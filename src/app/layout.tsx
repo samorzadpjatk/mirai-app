@@ -1,4 +1,7 @@
 import "~/styles/globals.css";
+import "~/styles/light_theme.css"
+import "~/styles/dark_theme.css"
+
 import "@radix-ui/themes/styles.css";
 
 import { type Metadata } from "next";
@@ -6,6 +9,7 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { Theme } from "@radix-ui/themes";
+import { ThemeProvider } from 'next-themes';
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -24,7 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        <TRPCReactProvider><Theme>{children}</Theme></TRPCReactProvider>
+        <TRPCReactProvider>
+          <ThemeProvider attribute="class">
+            <Theme>
+              {children}
+            </Theme>
+          </ThemeProvider>
+        </TRPCReactProvider>
       </body>
     </html>
   );
