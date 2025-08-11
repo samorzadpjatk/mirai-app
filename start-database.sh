@@ -20,7 +20,7 @@ DB_PORT=$(echo "$DATABASE_URL" | awk -F':' '{print $4}' | awk -F'\/' '{print $1}
 DB_NAME=$(echo "$DATABASE_URL" | awk -F'/' '{print $4}')
 DB_CONTAINER_NAME="$DB_NAME-postgres"
 
-if ! [ -x "$(command -v docker)" ] && ! [ -x "$(command -v podman)" ]; then
+if ! [ -x "$(command -v docker)" ] && ! [ -x "$(command -v podman)" ] && ! [ -x "$(command -v nerdctl)" ]; then
   echo -e "Docker or Podman is not installed. Please install docker or podman and try again.\nDocker install guide: https://docs.docker.com/engine/install/\nPodman install guide: https://podman.io/getting-started/installation"
   exit 1
 fi
@@ -30,6 +30,8 @@ if [ -x "$(command -v docker)" ]; then
   DOCKER_CMD="docker"
 elif [ -x "$(command -v podman)" ]; then
   DOCKER_CMD="podman"
+elif [ -x "$(command -v nerdctl)" ]; then
+  DOCKER_CMD="nerdctl"
 fi
 
 if ! $DOCKER_CMD info > /dev/null 2>&1; then
