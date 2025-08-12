@@ -27,15 +27,24 @@ export default async function SignInPage(props: {
                                 } catch (error) {
                                     // Signin can fail for a number of reasons, such as the user
                                     // not existing, or the user not having the correct role.
-                                    // In some cases, you may want to redirect to a custom error
+                                    // Wysyłamy pełne dane o błędzie do strony /error
                                     if (error instanceof AuthError) {
-                                        return redirect(`${SIGNIN_ERROR_URL}?error=${error.type}`)
+                                        const params = new URLSearchParams({
+                                            error: String(error.type ?? "Default"),
+                                            error_message: String(error.message ?? ""),
+                                            error_description: typeof error.cause?.description === "string"
+                                                ? error.cause.description
+                                                : error.cause?.description
+                                                    ? JSON.stringify(error.cause.description)
+                                                    : "",
+                                            error_details: typeof error.cause?.details === "string"
+                                                ? error.cause.details
+                                                : error.cause?.details
+                                                    ? JSON.stringify(error.cause.details)
+                                                    : ""
+                                        })
+                                        return redirect(`${SIGNIN_ERROR_URL}?${params.toString()}`)
                                     }
-
-                                    // Otherwise if a redirects happens Next.js can handle it
-                                    // so you can just re-thrown the error and let Next.js handle it.
-                                    // Docs:
-                                    // https://nextjs.org/docs/app/api-reference/functions/redirect#server-component
                                     throw error
                                 }
                             }}
