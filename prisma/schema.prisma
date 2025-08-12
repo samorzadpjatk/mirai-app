@@ -14,18 +14,6 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
-
-    @@index([name])
-}
-
 // Necessary for Next auth
 model Account {
     id                       String  @id @default(cuid())
@@ -55,14 +43,46 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
-    posts         Post[]
+    id                    String            @id @default(cuid())
+    name                  String?
+    email                 String?           @unique
+    emailVerified         DateTime?
+    image                 String?
+    accounts              Account[]
+    sessions              Session[]
+    groups                UserGroup[]
+    isAdmin               Boolean           @default(false)
+    organizerGroups       Group[]           @relation("UserOrganizerGroups")
+    coinTransactionsAdmin CoinTransaction[] @relation("UserCoinTransactionsAdmin")
+}
+
+model Group {
+    id               String            @id @default(uuid())
+    name             String
+    organizerId      String
+    organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
+    code             String            @unique
+    members          UserGroup[]
+    coins            Int               @default(0)
+    coinTransactions CoinTransaction[]
+}
+
+model UserGroup {
+    id      String @id @default(uuid())
+    userId  String
+    groupId String
+    user    User   @relation(fields: [userId], references: [id])
+    group   Group  @relation(fields: [groupId], references: [id])
+}
+
+model CoinTransaction {
+    id        String   @id @default(uuid())
+    groupId   String
+    group     Group    @relation(fields: [groupId], references: [id])
+    amount    Int
+    createdAt DateTime @default(now())
+    adminId   String
+    admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])
 }
 
 model VerificationToken {
