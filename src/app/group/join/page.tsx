@@ -1,12 +1,26 @@
 import { Card, Flex, Heading, Text, TextField, Button, Separator } from "@radix-ui/themes";
+import { redirect } from "next/navigation";
 import { db } from "~/server/db";
+import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
 
 export default async function JoinGroupPage() {
+    const session = await auth();
+    
+    // Redirect unauthenticated users to login
+    if (!session?.user) {
+        redirect("/auth/login?callbackUrl=/group/join");
+    }
     let message = "";
 
     async function dolaczDoGrupy(formData: FormData) {
         "use server";
+        const currentSession = await auth();
+        if (!currentSession?.user) {
+            message = "Błąd: Brak sesji użytkownika.";
+            return;
+        }
+        
         const code = formData.get("code") as string;
         try {
             const group = await db.group.findUnique({ where: { code } });
@@ -16,7 +30,7 @@ export default async function JoinGroupPage() {
             }
             await db.userGroup.create({
                 data: {
-                    userId: "TODO_USER_ID", // Uzupełnij pobieranie ID użytkownika z sesji
+                    userId: currentSession.user.id,
                     groupId: group.id,
                 },
             });
