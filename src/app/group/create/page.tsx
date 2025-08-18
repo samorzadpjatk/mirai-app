@@ -1,19 +1,33 @@
 import { Card, Flex, Heading, Text, TextField, Button, Separator } from "@radix-ui/themes";
+import { redirect } from "next/navigation";
 import { db } from "~/server/db";
+import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
 
 export default async function CreateGroupPage() {
+    const session = await auth();
+    
+    // Redirect unauthenticated users to login
+    if (!session?.user) {
+        redirect("/auth/login?callbackUrl=/group/create");
+    }
     let message = "";
     let code: string | null = null;
 
     async function utworzGrupe(formData: FormData) {
         "use server";
+        const currentSession = await auth();
+        if (!currentSession?.user) {
+            message = "Błąd: Brak sesji użytkownika.";
+            return;
+        }
+        
         const name = formData.get("name") as string;
         try {
             const group = await db.group.create({
                 data: {
                     name,
-                    organizerId: "TODO_USER_ID", // Uzupełnij pobieranie ID użytkownika z sesji
+                    organizerId: currentSession.user.id,
                     code: Math.random().toString(36).substring(2, 8).toUpperCase(),
                 },
             });
