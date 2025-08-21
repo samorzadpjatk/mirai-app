@@ -15,6 +15,7 @@ declare module "next-auth" {
     user: {
       id: string;
       groups: string[];
+      isAdmin: boolean;
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
@@ -50,12 +51,22 @@ export const authConfig = {
   ],
   adapter: PrismaAdapter(db),
   callbacks: {
-    session: ({ session }) => ({
-      ...session,
-      user: {
-        ...session.user,
-      },
-    }),
+    session: async ({ session, user }) => {
+      // Fetch the user's isAdmin status from the database
+      const dbUser = await db.user.findUnique({
+        where: { id: user.id },
+        select: { isAdmin: true },
+      });
+      
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: user.id,
+          isAdmin: dbUser?.isAdmin ?? false,
+        },
+      };
+    },
   },
   pages: {
     signIn: "/auth/login",
