@@ -8,8 +8,10 @@ import { providerMap, signIn } from "~/server/auth";
 const SIGNIN_ERROR_URL = "/error"
 
 export default async function SignInPage(props: {
-    searchParams: { callbackUrl: string | undefined }
+    searchParams: Promise<{ callbackUrl: string | undefined }>
 }) {
+    const searchParams = await props.searchParams;
+    
     return (
             <Card size="3" style={{ maxWidth: 400 }}>
                 <Heading size="4" mb="4">Logowanie</Heading>
@@ -22,7 +24,7 @@ export default async function SignInPage(props: {
                                 "use server"
                                 try {
                                     await signIn(provider.id, {
-                                        redirectTo: props.searchParams?.callbackUrl ?? "/",
+                                        redirectTo: searchParams?.callbackUrl ?? "/",
                                     })
                                 } catch (error) {
                                     // Signin can fail for a number of reasons, such as the user
