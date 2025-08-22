@@ -9,7 +9,7 @@ import { type Metadata } from "next";
 import { Roboto_Slab, IBM_Plex_Sans } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
-import { Container, Theme } from "@radix-ui/themes";
+import { Container, Flex, Theme } from "@radix-ui/themes";
 import { ThemeProvider } from 'next-themes';
 import TopBar from "./_components/top_bar";
 import ImageAdnotation from "./_components/image_adnotation";
@@ -38,14 +38,16 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-  <html lang="en" className={`${robotoSlab.variable} ${ibmPlex.variable}`}> 
+  <html lang="en" className={`${robotoSlab.variable} ${ibmPlex.variable}`}>
       <body>
         <TRPCReactProvider>
           <ThemeProvider attribute="class">
-            <Theme accentColor="red" panelBackground="solid">
-              <TopBar />
-              <Container align={"center"} style={{ fontFamily: 'var(--font-ibmplex)', backgroundImage: "url('/background.jpg')", backgroundSize: 'cover', backgroundColor: 'rgba(0, 0, 0, 0.7)', backgroundBlendMode: 'darken', width: '100vw', minHeight: '100vh' }}>
-                {children}
+            <Theme accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)', backgroundImage: "url('/background.jpg')", backgroundSize: 'cover', backgroundColor: 'var(--color-background)', backgroundBlendMode: 'color-burn', width: '100vw', height: '100vh' }}>
+              <Container size="3" style={{ maxWidth: 1200, padding: '20px', margin: 'auto' }}>
+                <Flex direction={"column"} align={"center"} justify={"center"} gap={"2"}>
+                  <TopBar />
+                  {children}
+                </Flex>
               </Container>
               <ImageAdnotation />
             </Theme>
