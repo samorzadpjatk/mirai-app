@@ -1,6 +1,9 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { User } from "@prisma/client";
+import { log } from "console";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import Authentik from "next-auth/providers/authentik";
+import { env } from "~/env";
 
 import { db } from "~/server/db";
 
@@ -20,11 +23,22 @@ declare module "next-auth" {
       // role: UserRole;
     } & DefaultSession["user"];
   }
+  interface User {
+    // ...other properties
+    isAdmin: boolean;
+  }
+}
 
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
+declare module "@auth/core/adapters" {
+  interface AdapterUser extends User {
+    isAdmin: boolean;
+  }
+}
+
+declare module "@auth/core/jwt" {
+  interface JWT extends DefaultJWT {
+    groups: string[];
+  }
 }
 
 /**
@@ -33,6 +47,18 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
+  debug: true,
+  logger: {
+    error(code, ...message) {
+      log(code, message)
+    },
+    warn(code, ...message) {
+      log(code, message)
+    },
+    debug(code, ...message) {
+      log(code, message)
+    },
+  },
   providers: [
     Authentik({
       clientId: process.env.AUTHENTIK_ID,
@@ -51,26 +77,22 @@ export const authConfig = {
   ],
   adapter: PrismaAdapter(db),
   callbacks: {
-    session: async ({ session, user }) => {
-      // Fetch the user's isAdmin status from the database
-      const dbUser = await db.user.findUnique({
-        where: { id: user.id },
-        select: { isAdmin: true },
-      });
-      
+    jwt: async ({token, user, profile}) => {
+      user.isAdmin = Array.isArray(profile?.groups) && profile.groups.includes(env.ADMIN_ROLE)
+      return token
+    },
+    session: async ({ session, user }) => {  
       return {
         ...session,
         user: {
           ...session.user,
           id: user.id,
-          isAdmin: dbUser?.isAdmin ?? false,
+          isAdmin: true,
         },
       };
     },
   },
   pages: {
-    signIn: "/auth/login",
-    signOut: "/auth/logout",
-    error: "/auth/error"
+    signIn: "/auth/login"
   }
 } satisfies NextAuthConfig;

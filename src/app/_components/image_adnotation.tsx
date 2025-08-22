@@ -4,7 +4,7 @@ import Link from "next/link";
 
 const ImageAdnotation = () => {
     return (
-        <Callout.Root size={"1"}variant="surface" style={{ position: 'absolute', bottom: 0, right: 0, margin: '1rem' }}>
+        <Callout.Root variant="surface" style={{ position: 'absolute', bottom: 0, right: 0, margin: '1rem' }}>
             <Callout.Icon>
                 <InfoCircledIcon />
             </Callout.Icon>
