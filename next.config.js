@@ -3,8 +3,26 @@
  * for Docker builds.
  */
 import "./src/env.js";
+import withPWA from "next-pwa";
+
+const isDev = process.env.NODE_ENV === "development";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const nextConfig = {
+  // Next.js config options here
+};
 
-export default config;
+const pwaConfig = {
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: isDev, // Disable PWA in development for easier debugging
+  // Remove complex runtime caching for now to avoid type issues
+  // The default next-pwa caching will still work
+  runtimeCaching: []
+};
+
+export default withPWA({
+  ...nextConfig,
+  ...pwaConfig
+});

@@ -1,5 +1,6 @@
 import { groupRouter } from "~/server/api/routers/group";
 import { adminRouter } from "~/server/api/routers/admin";
+import { notificationRouter } from "~/server/api/routers/notifications";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -10,6 +11,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 export const appRouter = createTRPCRouter({
   group: groupRouter,
   admin: adminRouter,
+  notifications: notificationRouter,
 });
 
 // export type definition of API

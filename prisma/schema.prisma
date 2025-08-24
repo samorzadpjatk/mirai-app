@@ -43,17 +43,18 @@ model Session {
 }
 
 model User {
-    id                    String            @id @default(cuid())
+    id                    String             @id @default(cuid())
     name                  String?
-    email                 String?           @unique
+    email                 String?            @unique
     emailVerified         DateTime?
     image                 String?
     accounts              Account[]
     sessions              Session[]
     groups                UserGroup[]
-    isAdmin               Boolean           @default(false)
-    organizerGroups       Group[]           @relation("UserOrganizerGroups")
-    coinTransactionsAdmin CoinTransaction[] @relation("UserCoinTransactionsAdmin")
+    isAdmin               Boolean            @default(false)
+    organizerGroups       Group[]            @relation("UserOrganizerGroups")
+    coinTransactionsAdmin CoinTransaction[]  @relation("UserCoinTransactionsAdmin")
+    pushSubscriptions     PushSubscription[]
 }
 
 model Group {
@@ -91,4 +92,17 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model PushSubscription {
+    id        String   @id @default(cuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    endpoint  String
+    p256dh    String
+    auth      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId])
 }

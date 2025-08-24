@@ -18,6 +18,27 @@ export const metadata: Metadata = {
   title: "Bank Monet",
   description: "Bank Monet - Integral 2025",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
+  manifest: "/manifest.json",
+  themeColor: "#dc2626",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Bank Monet",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Bank Monet",
+    title: "Bank Monet - Integral 2025",
+    description: "Bank Monet - Integral 2025 Progressive Web App",
+  },
+  twitter: {
+    card: "summary",
+    title: "Bank Monet - Integral 2025",
+    description: "Bank Monet - Integral 2025 Progressive Web App",
+  },
 };
 
 
@@ -39,6 +60,17 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
   <html lang="en" className={`${robotoSlab.variable} ${ibmPlex.variable}`}> 
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Bank Monet" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-TileColor" content="#dc2626" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png" />
+        <link rel="mask-icon" href="/icon-192x192.png" color="#dc2626" />
+      </head>
       <body>
         <TRPCReactProvider>
           <ThemeProvider attribute="class">

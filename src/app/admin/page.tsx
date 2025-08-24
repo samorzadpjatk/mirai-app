@@ -40,5 +40,5 @@ export default async function AdminDashboard() {
         );
     }
 
-    return <AdminDashboardClient userName={session.user.name} />;
+    return <AdminDashboardClient userName={session.user.name} userId={session.user.id} />;
 }

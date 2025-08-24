@@ -8,12 +8,15 @@ import GroupManagement from "./GroupManagement";
 import UserManagement from "./UserManagement";
 import CoinManagement from "./CoinManagement";
 import TransactionHistory from "./TransactionHistory";
+import NotificationSettings from "../NotificationSettings";
+import PWAInstallPrompt from "../PWAInstallPrompt";
 
 interface AdminDashboardClientProps {
     userName: string | null | undefined;
+    userId: string;
 }
 
-export default function AdminDashboardClient({ userName }: AdminDashboardClientProps) {
+export default function AdminDashboardClient({ userName, userId }: AdminDashboardClientProps) {
     return (
         <NoSSR fallback={
             <Container size="4">
@@ -47,6 +50,7 @@ export default function AdminDashboardClient({ userName }: AdminDashboardClientP
                                 <Tabs.Trigger value="users">👥 Użytkownicy</Tabs.Trigger>
                                 <Tabs.Trigger value="coins">💰 Monety</Tabs.Trigger>
                                 <Tabs.Trigger value="transactions">📊 Historia</Tabs.Trigger>
+                                <Tabs.Trigger value="pwa">📱 PWA & Powiadomienia</Tabs.Trigger>
                             </Tabs.List>
 
                             <Separator my="4" size="4" />
@@ -65,6 +69,13 @@ export default function AdminDashboardClient({ userName }: AdminDashboardClientP
 
                             <Tabs.Content value="transactions">
                                 <TransactionHistory />
+                            </Tabs.Content>
+
+                            <Tabs.Content value="pwa">
+                                <Flex direction="column" gap="4">
+                                    <PWAInstallPrompt />
+                                    <NotificationSettings showTestFeatures={true} userId={userId} />
+                                </Flex>
                             </Tabs.Content>
                         </Tabs.Root>
                     </Card>
