@@ -24,19 +24,19 @@ export default function CoinManagement() {
     const [operation, setOperation] = useState<"add" | "remove">("add");
 
     // Fetch data
-    const { data: groups, isLoading: groupsLoading, refetch } = api.admin.getAllGroups.useQuery();
+    const { data: groups, isLoading: groupsLoading, refetch } = api.group.getAll.useQuery();
 
     // Mutations
-    const addCoinsMutation = api.admin.addCoins.useMutation({
-        onSuccess: () => {
-            refetch();
+    const addCoinsMutation = api.coin.addCoins.useMutation({
+        onSuccess: async () => {
+            await refetch();
             resetForm();
         },
     });
 
-    const removeCoinsMutation = api.admin.removeCoins.useMutation({
-        onSuccess: () => {
-            refetch();
+    const removeCoinsMutation = api.coin.removeCoins.useMutation({
+        onSuccess: async () => {
+            await refetch();
             resetForm();
         },
     });
@@ -76,11 +76,11 @@ export default function CoinManagement() {
     return (
         <Flex direction="column" gap="6">
             {/* Header */}
-            <Heading size="5">Zarządzanie Monetami</Heading>
+            <Heading size={{"initial":"1"}}>Zarządzanie Monetami</Heading>
 
             {/* Coin Operations Form */}
-            <Card size="3">
-                <Heading size="4" mb="4">Operacje na Monetach</Heading>
+            <Card size={{"initial":"1"}}>
+                <Heading size={{"initial":"1"}} mb="4">Operacje na Monetach</Heading>
                 
                 <Flex direction="column" gap="4">
                     {/* Operation Type */}
@@ -107,7 +107,7 @@ export default function CoinManagement() {
 
                     {/* Group Selection */}
                     <div>
-                        <Text as="label" size="2" weight="bold" style={{ display: "block", marginBottom: "8px" }}>
+                        <Text as="label" size={{"initial":"1"}} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
                             Wybierz Gildię
                         </Text>
                         <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
@@ -124,7 +124,7 @@ export default function CoinManagement() {
 
                     {/* Amount */}
                     <div>
-                        <Text as="label" size="2" weight="bold" style={{ display: "block", marginBottom: "8px" }}>
+                        <Text as="label" size={{"initial":"1"}} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
                             Liczba Monet
                         </Text>
                         <TextField.Root
@@ -138,7 +138,7 @@ export default function CoinManagement() {
 
                     {/* Reason (Optional) */}
                     <div>
-                        <Text as="label" size="2" weight="bold" style={{ display: "block", marginBottom: "8px" }}>
+                        <Text as="label" size={{"initial":"1"}} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
                             Powód (opcjonalnie)
                         </Text>
                         <TextArea
@@ -151,7 +151,7 @@ export default function CoinManagement() {
 
                     {/* Submit Button */}
                     <Button
-                        size="3"
+                        size={{"initial":"1"}}
                         onClick={handleSubmit}
                         disabled={!selectedGroupId || !amount || parseInt(amount) <= 0 || isLoading}
                         color={operation === "add" ? "green" : "red"}
@@ -176,7 +176,7 @@ export default function CoinManagement() {
                             if (requestedAmount > currentCoins) {
                                 return (
                                     <Card variant="surface" style={{ backgroundColor: "var(--red-2)", border: "1px solid var(--red-6)" }}>
-                                        <Text size="2" color="red">
+                                        <Text size={{"initial":"1"}} color="red">
                                             ⚠️ Ostrzeżenie: Gildia ma tylko {currentCoins} monet, 
                                             a próbujesz odebrać {requestedAmount} monet!
                                         </Text>
@@ -192,7 +192,7 @@ export default function CoinManagement() {
 
             {/* Current Groups Status */}
             <Card>
-                <Heading size="4" mb="4">Aktualny Stan Monet</Heading>
+                <Heading size={{"initial":"1"}} mb="4">Aktualny Stan Monet</Heading>
                 
                 <Table.Root>
                     <Table.Header>
@@ -226,7 +226,7 @@ export default function CoinManagement() {
                                         </Badge>
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <Text size="2">
+                                        <Text size={{"initial":"1"}}>
                                             {group.organizer.name || group.organizer.email || "Nieznany"}
                                         </Text>
                                     </Table.Cell>
@@ -239,7 +239,7 @@ export default function CoinManagement() {
                                         <Badge 
                                             variant="solid" 
                                             color={group.coins > 0 ? "gold" : "gray"}
-                                            size="2"
+                                            size={{"initial":"1"}}
                                         >
                                             💰 {group.coins}
                                         </Badge>
@@ -247,13 +247,13 @@ export default function CoinManagement() {
                                     <Table.Cell>
                                         <Flex direction="column" gap="1">
                                             {group.coinTransactions.slice(0, 3).map((transaction) => (
-                                                <Text key={transaction.id} size="1" style={{ opacity: 0.7 }}>
+                                                <Text key={transaction.id} size={{"initial":"1"}} style={{ opacity: 0.7 }}>
                                                     {transaction.amount > 0 ? "+" : ""}{transaction.amount} 
                                                     {" "}od {transaction.admin.name}
                                                 </Text>
                                             ))}
                                             {group.coinTransactions.length === 0 && (
-                                                <Text size="1" style={{ opacity: 0.5 }}>
+                                                <Text size={{"initial":"1"}} style={{ opacity: 0.5 }}>
                                                     Brak transakcji
                                                 </Text>
                                             )}
@@ -266,10 +266,10 @@ export default function CoinManagement() {
 
                 {groups?.length === 0 && (
                     <Flex direction="column" align="center" justify="center" style={{ padding: "4rem" }}>
-                        <Text size="4" style={{ opacity: 0.6 }}>
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.6 }}>
                             Brak gildii do wyświetlenia
                         </Text>
-                        <Text size="2" style={{ opacity: 0.5 }}>
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.5 }}>
                             Najpierw utwórz gildie w zakładce "Gildie"
                         </Text>
                     </Flex>
@@ -278,29 +278,29 @@ export default function CoinManagement() {
 
             {/* Quick Stats */}
             <Card>
-                <Heading size="4" mb="4">Statystyki</Heading>
+                <Heading size={{"initial":"1"}} mb="4">Statystyki</Heading>
                 <Flex gap="6" wrap="wrap">
                     <div>
-                        <Text size="1" style={{ opacity: 0.7 }}>Łączna liczba monet</Text>
-                        <Text size="4" weight="bold">
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.7 }}>Łączna liczba monet</Text>
+                        <Text size={{"initial":"1"}} weight="bold">
                             💰 {groups?.reduce((sum, group) => sum + group.coins, 0) || 0}
                         </Text>
                     </div>
                     <div>
-                        <Text size="1" style={{ opacity: 0.7 }}>Liczba gildii</Text>
-                        <Text size="4" weight="bold">
-                            🏛️ {groups?.length || 0}
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.7 }}>Liczba gildii</Text>
+                        <Text size={{"initial":"1"}} weight="bold">
+                            🏛️ {groups?.length ?? 0}
                         </Text>
                     </div>
                     <div>
-                        <Text size="1" style={{ opacity: 0.7 }}>Średnia monet na gildię</Text>
-                        <Text size="4" weight="bold">
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.7 }}>Średnia monet na gildię</Text>
+                        <Text size={{"initial":"1"}} weight="bold">
                             📊 {groups?.length ? Math.round((groups.reduce((sum, group) => sum + group.coins, 0)) / groups.length) : 0}
                         </Text>
                     </div>
                     <div>
-                        <Text size="1" style={{ opacity: 0.7 }}>Najbogate gildia</Text>
-                        <Text size="4" weight="bold">
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.7 }}>Najbogate gildia</Text>
+                        <Text size={{"initial":"1"}} weight="bold">
                             🏆 {groups?.sort((a, b) => b.coins - a.coins)[0]?.name || "Brak"}
                         </Text>
                     </div>

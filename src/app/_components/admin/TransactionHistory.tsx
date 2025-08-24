@@ -53,7 +53,7 @@ export default function TransactionHistory() {
         <Flex direction="column" gap="6">
             {/* Header */}
             <Flex justify="between" align="center">
-                <Heading size="5">Historia Transakcji</Heading>
+                <Heading size={{"initial":"1"}}>Historia Transakcji</Heading>
                 <Button
                     variant="soft"
                     onClick={() => refetch()}
@@ -66,10 +66,10 @@ export default function TransactionHistory() {
 
             {/* Filters */}
             <Card>
-                <Heading size="4" mb="4">Filtry</Heading>
+                <Heading size={{"initial":"1"}} mb="4">Filtry</Heading>
                 <Flex gap="4" wrap="wrap">
                     <div style={{ minWidth: "200px" }}>
-                        <Text as="label" size="2" weight="bold" style={{ display: "block", marginBottom: "8px" }}>
+                        <Text as="label" size={{"initial":"1"}} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
                             Gildia
                         </Text>
                         <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
@@ -86,7 +86,7 @@ export default function TransactionHistory() {
                     </div>
 
                     <div style={{ minWidth: "150px" }}>
-                        <Text as="label" size="2" weight="bold" style={{ display: "block", marginBottom: "8px" }}>
+                        <Text as="label" size={{"initial":"1"}} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
                             Limit wyników
                         </Text>
                         <Select.Root value={limit.toString()} onValueChange={(value) => setLimit(parseInt(value))}>
@@ -106,26 +106,26 @@ export default function TransactionHistory() {
             {transactions && (
                 <Flex gap="4" wrap="wrap">
                     <Card style={{ flex: 1, minWidth: "200px" }}>
-                        <Text size="1" style={{ opacity: 0.7 }}>Łączne transakcje</Text>
-                        <Text size="4" weight="bold">
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.7 }}>Łączne transakcje</Text>
+                        <Text size={{"initial":"1"}} weight="bold">
                             📊 {transactions.length}
                         </Text>
                     </Card>
                     <Card style={{ flex: 1, minWidth: "200px" }}>
-                        <Text size="1" style={{ opacity: 0.7 }}>Dodane monety</Text>
-                        <Text size="4" weight="bold" color="green">
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.7 }}>Dodane monety</Text>
+                        <Text size={{"initial":"1"}} weight="bold" color="green">
                             💰 +{transactions.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)}
                         </Text>
                     </Card>
                     <Card style={{ flex: 1, minWidth: "200px" }}>
-                        <Text size="1" style={{ opacity: 0.7 }}>Odebrane monety</Text>
-                        <Text size="4" weight="bold" color="red">
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.7 }}>Odebrane monety</Text>
+                        <Text size={{"initial":"1"}} weight="bold" color="red">
                             💸 {transactions.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0)}
                         </Text>
                     </Card>
                     <Card style={{ flex: 1, minWidth: "200px" }}>
-                        <Text size="1" style={{ opacity: 0.7 }}>Bilans netto</Text>
-                        <Text size="4" weight="bold">
+                        <Text size={{"initial":"1"}} style={{ opacity: 0.7 }}>Bilans netto</Text>
+                        <Text size={{"initial":"1"}} weight="bold">
                             ⚖️ {transactions.reduce((sum, t) => sum + t.amount, 0)}
                         </Text>
                     </Card>
@@ -141,10 +141,10 @@ export default function TransactionHistory() {
                 ) : (
                     <>
                         <Flex justify="between" align="center" mb="4">
-                            <Heading size="4">Transakcje</Heading>
+                            <Heading size={{"initial":"1"}}>Transakcje</Heading>
                             {/* Future: Export functionality */}
                             {/*
-                            <Button variant="soft" size="2">
+                            <Button variant="soft" size={{"initial":"1"}}>
                                 <DownloadIcon />
                                 Eksportuj CSV
                             </Button>
@@ -167,7 +167,7 @@ export default function TransactionHistory() {
                                     return (
                                         <Table.Row key={transaction.id}>
                                             <Table.Cell>
-                                                <Text size="2">
+                                                <Text size={{"initial":"1"}}>
                                                     {formatDate(transaction.createdAt)}
                                                 </Text>
                                             </Table.Cell>
@@ -183,7 +183,7 @@ export default function TransactionHistory() {
                                                 </Badge>
                                             </Table.Cell>
                                             <Table.Cell>
-                                                <Text size="2">
+                                                <Text size={{"initial":"1"}}>
                                                     {transaction.admin.name || "Nieznany admin"}
                                                 </Text>
                                             </Table.Cell>
@@ -200,10 +200,10 @@ export default function TransactionHistory() {
 
                         {transactions?.length === 0 && (
                             <Flex direction="column" align="center" justify="center" style={{ padding: "4rem" }}>
-                                <Text size="4" style={{ opacity: 0.6 }}>
+                                <Text size={{"initial":"1"}} style={{ opacity: 0.6 }}>
                                     Brak transakcji do wyświetlenia
                                 </Text>
-                                <Text size="2" style={{ opacity: 0.5 }}>
+                                <Text size={{"initial":"1"}} style={{ opacity: 0.5 }}>
                                     {selectedGroupId 
                                         ? "Ta gildia nie ma jeszcze żadnych transakcji" 
                                         : "Nie ma jeszcze żadnych transakcji w systemie"
@@ -218,7 +218,7 @@ export default function TransactionHistory() {
             {/* Additional Insights */}
             {transactions && transactions.length > 0 && (
                 <Card>
-                    <Heading size="4" mb="4">Analiza</Heading>
+                    <Heading size={{"initial":"1"}} mb="4">Analiza</Heading>
                     <Flex direction="column" gap="3">
                         {(() => {
                             // Most active admin
@@ -239,19 +239,19 @@ export default function TransactionHistory() {
                             return (
                                 <>
                                     <div>
-                                        <Text size="2" weight="bold">Najbardziej aktywny administrator:</Text>
-                                        <Text size="2" style={{ marginLeft: "8px" }}>
+                                        <Text size={{"initial":"1"}} weight="bold">Najbardziej aktywny administrator:</Text>
+                                        <Text size={{"initial":"1"}} style={{ marginLeft: "8px" }}>
                                             {mostActiveAdmin?.[0]} ({mostActiveAdmin?.[1].count} transakcji)
                                         </Text>
                                     </div>
                                     
                                     <div>
-                                        <Text size="2" weight="bold">Ostatnie 5 transakcji:</Text>
+                                        <Text size={{"initial":"1"}} weight="bold">Ostatnie 5 transakcji:</Text>
                                         <Flex direction="column" gap="1" style={{ marginTop: "8px" }}>
                                             {recentTransactions.map((t) => {
                                                 const amountInfo = formatAmount(t.amount);
                                                 return (
-                                                    <Text key={t.id} size="1" style={{ opacity: 0.8 }}>
+                                                    <Text key={t.id} size={{"initial":"1"}} style={{ opacity: 0.8 }}>
                                                         {formatDate(t.createdAt)} - {t.group.name}: {amountInfo.icon} {amountInfo.value}
                                                     </Text>
                                                 );

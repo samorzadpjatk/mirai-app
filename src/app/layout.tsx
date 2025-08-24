@@ -43,9 +43,9 @@ export default function RootLayout({
         <TRPCReactProvider>
           <ThemeProvider attribute="class">
             <Theme accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)', backgroundImage: "url('/background.jpg')", backgroundSize: 'cover', backgroundColor: 'var(--color-background)', backgroundBlendMode: 'color-burn', width: '100vw', height: '100vh' }}>
-              <Container size="3" style={{ maxWidth: 1200, padding: '20px', margin: 'auto' }}>
-                <Flex direction={"column"} align={"center"} justify={"center"} gap={"2"}>
-                  <TopBar />
+              <Container size="3" style={{ height: '100%', margin: '0', padding: '1em' }}>
+                <TopBar />
+                <Flex style={{ height: '100%'}} direction={"column"} align={"center"} justify={"center"} gap={"1"}>
                   {children}
                 </Flex>
               </Container>
