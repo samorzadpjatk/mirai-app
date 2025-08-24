@@ -1,13 +1,9 @@
 "use client"
 
-import { type Group, type User } from "@prisma/client";
+import { type User } from "@prisma/client";
 import { Dialog, Flex, TextField, Select, Separator, Badge, Button, Text } from "@radix-ui/themes";
 import { useState } from "react";
-
-type GroupWithAllFields = Group & {
-    organizer: User;
-    members: User[];
-};
+import type { GroupWithAllFields } from "~/types/schema";
 
 const EditGroupDialog = ({
     group,

@@ -2,7 +2,8 @@ import { Card, Flex, Heading, Separator, Text } from "@radix-ui/themes";
 
 import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
-import NavGrid from "./_components/nav_grid";
+import NavGrid from "./components/nav_grid";
+import ImageAdnotation from "./components/image_adnotation";
 
 // Component for authenticated users - the main dashboard
 function AuthenticatedDashboard() {
@@ -47,6 +48,7 @@ export default async function Home() {
   return (
     <HydrateClient>
       {session?.user ? <AuthenticatedDashboard /> : <UnauthenticatedView />}
+      <ImageAdnotation />
     </HydrateClient>
   );
 }

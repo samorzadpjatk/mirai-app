@@ -9,10 +9,9 @@ import { type Metadata } from "next";
 import { Roboto_Slab, IBM_Plex_Sans } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
-import { Container, Flex, Theme } from "@radix-ui/themes";
+import { Container, Flex, ScrollArea, Theme } from "@radix-ui/themes";
 import { ThemeProvider } from 'next-themes';
-import TopBar from "./_components/top_bar";
-import ImageAdnotation from "./_components/image_adnotation";
+import TopBar from "./components/top_bar";
 
 export const metadata: Metadata = {
   title: "Bank Monet",
@@ -42,14 +41,15 @@ export default function RootLayout({
       <body>
         <TRPCReactProvider>
           <ThemeProvider attribute="class">
-            <Theme accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)', backgroundImage: "url('/background.jpg')", backgroundSize: 'cover', backgroundColor: 'var(--color-background)', backgroundBlendMode: 'color-burn', width: '100vw', height: '100vh' }}>
+            <Theme accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)', backgroundImage: "url('/background.jpg')", backgroundSize: 'cover', backgroundColor: 'var(--color-background)', backgroundBlendMode: 'color-burn', width: '100%', height: '100%' }}>
               <Container size="3" style={{ height: '100%', margin: '0', padding: '1em' }}>
                 <TopBar />
-                <Flex style={{ height: '100%'}} direction={"column"} align={"center"} justify={"center"} gap={"1"}>
-                  {children}
-                </Flex>
+                <ScrollArea type="scroll">
+                  <Flex style={{ height: "90vh", marginTop: '0.5em' }} direction={"column"} align={"center"} gap={"1"}>
+                    {children}
+                  </Flex>
+                </ScrollArea>
               </Container>
-              <ImageAdnotation />
             </Theme>
           </ThemeProvider>
         </TRPCReactProvider>

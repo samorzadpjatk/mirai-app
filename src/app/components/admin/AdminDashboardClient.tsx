@@ -6,8 +6,8 @@ import NoSSR from "./NoSSR";
 // Import admin dashboard components
 import GroupManagement from "./GroupManagement";
 import UserManagement from "./UserManagement";
-import CoinManagement from "./CoinManagement";
-import TransactionHistory from "./TransactionHistory";
+import CoinManagement from "./coin/CoinManagement";
+import TransactionHistory from "./coinTransation/TransactionHistory";
 
 export default function AdminDashboardClient() {
     return (

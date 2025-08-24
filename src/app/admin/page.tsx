@@ -1,11 +1,10 @@
 
-import { Card, Flex, Heading, Text, Separator, Tabs, Container } from "@radix-ui/themes";
+import { Card, Flex, Heading, Text, Container } from "@radix-ui/themes";
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
-import { HydrateClient } from "~/trpc/server";
 
 // Import admin dashboard components - we'll make these client components
-import AdminDashboardClient from "../_components/admin/AdminDashboardClient";
+import AdminDashboardClient from "../components/admin/AdminDashboardClient";
 
 export default async function AdminDashboard() {
     const session = await auth();
