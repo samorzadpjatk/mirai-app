@@ -3,10 +3,12 @@
 import type { Group } from "@prisma/client"
 import { PlusIcon, MinusIcon } from "@radix-ui/react-icons"
 import { Card, Heading, Flex, Button, Select, TextField, TextArea, Text } from "@radix-ui/themes"
+import type { QueryObserver } from "@tanstack/react-query"
+
 import { useState } from "react"
 import { api } from "~/trpc/react"
 
-const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[]; refetch: () => Promise<void> }) => {
+const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: QueryObserver["refetch"]}) => {
     const [selectedGroupId, setSelectedGroupId] = useState("");
     const [amount, setAmount] = useState("");
     const [reason, setReason] = useState("");
@@ -15,15 +17,15 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[]; refetch: 
     // Mutations
     const addCoinsMutation = api.coin.addCoins.useMutation({
         onSuccess: async () => {
-            await refetch();
             resetForm();
+            await refetch();
         },
     });
 
     const removeCoinsMutation = api.coin.removeCoins.useMutation({
         onSuccess: async () => {
-            await refetch();
             resetForm();
+            await refetch();
         },
     });
 

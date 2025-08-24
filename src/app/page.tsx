@@ -2,8 +2,8 @@ import { Card, Flex, Heading, Separator, Text } from "@radix-ui/themes";
 
 import { auth } from "~/server/auth";
 import { HydrateClient } from "~/trpc/server";
-import NavGrid from "./components/nav_grid";
-import ImageAdnotation from "./components/image_adnotation";
+import NavGrid from "./components/NavGrid";
+import ImageAdnotation from "./components/ImageAdnotation";
 
 // Component for authenticated users - the main dashboard
 function AuthenticatedDashboard() {

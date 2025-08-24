@@ -99,7 +99,6 @@ const CoinOperationCardList = ({ groups }: { groups: GroupWithAllFields[] }) => 
                                 </DataList.Value>
                             </DataList.Item>
                         </DataList.Root>
-
                     </Card>
                 ))}
         </Flex>

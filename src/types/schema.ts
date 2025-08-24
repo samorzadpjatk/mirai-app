@@ -14,3 +14,12 @@ export type GroupWithAllFields = Group & {
     organizer: User;
     coinTransactions: CoinTransactionWithAdmin[];
 }
+
+export type GroupAction = GroupWithAllFields & {
+    action: "edit" | "delete";
+}
+
+export type UserWithAllFields = User & {
+    group: Group | null;
+    organizerGroup: Group | null;
+};

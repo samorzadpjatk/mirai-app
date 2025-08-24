@@ -163,7 +163,6 @@ export const groupRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
-        groupId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

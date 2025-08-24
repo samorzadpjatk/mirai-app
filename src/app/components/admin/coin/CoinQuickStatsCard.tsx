@@ -1,12 +1,11 @@
-"use client"
-
 import { Card, Heading, Text, DataList } from "@radix-ui/themes";
+import { formatDate } from "~/app/utils/format";
 import type { GroupWithAllFields } from "~/types/schema";
 
 const CoinQuickStatsCard = ({groups}: {groups: GroupWithAllFields[]}) => {
     return (<Card>
         <Heading size={{ "initial": "1" }} mb="4">Statystyki</Heading>
-        <DataList.Root>
+        <DataList.Root size={{ initial: "1" }}>
             <DataList.Item>
                 <DataList.Label size={{ "initial": "1" }} style={{ opacity: 0.7 }}>Łączna liczba monet</DataList.Label>
                 <DataList.Value>
@@ -39,6 +38,7 @@ const CoinQuickStatsCard = ({groups}: {groups: GroupWithAllFields[]}) => {
                     </Text>
                 </DataList.Value>
             </DataList.Item>
+            <Text size={{ "initial": "1" }}>Ostatnia aktualizacja: {formatDate(new Date())}</Text>
         </DataList.Root>
     </Card>);
 }

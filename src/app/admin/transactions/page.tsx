@@ -11,9 +11,10 @@ import {
 } from "@radix-ui/themes";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { api } from "~/trpc/react";
-import TransactionsAdditionalInsights from "./TransactionsAdditionalInsights";
-import TransactionStatisticsDataList from "./TransactionStatisticsDataList";
-import TransactionCardList from "./TransactionCardList";
+import TransactionsAdditionalInsights from "~/app/components/admin/coinTransaction/TransactionsAdditionalInsights";
+import TransactionStatisticsDataList from "~/app/components/admin/coinTransaction/TransactionStatisticsDataList";
+import TransactionCardList from "~/app/components/admin/coinTransaction/TransactionCardList";
+
 
 export default function TransactionHistory() {
     const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
@@ -90,7 +91,7 @@ export default function TransactionHistory() {
             </Card>
 
             {/* Transactions Table */}
-            <TransactionCardList isLoading={isLoading} transactions={transactions} />
+            <TransactionCardList selectedGroupId={selectedGroupId} transactions={transactions} />
         </Flex>
     );
 }

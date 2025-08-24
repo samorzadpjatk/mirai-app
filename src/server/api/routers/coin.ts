@@ -21,6 +21,7 @@ export const coinRouter = createTRPCRouter({
         data: {
           groupId: input.groupId,
           amount: input.amount,
+          reason: input.reason,
           adminId: ctx.session.user.id,
         },
         include: {

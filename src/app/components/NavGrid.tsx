@@ -31,7 +31,7 @@ async function NavGridContent() {
           </Grid>
           {session?.user.isAdmin && (
             <Button variant="outline">
-              <Link href={"/admin"}>
+              <Link href={"/admin/groups"}>
                 <Text>Panel administracyjny</Text>
               </Link>
             </Button>

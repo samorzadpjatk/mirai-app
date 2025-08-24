@@ -1,6 +1,5 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { User } from "@prisma/client";
-import { log } from "console";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import Authentik from "next-auth/providers/authentik";
 import { env } from "~/env";
@@ -48,17 +47,6 @@ declare module "@auth/core/jwt" {
  */
 export const authConfig = {
   debug: true,
-  logger: {
-    error(code, ...message) {
-      log(code, message)
-    },
-    warn(code, ...message) {
-      log(code, message)
-    },
-    debug(code, ...message) {
-      log(code, message)
-    },
-  },
   providers: [
     Authentik({
       clientId: process.env.AUTHENTIK_ID,
@@ -93,6 +81,7 @@ export const authConfig = {
     },
   },
   pages: {
-    signIn: "/auth/login"
+    signIn: "/auth/login",
+    error: "/auth/error"
   }
 } satisfies NextAuthConfig;

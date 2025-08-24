@@ -2,22 +2,40 @@
 
 import { type User } from "@prisma/client";
 import { Dialog, Flex, TextField, Select, Separator, Badge, Button, Text } from "@radix-ui/themes";
+import type { QueryObserver } from "@tanstack/react-query";
 import { useState } from "react";
+import { api } from "~/trpc/react";
 import type { GroupWithAllFields } from "~/types/schema";
 
 const EditGroupDialog = ({
     group,
     users,
-    onSubmit,
-    isLoading
+    isEditDialogOpen,
+    setIsEditDialogOpen,
+    setSelectedGroupAction,
+    refetch
 }: {
     group: GroupWithAllFields;
     users: User[];
-    onSubmit: (data: { name?: string; organizerId?: string }) => void;
-    isLoading: boolean;
+    isEditDialogOpen: boolean;
+    setIsEditDialogOpen: (open: boolean) => void;
+    setSelectedGroupAction: (group: GroupAction | null) => void;
+    refetch: QueryObserver["refetch"];
 }) => {
-    const [name, setName] = useState(group.name);
-    const [organizerId, setOrganizerId] = useState(group.organizer.id);
+
+    const [name, setName] = useState(group?.name);
+    const [organizerId, setOrganizerId] = useState(group?.organizer.id);
+
+    const updateGroupMutation = api.group.update.useMutation({
+        onSuccess: async () => {
+            await refetch();
+            setIsEditDialogOpen(false);
+            setSelectedGroupAction(null);
+        },
+        onError: (error) => {
+            console.error("Error updating group:", error);
+        },
+    });
 
     const handleSubmit = () => {
         const updateData: { name?: string; organizerId?: string } = {};
@@ -31,11 +49,11 @@ const EditGroupDialog = ({
         }
 
         if (Object.keys(updateData).length > 0) {
-            onSubmit(updateData);
+            updateGroupMutation.mutate({ id: group.id, ...updateData })
         }
     };
 
-    return (
+    return (<Dialog.Root open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <Dialog.Content>
             <Dialog.Title>Edytuj Gildię</Dialog.Title>
             <Dialog.Description>
@@ -63,7 +81,7 @@ const EditGroupDialog = ({
                         <Select.Content>
                             {users.map((user) => (
                                 <Select.Item key={user.id} value={user.id}>
-                                    {user.name || user.email || `Użytkownik ${user.id}`}
+                                    {user.name ?? user.email ?? `Użytkownik ${user.id}`}
                                 </Select.Item>
                             ))}
                         </Select.Content>
@@ -96,12 +114,13 @@ const EditGroupDialog = ({
                 </Dialog.Close>
                 <Button
                     onClick={handleSubmit}
-                    disabled={!name.trim() || isLoading}
+                    disabled={!name.trim() || updateGroupMutation.isPending}
                 >
-                    {isLoading ? "Zapisywanie..." : "Zapisz Zmiany"}
+                    {updateGroupMutation.isPending ? "Zapisywanie..." : "Zapisz Zmiany"}
                 </Button>
             </Flex>
         </Dialog.Content>
+    </Dialog.Root>
     );
 }
 

@@ -77,6 +77,7 @@ model CoinTransaction {
     createdAt DateTime @default(now())
     adminId   String
     admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])
+    reason    String?
 }
 
 model VerificationToken {
