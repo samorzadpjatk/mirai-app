@@ -78,7 +78,7 @@ export const authConfig = {
   adapter: PrismaAdapter(db),
   callbacks: {
     jwt: async ({token, user, profile}) => {
-      user.isAdmin = Array.isArray(profile?.groups) && profile.groups.includes(env.ADMIN_ROLE)
+      user.isAdmin = Array.isArray(profile?.groups) && (profile.groups.includes(env.ADMIN_ROLE) || profile.groups.includes(env.KADRA_ROLE))
       return token
     },
     session: async ({ session, user }) => {  

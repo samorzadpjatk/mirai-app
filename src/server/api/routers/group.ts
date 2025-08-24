@@ -8,7 +8,7 @@ import {
 } from "~/server/api/trpc";
 
 export const groupRouter = createTRPCRouter({
-  getAllGroups: adminProcedure.query(async ({ ctx }) => {
+  getAll: adminProcedure.query(async ({ ctx }) => {
     return await ctx.db.group.findMany({
       include: {
         members: {
@@ -49,7 +49,7 @@ export const groupRouter = createTRPCRouter({
       });
     }),
   // Create a new group (admin version with more control)
-  createGroup: adminProcedure
+  create: adminProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -77,7 +77,7 @@ export const groupRouter = createTRPCRouter({
     }),
 
   // Update group information
-  updateGroup: adminProcedure
+  update: adminProcedure
     .input(
       z.object({
         id: z.string(),
@@ -103,7 +103,7 @@ export const groupRouter = createTRPCRouter({
     }),
 
   // Delete a group
-  deleteGroup: adminProcedure
+  delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // First, delete all related records

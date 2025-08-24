@@ -53,15 +53,16 @@ model User {
     group                 Group?            @relation(fields: [groupId], references: [id])
     groupId               String?
     isAdmin               Boolean           @default(false)
-    organizerGroups       Group[]           @relation("UserOrganizerGroups")
+    organizerGroupId      String?
+    organizerGroup        Group?            @relation("UserOrganizerGroup")
     coinTransactionsAdmin CoinTransaction[] @relation("UserCoinTransactionsAdmin")
 }
 
 model Group {
     id               String            @id @default(uuid())
     name             String
-    organizerId      String
-    organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
+    organizerId      String            @unique
+    organizer        User              @relation("UserOrganizerGroup", fields: [organizerId], references: [id])
     code             String            @unique
     members          User[]
     coins            Int               @default(0)

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
 
 export const userRouter = createTRPCRouter({
-  getAllUsers: adminProcedure.query(async ({ ctx }) => {
+  getAll: adminProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findMany({
       select: {
         id: true,
@@ -10,6 +10,7 @@ export const userRouter = createTRPCRouter({
         email: true,
         isAdmin: true,
         group: true,
+        organizerGroup: true,
       },
       orderBy: { name: "asc" },
     });
