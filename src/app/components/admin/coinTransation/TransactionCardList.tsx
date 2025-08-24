@@ -29,7 +29,6 @@ const TransactionCardList = ({ isLoading, transactions }: { isLoading: boolean, 
                                         setFilteredTransactions(
                                             transactions.filter((transaction) =>
                                                 transaction.group.name.toLowerCase().includes(value) ||
-                                                transaction.group.code.toLowerCase().includes(value) ||
                                                 transaction.admin.name?.toLowerCase().includes(value)
                                             )
                                         );

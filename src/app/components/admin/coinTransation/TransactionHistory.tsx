@@ -7,11 +7,7 @@ import {
     Heading,
     Text,
     Select,
-    Table,
-    Badge,
-    Strong,
     Button,
-    DataList,
 } from "@radix-ui/themes";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { api } from "~/trpc/react";
@@ -56,7 +52,7 @@ export default function TransactionHistory() {
             <TransactionStatisticsDataList transactions={transactions} />
 
             {/* Filters */}
-            <Heading  size={{ "initial": "1" }}>Filtry</Heading>
+            <Heading size={{ "initial": "1" }}>Filtry</Heading>
             <Card>
                 <Flex direction={"column"} gap="2">
                     <>

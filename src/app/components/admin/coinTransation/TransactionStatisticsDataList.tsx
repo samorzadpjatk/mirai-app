@@ -4,6 +4,9 @@ import type { CoinTransaction } from "@prisma/client";
 import { Card, DataList, Heading, Text } from "@radix-ui/themes";
 
 const TransactionStatisticsDataList = ({ transactions }: { transactions: CoinTransaction[] }) => {
+    if (!transactions || transactions.length === 0) {
+        return null;
+    }
     return (<>
         <Heading size={{ "initial": "1" }}>Statystyki</Heading>
         <Card>

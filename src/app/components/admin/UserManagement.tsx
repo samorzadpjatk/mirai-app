@@ -63,7 +63,7 @@ export default function UserManagement() {
     return (
         <Flex direction="column" gap="2" style={{marginTop: "0.5em"}}>
             {/* Header */}
-            <Flex wrap={"wrap"} justify="between" align="center">
+            <Flex gap={"2"} wrap={"wrap"} justify="between" align="center">
                 <Heading size={{ "initial": "1" }}>Zarządzanie Użytkownikami</Heading>
                 <Text size={{ "initial": "1" }} style={{ opacity: 0.7 }}>
                     Zarządzaj członkostwem w gildiach i uprawnieniami użytkowników
