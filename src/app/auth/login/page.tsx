@@ -9,7 +9,7 @@ export default async function SignInPage(props: {
     const searchParams = await props.searchParams;
 
     return (
-        <Card size="3" style={{ maxWidth: 400 }}>
+        <Card size="3">
             <Flex direction="column" align="center" justify="center">
                 <Heading size="4">Logowanie</Heading>
                 <Separator my="3" size="2" />

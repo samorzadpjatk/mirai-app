@@ -17,7 +17,7 @@ const GroupCardList = ({ groups, setSelectedGroup, setIsEditDialogOpen, setIsDel
                 </Card>
             )}
             {groups?.map((group) => (
-                <Card key={group.id} size={{ "initial": "2" }} style={{ width: "100%", maxWidth: "500px" }}>
+                <Card key={group.id} size={{ "initial": "2" }} style={{ width: "100%" }}>
                     <Flex direction="column" gap={{ "initial": "1" }}>
                         <Flex justify="between" align="center">
                             <Strong>{group.name}</Strong>

@@ -1,5 +1,5 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import type { User } from "@prisma/client";
+import { Prisma, type User } from "@prisma/client";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import Authentik from "next-auth/providers/authentik";
 import { env } from "~/env";
@@ -16,7 +16,7 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
-      groups: string[];
+      roles: string[];
       isAdmin: boolean;
       // ...other properties
       // role: UserRole;
@@ -65,23 +65,44 @@ export const authConfig = {
   ],
   adapter: PrismaAdapter(db),
   callbacks: {
-    jwt: async ({token, user, profile}) => {
-      user.isAdmin = Array.isArray(profile?.groups) && (profile.groups.includes(env.ADMIN_ROLE) || profile.groups.includes(env.KADRA_ROLE))
-      return token
+    signIn: async ({ user, profile }) => {
+      user.isAdmin =
+        Array.isArray(profile?.groups) &&
+        (profile.groups.includes(env.ADMIN_ROLE) ||
+          profile.groups.includes(env.KADRA_ROLE));
+      try {
+        if (user.email) {
+          await db.user.update({
+            where: { email: user.email },
+            data: { isAdmin: user.isAdmin },
+          });
+        }
+      } catch (e) {
+        // Rethrow any error that isn't known. This error will get thrown
+        // if we're trying to update a user in the database that doesn't exist
+        // yet i.e. they're a new user.
+        // https://www.prisma.io/docs/reference/api-reference/error-reference#p2025
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code !== "P2025") {
+            throw e;
+          }
+        }
+      }
+      return true;
     },
-    session: async ({ session, user }) => {  
+    session: async ({ session, user }) => {
       return {
         ...session,
         user: {
           ...session.user,
           id: user.id,
-          isAdmin: true,
+          isAdmin: user.isAdmin ?? false,
         },
       };
     },
   },
   pages: {
     signIn: "/auth/login",
-    error: "/auth/error"
-  }
+    error: "/auth/error",
+  },
 } satisfies NextAuthConfig;

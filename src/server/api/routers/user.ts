@@ -1,7 +1,13 @@
 import { z } from "zod";
-import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const userRouter = createTRPCRouter({
+  getMy: protectedProcedure
+    .query(async ({ ctx }) => {
+      return await ctx.db.user.findUnique({
+        where: { id: ctx.session.user.id },
+      });
+    }),
   getAll: adminProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findMany({
       select: {

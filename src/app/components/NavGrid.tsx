@@ -20,12 +20,12 @@ async function NavGridContent() {
           >
             <Button variant="outline">
               <Link href={"/group/my"}>
-                <Text>Twoja grupa</Text>
+                <Text>Twoja gildia</Text>
               </Link>
             </Button>
             <Button variant="outline">
               <Link href={"/ranking"}>
-                <Text>Ranking grup</Text>
+                <Text>Ranking gildii</Text>
               </Link>
             </Button>
           </Grid>

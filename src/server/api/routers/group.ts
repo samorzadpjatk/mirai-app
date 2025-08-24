@@ -1,13 +1,52 @@
+import { debug, log } from "node:console";
 import { z } from "zod";
 
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
 
 export const groupRouter = createTRPCRouter({
+  getMy: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { groupId: true, organizerGroupId: true },
+    });
+    if (!user?.groupId && !user?.organizerGroupId) {
+      return null;
+    }
+    return await ctx.db.group.findUnique({
+      where: { id: user.groupId ?? user.organizerGroupId },
+      include: {
+        members: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        organizer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        coinTransactions: {
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+  }),
   getAll: adminProcedure.query(async ({ ctx }) => {
     return await ctx.db.group.findMany({
       include: {
@@ -58,7 +97,7 @@ export const groupRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      return await ctx.db.group.create({
+      const group = await ctx.db.group.create({
         data: {
           name: input.name,
           organizerId: input.organizerId ?? ctx.session.user.id,
@@ -74,6 +113,11 @@ export const groupRouter = createTRPCRouter({
           },
         },
       });
+      await ctx.db.user.update({
+        where: { id: input.organizerId ?? ctx.session.user.id },
+        data: { organizerGroupId: group.id },
+      });
+      return group;
     }),
 
   // Update group information
@@ -190,10 +234,36 @@ export const groupRouter = createTRPCRouter({
         },
       });
     }),
-  ranking: publicProcedure.query(async ({ ctx }) => {
+  ranking: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.db.group.findMany({
       orderBy: { coins: "desc" },
-      select: { id: true, name: true, coins: true },
+      include: {
+        members: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        organizer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        coinTransactions: {
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
     });
   }),
 });
