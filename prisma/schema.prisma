@@ -50,7 +50,8 @@ model User {
     image                 String?
     accounts              Account[]
     sessions              Session[]
-    groups                UserGroup[]
+    group                 Group?            @relation(fields: [groupId], references: [id])
+    groupId               String?
     isAdmin               Boolean           @default(false)
     organizerGroups       Group[]           @relation("UserOrganizerGroups")
     coinTransactionsAdmin CoinTransaction[] @relation("UserCoinTransactionsAdmin")
@@ -62,17 +63,9 @@ model Group {
     organizerId      String
     organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
     code             String            @unique
-    members          UserGroup[]
+    members          User[]
     coins            Int               @default(0)
     coinTransactions CoinTransaction[]
-}
-
-model UserGroup {
-    id      String @id @default(uuid())
-    userId  String
-    groupId String
-    user    User   @relation(fields: [userId], references: [id])
-    group   Group  @relation(fields: [groupId], references: [id])
 }
 
 model CoinTransaction {
