@@ -1,4 +1,4 @@
-import { Card, Flex, Strong, Badge, Text } from "@radix-ui/themes";
+import { Card, Flex, Strong, Badge, Text, Heading } from "@radix-ui/themes";
 import { auth } from "~/server/auth";
 import { api, HydrateClient } from "~/trpc/server";
 import type { GroupWithAllFields } from "~/types/schema";
@@ -30,6 +30,18 @@ const MyGroupPage = async () => {
                         💰 {group.coins} monet
                     </Badge>
                 </Flex>
+                {group.members.length > 0 && <>
+                    <Heading size={{ "initial": "1" }} style={{ opacity: 0.7 }}>
+                        Członkowie
+                    </Heading>
+                    <Flex direction="column" gap="2">
+                        {group.members.map((member) => (
+                            <Badge key={member.id} variant="soft" color="blue">
+                                {member.name ?? "Nieznany członek"}
+                            </Badge>
+                        ))}
+                    </Flex></>}
+
             </Flex>
         </Card>
 

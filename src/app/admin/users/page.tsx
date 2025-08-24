@@ -2,16 +2,10 @@
 
 import { useState } from "react";
 import {
-    Card,
     Flex,
     Heading,
     Text,
-    Button,
-    Badge,
-    Strong,
-    DataList,
 } from "@radix-ui/themes";
-import { PersonIcon, PlusIcon, TrashIcon, StarIcon, MinusIcon } from "@radix-ui/react-icons";
 import { api } from "~/trpc/react";
 import type { Group, User } from "@prisma/client";
 import AssignUserToGroupForm from "~/app/components/admin/users/dialog/AssignUserToGroupFormDialog";
@@ -25,8 +19,6 @@ export default function UserManagement() {
 
     // Fetch data
     const { data: users, isLoading: usersLoading, refetch: refetchUsers } = api.user.getAll.useQuery();
-
-
 
     if (usersLoading) {
         return (
