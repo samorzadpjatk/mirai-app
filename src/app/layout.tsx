@@ -45,7 +45,7 @@ export default function RootLayout({
               <Container size="3" style={{ height: '100%', margin: '0', padding: '0.5em' }}>
                 <TopBar />
                 <ScrollArea type="scroll">
-                  <Flex style={{ height: "90vh", marginTop: '0.5em' }} direction={"column"} align={"center"} gap={"1"}>
+                  <Flex style={{ width: '100%', height: "90vh", marginTop: '0.5em' }} direction={"column"} align={"center"} gap={"1"}>
                     {children}
                   </Flex>
                 </ScrollArea>

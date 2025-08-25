@@ -9,7 +9,7 @@ import UserCardList from "~/components/admin/users/UserCardList";
 export default function UserManagement() {
 
     return (
-        <Suspense fallback={<Flex direction="column" align="center" justify="center">
+        <Suspense fallback={<Flex direction="column" align="center" justify="center" style={{ width: "100%", padding: "1rem" }}>
             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>Ładowanie użytkowników...</Text>
         </Flex>}>
             <Flex direction="column" gap="2" style={{ marginTop: "0.5em" }}>
