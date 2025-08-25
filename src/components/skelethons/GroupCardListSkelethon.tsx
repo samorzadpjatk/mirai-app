@@ -23,9 +23,6 @@ const GroupCardListSkeleton = () => {
                 <Flex direction="column" gap={{ "initial": "1" }}>
                     <Flex justify="between" align="center">
                         <Skeleton loading={true}><Strong>{group.name}</Strong></Skeleton>
-                        <Skeleton loading={true}><Badge variant="soft" color="blue">
-                            {group.code}
-                        </Badge></Skeleton>
                     </Flex>
                     <Skeleton loading={true}><Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
                         Przypisany: {(group.organizer.name ?? group.organizer.email) ?? "Nieznany"}

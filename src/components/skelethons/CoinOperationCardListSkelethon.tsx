@@ -40,9 +40,6 @@ const CoinOperationCardListSkeleton = () => {
                         </DataList.Item>
                         <DataList.Item>
                             <Skeleton loading={true}><DataList.Label>Kod</DataList.Label></Skeleton>
-                            <Skeleton loading={true}><DataList.Value><Badge variant="soft" color="blue">
-                                {group.code}
-                            </Badge></DataList.Value></Skeleton>
                         </DataList.Item>
                         <DataList.Item>
                             <Skeleton loading={true}><DataList.Label>Organizator</DataList.Label></Skeleton>

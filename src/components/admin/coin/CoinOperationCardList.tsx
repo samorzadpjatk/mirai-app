@@ -23,7 +23,6 @@ const CoinOperationCardList = () => {
                 setFilteredGroups(
                     groups.filter((group) =>
                         group.name.toLowerCase().includes(value) ||
-                        group.code.toLowerCase().includes(value) ||
                         group.organizer.name?.toLowerCase().includes(value)
                     )
                 );
@@ -60,12 +59,6 @@ const CoinOperationCardList = () => {
                                         <Strong>{group.name}</Strong>
                                     </Flex>
                                 </DataList.Value>
-                            </DataList.Item>
-                            <DataList.Item>
-                                <DataList.Label>Kod</DataList.Label>
-                                <DataList.Value><Badge variant="soft" color="blue">
-                                    {group.code}
-                                </Badge></DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
                                 <DataList.Label>Organizator</DataList.Label>

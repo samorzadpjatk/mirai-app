@@ -26,9 +26,14 @@ const GroupCardList = async () => {
                         <Flex direction="column" gap={{ "initial": "1" }}>
                             <Flex justify="between" align="center">
                                 <Strong>{group.name}</Strong>
-                                <Badge variant="soft" color="blue">
-                                    {group.code}
-                                </Badge>
+                                <Flex gap={{ "initial": "1" }} justify="end">
+                                    <EditGroupDialog
+                                        selectedGroupId={group.id}
+                                    />
+                                    <DeleteGroupDialog
+                                        selectedGroupId={group.id}
+                                    />
+                                </Flex>
                             </Flex>
                             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
                                 Przypisany: {(group.organizer.name ?? group.organizer.email) ?? "Nieznany"}
@@ -41,14 +46,7 @@ const GroupCardList = async () => {
                                     💰 {group.coins} monet
                                 </Badge>
                             </Flex>
-                            <Flex gap={{ "initial": "1" }} justify="end">
-                                <EditGroupDialog
-                                    selectedGroupId={group.id}
-                                />
-                                <DeleteGroupDialog
-                                    selectedGroupId={group.id}
-                                />
-                            </Flex>
+
                         </Flex>
                     </Card>
                 ))}

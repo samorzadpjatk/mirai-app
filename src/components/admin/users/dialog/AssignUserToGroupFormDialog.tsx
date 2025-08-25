@@ -79,7 +79,7 @@ const AssignUserToGroupFormDialog = ({
                                 <Select.Content>
                                     {availableGroups.map((group) => (
                                         <Select.Item key={group.id} value={group.id}>
-                                            {group.name} ({group.code})
+                                            {group.name}
                                         </Select.Item>
                                     ))}
                                 </Select.Content>

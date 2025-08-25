@@ -16,9 +16,6 @@ export default async function RankingPage() {
                         <Flex direction="column" gap={{ "initial": "1" }}>
                             <Flex justify="between" align="center">
                                 <Strong>{group.name}</Strong>
-                                <Badge variant="soft" color="blue">
-                                    {group.code}
-                                </Badge>
                             </Flex>
                             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
                                 Przypisany: {(group.organizer.name ?? group.organizer.email) ?? "Nieznany"}

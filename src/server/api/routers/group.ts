@@ -115,7 +115,6 @@ export const groupRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
-          code: true,
           coins: true,
           _count: { select: { members: true } },
           organizer: { select: { id: true, name: true } },
@@ -131,12 +130,10 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
       const group = await ctx.db.group.create({
         data: {
           name: input.name,
           organizerId: input.organizerId ?? ctx.session.user.id,
-          code,
         },
         include: {
           organizer: {
@@ -200,10 +197,10 @@ export const groupRouter = createTRPCRouter({
       });
     }),
   join: adminProcedure
-    .input(z.object({ code: z.string() }))
+    .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
-        where: { code: input.code },
+        where: { id: input.id },
       });
       if (!group) throw new Error("Group not found");
       return await ctx.db.user.update({

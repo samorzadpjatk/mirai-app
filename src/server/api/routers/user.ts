@@ -43,9 +43,9 @@ export const userRouter = createTRPCRouter({
       orderBy: { name: "asc" },
     });
   }),
-  getAllAdminsNames: moderatorProcedure.query(async ({ ctx }) => {
+  getAllAdminsNamesWithoutGroups: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findMany({
-      where: { isAdmin: true },
+      where: { isAdmin: true, organizerGroup: null },
       select: {
         id: true,
         name: true,

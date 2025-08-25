@@ -64,7 +64,6 @@ model Group {
     name             String
     organizerId      String            @unique
     organizer        User              @relation("UserOrganizerGroup", fields: [organizerId], references: [id])
-    code             String            @unique
     members          User[]
     coins            Int               @default(0)
     coinTransactions CoinTransaction[]
