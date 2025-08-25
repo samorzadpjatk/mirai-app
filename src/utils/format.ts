@@ -1,4 +1,5 @@
-export const formatDate = (date: Date) => {
+export const formatDate = (date: Date | null | undefined) => {
+    if (!date) return "";
     return new Intl.DateTimeFormat('pl-PL', {
         day: '2-digit',
         month: '2-digit',
