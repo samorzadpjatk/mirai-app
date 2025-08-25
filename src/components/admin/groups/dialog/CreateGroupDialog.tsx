@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, Flex, TextField, Select, Button, Text } from "@radix-ui/themes";
+import { Dialog, Flex, TextField, Select, Button, Text, Skeleton } from "@radix-ui/themes";
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { PlusIcon } from "@radix-ui/react-icons";
@@ -14,7 +14,7 @@ const CreateGroupDialog = () => {
     const [organizerId, setOrganizerId] = useState("");
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-    const { data: adminUsers } = api.user.getAllAdminsNames.useQuery();
+    const { data: adminUsers, isLoading } = api.user.getAllAdminsNames.useQuery();
     const createGroupMutation = api.group.create.useMutation({
         onSuccess: async () => {
             setIsCreateDialogOpen(false);
@@ -24,7 +24,6 @@ const CreateGroupDialog = () => {
             console.error("Error creating group:", error);
         },
     });
-    if (!adminUsers) return null;
 
     const handleCreateSubmit = () => {
         if (name.trim() && organizerId) {
@@ -38,7 +37,7 @@ const CreateGroupDialog = () => {
     };
 
     return (
-        <Dialog.Root open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Skeleton loading={isLoading}><Dialog.Root open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <Dialog.Trigger>
                 <Button size={{ "initial": "1", "xs": "2", "sm": "3" }}>
                     <PlusIcon />
@@ -71,7 +70,7 @@ const CreateGroupDialog = () => {
                         <Select.Root value={organizerId} onValueChange={setOrganizerId}>
                             <Select.Trigger placeholder="Wybierz przypisanego..." />
                             <Select.Content>
-                                {adminUsers.map((user) => (
+                                {adminUsers?.map((user) => (
                                     <Select.Item key={user.id} value={user.id}>
                                         {user.name}
                                     </Select.Item>
@@ -96,6 +95,7 @@ const CreateGroupDialog = () => {
                 </Flex>
             </Dialog.Content>
         </Dialog.Root>
+        </Skeleton>
     );
 }
 

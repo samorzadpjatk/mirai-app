@@ -12,6 +12,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { Container, Flex, ScrollArea, Theme } from "@radix-ui/themes";
 import { ThemeProvider } from 'next-themes';
 import TopBar from "~/components/TopBar";
+import BackgroundImage from "~/components/BackgroundImage";
 
 export const metadata: Metadata = {
   title: "Bank Monet",
@@ -41,7 +42,7 @@ export default function RootLayout({
       <body>
         <TRPCReactProvider>
           <ThemeProvider attribute="class">
-            <Theme accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)', backgroundImage: "url('/background.jpg')", backgroundSize: 'cover', backgroundColor: 'var(--color-background)', backgroundBlendMode: 'color-burn', width: '100%', height: '100%' }}>
+            <Theme panelBackground={"solid"} accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)' }}>
               <Container size="3" style={{ height: '100%', margin: '0', padding: '0.5em' }}>
                 <TopBar />
                 <ScrollArea type="scroll">
@@ -50,6 +51,7 @@ export default function RootLayout({
                   </Flex>
                 </ScrollArea>
               </Container>
+              <BackgroundImage />
             </Theme>
           </ThemeProvider>
         </TRPCReactProvider>

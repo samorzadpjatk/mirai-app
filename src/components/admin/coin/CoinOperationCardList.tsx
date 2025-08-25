@@ -2,18 +2,18 @@
 
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Card, Heading, Flex, Strong, Badge, Text, DataList, TextField } from "@radix-ui/themes";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import useDebounce from "~/utils/debounce";
 import { api } from "~/trpc/react";
+import CoinOperationCardListSkeleton from "~/components/skelethons/CoinOperationCardListSkelethon";
 
 const CoinOperationCardList = () => {
     const { data: groups } = api.group.getAll.useQuery();
-    const [filteredGroups, setFilteredGroups] = useState(groups);
-    const debouncedFilteredGroups = useDebounce(filteredGroups, 300);
+    const [filteredGroups, setFilteredGroups] = useDebounce(groups, 300);
 
     if (!groups) return null;
 
-    return (<Suspense fallback={<div>Ładowanie...</div>}>
+    return (<Suspense fallback={<CoinOperationCardListSkeleton />}>
         <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Aktualny Stan Monet</Heading>
         <TextField.Root
             placeholder="Filtruj gildie..."
@@ -34,7 +34,7 @@ const CoinOperationCardList = () => {
             </TextField.Slot>
         </TextField.Root>
         <Flex direction="column" justify="center">
-            {debouncedFilteredGroups?.length === 0 && (<>
+            {filteredGroups?.length === 0 && (<>
                 <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
                     Brak gildii do wyświetlenia
                 </Text>
@@ -43,7 +43,7 @@ const CoinOperationCardList = () => {
                 </Text>
             </>
             )}
-            {debouncedFilteredGroups
+            {filteredGroups
                 ?.sort((a, b) => b.coins - a.coins) // Sort by coins descending
                 .map((group, index) => (
                     <Card key={group.id}>

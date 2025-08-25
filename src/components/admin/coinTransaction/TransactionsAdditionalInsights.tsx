@@ -2,14 +2,14 @@ import { Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { formatAmount, formatDate } from "~/utils/format";
 import { api } from "~/trpc/server";
 import { Suspense } from "react";
+import TransactionAdditionalInsightsSkelethon from "~/components/skelethons/TransactionAdditionalInsightsSkelethon";
 
 const TransactionsAdditionalInsights = async () => {
     const transactionAdditionalInsights = await api.coinTransaction.getAdditionalInsights();
-    if (!transactionAdditionalInsights) return null;
-    const { mostActiveAdmin, recentTransactions } = transactionAdditionalInsights;
+    const { mostActiveAdmin, recentTransactions } = transactionAdditionalInsights ?? {};
 
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<TransactionAdditionalInsightsSkelethon />}>
             <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Analiza</Heading>
             <Card>
                 <Flex direction="column" gap="3">
@@ -23,7 +23,7 @@ const TransactionsAdditionalInsights = async () => {
                     <div>
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">Ostatnie 5 transakcji:</Text>
                         <Flex direction="column" gap="1" style={{ marginTop: "8px" }}>
-                            {recentTransactions.map((t) => {
+                            {recentTransactions?.map((t) => {
                                 const amountInfo = formatAmount(t.amount);
                                 return (
                                     <Text key={t.id} size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.8 }}>

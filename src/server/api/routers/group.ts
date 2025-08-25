@@ -8,6 +8,14 @@ import {
 } from "~/server/api/trpc";
 
 export const groupRouter = createTRPCRouter({
+  getAllNames: moderatorProcedure.query(async ({ ctx }) => {
+    return await ctx.db.group.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }),
   getMy: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
@@ -47,7 +55,7 @@ export const groupRouter = createTRPCRouter({
       },
     });
   }),
-  getAll: adminProcedure.query(async ({ ctx }) => {
+  getAll: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.group.findMany({
       include: {
         members: {
@@ -262,7 +270,8 @@ export const groupRouter = createTRPCRouter({
       });
     }),
   ranking: protectedProcedure.query(async ({ ctx }) => {
-    return await ctx.db.group.findMany({
+    const currentDate = new Date();
+    const data = await ctx.db.group.findMany({
       orderBy: { coins: "desc" },
       include: {
         members: {
@@ -292,5 +301,9 @@ export const groupRouter = createTRPCRouter({
         },
       },
     });
+    return {
+      data,
+      currentDate
+    }
   }),
 });

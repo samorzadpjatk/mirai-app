@@ -3,13 +3,14 @@ import { Suspense } from "react";
 import { api } from "~/trpc/server";
 import EditGroupDialog from "./dialog/EditGroupDialog";
 import DeleteGroupDialog from "./dialog/DeleteGroupDialog";
+import GroupCardListSkeleton from "~/components/skelethons/GroupCardListSkelethon";
 
 const GroupCardList = async () => {
     const groups = await api.group.getGroupList();
 
     return (
         <Flex direction="column" justify="center">
-            <Suspense fallback={<div>Ładowanie gildii...</div>}>
+            <Suspense fallback={<GroupCardListSkeleton />}>
                 {groups?.length === 0 && (
                     <Card style={{ padding: "1rem" }}>
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>

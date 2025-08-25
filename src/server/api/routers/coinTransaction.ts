@@ -2,6 +2,38 @@ import { z } from "zod";
 import { createTRPCRouter, moderatorProcedure } from "~/server/api/trpc";
 
 export const coinTransactionRouter = createTRPCRouter({
+  getStatistics : moderatorProcedure.query(async ({ ctx }) => {
+    const [transactionCount, addedCoins, removedCoins] = await Promise.all([
+      ctx.db.coinTransaction.count(),
+      ctx.db.coinTransaction.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          amount: {
+            gt: 0,
+          },
+        },
+      }),
+      ctx.db.coinTransaction.aggregate({
+        _sum: {
+          amount: true,
+        },
+        where: {
+          amount: {
+            lt: 0,
+          },
+        },
+      }),
+    ]);
+    return {
+      transactionCount,
+      addedCoins: addedCoins._sum.amount,
+      removedCoins: removedCoins._sum.amount,
+      netBalance: (addedCoins._sum.amount ?? 0) + (removedCoins._sum.amount ?? 0),
+      time: new Date()
+    };
+  }),
   getMostActiveAdminStats: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.coinTransaction.groupBy({
       by: ["adminId"],
@@ -69,6 +101,7 @@ export const coinTransactionRouter = createTRPCRouter({
       totalGroups: totalCoins._count.id,
       averageCoinsPerGroup,
       richestGroupName: richestGroupName.name,
+      time: new Date()
     };
   }),
   getAdditionalInsights: moderatorProcedure.query(async ({ ctx }) => {

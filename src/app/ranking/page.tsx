@@ -7,10 +7,10 @@ export default async function RankingPage() {
     return (
         <Card size={{ initial: "4" }} style={{ width: "100%" }}>
             <Heading size="5" mb="4">Ranking grup</Heading>
-            <Text>Ostatnia aktualizacja: {formatDate(new Date())}</Text>
+            <Text>Ostatnia aktualizacja: {formatDate(ranking?.currentDate)}</Text>
             <Separator my="3" size="2" />
             <Flex direction="column" gap="3">
-                {ranking.map((group, idx) => (<>
+                {ranking?.data.map((group, idx) => (<>
                     <Text>{idx + 1} miejsce: </Text>
                     <Card key={group.id} size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ width: "100%" }}>
                         <Flex direction="column" gap={{ "initial": "1" }}>

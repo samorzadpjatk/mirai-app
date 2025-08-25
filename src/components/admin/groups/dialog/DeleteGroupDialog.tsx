@@ -1,7 +1,7 @@
 "use client"
 
 import { TrashIcon } from "@radix-ui/react-icons";
-import { AlertDialog, Flex, Button } from "@radix-ui/themes"
+import { AlertDialog, Flex, Button, Skeleton } from "@radix-ui/themes"
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "~/trpc/react";
@@ -13,7 +13,7 @@ const DeleteGroupDialog = ({
 }) => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const router = useRouter();
-    const { data: selectedGroup } = api.group.getById.useQuery({ id: selectedGroupId });
+    const { data: selectedGroup, isLoading } = api.group.getById.useQuery({ id: selectedGroupId });
     const deleteGroupMutation = api.group.delete.useMutation({
         onSuccess: async () => {
             router.refresh();
@@ -24,7 +24,7 @@ const DeleteGroupDialog = ({
         },
     });
     return (
-        <AlertDialog.Root open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <Skeleton loading={isLoading}><AlertDialog.Root open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialog.Trigger>
                 <Button
                     size={{ "initial": "1", "xs": "2", "sm": "3" }}
@@ -61,7 +61,9 @@ const DeleteGroupDialog = ({
                     </AlertDialog.Action>
                 </Flex>
             </AlertDialog.Content>
-        </AlertDialog.Root>);
+        </AlertDialog.Root>
+        </Skeleton>
+    );
 }
 
 export default DeleteGroupDialog;
