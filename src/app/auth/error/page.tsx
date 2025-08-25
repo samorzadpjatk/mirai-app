@@ -1,4 +1,4 @@
-import Unauthorized from "~/app/components/Unauthorized";
+import Unauthorized from "~/components/Unauthorized";
 
 const UnAuthorizedPage = () => {
     return <Unauthorized />;

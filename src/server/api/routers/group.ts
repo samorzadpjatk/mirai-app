@@ -1,10 +1,10 @@
-import { debug, log } from "node:console";
 import { z } from "zod";
 
 import {
   createTRPCRouter,
   protectedProcedure,
   adminProcedure,
+  moderatorProcedure,
 } from "~/server/api/trpc";
 
 export const groupRouter = createTRPCRouter({
@@ -13,11 +13,11 @@ export const groupRouter = createTRPCRouter({
       where: { id: ctx.session.user.id },
       select: { groupId: true, organizerGroupId: true },
     });
-    if (!user?.groupId && !user?.organizerGroupId) {
-      return null;
-    }
+    if (!user) return null;
+    const id = user.groupId ?? user.organizerGroupId;
+    if (!id) return null;
     return await ctx.db.group.findUnique({
-      where: { id: user.groupId ?? user.organizerGroupId },
+      where: { id },
       include: {
         members: {
           select: {
@@ -80,11 +80,38 @@ export const groupRouter = createTRPCRouter({
       orderBy: { name: "asc" },
     });
   }),
-  getById: protectedProcedure
+  getGroupList: moderatorProcedure.query(async ({ ctx }) => {
+    return await ctx.db.group.findMany({
+      include: {
+        organizer: {
+          select: { name: true, email: true },
+        },
+        _count: {
+          select: { members: true },
+        },
+      },
+    });
+  }),
+  getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.group.findUnique({
         where: { id: input.id },
+      });
+    }),
+  getByIdWithOrganizer: adminProcedure
+    .input(z.object({ groupId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          coins: true,
+          _count: { select: { members: true } },
+          organizer: { select: { id: true, name: true } },
+        },
       });
     }),
   // Create a new group (admin version with more control)

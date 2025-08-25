@@ -1,28 +1,24 @@
-import { StarIcon, PersonIcon, MinusIcon, PlusIcon, TrashIcon } from "@radix-ui/react-icons";
-import { Flex, Card, DataList, Strong, Badge, Button, Text } from "@radix-ui/themes";
-import type { QueryObserver } from "@tanstack/react-query";
-import { api } from "~/trpc/react";
-import type { UserWithAllFields } from "~/types/schema";
+import { StarIcon, PersonIcon } from "@radix-ui/react-icons";
+import { Flex, Card, DataList, Strong, Badge, Text } from "@radix-ui/themes";
+import { api } from "~/trpc/server";
+import AssignUserToGroupFormDialog from "./dialog/AssignUserToGroupFormDialog";
+import RemoveUserFromGroupFormDialog from "./dialog/RemoveUserFromGroupFormDialog";
+import ChangeUserAdminButton from "./ChangeUserAdminButton";
 
-
-const UserCardList = ({ users, setSelectedUser, setIsAssignDialogOpen, setIsRemoveDialogOpen, refetchUsers }: { users: UserWithAllFields[], setSelectedUser: (user: UserWithAllFields) => void, setIsAssignDialogOpen: (isOpen: boolean) => void, setIsRemoveDialogOpen: (isOpen: boolean) => void, refetchUsers: QueryObserver["refetch"] }) => {
-    const updateAdminStatusMutation = api.user.updateUserAdminStatus.useMutation({
-        onSuccess: async () => {
-            await refetchUsers();
-        },
-    });
+const UserCardList = async () => {
+    const users = await api.user.getAll();
 
     return (
         <Flex direction="column" justify="center">
             {users?.length === 0 && (
                 <Card style={{ padding: "1rem" }}>
-                    <Text size={{ "initial": "1" }} style={{ opacity: 0.6 }}>
+                    <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
                         Brak użytkowników do wyświetlenia
                     </Text>
                 </Card>
             )}
             {users?.map((user) => (
-                <Card size={{ "initial": "2" }} key={user.id}>
+                <Card size={{ "initial": "1", "xs": "2", "sm": "3" }} key={user.id}>
                     <DataList.Root>
                         <DataList.Item>
                             <DataList.Label>Użytkownik</DataList.Label>
@@ -33,7 +29,7 @@ const UserCardList = ({ users, setSelectedUser, setIsAssignDialogOpen, setIsRemo
                         <DataList.Item>
                             <DataList.Label>Email</DataList.Label>
                             <DataList.Value>
-                                <Text size={{ "initial": "1" }} style={{ opacity: 0.6 }}>
+                                <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
                                     {user.email ?? "Brak email"}
                                 </Text>
                             </DataList.Value>
@@ -68,7 +64,7 @@ const UserCardList = ({ users, setSelectedUser, setIsAssignDialogOpen, setIsRemo
                                     </Badge>
                                 )}
                                 {user.group == null && user.organizerGroup == null && (
-                                    <Text size={{ "initial": "1" }} style={{ opacity: 0.6 }}>
+                                    <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
                                         Brak gildii
                                     </Text>
                                 )}
@@ -78,42 +74,17 @@ const UserCardList = ({ users, setSelectedUser, setIsAssignDialogOpen, setIsRemo
                             <DataList.Label>Akcje</DataList.Label>
                             <DataList.Value>
                                 <Flex direction={"column"} gap="2">
-                                    {!user.organizerGroup && (
-                                        <Button
-                                            size={{ "initial": "1" }}
-                                            variant="soft"
-                                            onClick={() => {
-                                                setSelectedUser(user);
-                                                if (user.group != null) {
-                                                    setIsRemoveDialogOpen(true);
-                                                } else {
-                                                    setIsAssignDialogOpen(true);
-                                                }
-                                            }}
-                                        > {user.group ? (
-                                            <>
-                                                <MinusIcon />
-                                                Usuń z gildii
-                                            </>
-                                        ) : (
-                                            <>
-                                                <PlusIcon />
-                                                Dodaj do gildii
-                                            </>
-                                        )}
-                                        </Button>)}
-                                    <Button
-                                        size={{ "initial": "1" }}
-                                        variant="soft"
-                                        color={user.isAdmin ? "red" : "blue"}
-                                        onClick={() => updateAdminStatusMutation.mutate({
-                                            userId: user.id,
-                                            isAdmin: !user.isAdmin
-                                        })}
-                                        disabled={updateAdminStatusMutation.isPending}
-                                    >
-                                        {user.isAdmin ? <><TrashIcon />Usuń admin</> : <><StarIcon />Nadaj admin</>}
-                                    </Button>
+                                    {user.group == null && user.organizerGroup == null && (
+                                        <AssignUserToGroupFormDialog
+                                            selectedUserId={user.id}
+                                        />
+                                    )}
+                                    {user.group != null && (
+                                        <RemoveUserFromGroupFormDialog
+                                            selectedUserId={user.id}
+                                        />
+                                    )}
+                                    <ChangeUserAdminButton selectedUserId={user.id} />
                                 </Flex>
                             </DataList.Value>
                         </DataList.Item>

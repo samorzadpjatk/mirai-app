@@ -11,7 +11,7 @@ import { Roboto_Slab, IBM_Plex_Sans } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 import { Container, Flex, ScrollArea, Theme } from "@radix-ui/themes";
 import { ThemeProvider } from 'next-themes';
-import TopBar from "./components/TopBar";
+import TopBar from "~/components/TopBar";
 
 export const metadata: Metadata = {
   title: "Bank Monet",

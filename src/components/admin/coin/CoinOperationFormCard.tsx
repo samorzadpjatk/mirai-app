@@ -1,14 +1,15 @@
 "use client"
 
-import type { Group } from "@prisma/client"
 import { PlusIcon, MinusIcon } from "@radix-ui/react-icons"
 import { Card, Heading, Flex, Button, Select, TextField, TextArea, Text } from "@radix-ui/themes"
-import type { QueryObserver } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
 
 import { useState } from "react"
 import { api } from "~/trpc/react"
 
-const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: QueryObserver["refetch"]}) => {
+const CoinOperationFormCard = () => {
+    const router = useRouter();
+    const { data: groups } = api.group.getAll.useQuery();
     const [selectedGroupId, setSelectedGroupId] = useState("");
     const [amount, setAmount] = useState("");
     const [reason, setReason] = useState("");
@@ -18,14 +19,14 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: 
     const addCoinsMutation = api.coin.addCoins.useMutation({
         onSuccess: async () => {
             resetForm();
-            await refetch();
+            router.refresh();
         },
     });
 
     const removeCoinsMutation = api.coin.removeCoins.useMutation({
         onSuccess: async () => {
             resetForm();
-            await refetch();
+            router.refresh();
         },
     });
 
@@ -54,14 +55,14 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: 
     };
 
     return (
-        <Card size={{ "initial": "1" }}>
-            <Heading size={{ "initial": "1" }} mb="4">Operacje na Monetach</Heading>
+        <Card size={{ "initial": "1", "xs": "2", "sm": "3" }}>
+            <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }} mb="4">Operacje na Monetach</Heading>
 
             <Flex direction="column" gap="4">
                 {/* Operation Type */}
                 <Flex gap="3">
                     <Button
-                        size={{ "initial": "1" }}
+                        size={{ "initial": "1", "xs": "2", "sm": "3" }}
                         variant={operation === "add" ? "solid" : "soft"}
                         color="green"
                         onClick={() => setOperation("add")}
@@ -71,7 +72,7 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: 
                         Dodaj Monety
                     </Button>
                     <Button
-                        size={{ "initial": "1" }}
+                        size={{ "initial": "1", "xs": "2", "sm": "3" }}
                         variant={operation === "remove" ? "solid" : "soft"}
                         color="red"
                         onClick={() => setOperation("remove")}
@@ -84,7 +85,7 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: 
 
                 {/* Group Selection */}
                 <div>
-                    <Text as="label" size={{ "initial": "1" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
+                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
                         Wybierz Gildię
                     </Text>
                     <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
@@ -101,7 +102,7 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: 
 
                 {/* Amount */}
                 <div>
-                    <Text as="label" size={{ "initial": "1" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
+                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
                         Liczba Monet
                     </Text>
                     <TextField.Root
@@ -115,7 +116,7 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: 
 
                 {/* Reason (Optional) */}
                 <div>
-                    <Text as="label" size={{ "initial": "1" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
+                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
                         Powód (opcjonalnie)
                     </Text>
                     <TextArea
@@ -128,7 +129,7 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: 
 
                 {/* Submit Button */}
                 <Button
-                    size={{ "initial": "1" }}
+                    size={{ "initial": "1", "xs": "2", "sm": "3" }}
                     onClick={handleSubmit}
                     disabled={!selectedGroupId || !amount || parseInt(amount) <= 0 || isLoading}
                     color={operation === "add" ? "green" : "red"}
@@ -148,12 +149,12 @@ const CoinOperationFormCard = ({ groups, refetch }: { groups: Group[], refetch: 
                     (() => {
                         const selectedGroup = groups.find(g => g.id === selectedGroupId);
                         const requestedAmount = parseInt(amount);
-                        const currentCoins = selectedGroup?.coins || 0;
+                        const currentCoins = selectedGroup?.coins ?? 0;
 
                         if (requestedAmount > currentCoins) {
                             return (
                                 <Card variant="surface" style={{ backgroundColor: "var(--red-2)", border: "1px solid var(--red-6)" }}>
-                                    <Text size={{ "initial": "1" }} color="red">
+                                    <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} color="red">
                                         ⚠️ Ostrzeżenie: Gildia ma tylko {currentCoins} monet,
                                         a próbujesz odebrać {requestedAmount} monet!
                                     </Text>

@@ -18,6 +18,7 @@ declare module "next-auth" {
       id: string;
       roles: string[];
       isAdmin: boolean;
+      isModerator: boolean;
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
@@ -25,12 +26,14 @@ declare module "next-auth" {
   interface User {
     // ...other properties
     isAdmin: boolean;
+    isModerator: boolean;
   }
 }
 
 declare module "@auth/core/adapters" {
   interface AdapterUser extends User {
     isAdmin: boolean;
+    isModerator: boolean;
   }
 }
 
@@ -68,13 +71,15 @@ export const authConfig = {
     signIn: async ({ user, profile }) => {
       user.isAdmin =
         Array.isArray(profile?.groups) &&
-        (profile.groups.includes(env.ADMIN_ROLE) ||
-          profile.groups.includes(env.KADRA_ROLE));
+        profile.groups.includes(env.ADMIN_ROLE);
+      user.isModerator =
+        Array.isArray(profile?.groups) &&
+        profile.groups.includes(env.KADRA_ROLE);
       try {
         if (user.email) {
           await db.user.update({
             where: { email: user.email },
-            data: { isAdmin: user.isAdmin },
+            data: { isAdmin: user.isAdmin, isModerator: user.isModerator },
           });
         }
       } catch (e) {
@@ -97,6 +102,7 @@ export const authConfig = {
           ...session.user,
           id: user.id,
           isAdmin: user.isAdmin ?? false,
+          isModerator: user.isModerator ?? false,
         },
       };
     },

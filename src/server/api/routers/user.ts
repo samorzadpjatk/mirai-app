@@ -1,14 +1,36 @@
 import { z } from "zod";
-import { adminProcedure, createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  moderatorProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 
 export const userRouter = createTRPCRouter({
-  getMy: protectedProcedure
-    .query(async ({ ctx }) => {
+  getById: moderatorProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
       return await ctx.db.user.findUnique({
-        where: { id: ctx.session.user.id },
+        where: { id: input.id },
       });
     }),
-  getAll: adminProcedure.query(async ({ ctx }) => {
+  getByIdWithGroup: moderatorProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.user.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          name: true,
+          group: { select: { id: true, name: true } },
+        },
+      });
+    }),
+  getMy: moderatorProcedure.query(async ({ ctx }) => {
+    return await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+    });
+  }),
+  getAll: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findMany({
       select: {
         id: true,
@@ -17,6 +39,16 @@ export const userRouter = createTRPCRouter({
         isAdmin: true,
         group: true,
         organizerGroup: true,
+      },
+      orderBy: { name: "asc" },
+    });
+  }),
+  getAllAdminsNames: moderatorProcedure.query(async ({ ctx }) => {
+    return await ctx.db.user.findMany({
+      where: { isAdmin: true },
+      select: {
+        id: true,
+        name: true,
       },
       orderBy: { name: "asc" },
     });

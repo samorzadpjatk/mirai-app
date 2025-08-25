@@ -2,16 +2,19 @@
 
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Card, Heading, Flex, Strong, Badge, Text, DataList, TextField } from "@radix-ui/themes";
-import { useState } from "react";
-import useDebounce from "~/app/utils/debounce";
-import type { GroupWithAllFields } from "~/types/schema";
+import { Suspense, useState } from "react";
+import useDebounce from "~/utils/debounce";
+import { api } from "~/trpc/react";
 
-const CoinOperationCardList = ({ groups }: { groups: GroupWithAllFields[] }) => {
+const CoinOperationCardList = () => {
+    const { data: groups } = api.group.getAll.useQuery();
     const [filteredGroups, setFilteredGroups] = useState(groups);
     const debouncedFilteredGroups = useDebounce(filteredGroups, 300);
 
-    return (<>
-        <Heading size={{ "initial": "1" }}>Aktualny Stan Monet</Heading>
+    if (!groups) return null;
+
+    return (<Suspense fallback={<div>Ładowanie...</div>}>
+        <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Aktualny Stan Monet</Heading>
         <TextField.Root
             placeholder="Filtruj gildie..."
             size={{ initial: "1" }}
@@ -32,10 +35,10 @@ const CoinOperationCardList = ({ groups }: { groups: GroupWithAllFields[] }) => 
         </TextField.Root>
         <Flex direction="column" justify="center">
             {debouncedFilteredGroups?.length === 0 && (<>
-                <Text size={{ "initial": "1" }} style={{ opacity: 0.6 }}>
+                <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
                     Brak gildii do wyświetlenia
                 </Text>
-                <Text size={{ "initial": "1" }} style={{ opacity: 0.5 }}>
+                <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.5 }}>
                     Najpierw utwórz gildie w zakładce &quot;Gildie&quot;
                 </Text>
             </>
@@ -85,13 +88,13 @@ const CoinOperationCardList = ({ groups }: { groups: GroupWithAllFields[] }) => 
                                 <DataList.Value>
                                     <Flex direction="column" gap="1">
                                         {group.coinTransactions.slice(0, 3).map((transaction) => (
-                                            <Text key={transaction.id} size={{ "initial": "1" }} style={{ opacity: 0.7 }}>
+                                            <Text key={transaction.id} size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
                                                 {transaction.amount > 0 ? "+" : ""}{transaction.amount}
                                                 {" "}od {transaction.admin.name}
                                             </Text>
                                         ))}
                                         {group.coinTransactions.length === 0 && (
-                                            <Text size={{ "initial": "1" }} style={{ opacity: 0.5 }}>
+                                            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.5 }}>
                                                 Brak transakcji
                                             </Text>
                                         )}
@@ -102,7 +105,7 @@ const CoinOperationCardList = ({ groups }: { groups: GroupWithAllFields[] }) => 
                     </Card>
                 ))}
         </Flex>
-    </>
+    </Suspense>
     );
 };
 

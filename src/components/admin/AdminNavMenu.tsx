@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 const AdminNavMenu = () => {
     const pathname = usePathname();
-    return (<TabNav.Root size={{ "initial": "1" }}>
+    return (<TabNav.Root size={{ "initial": "1", "xs": "2", "sm": "2" }}>
         <TabNav.Link asChild active={pathname?.includes("groups")}>
             <Link href="groups">🏛️ Gildie</Link>
         </TabNav.Link>

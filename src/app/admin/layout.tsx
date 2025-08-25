@@ -1,15 +1,13 @@
-
 import { Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 
-import Unauthorized from "../components/Unauthorized";
-import AdminNavMenu from "../components/AdminNavMenu";
+import Unauthorized from "~/components/Unauthorized";
+import AdminNavMenu from "~/components/admin/AdminNavMenu";
 
 export default async function AdminDashboard({ children }: Readonly<{ children: React.ReactNode }>) {
     const session = await auth();
 
-    // Redirect if not authenticated
     if (!session?.user) {
         redirect("/auth/login?callbackUrl=/admin");
     }
@@ -23,19 +21,19 @@ export default async function AdminDashboard({ children }: Readonly<{ children: 
     return (
         <Flex direction="column" gap={{ "initial": "1" }}>
             {/* Header */}
-            <Card size={{ "initial": "1" }}>
+            <Card size={{ "initial": "1", "xs": "2", "sm": "3" }}>
                 <Flex direction="column" align="center" gap="3">
                     <Heading size={{ "initial": "4" }} style={{ fontFamily: "var(--font-robotoslab)" }}>
                         🏰 Panel Administratora
                     </Heading>
-                    <Text size={{ "initial": "2" }} align="center" style={{ opacity: 0.8 }}>
+                    <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} align="center" style={{ opacity: 0.8 }}>
                         Zarządzaj Gildiami, użytkownikami i monetami w Królestwie
                     </Text>
                 </Flex>
             </Card>
 
             {/* Admin Dashboard Tabs */}
-            <Card size={{ "initial": "1" }}>
+            <Card size={{ "initial": "1", "xs": "2", "sm": "3" }}>
                 <AdminNavMenu />
                 {children}
             </Card>

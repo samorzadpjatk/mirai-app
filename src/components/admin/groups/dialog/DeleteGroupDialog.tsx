@@ -1,26 +1,23 @@
-import type { Group } from "@prisma/client";
+"use client"
+
+import { TrashIcon } from "@radix-ui/react-icons";
 import { AlertDialog, Flex, Button } from "@radix-ui/themes"
-import type { QueryObserver } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 
 const DeleteGroupDialog = ({
-    selectedGroup,
-    setSelectedGroup,
-    refetch,
-    isDeleteDialogOpen,
-    setIsDeleteDialogOpen
+    selectedGroupId,
 }: {
-    selectedGroup: Group | null;
-    setSelectedGroup: (group: Group | null) => void;
-    refetch: QueryObserver["refetch"];
-    isDeleteDialogOpen: boolean;
-    setIsDeleteDialogOpen: (open: boolean) => void;
+    selectedGroupId: string;
 }) => {
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const router = useRouter();
+    const { data: selectedGroup } = api.group.getById.useQuery({ id: selectedGroupId });
     const deleteGroupMutation = api.group.delete.useMutation({
         onSuccess: async () => {
-            await refetch();
+            router.refresh();
             setIsDeleteDialogOpen(false);
-            setSelectedGroup(null);
         },
         onError: (error) => {
             console.error("Error deleting group:", error);
@@ -28,6 +25,18 @@ const DeleteGroupDialog = ({
     });
     return (
         <AlertDialog.Root open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog.Trigger>
+                <Button
+                    size={{ "initial": "1", "xs": "2", "sm": "3" }}
+                    variant="soft"
+                    color="red"
+                    onClick={() => {
+                        setIsDeleteDialogOpen(true);
+                    }}
+                >
+                    <TrashIcon />
+                </Button>
+            </AlertDialog.Trigger>
             <AlertDialog.Content>
                 <AlertDialog.Title>Usuń Gildię</AlertDialog.Title>
                 <AlertDialog.Description>

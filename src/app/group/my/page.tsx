@@ -1,28 +1,27 @@
 import { Card, Flex, Strong, Badge, Text, Heading } from "@radix-ui/themes";
 import { auth } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
-import type { GroupWithAllFields } from "~/types/schema";
+import { api } from "~/trpc/server";
 
 const MyGroupPage = async () => {
     const session = await auth();
     if (!session?.user) {
         return null;
     }
-    const group: GroupWithAllFields | null = await api.group.getMy();
+    const group = await api.group.getMy();
     if (!group) {
-        return (<HydrateClient>
+        return (
             <Card size={{ initial: "4" }} style={{ width: "100%" }}>
                 <Text>Nie należysz do żadnej grupy.</Text>
             </Card>
-        </HydrateClient>);
+        );
     }
-    return (<HydrateClient>
-        <Card key={group.id} size={{ "initial": "2" }} style={{ width: "100%" }}>
+    return (
+        <Card key={group.id} size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ width: "100%" }}>
             <Flex direction="column" gap={{ "initial": "1" }}>
                 <Flex justify="between" align="center">
                     <Strong>{group.name}</Strong>
                 </Flex>
-                <Text size={{ "initial": "1" }} style={{ opacity: 0.7 }}>
+                <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
                     Władca Gildii: {group.organizer.name ?? "Nieznany"}
                 </Text>
                 <Flex justify="between" align="center">
@@ -31,7 +30,7 @@ const MyGroupPage = async () => {
                     </Badge>
                 </Flex>
                 {group.members.length > 0 && <>
-                    <Heading size={{ "initial": "1" }} style={{ opacity: 0.7 }}>
+                    <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
                         Członkowie
                     </Heading>
                     <Flex direction="column" gap="2">
@@ -45,7 +44,7 @@ const MyGroupPage = async () => {
             </Flex>
         </Card>
 
-    </HydrateClient>);
+    );
 }
 
 export default MyGroupPage;

@@ -1,29 +1,47 @@
-import type { Group } from "@prisma/client";
+"use client"
+
+import { MinusIcon } from "@radix-ui/react-icons";
 import { AlertDialog, Flex, Button } from "@radix-ui/themes";
-import type { User } from "next-auth";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 
 const RemoveUserFromGroupFormDialog = ({
-    isRemoveDialogOpen,
-    setIsRemoveDialogOpen,
-    onMutationSuccess,
-    selectedUser,
+    selectedUserId,
 }: {
-    isRemoveDialogOpen: boolean;
-    setIsRemoveDialogOpen: (open: boolean) => void;
-    onMutationSuccess: () => void;
-    selectedUser: User & { group: Group } | null;
+    selectedUserId: string;
 }) => {
-
+    const router = useRouter();
+    const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+    const { data: selectedUser } = api.user.getByIdWithGroup.useQuery({ id: selectedUserId });
     const removeUserMutation = api.group.removeUserFromGroup.useMutation({
-        onSuccess: onMutationSuccess,
+        onSuccess: () => {
+            setIsRemoveDialogOpen(false);
+            router.refresh();
+        },
     });
     return (
         <AlertDialog.Root open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+            <AlertDialog.Trigger>
+                <AlertDialog.Trigger>
+                    <Button
+                        size={{ "initial": "1", "xs": "2", "sm": "3" }}
+                        variant="soft"
+                        onClick={() => {
+                            setIsRemoveDialogOpen(true);
+                        }}
+                    >
+                        <>
+                            <MinusIcon />
+                            Usuń z gildii
+                        </>
+                    </Button>
+                </AlertDialog.Trigger>
+            </AlertDialog.Trigger>
             <AlertDialog.Content>
                 <AlertDialog.Title>Usuń z Gildii</AlertDialog.Title>
                 <AlertDialog.Description>
-                    Czy na pewno chcesz usunąć użytkownika &quot;{selectedUser?.name ?? selectedUser?.email}&quot;
+                    Czy na pewno chcesz usunąć użytkownika &quot;{selectedUser?.name}&quot;
                     z gildii &quot;{selectedUser?.group?.name}&quot;?
                 </AlertDialog.Description>
                 <Flex gap="3" mt="4" justify="end">
