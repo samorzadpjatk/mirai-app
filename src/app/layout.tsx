@@ -9,10 +9,10 @@ import { type Metadata } from "next";
 import { Roboto_Slab, IBM_Plex_Sans } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
-import { Container, Theme } from "@radix-ui/themes";
+import { Container, Flex, ScrollArea, Theme } from "@radix-ui/themes";
 import { ThemeProvider } from 'next-themes';
-import TopBar from "./_components/top_bar";
-import ImageAdnotation from "./_components/image_adnotation";
+import TopBar from "~/components/TopBar";
+import BackgroundImage from "~/components/BackgroundImage";
 
 export const metadata: Metadata = {
   title: "Bank Monet",
@@ -38,16 +38,20 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-  <html lang="en" className={`${robotoSlab.variable} ${ibmPlex.variable}`}> 
+  <html lang="en" className={`${robotoSlab.variable} ${ibmPlex.variable}`}>
       <body>
         <TRPCReactProvider>
           <ThemeProvider attribute="class">
-            <Theme accentColor="red" panelBackground="solid">
-              <TopBar />
-              <Container align={"center"} style={{ fontFamily: 'var(--font-ibmplex)', backgroundImage: "url('/background.jpg')", backgroundSize: 'cover', backgroundColor: 'rgba(0, 0, 0, 0.7)', backgroundBlendMode: 'darken', width: '100vw', minHeight: '100vh' }}>
-                {children}
+            <Theme panelBackground={"solid"} accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)' }}>
+              <Container size="3" style={{ height: '100%', margin: '0', padding: '0.5em' }}>
+                <TopBar />
+                <ScrollArea type="scroll">
+                  <Flex style={{ width: '100%', height: "90vh", marginTop: '0.5em' }} direction={"column"} align={"center"} gap={"1"}>
+                    {children}
+                  </Flex>
+                </ScrollArea>
               </Container>
-              <ImageAdnotation />
+              <BackgroundImage />
             </Theme>
           </ThemeProvider>
         </TRPCReactProvider>

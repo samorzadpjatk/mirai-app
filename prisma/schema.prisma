@@ -44,35 +44,29 @@ model Session {
 
 model User {
     id                    String            @id @default(cuid())
-    name                  String?
-    email                 String?           @unique
+    name                  String
+    email                 String           @unique
     emailVerified         DateTime?
     image                 String?
     accounts              Account[]
     sessions              Session[]
-    groups                UserGroup[]
+    group                 Group?            @relation(fields: [groupId], references: [id])
+    groupId               String?
     isAdmin               Boolean           @default(false)
-    organizerGroups       Group[]           @relation("UserOrganizerGroups")
+    isModerator           Boolean           @default(false)
+    organizerGroupId      String?
+    organizerGroup        Group?            @relation("UserOrganizerGroup")
     coinTransactionsAdmin CoinTransaction[] @relation("UserCoinTransactionsAdmin")
 }
 
 model Group {
     id               String            @id @default(uuid())
     name             String
-    organizerId      String
-    organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
-    code             String            @unique
-    members          UserGroup[]
+    organizerId      String            @unique
+    organizer        User              @relation("UserOrganizerGroup", fields: [organizerId], references: [id])
+    members          User[]
     coins            Int               @default(0)
     coinTransactions CoinTransaction[]
-}
-
-model UserGroup {
-    id      String @id @default(uuid())
-    userId  String
-    groupId String
-    user    User   @relation(fields: [userId], references: [id])
-    group   Group  @relation(fields: [groupId], references: [id])
 }
 
 model CoinTransaction {
@@ -83,6 +77,7 @@ model CoinTransaction {
     createdAt DateTime @default(now())
     adminId   String
     admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])
+    reason    String?
 }
 
 model VerificationToken {

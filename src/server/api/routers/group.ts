@@ -1,48 +1,259 @@
 import { z } from "zod";
 
-
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
+  adminProcedure,
+  moderatorProcedure,
 } from "~/server/api/trpc";
 
 export const groupRouter = createTRPCRouter({
-  create: protectedProcedure
-    .input(z.object({ name: z.string() }))
+  getAllNames: moderatorProcedure.query(async ({ ctx }) => {
+    return await ctx.db.group.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }),
+  getMy: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { groupId: true, organizerGroupId: true },
+    });
+    if (!user) return null;
+    const id = user.groupId ?? user.organizerGroupId;
+    if (!id) return null;
+    return await ctx.db.group.findUnique({
+      where: { id },
+      include: {
+        members: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        organizer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        coinTransactions: {
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+  }),
+  getAll: moderatorProcedure.query(async ({ ctx }) => {
+    return await ctx.db.group.findMany({
+      include: {
+        members: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        organizer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        coinTransactions: {
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10, // Last 10 transactions
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+  }),
+  getGroupList: moderatorProcedure.query(async ({ ctx }) => {
+    return await ctx.db.group.findMany({
+      include: {
+        organizer: {
+          select: { name: true, email: true },
+        },
+        _count: {
+          select: { members: true },
+        },
+      },
+    });
+  }),
+  getById: moderatorProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.group.findUnique({
+        where: { id: input.id },
+      });
+    }),
+  getByIdWithOrganizer: adminProcedure
+    .input(z.object({ groupId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: {
+          id: true,
+          name: true,
+          coins: true,
+          _count: { select: { members: true } },
+          organizer: { select: { id: true, name: true } },
+        },
+      });
+    }),
+  // Create a new group (admin version with more control)
+  create: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        organizerId: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      return await ctx.db.group.create({
+      const group = await ctx.db.group.create({
         data: {
           name: input.name,
-          organizerId: ctx.session.user.id,
-          code,
+          organizerId: input.organizerId ?? ctx.session.user.id,
+        },
+        include: {
+          organizer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+      await ctx.db.user.update({
+        where: { id: input.organizerId ?? ctx.session.user.id },
+        data: { organizerGroupId: group.id },
+      });
+      return group;
+    }),
+
+  // Update group information
+  update: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().min(1).optional(),
+        organizerId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updateData } = input;
+      return await ctx.db.group.update({
+        where: { id },
+        data: updateData,
+        include: {
+          organizer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
       });
     }),
-  join: protectedProcedure
-    .input(z.object({ code: z.string() }))
+
+  // Delete a group
+  delete: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // First, delete all related records
+      await ctx.db.user.updateMany({
+        where: { groupId: input.id },
+        data: { groupId: null },
+      });
+
+      await ctx.db.coinTransaction.deleteMany({
+        where: { groupId: input.id },
+      });
+
+      return await ctx.db.group.delete({
+        where: { id: input.id },
+      });
+    }),
+  join: adminProcedure
+    .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
-        where: { code: input.code },
+        where: { id: input.id },
       });
       if (!group) throw new Error("Group not found");
-      return await ctx.db.userGroup.create({
+      return await ctx.db.user.update({
+        where: { id: ctx.session.user.id },
+        data: { groupId: group.id },
+      });
+    }),
+  assignUserToGroup: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        groupId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is already in the group
+      const existingMembership = await ctx.db.user.findFirst({
+        where: {
+          id: input.userId,
+          groupId: input.groupId,
+        },
+      });
+
+      if (existingMembership) {
+        throw new Error("Użytkownik już należy do tej grupy");
+      }
+
+      return await ctx.db.user.update({
+        where: { id: input.userId },
+        data: { groupId: input.groupId },
+      });
+    }),
+
+  // Remove user from a group
+  removeUserFromGroup: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.user.update({
+        where: {
+          id: input.userId,
+        },
         data: {
-          userId: ctx.session.user.id,
-          groupId: group.id,
+          groupId: null,
         },
       });
     }),
-  addCoins: protectedProcedure
+  addCoins: adminProcedure
     .input(z.object({ groupId: z.string(), amount: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      // Sprawdzanie uprawnień admina na podstawie grup z profilu Authentik
-      const adminGroupName = "admin-group-name"; // Zmień na właściwą nazwę grupy adminów
-      const userGroups = ctx.session.user.groups ?? [];
-      if (!Array.isArray(userGroups) || !userGroups.includes(adminGroupName)) {
-        throw new Error("Brak uprawnień administratora");
-      }
       await ctx.db.group.update({
         where: { id: input.groupId },
         data: { coins: { increment: input.amount } },
@@ -55,10 +266,41 @@ export const groupRouter = createTRPCRouter({
         },
       });
     }),
-  ranking: publicProcedure.query(async ({ ctx }) => {
-    return await ctx.db.group.findMany({
+  ranking: protectedProcedure.query(async ({ ctx }) => {
+    const currentDate = new Date();
+    const data = await ctx.db.group.findMany({
       orderBy: { coins: "desc" },
-      select: { id: true, name: true, coins: true },
+      include: {
+        members: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        organizer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        coinTransactions: {
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
     });
+    return {
+      data,
+      currentDate
+    }
   }),
 });
