@@ -14,9 +14,9 @@ const nextConfig = {
 
 const pwaConfig = {
   dest: "public",
-  register: true,
+  register: false, // Disable auto-registration in development to avoid conflicts
   skipWaiting: true,
-  disable: isDev, // Disable PWA in development for easier debugging
+  disable: isDev, // Disable PWA in development, we'll handle SW manually
   // Remove complex runtime caching for now to avoid type issues
   // The default next-pwa caching will still work
   runtimeCaching: []

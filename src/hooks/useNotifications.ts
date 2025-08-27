@@ -7,11 +7,42 @@ import { api } from "~/trpc/react";
 const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
   if ("serviceWorker" in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register("/sw.js");
+      // First check if there's already a service worker registered
+      const existingRegistration = await navigator.serviceWorker.getRegistration();
+      if (existingRegistration) {
+        console.log("Using existing Service Worker registration:", existingRegistration);
+        return existingRegistration;
+      }
+
+      // Determine which service worker to use based on environment
+      // In development, use our custom service worker
+      const isDevelopment = window.location.hostname === 'localhost';
+      const swPath = isDevelopment ? "/sw-dev.js" : "/sw.js";
+      
+      console.log(`Registering Service Worker: ${swPath}`);
+      
+      // Try to register the service worker
+      const registration = await navigator.serviceWorker.register(swPath);
       console.log("Service Worker registered:", registration);
+      
+      // Wait for the service worker to be ready
+      await navigator.serviceWorker.ready;
+      
       return registration;
     } catch (error) {
       console.error("Service Worker registration failed:", error);
+      
+      // Fallback: check if there's at least a service worker available
+      try {
+        const existingRegistration = await navigator.serviceWorker.getRegistration();
+        if (existingRegistration) {
+          console.log("Using fallback Service Worker registration:", existingRegistration);
+          return existingRegistration;
+        }
+      } catch (fallbackError) {
+        console.error("Fallback registration check failed:", fallbackError);
+      }
+      
       return null;
     }
   }
@@ -180,8 +211,8 @@ export const useNotifications = () => {
 
     new Notification("Bank Monet", {
       body: "This is a test notification from your PWA!",
-      icon: "/icon-192x192.png",
-      badge: "/icon-192x192.png",
+      icon: "/GRAL192.png",
+      badge: "/GRAL192.png",
     });
   }, [isSupported, permission]);
 

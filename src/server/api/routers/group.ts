@@ -6,6 +6,7 @@ import {
   adminProcedure,
   moderatorProcedure,
 } from "~/server/api/trpc";
+import { NotificationService } from "~/server/services/notificationService";
 
 export const groupRouter = createTRPCRouter({
   getAllNames: moderatorProcedure.query(async ({ ctx }) => {
@@ -19,9 +20,9 @@ export const groupRouter = createTRPCRouter({
   getMy: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
-      select: { 
-        groups: { select: { group: { select: { id: true } } } },
-        organizerGroups: { select: { id: true } }
+      include: { 
+        groups: { include: { group: true } },
+        organizerGroups: true
       },
     });
     if (!user) return null;
@@ -265,17 +266,50 @@ export const groupRouter = createTRPCRouter({
   addCoins: adminProcedure
     .input(z.object({ groupId: z.string(), amount: z.number() }))
     .mutation(async ({ ctx, input }) => {
+      // Update group coins
       await ctx.db.group.update({
         where: { id: input.groupId },
         data: { coins: { increment: input.amount } },
       });
-      return await ctx.db.coinTransaction.create({
+      
+      // Create transaction record
+      const transaction = await ctx.db.coinTransaction.create({
         data: {
           groupId: input.groupId,
           amount: input.amount,
           adminId: ctx.session.user.id,
         },
+        include: {
+          group: {
+            select: {
+              id: true,
+              name: true,
+              coins: true,
+            },
+          },
+        },
       });
+
+      // Send push notifications to all group members
+      try {
+        const notification = NotificationService.createCoinsAddedNotification(
+          transaction.group.name,
+          input.amount
+        );
+        
+        await NotificationService.sendToGroupMembers(
+          input.groupId,
+          notification,
+          ctx.session.user.id // Exclude the admin who added coins
+        );
+        
+        console.log(`Sent coin notification to group ${transaction.group.name}`);
+      } catch (error) {
+        console.error("Failed to send coin notification:", error);
+        // Don't fail the mutation if notification fails
+      }
+
+      return transaction;
     }),
   ranking: protectedProcedure.query(async ({ ctx }) => {
     const currentDate = new Date();

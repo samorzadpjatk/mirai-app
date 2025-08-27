@@ -23,6 +23,7 @@ export const env = createEnv({
     VAPID_PUBLIC_KEY: z.string().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_EMAIL: z.string().email().optional(),
+    SCHEDULER_API_KEY: z.string().optional(),
   },
 
   /**
@@ -50,6 +51,7 @@ export const env = createEnv({
     VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
     VAPID_EMAIL: process.env.VAPID_EMAIL,
+    SCHEDULER_API_KEY: process.env.SCHEDULER_API_KEY,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
   },
   /**
