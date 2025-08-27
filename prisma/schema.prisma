@@ -43,30 +43,39 @@ model Session {
 }
 
 model User {
-    id                    String            @id @default(cuid())
-    name                  String
-    email                 String           @unique
+    id                    String                 @id @default(cuid())
+    name                  String?
+    email                 String?                @unique
     emailVerified         DateTime?
     image                 String?
     accounts              Account[]
     sessions              Session[]
-    group                 Group?            @relation(fields: [groupId], references: [id])
-    groupId               String?
-    isAdmin               Boolean           @default(false)
-    isModerator           Boolean           @default(false)
-    organizerGroupId      String?
-    organizerGroup        Group?            @relation("UserOrganizerGroup")
-    coinTransactionsAdmin CoinTransaction[] @relation("UserCoinTransactionsAdmin")
+    groups                UserGroup[]
+    isAdmin               Boolean                @default(false)
+    isModerator           Boolean               @default(false)
+    organizerGroups       Group[]                @relation("UserOrganizerGroups")
+    coinTransactionsAdmin CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
+    pushSubscriptions     PushSubscription[]
+    notificationSchedules NotificationSchedule[] @relation("NotificationScheduleAdmin")
 }
 
 model Group {
     id               String            @id @default(uuid())
     name             String
-    organizerId      String            @unique
-    organizer        User              @relation("UserOrganizerGroup", fields: [organizerId], references: [id])
-    members          User[]
+    organizerId      String
+    organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
+    code             String            @unique
+    members          UserGroup[]
     coins            Int               @default(0)
     coinTransactions CoinTransaction[]
+}
+
+model UserGroup {
+    id      String @id @default(uuid())
+    userId  String
+    groupId String
+    user    User   @relation(fields: [userId], references: [id])
+    group   Group  @relation(fields: [groupId], references: [id])
 }
 
 model CoinTransaction {
@@ -77,7 +86,6 @@ model CoinTransaction {
     createdAt DateTime @default(now())
     adminId   String
     admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])
-    reason    String?
 }
 
 model VerificationToken {
@@ -86,4 +94,33 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model PushSubscription {
+    id        String   @id @default(cuid())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    endpoint  String
+    p256dh    String
+    auth      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId])
+}
+
+model NotificationSchedule {
+    id          String   @id @default(cuid())
+    name        String   // e.g., "Daily Ranking Update", "Weekly Summary"
+    description String?  // Optional description
+    startDate   DateTime // When the schedule starts
+    endDate     DateTime // When the schedule ends
+    hour        Int      // Hour of the day (0-23)
+    minute      Int      @default(0) // Minute of the hour (0-59)
+    isActive    Boolean  @default(true)
+    lastRun     DateTime? // When was this schedule last executed
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    createdBy   String   // Admin who created this schedule
+    admin       User     @relation("NotificationScheduleAdmin", fields: [createdBy], references: [id])
 }

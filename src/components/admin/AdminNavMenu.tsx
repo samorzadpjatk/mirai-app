@@ -19,6 +19,9 @@ const AdminNavMenu = () => {
         <TabNav.Link asChild active={pathname?.includes("transactions")}>
             <Link href="transactions">📊 Historia</Link>
         </TabNav.Link>
+        <TabNav.Link asChild active={pathname?.includes("schedules")}>
+            <Link href="schedules">🔔 Harmonogramy</Link>
+        </TabNav.Link>
     </TabNav.Root>);
 }
 

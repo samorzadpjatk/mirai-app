@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { NotificationService } from "~/server/services/notificationService";
 
 export const coinRouter = createTRPCRouter({
     // Add coins to a group (enhanced version)
@@ -12,16 +13,17 @@ export const coinRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Update group coins
       await ctx.db.group.update({
         where: { id: input.groupId },
         data: { coins: { increment: input.amount } },
       });
 
-      return await ctx.db.coinTransaction.create({
+      // Create transaction record
+      const transaction = await ctx.db.coinTransaction.create({
         data: {
           groupId: input.groupId,
           amount: input.amount,
-          reason: input.reason,
           adminId: ctx.session.user.id,
         },
         include: {
@@ -40,6 +42,27 @@ export const coinRouter = createTRPCRouter({
           },
         },
       });
+
+      // Send push notifications to all group members
+      try {
+        const notification = NotificationService.createCoinsAddedNotification(
+          transaction.group.name,
+          input.amount
+        );
+        
+        await NotificationService.sendToGroupMembers(
+          input.groupId,
+          notification,
+          ctx.session.user.id // Exclude the admin who added coins
+        );
+        
+        console.log(`Sent coin notification to group ${transaction.group.name}`);
+      } catch (error) {
+        console.error("Failed to send coin notification:", error);
+        // Don't fail the mutation if notification fails
+      }
+
+      return transaction;
     }),
 
   // Remove coins from a group
@@ -67,7 +90,7 @@ export const coinRouter = createTRPCRouter({
         data: { coins: { decrement: input.amount } },
       });
 
-      return await ctx.db.coinTransaction.create({
+      const transaction = await ctx.db.coinTransaction.create({
         data: {
           groupId: input.groupId,
           amount: -input.amount, // Negative amount for removal
@@ -89,5 +112,33 @@ export const coinRouter = createTRPCRouter({
           },
         },
       });
+
+      // Send push notifications to all group members for coin removal
+      try {
+        const notification = {
+          title: `💸 ${transaction.group.name} - Monety usunięte`,
+          body: `Wasza gildia straciła ${input.amount} monet. ${input.reason ? `Powód: ${input.reason}` : 'Sprawdźcie aktualny ranking.'}`,
+          url: "/ranking",
+          data: {
+            type: "coins_removed",
+            amount: input.amount,
+            groupName: transaction.group.name,
+            reason: input.reason,
+          },
+        };
+        
+        await NotificationService.sendToGroupMembers(
+          input.groupId,
+          notification,
+          ctx.session.user.id // Exclude the admin who removed coins
+        );
+        
+        console.log(`Sent coin removal notification to group ${transaction.group.name}`);
+      } catch (error) {
+        console.error("Failed to send coin removal notification:", error);
+        // Don't fail the mutation if notification fails
+      }
+
+      return transaction;
     }),
 })

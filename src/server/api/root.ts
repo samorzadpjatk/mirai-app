@@ -1,4 +1,6 @@
 import { groupRouter } from "~/server/api/routers/group";
+import { notificationRouter } from "~/server/api/routers/notifications";
+import { notificationScheduleRouter } from "~/server/api/routers/notificationSchedule";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { userRouter } from "./routers/user";
 import { coinRouter } from "./routers/coin";
@@ -14,6 +16,8 @@ export const appRouter = createTRPCRouter({
   user: userRouter,
   coin: coinRouter,
   coinTransaction: coinTransactionRouter,
+  notifications: notificationRouter,
+  notificationSchedule: notificationScheduleRouter,
 });
 
 // export type definition of API

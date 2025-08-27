@@ -1,6 +1,7 @@
 import { Button, Flex, Grid, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { auth } from "~/server/auth";
+import NotificationSettings from "~/components/NotificationSettings";
 
 export default async function NavGrid() {
   const session = await auth();
@@ -32,6 +33,9 @@ export default async function NavGrid() {
                 </Link>
               </Button>
             )}
+            
+            {/* Notification Settings for all users */}
+            <NotificationSettings showTestFeatures={false} />
           </>
         )}
       </Flex>
