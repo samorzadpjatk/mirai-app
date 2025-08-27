@@ -19,19 +19,28 @@ export const groupRouter = createTRPCRouter({
   getMy: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
-      select: { groupId: true, organizerGroupId: true },
+      select: { 
+        groups: { select: { group: { select: { id: true } } } },
+        organizerGroups: { select: { id: true } }
+      },
     });
     if (!user) return null;
-    const id = user.groupId ?? user.organizerGroupId;
+    const memberGroupId = user.groups[0]?.group.id;
+    const organizerGroupId = user.organizerGroups[0]?.id;
+    const id = memberGroupId ?? organizerGroupId;
     if (!id) return null;
     return await ctx.db.group.findUnique({
       where: { id },
       include: {
         members: {
           select: {
-            id: true,
-            name: true,
-            email: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
         organizer: {
@@ -60,9 +69,13 @@ export const groupRouter = createTRPCRouter({
       include: {
         members: {
           select: {
-            id: true,
-            name: true,
-            email: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
         organizer: {
@@ -126,6 +139,7 @@ export const groupRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().min(1),
+        code: z.string().min(1),
         organizerId: z.string().optional(),
       }),
     )
@@ -133,6 +147,7 @@ export const groupRouter = createTRPCRouter({
       const group = await ctx.db.group.create({
         data: {
           name: input.name,
+          code: input.code,
           organizerId: input.organizerId ?? ctx.session.user.id,
         },
         include: {
@@ -145,10 +160,7 @@ export const groupRouter = createTRPCRouter({
           },
         },
       });
-      await ctx.db.user.update({
-        where: { id: input.organizerId ?? ctx.session.user.id },
-        data: { organizerGroupId: group.id },
-      });
+
       return group;
     }),
 
@@ -183,9 +195,8 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // First, delete all related records
-      await ctx.db.user.updateMany({
+      await ctx.db.userGroup.deleteMany({
         where: { groupId: input.id },
-        data: { groupId: null },
       });
 
       await ctx.db.coinTransaction.deleteMany({
@@ -273,9 +284,13 @@ export const groupRouter = createTRPCRouter({
       include: {
         members: {
           select: {
-            id: true,
-            name: true,
-            email: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
         organizer: {

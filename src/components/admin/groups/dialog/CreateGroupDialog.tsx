@@ -14,7 +14,7 @@ const CreateGroupDialog = () => {
     const [organizerId, setOrganizerId] = useState("");
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-    const { data: adminUsers, isLoading } = api.user.getAllAdminsNamesWithoutGroups.useQuery();
+    const { data: adminUsers, isLoading } = api.user.getAllAdminsNames.useQuery();
     const createGroupMutation = api.group.create.useMutation({
         onSuccess: async () => {
             setIsCreateDialogOpen(false);
@@ -23,10 +23,14 @@ const CreateGroupDialog = () => {
     });
 
     const handleCreateSubmit = () => {
-        if (name.trim() && organizerId) {
+        if (name.trim()) {
+            // Generate a simple code from the name
+            const generatedCode = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 8) + Math.floor(Math.random() * 100);
+            
             createGroupMutation.mutate({
                 name: name.trim(),
-                organizerId: organizerId,
+                code: generatedCode,
+                organizerId: organizerId === "__default__" ? undefined : organizerId || undefined,
             });
             setName("");
             setOrganizerId("");
@@ -60,13 +64,18 @@ const CreateGroupDialog = () => {
                         />
                     </div>
 
+
+
                     <Flex gap={"2"} align={"center"}>
                         <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                            Przypisany
+                            Przypisany <Text size="1" color="gray">(opcjonalne)</Text>
                         </Text>
                         <Select.Root value={organizerId} onValueChange={setOrganizerId}>
-                            <Select.Trigger placeholder="Wybierz przypisanego..." />
+                            <Select.Trigger placeholder="Zostaw puste = ty będziesz organizatorem" />
                             <Select.Content>
+                                <Select.Item value="__default__">
+                                    <Text color="gray">(Ty będziesz organizatorem)</Text>
+                                </Select.Item>
                                 {adminUsers?.map((user) => (
                                     <Select.Item key={user.id} value={user.id}>
                                         {user.name}

@@ -14,6 +14,7 @@ export default function PWAInstallPrompt() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
@@ -29,8 +30,15 @@ export default function PWAInstallPrompt() {
       setIsIOS(isIOSDevice);
     };
 
+    // Check if desktop (not mobile)
+    const checkIfDesktop = () => {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsDesktop(!isMobile);
+    };
+
     checkIfInstalled();
     checkIfIOS();
+    checkIfDesktop();
 
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -94,14 +102,8 @@ export default function PWAInstallPrompt() {
           </Text>
           
           <Flex gap="2">
-            {canInstall && (
-              <Button onClick={handleInstallClick} variant="solid">
-                Install App
-              </Button>
-            )}
-            
-            <Button onClick={handleShowInstructions} variant="outline">
-              How to Install
+            <Button onClick={handleShowInstructions} variant="solid">
+              Installation Guide
             </Button>
           </Flex>
         </Flex>
@@ -132,11 +134,25 @@ export default function PWAInstallPrompt() {
                   <Text size="2">3. Tap "Add" or "Install" to confirm</Text>
                 </Flex>
                 
-                <Text size="2" weight="bold">On Desktop:</Text>
+                <Text size="2" weight="bold">On Chrome (Windows/Mac):</Text>
                 <Flex direction="column" gap="2">
-                  <Text size="2">1. Look for an install icon in the address bar</Text>
-                  <Text size="2">2. Or use the browser menu to find "Install Bank Monet"</Text>
-                  <Text size="2">3. Click "Install" to add it to your apps</Text>
+                  <Text size="2">1. Look for install icon (⬇️) in the address bar</Text>
+                  <Text size="2">2. Or go to Menu (⋮) → "Install Bank Monet..."</Text>
+                  <Text size="2">3. Click "Install" - app will be added to your system</Text>
+                </Flex>
+
+                <Text size="2" weight="bold">On Safari (Mac):</Text>
+                <Flex direction="column" gap="2">
+                  <Text size="2">1. Go to Safari menu → "Add to Dock"</Text>
+                  <Text size="2">2. Click "Add" to install the PWA</Text>
+                  <Text size="2">3. Find "Bank Monet" in your Dock or Applications</Text>
+                </Flex>
+
+                <Text size="2" weight="bold">On Firefox:</Text>
+                <Flex direction="column" gap="2">
+                  <Text size="2">1. Go to Menu (☰) → "Install this site as an app"</Text>
+                  <Text size="2">2. Or use keyboard shortcut: Ctrl+Shift+A (Cmd+Shift+A on Mac)</Text>
+                  <Text size="2">3. Click "Install" to add to your applications</Text>
                 </Flex>
               </>
             )}

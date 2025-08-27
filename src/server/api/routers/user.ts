@@ -21,7 +21,7 @@ export const userRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
-          group: { select: { id: true, name: true } },
+          groups: { select: { group: { select: { id: true, name: true } } } },
         },
       });
     }),
@@ -37,15 +37,28 @@ export const userRouter = createTRPCRouter({
         name: true,
         email: true,
         isAdmin: true,
-        group: true,
-        organizerGroup: true,
+        groups: { select: { group: { select: { id: true, name: true } } } },
+        organizerGroups: { select: { id: true, name: true } },
+      },
+      orderBy: { name: "asc" },
+    });
+  }),
+  getAllAdminsNames: moderatorProcedure.query(async ({ ctx }) => {
+    return await ctx.db.user.findMany({
+      where: { isAdmin: true },
+      select: {
+        id: true,
+        name: true,
       },
       orderBy: { name: "asc" },
     });
   }),
   getAllAdminsNamesWithoutGroups: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findMany({
-      where: { isAdmin: true, organizerGroup: null },
+      where: { 
+        isAdmin: true, 
+        organizerGroups: { none: {} }
+      },
       select: {
         id: true,
         name: true,
