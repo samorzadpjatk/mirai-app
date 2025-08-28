@@ -26,7 +26,7 @@ export default async function NavGrid() {
                 </Link>
               </Button>
             </Grid>
-            {session?.user.isAdmin && (
+            {(session?.user.isAdmin || session?.user.isModerator) && (
               <Button size={"4"} variant="outline">
                 <Link href={"/admin/groups"}>
                   <Text>Panel administracyjny</Text>
