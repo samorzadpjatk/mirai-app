@@ -13,8 +13,9 @@ export default async function AdminDashboard({ children }: Readonly<{ children: 
     }
 
     const isAdmin = session.user.isAdmin;
+    const isModerator = session.user.isModerator;
 
-    if (!isAdmin) {
+    if (!isAdmin && !isModerator) {
         return <Unauthorized />;
     }
 
