@@ -4,6 +4,7 @@ import { api } from "~/trpc/server";
 import AssignUserToGroupFormDialog from "./dialog/AssignUserToGroupFormDialog";
 import RemoveUserFromGroupFormDialog from "./dialog/RemoveUserFromGroupFormDialog";
 import ChangeUserAdminButton from "./ChangeUserAdminButton";
+import WristNumberManager from "./WristNumberManager";
 import { Suspense } from "react";
 import UserCardListSkelethon from "~/components/skelethons/UserCardListSkelethon";
 
@@ -53,40 +54,62 @@ const UserCardList = async () => {
                                         </Badge>
                                     </Flex>
                                 </DataList.Value>
-                            </DataList.Item><DataList.Item>
-                                <DataList.Label>Gildie</DataList.Label>
+                            </DataList.Item>
+                            <DataList.Item>
+                                <DataList.Label>Numer opaski</DataList.Label>
                                 <DataList.Value>
-                                    {user.group != null && (
-                                        <Badge key={user.group.id} variant="soft" color="purple">
-                                            {user.group.name}
+                                    {user.wristNumber ? (
+                                        <Badge variant="soft" color="green">
+                                            {user.wristNumber}
                                         </Badge>
-                                    )}
-                                    {user.organizerGroup != null && (
-                                        <Badge key={user.organizerGroup.id} variant="solid" color="purple">
-                                            {user.organizerGroup.name}
-                                        </Badge>
-                                    )}
-                                    {user.group == null && user.organizerGroup == null && (
+                                    ) : (
                                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                                            Brak gildii
+                                            Nie przypisano
                                         </Text>
                                     )}
+                                </DataList.Value>
+                            </DataList.Item>
+                            <DataList.Item>
+                                <DataList.Label>Gildie</DataList.Label>
+                                <DataList.Value>
+                                    <Flex gap="2" wrap="wrap">
+                                        {user.groups.map((userGroup) => (
+                                            <Badge key={userGroup.group.id} variant="soft" color="purple">
+                                                {userGroup.group.name}
+                                            </Badge>
+                                        ))}
+                                        {user.organizerGroups.map((organizerGroup) => (
+                                            <Badge key={organizerGroup.id} variant="solid" color="purple">
+                                                {organizerGroup.name}
+                                            </Badge>
+                                        ))}
+                                        {user.groups.length === 0 && user.organizerGroups.length === 0 && (
+                                            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
+                                                Brak gildii
+                                            </Text>
+                                        )}
+                                    </Flex>
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
                                 <DataList.Label>Akcje</DataList.Label>
                                 <DataList.Value>
                                     <Flex direction={"column"} gap="2">
-                                        {user.group == null && user.organizerGroup == null && (
+                                        {user.groups.length === 0 && user.organizerGroups.length === 0 && (
                                             <AssignUserToGroupFormDialog
                                                 selectedUserId={user.id}
                                             />
                                         )}
-                                        {user.group != null && (
+                                        {user.groups.length > 0 && (
                                             <RemoveUserFromGroupFormDialog
                                                 selectedUserId={user.id}
                                             />
                                         )}
+                                        <WristNumberManager 
+                                            userId={user.id}
+                                            userName={user.name || "Nieznany użytkownik"}
+                                            currentWristNumber={user.wristNumber}
+                                        />
                                         <ChangeUserAdminButton selectedUserId={user.id} />
                                     </Flex>
                                 </DataList.Value>

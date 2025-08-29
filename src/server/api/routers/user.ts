@@ -37,6 +37,7 @@ export const userRouter = createTRPCRouter({
         name: true,
         email: true,
         isAdmin: true,
+        wristNumber: true,
         groups: { select: { group: { select: { id: true, name: true } } } },
         organizerGroups: { select: { id: true, name: true } },
       },
@@ -87,6 +88,59 @@ export const userRouter = createTRPCRouter({
           id: true,
           name: true,
           email: true,
+          isAdmin: true,
+        },
+      });
+    }),
+
+  // Update user wrist number
+  updateWristNumber: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        wristNumber: z.string().min(1, "Numer opaski nie może być pusty").max(20, "Numer opaski nie może być dłuższy niż 20 znaków"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if wrist number is already taken by another user
+      const existingUser = await ctx.db.user.findUnique({
+        where: { wristNumber: input.wristNumber },
+        select: { id: true, name: true },
+      });
+
+      if (existingUser && existingUser.id !== input.userId) {
+        throw new Error(`Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${existingUser.name}`);
+      }
+
+      return await ctx.db.user.update({
+        where: { id: input.userId },
+        data: { wristNumber: input.wristNumber },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          wristNumber: true,
+          isAdmin: true,
+        },
+      });
+    }),
+
+  // Remove wrist number from user
+  removeWristNumber: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.user.update({
+        where: { id: input.userId },
+        data: { wristNumber: null },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          wristNumber: true,
           isAdmin: true,
         },
       });
