@@ -145,4 +145,105 @@ export const userRouter = createTRPCRouter({
         },
       });
     }),
+
+  // Search users with pagination
+  searchWithPagination: moderatorProcedure
+    .input(
+      z.object({
+        searchTerm: z.string().optional(),
+        page: z.number().min(1).default(1),
+        limit: z.number().min(5).max(50).default(20),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { searchTerm, page, limit } = input;
+      const skip = (page - 1) * limit;
+
+      // Build search conditions
+      const searchConditions = searchTerm
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: searchTerm,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                email: {
+                  contains: searchTerm,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                wristNumber: {
+                  contains: searchTerm,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                groups: {
+                  some: {
+                    group: {
+                      name: {
+                        contains: searchTerm,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                organizerGroups: {
+                  some: {
+                    name: {
+                      contains: searchTerm,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                },
+              },
+            ],
+          }
+        : {};
+
+      // Get total count for pagination
+      const totalCount = await ctx.db.user.count({
+        where: searchConditions,
+      });
+
+      // Get paginated results
+      const users = await ctx.db.user.findMany({
+        where: searchConditions,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          isAdmin: true,
+          wristNumber: true,
+          groups: { select: { group: { select: { id: true, name: true } } } },
+          organizerGroups: { select: { id: true, name: true } },
+        },
+        orderBy: [
+          { name: "asc" },
+          { email: "asc" },
+        ],
+        skip,
+        take: limit,
+      });
+
+      const totalPages = Math.ceil(totalCount / limit);
+
+      return {
+        users,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+          limit,
+        },
+      };
+    }),
 });

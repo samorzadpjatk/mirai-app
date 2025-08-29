@@ -1,14 +1,11 @@
-import { api } from "~/trpc/server";
 import { Suspense } from "react";
 import UserCardListSkelethon from "~/components/skelethons/UserCardListSkelethon";
-import UserSearchableList from "./UserSearchableList";
+import UserSearchableListOptimized from "./UserSearchableListOptimized";
 
-const UserCardList = async () => {
-    const users = await api.user.getAll();
-
+const UserCardList = () => {
     return (
         <Suspense fallback={<UserCardListSkelethon />}>
-            <UserSearchableList users={users} />
+            <UserSearchableListOptimized />
         </Suspense>
     );
 };
