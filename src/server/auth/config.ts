@@ -72,7 +72,7 @@ export const authConfig = {
     signIn: async ({ user, profile }) => {
       user.isAdmin =
         Array.isArray(profile?.groups) &&
-        profile.groups.includes(env.ADMIN_ROLE);
+         (profile.groups.includes(env.ADMIN_ROLE) || profile.groups.includes(env.TECH_ROLE));
       user.isModerator =
         Array.isArray(profile?.groups) &&
         profile.groups.includes(env.KADRA_ROLE);
