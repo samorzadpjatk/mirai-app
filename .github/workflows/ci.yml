@@ -1,4 +1,4 @@
-name: NodeJS with Webpack
+name: Linting check
 
 on:
   push:
@@ -20,8 +20,10 @@ jobs:
 
     - name: Install dependencies
       run: |
-        npm install
+        npm ci
 
     - name: Run check
-      run: |
-        npm run check
+      uses: reviewdog/action-eslint@v1.33.2
+      with:
+        reporter: github-check
+        eslint_flags: "src/"
