@@ -1,35 +1,60 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Flex, Text, Heading, Select } from "@radix-ui/themes";
+import { Button, Card, Flex, Text, Heading, Select, TextField, TextArea } from "@radix-ui/themes";
+import { api } from "~/trpc/react";
 
 export default function ManualTrigger() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [notificationType, setNotificationType] = useState("ranking");
+  const [customTitle, setCustomTitle] = useState("");
+  const [customBody, setCustomBody] = useState("");
+  
+  const sendCustomNotificationMutation = api.notifications.sendCustomToAll.useMutation();
 
   const handleManualTrigger = async () => {
     setLoading(true);
     setResult(null);
 
     try {
-      const response = await fetch("/api/scheduler", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: notificationType,
-        }),
-      });
+      if (notificationType === "custom") {
+        // Handle custom notification
+        if (!customTitle.trim() || !customBody.trim()) {
+          setResult({
+            success: false,
+            error: "Tytuł i treść są wymagane dla własnej wiadomości",
+          });
+          return;
+        }
 
-      const data = await response.json();
-      setResult(data);
+        const customResult = await sendCustomNotificationMutation.mutateAsync({
+          title: customTitle.trim(),
+          body: customBody.trim(),
+          url: "/",
+        });
+
+        setResult(customResult);
+      } else {
+        // Handle scheduled notification types (ranking, weekly)
+        const response = await fetch("/api/scheduler", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: notificationType,
+          }),
+        });
+
+        const data = await response.json();
+        setResult(data);
+      }
     } catch (error) {
       console.error("Error triggering manual notification:", error);
       setResult({
         success: false,
-        error: "Failed to send notification",
+        error: "Wystąpił błąd podczas wysyłania powiadomienia",
       });
     } finally {
       setLoading(false);
@@ -54,13 +79,43 @@ export default function ManualTrigger() {
               <Select.Content>
                 <Select.Item value="ranking">Ranking gildii</Select.Item>
                 <Select.Item value="weekly">Podsumowanie tygodniowe</Select.Item>
+                <Select.Item value="custom">Własna wiadomość</Select.Item>
               </Select.Content>
             </Select.Root>
           </div>
 
+          {notificationType === "custom" && (
+            <>
+              <div>
+                <Text as="div" size="2" mb="2" weight="bold">
+                  Tytuł powiadomienia:
+                </Text>
+                <TextField.Root
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  placeholder="Wpisz tytuł powiadomienia..."
+                  style={{ width: "100%" }}
+                />
+              </div>
+
+              <div>
+                <Text as="div" size="2" mb="2" weight="bold">
+                  Treść powiadomienia:
+                </Text>
+                <TextArea
+                  value={customBody}
+                  onChange={(e) => setCustomBody(e.target.value)}
+                  placeholder="Wpisz treść powiadomienia..."
+                  rows={4}
+                  style={{ width: "100%" }}
+                />
+              </div>
+            </>
+          )}
+
           <Button
             onClick={handleManualTrigger}
-            disabled={loading}
+            disabled={loading || (notificationType === "custom" && (!customTitle.trim() || !customBody.trim()))}
             style={{ width: "fit-content" }}
           >
             {loading ? "Wysyłanie..." : "Wyślij powiadomienie"}
@@ -76,13 +131,16 @@ export default function ManualTrigger() {
               
               {result.success ? (
                 <Flex direction="column" gap="1">
-                  <Text size="2">Typ: {result.type}</Text>
+                  {result.type && <Text size="2">Typ: {result.type}</Text>}
                   <Text size="2">Wysłano: {result.sent}</Text>
                   <Text size="2">Błędy: {result.failed}</Text>
                   <Text size="2">Łączna liczba użytkowników: {result.totalUsers}</Text>
-                  <Text size="2" color="gray">
-                    Czas: {new Date(result.timestamp).toLocaleString("pl-PL")}
-                  </Text>
+                  {result.message && <Text size="2" color="green">{result.message}</Text>}
+                  {result.timestamp && (
+                    <Text size="2" color="gray">
+                      Czas: {new Date(result.timestamp).toLocaleString("pl-PL")}
+                    </Text>
+                  )}
                 </Flex>
               ) : (
                 <Text size="2" color="red">
@@ -96,6 +154,7 @@ export default function ManualTrigger() {
         <Text size="2" color="gray">
           To narzędzie pozwala na ręczne wysyłanie powiadomień do wszystkich użytkowników.
           Normalne powiadomienia będą wysyłane automatycznie według harmonogramów.
+          Użyj opcji "Własna wiadomość" aby wysłać spersonalizowane powiadomienie do wszystkich użytkowników.
         </Text>
       </Flex>
     </Card>

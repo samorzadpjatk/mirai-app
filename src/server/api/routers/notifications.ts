@@ -100,14 +100,12 @@ export const notificationRouter = createTRPCRouter({
         title: z.string(),
         body: z.string(),
         url: z.string().optional(),
-        data: z.record(z.any()).optional(),
+        data: z.record(z.string(), z.any()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user has admin permissions (you can customize this logic)
-      const adminGroupName = "admin-group-name";
-      const userGroups = ctx.session.user.groups ?? [];
-      if (!Array.isArray(userGroups) || !userGroups.includes(adminGroupName)) {
+      // Check if user has admin permissions
+      if (!ctx.session.user.isAdmin) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Insufficient permissions to send notifications",
@@ -190,14 +188,12 @@ export const notificationRouter = createTRPCRouter({
         title: z.string(),
         body: z.string(),
         url: z.string().optional(),
-        data: z.record(z.any()).optional(),
+        data: z.record(z.string(), z.any()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user has admin permissions
-      const adminGroupName = "admin-group-name";
-      const userGroups = ctx.session.user.groups ?? [];
-      if (!Array.isArray(userGroups) || !userGroups.includes(adminGroupName)) {
+      if (!ctx.session.user.isAdmin) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Insufficient permissions to send notifications",
@@ -295,4 +291,110 @@ export const notificationRouter = createTRPCRouter({
       endpoint: subscription?.endpoint,
     };
   }),
+
+  // Send custom notification to all users
+  sendCustomToAll: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1, "Tytuł jest wymagany"),
+        body: z.string().min(1, "Treść jest wymagana"),
+        url: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if user has admin permissions
+      const user = await ctx.db.user.findFirst({
+        where: { id: ctx.session.user.id },
+      });
+
+      if (!user?.isAdmin) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Insufficient permissions to send notifications",
+        });
+      }
+
+      try {
+        // Get all push subscriptions from all users
+        const allSubscriptions = await ctx.db.pushSubscription.findMany({
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+
+        if (allSubscriptions.length === 0) {
+          return {
+            success: true,
+            sent: 0,
+            failed: 0,
+            totalUsers: 0,
+            message: "Brak subskrypcji do wysłania powiadomień",
+          };
+        }
+
+        const payload = JSON.stringify({
+          title: input.title,
+          body: input.body,
+          url: input.url || "/",
+          data: {
+            type: "custom_notification",
+            customMessage: true,
+          },
+          timestamp: Date.now(),
+        });
+
+        const results = await Promise.allSettled(
+          allSubscriptions.map(async (subscription) => {
+            try {
+              const pushSubscription = {
+                endpoint: subscription.endpoint,
+                keys: {
+                  p256dh: subscription.p256dh,
+                  auth: subscription.auth,
+                },
+              };
+
+              return await webpush.sendNotification(pushSubscription, payload);
+            } catch (error: any) {
+              console.error("Error sending notification:", error);
+              
+              // Remove invalid subscriptions
+              if (error.statusCode === 410 || error.statusCode === 404) {
+                await ctx.db.pushSubscription.delete({
+                  where: { id: subscription.id },
+                });
+              }
+              
+              throw error;
+            }
+          })
+        );
+
+        const successful = results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
+        const failed = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
+
+        // Get unique user count
+        const uniqueUsers = new Set(allSubscriptions.map(s => s.userId)).size;
+
+        return {
+          success: true,
+          sent: successful,
+          failed: failed,
+          totalSubscriptions: allSubscriptions.length,
+          totalUsers: uniqueUsers,
+          message: `Wysłano powiadomienie do ${successful} subskrypcji (${uniqueUsers} użytkowników)`,
+        };
+      } catch (error) {
+        console.error("Error sending custom notification to all users:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send custom notification",
+        });
+      }
+    }),
 });
