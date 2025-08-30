@@ -43,7 +43,7 @@ const RemoveUserFromGroupFormDialog = ({
                     <AlertDialog.Title>Usuń z Gildii</AlertDialog.Title>
                     <AlertDialog.Description>
                         Czy na pewno chcesz usunąć użytkownika &quot;{selectedUser?.name}&quot;
-                        z gildii &quot;{selectedUser?.group?.name}&quot;?
+                        z gildii &quot;{selectedUser?.groups?.[0]?.group?.name ?? "Nieznana"}&quot;?
                     </AlertDialog.Description>
                     <Flex gap="3" mt="4" justify="end">
                         <AlertDialog.Cancel>

@@ -104,9 +104,13 @@ export const groupRouter = createTRPCRouter({
   }),
   getGroupList: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.group.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        coins: true,
         organizer: {
-          select: { name: true, email: true },
+          select: { id: true, name: true },
         },
         _count: {
           select: { members: true },
@@ -129,6 +133,7 @@ export const groupRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
+          code: true,
           coins: true,
           _count: { select: { members: true } },
           organizer: { select: { id: true, name: true } },

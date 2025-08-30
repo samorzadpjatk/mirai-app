@@ -7,7 +7,6 @@ const TransactionCardList = ({ transactions, loading }: {
         id: string;
         amount: number;
         createdAt: Date;
-        reason: string | null;
         group: {
             id: string;
             name: string;
@@ -15,7 +14,7 @@ const TransactionCardList = ({ transactions, loading }: {
         };
         admin: {
             id: string;
-            name: string;
+            name: string | null;
         };
     }[] | undefined, loading: boolean
 }) => {
@@ -24,7 +23,7 @@ const TransactionCardList = ({ transactions, loading }: {
     return (<>
         {transactions.map((transaction) => {
             const amountInfo = formatAmount(transaction.amount);
-            (<Card key={transaction.id}>
+            return (<Card key={transaction.id}>
                 <DataList.Root size={{ initial: "1" }}>
                     <DataList.Item>
                         <DataList.Label>Data</DataList.Label>
@@ -67,16 +66,7 @@ const TransactionCardList = ({ transactions, loading }: {
                             </Badge>
                         </DataList.Value>
                     </DataList.Item>
-                    {transaction.reason && (
-                        <DataList.Item>
-                            <DataList.Label>Powód</DataList.Label>
-                            <DataList.Value>
-                                <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>
-                                    {transaction.reason}
-                                </Text>
-                            </DataList.Value>
-                        </DataList.Item>
-                    )}
+
                 </DataList.Root>
             </Card>)
         })}

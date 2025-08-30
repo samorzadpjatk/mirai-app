@@ -1,4 +1,5 @@
 // Simple development service worker for push notifications
+// @ts-nocheck
 console.log('Development Service Worker loaded');
 
 // Install event
