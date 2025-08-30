@@ -38,5 +38,5 @@
     "**/*.js",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "public/sw.js", "public/workbox-*.js", "public/sw.js.map"]
+  "exclude": ["node_modules", "public/sw.js", "public/sw-dev.js", "public/workbox-*.js", "public/sw.js.map"]
 }
