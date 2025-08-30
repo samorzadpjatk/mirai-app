@@ -215,9 +215,24 @@ export const groupRouter = createTRPCRouter({
         where: { id: input.id },
       });
       if (!group) throw new Error("Group not found");
-      return await ctx.db.user.update({
-        where: { id: ctx.session.user.id },
-        data: { groupId: group.id },
+      
+      // Check if user is already in the group
+      const existingMembership = await ctx.db.userGroup.findFirst({
+        where: {
+          userId: ctx.session.user.id,
+          groupId: group.id,
+        },
+      });
+
+      if (existingMembership) {
+        throw new Error("Użytkownik już należy do tej grupy");
+      }
+
+      return await ctx.db.userGroup.create({
+        data: {
+          userId: ctx.session.user.id,
+          groupId: group.id,
+        },
       });
     }),
   assignUserToGroup: adminProcedure
@@ -229,9 +244,9 @@ export const groupRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Check if user is already in the group
-      const existingMembership = await ctx.db.user.findFirst({
+      const existingMembership = await ctx.db.userGroup.findFirst({
         where: {
-          id: input.userId,
+          userId: input.userId,
           groupId: input.groupId,
         },
       });
@@ -240,9 +255,11 @@ export const groupRouter = createTRPCRouter({
         throw new Error("Użytkownik już należy do tej grupy");
       }
 
-      return await ctx.db.user.update({
-        where: { id: input.userId },
-        data: { groupId: input.groupId },
+      return await ctx.db.userGroup.create({
+        data: {
+          userId: input.userId,
+          groupId: input.groupId,
+        },
       });
     }),
 
@@ -254,12 +271,9 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.user.update({
+      return await ctx.db.userGroup.deleteMany({
         where: {
-          id: input.userId,
-        },
-        data: {
-          groupId: null,
+          userId: input.userId,
         },
       });
     }),

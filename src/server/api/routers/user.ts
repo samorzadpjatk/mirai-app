@@ -37,6 +37,7 @@ export const userRouter = createTRPCRouter({
         name: true,
         email: true,
         isAdmin: true,
+        wristNumber: true,
         groups: { select: { group: { select: { id: true, name: true } } } },
         organizerGroups: { select: { id: true, name: true } },
       },
@@ -90,5 +91,159 @@ export const userRouter = createTRPCRouter({
           isAdmin: true,
         },
       });
+    }),
+
+  // Update user wrist number
+  updateWristNumber: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        wristNumber: z.string().min(1, "Numer opaski nie może być pusty").max(20, "Numer opaski nie może być dłuższy niż 20 znaków"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if wrist number is already taken by another user
+      const existingUser = await ctx.db.user.findUnique({
+        where: { wristNumber: input.wristNumber },
+        select: { id: true, name: true },
+      });
+
+      if (existingUser && existingUser.id !== input.userId) {
+        throw new Error(`Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${existingUser.name}`);
+      }
+
+      return await ctx.db.user.update({
+        where: { id: input.userId },
+        data: { wristNumber: input.wristNumber },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          wristNumber: true,
+          isAdmin: true,
+        },
+      });
+    }),
+
+  // Remove wrist number from user
+  removeWristNumber: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.user.update({
+        where: { id: input.userId },
+        data: { wristNumber: null },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          wristNumber: true,
+          isAdmin: true,
+        },
+      });
+    }),
+
+  // Search users with pagination
+  searchWithPagination: moderatorProcedure
+    .input(
+      z.object({
+        searchTerm: z.string().optional(),
+        page: z.number().min(1).default(1),
+        limit: z.number().min(5).max(50).default(20),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { searchTerm, page, limit } = input;
+      const skip = (page - 1) * limit;
+
+      // Build search conditions
+      const searchConditions = searchTerm
+        ? {
+            OR: [
+              {
+                name: {
+                  contains: searchTerm,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                email: {
+                  contains: searchTerm,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                wristNumber: {
+                  contains: searchTerm,
+                  mode: "insensitive" as const,
+                },
+              },
+              {
+                groups: {
+                  some: {
+                    group: {
+                      name: {
+                        contains: searchTerm,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                organizerGroups: {
+                  some: {
+                    name: {
+                      contains: searchTerm,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                },
+              },
+            ],
+          }
+        : {};
+
+      // Get total count for pagination
+      const totalCount = await ctx.db.user.count({
+        where: searchConditions,
+      });
+
+      // Get paginated results
+      const users = await ctx.db.user.findMany({
+        where: searchConditions,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          isAdmin: true,
+          wristNumber: true,
+          groups: { select: { group: { select: { id: true, name: true } } } },
+          organizerGroups: { select: { id: true, name: true } },
+        },
+        orderBy: [
+          { name: "asc" },
+          { email: "asc" },
+        ],
+        skip,
+        take: limit,
+      });
+
+      const totalPages = Math.ceil(totalCount / limit);
+
+      return {
+        users,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+          limit,
+        },
+      };
     }),
 });
