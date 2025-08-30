@@ -26,4 +26,4 @@ jobs:
       uses: reviewdog/action-eslint@v1.33.2
       with:
         reporter: github-check
-        eslint_flags: "src/"
+        eslint_flags: "."
