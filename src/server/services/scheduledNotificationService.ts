@@ -1,11 +1,24 @@
 import { db } from "~/server/db";
 import { NotificationService } from "./notificationService";
 
+// Type for group ranking data
+interface GroupRanking {
+  id: string;
+  name: string;
+  coins: number;
+  members: Array<{
+    user: {
+      id: string;
+      name: string | null;
+    };
+  }>;
+}
+
 export class ScheduledNotificationService {
   /**
    * Generate and send ranking update notifications to all users
    */
-  static async sendRankingUpdate(scheduleName: string): Promise<{
+  static async sendRankingUpdate(_scheduleName: string): Promise<{
     sent: number;
     failed: number;
     totalUsers: number;
@@ -40,7 +53,8 @@ export class ScheduledNotificationService {
 
       // Create ranking message
       const topGroup = ranking[0];
-      const rankingMessage = this.createRankingUpdateMessage(ranking);
+      // Create ranking message (for potential future use)
+      // const _rankingMessage = this.createRankingUpdateMessage(ranking);
 
       let totalSent = 0;
       let totalFailed = 0;
@@ -55,9 +69,9 @@ export class ScheduledNotificationService {
           group.name,
           groupPosition,
           group.coins,
-          topGroup?.name || "",
-          topGroup?.coins || 0,
-        );
+          topGroup?.name ?? "",
+          topGroup?.coins ?? 0,
+        ) as { title: string; body: string; url?: string; data?: Record<string, unknown> };
 
         // Send to group members
         if (group.members.length > 0) {
@@ -112,7 +126,7 @@ export class ScheduledNotificationService {
   /**
    * Create a general ranking update message
    */
-  private static createRankingUpdateMessage(ranking: any[]): any {
+  private static createRankingUpdateMessage(ranking: GroupRanking[]): string {
     const topGroup = ranking[0];
     const top3 = ranking.slice(0, 3);
 
@@ -146,7 +160,7 @@ export class ScheduledNotificationService {
     coins: number,
     topGroupName: string,
     topGroupCoins: number,
-  ): any {
+  ): { title: string; body: string; data: Record<string, unknown> } {
     let title: string;
     let body: string;
 
@@ -251,16 +265,16 @@ export class ScheduledNotificationService {
         },
       });
 
-      const summaryNotification = {
+      const summaryNotification: { title: string; body: string; url?: string; data?: Record<string, unknown> } = {
         title: "📊 Podsumowanie Tygodnia",
-        body: `W tym tygodniu: ${totalCoinsThisWeek._sum.amount || 0} monet rozdane, ${totalTransactions} transakcji. Lider: ${ranking[0]?.name || 'Brak'} (${ranking[0]?.coins || 0} monet). Sprawdź pełny ranking!`,
+        body: `W tym tygodniu: ${totalCoinsThisWeek._sum.amount ?? 0} monet rozdane, ${totalTransactions} transakcji. Lider: ${ranking[0]?.name ?? 'Brak'} (${ranking[0]?.coins ?? 0} monet). Sprawdź pełny ranking!`,
         url: "/ranking",
         data: {
           type: "weekly_summary",
-          totalCoins: totalCoinsThisWeek._sum.amount || 0,
+          totalCoins: totalCoinsThisWeek._sum.amount ?? 0,
           totalTransactions,
-          leader: ranking[0]?.name || null,
-          leaderCoins: ranking[0]?.coins || 0,
+          leader: ranking[0]?.name ?? null,
+          leaderCoins: ranking[0]?.coins ?? 0,
           timestamp: Date.now(),
         },
       };

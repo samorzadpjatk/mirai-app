@@ -2,6 +2,11 @@ import webpush from "web-push";
 import { db } from "~/server/db";
 import { env } from "~/env";
 
+// Interface for webpush error handling
+interface WebPushError extends Error {
+  statusCode?: number;
+}
+
 // Configure web-push with VAPID keys
 if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_EMAIL) {
   webpush.setVapidDetails(
@@ -15,7 +20,7 @@ interface NotificationData {
   title: string;
   body: string;
   url?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 export class NotificationService {
@@ -50,8 +55,8 @@ export class NotificationService {
       const payload = JSON.stringify({
         title: notification.title,
         body: notification.body,
-        url: notification.url || "/",
-        data: notification.data || {},
+        url: notification.url ?? "/",
+        data: notification.data ?? {},
         timestamp: Date.now(),
       });
 
@@ -75,11 +80,11 @@ export class NotificationService {
                 };
 
                 return await webpush.sendNotification(pushSubscription, payload);
-              } catch (error: any) {
+              } catch (error: unknown) {
                 console.error("Error sending notification:", error);
                 
                 // Remove invalid subscriptions
-                if (error.statusCode === 410 || error.statusCode === 404) {
+                if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
                   await db.pushSubscription.delete({
                     where: { id: subscription.id },
                   });
@@ -90,7 +95,7 @@ export class NotificationService {
             })
           );
 
-          totalSent += results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
+          totalSent += results.filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled').length;
           totalFailed += results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
         }
       }
@@ -127,8 +132,8 @@ export class NotificationService {
       const payload = JSON.stringify({
         title: notification.title,
         body: notification.body,
-        url: notification.url || "/",
-        data: notification.data || {},
+        url: notification.url ?? "/",
+        data: notification.data ?? {},
         timestamp: Date.now(),
       });
 
@@ -144,11 +149,11 @@ export class NotificationService {
             };
 
             return await webpush.sendNotification(pushSubscription, payload);
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error("Error sending notification:", error);
             
             // Remove invalid subscriptions
-            if (error.statusCode === 410 || error.statusCode === 404) {
+            if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
               await db.pushSubscription.delete({
                 where: { id: subscription.id },
               });
@@ -159,7 +164,7 @@ export class NotificationService {
         })
       );
 
-      const successful = results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
+      const successful = results.filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled').length;
       const failed = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
 
       return { sent: successful, failed: failed };

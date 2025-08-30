@@ -76,7 +76,7 @@ export default function UserSearchBar({
       {searchTerm && (
         <Flex align="center" gap="2">
           <Text size="2" color="gray">
-            Wyszukiwanie: "{searchTerm}"
+            Wyszukiwanie: &quot;{searchTerm}&quot;
           </Text>
           {typeof resultCount === 'number' && (
             <Badge variant="soft" color="blue">

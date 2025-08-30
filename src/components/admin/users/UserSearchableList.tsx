@@ -9,8 +9,18 @@ import ChangeUserAdminButton from "./ChangeUserAdminButton";
 import WristNumberManager from "./WristNumberManager";
 import UserSearchBar from "./UserSearchBar";
 
+interface UserWithGroups {
+  id: string;
+  name: string | null;
+  email: string | null;
+  isAdmin: boolean;
+  wristNumber: string | null;
+  groups: Array<{ group: { id: string; name: string } }>;
+  organizerGroups: Array<{ id: string; name: string }>;
+}
+
 interface UserSearchableListProps {
-  users: any[];
+  users: UserWithGroups[];
 }
 
 export default function UserSearchableList({ users }: UserSearchableListProps) {
@@ -25,20 +35,20 @@ export default function UserSearchableList({ users }: UserSearchableListProps) {
 
     return users.filter((user) => {
       // Search by name
-      const nameMatch = user.name?.toLowerCase().includes(searchLower);
+      const nameMatch = Boolean(user.name?.toLowerCase().includes(searchLower));
       
       // Search by email
-      const emailMatch = user.email?.toLowerCase().includes(searchLower);
+      const emailMatch = Boolean(user.email?.toLowerCase().includes(searchLower));
       
       // Search by wrist number
-      const wristNumberMatch = user.wristNumber?.toLowerCase().includes(searchLower);
+      const wristNumberMatch = Boolean(user.wristNumber?.toLowerCase().includes(searchLower));
       
       // Search by group names (both member and organizer)
-      const memberGroupMatch = user.groups?.some((userGroup: any) =>
+      const memberGroupMatch = user.groups?.some((userGroup: { group: { id: string; name: string } }) =>
         userGroup.group.name.toLowerCase().includes(searchLower)
       );
       
-      const organizerGroupMatch = user.organizerGroups?.some((organizerGroup: any) =>
+      const organizerGroupMatch = user.organizerGroups?.some((organizerGroup: { id: string; name: string }) =>
         organizerGroup.name.toLowerCase().includes(searchLower)
       );
 
@@ -57,7 +67,7 @@ export default function UserSearchableList({ users }: UserSearchableListProps) {
         {filteredUsers.length === 0 && searchTerm && (
           <Card style={{ padding: "1rem" }}>
             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-              Nie znaleziono użytkowników pasujących do frazy: "{searchTerm}"
+              Nie znaleziono użytkowników pasujących do frazy: &quot;{searchTerm}&quot;
             </Text>
           </Card>
         )}
@@ -122,12 +132,12 @@ export default function UserSearchableList({ users }: UserSearchableListProps) {
                 <DataList.Label>Gildie</DataList.Label>
                 <DataList.Value>
                   <Flex gap="2" wrap="wrap">
-                    {user.groups?.map((userGroup: any) => (
+                    {user.groups?.map((userGroup: { group: { id: string; name: string } }) => (
                       <Badge key={userGroup.group.id} variant="soft" color="purple">
                         {userGroup.group.name}
                       </Badge>
                     ))}
-                    {user.organizerGroups?.map((organizerGroup: any) => (
+                    {user.organizerGroups?.map((organizerGroup: { id: string; name: string }) => (
                       <Badge key={organizerGroup.id} variant="solid" color="purple">
                         {organizerGroup.name}
                       </Badge>
@@ -156,7 +166,7 @@ export default function UserSearchableList({ users }: UserSearchableListProps) {
                     )}
                     <WristNumberManager 
                       userId={user.id}
-                      userName={user.name || "Nieznany użytkownik"}
+                      userName={user.name ?? "Nieznany użytkownik"}
                       currentWristNumber={user.wristNumber}
                     />
                     <ChangeUserAdminButton selectedUserId={user.id} />
