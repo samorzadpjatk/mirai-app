@@ -22,8 +22,13 @@ jobs:
       run: |
         npm ci
 
-    - name: Run check
+    - name: Run ESLint
       uses: reviewdog/action-eslint@v1.33.2
       with:
         reporter: github-check
         eslint_flags: "."
+
+    - name: Run `tsc`
+      uses: EPMatt/reviewdog-action-tsc@v1.8.0
+      with:
+        reporter: github-check
