@@ -8,4 +8,6 @@ RUN npm ci
 
 COPY . .
 
+RUN npm run build
+
 CMD ["sh", "-c", "npm run db:migrate && npm run start"]
