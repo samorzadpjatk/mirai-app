@@ -95,7 +95,7 @@ export class NotificationService {
             })
           );
 
-          totalSent += results.filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled').length;
+          totalSent += results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
           totalFailed += results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
         }
       }
@@ -164,7 +164,7 @@ export class NotificationService {
         })
       );
 
-      const successful = results.filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled').length;
+      const successful = results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
       const failed = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
 
       return { sent: successful, failed: failed };

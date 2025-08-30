@@ -1,10 +1,9 @@
-// @ts-nocheck
 /**
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
  * for Docker builds.
  */
 import "./src/env.js";
-import withPWA from "next-pwa";
+import withSerwist from "@serwist/next";
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
@@ -17,14 +16,10 @@ const nextConfig = {
   }
 };
 
-// PWA Configuration
-const pwaConfig = {
-  dest: "public",
-  register: false, // Manual registration in our code
-  skipWaiting: true,
-  disable: false, // PWA enabled in both dev and production
-  runtimeCaching: [],
-};
-
-// Export with PWA wrapper - always enabled
-export default withPWA(pwaConfig)(nextConfig);
+// Serwist Configuration
+export default withSerwist({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === "development",
+})(nextConfig);

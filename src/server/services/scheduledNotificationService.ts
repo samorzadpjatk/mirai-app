@@ -126,7 +126,7 @@ export class ScheduledNotificationService {
   /**
    * Create a general ranking update message
    */
-  private static createRankingUpdateMessage(ranking: GroupRanking[]): string {
+  private static createRankingUpdateMessage(ranking: GroupRanking[]): { title: string; body: string; url: string; data: Record<string, unknown> } {
     const topGroup = ranking[0];
     const top3 = ranking.slice(0, 3);
 
@@ -160,7 +160,7 @@ export class ScheduledNotificationService {
     coins: number,
     topGroupName: string,
     topGroupCoins: number,
-  ): { title: string; body: string; data: Record<string, unknown> } {
+  ): { title: string; body: string; url: string; data: Record<string, unknown> } {
     let title: string;
     let body: string;
 

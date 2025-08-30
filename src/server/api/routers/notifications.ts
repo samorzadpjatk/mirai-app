@@ -167,7 +167,7 @@ export const notificationRouter = createTRPCRouter({
           })
         );
 
-        const successful = results.filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled').length;
+        const successful = results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
         const failed = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
 
         return {
@@ -262,7 +262,7 @@ export const notificationRouter = createTRPCRouter({
               })
             );
 
-            totalSent += results.filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled').length;
+            totalSent += results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
             totalFailed += results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
           }
         }
@@ -380,7 +380,7 @@ export const notificationRouter = createTRPCRouter({
           })
         );
 
-        const successful = results.filter((result): result is PromiseFulfilledResult<unknown> => result.status === 'fulfilled').length;
+        const successful = results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
         const failed = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
 
         // Get unique user count
