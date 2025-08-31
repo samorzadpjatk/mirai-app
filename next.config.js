@@ -13,13 +13,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true
   }
-  // Next.js config options here
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  eslint: {
-    ignoreDuringBuilds: true, // Temporary for deployment
-  }
 };
 
 
