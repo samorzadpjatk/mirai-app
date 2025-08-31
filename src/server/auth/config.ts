@@ -55,6 +55,7 @@ export const authConfig = {
       clientId: process.env.AUTHENTIK_ID,
       clientSecret: process.env.AUTHENTIK_SECRET,
       issuer: process.env.AUTHENTIK_ISSUER,
+      allowDangerousEmailAccountLinking: true,
     }),
     /**
      * ...add more providers here.
@@ -71,7 +72,7 @@ export const authConfig = {
     signIn: async ({ user, profile }) => {
       user.isAdmin =
         Array.isArray(profile?.groups) &&
-        profile.groups.includes(env.ADMIN_ROLE);
+         (profile.groups.includes(env.ADMIN_ROLE) || profile.groups.includes(env.TECH_ROLE));
       user.isModerator =
         Array.isArray(profile?.groups) &&
         profile.groups.includes(env.KADRA_ROLE);

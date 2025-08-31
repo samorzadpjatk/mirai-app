@@ -1,0 +1,21 @@
+services:
+  dev-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "11001:3000"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env.development
+  prod-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "11000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env.production
