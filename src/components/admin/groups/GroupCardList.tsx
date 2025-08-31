@@ -36,7 +36,7 @@ const GroupCardList = async () => {
                                 </Flex>
                             </Flex>
                             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
-                                Przypisany: {(group.organizer.name ?? group.organizer.email) ?? "Nieznany"}
+                                Przypisany: {group.organizer.name ?? "Nieznany"}
                             </Text>
                             <Flex justify="between" align="center">
                                 <Badge variant="soft" color="green">

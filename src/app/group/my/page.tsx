@@ -38,8 +38,8 @@ const MyGroupPage = async () => {
                             <DataList.Value>
                                 <Flex direction="column" gap="2">
                                     {group.members.map((member) => (
-                                        <Text key={member.id}>
-                                            {member.name}
+                                        <Text key={member.user.id}>
+                                            {member.user.name}
                                         </Text>
                                     ))}
                                 </Flex>

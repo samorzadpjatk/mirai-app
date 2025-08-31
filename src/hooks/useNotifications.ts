@@ -3,34 +3,35 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
 
-// Service Worker registration
+// Service Worker registration with Serwist
 const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
   if ("serviceWorker" in navigator) {
     try {
       // First check if there's already a service worker registered
       const existingRegistration = await navigator.serviceWorker.getRegistration();
       if (existingRegistration) {
-        console.log("Using existing Service Worker registration:", existingRegistration);
+        console.log("Using existing Serwist Service Worker registration:", existingRegistration);
         return existingRegistration;
       }
 
-      // Determine which service worker to use based on environment
-      // In development, use our custom service worker
-      const isDevelopment = window.location.hostname === 'localhost';
-      const swPath = isDevelopment ? "/sw-dev.js" : "/sw.js";
+      // In production, Serwist generates /sw.js
+      // In development, SW is disabled via next.config.js
+      const swPath = "/sw.js";
       
-      console.log(`Registering Service Worker: ${swPath}`);
+      console.log(`Registering Serwist Service Worker: ${swPath}`);
       
       // Try to register the service worker
-      const registration = await navigator.serviceWorker.register(swPath);
-      console.log("Service Worker registered:", registration);
+      const registration = await navigator.serviceWorker.register(swPath, {
+        scope: "/",
+      });
+      console.log("Serwist Service Worker registered:", registration);
       
       // Wait for the service worker to be ready
       await navigator.serviceWorker.ready;
       
       return registration;
     } catch (error) {
-      console.error("Service Worker registration failed:", error);
+      console.error("Serwist Service Worker registration failed:", error);
       
       // Fallback: check if there's at least a service worker available
       try {

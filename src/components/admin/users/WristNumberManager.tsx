@@ -19,7 +19,7 @@ export default function WristNumberManager({
 }: WristNumberManagerProps) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [wristNumber, setWristNumber] = useState(currentWristNumber || "");
+  const [wristNumber, setWristNumber] = useState(currentWristNumber ?? "");
   const [error, setError] = useState("");
 
   const updateWristNumberMutation = api.user.updateWristNumber.useMutation({
@@ -63,7 +63,7 @@ export default function WristNumberManager({
   };
 
   const handleOpenDialog = () => {
-    setWristNumber(currentWristNumber || "");
+    setWristNumber(currentWristNumber ?? "");
     setError("");
     setIsDialogOpen(true);
   };

@@ -8,6 +8,11 @@ import {
 } from "~/server/api/trpc";
 import { env } from "~/env";
 
+// Interface for webpush error handling
+interface WebPushError extends Error {
+  statusCode?: number;
+}
+
 // Configure web-push with VAPID keys
 if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_EMAIL) {
   webpush.setVapidDetails(
@@ -100,7 +105,7 @@ export const notificationRouter = createTRPCRouter({
         title: z.string(),
         body: z.string(),
         url: z.string().optional(),
-        data: z.record(z.string(), z.any()).optional(),
+        data: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -130,8 +135,8 @@ export const notificationRouter = createTRPCRouter({
         const payload = JSON.stringify({
           title: input.title,
           body: input.body,
-          url: input.url || "/",
-          data: input.data || {},
+          url: input.url ?? "/",
+          data: input.data ?? {},
           timestamp: Date.now(),
         });
 
@@ -147,11 +152,11 @@ export const notificationRouter = createTRPCRouter({
               };
 
               return await webpush.sendNotification(pushSubscription, payload);
-            } catch (error: any) {
+            } catch (error: unknown) {
               console.error("Error sending notification:", error);
               
               // Remove invalid subscriptions
-              if (error.statusCode === 410 || error.statusCode === 404) {
+              if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
                 await ctx.db.pushSubscription.delete({
                   where: { id: subscription.id },
                 });
@@ -188,7 +193,7 @@ export const notificationRouter = createTRPCRouter({
         title: z.string(),
         body: z.string(),
         url: z.string().optional(),
-        data: z.record(z.string(), z.any()).optional(),
+        data: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -218,8 +223,8 @@ export const notificationRouter = createTRPCRouter({
         const payload = JSON.stringify({
           title: input.title,
           body: input.body,
-          url: input.url || "/",
-          data: input.data || {},
+          url: input.url ?? "/",
+          data: input.data ?? {},
           timestamp: Date.now(),
         });
 
@@ -242,11 +247,11 @@ export const notificationRouter = createTRPCRouter({
                   };
 
                   return await webpush.sendNotification(pushSubscription, payload);
-                } catch (error: any) {
+                } catch (error: unknown) {
                   console.error("Error sending notification:", error);
                   
                   // Remove invalid subscriptions
-                  if (error.statusCode === 410 || error.statusCode === 404) {
+                  if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
                     await ctx.db.pushSubscription.delete({
                       where: { id: subscription.id },
                     });
@@ -340,7 +345,7 @@ export const notificationRouter = createTRPCRouter({
         const payload = JSON.stringify({
           title: input.title,
           body: input.body,
-          url: input.url || "/",
+          url: input.url ?? "/",
           data: {
             type: "custom_notification",
             customMessage: true,
@@ -360,11 +365,11 @@ export const notificationRouter = createTRPCRouter({
               };
 
               return await webpush.sendNotification(pushSubscription, payload);
-            } catch (error: any) {
+            } catch (error: unknown) {
               console.error("Error sending notification:", error);
               
               // Remove invalid subscriptions
-              if (error.statusCode === 410 || error.statusCode === 404) {
+              if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
                 await ctx.db.pushSubscription.delete({
                   where: { id: subscription.id },
                 });

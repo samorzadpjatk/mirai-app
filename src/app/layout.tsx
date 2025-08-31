@@ -92,7 +92,7 @@ export default function RootLayout({
       </head>
       <body>
         <TRPCReactProvider>
-          <ThemeProvider attribute="class" suppressHydrationWarning>
+          <ThemeProvider attribute="class">
             <Theme panelBackground={"solid"} accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)' }}>
               <Container size="3" style={{ height: '100%', margin: '0', padding: '0.5em' }}>
                 <TopBar />

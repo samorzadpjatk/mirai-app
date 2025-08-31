@@ -11,6 +11,29 @@ import UserSearchBar from "./UserSearchBar";
 import UserPagination from "./UserPagination";
 import { api } from "~/trpc/react";
 
+// Types for user data from searchWithPagination
+interface UserGroup {
+  group: {
+    id: string;
+    name: string;
+  };
+}
+
+interface OrganizerGroup {
+  id: string;
+  name: string;
+}
+
+interface SearchUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  isAdmin: boolean;
+  wristNumber: string | null;
+  groups: UserGroup[];
+  organizerGroups: OrganizerGroup[];
+}
+
 export default function UserSearchableListOptimized() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -19,7 +42,6 @@ export default function UserSearchableListOptimized() {
   const {
     data: searchResult,
     isLoading,
-    refetch,
   } = api.user.searchWithPagination.useQuery({
     searchTerm: searchTerm || undefined,
     page: currentPage,
@@ -40,7 +62,7 @@ export default function UserSearchableListOptimized() {
     setCurrentPage(1); // Reset to first page when changing limit
   }, []);
 
-  const users = searchResult?.users || [];
+  const users = (searchResult?.users ?? []) as SearchUser[];
   const pagination = searchResult?.pagination;
 
   return (
@@ -60,7 +82,7 @@ export default function UserSearchableListOptimized() {
             {users.length === 0 && searchTerm && (
               <Card style={{ padding: "1rem" }}>
                 <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                  Nie znaleziono użytkowników pasujących do frazy: "{searchTerm}"
+                  Nie znaleziono użytkowników pasujących do frazy: &quot;{searchTerm}&quot;
                 </Text>
               </Card>
             )}
@@ -125,12 +147,12 @@ export default function UserSearchableListOptimized() {
                     <DataList.Label>Gildie</DataList.Label>
                     <DataList.Value>
                       <Flex gap="2" wrap="wrap">
-                        {user.groups?.map((userGroup: any) => (
+                        {user.groups?.map((userGroup: UserGroup) => (
                           <Badge key={userGroup.group.id} variant="soft" color="purple">
                             {userGroup.group.name}
                           </Badge>
                         ))}
-                        {user.organizerGroups?.map((organizerGroup: any) => (
+                        {user.organizerGroups?.map((organizerGroup: OrganizerGroup) => (
                           <Badge key={organizerGroup.id} variant="solid" color="purple">
                             {organizerGroup.name}
                           </Badge>
@@ -159,7 +181,7 @@ export default function UserSearchableListOptimized() {
                         )}
                         <WristNumberManager 
                           userId={user.id}
-                          userName={user.name || "Nieznany użytkownik"}
+                          userName={user.name ?? "Nieznany użytkownik"}
                           currentWristNumber={user.wristNumber}
                         />
                         <ChangeUserAdminButton selectedUserId={user.id} />

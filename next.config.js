@@ -3,9 +3,7 @@
  * for Docker builds.
  */
 import "./src/env.js";
-import withPWA from "next-pwa";
-
-const isDev = process.env.NODE_ENV === "development";
+import withSerwist from "@serwist/next";
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {
@@ -16,17 +14,19 @@ const nextConfig = {
     ignoreDuringBuilds: true
   }
   // Next.js config options here
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: true, // Temporary for deployment
+  }
 };
 
-const pwaConfig = {
-  dest: "public",
-  register: false, // Disable auto-registration in development to avoid conflicts
-  skipWaiting: true,
-  disable: isDev, // Disable PWA in development, we'll handle SW manually
-  // Remove complex runtime caching for now to avoid type issues
-  // The default next-pwa caching will still work
-  runtimeCaching: []
-};
 
-const pwa = withPWA(pwaConfig)
-export default pwa(nextConfig);
+// Serwist Configuration
+export default withSerwist({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === "development",
+})(nextConfig);
