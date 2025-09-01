@@ -12,7 +12,7 @@ const RefreshButton = () => {
             onClick={() => router.refresh()}
         >
             <ReloadIcon />
-            Odśwież
+            Refresh
         </Button>
     );
 }

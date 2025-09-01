@@ -22,7 +22,7 @@ const TransactionCardListView = () => {
     return (
         <Card>
             <Flex direction={"column"} gap="2">
-                <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Transakcje</Heading>
+                <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Transactions</Heading>
                 <Flex wrap={"nowrap"} direction={"row"} gap={"1"} align="center" justify={"center"}>
                     <Box width="100%">
                         <TextField.Root

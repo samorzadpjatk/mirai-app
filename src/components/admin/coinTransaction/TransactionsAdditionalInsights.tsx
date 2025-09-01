@@ -10,18 +10,18 @@ const TransactionsAdditionalInsights = async () => {
 
     return (
         <Suspense fallback={<TransactionAdditionalInsightsSkelethon />}>
-            <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Analiza</Heading>
+            <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Analysis</Heading>
             <Card>
                 <Flex direction="column" gap="3">
                     <Flex direction={"column"} gap="2">
-                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">Najbardziej aktywny administrator:</Text>
+                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">Most Active Administrator:</Text>
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} >
-                            {mostActiveAdmin?.name} ({mostActiveAdmin?.transactionCount} transakcji)
+                            {mostActiveAdmin?.name} ({mostActiveAdmin?.transactionCount} transactions)
                         </Text>
                     </Flex>
 
                     <div>
-                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">Ostatnie 5 transakcji:</Text>
+                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">Last 5 transactions:</Text>
                         <Flex direction="column" gap="1" style={{ marginTop: "8px" }}>
                             {recentTransactions?.map((t) => {
                                 const amountInfo = formatAmount(t.amount);

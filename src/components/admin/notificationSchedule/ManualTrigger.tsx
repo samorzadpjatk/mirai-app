@@ -126,7 +126,7 @@ export default function ManualTrigger() {
           <Card variant="surface">
             <Flex direction="column" gap="2">
               <Text weight="bold" color={result.success ? "green" : "red"}>
-                {result.success ? "✅ Sukces" : "❌ Błąd"}
+                {result.success ? "✅ Success" : "❌ Error"}
               </Text>
               
               {result.success ? (

@@ -71,7 +71,7 @@ const CreateGroupDialog = () => {
                             Assigned <Text size="1" color="gray">(optional)</Text>
                         </Text>
                         <Select.Root value={organizerId} onValueChange={setOrganizerId}>
-                            <Select.Trigger placeholder="Zostaw puste = ty będziesz organizatorem" />
+                            <Select.Trigger placeholder="Leave this field empty = the mantle of organizer falls upon you." />
                             <Select.Content>
                                 <Select.Item value="__default__">
                                     <Text color="gray">(The role of organizer falls upon you)</Text>
