@@ -2,17 +2,38 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry } from "@serwist/precaching";
 import { installSerwist } from "@serwist/sw";
+import { BackgroundSyncPlugin } from "@serwist/background-sync";
+import { NetworkOnly } from "@serwist/strategies";
 
 declare const self: ServiceWorkerGlobalScope & {
   __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
 };
+
+// Background sync plugin for offline functionality
+const bgSyncPlugin = new BackgroundSyncPlugin("api-queue", {
+  maxRetentionTime: 24 * 60, // Retry for up to 24 hours (in minutes)
+});
+
+// Enhanced runtime caching with background sync
+const enhancedCache = [
+  ...defaultCache,
+  // API routes with background sync for offline support
+  {
+    matcher: ({ request }: { request: Request }) => {
+      return request.url.includes('/api/trpc/') && request.method === 'POST';
+    },
+    handler: new NetworkOnly({
+      plugins: [bgSyncPlugin],
+    }),
+  },
+];
 
 const serwist = installSerwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: enhancedCache,
 });
 
 // Custom push notification handler
@@ -87,19 +108,90 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Background sync for offline functionality
+// Enhanced background sync for offline functionality
 self.addEventListener("sync", (event) => {
-  console.log("SW: Background sync", event.tag);
+  console.log("SW: Background sync triggered", event.tag);
   
-  if (event.tag === "background-sync") {
-    event.waitUntil(doBackgroundSync());
+  switch (event.tag) {
+    case "api-queue":
+      // This is handled automatically by BackgroundSyncPlugin
+      console.log("SW: API queue sync triggered");
+      break;
+    case "coin-transactions":
+      event.waitUntil(syncCoinTransactions());
+      break;
+    case "user-data":
+      event.waitUntil(syncUserData());
+      break;
+    case "notifications":
+      event.waitUntil(syncNotifications());
+      break;
+    default:
+      console.log("SW: Unknown sync tag:", event.tag);
   }
 });
 
-async function doBackgroundSync() {
-  console.log("SW: Performing background sync");
-  // Here you can implement background sync logic
-  // For example, sync offline coin transactions, user data updates, etc.
+// Sync offline coin transactions
+async function syncCoinTransactions() {
+  console.log("SW: Syncing coin transactions");
+  try {
+    // Get offline transactions from IndexedDB or cache
+    const offlineTransactions = await getOfflineTransactions();
+    
+    for (const transaction of offlineTransactions) {
+      try {
+        const response = await fetch("/api/trpc/coinTransaction.create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(transaction),
+        });
+        
+        if (response.ok) {
+          console.log("SW: Transaction synced successfully");
+          await removeOfflineTransaction(transaction.id);
+        }
+      } catch (error) {
+        console.error("SW: Failed to sync transaction:", error);
+      }
+    }
+  } catch (error) {
+    console.error("SW: Error syncing coin transactions:", error);
+  }
+}
+
+// Sync user data updates
+async function syncUserData() {
+  console.log("SW: Syncing user data");
+  try {
+    // Implementation for syncing user data changes
+    // This could include profile updates, group memberships, etc.
+  } catch (error) {
+    console.error("SW: Error syncing user data:", error);
+  }
+}
+
+// Sync pending notifications
+async function syncNotifications() {
+  console.log("SW: Syncing notifications");
+  try {
+    // Implementation for syncing notification delivery attempts
+  } catch (error) {
+    console.error("SW: Error syncing notifications:", error);
+  }
+}
+
+// Helper functions for offline transaction management
+async function getOfflineTransactions(): Promise<any[]> {
+  // This would typically use IndexedDB to store offline transactions
+  // For now, return empty array - would need to implement IndexedDB storage
+  return [];
+}
+
+async function removeOfflineTransaction(transactionId: string): Promise<void> {
+  // Remove successfully synced transaction from offline storage
+  console.log("SW: Removing synced transaction:", transactionId);
 }
 
 // Error handling
@@ -111,4 +203,40 @@ self.addEventListener("unhandledrejection", (event) => {
   console.error("SW: Unhandled rejection:", event.reason);
 });
 
-console.log("SW: Serwist Service Worker loaded successfully");
+// Check for Background Sync API support and setup fallbacks
+function setupBackgroundSyncFallback() {
+  if (!('sync' in (self as any).ServiceWorkerRegistration?.prototype || {})) {
+    console.warn("SW: Background Sync not supported, setting up fallbacks");
+    
+    // Setup periodic checks for offline data when online
+    self.addEventListener('online', () => {
+      console.log("SW: Back online, attempting to sync offline data");
+      syncCoinTransactions();
+      syncUserData();
+      syncNotifications();
+    });
+    
+    // Setup message listener for manual sync triggers
+    self.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'MANUAL_SYNC') {
+        console.log("SW: Manual sync requested");
+        Promise.all([
+          syncCoinTransactions(),
+          syncUserData(),
+          syncNotifications()
+        ]).then(() => {
+          event.ports[0]?.postMessage({ success: true });
+        }).catch((error) => {
+          console.error("SW: Manual sync failed:", error);
+          event.ports[0]?.postMessage({ success: false, error });
+        });
+      }
+    });
+  } else {
+    console.log("SW: Background Sync API supported");
+  }
+}
+
+setupBackgroundSyncFallback();
+
+console.log("SW: Serwist Service Worker loaded successfully with Background Sync");
