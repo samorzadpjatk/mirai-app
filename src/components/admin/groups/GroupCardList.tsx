@@ -14,10 +14,10 @@ const GroupCardList = async () => {
                 {groups?.length === 0 && (
                     <Card style={{ padding: "1rem" }}>
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                            Brak gildii do wyświetlenia
+                            There are no Guilds in realm to display
                         </Text><br />
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.5 }}>
-                            Utwórz pierwszą gildię, aby rozpocząć zarządzanie
+                            Forge your first guild and embark on your path of leadership
                         </Text>
                     </Card>
                 )}
@@ -36,17 +36,16 @@ const GroupCardList = async () => {
                                 </Flex>
                             </Flex>
                             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
-                                Przypisany: {group.organizer.name ?? "Nieznany"}
+                                Assigned: {group.organizer.name ?? "Unknown"}
                             </Text>
                             <Flex justify="between" align="center">
                                 <Badge variant="soft" color="green">
-                                    {group._count.members} członków
+                                    {group._count.members} companions
                                 </Badge>
                                 <Badge variant="soft" color="gold">
-                                    💰 {group.coins} monet
+                                    💰 {group.coins} coins
                                 </Badge>
                             </Flex>
-
                         </Flex>
                     </Card>
                 ))}

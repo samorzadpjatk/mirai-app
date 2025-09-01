@@ -36,7 +36,7 @@ export default function NotificationScheduleList() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Czy na pewno chcesz usunąć ten harmonogram?")) {
+    if (confirm("Do you truly intend to strike this schedule from existence?")) {
       try {
         await deleteMutation.mutateAsync({ id });
       } catch (error) {
@@ -55,22 +55,22 @@ export default function NotificationScheduleList() {
     const isInDateRange = now >= new Date(schedule.startDate) && now <= new Date(schedule.endDate);
 
     if (!isActive) {
-      return <Badge color="gray">Nieaktywny</Badge>;
+      return <Badge color="gray">Inactive</Badge>;
     }
     
     if (!isInDateRange) {
-      return <Badge color="orange">Poza zakresem dat</Badge>;
+      return <Badge color="orange">Beyond the Bounds of Time</Badge>;
     }
     
-    return <Badge color="green">Aktywny</Badge>;
+    return <Badge color="green">Active</Badge>;
   };
 
   if (isLoading) {
     return (
       <Card>
         <Flex direction="column" gap="3">
-          <Heading size="4">Harmonogramy powiadomień</Heading>
-          <Text>Ładowanie...</Text>
+          <Heading size="4">Chronicles of Notifications</Heading>
+          <Text>Fetching data...</Text>
         </Flex>
       </Card>
     );
@@ -81,9 +81,9 @@ export default function NotificationScheduleList() {
       <Card>
         <Flex direction="column" gap="4">
           <Flex justify="between" align="center">
-            <Heading size="4">Harmonogramy powiadomień</Heading>
+            <Heading size="4">Chronicles of Notifications</Heading>
             <Button onClick={() => setCreateDialogOpen(true)}>
-              Dodaj nowy harmonogram
+              Create a New Chronicle
             </Button>
           </Flex>
 
@@ -91,13 +91,13 @@ export default function NotificationScheduleList() {
             <Table.Root>
               <Table.Header>
                 <Table.Row>
-                  <Table.ColumnHeaderCell>Nazwa</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Opis</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Godzina</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Okres</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Time</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Period</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Ostatnie uruchomienie</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Akcje</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Last Execution</Table.ColumnHeaderCell>
+                  <Table.ColumnHeaderCell>Action</Table.ColumnHeaderCell>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
@@ -128,7 +128,7 @@ export default function NotificationScheduleList() {
                       <Text size="2" color="gray">
                         {schedule.lastRun
                           ? format(new Date(schedule.lastRun), "dd MMM yyyy HH:mm", { locale: pl })
-                          : "Nigdy"}
+                          : "Never"}
                       </Text>
                     </Table.Cell>
                     <Table.Cell>
@@ -139,7 +139,7 @@ export default function NotificationScheduleList() {
                           color={schedule.isActive ? "orange" : "green"}
                           onClick={() => handleToggleActive(schedule.id)}
                         >
-                          {schedule.isActive ? "Dezaktywuj" : "Aktywuj"}
+                          {schedule.isActive ? "Deactivate" : "Activate"}
                         </Button>
                         <Button
                           size="1"
@@ -147,7 +147,7 @@ export default function NotificationScheduleList() {
                           color="red"
                           onClick={() => handleDelete(schedule.id)}
                         >
-                          Usuń
+                          Erase
                         </Button>
                       </Flex>
                     </Table.Cell>
@@ -156,7 +156,7 @@ export default function NotificationScheduleList() {
               </Table.Body>
             </Table.Root>
           ) : (
-            <Text color="gray">Brak harmonogramów powiadomień.</Text>
+            <Text color="gray">No chronicles of notifications exist.</Text>
           )}
         </Flex>
       </Card>

@@ -11,7 +11,7 @@ const MyGroupPage = async () => {
     if (!group) {
         return (
             <Card size={{ initial: "4" }} style={{ width: "100%" }}>
-                <Text>Nie należysz do żadnej grupy.</Text>
+                <Text>You are not a member of any group.</Text>
             </Card>
         );
     }
@@ -21,19 +21,19 @@ const MyGroupPage = async () => {
                 <Heading>{group.name}</Heading>
                 <DataList.Root>
                     <DataList.Item>
-                        <DataList.Label>Władca Gildii</DataList.Label>
+                        <DataList.Label>Lord of the Guild</DataList.Label>
                         <DataList.Value>{group.organizer.name}</DataList.Value>
                     </DataList.Item>
                     <DataList.Item align={"center"}>
-                        <DataList.Label>Stan konta</DataList.Label>
+                        <DataList.Label>Treasury Status</DataList.Label>
                         <DataList.Value><Badge size={"3"} variant="soft" color="gold">
-                            💰 {group.coins} monet
+                            💰 {group.coins} coins
                         </Badge></DataList.Value>
                     </DataList.Item>
                     {group.members.length > 0 &&
                         <DataList.Item>
                             <DataList.Label>
-                                Członkowie
+                                Companions
                             </DataList.Label>
                             <DataList.Value>
                                 <Flex direction="column" gap="2">

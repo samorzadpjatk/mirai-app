@@ -38,15 +38,15 @@ const DeleteGroupDialog = ({
                 </Button>
             </AlertDialog.Trigger>
             <AlertDialog.Content>
-                <AlertDialog.Title>Usuń Gildię</AlertDialog.Title>
+                <AlertDialog.Title>Banish the Guild</AlertDialog.Title>
                 <AlertDialog.Description>
-                    Czy na pewno chcesz usunąć gildię &quot;{selectedGroup?.name}&quot;?
-                    Ta akcja jest nieodwracalna i usunie wszystkich członków oraz historię transakcji.
+                    Are you certain you wish to banish the guild from existence &quot;{selectedGroup?.name}&quot;?
+                    Once executed, this action will strike all members from existence and erase the ledger of their deeds.
                 </AlertDialog.Description>
                 <Flex gap={{ "initial": "1" }} mt="4" justify="end">
                     <AlertDialog.Cancel>
                         <Button variant="soft" color="gray">
-                            Anuluj
+                            Cancel
                         </Button>
                     </AlertDialog.Cancel>
                     <AlertDialog.Action>
@@ -56,7 +56,7 @@ const DeleteGroupDialog = ({
                             onClick={() => selectedGroup && deleteGroupMutation.mutate({ id: selectedGroup.id })}
                             disabled={deleteGroupMutation.isPending}
                         >
-                            {deleteGroupMutation.isPending ? "Usuwanie..." : "Usuń"}
+                            {deleteGroupMutation.isPending ? "Banishing..." : "BANISH"}
                         </Button>
                     </AlertDialog.Action>
                 </Flex>

@@ -42,7 +42,7 @@ export default async function TopBar() {
         <LoadingIndicator />
         <form action={handleSign}>
           <Button>
-            <input type="submit" value={session?.user ? "Wyloguj się" : "Zaloguj się"} />
+            <input type="submit" value={session?.user ? "Sign Out" : "Sign In"} />
           </Button>
         </form>
       </Flex>

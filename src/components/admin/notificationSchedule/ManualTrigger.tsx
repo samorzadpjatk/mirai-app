@@ -64,12 +64,12 @@ export default function ManualTrigger() {
   return (
     <Card>
       <Flex direction="column" gap="4">
-        <Heading size="4">Ręczne uruchamianie powiadomień</Heading>
+        <Heading size="4">Manual Notification Trigger</Heading>
         
         <Flex direction="column" gap="3">
           <div>
             <Text as="div" size="2" mb="2" weight="bold">
-              Typ powiadomienia:
+              Notification type:
             </Text>
             <Select.Root
               value={notificationType}
@@ -77,9 +77,9 @@ export default function ManualTrigger() {
             >
               <Select.Trigger style={{ width: "200px" }} />
               <Select.Content>
-                <Select.Item value="ranking">Ranking gildii</Select.Item>
-                <Select.Item value="weekly">Podsumowanie tygodniowe</Select.Item>
-                <Select.Item value="custom">Własna wiadomość</Select.Item>
+                <Select.Item value="ranking">Leaderboard of Guilds</Select.Item>
+                <Select.Item value="weekly">Weekly summary</Select.Item>
+                <Select.Item value="custom">Custom message</Select.Item>
               </Select.Content>
             </Select.Root>
           </div>
@@ -118,7 +118,7 @@ export default function ManualTrigger() {
             disabled={loading || (notificationType === "custom" && (!customTitle.trim() || !customBody.trim()))}
             style={{ width: "fit-content" }}
           >
-            {loading ? "Wysyłanie..." : "Wyślij powiadomienie"}
+            {loading ? "Sending..." : "Summon notification"}
           </Button>
         </Flex>
 
@@ -131,16 +131,13 @@ export default function ManualTrigger() {
               
               {result.success ? (
                 <Flex direction="column" gap="1">
-                  {result.type && <Text size="2">Typ: {result.type}</Text>}
-                  <Text size="2">Wysłano: {result.sent}</Text>
-                  <Text size="2">Błędy: {result.failed}</Text>
-                  <Text size="2">Łączna liczba użytkowników: {result.totalUsers}</Text>
-                  {result.message && <Text size="2" color="green">{result.message}</Text>}
-                  {result.timestamp && (
-                    <Text size="2" color="gray">
-                      Czas: {new Date(result.timestamp).toLocaleString("pl-PL")}
-                    </Text>
-                  )}
+                  {result.type && <Text size="2">Type: {result.type}</Text>}                  
+                  <Text size="2">Sent: {result.sent}</Text>
+                  <Text size="2">Errors: {result.failed}</Text>
+                  <Text size="2">Total number of users: {result.totalUsers}</Text>
+                  <Text size="2" color="gray">
+                    Czas: {new Date(result.timestamp).toLocaleString("pl-PL")}
+                  </Text>
                 </Flex>
               ) : (
                 <Text size="2" color="red">
@@ -152,9 +149,9 @@ export default function ManualTrigger() {
         )}
 
         <Text size="2" color="gray">
-          To narzędzie pozwala na ręczne wysyłanie powiadomień do wszystkich użytkowników.
-          Normalne powiadomienia będą wysyłane automatycznie według harmonogramów.
-          Użyj opcji "Własna wiadomość" aby wysłać spersonalizowane powiadomienie do wszystkich użytkowników.
+          With this tool, you may summon notifications to all souls of the realm at will.
+          Ordinary messages shall be dispatched automatically by the appointed schedules.
+          Use the "Custom Message" option to send a personalized notification to all users. 
         </Text>
       </Flex>
     </Card>

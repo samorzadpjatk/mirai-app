@@ -7,7 +7,7 @@ import CoinQuickStatsCardSkeleton from "~/components/skelethons/CoinQuickStatsCa
 const CoinQuickStatsCard = async () => {
     const coinQuickStats = await api.coinTransaction.getQuickStats();
     return (<Suspense fallback={<CoinQuickStatsCardSkeleton />}><Card>
-        <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }} mb="4">Statystyki</Heading>
+        <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }} mb="4">Stats</Heading>
         <DataList.Root size={{ initial: "1" }}>
             <DataList.Item>
                 <DataList.Label><Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>Łączna liczba monet</Text></DataList.Label>

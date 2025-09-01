@@ -52,26 +52,26 @@ const EditGroupDialog = ({
                 </Dialog.Trigger>
                 <Dialog.Content>
 
-                    <Dialog.Title>Edytuj Gildię</Dialog.Title>
+                    <Dialog.Title>Refine the Guild</Dialog.Title>
                     <Dialog.Description>
-                        Modyfikuj informacje o gildii &quot;{group?.name}&quot;.
+                        Alter the Guild’s Records &quot;{group?.name}&quot;.
                     </Dialog.Description>
 
                     <Flex direction="column" gap="4" mt="4">
                         <div>
                             <Text as="label" size="2" weight="bold">
-                                Nazwa Gildii
+                                The Guild’s Heralded Name
                             </Text>
                             <TextField.Root
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="np. Rycerze Okrągłego Stołu"
+                                placeholder="e.g. Knights of the Round Table"
                             />
                         </div>
 
                         <Flex gap={"2"} align={"center"}>
                             <Text as="label" size="2" weight="bold">
-                                Przypisany
+                                Assigned
                             </Text>
                             <Select.Root value={organizerId} onValueChange={setOrganizerId}>
                                 <Select.Trigger />
@@ -88,16 +88,16 @@ const EditGroupDialog = ({
                         <Separator />
 
                         <div>
-                            <Text size="2" weight="bold">Aktualne statystyki:</Text>
+                            <Text size="2" weight="bold">Current Guild Stats:</Text>
                             <Flex gap="4" mt="2">
                                 <Badge variant="soft" color="blue">
                                     Kod: {group?.code}
                                 </Badge>
                                 <Badge variant="soft" color="green">
-                                    {group?._count.members} członków
+                                    {group?._count.members} companions
                                 </Badge>
                                 <Badge variant="soft" color="gold">
-                                    💰 {group?.coins} monet
+                                    💰 {group?.coins} coins
                                 </Badge>
                             </Flex>
                         </div>
@@ -106,14 +106,14 @@ const EditGroupDialog = ({
                     <Flex gap="3" mt="4" justify="end">
                         <Dialog.Close>
                             <Button variant="soft" color="gray">
-                                Anuluj
+                                Cancel
                             </Button>
                         </Dialog.Close>
                         <Button
                             onClick={handleEditSubmit}
                             disabled={!name?.trim() || updateGroupMutation.isPending}
                         >
-                            {updateGroupMutation.isPending ? "Zapisywanie..." : "Zapisz Zmiany"}
+                            {updateGroupMutation.isPending ? "Saving..." : "Save changes"}
                         </Button>
                     </Flex>
                 </Dialog.Content>
