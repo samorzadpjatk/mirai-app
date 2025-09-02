@@ -26,7 +26,7 @@ const ChangeUserAdminButton = ({ selectedUserId }: { selectedUserId: string }) =
                 })}
                 disabled={updateAdminStatusMutation.isPending}
             >
-                {user.isAdmin ? <><TrashIcon />Usuń admin</> : <><StarIcon />Nadaj admin</>}
+                {user.isAdmin ? <><TrashIcon />Remove admin</> : <><StarIcon />Assign admin</>}
             </Button>
         </Skeleton>
     );

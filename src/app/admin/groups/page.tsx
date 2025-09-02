@@ -10,7 +10,7 @@ const GroupManagement = () => {
     return (
         <Flex direction="column" gap={{ "initial": "1" }} style={{ marginTop: "0.5em" }}>
             <Flex justify="between" align="center">
-                <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Zarządzanie Gildiami</Heading>
+                <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Guild Management</Heading>
                 <CreateGroupDialog />
             </Flex>
             <GroupCardList />

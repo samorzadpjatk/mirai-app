@@ -46,7 +46,7 @@ export default function WristNumberManager({
 
   const handleSave = () => {
     if (!wristNumber.trim()) {
-      setError("Numer opaski nie może być pusty");
+      setError("Wrist number cannot be empty");
       return;
     }
     
@@ -77,18 +77,18 @@ export default function WristNumberManager({
         onClick={handleOpenDialog}
       >
         <PlusIcon />
-        {currentWristNumber ? "Zmień opaskę" : "Przypisz opaskę"}
+        {currentWristNumber ? "Change wrist number" : "Assign wrist number"}
       </Button>
 
       <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <Dialog.Content style={{ maxWidth: 450 }}>
           <Dialog.Title>
-            {currentWristNumber ? "Zmień numer opaski" : "Przypisz numer opaski"}
+            {currentWristNumber ? "Change wrist number" : "Assign wrist number"}
           </Dialog.Title>
           <Dialog.Description size="2" mb="4">
             {currentWristNumber 
-              ? `Zmień numer opaski dla użytkownika: ${userName}`
-              : `Przypisz numer opaski dla użytkownika: ${userName}`
+              ? `Change wrist number for user: ${userName}`
+              : `Assign wrist number for user: ${userName}`
             }
           </Dialog.Description>
 
@@ -100,7 +100,7 @@ export default function WristNumberManager({
               <TextField.Root
                 value={wristNumber}
                 onChange={(e) => setWristNumber(e.target.value)}
-                placeholder="Wpisz numer opaski..."
+                placeholder="Type wrist number..."
                 style={{ width: "100%" }}
               />
               {error && (
@@ -121,7 +121,7 @@ export default function WristNumberManager({
                   disabled={removeWristNumberMutation.isPending}
                 >
                   <TrashIcon />
-                  {removeWristNumberMutation.isPending ? "Usuwanie..." : "Usuń opaskę"}
+                  {removeWristNumberMutation.isPending ? "Removing..." : "Remove wrist number"}
                 </Button>
               )}
             </div>
@@ -136,7 +136,7 @@ export default function WristNumberManager({
                 onClick={handleSave}
                 disabled={updateWristNumberMutation.isPending || !wristNumber.trim()}
               >
-                {updateWristNumberMutation.isPending ? "Zapisywanie..." : "Zapisz"}
+                {updateWristNumberMutation.isPending ? "Saving..." : "Save"}
               </Button>
             </Flex>
           </Flex>

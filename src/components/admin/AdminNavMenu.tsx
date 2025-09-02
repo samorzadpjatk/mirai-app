@@ -17,10 +17,10 @@ const AdminNavMenu = () => {
             <Link href="coins">💰 Coins</Link>
         </TabNav.Link>
         <TabNav.Link asChild active={pathname?.includes("transactions")}>
-            <Link href="transactions">📊 Legacy</Link>
+            <Link href="transactions">📊 History</Link>
         </TabNav.Link>
         <TabNav.Link asChild active={pathname?.includes("schedules")}>
-            <Link href="schedules">🔔 Chronicles</Link>
+            <Link href="schedules">🔔 Schedules</Link>
         </TabNav.Link>
     </TabNav.Root>);
 }

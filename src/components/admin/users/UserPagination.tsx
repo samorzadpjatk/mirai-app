@@ -79,7 +79,7 @@ export default function UserPagination({
         </Text>
         
         <Flex align="center" gap="2">
-          <Text size="2" color="gray">Wyników na stronę:</Text>
+          <Text size="2" color="gray">Entries per page:</Text>
           <Select.Root
             value={limit.toString()}
             onValueChange={(value) => onLimitChange(parseInt(value))}

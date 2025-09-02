@@ -5,7 +5,7 @@ import UserSearchableListOptimized from "./UserSearchableListOptimized";
 const UserCardList = () => {
     return (
         <Suspense fallback={<UserCardListSkelethon />}>
-            <UserSearchableListOptimized />x
+            <UserSearchableListOptimized />
         </Suspense>
     );
 };

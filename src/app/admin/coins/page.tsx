@@ -15,7 +15,7 @@ export default function CoinManagement() {
             <CoinQuickStatsCard />
 
             {/* Header */}
-            <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Zarządzanie Monetami</Heading>
+            <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Coins Management</Heading>
 
             <CoinOperationFormCard />
 

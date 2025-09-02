@@ -23,7 +23,7 @@ export default function ManualTrigger() {
         if (!customTitle.trim() || !customBody.trim()) {
           setResult({
             success: false,
-            error: "Tytuł i treść są wymagane dla własnej wiadomości",
+            error: "Title and body are required for custom message",
           });
           return;
         }
@@ -54,7 +54,7 @@ export default function ManualTrigger() {
       console.error("Error triggering manual notification:", error);
       setResult({
         success: false,
-        error: "Wystąpił błąd podczas wysyłania powiadomienia",
+        error: "Error sending notification",
       });
     } finally {
       setLoading(false);
@@ -88,12 +88,12 @@ export default function ManualTrigger() {
             <>
               <div>
                 <Text as="div" size="2" mb="2" weight="bold">
-                  Tytuł powiadomienia:
+                  Title of notification:
                 </Text>
                 <TextField.Root
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
-                  placeholder="Wpisz tytuł powiadomienia..."
+                  placeholder="Type title of notification..."
                   style={{ width: "100%" }}
                 />
               </div>
@@ -105,7 +105,7 @@ export default function ManualTrigger() {
                 <TextArea
                   value={customBody}
                   onChange={(e) => setCustomBody(e.target.value)}
-                  placeholder="Wpisz treść powiadomienia..."
+                  placeholder="Type body of notification..."
                   rows={4}
                   style={{ width: "100%" }}
                 />
