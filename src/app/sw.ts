@@ -1,13 +1,20 @@
 /// <reference lib="webworker" />
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry } from "@serwist/precaching";
-import { installSerwist } from "@serwist/sw";
+import { Serwist, type SerwistGlobalConfig } from "serwist";
 
-declare const self: ServiceWorkerGlobalScope & {
-  __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
-};
+declare global {
+  interface WorkerGlobalScope extends SerwistGlobalConfig {
+    // Change this attribute's name to your \`injectionPoint\`.
+    // \`injectionPoint\` is an InjectManifest option.
+    // See https://serwist.pages.dev/docs/build/configuring
+    __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
+  }
+}
 
-const serwist = installSerwist({
+declare const self: ServiceWorkerGlobalScope;
+
+const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
@@ -40,11 +47,11 @@ self.addEventListener("push", (event) => {
   }
 
   const options: NotificationOptions = {
-    body: notificationData.body || "You have a new notification",
+    body: notificationData.body ?? "You have a new notification",
     icon: "/GRAL192.png",
     badge: "/GRAL192.png",
     data: {
-      url: notificationData.url || "/",
+      url: notificationData.url ?? "/",
       timestamp: Date.now(),
       ...notificationData.data,
     },
@@ -54,7 +61,7 @@ self.addEventListener("push", (event) => {
 
   event.waitUntil(
     self.registration.showNotification(
-      notificationData.title || "Bank Monet",
+      notificationData.title ?? "Bank Monet",
       options
     )
   );
@@ -65,9 +72,9 @@ self.addEventListener("notificationclick", (event) => {
   console.log("SW: Notification clicked", event);
   
   event.notification.close();
-  
-  const url = event.notification.data?.url || "/";
-  
+
+  const url = event.notification.data?.url ?? "/";
+
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
@@ -112,3 +119,5 @@ self.addEventListener("unhandledrejection", (event) => {
 });
 
 console.log("SW: Serwist Service Worker loaded successfully");
+
+serwist.addEventListeners();
