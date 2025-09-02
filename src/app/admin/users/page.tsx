@@ -11,9 +11,9 @@ export default function UserManagement() {
         <Flex direction="column" gap="2" style={{ marginTop: "0.5em" }}>
             {/* Header */}
             <Flex direction="column" gap={"2"} justify="between">
-                <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Zarządzanie Użytkownikami</Heading>
+                <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>User Management</Heading>
                 <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
-                    Zarządzaj członkostwem w gildiach i uprawnieniami użytkowników
+                    Manage guild membership and user permissions
                 </Text>
             </Flex>
 

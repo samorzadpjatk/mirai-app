@@ -25,10 +25,10 @@ export default async function AdminDashboard({ children }: Readonly<{ children: 
             <Card size={{ "initial": "1", "xs": "2", "sm": "3" }}>
                 <Flex direction="column" align="center" gap="3">
                     <Heading size={{ "initial": "4" }} style={{ fontFamily: "var(--font-robotoslab)" }}>
-                        🏰 Panel Administratora
+                        🏰 Chamber of Administration
                     </Heading>
                     <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} align="center" style={{ opacity: 0.8 }}>
-                        Zarządzaj Gildiami, użytkownikami i monetami w Królestwie
+                        Manage guilds, users, and coins in the Kingdom
                     </Text>
                 </Flex>
             </Card>

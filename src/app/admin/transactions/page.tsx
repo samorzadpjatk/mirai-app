@@ -13,7 +13,7 @@ export default function TransactionHistory() {
         <Flex direction="column" gap="2" style={{ marginTop: "1em" }}>
             {/* Header */}
             <Flex justify="between" align="center">
-                <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Historia Transakcji</Heading>
+                <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Transaction History</Heading>
                 <RefreshButton />
             </Flex>
 

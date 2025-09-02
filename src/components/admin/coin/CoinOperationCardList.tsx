@@ -14,9 +14,9 @@ const CoinOperationCardList = () => {
     if (!groups) return null;
 
     return (<Suspense fallback={<CoinOperationCardListSkeleton />}>
-        <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Aktualny Stan Monet</Heading>
+        <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Coins in Possession</Heading>
         <TextField.Root
-            placeholder="Filtruj gildie..."
+            placeholder="Filter Guilds..."
             size={{ initial: "1" }}
             onChange={(e) => {
                 const value = e.target.value.toLowerCase();
@@ -35,10 +35,10 @@ const CoinOperationCardList = () => {
         <Flex direction="column" justify="center">
             {filteredGroups?.length === 0 && (<>
                 <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                    Brak gildii do wyświetlenia
+                    The realm holds no guilds to display.
                 </Text>
                 <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.5 }}>
-                    Najpierw utwórz gildie w zakładce &quot;Gildie&quot;
+                    Begin by creating a guild under the &quot;Guilds&quot; section;
                 </Text>
             </>
             )}
@@ -48,7 +48,7 @@ const CoinOperationCardList = () => {
                     <Card key={group.id}>
                         <DataList.Root >
                             <DataList.Item>
-                                <DataList.Label>Gildia</DataList.Label>
+                                <DataList.Label>Guild</DataList.Label>
                                 <DataList.Value>
                                     <Flex align="center" gap="2">
                                         {index < 3 && (
@@ -61,23 +61,23 @@ const CoinOperationCardList = () => {
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
-                                <DataList.Label>Organizator</DataList.Label>
+                                <DataList.Label>Organizer</DataList.Label>
                                 <DataList.Value>{group.organizer.name}</DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
-                                <DataList.Label>Członkowie</DataList.Label>
+                                <DataList.Label>Companions</DataList.Label>
                                 <DataList.Value>
                                     <Badge variant="soft" color="green">
-                                        {group.members.length} osób
+                                        {group.members.length} members
                                     </Badge>
                                 </DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
-                                <DataList.Label>Monety</DataList.Label>
+                                <DataList.Label>Coins</DataList.Label>
                                 <DataList.Value>{group.coins}</DataList.Value>
                             </DataList.Item>
                             <DataList.Item>
-                                <DataList.Label>Ostatnie Transakcje</DataList.Label>
+                                <DataList.Label>Recent Transactions</DataList.Label>
                                 <DataList.Value>
                                     <Flex direction="column" gap="1">
                                         {group.coinTransactions.slice(0, 3).map((transaction) => (
@@ -88,7 +88,7 @@ const CoinOperationCardList = () => {
                                         ))}
                                         {group.coinTransactions.length === 0 && (
                                             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.5 }}>
-                                                Brak transakcji
+                                                No Transactions
                                             </Text>
                                         )}
                                     </Flex>

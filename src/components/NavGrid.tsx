@@ -17,19 +17,19 @@ export default async function NavGrid() {
             >
               <Button size={"4"} variant="outline">
                 <Link href={"/group/my"}>
-                  <Text>Twoja gildia</Text>
+                  <Text>Your Guild Hall</Text>
                 </Link>
               </Button>
               <Button size={"4"} variant="outline">
                 <Link href={"/ranking"}>
-                  <Text>Ranking gildii</Text>
+                  <Text>Leaderboard of Guilds</Text>
                 </Link>
               </Button>
             </Grid>
             {(session?.user.isAdmin || session?.user.isModerator) && (
               <Button size={"4"} variant="outline">
                 <Link href={"/admin/groups"}>
-                  <Text>Panel administracyjny</Text>
+                  <Text>Chamber of Administration</Text>
                 </Link>
               </Button>
             )}

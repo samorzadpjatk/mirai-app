@@ -34,21 +34,21 @@ const RemoveUserFromGroupFormDialog = ({
                         >
                             <>
                                 <MinusIcon />
-                                Usuń z gildii
+                                Banish from the Guild
                             </>
                         </Button>
                     </AlertDialog.Trigger>
                 </AlertDialog.Trigger>
                 <AlertDialog.Content>
-                    <AlertDialog.Title>Usuń z Gildii</AlertDialog.Title>
+                    <AlertDialog.Title>Banish from the Guild</AlertDialog.Title>
                     <AlertDialog.Description>
-                        Czy na pewno chcesz usunąć użytkownika &quot;{selectedUser?.name}&quot;
-                        z gildii &quot;{selectedUser?.groups?.[0]?.group?.name ?? "Nieznana"}&quot;?
+                        Do you dare to banish &quot;{selectedUser?.name}&quot;
+                        from the guild &quot;{selectedUser?.groups?.[0]?.group?.name ?? "Unknown"}&quot;?
                     </AlertDialog.Description>
                     <Flex gap="3" mt="4" justify="end">
                         <AlertDialog.Cancel>
                             <Button variant="soft" color="gray">
-                                Anuluj
+                                Cancel
                             </Button>
                         </AlertDialog.Cancel>
                         <AlertDialog.Action>
@@ -64,7 +64,7 @@ const RemoveUserFromGroupFormDialog = ({
                                 }}
                                 disabled={removeUserMutation.isPending}
                             >
-                                {removeUserMutation.isPending ? "Usuwanie..." : "Usuń"}
+                                {removeUserMutation.isPending ? "Banishing..." : "BANISH"}
                             </Button>
                         </AlertDialog.Action>
                     </Flex>

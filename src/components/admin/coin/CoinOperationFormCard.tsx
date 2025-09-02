@@ -56,7 +56,7 @@ const CoinOperationFormCard = () => {
 
     return (
         <Card size={{ "initial": "1", "xs": "2", "sm": "3" }}>
-            <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }} mb="4">Operacje na Monetach</Heading>
+            <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }} mb="4">Treasury Operations</Heading>
 
             <Flex direction="column" gap="4">
                 {/* Operation Type */}
@@ -69,7 +69,7 @@ const CoinOperationFormCard = () => {
                         style={{ flex: 1 }}
                     >
                         <PlusIcon />
-                        Dodaj Monety
+                        Add coins
                     </Button>
                     <Button
                         size={{ "initial": "1", "xs": "2", "sm": "3" }}
@@ -79,21 +79,21 @@ const CoinOperationFormCard = () => {
                         style={{ flex: 1 }}
                     >
                         <MinusIcon />
-                        Odbierz Monety
+                        Seize coins
                     </Button>
                 </Flex>
 
                 {/* Group Selection */}
                 <div>
                     <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
-                        Wybierz Gildię
+                        Select Guild
                     </Text>
                     <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                        <Select.Trigger placeholder="Wybierz gildię..." />
+                        <Select.Trigger placeholder="Select Guild..." />
                         <Select.Content>
                             {groups?.map((group) => (
                                 <Select.Item key={group.id} value={group.id}>
-                                    {group.name} (💰 {group.coins} monet)
+                                    {group.name} (💰 {group.coins} coins)
                                 </Select.Item>
                             ))}
                         </Select.Content>
@@ -103,7 +103,7 @@ const CoinOperationFormCard = () => {
                 {/* Amount */}
                 <div>
                     <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
-                        Liczba Monet
+                        Treasury
                     </Text>
                     <TextField.Root
                         type="number"
@@ -117,12 +117,12 @@ const CoinOperationFormCard = () => {
                 {/* Reason (Optional) */}
                 <div>
                     <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
-                        Powód (opcjonalnie)
+                        Justification (optional)
                     </Text>
                     <TextArea
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        placeholder="np. Nagroda za wygraną w turnieju"
+                        placeholder="e.g. Reward for Victory in the Tournament"
                         rows={3}
                     />
                 </div>
@@ -136,11 +136,11 @@ const CoinOperationFormCard = () => {
                     variant="solid"
                 >
                     {isLoading ? (
-                        operation === "add" ? "Dodawanie..." : "Odbieranie..."
+                        operation === "add" ? "Adding..." : "Seizing..."
                     ) : (
                         operation === "add" ?
-                            `💰 Dodaj ${amount || 0} monet` :
-                            `💸 Odbierz ${amount || 0} monet`
+                            `💰 Add ${amount || 0} coins` :
+                            `💸 Seize ${amount || 0} coins`
                     )}
                 </Button>
 
@@ -155,8 +155,8 @@ const CoinOperationFormCard = () => {
                             return (
                                 <Card variant="surface" style={{ backgroundColor: "var(--red-2)", border: "1px solid var(--red-6)" }}>
                                     <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} color="red">
-                                        ⚠️ Ostrzeżenie: Gildia ma tylko {currentCoins} monet,
-                                        a próbujesz odebrać {requestedAmount} monet!
+                                        ⚠️ Beware: The guild’s treasury holds a mere {currentCoins} coins,
+                                        yet you dare to seize {requestedAmount} coins!
                                     </Text>
                                 </Card>
                             );

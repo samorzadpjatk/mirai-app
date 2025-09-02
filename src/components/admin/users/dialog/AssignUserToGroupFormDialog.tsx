@@ -35,11 +35,11 @@ const AssignUserToGroupFormDialog = ({
         return (
             <Flex direction="column" gap="4" mt="4">
                 <Text>
-                    Użytkownik już należy do wszystkich dostępnych gildii lub nie ma żadnych gildii do przypisania.
+                    This champion belongs to every guild in the realm, or none remain for assignment.
                 </Text>
                 <Flex gap="3" justify="end">
                     <Button variant="soft" onClick={() => setIsAssignDialogOpen(false)}>
-                        Zamknij
+                        Close
                     </Button>
                 </Flex>
             </Flex>
@@ -59,20 +59,20 @@ const AssignUserToGroupFormDialog = ({
                     >
                         <>
                             <PlusIcon />
-                            Dodaj do gildii
+                            Enlist into the Guild
                         </>
 
                     </Button>
                 </Dialog.Trigger>
                 <Dialog.Content>
-                    <Dialog.Title>Dodaj do Gildii</Dialog.Title>
+                    <Dialog.Title>Enlist into the Guild</Dialog.Title>
                     <Dialog.Description>
-                        Przypisz użytkownika &quot;{user?.name}&quot; do gildii.
+                        Enlist companion &quot;{user?.name}&quot; into the Guild.
                     </Dialog.Description>
                     <Flex direction="column" gap="4" mt="4">
                         <div>
                             <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                                Wybierz Gildię
+                                Choose a Guild
                             </Text>
                             <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
                                 <Select.Trigger placeholder="Wybierz gildię..." />
@@ -88,13 +88,13 @@ const AssignUserToGroupFormDialog = ({
 
                         <Flex gap="3" justify="end">
                             <Button variant="soft" color="gray" onClick={() => setIsAssignDialogOpen(false)}>
-                                Anuluj
+                                Cancel
                             </Button>
                             <Button
                                 onClick={() => assignUserMutation.mutate({ userId: user.id, groupId: selectedGroupId })}
                                 disabled={!selectedGroupId || assignUserMutation.isPending}
                             >
-                                {assignUserMutation.isPending ? "Dodawanie..." : "Dodaj do Gildii"}
+                                {assignUserMutation.isPending ? "Enlisting..." : "Enlist into the Guild"}
                             </Button>
                         </Flex>
                     </Flex>

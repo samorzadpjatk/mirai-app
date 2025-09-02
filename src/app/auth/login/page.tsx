@@ -9,7 +9,7 @@ export default async function SignInPage(props: {
     return (
         <Card size={"5"}>
             <Flex direction="column" align="center" justify="center">
-                <Heading size={"7"}>Logowanie</Heading>
+                <Heading size={"7"}>Enter the Realm</Heading>
                 <Separator my="3" size="2" />
                 <form
                     action={async () => {
@@ -20,7 +20,7 @@ export default async function SignInPage(props: {
                     }}
                 >
                     <Button size={"4"} type="submit" variant="solid">
-                        Zaloguj się przez Samorząd
+                        Log in via Student Council Page
                     </Button>
                 </form>
 

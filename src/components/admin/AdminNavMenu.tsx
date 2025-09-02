@@ -8,19 +8,19 @@ const AdminNavMenu = () => {
     const pathname = usePathname();
     return (<TabNav.Root size={{ "initial": "1", "xs": "2", "sm": "2" }}>
         <TabNav.Link asChild active={pathname?.includes("groups")}>
-            <Link href="groups">🏛️ Gildie</Link>
+            <Link href="groups">🏛️ Guilds</Link>
         </TabNav.Link>
         <TabNav.Link asChild active={pathname?.includes("users")}>
-            <Link href="users">👥 Użytkownicy</Link>
+            <Link href="users">👥 Companions</Link>
         </TabNav.Link>
         <TabNav.Link asChild active={pathname?.includes("coins")}>
-            <Link href="coins">💰 Monety</Link>
+            <Link href="coins">💰 Coins</Link>
         </TabNav.Link>
         <TabNav.Link asChild active={pathname?.includes("transactions")}>
-            <Link href="transactions">📊 Historia</Link>
+            <Link href="transactions">📊 History</Link>
         </TabNav.Link>
         <TabNav.Link asChild active={pathname?.includes("schedules")}>
-            <Link href="schedules">🔔 Harmonogramy</Link>
+            <Link href="schedules">🔔 Schedules</Link>
         </TabNav.Link>
     </TabNav.Root>);
 }

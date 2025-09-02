@@ -6,13 +6,13 @@ const Unauthorized = () => {
             <Card size="4">
                 <Flex direction="column" align="center" gap="4">
                     <Heading size={{ "initial": "4", "xs": "5", "sm": "6" }} style={{ color: "var(--red-9)" }}>
-                        🚫 Brak dostępu
+                        🚫 Access Denied
                     </Heading>
                     <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} align="center">
-                        Nie masz uprawnień potrzebnych do dostępu do tego panelu.
+                        You are not granted the rights to access this chamber.
                     </Text>
                     <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }} align="center">
-                        Skontaktuj się z administratorem systemu, jeśli uważasz, że to błąd.
+                        Seek the counsel of the system administrator should you deem this an error.
                     </Text>
                 </Flex>
             </Card>

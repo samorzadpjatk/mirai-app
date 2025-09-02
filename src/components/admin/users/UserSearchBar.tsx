@@ -13,7 +13,7 @@ interface UserSearchBarProps {
 
 export default function UserSearchBar({ 
   onSearch, 
-  placeholder = "Szukaj po imieniu, mailu, gildii lub numerze opaski...",
+  placeholder = "Search users by name, email, or wrist number...",
   resultCount 
 }: UserSearchBarProps) {
   const [searchTerm, setSearchTerm] = useState("");

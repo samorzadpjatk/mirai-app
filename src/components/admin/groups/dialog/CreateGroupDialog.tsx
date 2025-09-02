@@ -42,24 +42,24 @@ const CreateGroupDialog = () => {
             <Dialog.Trigger>
                 <Button size={{ "initial": "1", "xs": "2", "sm": "3" }}>
                     <PlusIcon />
-                    Utwórz Gildię
+                    Forge the Guild
                 </Button>
             </Dialog.Trigger>
             <Dialog.Content>
-                <Dialog.Title>Utwórz Nową Gildię</Dialog.Title>
+                <Dialog.Title>Forge a new Guild</Dialog.Title>
                 <Dialog.Description>
-                    Stwórz nową gildię dla uczestników wydarzenia.
+                    Forge a new Guild for the brave participants of the event.
                 </Dialog.Description>
 
                 <Flex direction="column" gap={{ "initial": "1" }} mt="4">
                     <div>
                         <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                            Nazwa Gildii
+                            The Guild’s Heralded Name
                         </Text>
                         <TextField.Root
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="np. Rycerze Okrągłego Stołu"
+                            placeholder="e.g. Knights of the Round Table"
                             required
                         />
                     </div>
@@ -68,13 +68,13 @@ const CreateGroupDialog = () => {
 
                     <Flex gap={"2"} align={"center"}>
                         <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                            Przypisany <Text size="1" color="gray">(opcjonalne)</Text>
+                            Assigned <Text size="1" color="gray">(optional)</Text>
                         </Text>
                         <Select.Root value={organizerId} onValueChange={setOrganizerId}>
-                            <Select.Trigger placeholder="Zostaw puste = ty będziesz organizatorem" />
+                            <Select.Trigger placeholder="Leave this field empty = the mantle of organizer falls upon you." />
                             <Select.Content>
                                 <Select.Item value="__default__">
-                                    <Text color="gray">(Ty będziesz organizatorem)</Text>
+                                    <Text color="gray">(The role of organizer falls upon you)</Text>
                                 </Select.Item>
                                 {adminUsers?.map((user) => (
                                     <Select.Item key={user.id} value={user.id}>
@@ -89,14 +89,14 @@ const CreateGroupDialog = () => {
                 <Flex gap={{ "initial": "1" }} mt="4" justify="end">
                     <Dialog.Close>
                         <Button type="button" variant="soft" color="gray">
-                            Anuluj
+                            Cancel
                         </Button>
                     </Dialog.Close>
                     <Button
                         onClick={handleCreateSubmit}
                         disabled={!name.trim() || createGroupMutation.isPending}
                     >
-                        {createGroupMutation.isPending ? "Tworzenie..." : "Utwórz Gildię"}
+                        {createGroupMutation.isPending ? "Forging..." : "Forge the Guild"}
                     </Button>
                 </Flex>
             </Dialog.Content>

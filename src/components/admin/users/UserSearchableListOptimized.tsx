@@ -67,11 +67,11 @@ export default function UserSearchableListOptimized() {
 
   return (
     <Flex direction="column" gap="4">
-      <UserSearchBar 
+      <UserSearchBar
         onSearch={handleSearch}
         resultCount={pagination?.totalCount}
       />
-      
+
       {isLoading ? (
         <Card style={{ padding: "2rem", textAlign: "center" }}>
           <Text size="3">Ładowanie użytkowników...</Text>
@@ -82,24 +82,23 @@ export default function UserSearchableListOptimized() {
             {users.length === 0 && searchTerm && (
               <Card style={{ padding: "1rem" }}>
                 <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                  Nie znaleziono użytkowników pasujących do frazy: &quot;{searchTerm}&quot;
+                  The realm holds no users matching the phrase: &quot;{searchTerm}&quot;
                 </Text>
               </Card>
             )}
-            
+
             {users.length === 0 && !searchTerm && !isLoading && (
               <Card style={{ padding: "1rem" }}>
                 <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                  Brak użytkowników do wyświetlenia
+                  The realm holds no users to show
                 </Text>
               </Card>
             )}
-            
             {users.map((user) => (
               <Card size={{ "initial": "1", "xs": "2", "sm": "3" }} key={user.id}>
                 <DataList.Root>
                   <DataList.Item>
-                    <DataList.Label>Użytkownik</DataList.Label>
+                    <DataList.Label>Companions</DataList.Label>
                     <DataList.Value>
                       <Strong>{user.name}</Strong>
                     </DataList.Value>
@@ -124,13 +123,13 @@ export default function UserSearchableListOptimized() {
                         )}
                         <Badge variant="soft" color="blue">
                           <PersonIcon />
-                          Użytkownik
+                          Companions
                         </Badge>
                       </Flex>
                     </DataList.Value>
                   </DataList.Item>
                   <DataList.Item>
-                    <DataList.Label>Numer opaski</DataList.Label>
+                    <DataList.Label>Wrist number</DataList.Label>
                     <DataList.Value>
                       {user.wristNumber ? (
                         <Badge variant="soft" color="green">
@@ -138,43 +137,43 @@ export default function UserSearchableListOptimized() {
                         </Badge>
                       ) : (
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                          Nie przypisano
+                          Not assigned
                         </Text>
                       )}
                     </DataList.Value>
                   </DataList.Item>
                   <DataList.Item>
-                    <DataList.Label>Gildie</DataList.Label>
+                    <DataList.Label>Guilds</DataList.Label>
                     <DataList.Value>
                       <Flex gap="2" wrap="wrap">
-                        {user.groups?.map((userGroup: UserGroup) => (
-                          <Badge key={userGroup.group.id} variant="soft" color="purple">
-                            {userGroup.group.name}
-                          </Badge>
-                        ))}
-                        {user.organizerGroups?.map((organizerGroup: OrganizerGroup) => (
-                          <Badge key={organizerGroup.id} variant="solid" color="purple">
-                            {organizerGroup.name}
-                          </Badge>
-                        ))}
-                        {(!user.groups || user.groups.length === 0) && (!user.organizerGroups || user.organizerGroups.length === 0) && (
-                          <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                            Brak gildii
-                          </Text>
-                        )}
+                      {user.groups?.map((userGroup: UserGroup) => (
+                        <Badge key={userGroup.group.id} variant="soft" color="purple">
+                          {userGroup.group.name}
+                        </Badge>
+                      ))}
+                      {user.organizerGroups?.map((organizerGroup: OrganizerGroup) => (
+                        <Badge key={organizerGroup.id} variant="solid" color="purple">
+                          {organizerGroup.name}
+                        </Badge>
+                      ))}
+                      {(!user.groups || user.groups.length === 0) && (!user.organizerGroups || user.organizerGroups.length === 0) && (
+                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
+                          No groups assigned
+                        </Text>
+                      )}
                       </Flex>
                     </DataList.Value>
                   </DataList.Item>
                   <DataList.Item>
-                    <DataList.Label>Akcje</DataList.Label>
+                    <DataList.Label>Actions</DataList.Label>
                     <DataList.Value>
                       <Flex direction={"column"} gap="2">
-                        {(!user.groups || user.groups.length === 0) && (!user.organizerGroups || user.organizerGroups.length === 0) && (
+                        {user.groups == null && user.organizerGroups == null && (
                           <AssignUserToGroupFormDialog
                             selectedUserId={user.id}
                           />
                         )}
-                        {user.groups && user.groups.length > 0 && (
+                        {user.groups != null && (
                           <RemoveUserFromGroupFormDialog
                             selectedUserId={user.id}
                           />
