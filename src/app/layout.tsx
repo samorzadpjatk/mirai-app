@@ -17,7 +17,7 @@ import BackgroundImage from "~/components/BackgroundImage";
 export const metadata: Metadata = {
   title: "Treasure Bank",
   description: "Treasure Bank - Integral 2025",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [{ rel: "icon", url: "/graal.svg" }],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
