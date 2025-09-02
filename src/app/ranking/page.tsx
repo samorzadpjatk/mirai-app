@@ -7,7 +7,7 @@ export default async function RankingPage() {
     return (
         <Card size={{ initial: "4" }} style={{ width: "100%" }}>
             <Heading size="5" mb="4">Guild Leaderboard</Heading>
-            <Text>Last actualization: {formatDate(ranking?.currentDate)}</Text>
+            <Text>Last update: {formatDate(ranking?.currentDate)}</Text>
             <Separator my="3" size="2" />
             <Flex direction="column" gap="3">
                 {ranking?.data.map((group, idx) => (<>

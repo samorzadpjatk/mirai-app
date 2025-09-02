@@ -41,7 +41,7 @@ const CoinQuickStatsCard = async () => {
                     </Text>
                 </DataList.Value>
             </DataList.Item>
-            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>Last actualization: {formatDate(coinQuickStats?.time)}</Text>
+            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>Last update: {formatDate(coinQuickStats?.time)}</Text>
         </DataList.Root>
     </Card></Suspense>);
 }
