@@ -1,6 +1,6 @@
 # PWA Implementation Guide
 
-This document describes the Progressive Web App (PWA) features implemented in Bank Monet.
+This document describes the Progressive Web App (PWA) features implemented in Treasure Bank.
 
 ## Features Implemented
 

@@ -1,4 +1,4 @@
-# 📱 Typy Wiadomości Powiadomień - Bank Monet
+# 📱 Typy Wiadomości Powiadomień - Treasure Bank
 
 ## 🔄 **Natychmiastowe Powiadomienia** (po akcjach administratora)
 

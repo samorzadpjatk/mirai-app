@@ -1,4 +1,4 @@
-# PWA Implementation Complete - Bank Monet
+# PWA Implementation Complete - Treasure Bank
 
 
 ### **Core PWA Features**
@@ -73,7 +73,7 @@ npm run dev
 ## **Features Available**
 
 ### User Features:
-1. **Install App** - Users can install Bank Monet as a native app
+1. **Install App** - Users can install Treasure Bank as a native app
 2. **Enable Notifications** - One-click notification permission and subscription
 3. **Offline Access** - App works offline with cached content
 4. **Push Notifications** - Receive real-time updates
@@ -144,4 +144,4 @@ If you encounter issues:
 
 ---
 
-**🎉 Your Bank Monet app is now a fully functional Progressive Web App with push notifications!**
+**🎉 Your Treasure Bank app is now a fully functional Progressive Web App with push notifications!**

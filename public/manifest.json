@@ -1,7 +1,7 @@
 {
-  "name": "Bank Monet - Integral 2025",
-  "short_name": "Bank Monet",
-  "description": "Bank Monet - Integral 2025 Progressive Web App",
+  "name": "Treasure Bank - Integral 2025",
+  "short_name": "Treasure Bank",
+  "description": "Treasure Bank - Integral 2025 Progressive Web App",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,13 +9,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/GRAL192.png",
+      "src": "manifest-icon-192.maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/GRAL192.png",
+      "src": "manifest-icon-192.maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
@@ -33,19 +33,22 @@
       "purpose": "any"
     },
     {
-      "src": "/GRAL512.png",
+      "src": "manifest-icon-512.maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/GRAL512.png",
+      "src": "manifest-icon-512.maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "categories": ["finance", "business"],
+  "categories": [
+    "finance",
+    "business"
+  ],
   "lang": "en",
   "dir": "ltr",
   "scope": "/",

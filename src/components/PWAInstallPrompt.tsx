@@ -98,7 +98,7 @@ export default function PWAInstallPrompt() {
         <Flex direction="column" gap="3">
           <Heading size="3">Install App</Heading>
           <Text size="2">
-            Install Bank Monet as an app on your device for a better experience!
+            Install Treasure Bank as an app on your device for a better experience!
           </Text>
           
           <Flex gap="2">
@@ -112,7 +112,7 @@ export default function PWAInstallPrompt() {
       {/* Installation Instructions Dialog */}
       <Dialog.Root open={showInstallDialog} onOpenChange={setShowInstallDialog}>
         <Dialog.Content style={{ maxWidth: 500 }}>
-          <Dialog.Title>How to Install Bank Monet</Dialog.Title>
+          <Dialog.Title>How to Install Treasure Bank</Dialog.Title>
           
           <Flex direction="column" gap="4" mt="4">
             {isIOS ? (
@@ -137,7 +137,7 @@ export default function PWAInstallPrompt() {
                 <Text size="2" weight="bold">On Chrome (Windows/Mac):</Text>
                 <Flex direction="column" gap="2">
                   <Text size="2">1. Look for install icon (⬇️) in the address bar</Text>
-                  <Text size="2">2. Or go to Menu (⋮) → &quot;Install Bank Monet...&quot;</Text>
+                  <Text size="2">2. Or go to Menu (⋮) → &quot;Install Treasure Bank...&quot;</Text>
                   <Text size="2">3. Click &quot;Install&quot; - app will be added to your system</Text>
                 </Flex>
 
@@ -145,7 +145,7 @@ export default function PWAInstallPrompt() {
                 <Flex direction="column" gap="2">
                   <Text size="2">1. Go to Safari menu → &quot;Add to Dock&quot;</Text>
                   <Text size="2">2. Click &quot;Add&quot; to install the PWA</Text>
-                  <Text size="2">3. Find &quot;Bank Monet&quot; in your Dock or Applications</Text>
+                  <Text size="2">3. Find &quot;Treasure Bank&quot; in your Dock or Applications</Text>
                 </Flex>
 
                 <Text size="2" weight="bold">On Firefox:</Text>
@@ -158,7 +158,7 @@ export default function PWAInstallPrompt() {
             )}
             
             <Text size="1" color="gray">
-              Once installed, you&apos;ll be able to use Bank Monet like a native app with 
+              Once installed, you&apos;ll be able to use Treasure Bank like a native app with 
               offline support and push notifications!
             </Text>
           </Flex>

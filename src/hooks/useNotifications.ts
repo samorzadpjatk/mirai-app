@@ -210,7 +210,7 @@ export const useNotifications = () => {
       return;
     }
 
-    new Notification("Bank Monet", {
+    new Notification("Treasure Bank", {
       body: "This is a test notification from your PWA!",
       icon: "/GRAL192.png",
       badge: "/GRAL192.png",

@@ -1,8 +1,8 @@
-# 📱 PWA & Web Notifications - Bank Monet
+# 📱 PWA & Web Notifications - Treasure Bank
 
 ## 🌟 Overview
 
-The Bank Monet application features a complete Progressive Web App (PWA) implementation with advanced web push notifications system. Users can install the app on their devices and receive real-time notifications about group coin updates and scheduled ranking updates.
+The Treasure Bank application features a complete Progressive Web App (PWA) implementation with advanced web push notifications system. Users can install the app on their devices and receive real-time notifications about group coin updates and scheduled ranking updates.
 
 ## 🚀 Features
 
@@ -144,7 +144,7 @@ npm start
 ### Desktop (Chrome/Edge)
 1. Visit the app in browser
 2. Look for install icon in address bar
-3. Click "Install" or use menu "Install Bank Monet"
+3. Click "Install" or use menu "Install Treasure Bank"
 
 ### Mobile (iOS Safari)
 1. Open app in Safari

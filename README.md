@@ -1,10 +1,10 @@
-# Bank Monet - Integral 2025 App
+# Treasure Bank - Integral 2025 App
 
 A medieval-themed coin management system for group competitions and events. Built with the T3 Stack for managing groups, coin transactions, and rankings in a gamified environment.
 
 ## 🏰 About
 
-Bank Monet is designed for medieval-themed events and competitions where participants form guilds (groups) and compete for coins through various activities. The application features:
+Treasure Bank is designed for medieval-themed events and competitions where participants form guilds (groups) and compete for coins through various activities. The application features:
 
 - **Group Management**: Create and join guilds with unique access codes
 - **Coin System**: Track and manage coin transactions for each group

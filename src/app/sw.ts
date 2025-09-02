@@ -40,7 +40,7 @@ self.addEventListener("push", (event) => {
   } catch (error) {
     console.error("SW: Error parsing push data:", error);
     notificationData = {
-      title: "Bank Monet",
+      title: "Treasure Bank",
       body: "You have a new notification",
       url: "/",
     };
@@ -61,7 +61,7 @@ self.addEventListener("push", (event) => {
 
   event.waitUntil(
     self.registration.showNotification(
-      notificationData.title ?? "Bank Monet",
+      notificationData.title ?? "Treasure Bank",
       options
     )
   );
