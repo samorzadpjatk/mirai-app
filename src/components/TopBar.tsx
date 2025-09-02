@@ -30,6 +30,7 @@ export default async function TopBar() {
         {session?.user && (
           <Flex direction="row" align="center" justify="center" gap="2">
             <Avatar
+              variant={"solid"}
               size={{ "initial": "1", "xs": "2", "sm": "3" }}
               fallback={session.user.name?.split(" ").map((name) => name[0]).join("") ?? ""}
               src={session.user.image ?? undefined}

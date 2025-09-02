@@ -16,7 +16,7 @@ const BackgroundImage = () => {
         width: '100%',
         height: '100%',
         objectFit: 'cover',
-        mixBlendMode: 'color-burn',
+        mixBlendMode: 'multiply',
         zIndex: -1,
       }}
     />

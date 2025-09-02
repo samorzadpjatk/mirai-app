@@ -93,7 +93,7 @@ export default function RootLayout({
       <body>
         <TRPCReactProvider>
           <ThemeProvider attribute="class">
-            <Theme panelBackground={"solid"} accentColor="red" style={{ fontFamily: 'var(--font-ibmplex)' }}>
+            <Theme panelBackground={"translucent"} accentColor="red" grayColor="gray" style={{ fontFamily: 'var(--font-ibmplex)' }}>
               <Container size="3" style={{ height: '100%', margin: '0', padding: '0.5em' }}>
                 <TopBar />
                 <ScrollArea type="scroll">

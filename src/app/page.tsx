@@ -48,7 +48,6 @@ export default async function Home() {
   return (
     <>
       {session?.user ? <AuthenticatedDashboard /> : <UnauthenticatedView />}
-      <PWAInstallPrompt />
-      <ImageAdnotation /></>
+      <PWAInstallPrompt /></>
   );
 }
