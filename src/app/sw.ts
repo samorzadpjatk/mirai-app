@@ -206,6 +206,27 @@ async function syncCoinTransactions() {
           case 'notifications.sendToGroup':
             endpoint = '/api/trpc/notifications.sendToGroup';
             break;
+          case 'notifications.subscribe':
+            endpoint = '/api/trpc/notifications.subscribe';
+            break;
+          case 'notifications.unsubscribe':
+            endpoint = '/api/trpc/notifications.unsubscribe';
+            break;
+          case 'notificationSchedule.create':
+            endpoint = '/api/trpc/notificationSchedule.create';
+            break;
+          case 'notificationSchedule.update':
+            endpoint = '/api/trpc/notificationSchedule.update';
+            break;
+          case 'notificationSchedule.delete':
+            endpoint = '/api/trpc/notificationSchedule.delete';
+            break;
+          case 'notificationSchedule.toggleActive':
+            endpoint = '/api/trpc/notificationSchedule.toggleActive';
+            break;
+          case 'notificationSchedule.updateLastRun':
+            endpoint = '/api/trpc/notificationSchedule.updateLastRun';
+            break;
         }
 
         if (endpoint) {
