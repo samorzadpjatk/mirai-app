@@ -5,7 +5,6 @@ import { StarIcon, PersonIcon } from "@radix-ui/react-icons";
 import { Flex, Card, DataList, Strong, Badge, Text } from "@radix-ui/themes";
 import AssignUserToGroupFormDialog from "./dialog/AssignUserToGroupFormDialog";
 import RemoveUserFromGroupFormDialog from "./dialog/RemoveUserFromGroupFormDialog";
-import ChangeUserAdminButton from "./ChangeUserAdminButton";
 import WristNumberManager from "./WristNumberManager";
 import UserSearchBar from "./UserSearchBar";
 import UserPagination from "./UserPagination";
@@ -184,12 +183,12 @@ export default function UserSearchableListOptimized() {
                     <DataList.Label>Actions</DataList.Label>
                     <DataList.Value>
                       <Flex direction={"column"} gap="2">
-                        {user.groups == null && user.organizerGroups == null && (
+                        {user.groups.length === 0 && user.organizerGroups.length === 0 && (
                           <AssignUserToGroupFormDialog
                             selectedUserId={user.id}
                           />
                         )}
-                        {user.groups != null && (
+                        {user.groups.length > 0 && (
                           <RemoveUserFromGroupFormDialog
                             selectedUserId={user.id}
                           />
