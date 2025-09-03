@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Flex, TextField, Text, Dialog } from "@radix-ui/themes";
 import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
 import { api } from "~/trpc/react";
@@ -80,6 +80,13 @@ export default function WristNumberManager({
     setIsDialogOpen(true);
   };
 
+  // Auto-close dialog when request saved for later
+  useEffect(() => {
+    if (offlineStatus && offlineStatus.includes('saved for later')) {
+      setIsDialogOpen(false);
+    }
+  }, [offlineStatus]);
+
   return (
     <>
       <Button
@@ -154,6 +161,25 @@ export default function WristNumberManager({
           </Flex>
         </Dialog.Content>
       </Dialog.Root>
+
+      {offlineStatus && (
+        <div style={{ 
+          marginTop: '0.5rem',
+          padding: '0.5rem', 
+          borderRadius: '0.5rem',
+          backgroundColor: offlineStatus.includes('saved for later') ? 'var(--orange-2)' : 'var(--red-2)',
+          border: offlineStatus.includes('saved for later') ? '1px solid var(--orange-6)' : '1px solid var(--red-6)'
+        }}>
+          <Text size="1" color={offlineStatus.includes('saved for later') ? 'orange' : 'red'}>
+            {offlineStatus}
+          </Text>
+          {offlineStatus.includes('saved for later') && (
+            <Text size="1" color="gray" style={{ display: 'block', marginTop: '0.25rem' }}>
+              Operation will be completed when connection is restored.
+            </Text>
+          )}
+        </div>
+      )}
     </>
   );
 }

@@ -3,7 +3,7 @@
 import { PlusIcon } from "@radix-ui/react-icons";
 import { Flex, Button, Select, Text, Dialog, Skeleton } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 import { useOfflineUserMutation } from "~/hooks/useUniversalOfflineMutation";
 
@@ -33,6 +33,14 @@ const AssignUserToGroupFormDialog = ({
             }
         })
     );
+
+    // Auto-close when saved for later
+    useEffect(() => {
+        if (offlineStatus && offlineStatus.includes('saved for later')) {
+            setIsAssignDialogOpen(false);
+            setSelectedGroupId("");
+        }
+    }, [offlineStatus]);
 
     if (!user) return null;
 
