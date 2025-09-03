@@ -19,7 +19,7 @@ export default function HouseNumberManager({
 }: HouseNumberManagerProps) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [wristNumber, setHouseNumber] = useState(currentHouseNumber ?? "");
+  const [houseNumber, setHouseNumber] = useState(currentHouseNumber ?? "");
   const [error, setError] = useState("");
 
   const updateHouseNumberMutation = api.user.updateHouseNumber.useMutation({
@@ -45,7 +45,7 @@ export default function HouseNumberManager({
   });
 
   const handleSave = () => {
-    if (!wristNumber.trim()) {
+    if (!houseNumber.trim()) {
       setError("House number cannot be empty");
       return;
     }
@@ -53,7 +53,7 @@ export default function HouseNumberManager({
     setError("");
     updateHouseNumberMutation.mutate({
       userId,
-      wristNumber: wristNumber.trim(),
+      houseNumber: houseNumber.trim(),
     });
   };
 
@@ -77,18 +77,18 @@ export default function HouseNumberManager({
         onClick={handleOpenDialog}
       >
         <PlusIcon />
-        {currentHouseNumber ? "Change wrist number" : "Assign wrist number"}
+        {currentHouseNumber ? "Change house number" : "Assign house number"}
       </Button>
 
       <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <Dialog.Content style={{ maxWidth: 450 }}>
           <Dialog.Title>
-            {currentHouseNumber ? "Change wrist number" : "Assign wrist number"}
+            {currentHouseNumber ? "Change house number" : "Assign house number"}
           </Dialog.Title>
           <Dialog.Description size="2" mb="4">
             {currentHouseNumber 
-              ? `Change wrist number for user: ${userName}`
-              : `Assign wrist number for user: ${userName}`
+              ? `Change house number for user: ${userName}`
+              : `Assign house number for user: ${userName}`
             }
           </Dialog.Description>
 
@@ -98,9 +98,9 @@ export default function HouseNumberManager({
                 Numer opaski
               </Text>
               <TextField.Root
-                value={wristNumber}
+                value={houseNumber}
                 onChange={(e) => setHouseNumber(e.target.value)}
-                placeholder="Type wrist number..."
+                placeholder="Type house number..."
                 style={{ width: "100%" }}
               />
               {error && (
@@ -121,7 +121,7 @@ export default function HouseNumberManager({
                   disabled={removeHouseNumberMutation.isPending}
                 >
                   <TrashIcon />
-                  {removeHouseNumberMutation.isPending ? "Removing..." : "Remove wrist number"}
+                  {removeHouseNumberMutation.isPending ? "Removing..." : "Remove house number"}
                 </Button>
               )}
             </div>
@@ -134,7 +134,7 @@ export default function HouseNumberManager({
               </Dialog.Close>
               <Button
                 onClick={handleSave}
-                disabled={updateHouseNumberMutation.isPending || !wristNumber.trim()}
+                disabled={updateHouseNumberMutation.isPending || !houseNumber.trim()}
               >
                 {updateHouseNumberMutation.isPending ? "Saving..." : "Save"}
               </Button>
