@@ -30,6 +30,7 @@ const AssignUserToGroupFormDialog = ({
     });
 
     if (!user) return null;
+    if (availableGroups.length === 0) return null;
 
     return (
         <Skeleton loading={isLoadingUser || isLoadingGroups}>
@@ -50,53 +51,39 @@ const AssignUserToGroupFormDialog = ({
                     </Button>
                 </Dialog.Trigger>
                 <Dialog.Content>
-                    {availableGroups.length === 0 && user.groups.length > 0 ? (
-                        <Flex direction="column" gap="4" mt="4">
-                            <Text>
-                                This champion belongs to every guild in the realm, or none remain for assignment.
+                    <Dialog.Title>Enlist into the Guild</Dialog.Title>
+                    <Dialog.Description>
+                        Enlist companion &quot;{user?.name}&quot; into the Guild.
+                    </Dialog.Description>
+                    <Flex direction="column" gap="4" mt="4">
+                        <div>
+                            <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
+                                Choose a Guild
                             </Text>
-                            <Flex gap="3" justify="end">
-                                <Button variant="soft" onClick={() => setIsAssignDialogOpen(false)}>
-                                    Close
-                                </Button>
-                            </Flex>
-                        </Flex>
-                    ) : (
-                        <>
-                            <Dialog.Title>Enlist into the Guild</Dialog.Title>
-                            <Dialog.Description>
-                                Enlist companion &quot;{user?.name}&quot; into the Guild.
-                            </Dialog.Description>
-                            <Flex direction="column" gap="4" mt="4">
-                                <div>
-                                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                                        Choose a Guild
-                                    </Text>
-                                    <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                                        <Select.Trigger placeholder="Wybierz gildię..." />
-                                        <Select.Content>
-                                            {availableGroups.map((group) => (
-                                                <Select.Item key={group.id} value={group.id}>
-                                                    {group.name}
-                                                </Select.Item>
-                                            ))}
-                                        </Select.Content>
-                                    </Select.Root>
-                                </div>
+                            <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                                <Select.Trigger placeholder="Wybierz gildię..." />
+                                <Select.Content>
+                                    {availableGroups.map((group) => (
+                                        <Select.Item key={group.id} value={group.id}>
+                                            {group.name}
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select.Root>
+                        </div>
 
-                                <Flex gap="3" justify="end">
-                                    <Button variant="soft" color="gray" onClick={() => setIsAssignDialogOpen(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        onClick={() => assignUserMutation.mutate({ userId: user.id, groupId: selectedGroupId })}
-                                        disabled={!selectedGroupId || assignUserMutation.isPending}
-                                    >
-                                        {assignUserMutation.isPending ? "Enlisting..." : "Enlist into the Guild"}
-                                    </Button>
-                                </Flex>
-                            </Flex>
-                        </>)}
+                        <Flex gap="3" justify="end">
+                            <Button variant="soft" color="gray" onClick={() => setIsAssignDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() => assignUserMutation.mutate({ userId: user.id, groupId: selectedGroupId })}
+                                disabled={!selectedGroupId || assignUserMutation.isPending}
+                            >
+                                {assignUserMutation.isPending ? "Enlisting..." : "Enlist into the Guild"}
+                            </Button>
+                        </Flex>
+                    </Flex>
                 </Dialog.Content>
             </Dialog.Root>
         </Skeleton>
