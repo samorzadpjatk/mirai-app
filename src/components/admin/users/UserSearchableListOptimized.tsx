@@ -204,7 +204,6 @@ export default function UserSearchableListOptimized() {
                           userName={user.name ?? "Nieznany użytkownik"}
                           currentHouseNumber={user.houseNumber}
                         />
-                        <ChangeUserAdminButton selectedUserId={user.id} />
                       </Flex>
                     </DataList.Value>
                   </DataList.Item>
