@@ -145,6 +145,20 @@ function getOperationDescription(procedureName: string, variables: any): string 
       return `sending notification`;
     case 'notifications.sendToGroup':
       return `sending group notification`;
+    case 'notifications.subscribe':
+      return `subscribing to notifications`;
+    case 'notifications.unsubscribe':
+      return `unsubscribing from notifications`;
+    case 'notificationSchedule.create':
+      return `creating notification schedule`;
+    case 'notificationSchedule.update':
+      return `updating notification schedule`;
+    case 'notificationSchedule.delete':
+      return `deleting notification schedule`;
+    case 'notificationSchedule.toggleActive':
+      return `toggling schedule status`;
+    case 'notificationSchedule.updateLastRun':
+      return `updating schedule timestamp`;
     default:
       return `${procedureName.replace('.', ' ')} operation`;
   }
@@ -255,5 +269,25 @@ export function useOfflineNotificationMutation() {
     procedureName: `notifications.${operation}`,
     successMessage: "Notification sent successfully",
     errorMessage: "Failed to send notification"
+  });
+}
+
+// Notification Schedule operations
+export function useOfflineNotificationScheduleMutation(operation: string) {
+  return (mutationHook: () => any) => useUniversalOfflineMutation({
+    mutationHook,
+    procedureName: `notificationSchedule.${operation}`,
+    successMessage: `Schedule ${operation === 'create' ? 'created' : operation === 'update' ? 'updated' : operation === 'delete' ? 'deleted' : 'modified'} successfully`,
+    errorMessage: `Failed to ${operation} schedule`
+  });
+}
+
+// Push Subscription operations
+export function useOfflinePushSubscriptionMutation(operation: 'subscribe' | 'unsubscribe') {
+  return (mutationHook: () => any) => useUniversalOfflineMutation({
+    mutationHook,
+    procedureName: `notifications.${operation}`,
+    successMessage: `Successfully ${operation === 'subscribe' ? 'subscribed to' : 'unsubscribed from'} notifications`,
+    errorMessage: `Failed to ${operation} notifications`
   });
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Card, Flex, Text, Badge, Dialog, Box, Heading, Table } from "@radix-ui/themes";
 import { api } from "~/trpc/react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
+import { useOfflineNotificationScheduleMutation } from "~/hooks/useUniversalOfflineMutation";
 
 export default function NotificationScheduleList() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -15,17 +16,28 @@ export default function NotificationScheduleList() {
     refetch,
   } = api.notificationSchedule.getAll.useQuery();
 
-  const toggleActiveMutation = api.notificationSchedule.toggleActive.useMutation({
-    onSuccess: () => {
-      refetch();
-    },
-  });
+  // Enhanced mutations with offline handling
+  const offlineToggleActive = useOfflineNotificationScheduleMutation('toggleActive');
+  const offlineDelete = useOfflineNotificationScheduleMutation('delete');
+  
+  const { mutation: toggleActiveMutation, offlineStatus: toggleOfflineStatus } = offlineToggleActive(() => 
+    api.notificationSchedule.toggleActive.useMutation({
+      onSuccess: () => {
+        refetch();
+      }
+    })
+  );
 
-  const deleteMutation = api.notificationSchedule.delete.useMutation({
-    onSuccess: () => {
-      refetch();
-    },
-  });
+  const { mutation: deleteMutation, offlineStatus: deleteOfflineStatus } = offlineDelete(() => 
+    api.notificationSchedule.delete.useMutation({
+      onSuccess: () => {
+        refetch();
+      }
+    })
+  );
+
+  // Combined offline status
+  const offlineStatus = toggleOfflineStatus || deleteOfflineStatus;
 
   const handleToggleActive = async (id: string) => {
     try {
@@ -158,6 +170,29 @@ export default function NotificationScheduleList() {
           ) : (
             <Text color="gray">No chronicles of notifications exist.</Text>
           )}
+
+          {/* Offline Status Indicator */}
+          {offlineStatus && (
+            <Card 
+              variant="surface" 
+              style={{ 
+                backgroundColor: offlineStatus.includes('saved for later') ? 'var(--orange-2)' : 'var(--red-2)',
+                border: offlineStatus.includes('saved for later') ? '1px solid var(--orange-6)' : '1px solid var(--red-6)'
+              }}
+            >
+              <Text 
+                size="2" 
+                color={offlineStatus.includes('saved for later') ? 'orange' : 'red'}
+              >
+                {offlineStatus}
+              </Text>
+              {offlineStatus.includes('saved for later') && (
+                <Text size="1" color="gray" style={{ display: 'block', marginTop: '0.5rem' }}>
+                  Operation will be completed when connection is restored.
+                </Text>
+              )}
+            </Card>
+          )}
         </Flex>
       </Card>
 
@@ -194,9 +229,29 @@ function CreateNotificationScheduleDialog({
     isActive: true,
   });
 
-  const createMutation = api.notificationSchedule.create.useMutation({
-    onSuccess: () => {
-      onSuccess();
+  // Enhanced create mutation with offline handling
+  const offlineCreate = useOfflineNotificationScheduleMutation('create');
+  const { mutation: createMutation, offlineStatus: createOfflineStatus } = offlineCreate(() => 
+    api.notificationSchedule.create.useMutation({
+      onSuccess: () => {
+        onSuccess();
+        setFormData({
+          name: "",
+          description: "",
+          startDate: "",
+          endDate: "",
+          hour: 9,
+          minute: 0,
+          isActive: true,
+        });
+      }
+    })
+  );
+
+  // Auto-close dialog when saved for offline retry
+  useEffect(() => {
+    if (createOfflineStatus && createOfflineStatus.includes('saved for later')) {
+      onOpenChange(false);
       setFormData({
         name: "",
         description: "",
@@ -206,8 +261,8 @@ function CreateNotificationScheduleDialog({
         minute: 0,
         isActive: true,
       });
-    },
-  });
+    }
+  }, [createOfflineStatus, onOpenChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -366,6 +421,28 @@ function CreateNotificationScheduleDialog({
               </Flex>
             </label>
           </Flex>
+
+          {/* Offline Status Indicator */}
+          {createOfflineStatus && (
+            <div style={{ 
+              padding: '0.75rem', 
+              borderRadius: '0.5rem',
+              backgroundColor: createOfflineStatus.includes('saved for later') ? 'var(--orange-2)' : 'var(--red-2)',
+              border: createOfflineStatus.includes('saved for later') ? '1px solid var(--orange-6)' : '1px solid var(--red-6)'
+            }}>
+              <Text 
+                size="2" 
+                color={createOfflineStatus.includes('saved for later') ? 'orange' : 'red'}
+              >
+                {createOfflineStatus}
+              </Text>
+              {createOfflineStatus.includes('saved for later') && (
+                <Text size="1" color="gray" style={{ display: 'block', marginTop: '0.5rem' }}>
+                  Schedule will be created when connection is restored.
+                </Text>
+              )}
+            </div>
+          )}
 
           <Flex gap="3" mt="4" justify="end">
             <Dialog.Close>

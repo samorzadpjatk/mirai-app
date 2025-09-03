@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button, Card, Flex, Text, Heading, Select, TextField, TextArea } from "@radix-ui/themes";
 import { api } from "~/trpc/react";
+import { useOfflineNotificationMutation } from "~/hooks/useUniversalOfflineMutation";
 
 export default function ManualTrigger() {
   const [loading, setLoading] = useState(false);
@@ -12,8 +13,19 @@ export default function ManualTrigger() {
   const [customBody, setCustomBody] = useState("");
   const { data: groups } = api.group.getAll.useQuery();
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
-  const sendCustomNotificationMutation = api.notifications.sendCustomToAll.useMutation();
-  const sendCustomNotificationToGroupMutation = api.notifications.sendToGroup.useMutation();
+  
+  // Enhanced notification mutations with offline handling
+  const offlineCustomNotification = useOfflineNotificationMutation();
+  const { mutation: sendCustomNotificationMutation, offlineStatus } = offlineCustomNotification(
+    () => api.notifications.sendCustomToAll.useMutation(),
+    'sendCustomToAll'
+  );
+  
+  const offlineGroupNotification = useOfflineNotificationMutation();
+  const { mutation: sendCustomNotificationToGroupMutation } = offlineGroupNotification(
+    () => api.notifications.sendToGroup.useMutation(),
+    'sendToGroup'
+  );
 
   const handleManualTrigger = async () => {
     setLoading(true);
@@ -143,6 +155,28 @@ export default function ManualTrigger() {
                 </Select.Root>
               </div>
             </>
+          )}
+
+          {/* Offline Status Indicator */}
+          {offlineStatus && (
+            <div style={{ 
+              padding: '0.75rem', 
+              borderRadius: '0.5rem',
+              backgroundColor: offlineStatus.includes('saved for later') ? 'var(--orange-2)' : 'var(--red-2)',
+              border: offlineStatus.includes('saved for later') ? '1px solid var(--orange-6)' : '1px solid var(--red-6)'
+            }}>
+              <Text 
+                size="2" 
+                color={offlineStatus.includes('saved for later') ? 'orange' : 'red'}
+              >
+                {offlineStatus}
+              </Text>
+              {offlineStatus.includes('saved for later') && (
+                <Text size="1" color="gray" style={{ display: 'block', marginTop: '0.5rem' }}>
+                  Notification will be sent when connection is restored.
+                </Text>
+              )}
+            </div>
           )}
 
           <Button
