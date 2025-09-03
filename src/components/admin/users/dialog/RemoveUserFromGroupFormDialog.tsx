@@ -20,6 +20,7 @@ const RemoveUserFromGroupFormDialog = ({
             router.refresh();
         },
     });
+    if (selectedUser?.groups.length === 0) return null;
     return (
         <Skeleton loading={isLoadingUser}>
             <AlertDialog.Root open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
