@@ -146,6 +146,59 @@ export const userRouter = createTRPCRouter({
       });
     }),
 
+  // Update user house number
+  updateHouseNumber: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        houseNumber: z.string().min(1, "Numer domu nie może być pusty").max(20, "Numer domu nie może być dłuższy niż 20 znaków"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if house number is already taken by another user
+      const existingUser = await ctx.db.user.findUnique({
+        where: { houseNumber: input.houseNumber },
+        select: { id: true, name: true },
+      });
+
+      if (existingUser && existingUser.id !== input.userId) {
+        throw new Error(`Numer domu ${input.houseNumber} jest już przypisany do użytkownika: ${existingUser.name}`);
+      }
+
+      return await ctx.db.user.update({
+        where: { id: input.userId },
+        data: { houseNumber: input.houseNumber },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          houseNumber: true,
+          isAdmin: true,
+        },
+      });
+    }),
+
+  // Remove house number from user
+  removeHouseNumber: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.user.update({
+        where: { id: input.userId },
+        data: { houseNumber: null },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          houseNumber: true,
+          isAdmin: true,
+        },
+      });
+    }),
+
   // Search users with pagination
   searchWithPagination: moderatorProcedure
     .input(

@@ -10,6 +10,7 @@ import WristNumberManager from "./WristNumberManager";
 import UserSearchBar from "./UserSearchBar";
 import UserPagination from "./UserPagination";
 import { api } from "~/trpc/react";
+import HouseNumberManager from "./HouseNumberManager";
 
 // Types for user data from searchWithPagination
 interface UserGroup {
@@ -30,6 +31,7 @@ interface SearchUser {
   email: string | null;
   isAdmin: boolean;
   wristNumber: string | null;
+  houseNumber: string | null;
   groups: UserGroup[];
   organizerGroups: OrganizerGroup[];
 }
@@ -143,24 +145,38 @@ export default function UserSearchableListOptimized() {
                     </DataList.Value>
                   </DataList.Item>
                   <DataList.Item>
+                    <DataList.Label>House number</DataList.Label>
+                    <DataList.Value>
+                      {user.houseNumber ? (
+                        <Badge variant="soft" color="green">
+                          {user.houseNumber}
+                        </Badge>
+                      ) : (
+                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
+                          Not assigned
+                        </Text>
+                      )}
+                    </DataList.Value>
+                  </DataList.Item>
+                  <DataList.Item>
                     <DataList.Label>Guilds</DataList.Label>
                     <DataList.Value>
                       <Flex gap="2" wrap="wrap">
-                      {user.groups?.map((userGroup: UserGroup) => (
-                        <Badge key={userGroup.group.id} variant="soft" color="purple">
-                          {userGroup.group.name}
-                        </Badge>
-                      ))}
-                      {user.organizerGroups?.map((organizerGroup: OrganizerGroup) => (
-                        <Badge key={organizerGroup.id} variant="solid" color="purple">
-                          {organizerGroup.name}
-                        </Badge>
-                      ))}
-                      {(!user.groups || user.groups.length === 0) && (!user.organizerGroups || user.organizerGroups.length === 0) && (
-                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                          No groups assigned
-                        </Text>
-                      )}
+                        {user.groups?.map((userGroup: UserGroup) => (
+                          <Badge key={userGroup.group.id} variant="soft" color="purple">
+                            {userGroup.group.name}
+                          </Badge>
+                        ))}
+                        {user.organizerGroups?.map((organizerGroup: OrganizerGroup) => (
+                          <Badge key={organizerGroup.id} variant="solid" color="purple">
+                            {organizerGroup.name}
+                          </Badge>
+                        ))}
+                        {(!user.groups || user.groups.length === 0) && (!user.organizerGroups || user.organizerGroups.length === 0) && (
+                          <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
+                            No groups assigned
+                          </Text>
+                        )}
                       </Flex>
                     </DataList.Value>
                   </DataList.Item>
@@ -178,10 +194,15 @@ export default function UserSearchableListOptimized() {
                             selectedUserId={user.id}
                           />
                         )}
-                        <WristNumberManager 
+                        <WristNumberManager
                           userId={user.id}
                           userName={user.name ?? "Nieznany użytkownik"}
                           currentWristNumber={user.wristNumber}
+                        />
+                        <HouseNumberManager
+                          userId={user.id}
+                          userName={user.name ?? "Nieznany użytkownik"}
+                          currentHouseNumber={user.houseNumber}
                         />
                         <ChangeUserAdminButton selectedUserId={user.id} />
                       </Flex>
