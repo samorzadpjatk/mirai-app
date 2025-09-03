@@ -13,6 +13,8 @@ import { Container, Flex, ScrollArea, Theme } from "@radix-ui/themes";
 import { ThemeProvider } from 'next-themes';
 import TopBar from "~/components/TopBar";
 import BackgroundImage from "~/components/BackgroundImage";
+import ServiceWorkerMessageHandler from "~/components/ServiceWorkerMessageHandler";
+import GlobalOfflineStatus from "~/components/GlobalOfflineStatus";
 
 export const metadata: Metadata = {
   title: "Bank Monet",
@@ -103,6 +105,8 @@ export default function RootLayout({
                 </ScrollArea>
               </Container>
               <BackgroundImage />
+              <ServiceWorkerMessageHandler />
+              <GlobalOfflineStatus />
             </Theme>
           </ThemeProvider>
         </TRPCReactProvider>

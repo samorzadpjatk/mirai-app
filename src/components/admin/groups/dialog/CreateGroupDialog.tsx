@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
+import { useOfflineGroupMutation } from "~/hooks/useUniversalOfflineMutation";
 
 // Create Group Dialog Component
 const CreateGroupDialog = () => {
@@ -15,12 +16,17 @@ const CreateGroupDialog = () => {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
     const { data: adminUsers, isLoading } = api.user.getAllAdminsNames.useQuery();
-    const createGroupMutation = api.group.create.useMutation({
-        onSuccess: async () => {
-            setIsCreateDialogOpen(false);
-            router.refresh();
-        },
-    });
+    
+    // Enhanced group creation with offline handling
+    const offlineGroupCreate = useOfflineGroupMutation('create');
+    const { mutation: createGroupMutation, offlineStatus } = offlineGroupCreate(() => 
+        api.group.create.useMutation({
+            onSuccess: () => {
+                setIsCreateDialogOpen(false);
+                router.refresh();
+            }
+        })
+    );
 
     const handleCreateSubmit = () => {
         if (name.trim()) {
@@ -85,6 +91,29 @@ const CreateGroupDialog = () => {
                         </Select.Root>
                     </Flex>
                 </Flex>
+
+                {/* Offline Status Indicator */}
+                {offlineStatus && (
+                    <div style={{ 
+                        marginTop: '1rem',
+                        padding: '0.75rem', 
+                        borderRadius: '0.5rem',
+                        backgroundColor: offlineStatus.includes('saved for later') ? 'var(--orange-2)' : 'var(--red-2)',
+                        border: offlineStatus.includes('saved for later') ? '1px solid var(--orange-6)' : '1px solid var(--red-6)'
+                    }}>
+                        <Text 
+                            size="2" 
+                            color={offlineStatus.includes('saved for later') ? 'orange' : 'red'}
+                        >
+                            {offlineStatus.includes('saved for later') ? '📡' : '❌'} {offlineStatus}
+                        </Text>
+                        {offlineStatus.includes('saved for later') && (
+                            <Text size="1" color="gray" style={{ display: 'block', marginTop: '0.5rem' }}>
+                                Group will be created when connection is restored.
+                            </Text>
+                        )}
+                    </div>
+                )}
 
                 <Flex gap={{ "initial": "1" }} mt="4" justify="end">
                     <Dialog.Close>

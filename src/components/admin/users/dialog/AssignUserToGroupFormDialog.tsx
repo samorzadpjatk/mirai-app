@@ -5,6 +5,7 @@ import { Flex, Button, Select, Text, Dialog, Skeleton } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { useOfflineUserMutation } from "~/hooks/useUniversalOfflineMutation";
 
 const AssignUserToGroupFormDialog = ({
     selectedUserId
@@ -22,12 +23,16 @@ const AssignUserToGroupFormDialog = ({
     ) ?? [];
     const [selectedGroupId, setSelectedGroupId] = useState("");
 
-    const assignUserMutation = api.group.assignUserToGroup.useMutation({
-        onSuccess: () => {
-            setIsAssignDialogOpen(false);
-            router.refresh();
-        },
-    });
+    // Enhanced assignment with offline handling
+    const offlineUserAssign = useOfflineUserMutation('assignToGroup');
+    const { mutation: assignUserMutation, offlineStatus } = offlineUserAssign(() => 
+        api.group.assignUserToGroup.useMutation({
+            onSuccess: () => {
+                setIsAssignDialogOpen(false);
+                router.refresh();
+            }
+        })
+    );
 
     if (!user) return null;
 

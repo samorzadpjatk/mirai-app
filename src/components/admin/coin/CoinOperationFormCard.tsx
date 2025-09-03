@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 
 import { useState } from "react"
 import { api } from "~/trpc/react"
+import { useOfflineCoinMutation } from "~/hooks/useUniversalOfflineMutation"
 
 const CoinOperationFormCard = () => {
     const router = useRouter();
@@ -15,20 +16,30 @@ const CoinOperationFormCard = () => {
     const [reason, setReason] = useState("");
     const [operation, setOperation] = useState<"add" | "remove">("add");
 
-    // Mutations
-    const addCoinsMutation = api.coin.addCoins.useMutation({
-        onSuccess: async () => {
-            resetForm();
-            router.refresh();
-        },
-    });
+    // Enhanced mutations with universal offline handling
+    const offlineAddCoins = useOfflineCoinMutation('add');
+    const offlineRemoveCoins = useOfflineCoinMutation('remove');
+    
+    const { mutation: addCoinsMutation, offlineStatus: addOfflineStatus } = offlineAddCoins(() => 
+        api.coin.addCoins.useMutation({
+            onSuccess: () => {
+                resetForm();
+                router.refresh();
+            }
+        })
+    );
 
-    const removeCoinsMutation = api.coin.removeCoins.useMutation({
-        onSuccess: async () => {
-            resetForm();
-            router.refresh();
-        },
-    });
+    const { mutation: removeCoinsMutation, offlineStatus: removeOfflineStatus } = offlineRemoveCoins(() => 
+        api.coin.removeCoins.useMutation({
+            onSuccess: () => {
+                resetForm();
+                router.refresh();
+            }
+        })
+    );
+
+    // Combined offline status
+    const offlineStatus = addOfflineStatus || removeOfflineStatus;
 
     const isLoading = addCoinsMutation.isPending || removeCoinsMutation.isPending;
 
@@ -164,6 +175,29 @@ const CoinOperationFormCard = () => {
 
                         return null;
                     })()
+                )}
+
+                {/* Offline Status Indicator */}
+                {offlineStatus && (
+                    <Card 
+                        variant="surface" 
+                        style={{ 
+                            backgroundColor: offlineStatus.includes('saved for later') ? "var(--orange-2)" : "var(--red-2)", 
+                            border: offlineStatus.includes('saved for later') ? "1px solid var(--orange-6)" : "1px solid var(--red-6)" 
+                        }}
+                    >
+                        <Text 
+                            size={{ "initial": "1", "xs": "2", "sm": "3" }} 
+                            color={offlineStatus.includes('saved for later') ? "orange" : "red"}
+                        >
+                            {offlineStatus.includes('saved for later') ? '📡' : '❌'} {offlineStatus}
+                        </Text>
+                        {offlineStatus.includes('saved for later') && (
+                            <Text size="1" color="gray" style={{ display: 'block', marginTop: '8px' }}>
+                                Request will be automatically retried when connection is restored.
+                            </Text>
+                        )}
+                    </Card>
                 )}
             </Flex>
         </Card>
