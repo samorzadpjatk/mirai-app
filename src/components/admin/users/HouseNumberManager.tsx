@@ -95,7 +95,7 @@ export default function HouseNumberManager({
           <Flex direction="column" gap="3">
             <div>
               <Text as="div" size="2" mb="1" weight="bold">
-                Numer opaski
+                Numer domku
               </Text>
               <TextField.Root
                 value={houseNumber}
