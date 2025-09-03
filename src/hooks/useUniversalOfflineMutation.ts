@@ -32,6 +32,20 @@ export function useUniversalOfflineMutation<TInput, TOutput>({
   const [offlineStatus, setOfflineStatus] = useState<string>("");
   const originalMutation = mutationHook();
 
+  // Auto-dismiss offline status after a short delay
+  useEffect(() => {
+    if (!offlineStatus) return;
+
+    const isSavedForLater = offlineStatus.includes("saved for later retry");
+    const timeoutMs = isSavedForLater ? 5000 : 6000; // dismiss sooner for saved-for-later
+
+    const timer = setTimeout(() => {
+      setOfflineStatus("");
+    }, timeoutMs);
+
+    return () => clearTimeout(timer);
+  }, [offlineStatus]);
+
   // Create enhanced mutation with offline handling
   const enhancedMutation = {
     ...originalMutation,

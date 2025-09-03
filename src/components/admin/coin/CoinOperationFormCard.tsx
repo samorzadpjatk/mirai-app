@@ -190,7 +190,7 @@ const CoinOperationFormCard = () => {
                             size={{ "initial": "1", "xs": "2", "sm": "3" }} 
                             color={offlineStatus.includes('saved for later') ? "orange" : "red"}
                         >
-                            {offlineStatus.includes('saved for later') ? '📡' : '❌'} {offlineStatus}
+                            {offlineStatus}
                         </Text>
                         {offlineStatus.includes('saved for later') && (
                             <Text size="1" color="gray" style={{ display: 'block', marginTop: '8px' }}>

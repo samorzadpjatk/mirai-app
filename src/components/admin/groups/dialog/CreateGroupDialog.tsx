@@ -1,7 +1,7 @@
 "use client"
 
 import { Dialog, Flex, TextField, Select, Button, Text, Skeleton } from "@radix-ui/themes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
@@ -27,6 +27,15 @@ const CreateGroupDialog = () => {
             }
         })
     );
+
+    // Auto-close dialog when saved for offline retry
+    useEffect(() => {
+        if (offlineStatus && offlineStatus.includes('saved for later')) {
+            setIsCreateDialogOpen(false);
+            setName("");
+            setOrganizerId("");
+        }
+    }, [offlineStatus]);
 
     const handleCreateSubmit = () => {
         if (name.trim()) {
@@ -105,7 +114,7 @@ const CreateGroupDialog = () => {
                             size="2" 
                             color={offlineStatus.includes('saved for later') ? 'orange' : 'red'}
                         >
-                            {offlineStatus.includes('saved for later') ? '📡' : '❌'} {offlineStatus}
+                            {offlineStatus}
                         </Text>
                         {offlineStatus.includes('saved for later') && (
                             <Text size="1" color="gray" style={{ display: 'block', marginTop: '0.5rem' }}>
