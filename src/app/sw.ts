@@ -143,10 +143,12 @@ self.addEventListener("sync", (event) => {
 async function syncCoinTransactions() {
   console.log("SW: Syncing coin transactions");
   try {
-    // Get offline transactions from IndexedDB or cache
-    const offlineTransactions = await getOfflineTransactions();
+    // Get offline transactions from both storage methods
+    const legacyTransactions = await getOfflineTransactions();
+    const newRequests = await getOfflineRequests();
     
-    for (const transaction of offlineTransactions) {
+    // Sync legacy format transactions
+    for (const transaction of legacyTransactions) {
       try {
         const response = await fetch("/api/trpc/coinTransaction.create", {
           method: "POST",
@@ -157,11 +159,88 @@ async function syncCoinTransactions() {
         });
         
         if (response.ok) {
-          console.log("SW: Transaction synced successfully");
+          console.log("SW: Legacy transaction synced successfully");
           await removeOfflineTransaction(transaction.id);
         }
       } catch (error) {
-        console.error("SW: Failed to sync transaction:", error);
+        console.error("SW: Failed to sync legacy transaction:", error);
+      }
+    }
+
+    // Sync new format requests
+    for (const request of newRequests) {
+      try {
+        let endpoint = '';
+        let body = {};
+
+        // Map request types to tRPC endpoints
+        switch (request.type) {
+          case 'coin.addCoins':
+            endpoint = '/api/trpc/coin.addCoins';
+            break;
+          case 'coin.removeCoins':
+            endpoint = '/api/trpc/coin.removeCoins';
+            break;
+          case 'group.create':
+            endpoint = '/api/trpc/group.create';
+            break;
+          case 'group.update':
+            endpoint = '/api/trpc/group.update';
+            break;
+          case 'group.delete':
+            endpoint = '/api/trpc/group.delete';
+            break;
+          case 'user.updateUserAdminStatus':
+            endpoint = '/api/trpc/user.updateUserAdminStatus';
+            break;
+          case 'user.updateWristNumber':
+            endpoint = '/api/trpc/user.updateWristNumber';
+            break;
+          case 'user.removeWristNumber':
+            endpoint = '/api/trpc/user.removeWristNumber';
+            break;
+          case 'group.join':
+            endpoint = '/api/trpc/group.join';
+            break;
+          case 'group.assignUserToGroup':
+            endpoint = '/api/trpc/group.assignUserToGroup';
+            break;
+          case 'group.removeUserFromGroup':
+            endpoint = '/api/trpc/group.removeUserFromGroup';
+            break;
+          case 'notifications.sendToUser':
+            endpoint = '/api/trpc/notifications.sendToUser';
+            break;
+          case 'notifications.sendToGroup':
+            endpoint = '/api/trpc/notifications.sendToGroup';
+            break;
+        }
+
+        if (endpoint) {
+          body = { 
+            json: request.input,
+            meta: { values: { json: [] } }
+          };
+        }
+
+        if (endpoint) {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+          });
+          
+          if (response.ok) {
+            console.log(`SW: Request ${request.id} synced successfully`);
+            await removeOfflineRequest(request.id);
+          } else {
+            console.error(`SW: Failed to sync request ${request.id}: ${response.status}`);
+          }
+        }
+      } catch (error) {
+        console.error(`SW: Failed to sync request ${request.id}:`, error);
       }
     }
   } catch (error) {
@@ -192,14 +271,92 @@ async function syncNotifications() {
 
 // Helper functions for offline transaction management
 async function getOfflineTransactions(): Promise<any[]> {
-  // This would typically use IndexedDB to store offline transactions
-  // For now, return empty array - would need to implement IndexedDB storage
-  return [];
+  // Try to get legacy format transactions from localStorage
+  try {
+    const stored = await getLocalStorageFromSW('offlineTransactions');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error("SW: Error getting offline transactions:", error);
+    return [];
+  }
 }
 
 async function removeOfflineTransaction(transactionId: string): Promise<void> {
   // Remove successfully synced transaction from offline storage
-  console.log("SW: Removing synced transaction:", transactionId);
+  try {
+    const stored = await getLocalStorageFromSW('offlineTransactions');
+    if (stored) {
+      const transactions = JSON.parse(stored);
+      const filtered = transactions.filter((t: any) => t.id !== transactionId);
+      await setLocalStorageFromSW('offlineTransactions', JSON.stringify(filtered));
+    }
+    console.log("SW: Removed synced transaction:", transactionId);
+  } catch (error) {
+    console.error("SW: Error removing offline transaction:", error);
+  }
+}
+
+// New helper functions for enhanced offline requests
+async function getOfflineRequests(): Promise<any[]> {
+  try {
+    const stored = await getLocalStorageFromSW('offlineRequests');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error("SW: Error getting offline requests:", error);
+    return [];
+  }
+}
+
+async function removeOfflineRequest(requestId: string): Promise<void> {
+  try {
+    const stored = await getLocalStorageFromSW('offlineRequests');
+    if (stored) {
+      const requests = JSON.parse(stored);
+      const filtered = requests.filter((r: any) => r.id !== requestId);
+      await setLocalStorageFromSW('offlineRequests', JSON.stringify(filtered));
+    }
+    console.log("SW: Removed synced request:", requestId);
+  } catch (error) {
+    console.error("SW: Error removing offline request:", error);
+  }
+}
+
+// Helper functions to access localStorage from Service Worker context
+async function getLocalStorageFromSW(key: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    // Use message to main thread to access localStorage
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = (event) => {
+      resolve(event.data.value);
+    };
+    
+    // Send message to all clients to get localStorage value
+    self.clients.matchAll().then(clients => {
+      if (clients.length > 0 && clients[0]) {
+        clients[0].postMessage(
+          { type: 'GET_LOCALSTORAGE', key },
+          [messageChannel.port2]
+        );
+      } else {
+        resolve(null);
+      }
+    });
+    
+    // Timeout after 5 seconds
+    setTimeout(() => resolve(null), 5000);
+  });
+}
+
+async function setLocalStorageFromSW(key: string, value: string): Promise<void> {
+  return new Promise((resolve) => {
+    // Send message to all clients to set localStorage value
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({ type: 'SET_LOCALSTORAGE', key, value });
+      });
+      resolve();
+    });
+  });
 }
 // Error handling
 self.addEventListener("error", (event) => {

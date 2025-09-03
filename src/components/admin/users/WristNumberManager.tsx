@@ -5,6 +5,7 @@ import { Button, Flex, TextField, Text, Dialog } from "@radix-ui/themes";
 import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
+import { useOfflineUserMutation } from "~/hooks/useUniversalOfflineMutation";
 
 interface WristNumberManagerProps {
   userId: string;
@@ -22,27 +23,38 @@ export default function WristNumberManager({
   const [wristNumber, setWristNumber] = useState(currentWristNumber ?? "");
   const [error, setError] = useState("");
 
-  const updateWristNumberMutation = api.user.updateWristNumber.useMutation({
-    onSuccess: () => {
-      setIsDialogOpen(false);
-      setError("");
-      router.refresh();
-    },
-    onError: (error) => {
-      setError(error.message);
-    },
-  });
+  // Enhanced mutations with offline handling
+  const offlineUserUpdate = useOfflineUserMutation('updateWristNumber');
+  const offlineUserRemove = useOfflineUserMutation('removeWristNumber');
+  
+  const { mutation: updateWristNumberMutation, offlineStatus: updateOfflineStatus } = offlineUserUpdate(() => 
+    api.user.updateWristNumber.useMutation({
+      onSuccess: () => {
+        setIsDialogOpen(false);
+        setError("");
+        router.refresh();
+      },
+      onError: (error) => {
+        setError(error.message);
+      }
+    })
+  );
 
-  const removeWristNumberMutation = api.user.removeWristNumber.useMutation({
-    onSuccess: () => {
-      setIsDialogOpen(false);
-      setError("");
-      router.refresh();
-    },
-    onError: (error) => {
-      setError(error.message);
-    },
-  });
+  const { mutation: removeWristNumberMutation, offlineStatus: removeOfflineStatus } = offlineUserRemove(() => 
+    api.user.removeWristNumber.useMutation({
+      onSuccess: () => {
+        setIsDialogOpen(false);
+        setError("");
+        router.refresh();
+      },
+      onError: (error) => {
+        setError(error.message);
+      }
+    })
+  );
+
+  // Combined offline status
+  const offlineStatus = updateOfflineStatus || removeOfflineStatus;
 
   const handleSave = () => {
     if (!wristNumber.trim()) {
