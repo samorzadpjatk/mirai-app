@@ -30,7 +30,7 @@ const AssignUserToGroupFormDialog = ({
     });
 
     if (!user) return null;
-    if (availableGroups.length === 0) return null;
+    if (availableGroups.length === undefined || availableGroups.length === 0) return null;
 
     return (
         <Skeleton loading={isLoadingUser || isLoadingGroups}>
