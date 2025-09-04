@@ -56,9 +56,9 @@ export const userRouter = createTRPCRouter({
   }),
   getAllAdminsNamesWithoutGroups: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findMany({
-      where: { 
-        isAdmin: true, 
-        organizerGroups: { none: {} }
+      where: {
+        isAdmin: true,
+        organizerGroups: { none: {} },
       },
       select: {
         id: true,
@@ -98,7 +98,10 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
-        wristNumber: z.string().min(1, "Numer opaski nie może być pusty").max(20, "Numer opaski nie może być dłuższy niż 20 znaków"),
+        wristNumber: z
+          .string()
+          .min(1, "Numer opaski nie może być pusty")
+          .max(20, "Numer opaski nie może być dłuższy niż 20 znaków"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -109,7 +112,9 @@ export const userRouter = createTRPCRouter({
       });
 
       if (existingUser && existingUser.id !== input.userId) {
-        throw new Error(`Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${existingUser.name}`);
+        throw new Error(
+          `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${existingUser.name}`,
+        );
       }
 
       return await ctx.db.user.update({
@@ -151,7 +156,10 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
-        houseNumber: z.string().min(1, "Numer domu nie może być pusty").max(20, "Numer domu nie może być dłuższy niż 20 znaków"),
+        houseNumber: z
+          .string()
+          .min(1, "Numer domu nie może być pusty")
+          .max(20, "Numer domu nie może być dłuższy niż 20 znaków"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -162,7 +170,9 @@ export const userRouter = createTRPCRouter({
       });
 
       if (existingUser && existingUser.id !== input.userId) {
-        throw new Error(`Numer domu ${input.houseNumber} jest już przypisany do użytkownika: ${existingUser.name}`);
+        throw new Error(
+          `Numer domu ${input.houseNumber} jest już przypisany do użytkownika: ${existingUser.name}`,
+        );
       }
 
       return await ctx.db.user.update({
@@ -203,41 +213,56 @@ export const userRouter = createTRPCRouter({
   searchWithPagination: moderatorProcedure
     .input(
       z.object({
+        field: z.enum([
+          "name",
+          "email",
+          "wristNumber",
+          "houseNumber",
+          "groupName",
+        ]),
         searchTerm: z.string().optional(),
         page: z.number().min(1).default(1),
         limit: z.number().min(5).max(50).default(20),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { searchTerm, page, limit } = input;
+      const { searchTerm, page, limit, field } = input;
       const skip = (page - 1) * limit;
-
+      
       // Build search conditions
-      const searchConditions = searchTerm
-        ? {
-            OR: [
-              {
-                name: {
-                  contains: searchTerm,
-                  mode: "insensitive" as const,
+      let searchConditions;
+      if (field !== "groupName") {
+        searchConditions = searchTerm
+          ? {
+              OR: [
+                {
+                  [field]: {
+                    contains: searchTerm,
+                    mode: "insensitive" as const,
+                  },
                 },
-              },
-              {
-                email: {
-                  contains: searchTerm,
-                  mode: "insensitive" as const,
+              ],
+            }
+          : {};
+      } else {
+        searchConditions = searchTerm
+          ? {
+              OR: [
+                {
+                  groups: {
+                    some: {
+                      group: {
+                        name: {
+                          contains: searchTerm,
+                          mode: "insensitive" as const,
+                        },
+                      },
+                    },
+                  },
                 },
-              },
-              {
-                wristNumber: {
-                  contains: searchTerm,
-                  mode: "insensitive" as const,
-                },
-              },
-              {
-                groups: {
-                  some: {
-                    group: {
+                {
+                  organizerGroups: {
+                    some: {
                       name: {
                         contains: searchTerm,
                         mode: "insensitive" as const,
@@ -245,20 +270,10 @@ export const userRouter = createTRPCRouter({
                     },
                   },
                 },
-              },
-              {
-                organizerGroups: {
-                  some: {
-                    name: {
-                      contains: searchTerm,
-                      mode: "insensitive" as const,
-                    },
-                  },
-                },
-              },
-            ],
-          }
-        : {};
+              ],
+            }
+          : {};
+      }
 
       // Get total count for pagination
       const totalCount = await ctx.db.user.count({
@@ -277,10 +292,7 @@ export const userRouter = createTRPCRouter({
           groups: { select: { group: { select: { id: true, name: true } } } },
           organizerGroups: { select: { id: true, name: true } },
         },
-        orderBy: [
-          { name: "asc" },
-          { email: "asc" },
-        ],
+        orderBy: [{ name: "asc" }, { email: "asc" }],
         skip,
         take: limit,
       });

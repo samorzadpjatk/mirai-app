@@ -10,6 +10,7 @@ import UserSearchBar from "./UserSearchBar";
 import UserPagination from "./UserPagination";
 import { api } from "~/trpc/react";
 import HouseNumberManager from "./HouseNumberManager";
+import UserSearchFieldDropdownMenu from "./UserSearchFieldDropdownMenu";
 
 // Types for user data from searchWithPagination
 interface UserGroup {
@@ -39,6 +40,7 @@ export default function UserSearchableListOptimized() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(20);
+  const [field, setField] = useState<"name" | "email" | "wristNumber" | "houseNumber" | "groupName">("name");
 
   const {
     data: searchResult,
@@ -47,6 +49,7 @@ export default function UserSearchableListOptimized() {
     searchTerm: searchTerm || undefined,
     page: currentPage,
     limit,
+    field,
   });
 
   const handleSearch = useCallback((newSearchTerm: string) => {
@@ -68,6 +71,7 @@ export default function UserSearchableListOptimized() {
 
   return (
     <Flex direction="column" gap="4">
+      <UserSearchFieldDropdownMenu setField={setField} />
       <UserSearchBar
         onSearch={handleSearch}
         resultCount={pagination?.totalCount}
