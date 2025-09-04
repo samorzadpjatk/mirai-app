@@ -60,6 +60,7 @@ const urlBase64ToUint8Array = (base64String: string): ArrayBuffer => {
 export const useNotifications = () => {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribedElsewhere, setIsSubscribedElsewhere] = useState(false);
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
 
@@ -100,9 +101,22 @@ export const useNotifications = () => {
 
   // Update subscription status when data is loaded
   useEffect(() => {
-    if (statusQuery) {
-      setIsSubscribed(statusQuery.isSubscribed);
+    async function updateSubscription() {
+      if (statusQuery) {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (statusQuery.isSubscribed) {
+          if (!subscription || subscription.endpoint !== statusQuery.endpoint) {
+            setIsSubscribedElsewhere(true);
+          } else {
+            setIsSubscribed(true);
+          }
+        } else {
+          setIsSubscribed(false);
+        }
+      }
     }
+    void updateSubscription();
   }, [statusQuery]);
 
   // Request notification permission
@@ -232,6 +246,7 @@ export const useNotifications = () => {
   return {
     isSupported,
     isSubscribed,
+    isSubscribedElsewhere,
     isLoading,
     permission,
     requestPermission,

@@ -14,6 +14,7 @@ export default function NotificationSettings({ showTestFeatures = false, userId 
   const {
     isSupported,
     isSubscribed,
+    isSubscribedElsewhere,
     isLoading,
     permission,
     requestPermission,
@@ -96,8 +97,8 @@ export default function NotificationSettings({ showTestFeatures = false, userId 
             
             <Flex justify="between" align="center">
               <Text size="2">Subscription Status:</Text>
-              <Badge color={isSubscribed ? "green" : "gray"}>
-                {isSubscribed ? "Subscribed" : "Not Subscribed"}
+              <Badge color={isSubscribed ? "green" : isSubscribedElsewhere ? "yellow" : "gray"}>
+                {isSubscribed ? "Subscribed" : isSubscribedElsewhere ? "Subscribed Elsewhere" : "Not Subscribed"}
               </Badge>
             </Flex>
           </Flex>
