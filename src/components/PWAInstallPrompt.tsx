@@ -14,7 +14,7 @@ export default function PWAInstallPrompt() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
-  const [_isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
@@ -63,25 +63,6 @@ export default function PWAInstallPrompt() {
     };
   }, []);
 
-  const _handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    try {
-      await deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
-      
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
-      }
-      
-      setDeferredPrompt(null);
-      setCanInstall(false);
-    } catch (error) {
-      console.error('Error during installation:', error);
-    }
-  };
 
   const handleShowInstructions = () => {
     setShowInstallDialog(true);
@@ -100,7 +81,7 @@ export default function PWAInstallPrompt() {
           <Text size="2">
             Install Treasure Bank as an app on your device for a better experience!
           </Text>
-          
+
           <Flex gap="2">
             <Button onClick={handleShowInstructions} variant="solid">
               Installation Guide
@@ -113,27 +94,27 @@ export default function PWAInstallPrompt() {
       <Dialog.Root open={showInstallDialog} onOpenChange={setShowInstallDialog}>
         <Dialog.Content style={{ maxWidth: 500 }}>
           <Dialog.Title>How to Install Treasure Bank</Dialog.Title>
-          
+
           <Flex direction="column" gap="4" mt="4">
             {isIOS ? (
               <>
                 <Text size="2" weight="bold">On iOS (iPhone/iPad):</Text>
                 <Flex direction="column" gap="2">
-                  <Text size="2">1. Open this page in Safari</Text>
-                  <Text size="2">2. Tap the Share button (square with arrow up)</Text>
-                  <Text size="2">3. Scroll down and tap &quot;Add to Home Screen&quot;</Text>
-                  <Text size="2">4. Tap &quot;Add&quot; to confirm</Text>
+                  <Text size="2">1. Open &quot;Settings&quot;</Text>
+                  <Text size="2">2. Open &quot;Apps&quot; section</Text>
+                  <Text size="2">3. Select &quot;Safari&quot; App</Text>
+                  <Text size="2">4. Scroll down to &quot;Advanced &quot;section</Text>
+                  <Text size="2">5. Click on &quot;Feature Flags&quot; button</Text>
+                  <Text size="2">6. Find and enable &quot;Notifications&quot; feature</Text>
+                  <Text size="2">7. Restart Safari for changes to take effect</Text>
+                  <Text size="2">8. Open this page in Safari</Text>
+                  <Text size="2">9. Tap the Share button (square with arrow up)</Text>
+                  <Text size="2">10. Scroll down and tap &quot;Add to Home Screen&quot;</Text>
+                  <Text size="2">11. Tap &quot;Add&quot; to confirm</Text>
                 </Flex>
               </>
-            ) : (
+            ) : isDesktop ? (
               <>
-                <Text size="2" weight="bold">On Android:</Text>
-                <Flex direction="column" gap="2">
-                  <Text size="2">1. Tap the menu button (three dots) in Chrome</Text>
-                  <Text size="2">2. Select &quot;Add to Home screen&quot; or &quot;Install app&quot;</Text>
-                  <Text size="2">3. Tap &quot;Add&quot; or &quot;Install&quot; to confirm</Text>
-                </Flex>
-                
                 <Text size="2" weight="bold">On Chrome (Windows/Mac):</Text>
                 <Flex direction="column" gap="2">
                   <Text size="2">1. Look for install icon (⬇️) in the address bar</Text>
@@ -155,10 +136,19 @@ export default function PWAInstallPrompt() {
                   <Text size="2">3. Click &quot;Install&quot; to add to your applications</Text>
                 </Flex>
               </>
+            ) : (
+              <>
+                <Text size="2" weight="bold">On Android:</Text>
+                <Flex direction="column" gap="2">
+                  <Text size="2">1. Tap the menu button (three dots) in Chrome</Text>
+                  <Text size="2">2. Select &quot;Add to Home screen&quot; or &quot;Install app&quot;</Text>
+                  <Text size="2">3. Tap &quot;Add&quot; or &quot;Install&quot; to confirm</Text>
+                </Flex>
+              </>
             )}
-            
+
             <Text size="1" color="gray">
-              Once installed, you&apos;ll be able to use Treasure Bank like a native app with 
+              Once installed, you&apos;ll be able to use Treasure Bank like a native app with
               offline support and push notifications!
             </Text>
           </Flex>
