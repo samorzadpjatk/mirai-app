@@ -49,7 +49,7 @@ declare module "@auth/core/jwt" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
-  debug: true,
+  debug: env.NODE_ENV === "development",
   providers: [
     Authentik({
       clientId: process.env.AUTHENTIK_ID,
