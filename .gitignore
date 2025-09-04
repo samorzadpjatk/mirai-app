@@ -49,3 +49,5 @@ yarn-error.log*
 # Serwist
 public/sw*
 public/swe-worker*
+
+certificates
