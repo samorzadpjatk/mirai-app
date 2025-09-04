@@ -74,7 +74,11 @@ export const useNotifications = () => {
     refetch: refetchStatus,
   } = api.notifications.getSubscriptionStatus.useQuery();
 
-  const [isLoading, setIsLoading] = useState(isVapidLoading || isStatusLoading);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(isVapidLoading || isStatusLoading);
+  }, [isVapidLoading, isStatusLoading]);
 
   // Check browser support and permission status
   useEffect(() => {
