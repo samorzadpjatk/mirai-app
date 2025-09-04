@@ -25,14 +25,14 @@ const serwist = new Serwist({
 // Custom push notification handler
 self.addEventListener("push", (event) => {
   console.log("SW: Push event received", event);
-  
+
   let notificationData: {
     title?: string;
     body?: string;
     url?: string;
     data?: Record<string, unknown>;
   } = {};
-  
+
   try {
     if (event.data) {
       notificationData = event.data.json();
@@ -70,7 +70,7 @@ self.addEventListener("push", (event) => {
 // Custom notification click handler
 self.addEventListener("notificationclick", (event) => {
   console.log("SW: Notification clicked", event);
-  
+
   event.notification.close();
 
   const url = event.notification.data?.url ?? "/";
@@ -85,29 +85,14 @@ self.addEventListener("notificationclick", (event) => {
             return client.focus();
           }
         }
-        
+
         // If no existing window/tab, open a new one
         if (self.clients.openWindow) {
           return self.clients.openWindow(url);
         }
-      })
+      }),
   );
 });
-
-// Background sync for offline functionality
-self.addEventListener("sync", (event) => {
-  console.log("SW: Background sync", event.tag);
-  
-  if (event.tag === "background-sync") {
-    event.waitUntil(doBackgroundSync());
-  }
-});
-
-async function doBackgroundSync() {
-  console.log("SW: Performing background sync");
-  // Here you can implement background sync logic
-  // For example, sync offline coin transactions, user data updates, etc.
-}
 
 // Error handling
 self.addEventListener("error", (event) => {

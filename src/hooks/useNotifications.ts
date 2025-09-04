@@ -2,53 +2,48 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
+import { arrayBufferToBase64 } from "~/utils/web_push";
 
 // Service Worker registration with Serwist
-const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
-  if ("serviceWorker" in navigator) {
-    try {
-      // First check if there's already a service worker registered
-      const existingRegistration = await navigator.serviceWorker.getRegistration();
-      if (existingRegistration) {
-        console.log("Using existing Serwist Service Worker registration:", existingRegistration);
-        return existingRegistration;
-      }
-
-      // In production, Serwist generates /sw.js
-      // In development, SW is disabled via next.config.js
-      const swPath = "/sw.js";
-      
-      console.log(`Registering Serwist Service Worker: ${swPath}`);
-      
-      // Try to register the service worker
-      const registration = await navigator.serviceWorker.register(swPath, {
-        scope: "/",
-      });
-      console.log("Serwist Service Worker registered:", registration);
-      
-      // Wait for the service worker to be ready
-      await navigator.serviceWorker.ready;
-      
-      return registration;
-    } catch (error) {
-      console.error("Serwist Service Worker registration failed:", error);
-      
-      // Fallback: check if there's at least a service worker available
+const registerServiceWorker =
+  async (): Promise<ServiceWorkerRegistration | null> => {
+    if ("serviceWorker" in navigator) {
       try {
-        const existingRegistration = await navigator.serviceWorker.getRegistration();
+        // First check if there's already a service worker registered
+        const existingRegistration =
+          await navigator.serviceWorker.getRegistration();
         if (existingRegistration) {
-          console.log("Using fallback Service Worker registration:", existingRegistration);
+          console.log(
+            "Using existing Serwist Service Worker registration:",
+            existingRegistration,
+          );
           return existingRegistration;
         }
-      } catch (fallbackError) {
-        console.error("Fallback registration check failed:", fallbackError);
+
+        // In production, Serwist generates /sw.js
+        // In development, SW is disabled via next.config.js
+        const swPath = "/sw.js";
+
+        console.log(`Registering Serwist Service Worker: ${swPath}`);
+
+        // Try to register the service worker
+        const registration = await navigator.serviceWorker.register(swPath, {
+          scope: "/",
+        });
+        console.log("Serwist Service Worker registered:", registration);
+
+        // Wait for the service worker to be ready
+        await navigator.serviceWorker.ready;
+
+        return registration;
+      } catch (error) {
+        console.error("Serwist Service Worker registration failed:", error);
+
+        return null;
       }
-      
-      return null;
     }
-  }
-  return null;
-};
+    return null;
+  };
 
 // Convert VAPID key to Uint8Array
 const urlBase64ToUint8Array = (base64String: string): ArrayBuffer => {
@@ -65,25 +60,32 @@ const urlBase64ToUint8Array = (base64String: string): ArrayBuffer => {
 export const useNotifications = () => {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
 
   // tRPC mutations
   const subscribeMutation = api.notifications.subscribe.useMutation();
   const unsubscribeMutation = api.notifications.unsubscribe.useMutation();
-  const vapidQuery = api.notifications.getVapidPublicKey.useQuery();
-  const statusQuery = api.notifications.getSubscriptionStatus.useQuery();
+  const { data: vapidQuery, isLoading: isVapidLoading } =
+    api.notifications.getVapidPublicKey.useQuery();
+  const {
+    data: statusQuery,
+    isLoading: isStatusLoading,
+    refetch: refetchStatus,
+  } = api.notifications.getSubscriptionStatus.useQuery();
+
+  const [isLoading, setIsLoading] = useState(isVapidLoading || isStatusLoading);
 
   // Check browser support and permission status
   useEffect(() => {
     const checkSupport = () => {
-      const supported = 
+      const supported =
         "serviceWorker" in navigator &&
         "PushManager" in window &&
         "Notification" in window;
-      
+
       setIsSupported(supported);
-      
+
       if (supported) {
         setPermission(Notification.permission);
       }
@@ -94,10 +96,10 @@ export const useNotifications = () => {
 
   // Update subscription status when data is loaded
   useEffect(() => {
-    if (statusQuery.data) {
-      setIsSubscribed(statusQuery.data.isSubscribed);
+    if (statusQuery) {
+      setIsSubscribed(statusQuery.isSubscribed);
     }
-  }, [statusQuery.data]);
+  }, [statusQuery]);
 
   // Request notification permission
   const requestPermission = useCallback(async (): Promise<boolean> => {
@@ -123,7 +125,7 @@ export const useNotifications = () => {
       return false;
     }
 
-    if (!vapidQuery.data?.publicKey) {
+    if (!vapidQuery?.publicKey) {
       console.error("VAPID public key not available");
       return false;
     }
@@ -143,7 +145,7 @@ export const useNotifications = () => {
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidQuery.data.publicKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidQuery.publicKey),
       });
 
       // Send subscription to server
@@ -159,7 +161,7 @@ export const useNotifications = () => {
 
       if (result.success) {
         setIsSubscribed(true);
-        await statusQuery.refetch();
+        await refetchStatus();
         return true;
       }
 
@@ -170,7 +172,13 @@ export const useNotifications = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isSupported, permission, vapidQuery.data, subscribeMutation, statusQuery]);
+  }, [
+    isSupported,
+    permission,
+    vapidQuery?.publicKey,
+    subscribeMutation,
+    refetchStatus,
+  ]);
 
   // Unsubscribe from push notifications
   const unsubscribe = useCallback(async (): Promise<boolean> => {
@@ -184,13 +192,13 @@ export const useNotifications = () => {
         // Unsubscribe from browser
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
-        
+
         if (subscription) {
           await subscription.unsubscribe();
         }
 
         setIsSubscribed(false);
-        await statusQuery.refetch();
+        await refetchStatus();
         return true;
       }
 
@@ -201,7 +209,7 @@ export const useNotifications = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [unsubscribeMutation, statusQuery]);
+  }, [unsubscribeMutation, refetchStatus]);
 
   // Test notification
   const testNotification = useCallback(() => {
@@ -226,16 +234,6 @@ export const useNotifications = () => {
     subscribe,
     unsubscribe,
     testNotification,
-    vapidPublicKey: vapidQuery.data?.publicKey,
+    vapidPublicKey: vapidQuery?.publicKey,
   };
-};
-
-// Helper function to convert ArrayBuffer to base64
-const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]!);
-  }
-  return window.btoa(binary);
 };

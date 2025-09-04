@@ -2,6 +2,7 @@ import { z } from "zod";
 import webpush from "web-push";
 import { TRPCError } from "@trpc/server";
 import {
+  adminProcedure,
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
@@ -98,7 +99,7 @@ export const notificationRouter = createTRPCRouter({
   }),
 
   // Send push notification to a specific user
-  sendToUser: protectedProcedure
+  sendToUser: adminProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -109,14 +110,6 @@ export const notificationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user has admin permissions
-      if (!ctx.session.user.isAdmin) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Insufficient permissions to send notifications",
-        });
-      }
-
       try {
         // Get user's push subscriptions
         const subscriptions = await ctx.db.pushSubscription.findMany({
@@ -186,7 +179,7 @@ export const notificationRouter = createTRPCRouter({
     }),
 
   // Send push notification to all users in a group
-  sendToGroup: protectedProcedure
+  sendToGroup: adminProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -197,14 +190,6 @@ export const notificationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user has admin permissions
-      if (!ctx.session.user.isAdmin) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Insufficient permissions to send notifications",
-        });
-      }
-
       try {
         // Get all users in the group
         const groupUsers = await ctx.db.userGroup.findMany({
@@ -298,7 +283,7 @@ export const notificationRouter = createTRPCRouter({
   }),
 
   // Send custom notification to all users
-  sendCustomToAll: protectedProcedure
+  sendCustomToAll: adminProcedure
     .input(
       z.object({
         title: z.string().min(1, "Tytuł jest wymagany"),
@@ -307,18 +292,6 @@ export const notificationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user has admin permissions
-      const user = await ctx.db.user.findFirst({
-        where: { id: ctx.session.user.id },
-      });
-
-      if (!user?.isAdmin) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Insufficient permissions to send notifications",
-        });
-      }
-
       try {
         // Get all push subscriptions from all users
         const allSubscriptions = await ctx.db.pushSubscription.findMany({
