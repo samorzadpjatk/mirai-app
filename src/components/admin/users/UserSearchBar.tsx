@@ -11,10 +11,10 @@ interface UserSearchBarProps {
   resultCount?: number;
 }
 
-export default function UserSearchBar({ 
-  onSearch, 
+export default function UserSearchBar({
+  onSearch,
   placeholder = "Search users by name, email, or wrist number...",
-  resultCount 
+  resultCount
 }: UserSearchBarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -34,45 +34,24 @@ export default function UserSearchBar({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder={placeholder}
-          style={{ 
-            width: "100%",
-            paddingLeft: "2.5rem",
-            paddingRight: searchTerm ? "2.5rem" : "1rem"
-          }}
-        />
-        
-        <MagnifyingGlassIcon 
-          style={{
-            position: "absolute",
-            left: "0.75rem",
-            top: "50%",
-            transform: "translateY(-50%)",
-            opacity: 0.6,
-            width: "1rem",
-            height: "1rem"
-          }}
-        />
-        
-        {searchTerm && (
-          <Button
-            variant="ghost"
-            size="1"
-            onClick={handleClear}
-            style={{
-              position: "absolute",
-              right: "0.25rem",
-              top: "50%",
-              transform: "translateY(-50%)",
-              padding: "0.25rem",
-              minWidth: "auto",
-              height: "auto"
-            }}
-          >
-            <Cross2Icon width="12" height="12" />
-          </Button>
-        )}
+        >
+          <TextField.Slot>
+            <MagnifyingGlassIcon />
+          </TextField.Slot>
+          <TextField.Slot>
+            {searchTerm && (
+              <Button
+                variant="soft"
+                size="1"
+                onClick={handleClear}
+              >
+                <Cross2Icon />
+              </Button>
+            )}
+          </TextField.Slot>
+        </TextField.Root>
       </div>
-      
+
       {searchTerm && (
         <Flex align="center" gap="2">
           <Text size="2" color="gray">
