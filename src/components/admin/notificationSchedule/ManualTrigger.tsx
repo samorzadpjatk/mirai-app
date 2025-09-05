@@ -10,8 +10,10 @@ export default function ManualTrigger() {
   const [notificationType, setNotificationType] = useState("ranking");
   const [customTitle, setCustomTitle] = useState("");
   const [customBody, setCustomBody] = useState("");
-  
+  const { data: groups } = api.group.getAll.useQuery();
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
   const sendCustomNotificationMutation = api.notifications.sendCustomToAll.useMutation();
+  const sendCustomNotificationToGroupMutation = api.notifications.sendToGroup.useMutation();
 
   const handleManualTrigger = async () => {
     setLoading(true);
@@ -27,14 +29,24 @@ export default function ManualTrigger() {
           });
           return;
         }
-
-        const customResult = await sendCustomNotificationMutation.mutateAsync({
-          title: customTitle.trim(),
-          body: customBody.trim(),
-          url: "/",
-        });
-
-        setResult(customResult);
+        if (selectedGroupId != "all") {
+          // Send to specific group
+          const groupResult = await sendCustomNotificationToGroupMutation.mutateAsync({
+            groupId: selectedGroupId,
+            title: customTitle.trim(),
+            body: customBody.trim(),
+            url: "/",
+          });
+          setResult(groupResult);
+        } else {
+          // Send to all users
+          const customResult = await sendCustomNotificationMutation.mutateAsync({
+            title: customTitle.trim(),
+            body: customBody.trim(),
+            url: "/",
+          });
+          setResult(customResult);
+        }
       } else {
         // Handle scheduled notification types (ranking, weekly)
         const response = await fetch("/api/scheduler", {
@@ -100,7 +112,7 @@ export default function ManualTrigger() {
 
               <div>
                 <Text as="div" size="2" mb="2" weight="bold">
-                  Treść powiadomienia:
+                  Notification body:
                 </Text>
                 <TextArea
                   value={customBody}
@@ -109,6 +121,26 @@ export default function ManualTrigger() {
                   rows={4}
                   style={{ width: "100%" }}
                 />
+              </div>
+
+              <div>
+                <Text as="div" size="2" mb="2" weight="bold">
+                  Target group:
+                </Text>
+                <Select.Root
+                  value={selectedGroupId}
+                  onValueChange={setSelectedGroupId}
+                >
+                  <Select.Trigger style={{ width: "100%" }} />
+                  <Select.Content>
+                    <Select.Item value="all">All users</Select.Item>
+                    {groups?.map((group) => (
+                      <Select.Item key={group.id} value={group.id}>
+                        {group.name}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
               </div>
             </>
           )}
