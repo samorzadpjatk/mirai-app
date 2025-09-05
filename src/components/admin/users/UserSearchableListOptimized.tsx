@@ -41,6 +41,13 @@ export default function UserSearchableListOptimized() {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [field, setField] = useState<"name" | "email" | "wristNumber" | "houseNumber" | "groupName">("name");
+  const searchBarPlaceholderMap: Record<typeof field, string> = {
+    name: "Search users by name...",
+    email: "Search users by email...",
+    wristNumber: "Search users by wrist number...",
+    houseNumber: "Search users by house number...",
+    groupName: "Search users by group name...",
+  };
 
   const {
     data: searchResult,
@@ -73,6 +80,7 @@ export default function UserSearchableListOptimized() {
     <Flex direction="column" gap="4">
       <UserSearchFieldDropdownMenu setField={setField} />
       <UserSearchBar
+        placeholder={searchBarPlaceholderMap[field]}
         onSearch={handleSearch}
         resultCount={pagination?.totalCount}
       />
