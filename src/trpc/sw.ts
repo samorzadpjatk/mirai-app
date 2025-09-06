@@ -1,7 +1,10 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import SuperJSON from "superjson";
 import type { AppRouter } from "~/server/api/root";
-import { getBaseUrl } from "~/utils/format";
+
+export function getBaseUrl() {
+  return globalThis.location?.origin ?? "http://localhost:3000";
+}
 
 // Service Worker tRPC client: send same-site/http-only session cookie from AuthJS
 // by making fetch include credentials. Do NOT attempt to read the cookie in JS;
