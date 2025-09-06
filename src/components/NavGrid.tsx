@@ -26,7 +26,7 @@ export default async function NavGrid() {
                 </Link>
               </Button>
             </Grid>
-            {(session?.user.isAdmin || session?.user.isModerator) && (
+            {(process.env.NODE_ENV === 'development' || (session?.user.isAdmin || session?.user.isModerator)) && (
               <Button size={"4"} variant="outline">
                 <Link href={"/admin/groups"}>
                   <Text>Chamber of Administration</Text>
@@ -36,6 +36,13 @@ export default async function NavGrid() {
             
             {/* Notification Settings for all users */}
             <NotificationSettings showTestFeatures={false} />
+            
+            {/* Notifications section for all users */}
+            <Button size={"4"} variant="outline">
+              <Link href={"/notifications"}>
+                <Text>📨 Notifications</Text>
+              </Link>
+            </Button>
           </>
         )}
       </Flex>

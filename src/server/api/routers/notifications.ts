@@ -190,6 +190,17 @@ export const notificationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Create notification record first
+      const notification = await ctx.db.webPushNotification.create({
+        data: {
+          title: input.title,
+          body: input.body,
+          targetGroupId: input.groupId,
+          status: "pending",
+          createdBy: ctx.session.user.id,
+        },
+      });
+
       try {
         // Get all users in the group
         const groupUsers = await ctx.db.userGroup.findMany({
@@ -252,6 +263,18 @@ export const notificationRouter = createTRPCRouter({
           }
         }
 
+        // Update notification record with results
+        await ctx.db.webPushNotification.update({
+          where: { id: notification.id },
+          data: {
+            status: totalSent > 0 ? "sent" : "failed",
+            sentAt: totalSent > 0 ? new Date() : null,
+            deliveryAttempts: 1,
+            lastAttemptAt: new Date(),
+            failureReason: totalSent === 0 ? "No active subscriptions or delivery failed" : null,
+          },
+        });
+
         return {
           success: true,
           sent: totalSent,
@@ -259,6 +282,17 @@ export const notificationRouter = createTRPCRouter({
           usersInGroup: groupUsers.length,
         };
       } catch (error) {
+        // Update notification record as failed
+        await ctx.db.webPushNotification.update({
+          where: { id: notification.id },
+          data: {
+            status: "failed",
+            deliveryAttempts: 1,
+            lastAttemptAt: new Date(),
+            failureReason: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+        
         console.error("Error sending group push notification:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -292,6 +326,17 @@ export const notificationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Create notification record first
+      const notification = await ctx.db.webPushNotification.create({
+        data: {
+          title: input.title,
+          body: input.body,
+          sentToAll: true,
+          status: "pending",
+          createdBy: ctx.session.user.id,
+        },
+      });
+
       try {
         // Get all push subscriptions from all users
         const allSubscriptions = await ctx.db.pushSubscription.findMany({
@@ -306,6 +351,17 @@ export const notificationRouter = createTRPCRouter({
         });
 
         if (allSubscriptions.length === 0) {
+          // Update notification record as failed
+          await ctx.db.webPushNotification.update({
+            where: { id: notification.id },
+            data: {
+              status: "failed",
+              deliveryAttempts: 1,
+              lastAttemptAt: new Date(),
+              failureReason: "No active subscriptions",
+            },
+          });
+
           return {
             success: true,
             sent: 0,
@@ -359,6 +415,18 @@ export const notificationRouter = createTRPCRouter({
         // Get unique user count
         const uniqueUsers = new Set(allSubscriptions.map(s => s.userId)).size;
 
+        // Update notification record with results
+        await ctx.db.webPushNotification.update({
+          where: { id: notification.id },
+          data: {
+            status: successful > 0 ? "sent" : "failed",
+            sentAt: successful > 0 ? new Date() : null,
+            deliveryAttempts: 1,
+            lastAttemptAt: new Date(),
+            failureReason: successful === 0 ? "No active subscriptions or delivery failed" : null,
+          },
+        });
+
         return {
           success: true,
           sent: successful,
@@ -368,6 +436,17 @@ export const notificationRouter = createTRPCRouter({
           message: `Wysłano powiadomienie do ${successful} subskrypcji (${uniqueUsers} użytkowników)`,
         };
       } catch (error) {
+        // Update notification record as failed
+        await ctx.db.webPushNotification.update({
+          where: { id: notification.id },
+          data: {
+            status: "failed",
+            deliveryAttempts: 1,
+            lastAttemptAt: new Date(),
+            failureReason: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+        
         console.error("Error sending custom notification to all users:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
