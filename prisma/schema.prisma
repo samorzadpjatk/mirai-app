@@ -43,33 +43,36 @@ model Session {
 }
 
 model User {
-    id                    String                 @id @default(cuid())
-    name                  String?
-    email                 String?                @unique
-    emailVerified         DateTime?
-    image                 String?
-    wristNumber           String?                @unique
-    houseNumber           String?                @unique
-    accounts              Account[]
-    sessions              Session[]
-    groups                UserGroup[]
-    isAdmin               Boolean                @default(false)
-    isModerator           Boolean               @default(false)
-    organizerGroups       Group[]                @relation("UserOrganizerGroups")
-    coinTransactionsAdmin CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
-    pushSubscriptions     PushSubscription[]
-    notificationSchedules NotificationSchedule[] @relation("NotificationScheduleAdmin")
+    id                         String                 @id @default(cuid())
+    name                       String?
+    email                      String?                @unique
+    emailVerified              DateTime?
+    image                      String?
+    wristNumber                String?                @unique
+    houseNumber                String?                @unique
+    accounts                   Account[]
+    sessions                   Session[]
+    groups                     UserGroup[]
+    isAdmin                    Boolean                @default(false)
+    isModerator                Boolean               @default(false)
+    organizerGroups            Group[]                @relation("UserOrganizerGroups")
+    coinTransactionsAdmin      CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
+    pushSubscriptions          PushSubscription[]
+    notificationSchedules      NotificationSchedule[] @relation("NotificationScheduleAdmin")
+    webPushNotificationsAdmin  WebPushNotification[]  @relation("WebPushNotificationAdmin")
+    webPushNotificationsTarget WebPushNotification[]  @relation("WebPushNotificationTargetUser")
 }
 
 model Group {
-    id               String            @id @default(uuid())
-    name             String
-    organizerId      String
-    organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
-    code             String            @unique
-    members          UserGroup[]
-    coins            Int               @default(0)
-    coinTransactions CoinTransaction[]
+    id                    String                 @id @default(uuid())
+    name                  String
+    organizerId           String
+    organizer             User                   @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
+    code                  String                 @unique
+    members               UserGroup[]
+    coins                 Int                    @default(0)
+    coinTransactions      CoinTransaction[]
+    webPushNotifications  WebPushNotification[]  @relation("WebPushNotificationTargetGroup")
 }
 
 model UserGroup {
@@ -125,4 +128,31 @@ model NotificationSchedule {
     updatedAt   DateTime @updatedAt
     createdBy   String   // Admin who created this schedule
     admin       User     @relation("NotificationScheduleAdmin", fields: [createdBy], references: [id])
+}
+
+model WebPushNotification {
+    id               String   @id @default(cuid())
+    title            String   // Notification title
+    body             String   // Notification body/message
+    icon             String?  // Optional notification icon URL
+    badge            String?  // Optional badge icon URL
+    tag              String?  // Optional tag for grouping notifications
+    requireInteraction Boolean @default(false) // Whether notification requires user interaction
+    silent           Boolean  @default(false) // Whether notification should be silent
+    targetUserId     String?  // If sent to specific user
+    targetUser       User?    @relation("WebPushNotificationTargetUser", fields: [targetUserId], references: [id])
+    targetGroupId    String?  // If sent to specific group
+    targetGroup      Group?   @relation("WebPushNotificationTargetGroup", fields: [targetGroupId], references: [id])
+    sentToAll        Boolean  @default(false) // If sent to all users
+    status           String   @default("pending") // pending, sent, failed
+    sentAt           DateTime? // When the notification was actually sent
+    failureReason    String?  // Reason for failure if status is 'failed'
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+    createdBy        String   // Admin who created this notification
+    admin            User     @relation("WebPushNotificationAdmin", fields: [createdBy], references: [id])
+    
+    // Delivery tracking
+    deliveryAttempts Int      @default(0)
+    lastAttemptAt    DateTime?
 }
