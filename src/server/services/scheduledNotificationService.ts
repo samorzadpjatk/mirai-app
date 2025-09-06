@@ -1,5 +1,20 @@
 import { db } from "~/server/db";
 import { NotificationService } from "./notificationService";
+import webpush from "web-push";
+import { env } from "~/env";
+
+// Configure web-push with VAPID keys
+if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_EMAIL) {
+  webpush.setVapidDetails(
+    `mailto:${env.VAPID_EMAIL}`,
+    env.VAPID_PUBLIC_KEY,
+    env.VAPID_PRIVATE_KEY
+  );
+}
+
+interface WebPushError extends Error {
+  statusCode?: number;
+}
 
 // Type for group ranking data
 interface GroupRanking {
@@ -16,9 +31,59 @@ interface GroupRanking {
 
 export class ScheduledNotificationService {
   /**
+   * Helper function to send notification to a user and handle web push directly
+   */
+  private static async sendNotificationToUser(
+    user: any,
+    notification: { title: string; body: string; url?: string; data?: Record<string, unknown> }
+  ): Promise<{ sent: number; failed: number }> {
+    const payload = JSON.stringify({
+      title: notification.title,
+      body: notification.body,
+      url: notification.url ?? "/",
+      data: notification.data ?? {},
+      timestamp: Date.now(),
+    });
+
+    let sent = 0;
+    let failed = 0;
+
+    const results = await Promise.allSettled(
+      user.pushSubscriptions.map(async (subscription: any) => {
+        try {
+          const pushSubscription = {
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: subscription.p256dh,
+              auth: subscription.auth,
+            },
+          };
+
+          return await webpush.sendNotification(pushSubscription, payload);
+        } catch (error: unknown) {
+          console.error("Error sending notification:", error);
+          
+          // Remove invalid subscriptions
+          if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
+            await db.pushSubscription.delete({
+              where: { id: subscription.id },
+            });
+          }
+          
+          throw error;
+        }
+      })
+    );
+
+    sent = results.filter(result => result.status === 'fulfilled').length;
+    failed = results.filter(result => result.status === 'rejected').length;
+
+    return { sent, failed };
+  }
+  /**
    * Generate and send ranking update notifications to all users
    */
-  static async sendRankingUpdate(_scheduleName: string): Promise<{
+  static async sendRankingUpdate(scheduleName: string): Promise<{
     sent: number;
     failed: number;
     totalUsers: number;
@@ -73,41 +138,56 @@ export class ScheduledNotificationService {
           topGroup?.coins ?? 0,
         ) as { title: string; body: string; url?: string; data?: Record<string, unknown> };
 
-        // Send to group members
-        if (group.members.length > 0) {
-          for (const member of group.members) {
-            if (member.user.pushSubscriptions.length > 0) {
-              totalUsers++;
-              try {
-                const result = await NotificationService.sendToUser(
-                  member.user.id,
-                  personalizedMessage
-                );
-                totalSent += result.sent;
-                totalFailed += result.failed;
-              } catch (error) {
-                console.error(`Failed to send ranking update to user ${member.user.id}:`, error);
-                totalFailed += member.user.pushSubscriptions.length;
-              }
-            }
-          }
-        }
+        // Create notification record for this group
+        const notification = await db.webPushNotification.create({
+          data: {
+            title: personalizedMessage.title,
+            body: personalizedMessage.body,
+            targetGroupId: group.id,
+            status: "pending",
+            createdBy: "cmf8fmjmw0000u1v6y4z9mwnm", // System user ID
+          },
+        });
 
-        // Send to organizer if they have subscriptions
-        if (group.organizer.pushSubscriptions.length > 0) {
+        // Send to group members and organizer
+        const allUsersInGroup = [
+          ...group.members.map(m => m.user),
+          group.organizer
+        ].filter((user, index, self) => 
+          // Remove duplicates and filter users with subscriptions
+          self.findIndex(u => u.id === user.id) === index && 
+          user.pushSubscriptions && user.pushSubscriptions.length > 0
+        );
+
+        let groupSent = 0;
+        let groupFailed = 0;
+
+        for (const user of allUsersInGroup) {
           totalUsers++;
           try {
-            const result = await NotificationService.sendToUser(
-              group.organizer.id,
-              personalizedMessage
-            );
+            const result = await this.sendNotificationToUser(user, personalizedMessage);
+            groupSent += result.sent;
+            groupFailed += result.failed;
             totalSent += result.sent;
             totalFailed += result.failed;
           } catch (error) {
-            console.error(`Failed to send ranking update to organizer ${group.organizer.id}:`, error);
-            totalFailed += group.organizer.pushSubscriptions.length;
+            console.error(`Failed to send ranking update to user ${user.id}:`, error);
+            groupFailed += user.pushSubscriptions?.length || 0;
+            totalFailed += user.pushSubscriptions?.length || 0;
           }
         }
+
+        // Update notification record
+        await db.webPushNotification.update({
+          where: { id: notification.id },
+          data: {
+            status: groupSent > 0 ? "sent" : "failed",
+            sentAt: groupSent > 0 ? new Date() : null,
+            deliveryAttempts: 1,
+            lastAttemptAt: new Date(),
+            failureReason: groupSent === 0 ? `Ranking update failed for ${scheduleName}` : null,
+          },
+        });
       }
 
       console.log(`Ranking update sent: ${totalSent} successful, ${totalFailed} failed, ${totalUsers} total users`);
@@ -279,46 +359,62 @@ export class ScheduledNotificationService {
         },
       };
 
+      // Create notification record for weekly summary
+      const notification = await db.webPushNotification.create({
+        data: {
+          title: summaryNotification.title,
+          body: summaryNotification.body,
+          sentToAll: true,
+          status: "pending",
+          createdBy: "cmf8fmjmw0000u1v6y4z9mwnm", // System user ID
+        },
+      });
+
       let totalSent = 0;
       let totalFailed = 0;
       let totalUsers = 0;
 
-      // Send to all users
+      // Get all unique users from all groups
+      const allUsers = new Map();
+      
       for (const group of ranking) {
-        // Send to group members
+        // Add group members
         for (const member of group.members) {
-          if (member.user.pushSubscriptions.length > 0) {
-            totalUsers++;
-            try {
-              const result = await NotificationService.sendToUser(
-                member.user.id,
-                summaryNotification
-              );
-              totalSent += result.sent;
-              totalFailed += result.failed;
-            } catch (error) {
-              console.error(`Failed to send weekly summary to user ${member.user.id}:`, error);
-              totalFailed += member.user.pushSubscriptions.length;
-            }
+          if (member.user.pushSubscriptions && member.user.pushSubscriptions.length > 0) {
+            allUsers.set(member.user.id, member.user);
           }
         }
 
-        // Send to organizer
-        if (group.organizer.pushSubscriptions.length > 0) {
-          totalUsers++;
-          try {
-            const result = await NotificationService.sendToUser(
-              group.organizer.id,
-              summaryNotification
-            );
-            totalSent += result.sent;
-            totalFailed += result.failed;
-          } catch (error) {
-            console.error(`Failed to send weekly summary to organizer ${group.organizer.id}:`, error);
-            totalFailed += group.organizer.pushSubscriptions.length;
-          }
+        // Add organizer
+        if (group.organizer.pushSubscriptions && group.organizer.pushSubscriptions.length > 0) {
+          allUsers.set(group.organizer.id, group.organizer);
         }
       }
+
+      // Send to all unique users
+      for (const user of allUsers.values()) {
+        totalUsers++;
+        try {
+          const result = await this.sendNotificationToUser(user, summaryNotification);
+          totalSent += result.sent;
+          totalFailed += result.failed;
+        } catch (error) {
+          console.error(`Failed to send weekly summary to user ${user.id}:`, error);
+          totalFailed += user.pushSubscriptions?.length || 0;
+        }
+      }
+
+      // Update notification record
+      await db.webPushNotification.update({
+        where: { id: notification.id },
+        data: {
+          status: totalSent > 0 ? "sent" : "failed",
+          sentAt: totalSent > 0 ? new Date() : null,
+          deliveryAttempts: 1,
+          lastAttemptAt: new Date(),
+          failureReason: totalSent === 0 ? "Weekly summary failed - no active subscriptions" : null,
+        },
+      });
 
       return {
         sent: totalSent,

@@ -8,8 +8,8 @@ import {
 import { NotificationService } from "~/server/services/notificationService";
 
 export const webPushNotificationRouter = createTRPCRouter({
-  // Get all web push notifications with pagination and filtering
-  getAll: adminProcedure
+  // Get all web push notifications for regular users (filtered by group membership)
+  getAll: protectedProcedure
     .input(
       z.object({
         page: z.number().min(1).default(1),
@@ -22,13 +22,130 @@ export const webPushNotificationRouter = createTRPCRouter({
       const { page, pageSize, status, targetType } = input;
       const skip = (page - 1) * pageSize;
 
-      // Build filter conditions
-      const where: any = {};
+      // Get user's group memberships
+      const userGroups = await ctx.db.userGroup.findMany({
+        where: { userId: ctx.session.user.id },
+        select: { groupId: true },
+      });
       
+      const userGroupIds = userGroups.map((ug: { groupId: string }) => ug.groupId);
+      
+      // Also check if user is an organizer of any groups
+      const organizedGroups = await ctx.db.group.findMany({
+        where: { organizerId: ctx.session.user.id },
+        select: { id: true },
+      });
+      
+      const organizedGroupIds = organizedGroups.map(g => g.id);
+      const allUserGroupIds = [...userGroupIds, ...organizedGroupIds];
+
+      // Build filter conditions - only show notifications user should see
+      const where: any = {
+        OR: [
+          // Notifications sent to all users
+          { sentToAll: true },
+          // Notifications sent specifically to this user
+          { targetUserId: ctx.session.user.id },
+          // Notifications sent to groups user is member/organizer of
+          ...(allUserGroupIds.length > 0 ? [{ targetGroupId: { in: allUserGroupIds } }] : [])
+        ]
+      };
+      
+      // Apply additional filters
       if (status && status !== "all") {
         where.status = status;
       }
       
+      if (targetType && targetType !== "all") {
+        // Override OR condition with specific target type filter
+        if (targetType === "user") {
+          where.AND = [
+            { OR: where.OR }, // Keep the membership filter
+            { targetUserId: { not: null }, sentToAll: false }
+          ];
+          delete where.OR;
+        } else if (targetType === "group") {
+          where.AND = [
+            { OR: where.OR }, // Keep the membership filter  
+            { targetGroupId: { not: null }, sentToAll: false }
+          ];
+          delete where.OR;
+        } else if (targetType === "all_users") {
+          where.AND = [
+            { OR: where.OR }, // Keep the membership filter
+            { sentToAll: true }
+          ];
+          delete where.OR;
+        }
+      }
+
+      const [notifications, total] = await Promise.all([
+        ctx.db.webPushNotification.findMany({
+          where,
+          skip,
+          take: pageSize,
+          orderBy: { createdAt: "desc" },
+          include: {
+            admin: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            targetUser: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            targetGroup: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
+          },
+        }),
+        ctx.db.webPushNotification.count({ where }),
+      ]);
+
+      return {
+        notifications,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    }),
+
+  // Get ALL notifications for admins (no filtering)
+  getAllForAdmin: adminProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+        status: z.enum(["pending", "sent", "failed", "all"]).optional(),
+        targetType: z.enum(["user", "group", "all_users", "all"]).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { page, pageSize, status, targetType } = input;
+      const skip = (page - 1) * pageSize;
+
+      // Build filter conditions for admins - NO group membership filtering
+      const where: any = {};
+      
+      // Apply status filter
+      if (status && status !== "all") {
+        where.status = status;
+      }
+      
+      // Apply target type filter
       if (targetType && targetType !== "all") {
         if (targetType === "user") {
           where.targetUserId = { not: null };
@@ -86,10 +203,84 @@ export const webPushNotificationRouter = createTRPCRouter({
     }),
 
   // Get notification statistics
-  getStats: adminProcedure.query(async ({ ctx }) => {
+  getStats: protectedProcedure.query(async ({ ctx }) => {
+    // Get user's group memberships for filtering
+    const userGroups = await ctx.db.userGroup.findMany({
+      where: { userId: ctx.session.user.id },
+      select: { groupId: true },
+    });
+    
+    const userGroupIds = userGroups.map((ug: { groupId: string }) => ug.groupId);
+    
+    // Also check if user is an organizer of any groups
+    const organizedGroups = await ctx.db.group.findMany({
+      where: { organizerId: ctx.session.user.id },
+      select: { id: true },
+    });
+    
+    const organizedGroupIds = organizedGroups.map(g => g.id);
+    const allUserGroupIds = [...userGroupIds, ...organizedGroupIds];
+
+    // Base filter - only notifications user should see
+    const baseWhere = {
+      OR: [
+        { sentToAll: true },
+        { targetUserId: ctx.session.user.id },
+        ...(allUserGroupIds.length > 0 ? [{ targetGroupId: { in: allUserGroupIds } }] : [])
+      ]
+    };
+
     const [
       totalNotifications,
-      sentNotifications,
+      sentNotifications, 
+      failedNotifications,
+      pendingNotifications,
+      todayNotifications,
+    ] = await Promise.all([
+      ctx.db.webPushNotification.count({ where: baseWhere }),
+      ctx.db.webPushNotification.count({ 
+        where: { 
+          ...baseWhere,
+          status: "sent" 
+        } 
+      }),
+      ctx.db.webPushNotification.count({ 
+        where: { 
+          ...baseWhere,
+          status: "failed" 
+        } 
+      }),
+      ctx.db.webPushNotification.count({ 
+        where: { 
+          ...baseWhere,
+          status: "pending" 
+        } 
+      }),
+      ctx.db.webPushNotification.count({
+        where: {
+          ...baseWhere,
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
+        },
+      }),
+    ]);
+
+    return {
+      total: totalNotifications,
+      sent: sentNotifications,
+      failed: failedNotifications,
+      pending: pendingNotifications,
+      today: todayNotifications,
+      successRate: totalNotifications > 0 ? ((sentNotifications / totalNotifications) * 100).toFixed(1) : "0",
+    };
+  }),
+
+  // Get ALL notification statistics for admins (no filtering)
+  getStatsForAdmin: adminProcedure.query(async ({ ctx }) => {
+    const [
+      totalNotifications,
+      sentNotifications, 
       failedNotifications,
       pendingNotifications,
       todayNotifications,
@@ -234,15 +425,9 @@ export const webPushNotificationRouter = createTRPCRouter({
         let failed = 0;
 
         if (allSubscriptions.length > 0) {
-          // Use the existing notification service logic
-          const result = await ctx.trpc.notifications.sendCustomToAll({
-            title: input.title,
-            body: input.body,
-            url: "/",
-          });
-
-          sent = result.sent;
-          failed = result.failed;
+          // Sending from admin panel is disabled - only through schedules
+          sent = 0;
+          failed = allSubscriptions.length;
         }
 
         // Update notification status
@@ -307,12 +492,8 @@ export const webPushNotificationRouter = createTRPCRouter({
         let result = { sent: 0, failed: 0 };
 
         if (notification.sentToAll) {
-          // Retry sending to all users
-          result = await ctx.trpc.notifications.sendCustomToAll({
-            title: notification.title,
-            body: notification.body,
-            url: "/",
-          });
+          // Retry is disabled - notifications are sent only through schedules
+          result = { sent: 0, failed: 1 };
         } else if (notification.targetUserId) {
           // Retry sending to specific user
           result = await NotificationService.sendToUser(notification.targetUserId, {
