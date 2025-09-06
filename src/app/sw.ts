@@ -2,6 +2,8 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry } from "@serwist/precaching";
 import { Serwist, type SerwistGlobalConfig } from "serwist";
+import { api } from "~/trpc/sw";
+import { arrayBufferToBase64 } from "~/utils/web_push";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -62,9 +64,37 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(
       notificationData.title ?? "Treasure Bank",
-      options
-    )
+      options,
+    ),
   );
+});
+
+self.addEventListener("pushsubscriptionchange", (event) => {
+  console.log("SW: Push subscription change event", event);
+  const work = async () => {
+    if (event.newSubscription) {
+      const subscription = event.newSubscription;
+      console.log("SW: New push subscription:", subscription);
+      const p256dh = subscription.getKey("p256dh");
+      const auth = subscription.getKey("auth");
+      if (!p256dh || !auth) {
+        console.error("SW: Missing keys in subscription");
+        return;
+      }
+      const payload = {
+        subscription: {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: arrayBufferToBase64(p256dh),
+            auth: arrayBufferToBase64(auth),
+          },
+        },
+      };
+      await api.notifications.subscribe.mutate(payload);
+    }
+  };
+  // Here you would typically resubscribe and send the new subscription to your server
+  event.waitUntil(work());
 });
 
 // Custom notification click handler
