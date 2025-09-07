@@ -193,6 +193,29 @@ export default function NotificationScheduleList() {
               )}
             </Card>
           )}
+
+          {/* Offline Status Indicator */}
+          {offlineStatus && (
+            <Card 
+              variant="surface" 
+              style={{ 
+                backgroundColor: offlineStatus.includes('saved for later') ? 'var(--orange-2)' : 'var(--red-2)',
+                border: offlineStatus.includes('saved for later') ? '1px solid var(--orange-6)' : '1px solid var(--red-6)'
+              }}
+            >
+              <Text 
+                size="2" 
+                color={offlineStatus.includes('saved for later') ? 'orange' : 'red'}
+              >
+                {offlineStatus}
+              </Text>
+              {offlineStatus.includes('saved for later') && (
+                <Text size="1" color="gray" style={{ display: 'block', marginTop: '0.5rem' }}>
+                  Operation will be completed when connection is restored.
+                </Text>
+              )}
+            </Card>
+          )}
         </Flex>
       </Card>
 
