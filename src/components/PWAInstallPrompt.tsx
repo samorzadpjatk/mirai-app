@@ -76,17 +76,16 @@ export default function PWAInstallPrompt() {
   return (
     <>
       <Card>
-        <Flex direction="column" gap="3">
-          <Heading size="3">Install App</Heading>
-          <Text size="2">
-            Install Treasure Bank as an app on your device for a better experience!
-          </Text>
-
-          <Flex gap="2">
-            <Button onClick={handleShowInstructions} variant="solid">
+        <Flex direction="column" gap="2">
+          <Flex justify={"between"} align="center">
+            <Heading size="2">Install App</Heading>
+            <Button size={"1"} onClick={handleShowInstructions} variant="solid">
               Installation Guide
             </Button>
           </Flex>
+          <Text size="1">
+            Install Treasure Bank as an app on your device for a better experience!
+          </Text>
         </Flex>
       </Card>
 
