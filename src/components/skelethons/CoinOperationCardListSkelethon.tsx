@@ -15,9 +15,9 @@ const CoinOperationCardListSkeleton = () => {
     }
     return (
         <>
-            <Skeleton loading={true}><Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Transakcje</Heading></Skeleton>
+            <Skeleton loading={true}><Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Transactions</Heading></Skeleton>
             <Skeleton loading={true}><TextField.Root
-                placeholder="Filtruj gildie..."
+                placeholder="Filter guilds..."
                 size={{ initial: "1" }}><TextField.Slot>
                     <MagnifyingGlassIcon />
                 </TextField.Slot>

@@ -27,7 +27,7 @@ const TransactionCardListView = () => {
                     <Box width="100%">
                         <TextField.Root
                             style={{ width: "100%" }}
-                            placeholder="Filtruj transakcje..."
+                            placeholder="Filter transactions..."
                             size={{ "initial": "1", "xs": "2", "sm": "3" }}
                             onChange={(e) => {
                                 const value = e.target.value.toLowerCase();
@@ -62,12 +62,12 @@ const TransactionCardListView = () => {
                 filteredTransactions?.length === 0 && (
                     <Flex direction="column" justify="center" style={{ padding: "4rem" }}>
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
-                            Brak transakcji do wyświetlenia
+                            No transactions to display
                         </Text>
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.5 }}>
                             {selectedGroupId
-                                ? "Ta gildia nie ma jeszcze żadnych transakcji"
-                                : "Nie ma jeszcze żadnych transakcji w systemie"
+                                ? "This guild has no transactions yet"
+                                : "There are no transactions in the system yet"
                             }
                         </Text>
                     </Flex>

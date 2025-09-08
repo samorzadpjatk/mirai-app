@@ -129,7 +129,7 @@ export default function WristNumberManager({
             <Flex gap="3">
               <Dialog.Close>
                 <Button variant="soft" color="gray">
-                  Anuluj
+                  Cancel
                 </Button>
               </Dialog.Close>
               <Button

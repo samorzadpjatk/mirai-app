@@ -109,7 +109,7 @@ const CoinOperationFormCard = () => {
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        placeholder="np. 100"
+                        placeholder="e.g. 100"
                         min="1"
                     />
                 </div>

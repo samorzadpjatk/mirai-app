@@ -88,6 +88,7 @@ model CoinTransaction {
     groupId   String
     group     Group    @relation(fields: [groupId], references: [id])
     amount    Int
+    reason    String?  // Optional reason for the transaction
     createdAt DateTime @default(now())
     adminId   String
     admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])

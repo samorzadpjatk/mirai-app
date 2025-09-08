@@ -75,7 +75,7 @@ export default function UserPagination({
       {/* Page info */}
       <Flex justify="between" align="center">
         <Text size="2" color="gray">
-          Pokazano {Math.min((currentPage - 1) * limit + 1, totalCount)}-{Math.min(currentPage * limit, totalCount)} z {totalCount} użytkowników
+          Showing {Math.min((currentPage - 1) * limit + 1, totalCount)}-{Math.min(currentPage * limit, totalCount)} of {totalCount} users
         </Text>
         
         <Flex align="center" gap="2">
