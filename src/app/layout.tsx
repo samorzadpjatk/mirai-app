@@ -125,12 +125,12 @@ export default function RootLayout({
             <Theme panelBackground={"translucent"} accentColor="red" grayColor="gray" style={{ fontFamily: 'var(--font-ibmplex)' }}>
               <Container size="3" style={{ height: '100%', margin: '0', padding: '0.5em' }}>
                 <TopBar />
-                <ScrollArea type="scroll">
                   <Flex style={{ width: '100%', height: "90vh", marginTop: '0.5em' }} direction={"column"} gap={"1"}>
                     <StaffNumber />
-                    {children}
+                    <ScrollArea type="scroll">
+                      {children}
+                    </ScrollArea>
                   </Flex>
-                </ScrollArea>
               </Container>
               <BackgroundImage />
             </Theme>
