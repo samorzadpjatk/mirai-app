@@ -142,7 +142,7 @@ export class ScheduledNotificationService {
 
         // Get first admin user for createdBy
         const firstAdmin = await db.user.findFirst({
-          where: { isAdmin: true, email: "smrz@pjwstk.edu.pl" },
+          where: { isServiceAccount: true, email: "smrz@pjwstk.edu.pl" },
         });
         
         if (!firstAdmin) {
@@ -375,7 +375,7 @@ export class ScheduledNotificationService {
 
       // Get first admin user for createdBy
       const firstAdmin = await db.user.findFirst({
-        where: { isAdmin: true, email: "smrz@pjwstk.edu.pl" },
+        where: { isServiceAccount: true, email: "smrz@pjwstk.edu.pl" },
       });
       
       if (!firstAdmin) {

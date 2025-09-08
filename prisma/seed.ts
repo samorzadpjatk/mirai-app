@@ -48,6 +48,7 @@ async function main() {
           emailVerified: new Date(),
           isAdmin: group.name === process.env.ADMIN_ROLE,
           isModerator: group.name === process.env.KADRA_ROLE,
+          isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
         },
         create: {
           email: user.email,
@@ -55,6 +56,7 @@ async function main() {
           emailVerified: new Date(),
           isAdmin: group.name === process.env.ADMIN_ROLE,
           isModerator: group.name === process.env.KADRA_ROLE,
+          isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
           // securityCode:
         },
       });

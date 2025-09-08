@@ -55,6 +55,7 @@ model User {
     groups                     UserGroup[]
     isAdmin                    Boolean                @default(false)
     isModerator                Boolean               @default(false)
+    isServiceAccount           Boolean               @default(false)
     organizerGroups            Group[]                @relation("UserOrganizerGroups")
     coinTransactionsAdmin      CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
     pushSubscriptions          PushSubscription[]
