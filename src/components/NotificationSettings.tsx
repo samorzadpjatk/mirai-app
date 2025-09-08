@@ -67,6 +67,7 @@ export default function NotificationSettings() {
                     {(<>
                       {getPermissionBadge()}
                       <Button
+                        size={"1"}
                         onClick={requestPermission}
                         disabled={isLoading}
                         variant="solid"
