@@ -8,21 +8,15 @@ import AdminNavMenu from "~/components/admin/AdminNavMenu";
 export default async function AdminDashboard({ children }: Readonly<{ children: React.ReactNode }>) {
     const session = await auth();
 
-    // TEMPORARY: Skip auth check for development
-    if (process.env.NODE_ENV === 'development') {
-        console.log('🚧 Development mode: Skipping admin auth check');
-        // Skip all auth checks in development
-    } else {
-        if (!session?.user) {
-            redirect("/auth/login?callbackUrl=/admin");
-        }
+    if (!session?.user) {
+        redirect("/auth/login?callbackUrl=/admin");
+    }
 
-        const isAdmin = session.user.isAdmin;
-        const isModerator = session.user.isModerator;
+    const isAdmin = session.user.isAdmin;
+    const isModerator = session.user.isModerator;
 
-        if (!isAdmin && !isModerator) {
-            return <Unauthorized />;
-        }
+    if (!isAdmin && !isModerator) {
+        return <Unauthorized />;
     }
 
     return (

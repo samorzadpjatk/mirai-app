@@ -26,7 +26,7 @@ export default async function NavGrid() {
                 </Link>
               </Button>
             </Grid>
-            {(process.env.NODE_ENV === 'development' || (session?.user.isAdmin || session?.user.isModerator)) && (
+            {(session?.user.isAdmin || session?.user.isModerator) && (
               <Button size={"4"} variant="outline">
                 <Link href={"/admin/groups"}>
                   <Text>Chamber of Administration</Text>

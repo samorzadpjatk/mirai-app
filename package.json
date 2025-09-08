@@ -11,14 +11,14 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
-    "dev": "next dev --turbo -p 8080 --experimental-https",
+    "dev": "next dev --turbo -p 11000 --experimental-https",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "postinstall": "prisma generate",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "preview": "next build && next start -p 8080",
-    "start": "next start -p 8080",
+    "preview": "next build && next start -p 11000",
+    "start": "next start -p 11000",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
