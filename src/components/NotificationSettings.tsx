@@ -3,10 +3,6 @@
 import { Button, Card, Flex, Text, Badge, Heading, DataList } from "@radix-ui/themes";
 import { useNotifications } from "~/hooks/useNotifications";
 
-interface NotificationSettingsProps {
-  userId?: string;
-}
-
 export default function NotificationSettings() {
   const {
     isSupported,
@@ -28,20 +24,6 @@ export default function NotificationSettings() {
         return <Badge color="red">Denied</Badge>;
       default:
         return <Badge color="gray">Not Requested</Badge>;
-    }
-  };
-
-  const handleSubscribe = async () => {
-    if (permission !== "granted") {
-      const granted = await requestPermission();
-      if (!granted) return;
-    }
-    await subscribe();
-  };
-
-  const handleTestNotification = () => {
-    if (permission === "granted") {
-      testNotification();
     }
   };
 
@@ -97,7 +79,7 @@ export default function NotificationSettings() {
               {!isSubscribed && (
                 <Button
                   size={"1"}
-                  onClick={handleSubscribe}
+                  onClick={subscribe}
                   disabled={isLoading}
                   variant="solid"
                   color="green"
@@ -119,7 +101,7 @@ export default function NotificationSettings() {
               )}
               <Button
                 size={"1"}
-                onClick={handleTestNotification}
+                onClick={testNotification}
                 variant="outline"
                 disabled={isLoading}
               >

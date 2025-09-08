@@ -143,15 +143,15 @@ export const useNotifications = () => {
   }, [isSupported]);
 
   // Subscribe to push notifications
-  const subscribe = useCallback(async (): Promise<boolean> => {
+  const subscribe = useCallback(async (): Promise<void> => {
     if (!isSupported || permission !== "granted") {
       console.warn("Cannot subscribe: not supported or permission not granted");
-      return false;
+      return;
     }
 
     if (!vapidQuery?.publicKey) {
       console.error("VAPID public key not available");
-      return false;
+      return;
     }
 
     setIsLoading(true);
@@ -185,16 +185,12 @@ export const useNotifications = () => {
 
       if (result.success) {
         setIsSubscribed(true);
-        await refetchStatus();
-        return true;
       }
-
-      return false;
     } catch (error) {
       console.error("Error subscribing to push notifications:", error);
-      return false;
     } finally {
       setIsLoading(false);
+      await refetchStatus();
     }
   }, [
     isSupported,
@@ -205,7 +201,7 @@ export const useNotifications = () => {
   ]);
 
   // Unsubscribe from push notifications
-  const unsubscribe = useCallback(async (): Promise<boolean> => {
+  const unsubscribe = useCallback(async (): Promise<void> => {
     setIsLoading(true);
 
     try {
@@ -222,16 +218,12 @@ export const useNotifications = () => {
         }
 
         setIsSubscribed(false);
-        await refetchStatus();
-        return true;
       }
-
-      return false;
     } catch (error) {
       console.error("Error unsubscribing from push notifications:", error);
-      return false;
     } finally {
       setIsLoading(false);
+      await refetchStatus();
     }
   }, [unsubscribeMutation, refetchStatus]);
 
