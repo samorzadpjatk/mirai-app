@@ -103,7 +103,7 @@ export const useNotifications = () => {
   useEffect(() => {
     async function updateSubscription() {
       if (statusQuery) {
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await navigator.serviceWorker?.ready;
         const subscription = await registration.pushManager?.getSubscription();
         if (statusQuery.isSubscribed) {
           if (!subscription || subscription.endpoint !== statusQuery.endpoint) {
