@@ -21,5 +21,5 @@ export default withSerwist({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
   reloadOnOnline: true,
-  disable: process.env.NODE_ENV === "development",
+  disable: false, // Enable Service Worker in development for push notifications
 })(nextConfig);
