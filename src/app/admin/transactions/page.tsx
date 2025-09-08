@@ -10,7 +10,7 @@ import RefreshButton from "~/components/RefreshButton";
 
 export default function TransactionHistory() {
     return (
-        <Flex direction="column" gap="2" style={{ marginTop: "1em" }}>
+        <Flex direction="column" gap="2">
             {/* Header */}
             <Flex justify="between" align="center">
                 <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Transaction History</Heading>

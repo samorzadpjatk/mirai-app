@@ -95,16 +95,6 @@ export default function NotificationsAdminPage() {
 
   return (
     <Flex direction="column" gap="4">
-      {/* Header with Stats */}
-      <Flex direction="column" gap="3">
-        <Flex align="center" justify="center">
-          <Heading size="6">📨 Notifications</Heading>
-        </Flex>
-
-      </Flex>
-
-      <Separator size="4" />
-
       {/* Filters */}
       <Flex gap="3" wrap="wrap">
         <TextField.Root 
