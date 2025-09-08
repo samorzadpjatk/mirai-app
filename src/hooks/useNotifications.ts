@@ -101,22 +101,28 @@ export const useNotifications = () => {
 
   // Update subscription status when data is loaded
   useEffect(() => {
-    async function updateSubscription() {
-      if (statusQuery) {
-        const registration = await navigator.serviceWorker?.ready;
-        const subscription = await registration.pushManager?.getSubscription();
-        if (statusQuery.isSubscribed) {
-          if (!subscription || subscription.endpoint !== statusQuery.endpoint) {
-            setIsSubscribedElsewhere(true);
+    if (statusQuery) {
+      navigator.serviceWorker?.ready
+        .then(async (registration) => {
+          const subscription =
+            await registration.pushManager?.getSubscription();
+          if (statusQuery.isSubscribed) {
+            if (
+              !subscription ||
+              subscription.endpoint !== statusQuery.endpoint
+            ) {
+              setIsSubscribedElsewhere(true);
+            } else {
+              setIsSubscribed(true);
+            }
           } else {
-            setIsSubscribed(true);
+            setIsSubscribed(false);
           }
-        } else {
-          setIsSubscribed(false);
-        }
-      }
+        })
+        .catch((error) => {
+          console.error("Error checking subscription:", error);
+        });
     }
-    void updateSubscription();
   }, [statusQuery]);
 
   // Request notification permission
