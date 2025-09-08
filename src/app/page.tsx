@@ -2,7 +2,6 @@ import { Card, Flex, Heading, Separator, Text } from "@radix-ui/themes";
 
 import { auth } from "~/server/auth";
 import NavGrid from "~/components/NavGrid";
-import ImageAdnotation from "~/components/ImageAdnotation";
 import PWAInstallPrompt from "~/components/PWAInstallPrompt";
 
 // Component for authenticated users - the main dashboard
