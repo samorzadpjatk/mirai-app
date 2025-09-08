@@ -113,8 +113,11 @@ export class ScheduledNotificationService {
       });
 
       if (ranking.length === 0) {
+        console.log("No groups found for ranking update");
         return { sent: 0, failed: 0, totalUsers: 0 };
       }
+
+      console.log(`Found ${ranking.length} groups for ranking update`);
 
       // Create ranking message
       const topGroup = ranking[0];
@@ -138,6 +141,16 @@ export class ScheduledNotificationService {
           topGroup?.coins ?? 0,
         ) as { title: string; body: string; url?: string; data?: Record<string, unknown> };
 
+        // Get first admin user for createdBy
+        const firstAdmin = await db.user.findFirst({
+          where: { isAdmin: true },
+        });
+        
+        if (!firstAdmin) {
+          console.error("No admin user found for scheduled notification");
+          continue; // Skip this group if no admin found
+        }
+
         // Create notification record for this group
         const notification = await db.webPushNotification.create({
           data: {
@@ -145,7 +158,7 @@ export class ScheduledNotificationService {
             body: personalizedMessage.body,
             targetGroupId: group.id,
             status: "pending",
-            createdBy: "cmf8fmjmw0000u1v6y4z9mwnm", // System user ID
+            createdBy: firstAdmin.id,
           },
         });
 
@@ -158,6 +171,8 @@ export class ScheduledNotificationService {
           self.findIndex(u => u.id === user.id) === index && 
           user.pushSubscriptions && user.pushSubscriptions.length > 0
         );
+
+        console.log(`Group ${group.name}: ${group.members.length} members, ${allUsersInGroup.length} users with push subscriptions`);
 
         let groupSent = 0;
         let groupFailed = 0;
@@ -359,6 +374,15 @@ export class ScheduledNotificationService {
         },
       };
 
+      // Get first admin user for createdBy
+      const firstAdmin = await db.user.findFirst({
+        where: { isAdmin: true },
+      });
+      
+      if (!firstAdmin) {
+        throw new Error("No admin user found for scheduled weekly summary notification");
+      }
+
       // Create notification record for weekly summary
       const notification = await db.webPushNotification.create({
         data: {
@@ -366,7 +390,7 @@ export class ScheduledNotificationService {
           body: summaryNotification.body,
           sentToAll: true,
           status: "pending",
-          createdBy: "cmf8fmjmw0000u1v6y4z9mwnm", // System user ID
+          createdBy: firstAdmin.id,
         },
       });
 
