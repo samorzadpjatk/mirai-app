@@ -19,7 +19,7 @@ export default async function TopBar() {
   }
 
   return (
-    <Flex p={{ "initial": "2" }} position={{ "initial": "sticky" }} direction="row" justify="between" align="center" gap="2" width="100%">
+    <Flex position={{ "initial": "sticky" }} direction="row" justify="between" align="center" gap="2" width="100%">
       <Link href="/">
         <IconButton>
           <HomeIcon />
