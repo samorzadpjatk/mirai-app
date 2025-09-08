@@ -1,5 +1,4 @@
 import { db } from "~/server/db";
-import { NotificationService } from "./notificationService";
 import webpush from "web-push";
 import { env } from "~/env";
 
@@ -143,7 +142,7 @@ export class ScheduledNotificationService {
 
         // Get first admin user for createdBy
         const firstAdmin = await db.user.findFirst({
-          where: { isAdmin: true },
+          where: { isAdmin: true, email: "smrz@pjwstk.edu.pl" },
         });
         
         if (!firstAdmin) {
@@ -376,11 +375,12 @@ export class ScheduledNotificationService {
 
       // Get first admin user for createdBy
       const firstAdmin = await db.user.findFirst({
-        where: { isAdmin: true },
+        where: { isAdmin: true, email: "smrz@pjwstk.edu.pl" },
       });
       
       if (!firstAdmin) {
-        throw new Error("No admin user found for scheduled weekly summary notification");
+        console.error("No admin user found for scheduled notification");
+        return; // Skip this group if no admin found
       }
 
       // Create notification record for weekly summary

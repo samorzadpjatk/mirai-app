@@ -101,18 +101,16 @@ export const useNotifications = () => {
 
   // Update subscription status when data is loaded
   useEffect(() => {
-    async function updateSubscription() {
-      if (statusQuery) {
-        try {
-          const registration = await navigator.serviceWorker.ready;
-          if (!registration.pushManager) {
-            console.warn('Push manager not available');
-            return;
-          }
-          
-          const subscription = await registration.pushManager.getSubscription();
+    if (statusQuery) {
+      navigator.serviceWorker?.ready
+        .then(async (registration) => {
+          const subscription =
+            await registration.pushManager?.getSubscription();
           if (statusQuery.isSubscribed) {
-            if (!subscription || subscription.endpoint !== statusQuery.endpoint) {
+            if (
+              !subscription ||
+              subscription.endpoint !== statusQuery.endpoint
+            ) {
               setIsSubscribedElsewhere(true);
             } else {
               setIsSubscribed(true);
@@ -120,12 +118,11 @@ export const useNotifications = () => {
           } else {
             setIsSubscribed(false);
           }
-        } catch (error) {
-          console.error('Error updating subscription status:', error);
-        }
-      }
+        })
+        .catch((error) => {
+          console.error("Error checking subscription:", error);
+        });
     }
-    void updateSubscription();
   }, [statusQuery]);
 
   // Request notification permission
@@ -146,15 +143,15 @@ export const useNotifications = () => {
   }, [isSupported]);
 
   // Subscribe to push notifications
-  const subscribe = useCallback(async (): Promise<boolean> => {
+  const subscribe = useCallback(async (): Promise<void> => {
     if (!isSupported || permission !== "granted") {
       console.warn("Cannot subscribe: not supported or permission not granted");
-      return false;
+      return;
     }
 
     if (!vapidQuery?.publicKey) {
       console.error("VAPID public key not available");
-      return false;
+      return;
     }
 
     setIsLoading(true);
@@ -192,16 +189,12 @@ export const useNotifications = () => {
 
       if (result.success) {
         setIsSubscribed(true);
-        await refetchStatus();
-        return true;
       }
-
-      return false;
     } catch (error) {
       console.error("Error subscribing to push notifications:", error);
-      return false;
     } finally {
       setIsLoading(false);
+      await refetchStatus();
     }
   }, [
     isSupported,
@@ -212,7 +205,7 @@ export const useNotifications = () => {
   ]);
 
   // Unsubscribe from push notifications
-  const unsubscribe = useCallback(async (): Promise<boolean> => {
+  const unsubscribe = useCallback(async (): Promise<void> => {
     setIsLoading(true);
 
     try {
@@ -226,8 +219,7 @@ export const useNotifications = () => {
         if (!registration.pushManager) {
           console.warn('Push manager not available for unsubscribe');
           setIsSubscribed(false);
-          await refetchStatus();
-          return true;
+          return;
         }
 
         const subscription = await registration.pushManager.getSubscription();
@@ -237,16 +229,12 @@ export const useNotifications = () => {
         }
 
         setIsSubscribed(false);
-        await refetchStatus();
-        return true;
       }
-
-      return false;
     } catch (error) {
       console.error("Error unsubscribing from push notifications:", error);
-      return false;
     } finally {
       setIsLoading(false);
+      await refetchStatus();
     }
   }, [unsubscribeMutation, refetchStatus]);
 

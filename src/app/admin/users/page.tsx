@@ -8,7 +8,7 @@ import UserCardList from "~/components/admin/users/UserCardList";
 export default function UserManagement() {
 
     return (
-        <Flex direction="column" gap="2" style={{ marginTop: "0.5em" }}>
+        <Flex direction="column" gap="2">
             {/* Header */}
             <Flex direction="column" gap={"2"} justify="between">
                 <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>User Management</Heading>

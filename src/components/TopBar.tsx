@@ -3,7 +3,6 @@ import { Flex, Avatar, Button, IconButton, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "~/server/auth";
-import LoadingIndicator from "./LoadingIndicator";
 
 export default async function TopBar() {
   const session = await auth();
@@ -20,7 +19,7 @@ export default async function TopBar() {
   }
 
   return (
-    <Flex p={{ "initial": "2" }} position={{ "initial": "sticky" }} direction="row" justify="between" align="center" gap="2" width="100%">
+    <Flex position={{ "initial": "sticky" }} direction="row" justify="between" align="center" gap="2" width="100%">
       <Link href="/">
         <IconButton>
           <HomeIcon />
@@ -40,7 +39,6 @@ export default async function TopBar() {
             </Text>
           </Flex>
         )}
-        <LoadingIndicator />
         <form action={handleSign}>
           <Button>
             <input type="submit" value={session?.user ? "Sign Out" : "Sign In"} />

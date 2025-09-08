@@ -8,7 +8,7 @@ import GroupCardList from "~/components/admin/groups/GroupCardList";
 
 const GroupManagement = () => {
     return (
-        <Flex direction="column" gap={{ "initial": "1" }} style={{ marginTop: "0.5em" }}>
+        <Flex direction="column" gap={{ "initial": "1" }}>
             <Flex justify="between" align="center">
                 <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }}>Guild Management</Heading>
                 <CreateGroupDialog />

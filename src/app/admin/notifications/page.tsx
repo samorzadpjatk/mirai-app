@@ -6,24 +6,17 @@ import {
   Button, 
   Card, 
   Flex, 
-  Heading, 
   Text, 
   TextField,
   Select,
   Table,
-  Dialog,
-  TextArea,
-  Switch,
   AlertDialog,
   Spinner,
-  Separator,
 } from "@radix-ui/themes";
 import { 
-  PaperPlaneIcon, 
   TrashIcon, 
   ReloadIcon,
   MagnifyingGlassIcon,
-  PlusIcon,
 } from "@radix-ui/react-icons";
 import { api } from "~/trpc/react";
 import { format } from "~/utils/format";
@@ -54,14 +47,14 @@ export default function NotificationsAdminPage() {
 
   const retryMutation = api.webPushNotification.retryNotification.useMutation({
     onSuccess: () => {
-      refetchNotifications();
+      void refetchNotifications();
     },
   });
 
   const deleteMutation = api.webPushNotification.delete.useMutation({
     onSuccess: () => {
       setShowDeleteDialog(null);
-      refetchNotifications();
+      void refetchNotifications();
     },
   });
 
@@ -95,16 +88,6 @@ export default function NotificationsAdminPage() {
 
   return (
     <Flex direction="column" gap="4">
-      {/* Header with Stats */}
-      <Flex direction="column" gap="3">
-        <Flex align="center" justify="center">
-          <Heading size="6">📨 Notifications</Heading>
-        </Flex>
-
-      </Flex>
-
-      <Separator size="4" />
-
       {/* Filters */}
       <Flex gap="3" wrap="wrap">
         <TextField.Root 

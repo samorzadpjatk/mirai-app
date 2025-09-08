@@ -10,7 +10,7 @@ import CoinOperationCardList from "~/components/admin/coin/CoinOperationCardList
 export default function CoinManagement() {
 
     return (
-        <Flex direction="column" gap="4" style={{ marginTop: "1rem" }}>
+        <Flex direction="column" gap="4" >
             {/* Quick Stats */}
             <CoinQuickStatsCard />
 

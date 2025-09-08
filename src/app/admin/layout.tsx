@@ -1,4 +1,4 @@
-import { Card, Flex, Heading, Text } from "@radix-ui/themes";
+import { Box, Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 
@@ -36,7 +36,9 @@ export default async function AdminDashboard({ children }: Readonly<{ children: 
             {/* Admin Dashboard Tabs */}
             <Card size={{ "initial": "1", "xs": "2", "sm": "3" }}>
                 <AdminNavMenu />
-                {children}
+                <Box style={{ marginTop: "0.5rem" }}>
+                    {children}
+                </Box>
             </Card>
         </Flex>
     );

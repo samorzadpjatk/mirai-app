@@ -1,20 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Badge, 
+
+import {
+  Badge,
   Button,
-  Card, 
-  Flex, 
-  Heading, 
-  Text, 
+  Card,
+  Flex,
+  Heading,
+  Text,
   TextField,
   Select,
   Table,
   Spinner,
   Separator,
 } from "@radix-ui/themes";
-import { 
+
+import {
   MagnifyingGlassIcon,
 } from "@radix-ui/react-icons";
 import { api } from "~/trpc/react";
@@ -61,7 +63,7 @@ export default function NotificationsPage() {
 
   // Filter notifications based on search term
   const filteredNotifications = notifications?.notifications.filter(notification =>
-    searchTerm === "" || 
+    searchTerm === "" ||
     notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     notification.body.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
@@ -75,120 +77,114 @@ export default function NotificationsPage() {
   }
 
   return (
-    <Flex direction="column" gap="4">
-      {/* Header */}
-      <Flex direction="column" gap="3">
-        <Flex align="center" justify="center">
+    <Card>
+      <Flex direction="column" gap="4">
+        {/* Header */}
+        <Flex direction="column" align="center" justify="center" gap="3">
           <Heading size="6">📨 Notifications</Heading>
+          <Text size="2" align="center" color="gray">
+            All notifications that have been sent in the application
+          </Text>
         </Flex>
-        
-        <Text size="2" align="center" color="gray">
-          All notifications that have been sent in the application
-        </Text>
 
-      </Flex>
+        <Separator size="4" />
 
-      <Separator size="4" />
+        {/* Search and Filters */}
+        <Flex gap="3">
+          <TextField.Root
+            style={{width: '100%'}}
+            placeholder="Search notifications..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          >
+            <TextField.Slot>
+              <MagnifyingGlassIcon height="16" width="16" />
+            </TextField.Slot>
+          </TextField.Root>
 
-      {/* Search and Filters */}
-      <Flex gap="3" wrap="wrap" justify="center">
-        <TextField.Root 
-          placeholder="Search notifications..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ width: "300px" }}
-        >
-          <TextField.Slot>
-            <MagnifyingGlassIcon height="16" width="16" />
-          </TextField.Slot>
-        </TextField.Root>
+          <Select.Root value={targetType} onValueChange={(value) => setTargetType(value as TargetType)}>
+            <Select.Trigger placeholder="Filter by target..." />
+            <Select.Content>
+              <Select.Item value="all">All</Select.Item>
+              <Select.Item value="all_users">All users</Select.Item>
+              <Select.Item value="group">Guild</Select.Item>
+            </Select.Content>
+          </Select.Root>
+        </Flex>
 
-        <Select.Root value={targetType} onValueChange={(value) => setTargetType(value as TargetType)}>
-          <Select.Trigger placeholder="Filter by target..." />
-          <Select.Content>
-            <Select.Item value="all">All</Select.Item>
-            <Select.Item value="all_users">All users</Select.Item>
-            <Select.Item value="group">Guild</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </Flex>
-
-      {/* Notifications Table */}
-      <Card>
-        <Table.Root>
-          <Table.Header>
-            <Table.Row>
-              <Table.ColumnHeaderCell>Notification</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Target</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Sent at</Table.ColumnHeaderCell>
-              <Table.ColumnHeaderCell>Sent by</Table.ColumnHeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {filteredNotifications.length === 0 ? (
+        {/* Notifications Table */}
+        <Card>
+          <Table.Root>
+            <Table.Header>
               <Table.Row>
-                <Table.Cell colSpan={4} style={{ textAlign: "center", padding: "2rem" }}>
-                  <Text color="gray">
-                    {searchTerm ? "Nie znaleziono powiadomień pasujących do wyszukiwania" : "Brak powiadomień do wyświetlenia"}
-                  </Text>
-                </Table.Cell>
+                <Table.ColumnHeaderCell>Notification</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Target</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Sent at</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Sent by</Table.ColumnHeaderCell>
               </Table.Row>
-            ) : (
-              filteredNotifications.map((notification) => (
-                <Table.Row key={notification.id}>
-                  <Table.Cell>
-                    <Flex direction="column" gap="1">
-                      <Text size="2" weight="bold">{notification.title}</Text>
-                      <Text size="1" color="gray">{notification.body}</Text>
-                    </Flex>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text size="2">{getTargetDescription(notification)}</Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text size="2">
-                      {notification.sentAt ? format.formatDateTime(notification.sentAt) : "-"}
+            </Table.Header>
+            <Table.Body>
+              {filteredNotifications.length === 0 ? (
+                <Table.Row>
+                  <Table.Cell colSpan={4} style={{ textAlign: "center", padding: "2rem" }}>
+                    <Text color="gray">
+                      {searchTerm ? "Nie znaleziono powiadomień pasujących do wyszukiwania" : "Brak powiadomień do wyświetlenia"}
                     </Text>
                   </Table.Cell>
-                  <Table.Cell>
-                    <Text size="2">{notification.admin.name}</Text>
-                  </Table.Cell>
                 </Table.Row>
-              ))
-            )}
-          </Table.Body>
-        </Table.Root>
+              ) : (
+                filteredNotifications.map((notification) => (
+                  <Table.Row key={notification.id}>
+                    <Table.Cell>
+                      <Flex direction="column" gap="1">
+                        <Text size="2" weight="bold">{notification.title}</Text>
+                        <Text size="1" color="gray">{notification.body}</Text>
+                      </Flex>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text size="2">{getTargetDescription(notification)}</Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text size="2">
+                        {notification.sentAt ? format.formatDateTime(notification.sentAt) : "-"}
+                      </Text>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Text size="2">{notification.admin.name}</Text>
+                    </Table.Cell>
+                  </Table.Row>
+                ))
+              )}
+            </Table.Body>
+          </Table.Root>
 
-        {/* Pagination */}
-        {notifications && notifications.pagination.totalPages > 1 && (
-          <Flex justify="between" align="center" mt="4">
-            <Text size="2" color="gray">
-              Page {notifications.pagination.page} of {notifications.pagination.totalPages}
-              {" "}({notifications.pagination.total} total)
-            </Text>
-            <Flex gap="2">
-              <Button 
-                variant="soft" 
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Previous
-              </Button>
-              <Button 
-                variant="soft"
-                disabled={page === notifications.pagination.totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </Button>
+          {/* Pagination */}
+          {notifications && notifications.pagination.totalPages > 1 && (
+            <Flex justify="between" align="center" mt="4">
+              <Text size="2" color="gray">
+                Page {notifications.pagination.page} of {notifications.pagination.totalPages}
+                {" "}({notifications.pagination.total} total)
+              </Text>
+              <Flex gap="2">
+                <Button
+                  variant="soft"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="soft"
+                  disabled={page === notifications.pagination.totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Next
+                </Button>
+              </Flex>
             </Flex>
-          </Flex>
-        )}
-      </Card>
-
-      <Text size="1" color="gray" align="center" mt="4">
-        This page shows all successfully sent notifications in the application.
-      </Text>
-    </Flex>
+          )}
+        </Card>
+      </Flex>
+    </Card>
   );
 }
