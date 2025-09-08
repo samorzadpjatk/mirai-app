@@ -22,6 +22,9 @@ const AdminNavMenu = () => {
         <TabNav.Link asChild active={pathname?.includes("schedules")}>
             <Link href="schedules">🔔 Schedules</Link>
         </TabNav.Link>
+        <TabNav.Link asChild active={pathname?.includes("notifications")}>
+            <Link href="notifications">📨 Notifications</Link>
+        </TabNav.Link>
     </TabNav.Root>);
 }
 
