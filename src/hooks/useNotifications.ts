@@ -103,16 +103,25 @@ export const useNotifications = () => {
   useEffect(() => {
     async function updateSubscription() {
       if (statusQuery) {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager?.getSubscription();
-        if (statusQuery.isSubscribed) {
-          if (!subscription || subscription.endpoint !== statusQuery.endpoint) {
-            setIsSubscribedElsewhere(true);
-          } else {
-            setIsSubscribed(true);
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          if (!registration.pushManager) {
+            console.warn('Push manager not available');
+            return;
           }
-        } else {
-          setIsSubscribed(false);
+          
+          const subscription = await registration.pushManager.getSubscription();
+          if (statusQuery.isSubscribed) {
+            if (!subscription || subscription.endpoint !== statusQuery.endpoint) {
+              setIsSubscribedElsewhere(true);
+            } else {
+              setIsSubscribed(true);
+            }
+          } else {
+            setIsSubscribed(false);
+          }
+        } catch (error) {
+          console.error('Error updating subscription status:', error);
         }
       }
     }
@@ -159,6 +168,10 @@ export const useNotifications = () => {
 
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
+
+      if (!registration.pushManager) {
+        throw new Error("Push manager not available");
+      }
 
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
@@ -209,6 +222,14 @@ export const useNotifications = () => {
       if (result.success) {
         // Unsubscribe from browser
         const registration = await navigator.serviceWorker.ready;
+        
+        if (!registration.pushManager) {
+          console.warn('Push manager not available for unsubscribe');
+          setIsSubscribed(false);
+          await refetchStatus();
+          return true;
+        }
+
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {
