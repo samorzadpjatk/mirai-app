@@ -13,6 +13,7 @@ import { Container, Flex, ScrollArea, Theme } from "@radix-ui/themes";
 import { ThemeProvider } from 'next-themes';
 import TopBar from "~/components/TopBar";
 import BackgroundImage from "~/components/BackgroundImage";
+import StaffNumber from "~/components/StaffNumber";
 
 export const metadata: Metadata = {
   title: "Treasure Bank",
@@ -123,6 +124,7 @@ export default function RootLayout({
           <ThemeProvider attribute="class">
             <Theme panelBackground={"translucent"} accentColor="red" grayColor="gray" style={{ fontFamily: 'var(--font-ibmplex)' }}>
               <Container size="3" style={{ height: '100%', margin: '0', padding: '0.5em' }}>
+                <StaffNumber />
                 <TopBar />
                 <ScrollArea type="scroll">
                   <Flex style={{ width: '100%', height: "90vh", marginTop: '0.5em' }} direction={"column"} align={"center"} gap={"1"}>
