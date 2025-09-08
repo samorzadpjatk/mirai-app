@@ -6,6 +6,7 @@ const TransactionCardList = ({ transactions, loading }: {
     transactions: {
         id: string;
         amount: number;
+        reason?: string | null;
         createdAt: Date;
         group: {
             id: string;
@@ -26,7 +27,7 @@ const TransactionCardList = ({ transactions, loading }: {
             return (<Card key={transaction.id}>
                 <DataList.Root size={{ initial: "1" }}>
                     <DataList.Item>
-                        <DataList.Label>Data</DataList.Label>
+                        <DataList.Label>Date</DataList.Label>
                         <DataList.Value>
                             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>
                                 {formatDate(transaction.createdAt)}
@@ -34,13 +35,13 @@ const TransactionCardList = ({ transactions, loading }: {
                         </DataList.Value>
                     </DataList.Item>
                     <DataList.Item>
-                        <DataList.Label>Gildia</DataList.Label>
+                        <DataList.Label>Guild</DataList.Label>
                         <DataList.Value>
                             <Strong>{transaction.group.name}</Strong>
                         </DataList.Value>
                     </DataList.Item>
                     <DataList.Item>
-                        <DataList.Label>Kwota</DataList.Label>
+                        <DataList.Label>Amount</DataList.Label>
                         <DataList.Value>
                             <Badge
                                 variant="solid"
@@ -54,12 +55,22 @@ const TransactionCardList = ({ transactions, loading }: {
                         <DataList.Label>Administrator</DataList.Label>
                         <DataList.Value>
                             <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>
-                                {transaction.admin.name ?? "Nieznany admin"}
+                                {transaction.admin.name ?? "Unknown admin"}
                             </Text>
                         </DataList.Value>
                     </DataList.Item>
+                    {transaction.reason && (
+                        <DataList.Item>
+                            <DataList.Label>Reason</DataList.Label>
+                            <DataList.Value>
+                                <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>
+                                    {transaction.reason}
+                                </Text>
+                            </DataList.Value>
+                        </DataList.Item>
+                    )}
                     <DataList.Item>
-                        <DataList.Label>Stan po transakcji</DataList.Label>
+                        <DataList.Label>Balance After Transaction</DataList.Label>
                         <DataList.Value>
                             <Badge variant="soft" color="blue">
                                 💰 {transaction.group.coins ?? 0}

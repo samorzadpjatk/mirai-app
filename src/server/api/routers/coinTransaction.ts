@@ -56,6 +56,7 @@ export const coinTransactionRouter = createTRPCRouter({
       select: {
         id: true,
         amount: true,
+        reason: true,
         createdAt: true,
         group: { select: { id: true, name: true } },
         admin: { select: { id: true, name: true } },
@@ -111,6 +112,7 @@ export const coinTransactionRouter = createTRPCRouter({
         select: {
           id: true,
           amount: true,
+          reason: true,
           createdAt: true,
           group: { select: { name: true } },
         },

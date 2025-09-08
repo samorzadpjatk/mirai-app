@@ -23,12 +23,12 @@ const TransactionListFilterPopover = ({ groups, selectedGroupId, setSelectedGrou
             <Flex direction="column" gap="2">
                 <>
                     <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                        Gildia
+                        Guild
                     </Text>
                     <Select.Root size={{ "initial": "1", "xs": "2", "sm": "3" }} value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                        <Select.Trigger placeholder="Wszystkie gildie" />
+                        <Select.Trigger placeholder="All Guilds" />
                         <Select.Content>
-                            <Select.Item value="all">Wszystkie gildie</Select.Item>
+                            <Select.Item value="all">All Guilds</Select.Item>
                             {groups?.map((group) => (
                                 <Select.Item key={group.id} value={group.id}>
                                     {group.name}
@@ -40,15 +40,15 @@ const TransactionListFilterPopover = ({ groups, selectedGroupId, setSelectedGrou
 
                 <>
                     <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                        Limit wyników
+                        Results Limit
                     </Text>
                     <Select.Root size={{ "initial": "1", "xs": "2", "sm": "3" }} value={limit.toString()} onValueChange={(value) => setLimit(parseInt(value))}>
                         <Select.Trigger />
                         <Select.Content>
-                            <Select.Item value="10">10 ostatnich</Select.Item>
-                            <Select.Item value="25">25 ostatnich</Select.Item>
-                            <Select.Item value="50">50 ostatnich</Select.Item>
-                            <Select.Item value="100">100 ostatnich</Select.Item>
+                            <Select.Item value="10">Last 10</Select.Item>
+                            <Select.Item value="25">Last 25</Select.Item>
+                            <Select.Item value="50">Last 50</Select.Item>
+                            <Select.Item value="100">Last 100</Select.Item>
                         </Select.Content>
                     </Select.Root>
                 </></Flex>
