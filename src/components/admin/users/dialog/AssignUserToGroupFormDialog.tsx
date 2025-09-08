@@ -61,7 +61,7 @@ const AssignUserToGroupFormDialog = ({
                                 Choose a Guild
                             </Text>
                             <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                                <Select.Trigger placeholder="Wybierz gildię..." />
+                                <Select.Trigger placeholder="Select guild..." />
                                 <Select.Content>
                                     {availableGroups.map((group) => (
                                         <Select.Item key={group.id} value={group.id}>

@@ -179,8 +179,8 @@ export class NotificationService {
    */
   static createCoinsAddedNotification(groupName: string, amount: number): NotificationData {
     return {
-      title: `💰 ${groupName} otrzymała monety!`,
-      body: `Wasza gildia otrzymała ${amount} monet! Sprawdźcie aktualny ranking.`,
+      title: `💰 ${groupName} received coins!`,
+      body: `Your guild received ${amount} coins! Check the current ranking.`,
       url: "/ranking",
       data: {
         type: "coins_added",
@@ -192,8 +192,8 @@ export class NotificationService {
 
   static createNewMemberNotification(groupName: string, memberName: string): NotificationData {
     return {
-      title: `👥 Nowy członek w ${groupName}!`,
-      body: `${memberName} dołączył do waszej gildii!`,
+      title: `👥 New member in ${groupName}!`,
+      body: `${memberName} joined your guild!`,
       url: "/",
       data: {
         type: "new_member",
@@ -205,8 +205,8 @@ export class NotificationService {
 
   static createRankingUpdateNotification(groupName: string, newPosition: number): NotificationData {
     return {
-      title: `🏆 Aktualizacja rankingu!`,
-      body: `${groupName} zajmuje teraz ${newPosition} miejsce w rankingu!`,
+      title: `🏆 Ranking update!`,
+      body: `${groupName} now holds ${newPosition} place in the ranking!`,
       url: "/ranking",
       data: {
         type: "ranking_update",

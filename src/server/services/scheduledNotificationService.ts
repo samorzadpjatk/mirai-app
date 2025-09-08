@@ -224,16 +224,16 @@ export class ScheduledNotificationService {
     const topGroup = ranking[0];
     const top3 = ranking.slice(0, 3);
 
-    let message = "🏆 Aktualizacja Rankingu Gildii!\n\n";
-    message += "Najlepsze 3 gildie:\n";
+    let message = "🏆 Guild Ranking Update!\n\n";
+    message += "Top 3 guilds:\n";
     
     top3.forEach((group, index) => {
       const emoji = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
-      message += `${emoji} ${group.name}: ${group.coins} monet\n`;
+      message += `${emoji} ${group.name}: ${group.coins} coins\n`;
     });
 
     return {
-      title: "🏆 Ranking Gildii - Aktualizacja",
+      title: "🏆 Guild Ranking - Update",
       body: message.trim(),
       url: "/ranking",
       data: {
@@ -259,25 +259,25 @@ export class ScheduledNotificationService {
     let body: string;
 
     if (position === 1) {
-      title = `🥇 ${groupName} - Liderzy Rankingu!`;
-      body = `Gratulacje! Wasza gildia jest na 1. miejscu z ${coins} monetami! Kontynuujcie dobrą pracę!`;
+      title = `🥇 ${groupName} - Ranking Leaders!`;
+      body = `Congratulations! Your guild is in 1st place with ${coins} coins! Keep up the good work!`;
     } else if (position <= 3) {
       const emoji = position === 2 ? "🥈" : "🥉";
       title = `${emoji} ${groupName} - Top 3!`;
-      body = `Wasza gildia jest na ${position}. miejscu z ${coins} monetami! `;
+      body = `Your guild is in ${position}${position === 2 ? 'nd' : 'rd'} place with ${coins} coins! `;
       
       if (position === 2) {
         const coinDiff = topGroupCoins - coins;
-        body += `Do 1. miejsca brakuje wam ${coinDiff} monet!`;
+        body += `You need ${coinDiff} more coins to reach 1st place!`;
       } else {
-        body += `Świetna robota! Jesteście w TOP 3!`;
+        body += `Great job! You're in the TOP 3!`;
       }
     } else {
-      title = `📊 ${groupName} - Pozycja ${position}`;
-      body = `Wasza gildia jest obecnie na ${position}. miejscu z ${coins} monetami. `;
+      title = `📊 ${groupName} - Position ${position}`;
+      body = `Your guild is currently in ${position}${position % 10 === 1 && position !== 11 ? 'st' : position % 10 === 2 && position !== 12 ? 'nd' : position % 10 === 3 && position !== 13 ? 'rd' : 'th'} place with ${coins} coins. `;
       
       const coinDiff = topGroupCoins - coins;
-      body += `Lider (${topGroupName}) ma ${topGroupCoins} monet. Pozostało ${coinDiff} monet do dogonięcia!`;
+      body += `The leader (${topGroupName}) has ${topGroupCoins} coins. You need ${coinDiff} more coins to catch up!`;
     }
 
     return {
@@ -360,8 +360,8 @@ export class ScheduledNotificationService {
       });
 
       const summaryNotification: { title: string; body: string; url?: string; data?: Record<string, unknown> } = {
-        title: "📊 Podsumowanie Tygodnia",
-        body: `W tym tygodniu: ${totalCoinsThisWeek._sum.amount ?? 0} monet rozdane, ${totalTransactions} transakcji. Lider: ${ranking[0]?.name ?? 'Brak'} (${ranking[0]?.coins ?? 0} monet). Sprawdź pełny ranking!`,
+        title: "📊 Weekly Summary",
+        body: `This week: ${totalCoinsThisWeek._sum.amount ?? 0} coins distributed, ${totalTransactions} transactions. Leader: ${ranking[0]?.name ?? 'None'} (${ranking[0]?.coins ?? 0} coins). Check the full ranking!`,
         url: "/ranking",
         data: {
           type: "weekly_summary",

@@ -24,6 +24,7 @@ export const coinRouter = createTRPCRouter({
         data: {
           groupId: input.groupId,
           amount: input.amount,
+          reason: input.reason,
           adminId: ctx.session.user.id,
         },
         include: {
@@ -82,7 +83,7 @@ export const coinRouter = createTRPCRouter({
       });
 
       if (!group || group.coins < input.amount) {
-        throw new Error("Grupa nie ma wystarczającej liczby monet");
+        throw new Error("Guild does not have enough coins");
       }
 
       await ctx.db.group.update({
@@ -94,6 +95,7 @@ export const coinRouter = createTRPCRouter({
         data: {
           groupId: input.groupId,
           amount: -input.amount, // Negative amount for removal
+          reason: input.reason,
           adminId: ctx.session.user.id,
         },
         include: {
@@ -116,8 +118,8 @@ export const coinRouter = createTRPCRouter({
       // Send push notifications to all group members for coin removal
       try {
         const notification = {
-          title: `💸 ${transaction.group.name} - Monety usunięte`,
-          body: `Wasza gildia straciła ${input.amount} monet. ${input.reason ? `Powód: ${input.reason}` : 'Sprawdźcie aktualny ranking.'}`,
+          title: `💸 ${transaction.group.name} - Coins Seized`,
+          body: `Your guild lost ${input.amount} coins. ${input.reason ? `Reason: ${input.reason}` : 'Check the current ranking.'}`,
           url: "/ranking",
           data: {
             type: "coins_removed",
