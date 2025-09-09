@@ -46,7 +46,7 @@ async function main() {
         where: { email: user.email },
         update: {
           emailVerified: new Date(),
-          isAdmin: group.name === process.env.ADMIN_ROLE,
+          isAdmin: group.name === process.env.ADMIN_ROLE || group.name === process.env.TECH_ROLE,
           isModerator: group.name === process.env.KADRA_ROLE,
           isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
         },
@@ -54,7 +54,7 @@ async function main() {
           email: user.email,
           name: user.name,
           emailVerified: new Date(),
-          isAdmin: group.name === process.env.ADMIN_ROLE,
+          isAdmin: group.name === process.env.ADMIN_ROLE || group.name === process.env.TECH_ROLE,
           isModerator: group.name === process.env.KADRA_ROLE,
           isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
           // securityCode:

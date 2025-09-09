@@ -18,7 +18,7 @@ const AssignUserToGroupFormDialog = ({
     const { data: groups, isLoading: isLoadingGroups } = api.group.getAll.useQuery();
 
     const availableGroups = groups?.filter(group =>
-        !user?.groups?.some(userGroup => userGroup.group.id === group.id)
+        user?.group?.id === group.id
     ) ?? [];
     const [selectedGroupId, setSelectedGroupId] = useState("");
 

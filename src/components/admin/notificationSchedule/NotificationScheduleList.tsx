@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, Flex, Text, Badge, Dialog, Box, Heading, Table } from "@radix-ui/themes";
+import { Button, Card, Flex, Text, Badge, Dialog, Heading, Table, TextArea } from "@radix-ui/themes";
 import { api } from "~/trpc/react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
+import type { NotificationSchedule } from "@prisma/client";
 
 export default function NotificationScheduleList() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -16,14 +17,14 @@ export default function NotificationScheduleList() {
   } = api.notificationSchedule.getAll.useQuery();
 
   const toggleActiveMutation = api.notificationSchedule.toggleActive.useMutation({
-    onSuccess: () => {
-      refetch();
+    onSuccess: async () => {
+      await refetch();
     },
   });
 
   const deleteMutation = api.notificationSchedule.delete.useMutation({
-    onSuccess: () => {
-      refetch();
+    onSuccess: async () => {
+      await refetch();
     },
   });
 
@@ -49,7 +50,7 @@ export default function NotificationScheduleList() {
     return `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
   };
 
-  const getStatusBadge = (schedule: any) => {
+  const getStatusBadge = (schedule: NotificationSchedule) => {
     const now = new Date();
     const isActive = schedule.isActive;
     const isInDateRange = now >= new Date(schedule.startDate) && now <= new Date(schedule.endDate);
@@ -57,11 +58,11 @@ export default function NotificationScheduleList() {
     if (!isActive) {
       return <Badge color="gray">Inactive</Badge>;
     }
-    
+
     if (!isInDateRange) {
       return <Badge color="orange">Beyond the Bounds of Time</Badge>;
     }
-    
+
     return <Badge color="green">Active</Badge>;
   };
 
@@ -92,7 +93,6 @@ export default function NotificationScheduleList() {
               <Table.Header>
                 <Table.Row>
                   <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Description</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Time</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Period</Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
@@ -105,11 +105,6 @@ export default function NotificationScheduleList() {
                   <Table.Row key={schedule.id}>
                     <Table.Cell>
                       <Text weight="bold">{schedule.name}</Text>
-                    </Table.Cell>
-                    <Table.Cell>
-                      <Text size="2" color="gray">
-                        {schedule.description || "Brak opisu"}
-                      </Text>
                     </Table.Cell>
                     <Table.Cell>
                       <Text>{formatTime(schedule.hour, schedule.minute)}</Text>
@@ -164,8 +159,8 @@ export default function NotificationScheduleList() {
       <CreateNotificationScheduleDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        onSuccess={() => {
-          refetch();
+        onSuccess={async () => {
+          await refetch();
           setCreateDialogOpen(false);
         }}
       />
@@ -186,6 +181,10 @@ function CreateNotificationScheduleDialog({
 }: CreateNotificationScheduleDialogProps) {
   const [formData, setFormData] = useState({
     name: "",
+    notificationType: "custom" as "custom" | "ranking",
+    notificationTitle: "",
+    notificationBody: "",
+    notificationUrl: "/",
     description: "",
     startDate: "",
     endDate: "",
@@ -199,6 +198,10 @@ function CreateNotificationScheduleDialog({
       onSuccess();
       setFormData({
         name: "",
+        notificationType: "custom",
+        notificationTitle: "",
+        notificationBody: "",
+        notificationUrl: "/",
         description: "",
         startDate: "",
         endDate: "",
@@ -211,11 +214,14 @@ function CreateNotificationScheduleDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       await createMutation.mutateAsync({
         name: formData.name,
-        description: formData.description || undefined,
+        notificationType: formData.notificationType,
+        notificationTitle: formData.notificationTitle,
+        notificationBody: formData.notificationBody,
+        notificationUrl: formData.notificationUrl,
         startDate: new Date(formData.startDate),
         endDate: new Date(formData.endDate),
         hour: formData.hour,
@@ -245,35 +251,37 @@ function CreateNotificationScheduleDialog({
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="np. Codzienny ranking"
+                placeholder="np. Daily ranking"
                 required
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  border: "1px solid var(--gray-7)",
-                  borderRadius: "4px",
-                }}
               />
             </label>
+            {formData.notificationType === "custom" && <>
+              <label>
+                <Text as="div" size="2" mb="1" weight="bold">
+                  Notification title
+                </Text>
+                <input
+                  type="text"
+                  value={formData.notificationTitle}
+                  onChange={(e) => setFormData({ ...formData, notificationTitle: e.target.value })}
+                  placeholder="np. Daily ranking"
+                  required
+                />
+              </label>
+              <label>
+                <Text as="div" size="2" mb="1" weight="bold">
+                  Notification body
+                </Text>
+                <input
+                  type="text"
+                  value={formData.notificationBody}
+                  onChange={(e) => setFormData({ ...formData, notificationBody: e.target.value })}
+                  placeholder="np. Daily ranking"
+                  required
+                />
+              </label>
+            </>}
 
-            <label>
-              <Text as="div" size="2" mb="1" weight="bold">
-                Description (optional)
-              </Text>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Chronicles description..."
-                rows={2}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  border: "1px solid var(--gray-7)",
-                  borderRadius: "4px",
-                  resize: "vertical",
-                }}
-              />
-            </label>
 
             <Flex gap="3">
               <label style={{ flex: 1 }}>
@@ -285,12 +293,6 @@ function CreateNotificationScheduleDialog({
                   value={formData.startDate}
                   onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    border: "1px solid var(--gray-7)",
-                    borderRadius: "4px",
-                  }}
                 />
               </label>
 
@@ -303,12 +305,6 @@ function CreateNotificationScheduleDialog({
                   value={formData.endDate}
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    border: "1px solid var(--gray-7)",
-                    borderRadius: "4px",
-                  }}
                 />
               </label>
             </Flex>
@@ -325,12 +321,6 @@ function CreateNotificationScheduleDialog({
                   value={formData.hour}
                   onChange={(e) => setFormData({ ...formData, hour: parseInt(e.target.value) })}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    border: "1px solid var(--gray-7)",
-                    borderRadius: "4px",
-                  }}
                 />
               </label>
 
@@ -345,12 +335,6 @@ function CreateNotificationScheduleDialog({
                   value={formData.minute}
                   onChange={(e) => setFormData({ ...formData, minute: parseInt(e.target.value) })}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    border: "1px solid var(--gray-7)",
-                    borderRadius: "4px",
-                  }}
                 />
               </label>
             </Flex>

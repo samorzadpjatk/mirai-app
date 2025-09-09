@@ -1,7 +1,6 @@
-import { Button, Flex, Grid, Separator, Text } from "@radix-ui/themes";
+import { Button, Grid, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { auth } from "~/server/auth";
-import NotificationSettings from "~/components/NotificationSettings";
 
 export default async function NavGrid() {
   const session = await auth();

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
-import { NotificationService } from "~/server/services/notificationService";
 
 export const coinRouter = createTRPCRouter({
     // Add coins to a group (enhanced version)
@@ -43,25 +42,6 @@ export const coinRouter = createTRPCRouter({
           },
         },
       });
-
-      // Send push notifications to all group members
-      try {
-        const notification = NotificationService.createCoinsAddedNotification(
-          transaction.group.name,
-          input.amount
-        );
-        
-        await NotificationService.sendToGroupMembers(
-          input.groupId,
-          notification,
-          ctx.session.user.id // Exclude the admin who added coins
-        );
-        
-        console.log(`Sent coin notification to group ${transaction.group.name}`);
-      } catch (error) {
-        console.error("Failed to send coin notification:", error);
-        // Don't fail the mutation if notification fails
-      }
 
       return transaction;
     }),
@@ -114,32 +94,6 @@ export const coinRouter = createTRPCRouter({
           },
         },
       });
-
-      // Send push notifications to all group members for coin removal
-      try {
-        const notification = {
-          title: `💸 ${transaction.group.name} - Coins Seized`,
-          body: `Your guild lost ${input.amount} coins. ${input.reason ? `Reason: ${input.reason}` : 'Check the current ranking.'}`,
-          url: "/ranking",
-          data: {
-            type: "coins_removed",
-            amount: input.amount,
-            groupName: transaction.group.name,
-            reason: input.reason,
-          },
-        };
-        
-        await NotificationService.sendToGroupMembers(
-          input.groupId,
-          notification,
-          ctx.session.user.id // Exclude the admin who removed coins
-        );
-        
-        console.log(`Sent coin removal notification to group ${transaction.group.name}`);
-      } catch (error) {
-        console.error("Failed to send coin removal notification:", error);
-        // Don't fail the mutation if notification fails
-      }
 
       return transaction;
     }),

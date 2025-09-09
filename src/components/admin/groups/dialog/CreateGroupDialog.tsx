@@ -14,7 +14,8 @@ const CreateGroupDialog = () => {
     const [organizerId, setOrganizerId] = useState("");
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-    const { data: adminUsers, isLoading } = api.user.getAllAdminsNames.useQuery();
+    const { data: adminUsers, isLoading } = api.user.getAllAdminsNamesWithoutGroups.useQuery();
+    
     const createGroupMutation = api.group.create.useMutation({
         onSuccess: async () => {
             setIsCreateDialogOpen(false);

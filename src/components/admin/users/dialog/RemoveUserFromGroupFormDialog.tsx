@@ -20,7 +20,7 @@ const RemoveUserFromGroupFormDialog = ({
             router.refresh();
         },
     });
-    if (selectedUser?.groups.length === undefined || selectedUser?.groups.length === 0) return null;
+    if (!selectedUser?.group) return null;
     return (
         <Skeleton loading={isLoadingUser}>
             <AlertDialog.Root open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
@@ -44,7 +44,7 @@ const RemoveUserFromGroupFormDialog = ({
                     <AlertDialog.Title>Banish from the Guild</AlertDialog.Title>
                     <AlertDialog.Description>
                         Do you dare to banish &quot;{selectedUser?.name}&quot;
-                        from the guild &quot;{selectedUser?.groups?.[0]?.group?.name ?? "Unknown"}&quot;?
+                        from the guild &quot;{selectedUser?.group?.name ?? "Unknown"}&quot;?
                     </AlertDialog.Description>
                     <Flex gap="3" mt="4" justify="end">
                         <AlertDialog.Cancel>

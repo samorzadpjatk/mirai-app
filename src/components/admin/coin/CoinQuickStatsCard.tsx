@@ -6,6 +6,7 @@ import CoinQuickStatsCardSkeleton from "~/components/skelethons/CoinQuickStatsCa
 
 const CoinQuickStatsCard = async () => {
     const coinQuickStats = await api.coinTransaction.getQuickStats();
+    if (!coinQuickStats) return null;
     return (<Suspense fallback={<CoinQuickStatsCardSkeleton />}><Card>
         <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }} mb="4">Stats</Heading>
         <DataList.Root size={{ initial: "1" }}>
@@ -13,7 +14,7 @@ const CoinQuickStatsCard = async () => {
                 <DataList.Label><Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>Total Treasure</Text></DataList.Label>
                 <DataList.Value>
                     <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                        💰 {coinQuickStats?.totalCoins}
+                        💰 {coinQuickStats.totalCoins}
                     </Text>
                 </DataList.Value>
             </DataList.Item>
@@ -21,7 +22,7 @@ const CoinQuickStatsCard = async () => {
                 <DataList.Label><Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>Number of Guilds</Text></DataList.Label>
                 <DataList.Value>
                     <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                        🏛️ {coinQuickStats?.totalGroups}
+                        🏛️ {coinQuickStats.totalGroups}
                     </Text>
                 </DataList.Value>
             </DataList.Item>
@@ -29,7 +30,7 @@ const CoinQuickStatsCard = async () => {
                 <DataList.Label><Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>Average Treasure per Guild</Text></DataList.Label>
                 <DataList.Value>
                     <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                        📊 {coinQuickStats?.averageCoinsPerGroup}
+                        📊 {coinQuickStats.averageCoinsPerGroup}
                     </Text>
                 </DataList.Value>
             </DataList.Item>
@@ -37,11 +38,11 @@ const CoinQuickStatsCard = async () => {
                 <DataList.Label><Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>The Wealthiest Guild</Text></DataList.Label>
                 <DataList.Value>
                     <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                        🏆 {coinQuickStats?.richestGroupName}
+                        🏆 {coinQuickStats.richestGroupName}
                     </Text>
                 </DataList.Value>
             </DataList.Item>
-            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>Last update: {formatDate(coinQuickStats?.time)}</Text>
+            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>Last update: {formatDate(coinQuickStats.time)}</Text>
         </DataList.Root>
     </Card></Suspense>);
 }

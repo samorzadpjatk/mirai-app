@@ -19,7 +19,7 @@ export const formatAmount = (amount: number) => {
 };
 
 export const formatDateTime = (date: Date | string | null | undefined) => {
-    if (!date) return "-";
+    if (!date) return "---";
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat('pl-PL', {
         day: '2-digit',

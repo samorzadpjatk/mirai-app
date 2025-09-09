@@ -2,13 +2,10 @@
 
 import { Select } from "@radix-ui/themes";
 
-interface UserSearchFieldDropdownMenuProps {
-    setField: (field: "name" | "email" | "wristNumber" | "houseNumber" | "groupName") => void;
-}
 
-const UserSearchFieldDropdownMenu = ({ setField }: UserSearchFieldDropdownMenuProps) => {
+const UserSearchFieldDropdownMenu = ({ onValueChange }: { onValueChange: (field: "name" | "email" | "wristNumber" | "houseNumber" | "groupName") => void }) => {
     return (
-        <Select.Root defaultValue="name" onValueChange={(value) => { setField(value as "name" | "email" | "wristNumber" | "houseNumber" | "groupName") }}>
+        <Select.Root defaultValue="name" onValueChange={onValueChange}>
             <Select.Trigger placeholder="Select a search field" />
             <Select.Content>
                 <Select.Item value="name">Name</Select.Item>

@@ -11,19 +11,7 @@ import UserPagination from "./UserPagination";
 import { api } from "~/trpc/react";
 import HouseNumberManager from "./HouseNumberManager";
 import UserSearchFieldDropdownMenu from "./UserSearchFieldDropdownMenu";
-
-// Types for user data from searchWithPagination
-interface UserGroup {
-  group: {
-    id: string;
-    name: string;
-  };
-}
-
-interface OrganizerGroup {
-  id: string;
-  name: string;
-}
+import type { Group } from "@prisma/client";
 
 interface SearchUser {
   id: string;
@@ -32,8 +20,8 @@ interface SearchUser {
   isAdmin: boolean;
   wristNumber: string | null;
   houseNumber: string | null;
-  groups: UserGroup[];
-  organizerGroups: OrganizerGroup[];
+  group: Group | null;
+  organizerGroup: Group | null;
 }
 
 export default function UserSearchableListOptimized() {
@@ -52,6 +40,7 @@ export default function UserSearchableListOptimized() {
   const {
     data: searchResult,
     isLoading,
+    refetch
   } = api.user.searchWithPagination.useQuery({
     searchTerm: searchTerm || undefined,
     page: currentPage,
@@ -59,26 +48,34 @@ export default function UserSearchableListOptimized() {
     field,
   });
 
-  const handleSearch = useCallback((newSearchTerm: string) => {
+  const handleSearch = useCallback(async (newSearchTerm: string) => {
     setSearchTerm(newSearchTerm);
     setCurrentPage(1); // Reset to first page when searching
-  }, []);
+    await refetch();
+  }, [refetch]);
 
-  const handlePageChange = useCallback((page: number) => {
+  const handlePageChange = useCallback(async (page: number) => {
     setCurrentPage(page);
   }, []);
 
-  const handleLimitChange = useCallback((newLimit: number) => {
+  const handleLimitChange = useCallback(async (newLimit: number) => {
     setLimit(newLimit);
     setCurrentPage(1); // Reset to first page when changing limit
-  }, []);
+    await refetch();
+  }, [refetch]);
+
+  const handleValueChange = useCallback(async (newField: typeof field) => {
+    setField(newField);
+    setCurrentPage(1); // Reset to first page when changing search field
+    await refetch();
+  }, [refetch]);
 
   const users = (searchResult?.users ?? []) as SearchUser[];
   const pagination = searchResult?.pagination;
 
   return (
     <Flex direction="column" gap="4">
-      <UserSearchFieldDropdownMenu setField={setField} />
+      <UserSearchFieldDropdownMenu onValueChange={handleValueChange} />
       <UserSearchBar
         placeholder={searchBarPlaceholderMap[field]}
         onSearch={handleSearch}
@@ -173,17 +170,17 @@ export default function UserSearchableListOptimized() {
                     <DataList.Label>Guilds</DataList.Label>
                     <DataList.Value>
                       <Flex gap="2" wrap="wrap">
-                        {user.groups?.map((userGroup: UserGroup) => (
-                          <Badge key={userGroup.group.id} variant="soft" color="purple">
-                            {userGroup.group.name}
+                        {user.group && (
+                          <Badge key={user.group.id} variant="soft" color="purple">
+                            {user.group.name}
                           </Badge>
-                        ))}
-                        {user.organizerGroups?.map((organizerGroup: OrganizerGroup) => (
-                          <Badge key={organizerGroup.id} variant="solid" color="purple">
-                            {organizerGroup.name}
+                        )}
+                        {user.organizerGroup && (
+                          <Badge key={user.organizerGroup.id} variant="solid" color="purple">
+                            {user.organizerGroup.name}
                           </Badge>
-                        ))}
-                        {(!user.groups || user.groups.length === 0) && (!user.organizerGroups || user.organizerGroups.length === 0) && (
+                        )}
+                        {(!user.group) && (!user.organizerGroup) && (
                           <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
                             No groups assigned
                           </Text>
@@ -195,12 +192,12 @@ export default function UserSearchableListOptimized() {
                     <DataList.Label>Actions</DataList.Label>
                     <DataList.Value>
                       <Flex direction={"column"} gap="2">
-                        {user.groups.length === 0 && user.organizerGroups.length === 0 && (
+                        {user.group === null && user.organizerGroup === null && (
                           <AssignUserToGroupFormDialog
                             selectedUserId={user.id}
                           />
                         )}
-                        {user.groups.length > 0 && (
+                        {user.group && (
                           <RemoveUserFromGroupFormDialog
                             selectedUserId={user.id}
                           />

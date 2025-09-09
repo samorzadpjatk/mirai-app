@@ -1,7 +1,6 @@
 import { groupRouter } from "~/server/api/routers/group";
 import { notificationRouter } from "~/server/api/routers/notifications";
 import { notificationScheduleRouter } from "~/server/api/routers/notificationSchedule";
-import { webPushNotificationRouter } from "~/server/api/routers/webPushNotification";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { userRouter } from "./routers/user";
 import { coinRouter } from "./routers/coin";
@@ -19,7 +18,6 @@ export const appRouter = createTRPCRouter({
   coinTransaction: coinTransactionRouter,
   notifications: notificationRouter,
   notificationSchedule: notificationScheduleRouter,
-  webPushNotification: webPushNotificationRouter,
 });
 
 // export type definition of API

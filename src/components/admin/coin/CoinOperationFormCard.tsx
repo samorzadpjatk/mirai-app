@@ -15,9 +15,17 @@ const CoinOperationFormCard = () => {
     const [reason, setReason] = useState("");
     const [operation, setOperation] = useState<"add" | "remove">("add");
 
+    const sendCoinAddedNotificationMutation = api.notifications.sendCoinAddedToGroup.useMutation()
+    const sendCoinRemovedNotificationMutation = api.notifications.sendCoinRemovedFromGroup.useMutation()
+
     // Mutations
     const addCoinsMutation = api.coin.addCoins.useMutation({
         onSuccess: async () => {
+            await sendCoinAddedNotificationMutation.mutateAsync({
+                groupId: selectedGroupId,
+                coins: parseInt(amount),
+                reason: reason,
+            });
             resetForm();
             router.refresh();
         },
@@ -25,6 +33,11 @@ const CoinOperationFormCard = () => {
 
     const removeCoinsMutation = api.coin.removeCoins.useMutation({
         onSuccess: async () => {
+            await sendCoinRemovedNotificationMutation.mutateAsync({
+                groupId: selectedGroupId,
+                coins: parseInt(amount),
+                reason: reason,
+            });
             resetForm();
             router.refresh();
         },
