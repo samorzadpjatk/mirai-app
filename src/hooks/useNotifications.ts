@@ -166,6 +166,10 @@ export const useNotifications = () => {
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
 
+      if (!registration.pushManager) {
+        throw new Error("Push manager not available");
+      }
+
       // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -211,6 +215,13 @@ export const useNotifications = () => {
       if (result.success) {
         // Unsubscribe from browser
         const registration = await navigator.serviceWorker.ready;
+        
+        if (!registration.pushManager) {
+          console.warn('Push manager not available for unsubscribe');
+          setIsSubscribed(false);
+          return;
+        }
+
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {

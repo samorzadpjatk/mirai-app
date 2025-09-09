@@ -28,8 +28,8 @@ export const coinTransactionRouter = createTRPCRouter({
     ]);
     return {
       transactionCount,
-      addedCoins: addedCoins._sum.amount,
-      removedCoins: removedCoins._sum.amount,
+      addedCoins: addedCoins._sum.amount ?? 0,
+      removedCoins: removedCoins._sum.amount ?? 0,
       netBalance: (addedCoins._sum.amount ?? 0) + (removedCoins._sum.amount ?? 0),
       time: new Date()
     };

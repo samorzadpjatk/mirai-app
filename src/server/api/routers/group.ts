@@ -6,7 +6,6 @@ import {
   adminProcedure,
   moderatorProcedure,
 } from "~/server/api/trpc";
-import { NotificationService } from "~/server/services/notificationService";
 
 export const groupRouter = createTRPCRouter({
   getAllNames: moderatorProcedure.query(async ({ ctx }) => {
@@ -20,14 +19,14 @@ export const groupRouter = createTRPCRouter({
   getMy: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
-      include: { 
-        groups: { include: { group: true } },
-        organizerGroups: true
+      select: {
+        group: { select: { id: true, name: true } },
+        organizerGroup: { select: { id: true, name: true } },
       },
     });
     if (!user) return null;
-    const memberGroupId = user.groups[0]?.group.id;
-    const organizerGroupId = user.organizerGroups[0]?.id;
+    const memberGroupId = user.group?.id;
+    const organizerGroupId = user.organizerGroup?.id;
     const id = memberGroupId ?? organizerGroupId;
     if (!id) return null;
     return await ctx.db.group.findUnique({
@@ -35,13 +34,9 @@ export const groupRouter = createTRPCRouter({
       include: {
         members: {
           select: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+            id: true,
+            name: true,
+            email: true,
           },
         },
         organizer: {
@@ -70,13 +65,9 @@ export const groupRouter = createTRPCRouter({
       include: {
         members: {
           select: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+            id: true,
+            name: true,
+            email: true,
           },
         },
         organizer: {
@@ -201,8 +192,9 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // First, delete all related records
-      await ctx.db.userGroup.deleteMany({
+      await ctx.db.user.updateMany({
         where: { groupId: input.id },
+        data: { groupId: null },
       });
 
       await ctx.db.coinTransaction.deleteMany({
@@ -218,24 +210,22 @@ export const groupRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
         where: { id: input.id },
+        include: { members: true },
       });
       if (!group) throw new Error("Group not found");
-      
+
       // Check if user is already in the group
-      const existingMembership = await ctx.db.userGroup.findFirst({
-        where: {
-          userId: ctx.session.user.id,
-          groupId: group.id,
-        },
-      });
+      const existingMembership = group.members.find(
+        (member) => member.id === ctx.session.user.id,
+      );
 
       if (existingMembership) {
         throw new Error("Użytkownik już należy do tej grupy");
       }
 
-      return await ctx.db.userGroup.create({
+      return await ctx.db.user.update({
+        where: { id: ctx.session.user.id },
         data: {
-          userId: ctx.session.user.id,
           groupId: group.id,
         },
       });
@@ -248,21 +238,24 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if user is already in the group
-      const existingMembership = await ctx.db.userGroup.findFirst({
-        where: {
-          userId: input.userId,
-          groupId: input.groupId,
-        },
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        include: { members: true },
       });
+      if (!group) throw new Error("Group not found");
+
+      // Check if user is already in the group
+      const existingMembership = group.members.find(
+        (member) => member.id === ctx.session.user.id,
+      );
 
       if (existingMembership) {
         throw new Error("Użytkownik już należy do tej grupy");
       }
 
-      return await ctx.db.userGroup.create({
+      return await ctx.db.user.update({
+        where: { id: input.userId },
         data: {
-          userId: input.userId,
           groupId: input.groupId,
         },
       });
@@ -276,9 +269,12 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.userGroup.deleteMany({
+      return await ctx.db.user.update({
         where: {
-          userId: input.userId,
+          id: input.userId,
+        },
+        data: {
+          groupId: null,
         },
       });
     }),
@@ -290,7 +286,7 @@ export const groupRouter = createTRPCRouter({
         where: { id: input.groupId },
         data: { coins: { increment: input.amount } },
       });
-      
+
       // Create transaction record
       const transaction = await ctx.db.coinTransaction.create({
         data: {
@@ -309,25 +305,6 @@ export const groupRouter = createTRPCRouter({
         },
       });
 
-      // Send push notifications to all group members
-      try {
-        const notification = NotificationService.createCoinsAddedNotification(
-          transaction.group.name,
-          input.amount
-        );
-        
-        await NotificationService.sendToGroupMembers(
-          input.groupId,
-          notification,
-          ctx.session.user.id // Exclude the admin who added coins
-        );
-        
-        console.log(`Sent coin notification to group ${transaction.group.name}`);
-      } catch (error) {
-        console.error("Failed to send coin notification:", error);
-        // Don't fail the mutation if notification fails
-      }
-
       return transaction;
     }),
   ranking: protectedProcedure.query(async ({ ctx }) => {
@@ -337,13 +314,9 @@ export const groupRouter = createTRPCRouter({
       include: {
         members: {
           select: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+            id: true,
+            name: true,
+            email: true,
           },
         },
         organizer: {
@@ -368,7 +341,7 @@ export const groupRouter = createTRPCRouter({
     });
     return {
       data,
-      currentDate
-    }
+      currentDate,
+    };
   }),
 });

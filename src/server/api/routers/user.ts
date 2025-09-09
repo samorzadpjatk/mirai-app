@@ -21,7 +21,7 @@ export const userRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
-          groups: { select: { group: { select: { id: true, name: true } } } },
+          group: { select: { id: true, name: true } },
         },
       });
     }),
@@ -38,8 +38,8 @@ export const userRouter = createTRPCRouter({
         email: true,
         isAdmin: true,
         wristNumber: true,
-        groups: { select: { group: { select: { id: true, name: true } } } },
-        organizerGroups: { select: { id: true, name: true } },
+        group: { select: { id: true, name: true } },
+        organizerGroup: { select: { id: true, name: true } },
       },
       orderBy: { name: "asc" },
     });
@@ -58,7 +58,7 @@ export const userRouter = createTRPCRouter({
     return await ctx.db.user.findMany({
       where: {
         isAdmin: true,
-        organizerGroups: { none: {} },
+        organizerGroup: null,
       },
       select: {
         id: true,
@@ -228,7 +228,7 @@ export const userRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { searchTerm, page, limit, field } = input;
       const skip = (page - 1) * limit;
-      
+
       // Build search conditions
       let searchConditions;
       if (field !== "groupName") {
@@ -249,24 +249,18 @@ export const userRouter = createTRPCRouter({
           ? {
               OR: [
                 {
-                  groups: {
-                    some: {
-                      group: {
-                        name: {
-                          contains: searchTerm,
-                          mode: "insensitive" as const,
-                        },
-                      },
+                  group: {
+                    name: {
+                      contains: searchTerm,
+                      mode: "insensitive" as const,
                     },
                   },
                 },
                 {
-                  organizerGroups: {
-                    some: {
-                      name: {
-                        contains: searchTerm,
-                        mode: "insensitive" as const,
-                      },
+                  organizerGroup: {
+                    name: {
+                      contains: searchTerm,
+                      mode: "insensitive" as const,
                     },
                   },
                 },
@@ -288,9 +282,10 @@ export const userRouter = createTRPCRouter({
           name: true,
           email: true,
           isAdmin: true,
+          houseNumber: true,
           wristNumber: true,
-          groups: { select: { group: { select: { id: true, name: true } } } },
-          organizerGroups: { select: { id: true, name: true } },
+          group: { select: { id: true, name: true } },
+          organizerGroup: { select: { id: true, name: true } },
         },
         orderBy: [{ name: "asc" }, { email: "asc" }],
         skip,

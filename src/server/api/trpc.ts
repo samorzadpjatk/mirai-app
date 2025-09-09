@@ -167,3 +167,24 @@ export const adminProcedure = t.procedure
       },
     });
   });
+
+export const serviceAccountProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(async ({ ctx, next }) => {
+    // Optional: Add some basic authentication/API key check
+    const authHeader = ctx.headers.get("authorization");
+    const expectedAuth = process.env.SCHEDULER_API_KEY;
+
+    if (authHeader !== `Bearer ${expectedAuth}`) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    const user = await db.user.findFirstOrThrow({
+      where: { isServiceAccount: true },
+    });
+    return next({
+      ctx: {
+        // infers the `session` as non-nullable
+        session: { ...ctx.session, user: user },
+      },
+    });
+  });

@@ -1,4 +1,4 @@
-import { Card, Flex, Badge, Text, Heading, DataList } from "@radix-ui/themes";
+import { Card, Flex, Badge, Text, Heading, DataList, Separator, Avatar } from "@radix-ui/themes";
 import { auth } from "~/server/auth";
 import { api } from "~/trpc/server";
 
@@ -17,7 +17,7 @@ const MyGroupPage = async () => {
     }
     return (
         <Card key={group.id} size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ width: "100%" }}>
-            <Flex direction="column" gap={{ "initial": "1" }}>
+            <Flex direction="column" gap={{ "initial": "2" }}>
                 <Heading>{group.name}</Heading>
                 <DataList.Root>
                     <DataList.Item>
@@ -38,14 +38,41 @@ const MyGroupPage = async () => {
                             <DataList.Value>
                                 <Flex direction="column" gap="2">
                                     {group.members.map((member) => (
-                                        <Text key={member.user.id}>
-                                            {member.user.name}
+                                        <Text key={member.id}>
+                                            {member.name}
                                         </Text>
                                     ))}
                                 </Flex>
                             </DataList.Value>
                         </DataList.Item>}
                 </DataList.Root>
+                {group.coinTransactions.length > 0 && (
+                    <Flex direction="column" gap="2">
+                        <Heading size="4">Treasury Transactions</Heading>
+                        <Flex direction="column" gap="3">
+                            {group.coinTransactions.map((transaction) => (
+                                <Card key={transaction.id} size={{ "initial": "1", "xs": "2", "sm": "3" }}>
+                                    <Flex direction="column" gap="2">
+                                        <Flex justify="start" align="center" gap={"2"}>
+                                            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>{transaction.createdAt.toLocaleString()}</Text>
+                                            <Separator orientation="vertical" />
+                                            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }}>{transaction.admin.name}</Text>
+                                            <Separator orientation="vertical" />
+                                            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
+                                                {transaction.amount > 0 && "+"}{transaction.amount}
+                                            </Text>
+                                        </Flex>
+                                        {transaction.reason && (
+                                            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} color="gray">
+                                                ({transaction.reason})
+                                            </Text>
+                                        )}
+                                    </Flex>
+                                </Card>
+                            ))}
+                        </Flex>
+                    </Flex>
+                )}
             </Flex>
         </Card>
     );

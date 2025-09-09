@@ -6,7 +6,8 @@ import TransactionAdditionalInsightsSkelethon from "~/components/skelethons/Tran
 
 const TransactionsAdditionalInsights = async () => {
     const transactionAdditionalInsights = await api.coinTransaction.getAdditionalInsights();
-    const { mostActiveAdmin, recentTransactions } = transactionAdditionalInsights ?? {};
+    if (!transactionAdditionalInsights) return null;
+    const { mostActiveAdmin, recentTransactions } = transactionAdditionalInsights;
 
     return (
         <Suspense fallback={<TransactionAdditionalInsightsSkelethon />}>
@@ -16,14 +17,14 @@ const TransactionsAdditionalInsights = async () => {
                     <Flex direction={"column"} gap="2">
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">Most Active Administrator:</Text>
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} >
-                            {mostActiveAdmin?.name} ({mostActiveAdmin?.transactionCount} transactions)
+                            {mostActiveAdmin.name} ({mostActiveAdmin.transactionCount} transactions)
                         </Text>
                     </Flex>
 
                     <div>
                         <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">Last 5 transactions:</Text>
                         <Flex direction="column" gap="1" style={{ marginTop: "8px" }}>
-                            {recentTransactions?.map((t) => {
+                            {recentTransactions.map((t) => {
                                 const amountInfo = formatAmount(t.amount);
                                 return (
                                     <Text key={t.id} size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.8 }}>

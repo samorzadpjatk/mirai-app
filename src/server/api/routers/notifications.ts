@@ -8,18 +8,15 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import { env } from "~/env";
-
-// Interface for webpush error handling
-interface WebPushError extends Error {
-  statusCode?: number;
-}
+import { NotificationService } from "~/server/services/notificationService";
+import { send, sendRanking } from "../utils/webPush";
 
 // Configure web-push with VAPID keys
 if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_EMAIL) {
   webpush.setVapidDetails(
     `mailto:${env.VAPID_EMAIL}`,
     env.VAPID_PUBLIC_KEY,
-    env.VAPID_PRIVATE_KEY
+    env.VAPID_PRIVATE_KEY,
   );
 }
 
@@ -46,7 +43,7 @@ export const notificationRouter = createTRPCRouter({
             auth: z.string(),
           }),
         }),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
@@ -98,209 +95,6 @@ export const notificationRouter = createTRPCRouter({
     }
   }),
 
-  // Send push notification to a specific user
-  sendToUser: adminProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        title: z.string(),
-        body: z.string(),
-        url: z.string().optional(),
-        data: z.record(z.string(), z.unknown()).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Get user's push subscriptions
-        const subscriptions = await ctx.db.pushSubscription.findMany({
-          where: {
-            userId: input.userId,
-          },
-        });
-
-        if (subscriptions.length === 0) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "No push subscriptions found for this user",
-          });
-        }
-
-        const payload = JSON.stringify({
-          title: input.title,
-          body: input.body,
-          url: input.url ?? "/",
-          data: input.data ?? {},
-          timestamp: Date.now(),
-        });
-
-        const results = await Promise.allSettled(
-          subscriptions.map(async (subscription) => {
-            try {
-              const pushSubscription = {
-                endpoint: subscription.endpoint,
-                keys: {
-                  p256dh: subscription.p256dh,
-                  auth: subscription.auth,
-                },
-              };
-
-              return await webpush.sendNotification(pushSubscription, payload);
-            } catch (error: unknown) {
-              console.error("Error sending notification:", error);
-              
-              // Remove invalid subscriptions
-              if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
-                await ctx.db.pushSubscription.delete({
-                  where: { id: subscription.id },
-                });
-              }
-              
-              throw error;
-            }
-          })
-        );
-
-        const successful = results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
-        const failed = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
-
-        return {
-          success: true,
-          sent: successful,
-          failed: failed,
-          total: subscriptions.length,
-        };
-      } catch (error) {
-        console.error("Error sending push notification:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send push notification",
-        });
-      }
-    }),
-
-  // Send push notification to all users in a group
-  sendToGroup: adminProcedure
-    .input(
-      z.object({
-        groupId: z.string(),
-        title: z.string(),
-        body: z.string(),
-        url: z.string().optional(),
-        data: z.record(z.string(), z.unknown()).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Create notification record first
-      const notification = await ctx.db.webPushNotification.create({
-        data: {
-          title: input.title,
-          body: input.body,
-          targetGroupId: input.groupId,
-          status: "pending",
-          createdBy: ctx.session.user.id,
-        },
-      });
-
-      try {
-        // Get all users in the group
-        const groupUsers = await ctx.db.userGroup.findMany({
-          where: {
-            groupId: input.groupId,
-          },
-          include: {
-            user: {
-              include: {
-                pushSubscriptions: true,
-              },
-            },
-          },
-        });
-
-        const payload = JSON.stringify({
-          title: input.title,
-          body: input.body,
-          url: input.url ?? "/",
-          data: input.data ?? {},
-          timestamp: Date.now(),
-        });
-
-        let totalSent = 0;
-        let totalFailed = 0;
-
-        for (const groupUser of groupUsers) {
-          const subscriptions = groupUser.user.pushSubscriptions;
-          
-          if (subscriptions.length > 0) {
-            const results = await Promise.allSettled(
-              subscriptions.map(async (subscription) => {
-                try {
-                  const pushSubscription = {
-                    endpoint: subscription.endpoint,
-                    keys: {
-                      p256dh: subscription.p256dh,
-                      auth: subscription.auth,
-                    },
-                  };
-
-                  return await webpush.sendNotification(pushSubscription, payload);
-                } catch (error: unknown) {
-                  console.error("Error sending notification:", error);
-                  
-                  // Remove invalid subscriptions
-                  if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
-                    await ctx.db.pushSubscription.delete({
-                      where: { id: subscription.id },
-                    });
-                  }
-                  
-                  throw error;
-                }
-              })
-            );
-
-            totalSent += results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
-            totalFailed += results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
-          }
-        }
-
-        // Update notification record with results
-        await ctx.db.webPushNotification.update({
-          where: { id: notification.id },
-          data: {
-            status: totalSent > 0 ? "sent" : "failed",
-            sentAt: totalSent > 0 ? new Date() : null,
-            deliveryAttempts: 1,
-            lastAttemptAt: new Date(),
-            failureReason: totalSent === 0 ? "No active subscriptions or delivery failed" : null,
-          },
-        });
-
-        return {
-          success: true,
-          sent: totalSent,
-          failed: totalFailed,
-          usersInGroup: groupUsers.length,
-        };
-      } catch (error) {
-        // Update notification record as failed
-        await ctx.db.webPushNotification.update({
-          where: { id: notification.id },
-          data: {
-            status: "failed",
-            deliveryAttempts: 1,
-            lastAttemptAt: new Date(),
-            failureReason: error instanceof Error ? error.message : "Unknown error",
-          },
-        });
-        
-        console.error("Error sending group push notification:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send group push notification",
-        });
-      }
-    }),
-
   // Get user's notification preferences/subscription status
   getSubscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
     const subscription = await ctx.db.pushSubscription.findFirst({
@@ -316,141 +110,429 @@ export const notificationRouter = createTRPCRouter({
     };
   }),
 
-  // Send custom notification to all users
-  sendCustomToAll: adminProcedure
+  getAllMy: protectedProcedure
     .input(
       z.object({
-        title: z.string().min(1, "Tytuł jest wymagany"),
-        body: z.string().min(1, "Treść jest wymagana"),
-        url: z.string().optional(),
-      })
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const count = await ctx.db.notification.count({
+        where: { pushes: { some: { targetUserId: ctx.session.user.id } } },
+      });
+      const totalPages = Math.ceil(count / input.pageSize);
+      if (input.page > totalPages && totalPages > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Page ${input.page} exceeds total pages ${totalPages}`,
+        });
+      }
+      const notifications = await ctx.db.notification.findMany({
+        where: { pushes: { some: { targetUserId: ctx.session.user.id } } },
+        orderBy: { createdAt: "desc" },
+        include: { createdBy: { select: { id: true, name: true } } },
+        take: input.pageSize,
+        skip: (input.page - 1) * input.pageSize,
+      });
+      return {
+        notifications,
+        pagination: {
+          total: count,
+          page: input.page,
+          pageSize: input.pageSize,
+          totalPages,
+        },
+      };
+    }),
+
+  getAll: adminProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const count = await ctx.db.notification.count();
+      const totalPages = Math.ceil(count / input.pageSize);
+      if (input.page > totalPages && totalPages > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Page ${input.page} exceeds total pages ${totalPages}`,
+        });
+      }
+      const notifications = await ctx.db.notification.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          createdBy: { select: { id: true, name: true } },
+          pushes: {
+            select: {
+              sentAt: true,
+              status: true,
+              failureReason: true,
+              targetUser: { select: { id: true, name: true } },
+            },
+          },
+        },
+        take: input.pageSize,
+        skip: (input.page - 1) * input.pageSize,
+      });
+      return {
+        notifications,
+        pagination: {
+          total: count,
+          page: input.page,
+          pageSize: input.pageSize,
+          totalPages,
+        },
+      };
+    }),
+
+  // Send push notification to specific users
+  sendToGroup: adminProcedure
+    .input(
+      z.object({
+        groupId: z.string(),
+        title: z.string(),
+        body: z.string(),
+        url: z.string(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Create notification record first
-      const notification = await ctx.db.webPushNotification.create({
-        data: {
-          title: input.title,
-          body: input.body,
-          sentToAll: true,
-          status: "pending",
-          createdBy: ctx.session.user.id,
-        },
-      });
-
       try {
-        // Get all push subscriptions from all users
-        const allSubscriptions = await ctx.db.pushSubscription.findMany({
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
+        const members = await ctx.db.user.findMany({
+          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          select: { id: true },
         });
-
-        if (allSubscriptions.length === 0) {
-          // Update notification record as failed
-          await ctx.db.webPushNotification.update({
-            where: { id: notification.id },
-            data: {
-              status: "failed",
-              deliveryAttempts: 1,
-              lastAttemptAt: new Date(),
-              failureReason: "No active subscriptions",
-            },
-          });
-
-          return {
-            success: true,
-            sent: 0,
-            failed: 0,
-            totalUsers: 0,
-            message: "Brak subskrypcji do wysłania powiadomień",
-          };
-        }
-
-        const payload = JSON.stringify({
+        const userIds = members.map((m) => m.id);
+        const payload = {
+          userIds,
           title: input.title,
           body: input.body,
-          url: input.url ?? "/",
-          data: {
-            type: "custom_notification",
-            customMessage: true,
-          },
-          timestamp: Date.now(),
-        });
-
-        const results = await Promise.allSettled(
-          allSubscriptions.map(async (subscription) => {
-            try {
-              const pushSubscription = {
-                endpoint: subscription.endpoint,
-                keys: {
-                  p256dh: subscription.p256dh,
-                  auth: subscription.auth,
-                },
-              };
-
-              return await webpush.sendNotification(pushSubscription, payload);
-            } catch (error: unknown) {
-              console.error("Error sending notification:", error);
-              
-              // Remove invalid subscriptions
-              if ((error as WebPushError).statusCode === 410 || (error as WebPushError).statusCode === 404) {
-                await ctx.db.pushSubscription.delete({
-                  where: { id: subscription.id },
-                });
-              }
-              
-              throw error;
-            }
-          })
-        );
-
-        const successful = results.filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled').length;
-        const failed = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected').length;
-
-        // Get unique user count
-        const uniqueUsers = new Set(allSubscriptions.map(s => s.userId)).size;
-
-        // Update notification record with results
-        await ctx.db.webPushNotification.update({
-          where: { id: notification.id },
-          data: {
-            status: successful > 0 ? "sent" : "failed",
-            sentAt: successful > 0 ? new Date() : null,
-            deliveryAttempts: 1,
-            lastAttemptAt: new Date(),
-            failureReason: successful === 0 ? "No active subscriptions or delivery failed" : null,
-          },
-        });
-
-        return {
-          success: true,
-          sent: successful,
-          failed: failed,
-          totalSubscriptions: allSubscriptions.length,
-          totalUsers: uniqueUsers,
-          message: `Wysłano powiadomienie do ${successful} subskrypcji (${uniqueUsers} użytkowników)`,
+          url: input.url,
         };
-      } catch (error) {
-        // Update notification record as failed
-        await ctx.db.webPushNotification.update({
-          where: { id: notification.id },
-          data: {
-            status: "failed",
-            deliveryAttempts: 1,
-            lastAttemptAt: new Date(),
-            failureReason: error instanceof Error ? error.message : "Unknown error",
-          },
+        return await send({
+          db: ctx.db,
+          userId: ctx.session.user.id,
+          input: payload,
         });
-        
-        console.error("Error sending custom notification to all users:", error);
+      } catch (error) {
+        console.error("Error sending notification to group:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send custom notification",
+          message: "Failed to send notification to group",
+        });
+      }
+    }),
+  sendToAll: adminProcedure
+    .input(
+      z.object({
+        title: z.string(),
+        body: z.string(),
+        url: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const members = await ctx.db.user.findMany({
+          select: { id: true },
+        });
+        const userIds = members.map((m) => m.id);
+        const payload = {
+          userIds,
+          title: input.title,
+          body: input.body,
+          url: input.url,
+        };
+        return await send({
+          db: ctx.db,
+          userId: ctx.session.user.id,
+          input: payload,
+        });
+      } catch (error) {
+        console.error("Error sending notification to group:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send notification to group",
+        });
+      }
+    }),
+
+  sendRankingUpdateToGroups: adminProcedure.mutation(async ({ ctx }) => {
+    try {
+      return await sendRanking({
+        db: ctx.db,
+        userId: ctx.session.user.id,
+      });
+    } catch (error) {
+      console.error("Error sending ranking update notifications:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to send ranking update notifications",
+      });
+    }
+  }),
+  sendCoinAddedToGroup: adminProcedure
+    .input(
+      z.object({
+        groupId: z.string(),
+        coins: z.number(),
+        reason: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const group = await ctx.db.group.findFirst({
+          where: { id: input.groupId },
+        });
+        if (!group) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
+        }
+
+        const members = await ctx.db.user.findMany({
+          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          select: { id: true },
+        });
+        const userIds = members.map((m) => m.id);
+        const notificationData =
+          NotificationService.createCoinsAddedNotification(
+            group.name,
+            input.coins,
+            input.reason
+          );
+        const payload = {
+          userIds,
+          title: notificationData.title,
+          body: notificationData.body,
+          url: notificationData.url,
+        };
+        return await send({
+          db: ctx.db,
+          userId: ctx.session.user.id,
+          input: payload,
+        });
+      } catch (error) {
+        console.error(
+          "Error sending coins added notification to group:",
+          error,
+        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send coins added notification to group",
+        });
+      }
+    }),
+  sendCoinRemovedFromGroup: adminProcedure
+    .input(
+      z.object({
+        groupId: z.string(),
+        coins: z.number(),
+        reason: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const group = await ctx.db.group.findFirst({
+          where: { id: input.groupId },
+        });
+        if (!group) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
+        }
+
+        const members = await ctx.db.user.findMany({
+          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          select: { id: true },
+        });
+        const userIds = members.map((m) => m.id);
+        const notificationData =
+          NotificationService.createCoinsRemovedNotification(
+            group.name,
+            input.coins,
+            input.reason
+          );
+        const payload = {
+          userIds,
+          title: notificationData.title,
+          body: notificationData.body,
+          url: notificationData.url,
+        };
+        return await send({
+          db: ctx.db,
+          userId: ctx.session.user.id,
+          input: payload,
+        });
+      } catch (error) {
+        console.error(
+          "Error sending coins added notification to group:",
+          error,
+        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send coins added notification to group",
+        });
+      }
+    }),
+  sendNewMemberToGroup: adminProcedure
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const group = await ctx.db.group.findFirst({
+          where: { id: input.groupId },
+        });
+        if (!group) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
+        }
+        const user = await ctx.db.user.findFirst({
+          where: { id: input.userId },
+        });
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+        const members = await ctx.db.user.findMany({
+          where: { group: { id: group.id } },
+          select: { id: true },
+        });
+        const userIds = members.map((m) => m.id);
+        const notificationData =
+          NotificationService.createNewMemberNotification(
+            group.name,
+            user.name ?? "A new member",
+          );
+        const payload = {
+          userIds,
+          title: notificationData.title,
+          body: notificationData.body,
+          url: notificationData.url,
+        };
+        return await send({
+          db: ctx.db,
+          userId: ctx.session.user.id,
+          input: payload,
+        });
+      } catch (error) {
+        console.error(
+          "Error sending coins added notification to group:",
+          error,
+        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send coins added notification to group",
+        });
+      }
+    }),
+  sendCustomToGroup: adminProcedure
+    .input(
+      z.object({
+        groupId: z.string(),
+        title: z.string(),
+        body: z.string(),
+        url: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const members = await ctx.db.user.findMany({
+          where: { group: { id: input.groupId } },
+          select: { id: true },
+        });
+        const userIds = members.map((m) => m.id);
+        const payload = {
+          userIds,
+          title: input.title,
+          body: input.body,
+          url: input.url,
+        };
+        return await send({ db: ctx.db, userId: ctx.session.user.id, input: payload });
+      } catch (error) {
+        console.error("Error sending custom notification to group:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send custom notification to group",
+        });
+      }
+    }),
+
+  retryNotification: adminProcedure
+    .input(
+      z.object({
+        notificationId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const notification = await ctx.db.notification.findFirst({
+          where: { id: input.notificationId },
+        });
+        const pushes = await ctx.db.notificationPush.findMany({
+          where: { notificationId: input.notificationId, status: "failed" },
+        });
+        if (!notification) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Notification not found",
+          });
+        }
+        if (pushes.length === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "No failed pushes to retry",
+          });
+        }
+        const payload = {
+          userIds: pushes.map((p) => p.targetUserId),
+          title: notification.title,
+          body: notification.body,
+          url: notification.url,
+        };
+        return await send({
+          db: ctx.db,
+          userId: ctx.session.user.id,
+          input: payload,
+        });
+      } catch (error) {
+        console.error("Error retrying notification:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retry notification",
+        });
+      }
+    }),
+
+  delete: adminProcedure
+    .input(
+      z.object({
+        notificationId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ctx.db.notification.delete({
+          where: { id: input.notificationId },
+        });
+        return { success: true };
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete notification",
         });
       }
     }),

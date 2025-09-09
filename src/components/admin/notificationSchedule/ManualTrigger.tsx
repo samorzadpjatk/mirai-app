@@ -4,69 +4,81 @@ import { useState } from "react";
 import { Button, Card, Flex, Text, Heading, Select, TextField, TextArea } from "@radix-ui/themes";
 import { api } from "~/trpc/react";
 
+interface ManualTriggerResult {
+  success: boolean,
+  sent?: number,
+  failed?: number,
+  total?: number,
+  timestamp: number,
+  error?: string,
+  type?: "ranking" | "custom",
+}
+
 export default function ManualTrigger() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [notificationType, setNotificationType] = useState("ranking");
+  const [result, setResult] = useState<ManualTriggerResult | null>(null);
+  const [notificationType, setNotificationType] = useState<string>("ranking");
   const [customTitle, setCustomTitle] = useState("");
   const [customBody, setCustomBody] = useState("");
   const { data: groups } = api.group.getAll.useQuery();
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
-  const sendCustomNotificationMutation = api.notifications.sendCustomToAll.useMutation();
-  const sendCustomNotificationToGroupMutation = api.notifications.sendToGroup.useMutation();
+  const sendToAll = api.notifications.sendToAll.useMutation();
+  const sendToGroup = api.notifications.sendToGroup.useMutation();
+  const sendRanking = api.notifications.sendRankingUpdateToGroups.useMutation();
 
   const handleManualTrigger = async () => {
     setLoading(true);
     setResult(null);
-
+    let res;
     try {
-      if (notificationType === "custom") {
-        // Handle custom notification
-        if (!customTitle.trim() || !customBody.trim()) {
-          setResult({
-            success: false,
-            error: "Title and body are required for custom message",
-          });
-          return;
-        }
-        if (selectedGroupId != "all") {
-          // Send to specific group
-          const groupResult = await sendCustomNotificationToGroupMutation.mutateAsync({
-            groupId: selectedGroupId,
-            title: customTitle.trim(),
-            body: customBody.trim(),
-            url: "/",
-          });
-          setResult(groupResult);
-        } else {
-          // Send to all users
-          const customResult = await sendCustomNotificationMutation.mutateAsync({
-            title: customTitle.trim(),
-            body: customBody.trim(),
-            url: "/",
-          });
-          setResult(customResult);
-        }
-      } else {
-        // Handle scheduled notification types (ranking, weekly)
-        const response = await fetch("/api/scheduler", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            type: notificationType,
-          }),
-        });
+      switch (notificationType) {
+        case "custom":
+          if (!customTitle.trim() || !customBody.trim()) {
+            setResult({ success: false, error: "Title and body are required for custom notifications.", timestamp: Date.now() });
+            setLoading(false);
+            return;
+          }
+          if (selectedGroupId === "all") {
+            res = await sendToAll.mutateAsync({
+              title: customTitle,
+              body: customBody,
+              url: "/",
+            });
+          } else {
+            res = await sendToGroup.mutateAsync({
+              groupId: selectedGroupId,
+              title: customTitle,
+              body: customBody,
+              url: "/",
+            });
+          }
 
-        const data = await response.json();
-        setResult(data);
+          setResult({
+            type: "custom",
+            timestamp: Date.now(),
+            ...res
+          });
+          break;
+        case "ranking":
+          res = await sendRanking.mutateAsync();
+
+          setResult({
+            type: "ranking",
+            timestamp: Date.now(),
+            ...res
+          });
+          break;
+        default:
+          setResult({ success: false, error: "Invalid notification type", timestamp: Date.now() });
+          setLoading(false);
+          break;
       }
     } catch (error) {
       console.error("Error triggering manual notification:", error);
       setResult({
         success: false,
         error: "Error sending notification",
+        timestamp: Date.now(),
       });
     } finally {
       setLoading(false);
@@ -77,7 +89,7 @@ export default function ManualTrigger() {
     <Card>
       <Flex direction="column" gap="4">
         <Heading size="4">Manual Notification Trigger</Heading>
-        
+
         <Flex direction="column" gap="3">
           <div>
             <Text as="div" size="2" mb="2" weight="bold">
@@ -89,8 +101,7 @@ export default function ManualTrigger() {
             >
               <Select.Trigger style={{ width: "200px" }} />
               <Select.Content>
-                <Select.Item value="ranking">Leaderboard of Guilds</Select.Item>
-                <Select.Item value="weekly">Weekly summary</Select.Item>
+                <Select.Item value="ranking">Ranking update</Select.Item>
                 <Select.Item value="custom">Custom message</Select.Item>
               </Select.Content>
             </Select.Root>
@@ -160,13 +171,13 @@ export default function ManualTrigger() {
               <Text weight="bold" color={result.success ? "green" : "red"}>
                 {result.success ? "✅ Success" : "❌ Error"}
               </Text>
-              
+
               {result.success ? (
                 <Flex direction="column" gap="1">
-                  {result.type && <Text size="2">Type: {result.type}</Text>}                  
+                  {result.type && <Text size="2">Type: {result.type}</Text>}
                   <Text size="2">Sent: {result.sent}</Text>
                   <Text size="2">Errors: {result.failed}</Text>
-                  <Text size="2">Total number of users: {result.totalUsers}</Text>
+                  <Text size="2">Total number of users: {result.total}</Text>
                   <Text size="2" color="gray">
                     Czas: {new Date(result.timestamp).toLocaleString("pl-PL")}
                   </Text>
@@ -183,7 +194,7 @@ export default function ManualTrigger() {
         <Text size="2" color="gray">
           With this tool, you may summon notifications to all souls of the realm at will.
           Ordinary messages shall be dispatched automatically by the appointed schedules.
-          Use the "Custom Message" option to send a personalized notification to all users. 
+          Use the &quot;Custom Message&quot; option to send a personalized notification to all users.
         </Text>
       </Flex>
     </Card>
