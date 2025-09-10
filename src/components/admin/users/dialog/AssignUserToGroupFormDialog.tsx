@@ -13,15 +13,17 @@ const AssignUserToGroupFormDialog = ({
 }) => {
     const router = useRouter();
     const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-
+    const [selectedGroupId, setSelectedGroupId] = useState("");
+    
     const { data: user, isLoading: isLoadingUser } = api.user.getByIdWithGroup.useQuery({ id: selectedUserId });
     const { data: groups, isLoading: isLoadingGroups } = api.group.getAll.useQuery();
 
-    const availableGroups = groups?.filter(group =>
-        user?.group?.id === group.id
-    ) ?? [];
-    const [selectedGroupId, setSelectedGroupId] = useState("");
+    if (!user || !groups) return null;
 
+    const availableGroups = groups?.filter(group =>
+        user?.group?.id !== group.id && user?.organizerGroup?.id !== group.id
+    ) ?? [];
+    
     const assignUserMutation = api.group.assignUserToGroup.useMutation({
         onSuccess: () => {
             setIsAssignDialogOpen(false);
@@ -30,7 +32,7 @@ const AssignUserToGroupFormDialog = ({
     });
 
     if (!user) return null;
-    if (availableGroups.length === undefined || availableGroups.length === 0) return null;
+    if (availableGroups.length === 0) return null;
 
     return (
         <Skeleton loading={isLoadingUser || isLoadingGroups}>
