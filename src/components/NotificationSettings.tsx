@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Card, Flex, Text, Badge, Heading, DataList } from "@radix-ui/themes";
+import { useCallback } from "react";
 import { useNotifications } from "~/hooks/useNotifications";
 
 export default function NotificationSettings() {
@@ -15,6 +16,10 @@ export default function NotificationSettings() {
     unsubscribe,
     testNotification,
   } = useNotifications();
+
+  const autoSubscribe = useCallback(async () => {
+    if (isSubscribedElsewhere || !isSubscribed) { await subscribe(); }
+  }, [isSubscribed, isSubscribedElsewhere, subscribe])
 
   const getPermissionBadge = () => {
     switch (permission) {
