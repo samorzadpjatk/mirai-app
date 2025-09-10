@@ -17,8 +17,8 @@
     "postinstall": "prisma generate",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "preview": "next build && next start -p 11000",
-    "start": "next start -p 11000",
+    "preview": "next build && next start -p 11001",
+    "start": "next start -p 11001",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
