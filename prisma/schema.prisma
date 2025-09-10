@@ -53,7 +53,7 @@ model User {
   accounts                  Account[]
   sessions                  Session[]
   group                     Group?                 @relation(fields: [groupId], references: [id])
-  groupId                   String?                @unique
+  groupId                   String?                 
   isAdmin                   Boolean                @default(false)
   isModerator               Boolean                @default(false)
   isServiceAccount          Boolean                @default(false)
