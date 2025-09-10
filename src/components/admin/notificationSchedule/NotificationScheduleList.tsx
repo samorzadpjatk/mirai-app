@@ -255,6 +255,19 @@ function CreateNotificationScheduleDialog({
                 required
               />
             </label>
+            <label>
+              <Text as="div" size="2" mb="1" weight="bold">
+                Notification Type
+              </Text>
+              <select
+                value={formData.notificationType}
+                onChange={(e) => setFormData({ ...formData, notificationType: e.target.value as "custom" | "ranking" })}
+                required
+              >
+                <option value="custom">Custom Notification</option>
+                <option value="ranking">Guild Ranking Notification</option>
+              </select>
+            </label>
             {formData.notificationType === "custom" && <>
               <label>
                 <Text as="div" size="2" mb="1" weight="bold">
@@ -264,7 +277,7 @@ function CreateNotificationScheduleDialog({
                   type="text"
                   value={formData.notificationTitle}
                   onChange={(e) => setFormData({ ...formData, notificationTitle: e.target.value })}
-                  placeholder="np. Daily ranking"
+                  placeholder="np. Time for lunch!"
                   required
                 />
               </label>
@@ -276,7 +289,7 @@ function CreateNotificationScheduleDialog({
                   type="text"
                   value={formData.notificationBody}
                   onChange={(e) => setFormData({ ...formData, notificationBody: e.target.value })}
-                  placeholder="np. Daily ranking"
+                  placeholder="np. Lucky you, it's lunch time!"
                   required
                 />
               </label>
