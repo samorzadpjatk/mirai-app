@@ -35,7 +35,7 @@ export default async function AdminDashboard({ children }: Readonly<{ children: 
 
             {/* Admin Dashboard Tabs */}
             <Card size={{ "initial": "1", "xs": "2", "sm": "3" }}>
-                <AdminNavMenu />
+                <AdminNavMenu isAdmin />
                 <Box style={{ marginTop: "0.5rem" }}>
                     {children}
                 </Box>
