@@ -18,7 +18,6 @@ const AssignUserToGroupFormDialog = ({
     const { data: user, isLoading: isLoadingUser } = api.user.getByIdWithGroup.useQuery({ id: selectedUserId });
     const { data: groups, isLoading: isLoadingGroups } = api.group.getAll.useQuery();
 
-    if (!user || !groups) return null;
 
     const availableGroups = groups?.filter(group =>
         user?.group?.id !== group.id && user?.organizerGroup?.id !== group.id
@@ -31,7 +30,7 @@ const AssignUserToGroupFormDialog = ({
         },
     });
 
-    if (!user) return null;
+    if (!user || !groups) return null;
     if (availableGroups.length === 0) return null;
 
     return (
