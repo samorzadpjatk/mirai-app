@@ -13,17 +13,6 @@ import HouseNumberManager from "./HouseNumberManager";
 import UserSearchFieldDropdownMenu from "./UserSearchFieldDropdownMenu";
 import type { Group } from "@prisma/client";
 
-interface SearchUser {
-  id: string;
-  name: string | null;
-  email: string | null;
-  isAdmin: boolean;
-  wristNumber: string | null;
-  houseNumber: string | null;
-  group: Group | null;
-  organizerGroup: Group | null;
-}
-
 export default function UserSearchableListOptimized() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,7 +59,7 @@ export default function UserSearchableListOptimized() {
     await refetch();
   }, [refetch]);
 
-  const users = (searchResult?.users ?? []) as SearchUser[];
+  const users = searchResult?.users ?? [];
   const pagination = searchResult?.pagination;
 
   return (
@@ -192,7 +181,7 @@ export default function UserSearchableListOptimized() {
                     <DataList.Label>Actions</DataList.Label>
                     <DataList.Value>
                       <Flex direction={"column"} gap="2">
-                        {user.group === null && user.organizerGroup === null && (
+                        {(user.group === null && user.organizerGroup === null) && (
                           <AssignUserToGroupFormDialog
                             selectedUserId={user.id}
                           />

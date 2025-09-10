@@ -22,6 +22,7 @@ export const userRouter = createTRPCRouter({
           id: true,
           name: true,
           group: { select: { id: true, name: true } },
+          organizerGroup: { select: { id: true, name: true } },
         },
       });
     }),
