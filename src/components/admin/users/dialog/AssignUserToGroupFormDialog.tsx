@@ -32,6 +32,7 @@ const AssignUserToGroupFormDialog = ({
 
 
     if (!user || !groups) return null;
+
     if (availableGroups.length === 0) return null;
 
     return (
