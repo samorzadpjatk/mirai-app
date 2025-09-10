@@ -30,10 +30,12 @@ export async function send({
     });
 
     if (subscriptions.length === 0) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "No push subscriptions found to send to",
-      });
+      return {
+        success: true,
+        sent: 0,
+        failed: 0,
+        total: 0,
+      };
     }
 
     const payload = JSON.stringify({
@@ -131,7 +133,10 @@ export async function sendRanking({
     groups.map(async (group, index) => {
       const members = await db.user.findMany({
         where: {
-          OR: [{ group: { id: group.id } }, { organizerGroup: { id: group.id } }],
+          OR: [
+            { group: { id: group.id } },
+            { organizerGroup: { id: group.id } },
+          ],
         },
         select: { id: true },
       });
