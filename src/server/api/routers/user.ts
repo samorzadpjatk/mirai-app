@@ -170,12 +170,6 @@ export const userRouter = createTRPCRouter({
         select: { id: true, name: true },
       });
 
-      if (existingUser && existingUser.id !== input.userId) {
-        throw new Error(
-          `Numer domu ${input.houseNumber} jest już przypisany do użytkownika: ${existingUser.name}`,
-        );
-      }
-
       return await ctx.db.user.update({
         where: { id: input.userId },
         data: { houseNumber: input.houseNumber },
