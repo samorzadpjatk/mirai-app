@@ -7,7 +7,6 @@ import {
   serviceAccountProcedure,
 } from "~/server/api/trpc";
 import { send, sendRanking } from "../utils/webPush";
-import { NotificationService } from "~/server/services/notificationService";
 
 export const notificationScheduleRouter = createTRPCRouter({
   // Get all notification schedules
@@ -83,7 +82,7 @@ export const notificationScheduleRouter = createTRPCRouter({
         notificationType: z.enum(["custom", "ranking"]),
         notificationTitle: z.string().optional(),
         notificationBody: z.string().optional(),
-        notificationUrl: z.url().optional(),
+        notificationUrl: z.string().optional(),
         startDate: z.date(),
         endDate: z.date(),
         hour: z.number().int().min(0).max(23),

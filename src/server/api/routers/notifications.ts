@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import {
   adminProcedure,
   createTRPCRouter,
+  moderatorProcedure,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
@@ -273,7 +274,7 @@ export const notificationRouter = createTRPCRouter({
       });
     }
   }),
-  sendCoinAddedToGroup: adminProcedure
+  sendCoinAddedToGroup: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -326,7 +327,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
-  sendCoinRemovedFromGroup: adminProcedure
+  sendCoinRemovedFromGroup: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),

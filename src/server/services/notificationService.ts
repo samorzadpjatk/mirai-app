@@ -9,17 +9,29 @@ export class NotificationService {
   /**
    * Create notifications for common group events
    */
-  static createCoinsAddedNotification(groupName: string, amount: number, reason: string): NotificationData {
+  static createCoinsAddedNotification(groupName: string, amount: number, reason: string | undefined): NotificationData {
+    let body;
+    if (reason) {
+      body = `Your guild received ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`
+    } else {
+      body = `Your guild received ${amount} coins!\nClick me to see your balance!`
+    }
     return {
       title: `💰 ${groupName} received coins!`,
-      body: `Your guild received ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`,
+      body: body,
       url: "/group/my",
     };
   }
-  static createCoinsRemovedNotification(groupName: string, amount: number, reason: string): NotificationData {
+  static createCoinsRemovedNotification(groupName: string, amount: number, reason: string | undefined): NotificationData {
+    let body;
+    if (reason) {
+      body = `Your guild lost ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`
+    } else {
+      body = `Your guild lost ${amount} coins!\nClick me to see your balance!`
+    }
     return {
       title: `💸 ${groupName} - Coins Seized`,
-      body: `Your guild lost ${amount} coins!\nReason: ${reason}\nClick me to see your balance!`,
+      body: body,
       url: "/group/my",
     };
   }
