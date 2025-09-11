@@ -191,7 +191,7 @@ export const notificationRouter = createTRPCRouter({
     }),
 
   // Send push notification to specific users
-  sendToGroup: adminProcedure
+  sendToGroup: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -226,7 +226,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
-  sendToAll: adminProcedure
+  sendToAll: moderatorProcedure
     .input(
       z.object({
         title: z.string(),
@@ -260,7 +260,7 @@ export const notificationRouter = createTRPCRouter({
       }
     }),
 
-  sendRankingUpdateToGroups: adminProcedure.mutation(async ({ ctx }) => {
+  sendRankingUpdateToGroups: moderatorProcedure.mutation(async ({ ctx }) => {
     try {
       return await sendRanking({
         db: ctx.db,
@@ -380,7 +380,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
-  sendNewMemberToGroup: adminProcedure
+  sendNewMemberToGroup: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -439,7 +439,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
-  sendCustomToGroup: adminProcedure
+  sendCustomToGroup: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -471,7 +471,7 @@ export const notificationRouter = createTRPCRouter({
       }
     }),
 
-  retryNotification: adminProcedure
+  retryNotification: moderatorProcedure
     .input(
       z.object({
         notificationId: z.string(),
