@@ -26,8 +26,7 @@ export const groupRouter = createTRPCRouter({
     });
     if (!user) return null;
     const memberGroupId = user.group?.id;
-    const organizerGroupId = user.organizerGroup?.id;
-    const id = memberGroupId ?? organizerGroupId;
+    const id = memberGroupId;
     if (!id) return null;
     return await ctx.db.group.findUnique({
       where: { id },

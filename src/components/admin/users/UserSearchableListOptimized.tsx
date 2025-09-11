@@ -11,7 +11,6 @@ import UserPagination from "./UserPagination";
 import { api } from "~/trpc/react";
 import HouseNumberManager from "./HouseNumberManager";
 import UserSearchFieldDropdownMenu from "./UserSearchFieldDropdownMenu";
-import type { Group } from "@prisma/client";
 
 export default function UserSearchableListOptimized() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -164,12 +163,12 @@ export default function UserSearchableListOptimized() {
                             {user.group.name}
                           </Badge>
                         )}
-                        {user.organizerGroup && (
-                          <Badge key={user.organizerGroup.id} variant="solid" color="purple">
-                            {user.organizerGroup.name}
+                        {user.organizerGroup.map(group => (
+                          <Badge key={group.id} variant="solid" color="purple">
+                            {group.name}
                           </Badge>
-                        )}
-                        {(!user.group) && (!user.organizerGroup) && (
+                        ))}
+                        {(!user.group) && (user.organizerGroup.length === 0) && (
                           <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
                             No groups assigned
                           </Text>
@@ -181,7 +180,7 @@ export default function UserSearchableListOptimized() {
                     <DataList.Label>Actions</DataList.Label>
                     <DataList.Value>
                       <Flex direction={"column"} gap="2">
-                        {(user.group === null && user.organizerGroup === null) && (
+                        {(user.group === null) && (
                           <AssignUserToGroupFormDialog
                             selectedUserId={user.id}
                           />

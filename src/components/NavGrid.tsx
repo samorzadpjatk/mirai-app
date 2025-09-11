@@ -13,11 +13,13 @@ export default async function NavGrid() {
           rows={"repeat(2, 1fr)"}
           width={"100%"}
         >
-          <Button size={"4"} variant="outline">
-            <Link href={"/group/my"}>
-              <Text>Your Guild Hall</Text>
-            </Link>
-          </Button>
+          {!session?.user.isAdmin && (
+            <Button size={"4"} variant="outline">
+              <Link href={"/group/my"}>
+                <Text>Your Guild Hall</Text>
+              </Link>
+            </Button>
+          )}
           <Button size={"4"} variant="outline">
             <Link href={"/ranking"}>
               <Text>Leaderboard of Guilds</Text>
