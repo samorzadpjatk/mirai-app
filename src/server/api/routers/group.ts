@@ -116,7 +116,7 @@ export const groupRouter = createTRPCRouter({
         where: { id: input.id },
       });
     }),
-  getByIdWithOrganizer: adminProcedure
+  getByIdWithOrganizer: moderatorProcedure
     .input(z.object({ groupId: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.group.findUnique({
@@ -278,7 +278,7 @@ export const groupRouter = createTRPCRouter({
         },
       });
     }),
-  addCoins: adminProcedure
+  addCoins: moderatorProcedure
     .input(z.object({ groupId: z.string(), amount: z.number() }))
     .mutation(async ({ ctx, input }) => {
       // Update group coins

@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { createTRPCRouter, moderatorProcedure } from "~/server/api/trpc";
 
 export const coinRouter = createTRPCRouter({
     // Add coins to a group (enhanced version)
-  addCoins: adminProcedure
+  addCoins: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -47,7 +47,7 @@ export const coinRouter = createTRPCRouter({
     }),
 
   // Remove coins from a group
-  removeCoins: adminProcedure
+  removeCoins: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
