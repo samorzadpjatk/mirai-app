@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import webpush, { WebPushError } from "web-push";
 import { NotificationService } from "~/server/services/notificationService";
@@ -8,7 +8,7 @@ export async function send({
   userId,
   input,
 }: {
-  db: PrismaClient;
+  db: Prisma.TransactionClient;
   userId: string;
   input: { title: string; body: string; url: string; userIds: string[] };
 }) {
@@ -123,7 +123,7 @@ export async function sendRanking({
   db,
   userId,
 }: {
-  db: PrismaClient;
+  db: Prisma.TransactionClient;
   userId: string;
 }) {
   const groups = await db.group.findMany({
@@ -135,7 +135,7 @@ export async function sendRanking({
         where: {
           OR: [
             { group: { id: group.id } },
-            { organizerGroup: { id: group.id } },
+            { organizerGroup: { some: { id: group.id } } },
           ],
         },
         select: { id: true },
