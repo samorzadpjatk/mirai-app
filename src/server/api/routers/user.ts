@@ -55,19 +55,6 @@ export const userRouter = createTRPCRouter({
       orderBy: { name: "asc" },
     });
   }),
-  getAllAdminsNamesWithoutGroups: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.db.user.findMany({
-      where: {
-        isAdmin: true,
-        organizerGroup: null,
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-      orderBy: { name: "asc" },
-    });
-  }),
   // Update user admin status
   updateUserAdminStatus: adminProcedure
     .input(
@@ -164,12 +151,6 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if house number is already taken by another user
-      const existingUser = await ctx.db.user.findUnique({
-        where: { houseNumber: input.houseNumber },
-        select: { id: true, name: true },
-      });
-
       return await ctx.db.user.update({
         where: { id: input.userId },
         data: { houseNumber: input.houseNumber },
@@ -253,9 +234,11 @@ export const userRouter = createTRPCRouter({
                 },
                 {
                   organizerGroup: {
-                    name: {
-                      contains: searchTerm,
-                      mode: "insensitive" as const,
+                    some: {
+                      name: {
+                        contains: searchTerm,
+                        mode: "insensitive" as const,
+                      },
                     },
                   },
                 },

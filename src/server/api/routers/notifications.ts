@@ -191,7 +191,7 @@ export const notificationRouter = createTRPCRouter({
     }),
 
   // Send push notification to specific users
-  sendToGroup: adminProcedure
+  sendToGroup: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -203,7 +203,12 @@ export const notificationRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         const members = await ctx.db.user.findMany({
-          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          where: {
+            OR: [
+              { group: { id: input.groupId } },
+              { organizerGroup: { some: { id: input.groupId } } },
+            ],
+          },
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
@@ -226,7 +231,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
-  sendToAll: adminProcedure
+  sendToAll: moderatorProcedure
     .input(
       z.object({
         title: z.string(),
@@ -260,7 +265,7 @@ export const notificationRouter = createTRPCRouter({
       }
     }),
 
-  sendRankingUpdateToGroups: adminProcedure.mutation(async ({ ctx }) => {
+  sendRankingUpdateToGroups: moderatorProcedure.mutation(async ({ ctx }) => {
     try {
       return await sendRanking({
         db: ctx.db,
@@ -295,7 +300,12 @@ export const notificationRouter = createTRPCRouter({
         }
 
         const members = await ctx.db.user.findMany({
-          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          where: {
+            OR: [
+              { group: { id: input.groupId } },
+              { organizerGroup: { some: { id: input.groupId } } },
+            ],
+          },
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
@@ -303,7 +313,7 @@ export const notificationRouter = createTRPCRouter({
           NotificationService.createCoinsAddedNotification(
             group.name,
             input.coins,
-            input.reason
+            input.reason,
           );
         const payload = {
           userIds,
@@ -348,7 +358,12 @@ export const notificationRouter = createTRPCRouter({
         }
 
         const members = await ctx.db.user.findMany({
-          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          where: {
+            OR: [
+              { group: { id: input.groupId } },
+              { organizerGroup: { some: { id: input.groupId } } },
+            ],
+          },
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
@@ -356,7 +371,7 @@ export const notificationRouter = createTRPCRouter({
           NotificationService.createCoinsRemovedNotification(
             group.name,
             input.coins,
-            input.reason
+            input.reason,
           );
         const payload = {
           userIds,
@@ -380,7 +395,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
-  sendNewMemberToGroup: adminProcedure
+  sendNewMemberToGroup: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -439,7 +454,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
-  sendCustomToGroup: adminProcedure
+  sendCustomToGroup: moderatorProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -461,7 +476,11 @@ export const notificationRouter = createTRPCRouter({
           body: input.body,
           url: input.url,
         };
-        return await send({ db: ctx.db, userId: ctx.session.user.id, input: payload });
+        return await send({
+          db: ctx.db,
+          userId: ctx.session.user.id,
+          input: payload,
+        });
       } catch (error) {
         console.error("Error sending custom notification to group:", error);
         throw new TRPCError({
@@ -471,7 +490,7 @@ export const notificationRouter = createTRPCRouter({
       }
     }),
 
-  retryNotification: adminProcedure
+  retryNotification: moderatorProcedure
     .input(
       z.object({
         notificationId: z.string(),

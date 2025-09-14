@@ -57,7 +57,7 @@ model User {
   isAdmin                   Boolean                @default(false)
   isModerator               Boolean                @default(false)
   isServiceAccount          Boolean                @default(false)
-  organizerGroup            Group?                 @relation("UserOrganizerGroups")
+  organizerGroup            Group[]                 @relation("UserOrganizerGroups")
   coinTransactionsAdmin     CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
   pushSubscriptions         PushSubscription[]
   notificationSchedules     NotificationSchedule[] @relation("NotificationScheduleAdmin")
@@ -68,7 +68,7 @@ model User {
 model Group {
   id               String            @id @default(uuid())
   name             String
-  organizerId      String            @unique
+  organizerId      String            
   organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
   code             String            @unique
   members          User[]
