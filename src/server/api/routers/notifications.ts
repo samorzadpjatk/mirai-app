@@ -203,7 +203,12 @@ export const notificationRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         const members = await ctx.db.user.findMany({
-          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          where: {
+            OR: [
+              { group: { id: input.groupId } },
+              { organizerGroup: { some: { id: input.groupId } } },
+            ],
+          },
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
@@ -295,7 +300,12 @@ export const notificationRouter = createTRPCRouter({
         }
 
         const members = await ctx.db.user.findMany({
-          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          where: {
+            OR: [
+              { group: { id: input.groupId } },
+              { organizerGroup: { some: { id: input.groupId } } },
+            ],
+          },
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
@@ -303,7 +313,7 @@ export const notificationRouter = createTRPCRouter({
           NotificationService.createCoinsAddedNotification(
             group.name,
             input.coins,
-            input.reason
+            input.reason,
           );
         const payload = {
           userIds,
@@ -348,7 +358,12 @@ export const notificationRouter = createTRPCRouter({
         }
 
         const members = await ctx.db.user.findMany({
-          where: { OR: [{ group: { id: input.groupId } }, { organizerGroup: { id: input.groupId } }] },
+          where: {
+            OR: [
+              { group: { id: input.groupId } },
+              { organizerGroup: { some: { id: input.groupId } } },
+            ],
+          },
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
@@ -356,7 +371,7 @@ export const notificationRouter = createTRPCRouter({
           NotificationService.createCoinsRemovedNotification(
             group.name,
             input.coins,
-            input.reason
+            input.reason,
           );
         const payload = {
           userIds,
@@ -461,7 +476,11 @@ export const notificationRouter = createTRPCRouter({
           body: input.body,
           url: input.url,
         };
-        return await send({ db: ctx.db, userId: ctx.session.user.id, input: payload });
+        return await send({
+          db: ctx.db,
+          userId: ctx.session.user.id,
+          input: payload,
+        });
       } catch (error) {
         console.error("Error sending custom notification to group:", error);
         throw new TRPCError({
