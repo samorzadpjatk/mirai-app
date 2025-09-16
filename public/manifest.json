@@ -4,7 +4,7 @@
   "description": "Treasure Bank - Integral 2025 Progressive Web App",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#6728f5",
   "theme_color": "#dc2626",
   "orientation": "portrait-primary",
   "icons": [
