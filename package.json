@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "build": "next build",
     "check": "eslint . && tsc --noEmit",
     "db:generate": "prisma migrate dev",
@@ -66,6 +67,5 @@
   },
   "ct3aMetadata": {
     "initVersion": "7.39.3"
-  },
-  "packageManager": "npm@11.5.1"
+  }
 }
