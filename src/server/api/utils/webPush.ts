@@ -56,47 +56,47 @@ export async function send({
         async (subscription): Promise<PushSubscriptionNotificationResult> => {
           let statusCode = 0;
           const userId = subscription.userId;
-          try {
-            const pushSubscription = {
-              endpoint: subscription.endpoint,
-              keys: {
-                p256dh: subscription.p256dh,
-                auth: subscription.auth,
-              },
-            };
 
-            const sendNotification = async () => {
-              const result = await webpush.sendNotification(
-                pushSubscription,
-                payload,
-              );
-              statusCode = result.statusCode;
-            };
+          const pushSubscription = {
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: subscription.p256dh,
+              auth: subscription.auth,
+            },
+          };
 
-            const onError = async (err: unknown, retryAttempt: number) => {
-              console.error(
-                `Error sending push notification subscription on attempt ${retryAttempt}`,
-                err,
-              );
+          const sendNotification = async () => {
+            const result = await webpush.sendNotification(
+              pushSubscription,
+              payload,
+            );
+            statusCode = result.statusCode;
+          };
 
-              if (err instanceof WebPushError) {
-                if (err.statusCode === 410 || err.statusCode === 404) {
-                  await db.pushSubscription
-                    .delete({
-                      where: { id: subscription.id },
-                    })
-                    .catch((deleteErr) =>
-                      console.error(
-                        "Failed to delete an invalid subscription.",
-                        deleteErr,
-                      ),
-                    );
+          const onError = async (err: unknown, retryAttempt: number) => {
+            console.error(
+              `Error sending push notification subscription on attempt ${retryAttempt}`,
+              err,
+            );
 
-                  statusCode = err.statusCode;
-                }
+            if (err instanceof WebPushError) {
+              if (err.statusCode === 410 || err.statusCode === 404) {
+                await db.pushSubscription
+                  .delete({
+                    where: { id: subscription.id },
+                  })
+                  .catch((deleteErr) =>
+                    console.error(
+                      "Failed to delete an invalid subscription.",
+                      deleteErr,
+                    ),
+                  );
+
+                statusCode = err.statusCode;
               }
-            };
-
+            }
+          };
+          try {
             await executeWithRetry(sendNotification, onError);
           } catch (err) {
             console.error("Error sending notification:", err);
