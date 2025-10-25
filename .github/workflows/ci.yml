@@ -2,37 +2,40 @@ name: Linting check
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Use Node.js 24
-      uses: actions/setup-node@v4
-      with:
-        node-version: 24
-        
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
           version: 10
-   
-    - name: Install dependencies
-      run: pnpm install
 
-    - name: Run ESLint
-      uses: reviewdog/action-eslint@v1.33.2
-      with:
-        reporter: github-check
-        eslint_flags: "."
+      - name: Install dependencies
+        run: pnpm install
 
-    - name: Run `tsc`
-      uses: EPMatt/reviewdog-action-tsc@v1.8.0
-      with:
-        reporter: github-check
+      - name: Test
+        run: pnpm test --silent
+
+      - name: Run ESLint
+        uses: reviewdog/action-eslint@v1.33.2
+        with:
+          reporter: github-check
+          eslint_flags: "."
+
+      - name: Run `tsc`
+        uses: EPMatt/reviewdog-action-tsc@v1.8.0
+        with:
+          reporter: github-check
