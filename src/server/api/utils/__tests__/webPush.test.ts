@@ -6,6 +6,19 @@ import { type Prisma } from "@prisma/client";
 
 jest.mock("web-push");
 jest.mock("~/server/services/notificationService");
+jest.mock("~/utils/resilience", () => ({
+  executeWithRetry: async (
+    toExecute: () => Promise<unknown>,
+    onError: (err: unknown, retryAttempt: number) => void,
+  ) => {
+    try {
+      return await toExecute();
+    } catch (err) {
+      onError(err, 0);
+      throw err;
+    }
+  },
+}));
 
 type MockPushSubscription = {
   id: string;
