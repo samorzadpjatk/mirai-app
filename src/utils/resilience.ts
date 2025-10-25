@@ -22,7 +22,6 @@ export async function executeWithRetry<T>(
   for (let retryAttempt = 0; retryAttempt < maxRetriesCount; retryAttempt++) {
     try {
       const result = await toExecute();
-      console.log(result);
       if (isValidResult && !isValidResult(result)) {
         await handleDelay(retryAttempt);
         continue;
@@ -30,7 +29,6 @@ export async function executeWithRetry<T>(
 
       return result;
     } catch (err: unknown) {
-      console.log("ERR");
       await onError?.(err, retryAttempt);
       if (retryAttempt == maxRetriesCount - 1) {
         throw err;
