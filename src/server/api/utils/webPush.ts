@@ -2,6 +2,12 @@ import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import webpush, { WebPushError } from "web-push";
 import { NotificationService } from "~/server/services/notificationService";
+import { executeWithRetry } from "~/utils/resilience";
+
+type PushSubscriptionNotificationResult = {
+  userId: string;
+  statusCode: number;
+};
 
 export async function send({
   db,
@@ -46,9 +52,11 @@ export async function send({
     });
 
     const results = await Promise.all(
-      subscriptions.map(async (subscription) => {
-        let statusCode = 0;
-        try {
+      subscriptions.map(
+        async (subscription): Promise<PushSubscriptionNotificationResult> => {
+          let statusCode = 0;
+          const userId = subscription.userId;
+
           const pushSubscription = {
             endpoint: subscription.endpoint,
             keys: {
@@ -56,26 +64,47 @@ export async function send({
               auth: subscription.auth,
             },
           };
-          const result = await webpush.sendNotification(
-            pushSubscription,
-            payload,
-          );
-          statusCode = result.statusCode;
-        } catch (error) {
-          console.error("Error sending notification:", error);
-          // Remove invalid subscriptions
-          if (error instanceof WebPushError) {
-            if (error.statusCode === 410 || error.statusCode === 404) {
-              await db.pushSubscription.delete({
-                where: { id: subscription.id },
-              });
+
+          const sendNotification = async () => {
+            const result = await webpush.sendNotification(
+              pushSubscription,
+              payload,
+            );
+            statusCode = result.statusCode;
+          };
+
+          const onError = async (err: unknown, retryAttempt: number) => {
+            console.error(
+              `Error sending push notification subscription on attempt ${retryAttempt}`,
+              err,
+            );
+
+            if (err instanceof WebPushError) {
+              if (err.statusCode === 410 || err.statusCode === 404) {
+                await db.pushSubscription
+                  .delete({
+                    where: { id: subscription.id },
+                  })
+                  .catch((deleteErr) =>
+                    console.error(
+                      "Failed to delete an invalid subscription.",
+                      deleteErr,
+                    ),
+                  );
+
+                statusCode = err.statusCode;
+              }
             }
-            statusCode = error.statusCode;
+          };
+          try {
+            await executeWithRetry(sendNotification, onError);
+          } catch (err) {
+            console.error("Error sending notification:", err);
+          } finally {
+            return { userId, statusCode };
           }
-        } finally {
-          return { userId: subscription.userId, statusCode };
-        }
-      }),
+        },
+      ),
     );
 
     const successful = results.filter(

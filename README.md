@@ -30,7 +30,7 @@ This project is built using the [T3 Stack](https://create.t3.gg/):
 Before setting up the project, ensure you have:
 
 - **Node.js** (version 18 or higher)
-- **npm** (comes with Node.js)
+- **pnpm** (`npm install -g pnpm`)
 - **Docker** (for local database)
 - **PostgreSQL** (or use Docker container)
 - **Authentik instance** (for OIDC authentication)
@@ -47,7 +47,7 @@ cd integral-app
 ### 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Environment Setup
@@ -102,13 +102,13 @@ Set up the database schema:
 
 ```bash
 # Generate Prisma client
-npm run postinstall
+ppnpm run postinstall
 
 # Push the schema to the database
-npm run db:push
+ppnpm run db:push
 
 # Optional: Open Prisma Studio to view the database
-npm run db:studio
+pnpm run db:studio
 ```
 
 ### 6. Authentication Setup
@@ -124,25 +124,25 @@ Configure your Authentik instance:
 ### 7. Start Development Server
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 The application will be available at `http://localhost:3000`.
 
 ## 📝 Available Scripts
 
-- `npm run dev` - Start development server with Turbo
-- `npm run build` - Build production application
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
-- `npm run typecheck` - Run TypeScript type checking
-- `npm run format:check` - Check code formatting
-- `npm run format:write` - Format code with Prettier
-- `npm run db:push` - Push schema changes to database
-- `npm run db:studio` - Open Prisma Studio
-- `npm run db:generate` - Generate and run migrations
-- `npm run db:migrate` - Deploy migrations to production
+- `pnpm run dev` - Start development server with Turbo
+- `pnpm run build` - Build production application
+- `pnpm run start` - Start production server
+- `pnpm run lint` - Run ESLint
+- `pnpm run lint:fix` - Fix ESLint issues
+- `pnpm run typecheck` - Run TypeScript type checking
+- `pnpm run format:check` - Check code formatting
+- `pnpm run format:write` - Format code with Prettier
+- `pnpm run db:push` - Push schema changes to database
+- `pnpm run db:studio` - Open Prisma Studio
+- `pnpm run db:generate` - Generate and run migrations
+- `pnpm run db:migrate` - Deploy migrations to production
 
 ## 🏗️ Project Structure
 
@@ -164,21 +164,25 @@ src/
 ## 🎮 Features
 
 ### Group Management
+
 - Create new groups with auto-generated access codes
 - Join existing groups using invite codes
 - View group members and details
 
 ### Coin System
+
 - Track coin balances for each group
 - Historical transaction records
 - Admin-controlled coin distribution
 
 ### Ranking System
+
 - Real-time leaderboard
 - Sorted by total coins
 - Public viewing for all participants
 
 ### Admin Features
+
 - Award coins to specific groups
 - View transaction history
 - Manage group permissions
@@ -199,7 +203,7 @@ For production, set up a PostgreSQL database and update the `DATABASE_URL`:
 
 ```bash
 # Run migrations in production
-npm run db:migrate
+pnpm run db:migrate
 ```
 
 ### Deployment Platforms
@@ -218,23 +222,23 @@ For detailed deployment guides, refer to the [T3 Stack documentation](https://cr
 
 ```bash
 # Reset database (development only)
-npm run db:push
+pnpm run db:push
 
 # View database in browser
-npm run db:studio
+pnpm run db:studio
 
 # Generate Prisma client after schema changes
-npm run postinstall
+pnpm run postinstall
 ```
 
 ### Code Quality
 
 ```bash
 # Check formatting and linting
-npm run check
+pnpm run check
 
 # Fix issues automatically
-npm run lint:fix && npm run format:write
+pnpm run lint:fix && pnpm run format:write
 ```
 
 ## 🤝 Contributing
