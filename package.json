@@ -21,7 +21,8 @@
     "preview": "next build && next start -p 11001",
     "start": "next start -p 11001",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest --coverage",
+    "test:ci": "jest --silent --no-converage"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
@@ -43,6 +44,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "server-only": "^0.0.1",
+    "serwist": "^9.2.1",
     "superjson": "^2.2.1",
     "web-push": "^3.6.7",
     "workbox-webpack-plugin": "^7.3.0",

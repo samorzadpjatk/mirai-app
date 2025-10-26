@@ -27,7 +27,10 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@auth/core/*": [
+        "./node_modules/.pnpm/@auth+core@0.37.2/node_modules/@auth/core/*"
+      ]
     }
   },
   "include": [
@@ -38,5 +41,11 @@
     "**/*.js",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "public/sw.js", "public/sw-dev.js", "public/workbox-*.js", "public/sw.js.map"]
+  "exclude": [
+    "node_modules",
+    "public/sw.js",
+    "public/sw-dev.js",
+    "public/workbox-*.js",
+    "public/sw.js.map"
+  ]
 }

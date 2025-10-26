@@ -27,7 +27,7 @@ jobs:
         run: pnpm install
 
       - name: Test
-        run: pnpm test --silent
+        run: pnpm test:ci
 
       - name: Run ESLint
         uses: reviewdog/action-eslint@v1.33.2
