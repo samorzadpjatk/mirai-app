@@ -102,10 +102,10 @@ Set up the database schema:
 
 ```bash
 # Generate Prisma client
-ppnpm run postinstall
+pnpm run postinstall
 
 # Push the schema to the database
-ppnpm run db:push
+pnpm run db:push
 
 # Optional: Open Prisma Studio to view the database
 pnpm run db:studio
