@@ -2,6 +2,14 @@
 
 A medieval-themed coin management system for group competitions and events. Built with the T3 Stack for managing groups, coin transactions, and rankings in a gamified environment.
 
+## Osoby uprawnione do review PR-ów
+
+- [Rafał Opiłowski](https://github.com/rafalopilowski1)
+- [Artur Niklewicz](https://github.com/ArturNiklewicz)
+- [Jakub Graliński](https://github.com/JakubGralinski)
+- [Mateusz Laskowski](https://github.com/mlaskowski7)
+- [Mateusz Górka](https://github.com/mateuszgorka)
+
 ## 🏰 About
 
 Treasure Bank is designed for medieval-themed events and competitions where participants form guilds (groups) and compete for coins through various activities. The application features:
