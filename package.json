@@ -22,7 +22,9 @@
     "start": "next start -p 11001",
     "typecheck": "tsc --noEmit",
     "test": "jest --coverage",
-    "test:ci": "jest --silent --no-converage"
+    "test:ci": "jest --silent --no-converage",
+    "webpack:dev": "webpack serve --mode development --open --hot --port 12000",
+    "webpack:build": "webpack --mode production"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
@@ -41,7 +43,7 @@
     "next": "^15.5.2",
     "next-auth": "5.0.0-beta.25",
     "next-themes": "^0.4.6",
-    "pdfjs-dist": "4.7.76",
+    "pdfjs-dist": "^4.7.76",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "server-only": "^0.0.1",
@@ -58,7 +60,6 @@
     "@types/jest": "^30.0.0",
     "@types/next-pwa": "^5.6.9",
     "@types/node": "^24.3.0",
-    "@types/pdfjs-dist": "^2.10.378",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/web-push": "^3.6.4",
@@ -73,7 +74,11 @@
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
-    "typescript-eslint": "^8.27.0"
+    "typescript-eslint": "^8.27.0",
+    "ts-loader": "^9.5.1",
+    "webpack": "^5.95.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
   },
   "ct3aMetadata": {
     "initVersion": "7.39.3"

@@ -1,11 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import * as pdfjsLib from "pdfjs-dist";
-// PDF.js worker: must be available locally as /pdf.worker.mjs (see README)
-if (typeof window !== "undefined" && (pdfjsLib as any).GlobalWorkerOptions) {
-  (pdfjsLib as any).GlobalWorkerOptions.workerSrc = "/pdf.worker.mjs";
-}
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
+
 
 type PDFViewerProps = {
   src?: string;
@@ -56,7 +53,21 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
       try {
         setIsLoading(true);
         setError(null);
-        const loadingTask = pdfjsLib.getDocument(src);
+        // Ensure PDF.js worker is configured when running in the browser
+        if (typeof window !== "undefined") {
+          const gwOptions = GlobalWorkerOptions as unknown as { workerPort?: Worker; workerSrc?: string };
+          const cdnWorkerUrl = "https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
+          try {
+            if (!gwOptions.workerPort) {
+              const worker = new Worker(cdnWorkerUrl, { type: "module" });
+              gwOptions.workerPort = worker;
+            }
+          } catch {
+            gwOptions.workerSrc = cdnWorkerUrl;
+          }
+        }
+
+        const loadingTask = getDocument(src);
         const pdf = await loadingTask.promise;
         if (cancelled) return;
         const page = await pdf.getPage(1);
