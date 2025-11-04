@@ -26,8 +26,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Test
-        run: pnpm test:ci
+      - name: Test web app
+        run: pnpm --filter @integral-2025-app/web test:ci
 
       - name: Run ESLint
         uses: reviewdog/action-eslint@v1.33.2

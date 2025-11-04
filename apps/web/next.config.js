@@ -8,13 +8,12 @@ import withSerwist from "@serwist/next";
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: true
+    ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true
-  }
+    ignoreDuringBuilds: true,
+  },
 };
-
 
 // Serwist Configuration
 export default withSerwist({

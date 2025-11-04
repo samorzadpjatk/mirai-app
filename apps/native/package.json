@@ -1,0 +1,35 @@
+{
+  "name": "@integral-2025-app/native",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "dev": "expo start",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "build": "expo export",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx}\" --cache",
+    "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx}\" --cache",
+    "clean": "rm -rf .expo .turbo node_modules dist"
+  },
+  "dependencies": {
+    "expo": "~54.0.22",
+    "expo-status-bar": "~3.0.8",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "eslint": "^9.23.0",
+    "prettier": "^3.5.3",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.27.0"
+  }
+}

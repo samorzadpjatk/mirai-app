@@ -2,12 +2,17 @@ FROM node:24-alpine AS base
 
 WORKDIR /usr/src/app
 
-COPY package.json package-lock.json prisma/ ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY turbo.json ./
 
-RUN npm ci
+COPY apps/web/package.json ./apps/web/
+COPY apps/web/prisma/ ./apps/web/prisma/
 
-COPY . .
+RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
-RUN npm run build
+COPY apps/web/ ./apps/web/
 
-CMD ["sh", "-c", "npm run db:migrate && npm run start"]
+WORKDIR /usr/src/app/apps/web
+RUN pnpm build
+
+CMD ["sh", "-c", "pnpm db:migrate && pnpm start"]
