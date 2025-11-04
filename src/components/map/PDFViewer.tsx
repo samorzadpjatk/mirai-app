@@ -11,8 +11,14 @@ type PDFViewerProps = {
 export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const pageRef = useRef<any>(null);
-  const renderTaskRef = useRef<any>(null);
+  type PdfRenderTask = { cancel?: () => void; promise: Promise<unknown> };
+  type PdfPage = {
+    getViewport: (opts: { scale: number }) => { width: number; height: number };
+    render: (params: { canvasContext: CanvasRenderingContext2D; viewport: unknown }) => PdfRenderTask;
+  };
+
+  const pageRef = useRef<PdfPage | null>(null);
+  const renderTaskRef = useRef<PdfRenderTask | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,15 +35,13 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
 
   const renderPage = useCallback(async (nextScale: number) => {
     if (!pageRef.current || !canvasRef.current) return;
-    const page = pageRef.current as any;
-    const canvas = canvasRef.current as HTMLCanvasElement;
+    const page = pageRef.current;
+    const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
     if (!context) return;
 
     // Cancel previous rendering if any
-    if (renderTaskRef.current && typeof renderTaskRef.current.cancel === "function") {
-      try { renderTaskRef.current.cancel(); } catch {}
-    }
+    renderTaskRef.current?.cancel?.();
 
     const viewport = page.getViewport({ scale: nextScale });
     canvas.width = viewport.width;
@@ -78,19 +82,17 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
     })();
     return () => {
       cancelled = true;
-      if (renderTaskRef.current && typeof renderTaskRef.current.cancel === "function") {
-        try { renderTaskRef.current.cancel(); } catch {}
-      }
+      renderTaskRef.current?.cancel?.();
     };
   }, [src, renderPage, scale]);
 
   // Wheel event (desktop zoom)
-  const onWheel = (e: React.WheelEvent | WheelEvent) => {
+  const onWheel = useCallback((e: React.WheelEvent | WheelEvent) => {
     // Only zoom, never scroll parent!
     e.preventDefault();
     const delta = (e as any).deltaY > 0 ? -0.1 : 0.1;
     setScale((s) => Math.min(3, Math.max(0.5, Number((s + delta).toFixed(2)))));
-  };
+  }, []);
 
   const startPan = (e: React.MouseEvent) => {
     setIsPanning(true);
@@ -149,7 +151,7 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
   };
 
   // Touch gesture end handler
-  const onTouchEnd = (e: React.TouchEvent) => {
+  const onTouchEnd = () => {
     setIsPanning(false);
     lastTouch.current = null;
     lastPinchDist.current = null;
