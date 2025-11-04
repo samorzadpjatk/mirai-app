@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
+// PDF.js will be loaded dynamically from CDN; no direct import here
 
 
 type PDFViewerProps = {
@@ -53,21 +53,16 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
       try {
         setIsLoading(true);
         setError(null);
-        // Ensure PDF.js worker is configured when running in the browser
-        if (typeof window !== "undefined") {
-          const gwOptions = GlobalWorkerOptions as unknown as { workerPort?: Worker; workerSrc?: string };
-          const cdnWorkerUrl = "https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
-          try {
-            if (!gwOptions.workerPort) {
-              const worker = new Worker(cdnWorkerUrl, { type: "module" });
-              gwOptions.workerPort = worker;
-            }
-          } catch {
-            gwOptions.workerSrc = cdnWorkerUrl;
-          }
-        }
+        // Load PDF.js ESM directly from CDN (no bundler import)
+        // Dynamic ESM import via eval to avoid TS module resolution
+        const pdfjs: any = await (0, eval)(
+          "import('https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.mjs')"
+        );
+        // Configure worker URL from CDN
+        pdfjs.GlobalWorkerOptions.workerSrc =
+          "https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
 
-        const loadingTask = getDocument(src);
+        const loadingTask = pdfjs.getDocument(src);
         const pdf = await loadingTask.promise;
         if (cancelled) return;
         const page = await pdf.getPage(1);
@@ -76,7 +71,7 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
         await renderPage(scale);
       } catch (e) {
         console.error("Failed to load map PDF:", e); 
-        setError("Failed to load map. Ensure public/radom-mapa.pdf exists and is not corrupted.");
+        setError("Failed to load map.");
       } finally {
         if (!cancelled) setIsLoading(false);
       }
