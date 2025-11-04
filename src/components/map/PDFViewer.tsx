@@ -16,6 +16,11 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
     getViewport: (opts: { scale: number }) => { width: number; height: number };
     render: (params: { canvasContext: CanvasRenderingContext2D; viewport: unknown }) => PdfRenderTask;
   };
+  type PdfDocument = { getPage: (pageNumber: number) => Promise<PdfPage> };
+  type PdfJsModule = {
+    GlobalWorkerOptions: { workerSrc: string };
+    getDocument: (src: string) => { promise: Promise<PdfDocument> };
+  };
 
   const pageRef = useRef<PdfPage | null>(null);
   const renderTaskRef = useRef<PdfRenderTask | null>(null);
@@ -59,9 +64,9 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
         setError(null);
         // Load PDF.js ESM directly from CDN (no bundler import)
         // Dynamic ESM import via eval to avoid TS module resolution
-        const pdfjs: any = await (0, eval)(
+        const pdfjs = (await (0, eval)(
           "import('https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.mjs')"
-        );
+        )) as unknown as PdfJsModule;
         // Configure worker URL from CDN
         pdfjs.GlobalWorkerOptions.workerSrc =
           "https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
@@ -90,7 +95,8 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
   const onWheel = useCallback((e: React.WheelEvent | WheelEvent) => {
     // Only zoom, never scroll parent!
     e.preventDefault();
-    const delta = (e as any).deltaY > 0 ? -0.1 : 0.1;
+    const deltaY = 'deltaY' in e ? e.deltaY : (e as React.WheelEvent).deltaY;
+    const delta = deltaY > 0 ? -0.1 : 0.1;
     setScale((s) => Math.min(3, Math.max(0.5, Number((s + delta).toFixed(2)))));
   }, []);
 
