@@ -2,11 +2,12 @@ FROM node:24-alpine AS base
 
 WORKDIR /usr/src/app
 
-COPY package.json package-lock.json prisma/ ./
+COPY ./apps/web/package.json ./apps/web/package-lock.json ./apps/web/prisma/ ./
+COPY tsconfig.base.json /usr/
 
 RUN npm ci
 
-COPY . .
+COPY ./apps/web ./
 
 RUN npm run build
 

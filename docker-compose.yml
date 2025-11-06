@@ -1,21 +1,22 @@
 services:
-  dev-app:
+  dev-web-app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.web
     ports:
       - "11001:3000"
     environment:
       - NODE_ENV=development
     env_file:
-      - .env.development
-  prod-app:
+      - ./apps/web/.env
+
+  prod-web-app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.web
     ports:
       - "11000:3000"
     environment:
       - NODE_ENV=production
     env_file:
-      - .env.production
+      - ./apps/web/.env
