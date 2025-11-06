@@ -5,10 +5,12 @@ const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
 });
 
-export default [
+const config = [
   ...baseConfig,
   {
     ignores: [".next", "public/**/*"],
   },
   ...compat.extends("next/core-web-vitals"),
 ];
+
+export default config;
