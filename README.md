@@ -110,13 +110,13 @@ Set up the database schema:
 
 ```bash
 # Generate Prisma client
-pnpm run postinstall
+pnpm --filter @integral-2025-app/web postinstall
 
 # Push the schema to the database
-pnpm run db:push
+pnpm --filter @integral-2025-app/web db:push
 
 # Optional: Open Prisma Studio to view the database
-pnpm run db:studio
+pnpm --filter @integral-2025-app/web db:studio
 ```
 
 ### 6. Authentication Setup
@@ -132,12 +132,14 @@ Configure your Authentik instance:
 ### 7. Start Development Server
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
 The application will be available at `http://localhost:3000`.
 
 ## 📝 Available Scripts
+
+To understand how to run scripts with monorepo configuration pls see [`MONOREPO.md`](./docs/MONOREPO.md)
 
 - `pnpm run dev` - Start development server with Turbo
 - `pnpm run build` - Build production application

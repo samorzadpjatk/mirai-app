@@ -1,35 +1,19 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    /* Base Options: */
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "target": "es2022",
-    "allowJs": true,
-    "resolveJsonModule": true,
-    "moduleDetection": "force",
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-
-    /* Strictness */
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "checkJs": true,
-
-    /* Bundled projects */
+    /* Next.js specific */
     "lib": ["dom", "dom.iterable", "ES2022"],
-    "noEmit": true,
-    "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "preserve",
+    "verbatimModuleSyntax": true,
     "plugins": [{ "name": "next" }],
-    "incremental": true,
 
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"],
       "@auth/core/*": [
-        "./node_modules/.pnpm/@auth+core@0.37.2/node_modules/@auth/core/*"
+        "../../node_modules/.pnpm/@auth+core@0.37.2/node_modules/@auth/core/*"
       ]
     }
   },

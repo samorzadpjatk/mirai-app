@@ -1,0 +1,14 @@
+FROM node:24-alpine AS base
+
+WORKDIR /usr/src/app
+
+COPY ./apps/web/package.json ./apps/web/package-lock.json ./apps/web/prisma/ ./
+COPY tsconfig.base.json /usr/
+
+RUN npm ci
+
+COPY ./apps/web ./
+
+RUN npm run build
+
+CMD ["sh", "-c", "npm run db:migrate && npm run start"]
