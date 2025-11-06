@@ -53,12 +53,18 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
     canvas.height = viewport.height;
 
     renderTaskRef.current = page.render({ canvasContext: context, viewport });
-    await renderTaskRef.current.promise.catch((error) => {
+    await renderTaskRef.current.promise.catch((error: unknown) => {
       // Ignore cancellation errors (normal when zooming/panning quickly)
       // but log other errors for debugging
-      if (error?.name !== "RenderingCancelledException") {
-        console.warn("PDF render error:", error);
+      if (
+        error &&
+        typeof error === "object" &&
+        "name" in error &&
+        error.name === "RenderingCancelledException"
+      ) {
+        return; // Ignore cancellation errors
       }
+      console.warn("PDF render error:", error);
     });
   }, []);
 
