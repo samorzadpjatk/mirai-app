@@ -27,10 +27,11 @@ jobs:
       - name: Test web app
         run: pnpm --filter @integral-2025-app/web test:ci
 
-      - name: Run ESLint
+      - name: Run ESLint web app
         uses: reviewdog/action-eslint@v1.33.2
         with:
           reporter: github-check
+          workdir: apps/web
           eslint_flags: "."
 
       - name: Run `tsc`
