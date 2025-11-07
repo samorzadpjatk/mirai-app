@@ -26,6 +26,8 @@ export const env = createEnv({
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_EMAIL: z.string().email().optional(),
     SCHEDULER_API_KEY: z.string().optional(),
+    SUPABASE_PROJECT_URL: z.string().url(),
+    SUPABASE_PROJECT_KEY: z.string(),
   },
 
   /**
@@ -57,6 +59,8 @@ export const env = createEnv({
     VAPID_EMAIL: process.env.VAPID_EMAIL,
     SCHEDULER_API_KEY: process.env.SCHEDULER_API_KEY,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    SUPABASE_PROJECT_URL: process.env.SUPABASE_PROJECT_URL,
+    SUPABASE_PROJECT_KEY: process.env.SUPABASE_PROJECT_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
