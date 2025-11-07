@@ -1,0 +1,7 @@
+{
+  "name": "@integral-2025-app/jest-config",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "jest.base.config.cjs",
+  "types": "index.d.ts"
+}
