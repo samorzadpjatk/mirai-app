@@ -20,6 +20,7 @@
     "clean": "rm -rf .expo .turbo node_modules dist"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.80.0",
     "expo": "~54.0.22",
     "expo-router": "^6.0.14",
     "expo-status-bar": "~3.0.8",
