@@ -25,9 +25,14 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
   const pageRef = useRef<PdfPage | null>(null);
   const renderTaskRef = useRef<PdfRenderTask | null>(null);
 
+  // Render scale - always render at high resolution (oversampling)
+  const RENDER_SCALE = 4.0;
+  
+  // Display scale - CSS transform scale for zoom (0.1 to 1.0, where 1.0 = full render scale)
+  const [displayScale, setDisplayScale] = useState(0.3);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scale, setScale] = useState(1.2);
 
   // Touch logic refs for mobile
   const lastTouch = useRef<{x: number, y: number} | null>(null);
@@ -38,7 +43,7 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  const renderPage = useCallback(async (nextScale: number) => {
+  const renderPage = useCallback(async () => {
     if (!pageRef.current || !canvasRef.current) return;
     const page = pageRef.current;
     const canvas = canvasRef.current;
@@ -48,21 +53,21 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
     // Cancel previous rendering if any
     renderTaskRef.current?.cancel?.();
 
-    const viewport = page.getViewport({ scale: nextScale });
+    // Always render at high resolution (oversampling)
+    const viewport = page.getViewport({ scale: RENDER_SCALE });
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
     renderTaskRef.current = page.render({ canvasContext: context, viewport });
     await renderTaskRef.current.promise.catch((error: unknown) => {
-      // Ignore cancellation errors (normal when zooming/panning quickly)
-      // but log other errors for debugging
+      // Ignore cancellation errors
       if (
         error &&
         typeof error === "object" &&
         "name" in error &&
         error.name === "RenderingCancelledException"
       ) {
-        return; // Ignore cancellation errors
+        return;
       }
       console.warn("PDF render error:", error);
     });
@@ -75,7 +80,6 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
         setIsLoading(true);
         setError(null);
         // Load PDF.js ESM directly from CDN (no bundler import)
-        // Dynamic ESM import via eval to avoid TS module resolution
         const pdfjs = (await (0, eval)(
           "import('https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.mjs')"
         )) as unknown as PdfJsModule;
@@ -89,7 +93,7 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
         const page = await pdf.getPage(1);
         if (cancelled) return;
         pageRef.current = page;
-        await renderPage(scale);
+        await renderPage();
       } catch (e) {
         console.error("Failed to load map PDF:", e); 
         setError("Failed to load map.");
@@ -101,32 +105,34 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
       cancelled = true;
       renderTaskRef.current?.cancel?.();
     };
-  }, [src, renderPage, scale]);
+  }, [src, renderPage]);
 
-  // Wheel event (desktop zoom)
+  // Wheel event (desktop zoom) - only changes CSS scale, no re-rendering
   const onWheel = useCallback((e: React.WheelEvent | WheelEvent) => {
     // Only zoom, never scroll parent!
     e.preventDefault();
     const deltaY = 'deltaY' in e ? e.deltaY : (e as React.WheelEvent).deltaY;
-    const delta = deltaY > 0 ? -0.1 : 0.1;
-    setScale((s) => Math.min(3, Math.max(0.5, Number((s + delta).toFixed(2)))));
+    const delta = deltaY > 0 ? -0.02 : 0.02;
+    setDisplayScale((s) => Math.min(1.0, Math.max(0.1, Number((s + delta).toFixed(3)))));
   }, []);
 
   const startPan = (e: React.MouseEvent) => {
     setIsPanning(true);
     panStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
   };
+  
   const movePan = (e: React.MouseEvent) => {
     if (!isPanning || !panStartRef.current) return;
     setPan({ x: e.clientX - panStartRef.current.x, y: e.clientY - panStartRef.current.y });
   };
+  
   const endPan = () => {
     setIsPanning(false);
     panStartRef.current = null;
   };
 
-  const zoomIn = () => setScale((s) => Math.min(3, Number((s + 0.2).toFixed(2))));
-  const zoomOut = () => setScale((s) => Math.max(0.5, Number((s - 0.2).toFixed(2))));
+  const zoomIn = () => setDisplayScale((s) => Math.min(1.0, Number((s + 0.05).toFixed(3))));
+  const zoomOut = () => setDisplayScale((s) => Math.max(0.1, Number((s - 0.05).toFixed(3))));
 
   // Touch gesture start handler
   const onTouchStart = (e: React.TouchEvent) => {
@@ -161,8 +167,8 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      const delta = (d - lastPinchDist.current) / 200; // pinch-zoom sensitivity
-      setScale((s) => Math.min(3, Math.max(0.5, Number((s + delta).toFixed(2)))));
+      const delta = (d - lastPinchDist.current) / 1000; // pinch-zoom sensitivity
+      setDisplayScale((s) => Math.min(1.0, Math.max(0.1, Number((s + delta).toFixed(3)))));
       lastPinchDist.current = d;
     }
     e.preventDefault();
@@ -241,9 +247,20 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
         )}
         <div
           className="w-max h-max"
-          style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}
+          style={{ 
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${displayScale})`,
+            transformOrigin: '0 0',
+            willChange: 'transform'
+          }}
         >
-          <canvas ref={canvasRef} className="block" />
+          <canvas 
+            ref={canvasRef} 
+            className="block" 
+            style={{ 
+              imageRendering: 'auto',
+              willChange: 'contents'
+            }} 
+          />
         </div>
       </div>
     </div>
