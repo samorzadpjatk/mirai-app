@@ -38,6 +38,11 @@ export default async function NavGrid() {
               <Text>Notifications</Text>
             </Link>
           </Button>
+          <Button size={"4"} variant="outline">
+            <Link href={"/map"}>
+              <Text>Map Viewer</Text>
+            </Link>
+          </Button>
         </Grid>
       </>
     )}
