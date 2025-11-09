@@ -5,7 +5,7 @@ This is a minimal Docker Compose setup for self-hosting Supabase.
 ## How to start?
 
 Run the following commands inside this folder:
-1. This command prepares enviromental variables:
+1. This command prepares environmental variables:
 ```bash
 cp .env.example .env
 ```
