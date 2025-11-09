@@ -1,29 +1,29 @@
-# PJApp Dev Environment
+# Środowisko deweloperskie PJApp 
 
-This is a minimal Docker Compose setup for self-hosting Supabase. 
+## Jak uruchomić?
 
-## How to start?
-
-Run the following commands inside this folder:
-1. This command prepares environmental variables:
+Wykonaj następujące komendy w tym folderze:
+1. Ta komenda przygotowuje zmienne środowiskowe:
 ```bash
 cp .env.example .env
 ```
-2. This command launches PostgreSQL DB with Supabase:
+2. Ta komenda uruchamia bazę danych PostgreSQL z Supabase:
 ```bash
 docker compose up -d
 ```
-3. Those commands creates the schema and seeds the DB
+3. Te komendy tworzą schemat i wypełniają bazę danych danymi początkowymi:
 ```bash
 pnpm --filter @integral-2025-app/web run db:generate
 pnpm --filter @integral-2025-app/web run db:seed
 ```
-4. This command starts the server
-```bash
-pnpm --filter @integral-2025-app/web run dev
-```
 
-## How to reset?
+## Jak zresetować?
 ```bash
 bash ./reset.sh
 ```
+
+## Przydatne komendy
+
+- `pnpm --filter @integral-2025-app/web run db:push` - Wypchnij zmiany schematu do bazy danych
+- `pnpm --filter @integral-2025-app/web run db:studio` - Otwórz Prisma Studio
+- `pnpm --filter @integral-2025-app/web run db:generate` - Wygeneruj i uruchom migracje
