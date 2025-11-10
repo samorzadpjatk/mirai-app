@@ -1,7 +1,7 @@
 # Integral 2025 - Aplikacja PWA
 
 > **UWAGA**: 
-> - Docelowo na tym projektcie zostaje tylko backend na bazie NextJS!
+> - Docelowo na tym projekcie zostaje tylko backend na bazie NextJS!
 > - Frontend zostanie przeniesiony do projektu aplikacji natywnej
 > - definicja API oraz bazy danych na bazie Prisma i tRPC zostanie uwspólniona we wspólnych pakietach
 
