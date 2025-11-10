@@ -38,8 +38,8 @@ async function main() {
   const data: AuthentikResponse | undefined = (await response.json()) as
     | AuthentikResponse
     | undefined;
-  console.log(data);
   const groupResults = data?.results ?? [];
+  console.log(`Found ${groupResults.length} groups`);
   for (const group of groupResults) {
     for (const user of group.users_obj) {
       // Upsert the information of each user in groups related to the trip into the database
