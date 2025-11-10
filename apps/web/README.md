@@ -1,6 +1,9 @@
 # Integral 2025 - Aplikacja PWA
 
-> UWAGA!: Docelowo na tym projektcie zostaje tylko backend na bazie NextJS, natomiast frontend zostanie przeniesiony do projektu aplikacji natywnej, przy czym definicja API oraz bazy danych na bazie Prisma i tRPC zostanie uwspólniona we wspólnych pakietach
+> **UWAGA**: 
+> - Docelowo na tym projektcie zostaje tylko backend na bazie NextJS!
+> - Frontend zostanie przeniesiony do projektu aplikacji natywnej
+> - definicja API oraz bazy danych na bazie Prisma i tRPC zostanie uwspólniona we wspólnych pakietach
 
 Progressive Web App zbudowana na bazie T3 Stack z obsługą powiadomień push i instalacji na urządzeniach mobilnych.
 
@@ -32,6 +35,9 @@ Aplikacja będzie dostępna pod adresem: `http://localhost:11000`
 Skopiuj `.env.example` do `.env` i uzupełnij:
 
 ```bash
+# Auth secret (wygeneruj: npx auth secret)
+AUTH_SECRET="..."
+
 # Database
 DATABASE_URL="postgresql://..."
 

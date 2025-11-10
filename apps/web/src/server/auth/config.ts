@@ -76,7 +76,7 @@ export const authConfig = {
           profile.groups.includes(env.TECH_ROLE));
       user.isModerator =
         Array.isArray(profile?.groups) &&
-        profile.groups.includes(env.KADRA_ROLE);
+        profile.groups.includes(env.MODERATOR_ROLE);
       try {
         if (user.email) {
           await db.user.update({
