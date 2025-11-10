@@ -18,9 +18,9 @@ const AUTHENTIK_SERVICE_ACCOUNT_TOKEN =
   process.env.AUTHENTIK_SERVICE_ACCOUNT_TOKEN;
 const AUTHENTIK_API_SEARCH_URL = new URL(
   "/api/v3/core/groups/",
-  "https://auth.samorzad.pja.edu.pl",
+  process.env.AUTHENTIK_ISSUER,
 );
-AUTHENTIK_API_SEARCH_URL.searchParams.append("search", "Integral 2025");
+AUTHENTIK_API_SEARCH_URL.searchParams.append("search", "PJAPP");
 
 async function main() {
   if (!AUTHENTIK_SERVICE_ACCOUNT_TOKEN) {
@@ -39,6 +39,7 @@ async function main() {
     | AuthentikResponse
     | undefined;
   const groupResults = data?.results ?? [];
+  console.log(`Found ${groupResults.length} groups`);
   for (const group of groupResults) {
     for (const user of group.users_obj) {
       // Upsert the information of each user in groups related to the trip into the database
@@ -47,7 +48,7 @@ async function main() {
         update: {
           emailVerified: new Date(),
           isAdmin: group.name === process.env.ADMIN_ROLE || group.name === process.env.TECH_ROLE,
-          isModerator: group.name === process.env.KADRA_ROLE,
+          isModerator: group.name === process.env.MODERATOR_ROLE,
           isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
         },
         create: {
@@ -55,7 +56,7 @@ async function main() {
           name: user.name,
           emailVerified: new Date(),
           isAdmin: group.name === process.env.ADMIN_ROLE || group.name === process.env.TECH_ROLE,
-          isModerator: group.name === process.env.KADRA_ROLE,
+          isModerator: group.name === process.env.MODERATOR_ROLE,
           isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
           // securityCode:
         },

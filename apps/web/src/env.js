@@ -19,7 +19,7 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     ADMIN_ROLE: z.string(),
-    KADRA_ROLE: z.string(),
+    MODERATOR_ROLE: z.string(),
     TECH_ROLE: z.string(),
     SERVICE_ACCOUNT_ROLE: z.string(),
     VAPID_PUBLIC_KEY: z.string().optional(),
@@ -51,7 +51,7 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     ADMIN_ROLE: process.env.ADMIN_ROLE,
-    KADRA_ROLE: process.env.KADRA_ROLE,
+    MODERATOR_ROLE: process.env.MODERATOR_ROLE,
     TECH_ROLE: process.env.TECH_ROLE,
     SERVICE_ACCOUNT_ROLE: process.env.SERVICE_ACCOUNT_ROLE,
     VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,

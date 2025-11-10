@@ -1,14 +1,34 @@
-# Usage
-#   Start:              docker compose up
-#   With helpers:       docker compose -f docker-compose.yml -f ./dev/docker-compose.dev.yml up
-#   Stop:               docker compose down
-#   Destroy:            docker compose -f docker-compose.yml -f ./dev/docker-compose.dev.yml down -v --remove-orphans
-#   Reset everything:  ./reset.sh
+# =============================================================================
+# PJApp Development Environment - Supabase + Authentik Integration
+# =============================================================================
+#
+# This Docker Compose configuration provides a complete local development
+# environment with:
+#   - Supabase: Backend-as-a-Service (Database, Auth, Storage, Realtime, etc.)
+#   - Authentik: Identity Provider (IdP) for advanced authentication
+#
+# Usage:
+#   Start:           docker compose up -d
+#   Stop:            docker compose down
+#   Reset:           ./reset.sh
+#   View logs:       docker compose logs -f
+#   Check status:    docker compose ps
+#
+# Prerequisites:
+#   - Copy .env.example to .env
+#   - Set AUTHENTIK_SECRET_KEY and PG_PASS in .env
+#
+# =============================================================================
 
-name: supabase
+name: pjapp_dev_environment
 
 services:
 
+  # ===========================================================================
+  # SUPABASE SERVICES
+  # ===========================================================================
+
+  # Supabase Studio - Web-based database management interface
   studio:
     container_name: supabase-studio
     image: supabase/studio:2025.10.27-sha-85b84e0
@@ -27,6 +47,8 @@ services:
     depends_on:
       analytics:
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       # Binds nestjs listener to both IPv4 and IPv6 network interfaces
       HOSTNAME: "::"
@@ -60,6 +82,7 @@ services:
       # Uncomment to use Big Query backend for analytics
       # NEXT_ANALYTICS_BACKEND_PROVIDER: bigquery
 
+  # Kong API Gateway - Routes requests to appropriate Supabase services
   kong:
     container_name: supabase-kong
     image: kong:2.8.1
@@ -73,6 +96,8 @@ services:
     depends_on:
       analytics:
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
@@ -88,6 +113,7 @@ services:
     # https://unix.stackexchange.com/a/294837
     entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml && /docker-entrypoint.sh kong docker-start'
 
+  # GoTrue - Supabase authentication service
   auth:
     container_name: supabase-auth
     image: supabase/gotrue:v2.180.0
@@ -111,6 +137,8 @@ services:
         condition: service_healthy
       analytics:
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
@@ -171,6 +199,7 @@ services:
       # GOTRUE_HOOK_SEND_EMAIL_URI: "http://host.docker.internal:54321/functions/v1/email_sender"
       # GOTRUE_HOOK_SEND_EMAIL_SECRETS: "v1,whsec_VGhpcyBpcyBhbiBleGFtcGxlIG9mIGEgc2hvcnRlciBCYXNlNjQgc3RyaW5n"
 
+  # PostgREST - RESTful API for PostgreSQL
   rest:
     container_name: supabase-rest
     image: postgrest/postgrest:v13.0.7
@@ -181,6 +210,8 @@ services:
         condition: service_healthy
       analytics:
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS}
@@ -194,6 +225,7 @@ services:
         "postgrest"
       ]
 
+  # Supabase Realtime - WebSocket server for real-time subscriptions
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
@@ -205,6 +237,8 @@ services:
         condition: service_healthy
       analytics:
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -239,6 +273,7 @@ services:
       SEED_SELF_HOST: true
       RUN_JANITOR: true
 
+  # Supabase Storage - Object storage with image transformations
   # To use S3 backed storage: docker compose -f docker-compose.yml -f docker-compose.s3.yml up
   storage:
     container_name: supabase-storage
@@ -267,6 +302,8 @@ services:
         condition: service_started
       imgproxy:
         condition: service_started
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       ANON_KEY: ${ANON_KEY}
       SERVICE_KEY: ${SERVICE_ROLE_KEY}
@@ -283,6 +320,7 @@ services:
       ENABLE_IMAGE_TRANSFORMATION: "true"
       IMGPROXY_URL: http://imgproxy:5001
 
+  # ImgProxy - Fast image processing service
   imgproxy:
     container_name: supabase-imgproxy
     image: darthsim/imgproxy:v3.8.0
@@ -305,6 +343,7 @@ services:
       IMGPROXY_USE_ETAG: "true"
       IMGPROXY_ENABLE_WEBP_DETECTION: ${IMGPROXY_ENABLE_WEBP_DETECTION}
 
+  # Supabase Postgres Meta - PostgreSQL metadata API
   meta:
     container_name: supabase-meta
     image: supabase/postgres-meta:v0.93.1
@@ -315,6 +354,8 @@ services:
         condition: service_healthy
       analytics:
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       PG_META_PORT: 8080
       PG_META_DB_HOST: ${POSTGRES_HOST}
@@ -324,6 +365,7 @@ services:
       PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
       CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
 
+  # Supabase Edge Functions - Serverless functions runtime
   functions:
     container_name: supabase-edge-functions
     image: supabase/edge-runtime:v1.69.15
@@ -333,6 +375,8 @@ services:
     depends_on:
       analytics:
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       JWT_SECRET: ${JWT_SECRET}
       SUPABASE_URL: http://kong:8000
@@ -348,6 +392,7 @@ services:
         "/home/deno/functions/main"
       ]
 
+  # Supabase Analytics (Logflare) - Log management and analytics
   analytics:
     container_name: supabase-analytics
     image: supabase/logflare:1.22.6
@@ -374,6 +419,8 @@ services:
       db:
         # Disable this if you are using an external Postgres database
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       LOGFLARE_NODE_HOST: 127.0.0.1
       DB_USERNAME: supabase_admin
@@ -395,6 +442,7 @@ services:
       # GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID}
       # GOOGLE_PROJECT_NUMBER: ${GOOGLE_PROJECT_NUMBER}
 
+  # Supabase PostgreSQL Database - Main database for Supabase
   # Comment out everything below this point if you are using an external Postgres database
   db:
     container_name: supabase-db
@@ -453,6 +501,28 @@ services:
         "log_min_messages=fatal" # prevents Realtime polling queries from appearing in logs
       ]
 
+  supabase-db-restore:
+    container_name: supabase-db-restore
+    image: postgres:15-alpine
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: ${POSTGRES_PORT}
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./scripts:/scripts:ro,z
+      - ./volumes/db/backups:/backups:ro,z
+    entrypoint: ["/bin/sh", "/scripts/pg_restore.sh"]
+    command:
+      - /backups/dump.sql
+      - Supabase
+
+  # Vector - Log collection and routing
   vector:
     container_name: supabase-vector
     image: timberio/vector:0.28.1-alpine
@@ -483,6 +553,7 @@ services:
     security_opt:
       - "label=disable"
 
+  # Supavisor - PostgreSQL connection pooler
   # Update the DATABASE_URL if you are using an external Postgres database
   supavisor:
     container_name: supabase-pooler
@@ -512,6 +583,8 @@ services:
         condition: service_healthy
       analytics:
         condition: service_healthy
+      supabase-db-restore:
+        condition: service_completed_successfully
     environment:
       PORT: 4000
       POSTGRES_PORT: ${POSTGRES_PORT}
@@ -537,5 +610,124 @@ services:
         "/app/bin/migrate && /app/bin/supavisor eval \"$$(cat /etc/pooler/pooler.exs)\" && /app/bin/server"
       ]
 
+  # ===========================================================================
+  # AUTHENTIK SERVICES
+  # ===========================================================================
+
+  # Authentik PostgreSQL database (separate from Supabase)
+  authentik-db:
+    container_name: authentik-postgresql
+    image: postgres:15-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-authentik}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - authentik-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASS:?authentik}
+      POSTGRES_USER: ${PG_USER:-authentik}
+      POSTGRES_DB: ${PG_DB:-authentik}
+
+  # Authentik Redis cache
+  authentik-redis:
+    container_name: authentik-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - authentik-redis-data:/data
+
+  # Authentik server
+  authentik-server:
+    container_name: authentik-server
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.1}
+    restart: unless-stopped
+    command: server
+    depends_on:
+      authentik-db:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+      authentik-db-restore:
+        condition: service_completed_successfully
+    ports:
+      - ${COMPOSE_PORT_HTTP:-9000}:9000
+      - ${COMPOSE_PORT_HTTPS:-9443}:9443
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-db
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS:?authentik}
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?AUTHENTIK_SECRET_KEY_REQUIRED}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING:-false}
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-your-strong-authentik-admin-password}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:-your-bootstrap-token-here}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-your-email@example.com}
+    volumes:
+      - ./volumes/authentik/media:/media
+      - ./volumes/authentik/custom-templates:/templates
+
+  # Authentik worker
+  authentik-worker:
+    container_name: authentik-worker
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.1}
+    restart: unless-stopped
+    command: worker
+    depends_on:
+      authentik-db:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+      authentik-db-restore:
+        condition: service_completed_successfully
+    user: root
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-db
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS:?authentik}
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?AUTHENTIK_SECRET_KEY_REQUIRED}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING:-false}
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-your-strong-authentik-admin-password}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN:-your-bootstrap-token-here}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-your-email@example.com}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./volumes/authentik/media:/media
+      - ./volumes/authentik/certs:/certs
+      - ./volumes/authentik/custom-templates:/templates
+
+  authentik-db-restore:
+    container_name: authentik-db-restore
+    image: postgres:15-alpine
+    restart: "no"
+    depends_on:
+      authentik-db:
+        condition: service_healthy
+    environment:
+      PGHOST: authentik-db
+      PGPORT: ${PG_PORT:-5432}
+      PGDATABASE: ${PG_DB:-authentik}
+      PGUSER: ${PG_USER:-authentik}
+      PGPASSWORD: ${PG_PASS:?authentik}
+    volumes:
+      - ./scripts:/scripts:ro,z
+      - ./volumes/authentik/backups:/backups:ro,z
+    entrypoint: ["/bin/sh", "/scripts/pg_restore.sh"]
+    command:
+      - /backups/dump.sql
+      - Authentik
+
 volumes:
   db-config:
+  authentik-db-data:
+  authentik-redis-data:
