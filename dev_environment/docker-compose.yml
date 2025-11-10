@@ -519,7 +519,7 @@ services:
       - ./volumes/db/backups:/backups:ro,z
     entrypoint: ["/bin/sh", "/scripts/pg_restore.sh"]
     command:
-      - /backups/supabase.dump
+      - /backups/dump.sql
       - Supabase
 
   # Vector - Log collection and routing
