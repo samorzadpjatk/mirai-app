@@ -31,3 +31,7 @@ bash ./reset.sh
 ## Hasło do fikcyjnych kont
 
 `MockUser123`
+
+## Hasło do konta administracyjnego `akadmin` w Authentik
+
+zmienna środowiskowa `AUTHENTIK_BOOTSTRAP_PASSWORD` w pliku `.env.example`
