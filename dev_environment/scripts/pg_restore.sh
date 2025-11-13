@@ -1,6 +1,5 @@
 #!/bin/sh
 # Shell helper used by database restore sidecars to perform pg_restore with common logging and retry semantics.
-set -euo pipefail
 
 BACKUP_PATH="${1:-}"
 DB_LABEL="${2:-database}"
