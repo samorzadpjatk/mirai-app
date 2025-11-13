@@ -27,3 +27,7 @@ bash ./reset.sh
 - `pnpm --filter @integral-2025-app/web run db:push` - Wypchnij zmiany schematu do bazy danych
 - `pnpm --filter @integral-2025-app/web run db:studio` - Otwórz Prisma Studio
 - `pnpm --filter @integral-2025-app/web run db:generate` - Wygeneruj i uruchom migracje
+
+## Hasło do fikcyjnych kont
+
+`MockUser123`
