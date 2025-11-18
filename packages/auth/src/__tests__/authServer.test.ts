@@ -43,7 +43,7 @@ describe("auth server", () => {
     it("should map database user to auth user with only auth-relevant fields", () => {
       const dbUser: User = {
         id: "1",
-        supabaseUserId: "sub-1",
+        authUserId: "sub-1",
         email: "user@test.com",
         name: "User",
         image: "https://example.com/avatar.jpg",
@@ -54,16 +54,13 @@ describe("auth server", () => {
         isServiceAccount: false,
         groupId: "group-1",
         emailVerified: new Date("2024-01-01"),
-        coinBalance: 100,
-        createdAt: new Date("2024-01-01"),
-        updatedAt: new Date("2024-01-01"),
       };
 
       const authUser = mapDatabaseUserToAuthUser(dbUser);
 
       expect(authUser).toEqual({
         id: "1",
-        supabaseUserId: "sub-1",
+        authUserId: "sub-1",
         email: "user@test.com",
         name: "User",
         emailVerified: new Date("2024-01-01"),
@@ -74,10 +71,10 @@ describe("auth server", () => {
       expect(mapDatabaseUserToAuthUser(null)).toBeNull();
     });
 
-    it("should return null if supabaseUserId is missing", () => {
+    it("should return null if authUserId is missing", () => {
       const dbUser: User = {
         id: "1",
-        supabaseUserId: null,
+        authUserId: null,
         email: "user@test.com",
         name: "User",
         image: null,
@@ -88,9 +85,6 @@ describe("auth server", () => {
         isServiceAccount: false,
         groupId: null,
         emailVerified: null,
-        coinBalance: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       };
 
       expect(mapDatabaseUserToAuthUser(dbUser)).toBeNull();

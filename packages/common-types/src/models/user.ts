@@ -1,6 +1,6 @@
 export interface User {
   id: string;
-  supabaseUserId: string | null;
+  authUserId: string | null;
   email: string | null;
   name: string | null;
   image: string | null;
@@ -11,9 +11,6 @@ export interface User {
   isServiceAccount: boolean;
   groupId: string | null;
   emailVerified: Date | null;
-  coinBalance: number;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export type Role = "admin" | "moderator" | "service-account";

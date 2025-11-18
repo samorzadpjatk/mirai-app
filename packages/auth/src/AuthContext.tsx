@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, useEffect, useState, type ReactNode } from "react";
 import type { SupabaseClient, Session } from "@supabase/supabase-js";
 import createSupabaseClient from "./supabaseClient";
@@ -19,7 +21,7 @@ export interface AuthProviderProps {
       removeItem: (key: string) => Promise<void> | void;
     };
   };
-  onUserFetch?: (supabaseUserId: string) => Promise<AuthUser | null>;
+  onUserFetch?: (authUserId: string) => Promise<AuthUser | null>;
 }
 
 export function AuthProvider({

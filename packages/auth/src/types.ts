@@ -2,7 +2,7 @@ import type { Session as SupabaseSession } from "@supabase/supabase-js";
 
 export interface AuthUser {
   id: string;
-  supabaseUserId: string;
+  authUserId: string;
   email: string | null;
   name: string | null;
   emailVerified: Date | null;

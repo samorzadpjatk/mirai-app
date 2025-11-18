@@ -52,13 +52,13 @@ export async function getAuthServerSession(supabase: SupabaseClient) {
 export function mapDatabaseUserToAuthUser(
   dbUser: User | null,
 ): AuthUser | null {
-  if (!dbUser?.supabaseUserId) {
+  if (!dbUser?.authUserId) {
     return null;
   }
 
   return {
     id: dbUser.id,
-    supabaseUserId: dbUser.supabaseUserId,
+    authUserId: dbUser.authUserId,
     email: dbUser.email,
     name: dbUser.name,
     emailVerified: dbUser.emailVerified,

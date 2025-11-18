@@ -1,3 +1,5 @@
+"use client";
+
 import { useContext } from "react";
 import type { AuthUser, AuthContextValue } from "./types";
 import { AuthContext } from "./AuthContext";
