@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "prisma": {
     "schema": "./prisma/schema.prisma",
-    "seed": "ts-node --esm ./prisma/seed.ts"
+    "seed": "tsx ./src/seed.ts"
   },
   "files": [
     "dist",
@@ -34,7 +34,7 @@
     "@types/node": "^24.3.0",
     "prisma": "^6.15.0",
     "rimraf": "^6.0.1",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "typescript": "^5.8.2"
   }
 }

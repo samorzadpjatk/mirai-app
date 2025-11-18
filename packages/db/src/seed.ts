@@ -1,5 +1,5 @@
-import { env } from "../src/env"
-import { prisma } from "../src/index"
+import { env } from "./env.js";
+import { prisma } from "./index.js";
 
 type AuthentikResponse = {
   results: {
