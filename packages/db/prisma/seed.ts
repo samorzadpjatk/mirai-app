@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { env } from "../src/env"
+import { prisma } from "../src/index"
 
 type AuthentikResponse = {
   results: {
@@ -12,13 +13,11 @@ type AuthentikResponse = {
   }[];
 };
 
-const prisma = new PrismaClient();
-
 const AUTHENTIK_SERVICE_ACCOUNT_TOKEN =
-  process.env.AUTHENTIK_SERVICE_ACCOUNT_TOKEN;
+  env.AUTHENTIK_SERVICE_ACCOUNT_TOKEN;
 const AUTHENTIK_API_SEARCH_URL = new URL(
   "/api/v3/core/groups/",
-  process.env.AUTHENTIK_ISSUER,
+  env.AUTHENTIK_ISSUER,
 );
 AUTHENTIK_API_SEARCH_URL.searchParams.append("search", "PJAPP");
 
@@ -47,18 +46,17 @@ async function main() {
         where: { email: user.email },
         update: {
           emailVerified: new Date(),
-          isAdmin: group.name === process.env.ADMIN_ROLE || group.name === process.env.TECH_ROLE,
-          isModerator: group.name === process.env.MODERATOR_ROLE,
-          isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
+          isAdmin: group.name === env.ADMIN_ROLE || group.name === env.TECH_ROLE,
+          isModerator: group.name === env.MODERATOR_ROLE,
+          isServiceAccount: group.name === env.SERVICE_ACCOUNT_ROLE,
         },
         create: {
           email: user.email,
           name: user.name,
           emailVerified: new Date(),
-          isAdmin: group.name === process.env.ADMIN_ROLE || group.name === process.env.TECH_ROLE,
-          isModerator: group.name === process.env.MODERATOR_ROLE,
-          isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
-          // securityCode:
+          isAdmin: group.name === env.ADMIN_ROLE || group.name === env.TECH_ROLE,
+          isModerator: group.name === env.MODERATOR_ROLE,
+          isServiceAccount: group.name === env.SERVICE_ACCOUNT_ROLE,
         },
       });
       console.log(`Upserted user: ${result.email} (${group.name})`);

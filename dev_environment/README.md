@@ -13,9 +13,11 @@ docker compose up -d
 ```
 3. Te komendy tworzą schemat i wypełniają bazę danych danymi początkowymi:
 ```bash
-pnpm --filter @integral-2025-app/web run db:generate
-pnpm --filter @integral-2025-app/web run db:seed
+pnpm --filter @integral-2025-app/db run db:generate
+pnpm --filter @integral-2025-app/db run db:seed
 ```
+
+> 📖 **Dokumentacja komend bazodanowych**: Zobacz [packages/db/README.md](../packages/db/README.md)
 
 ## Jak zresetować?
 ```bash
@@ -24,9 +26,11 @@ bash ./reset.sh
 
 ## Przydatne komendy
 
-- `pnpm --filter @integral-2025-app/web run db:push` - Wypchnij zmiany schematu do bazy danych
-- `pnpm --filter @integral-2025-app/web run db:studio` - Otwórz Prisma Studio
-- `pnpm --filter @integral-2025-app/web run db:generate` - Wygeneruj i uruchom migracje
+- `pnpm --filter @integral-2025-app/db run db:push` - Wypchnij zmiany schematu do bazy danych
+- `pnpm --filter @integral-2025-app/db run db:studio` - Otwórz Prisma Studio
+- `pnpm --filter @integral-2025-app/db run db:generate` - Wygeneruj i uruchom migracje
+
+> 📖 **Pełna lista komend**: Zobacz [packages/db/README.md](../packages/db/README.md)
 
 ## Hasło do fikcyjnych kont
 

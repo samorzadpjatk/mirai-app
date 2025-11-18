@@ -1,10 +1,8 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { Prisma, type User } from "@prisma/client";
+import { prisma, Prisma, type User } from "@integral-2025-app/db";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import Authentik from "next-auth/providers/authentik";
 import { env } from "~/env";
-
-import { db } from "~/server/db";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -67,7 +65,7 @@ export const authConfig = {
      * @see https://next-auth.js.org/providers/github
      */
   ],
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(prisma),
   callbacks: {
     signIn: async ({ user, profile }) => {
       user.isAdmin =
@@ -79,7 +77,7 @@ export const authConfig = {
         profile.groups.includes(env.MODERATOR_ROLE);
       try {
         if (user.email) {
-          await db.user.update({
+          await prisma.user.update({
             where: { email: user.email },
             data: { isAdmin: user.isAdmin, isModerator: user.isModerator },
           });

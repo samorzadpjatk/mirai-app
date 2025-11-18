@@ -12,7 +12,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { auth } from "~/server/auth";
-import { db } from "~/server/db";
+import { prisma } from "@integral-2025-app/db";
 import { supabase } from "~/server/supabase"
 
 /**
@@ -31,7 +31,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   const session = await auth();
 
   return {
-    db,
+    prisma,
     supabase,
     session,
     ...opts,
@@ -180,7 +180,7 @@ export const serviceAccountProcedure = t.procedure
     if (authHeader !== `Bearer ${expectedAuth}`) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
-    const user = await db.user.findFirstOrThrow({
+    const user = await prisma.user.findFirstOrThrow({
       where: { isServiceAccount: true },
     });
     return next({

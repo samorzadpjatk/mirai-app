@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { send, sendRanking } from "../webPush";
 import webpush, { WebPushError } from "web-push";
 import { NotificationService } from "~/server/services/notificationService";
-import { type Prisma } from "@prisma/client";
+import { type Prisma } from "@integral-2025-app/db";
 
 jest.mock("web-push");
 jest.mock("~/server/services/notificationService");

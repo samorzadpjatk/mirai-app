@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@integral-2025-app/db";
 import { TRPCError } from "@trpc/server";
 import webpush, { WebPushError } from "web-push";
 import { NotificationService } from "~/server/services/notificationService";
