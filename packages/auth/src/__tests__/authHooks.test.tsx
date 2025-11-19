@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { useAuth, useUser, useSession, useIsAuthenticated } from "../authHooks";
-import { AuthProvider } from "../authContext";
+import { AuthProvider } from "../AuthContext";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const mockSupabaseClient = () => {
