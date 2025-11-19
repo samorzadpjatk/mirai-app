@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, moderatorProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, moderatorProcedure } from "../trpc";
 
 export const coinRouter = createTRPCRouter({
     // Add coins to a group (enhanced version)

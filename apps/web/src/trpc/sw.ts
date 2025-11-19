@@ -1,5 +1,5 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import SuperJSON from "superjson";
+import superjson from "superjson";
 import type { AppRouter } from "~/server/api/root";
 
 export function getBaseUrl() {
@@ -13,7 +13,7 @@ export const api = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: getBaseUrl() + "/api/trpc",
-      transformer: SuperJSON,
+      transformer: superjson,
       // wrap global fetch to ensure credentials (cookies) are sent with requests
       fetch: (input: RequestInfo | URL, init?: RequestInit) =>
         // ensure the SW's global fetch is still used but with credentials included

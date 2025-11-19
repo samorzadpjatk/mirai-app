@@ -5,7 +5,7 @@ import {
   protectedProcedure,
   adminProcedure,
   moderatorProcedure,
-} from "~/server/api/trpc";
+} from "../trpc";
 
 export const groupRouter = createTRPCRouter({
   getAllNames: moderatorProcedure.query(async ({ ctx }) => {

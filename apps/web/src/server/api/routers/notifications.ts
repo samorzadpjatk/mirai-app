@@ -10,7 +10,7 @@ import {
 } from "~/server/api/trpc";
 import { env } from "~/env";
 import { NotificationService } from "~/server/services/notificationService";
-import { send, sendRanking } from "../utils/webPush";
+import { send, sendRanking } from "~/server/utils/webPush";
 
 // Configure web-push with VAPID keys
 if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_EMAIL) {

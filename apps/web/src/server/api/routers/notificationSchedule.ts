@@ -6,7 +6,7 @@ import {
   moderatorProcedure,
   serviceAccountProcedure,
 } from "~/server/api/trpc";
-import { send, sendRanking } from "../utils/webPush";
+import { send, sendRanking } from "../../utils/webPush";
 
 export const notificationScheduleRouter = createTRPCRouter({
   // Get all notification schedules

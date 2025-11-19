@@ -1,8 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import webpush, { WebPushError } from "web-push";
-import { NotificationService } from "~/server/services/notificationService";
-import { executeWithRetry } from "~/utils/resilience";
+import { NotificationService } from "../services/notificationService";
+import { executeWithRetry } from "./resilience";
 
 type PushSubscriptionNotificationResult = {
   userId: string;

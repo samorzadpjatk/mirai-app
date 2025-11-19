@@ -115,6 +115,9 @@ importers:
       '@auth/prisma-adapter':
         specifier: ^2.7.2
         version: 2.11.1(@prisma/client@6.19.0(prisma@6.19.0(typescript@5.9.3))(typescript@5.9.3))
+      '@integral-2025-app/trpc':
+        specifier: workspace:*
+        version: link:../../packages/trpc
       '@prisma/client':
         specifier: ^6.5.0
         version: 6.19.0(prisma@6.19.0(typescript@5.9.3))(typescript@5.9.3)
@@ -274,6 +277,22 @@ importers:
         version: 5.9.3
 
   packages/jest-config: {}
+
+  packages/trpc:
+    dependencies:
+      '@trpc/server':
+        specifier: ^11.0.0
+        version: 11.7.1(typescript@5.9.3)
+      superjson:
+        specifier: ^2.2.1
+        version: 2.2.5
+      zod:
+        specifier: ^4.1.4
+        version: 4.1.12
+    devDependencies:
+      '@jest/globals':
+        specifier: ^30.2.0
+        version: 30.2.0
 
 packages:
 
