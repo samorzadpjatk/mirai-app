@@ -3,7 +3,13 @@
 import { createContext, useEffect, useState, type ReactNode } from "react";
 import type { SupabaseClient, Session } from "@supabase/supabase-js";
 import createSupabaseClient from "./supabaseClient";
-import type { AuthContextValue, AuthUser, SignInOptions } from "./types";
+import type {
+  AuthContextValue,
+  AuthUser,
+  SignInWithEmailOptions,
+  SignUpWithEmailOptions,
+  SignInWithOAuthOptions,
+} from "./types";
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
   undefined,
@@ -79,7 +85,42 @@ export function AuthProvider({
     };
   }, [client, onUserFetch]);
 
-  const signIn = async ({ provider, redirectTo }: SignInOptions) => {
+  const signInWithEmail = async ({
+    email,
+    password,
+  }: SignInWithEmailOptions) => {
+    const { error } = await client.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      throw error;
+    }
+  };
+
+  const signUpWithEmail = async ({
+    email,
+    password,
+    metadata,
+  }: SignUpWithEmailOptions) => {
+    const { error } = await client.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+  };
+
+  const signInWithOAuth = async ({
+    provider,
+    redirectTo,
+  }: SignInWithOAuthOptions) => {
     const { error } = await client.auth.signInWithOAuth({
       provider: provider as never,
       options: {
@@ -118,7 +159,9 @@ export function AuthProvider({
     session,
     isLoading,
     isAuthenticated: !!session && !!user,
-    signIn,
+    signInWithEmail,
+    signUpWithEmail,
+    signInWithOAuth,
     signOut,
     refreshSession,
   };

@@ -15,15 +15,28 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
-export interface AuthContextValue extends AuthState {
-  signIn: (options: SignInOptions) => Promise<void>;
-  signOut: () => Promise<void>;
-  refreshSession: () => Promise<void>;
+export interface SignInWithEmailOptions {
+  email: string;
+  password: string;
 }
 
-export interface SignInOptions {
+export interface SignUpWithEmailOptions {
+  email: string;
+  password: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SignInWithOAuthOptions {
   provider: string;
   redirectTo?: string;
+}
+
+export interface AuthContextValue extends AuthState {
+  signInWithEmail: (options: SignInWithEmailOptions) => Promise<void>;
+  signUpWithEmail: (options: SignUpWithEmailOptions) => Promise<void>;
+  signInWithOAuth: (options: SignInWithOAuthOptions) => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 export interface SupabaseClientOptions {

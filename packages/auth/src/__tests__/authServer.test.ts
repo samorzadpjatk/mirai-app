@@ -2,10 +2,123 @@ import {
   parseRolesFromToken,
   hasRequiredRole,
   mapDatabaseUserToAuthUser,
+  getAuthServerUser,
+  getAuthServerSession,
+  AuthenticationError,
+  AuthorizationError,
 } from "../authServer";
 import type { User } from "@integral-2025-app/common-types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+const mockSupabaseClient = () => {
+  return {
+    auth: {
+      getUser: jest.fn(),
+      getSession: jest.fn(),
+    },
+  } as unknown as SupabaseClient;
+};
 
 describe("auth server", () => {
+  describe("AuthenticationError", () => {
+    it("should create error with default message", () => {
+      const error = new AuthenticationError();
+      expect(error.message).toBe("Not Authenticated");
+      expect(error.name).toBe("AuthenticationError");
+    });
+
+    it("should create error with custom message", () => {
+      const error = new AuthenticationError("Custom auth error");
+      expect(error.message).toBe("Custom auth error");
+    });
+  });
+
+  describe("AuthorizationError", () => {
+    it("should create error with default message", () => {
+      const error = new AuthorizationError();
+      expect(error.message).toBe("Missing Required Permissions");
+      expect(error.name).toBe("AuthorizationError");
+    });
+
+    it("should create error with custom message", () => {
+      const error = new AuthorizationError("Custom auth error");
+      expect(error.message).toBe("Custom auth error");
+    });
+  });
+
+  describe("getAuthServerUser", () => {
+    it("should return user when successful", async () => {
+      const client = mockSupabaseClient();
+      const mockUser = {
+        id: "user-123",
+        email: "test@example.com",
+        created_at: "2024-01-01",
+      };
+      (client.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      });
+
+      const user = await getAuthServerUser(client);
+      expect(user).toEqual(mockUser);
+    });
+
+    it("should return null on error", async () => {
+      const client = mockSupabaseClient();
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+
+      (client.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: null },
+        error: new Error("Auth error"),
+      });
+
+      const user = await getAuthServerUser(client);
+      expect(user).toBeNull();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Error occurred while fetching user:",
+        expect.any(Error),
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe("getAuthServerSession", () => {
+    it("should return session when successful", async () => {
+      const client = mockSupabaseClient();
+      const mockSession = {
+        access_token: "token",
+        refresh_token: "refresh",
+        user: { id: "user-123" },
+      };
+      (client.auth.getSession as jest.Mock).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      const session = await getAuthServerSession(client);
+      expect(session).toEqual(mockSession);
+    });
+
+    it("should return null on error", async () => {
+      const client = mockSupabaseClient();
+      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+
+      (client.auth.getSession as jest.Mock).mockResolvedValue({
+        data: { session: null },
+        error: new Error("Session error"),
+      });
+
+      const session = await getAuthServerSession(client);
+      expect(session).toBeNull();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Error occurred while fetching session:",
+        expect.any(Error),
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
   describe("parseRolesFromToken", () => {
     it("should parse roles from valid JWT", () => {
       const payload = { groups: ["admin", "users"] };

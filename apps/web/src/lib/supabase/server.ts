@@ -20,6 +20,7 @@ export async function createServerSupabaseClient() {
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
                 maxAge: 60 * 60 * 24 * 7,
+                path: "/",
               });
             } catch (error) {
               // Cookie modification is only allowed in Server Actions/Route Handlers
@@ -35,7 +36,7 @@ export async function createServerSupabaseClient() {
             }
           },
         },
-        autoRefreshToken: false,
+        autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
       },

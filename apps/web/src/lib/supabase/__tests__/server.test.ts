@@ -41,7 +41,7 @@ describe("lib/supabase/server", () => {
         expect.objectContaining({
           auth: expect.objectContaining({
             storage: expect.any(Object),
-            autoRefreshToken: false,
+            autoRefreshToken: true,
             persistSession: true,
             detectSessionInUrl: false,
           }),
@@ -119,6 +119,7 @@ describe("lib/supabase/server", () => {
             secure: true,
             sameSite: "lax",
             maxAge: 604800,
+            path: "/",
           },
         );
       }
@@ -150,6 +151,7 @@ describe("lib/supabase/server", () => {
             secure: false,
             sameSite: "lax",
             maxAge: 604800,
+            path: "/",
           },
         );
       }

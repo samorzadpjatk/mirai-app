@@ -9,7 +9,9 @@ export type {
   AuthUser,
   AuthState,
   AuthContextValue,
-  SignInOptions,
+  SignInWithEmailOptions,
+  SignUpWithEmailOptions,
+  SignInWithOAuthOptions,
   SupabaseClientOptions,
 } from "./types";
 

@@ -16,7 +16,13 @@ cp .env.example .env
 docker compose up -d
 ```
 
-3. Te komendy tworzą schemat i wypełniają bazę danych danymi początkowymi:
+3. Ta komenda seeduje supabase-auth z defaultowymi userami dla dev purposes
+
+```bash
+./seed-supabase-auth.sh
+```
+
+4. Te komendy tworzą schemat i wypełniają bazę danych danymi początkowymi:
 
 ```bash
 pnpm --filter @integral-2025-app/web run db:generate
