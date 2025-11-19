@@ -46,7 +46,9 @@ export default async function SignInPage(props: {
     // Sync user to database
     if (data.user) {
       const role =
-        data.user.app_metadata?.role || data.user.user_metadata?.role || "user";
+        (data.user.app_metadata?.role as string | undefined) ??
+        (data.user.user_metadata?.role as string | undefined) ??
+        "user";
       const isAdmin = role === "admin" || role === "tech";
       const isModerator = role === "moderator";
       const isServiceAccount = role === "service";
@@ -56,7 +58,9 @@ export default async function SignInPage(props: {
         create: {
           authUserId: data.user.id,
           email: data.user.email!,
-          name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+          name:
+            (data.user.user_metadata?.name as string | undefined) ??
+            data.user.email?.split("@")[0],
           emailVerified: data.user.email_confirmed_at
             ? new Date(data.user.email_confirmed_at)
             : null,
@@ -66,7 +70,9 @@ export default async function SignInPage(props: {
         },
         update: {
           email: data.user.email!,
-          name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+          name:
+            (data.user.user_metadata?.name as string | undefined) ??
+            data.user.email?.split("@")[0],
           emailVerified: data.user.email_confirmed_at
             ? new Date(data.user.email_confirmed_at)
             : null,

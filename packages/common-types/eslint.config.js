@@ -1,3 +1,8 @@
 import baseConfig from "../../eslint.config.base.js";
 
-export default [...baseConfig];
+export default [
+  {
+    ignores: ["dist/**", "node_modules/**"],
+  },
+  ...baseConfig,
+];

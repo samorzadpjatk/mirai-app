@@ -19,9 +19,9 @@ type SupabaseUsersResponse = {
 const prisma = new PrismaClient();
 
 const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
 const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SERVICE_ROLE_KEY;
 
 async function main() {
   if (!SERVICE_ROLE_KEY) {
@@ -57,8 +57,8 @@ async function main() {
   console.log(`Found ${users.length} users in Supabase Auth`);
 
   for (const user of users) {
-    const role = user.app_metadata?.role || user.user_metadata?.role || "user";
-    const name = user.user_metadata?.name || user.email.split("@")[0];
+    const role = user.app_metadata?.role ?? user.user_metadata?.role ?? "user";
+    const name = user.user_metadata?.name ?? user.email.split("@")[0];
 
     // Determine permissions based on role
     const isAdmin = role === "admin" || role === "tech";

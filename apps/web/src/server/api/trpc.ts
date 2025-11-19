@@ -186,7 +186,7 @@ export const adminProcedure = t.procedure
       where: { authUserId: ctx.session.authUserId! },
     });
 
-    if (!dbUser || !dbUser.isAdmin) {
+    if (!dbUser?.isAdmin) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "Admin access required",

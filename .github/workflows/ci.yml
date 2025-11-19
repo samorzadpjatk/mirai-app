@@ -41,6 +41,9 @@ jobs:
           workdir: apps/native
           eslint_flags: "."
 
+      - name: Run ESLint for monorepo
+        run: pnpm lint
+
       - name: Run `tsc`
         uses: EPMatt/reviewdog-action-tsc@v1.8.0
         with:

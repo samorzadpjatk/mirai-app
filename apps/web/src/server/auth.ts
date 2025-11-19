@@ -55,13 +55,15 @@ export async function requireAuth(): Promise<{
     throw new Error("User not found in database");
   }
 
+  const { user } = session;
+
   return {
-    user: session.user,
-    dbUser: dbUser as DatabaseUser,
+    user,
+    dbUser,
   };
 }
 
-export async function requireAdmin() {
+export async function requireAdmin(): Promise<DatabaseUser> {
   const { dbUser } = await requireAuth();
 
   if (!dbUser.isAdmin) {
@@ -71,7 +73,7 @@ export async function requireAdmin() {
   return dbUser;
 }
 
-export async function requireModerator() {
+export async function requireModerator(): Promise<DatabaseUser> {
   const { dbUser } = await requireAuth();
 
   if (!dbUser.isModerator && !dbUser.isAdmin) {
