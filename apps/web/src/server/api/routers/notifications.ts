@@ -49,7 +49,7 @@ export const notificationRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         // Store the subscription in the database
-        const subscription = await ctx.prisma.pushSubscription.upsert({
+        const subscription = await ctx.db.pushSubscription.upsert({
           where: {
             userId: ctx.session.user.id,
           },
@@ -80,7 +80,7 @@ export const notificationRouter = createTRPCRouter({
   // Unsubscribe from push notifications
   unsubscribe: protectedProcedure.mutation(async ({ ctx }) => {
     try {
-      await ctx.prisma.pushSubscription.deleteMany({
+      await ctx.db.pushSubscription.deleteMany({
         where: {
           userId: ctx.session.user.id,
         },
@@ -98,7 +98,7 @@ export const notificationRouter = createTRPCRouter({
 
   // Get user's notification preferences/subscription status
   getSubscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
-    const subscription = await ctx.prisma.pushSubscription.findFirst({
+    const subscription = await ctx.db.pushSubscription.findFirst({
       where: {
         userId: ctx.session.user.id,
       },
@@ -119,7 +119,7 @@ export const notificationRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const count = await ctx.prisma.notification.count({
+      const count = await ctx.db.notification.count({
         where: { pushes: { some: { targetUserId: ctx.session.user.id } } },
       });
       const totalPages = Math.ceil(count / input.pageSize);
@@ -129,7 +129,7 @@ export const notificationRouter = createTRPCRouter({
           message: `Page ${input.page} exceeds total pages ${totalPages}`,
         });
       }
-      const notifications = await ctx.prisma.notification.findMany({
+      const notifications = await ctx.db.notification.findMany({
         where: { pushes: { some: { targetUserId: ctx.session.user.id } } },
         orderBy: { createdAt: "desc" },
         include: { createdBy: { select: { id: true, name: true } } },
@@ -155,7 +155,7 @@ export const notificationRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const count = await ctx.prisma.notification.count();
+      const count = await ctx.db.notification.count();
       const totalPages = Math.ceil(count / input.pageSize);
       if (input.page > totalPages && totalPages > 0) {
         throw new TRPCError({
@@ -163,7 +163,7 @@ export const notificationRouter = createTRPCRouter({
           message: `Page ${input.page} exceeds total pages ${totalPages}`,
         });
       }
-      const notifications = await ctx.prisma.notification.findMany({
+      const notifications = await ctx.db.notification.findMany({
         orderBy: { createdAt: "desc" },
         include: {
           createdBy: { select: { id: true, name: true } },
@@ -202,7 +202,7 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const members = await ctx.prisma.user.findMany({
+        const members = await ctx.db.user.findMany({
           where: {
             OR: [
               { group: { id: input.groupId } },
@@ -219,7 +219,7 @@ export const notificationRouter = createTRPCRouter({
           url: input.url,
         };
         return await send({
-          db: ctx.prisma,
+          db: ctx.db,
           userId: ctx.session.user.id,
           input: payload,
         });
@@ -241,7 +241,7 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const members = await ctx.prisma.user.findMany({
+        const members = await ctx.db.user.findMany({
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
@@ -252,7 +252,7 @@ export const notificationRouter = createTRPCRouter({
           url: input.url,
         };
         return await send({
-          db: ctx.prisma,
+          db: ctx.db,
           userId: ctx.session.user.id,
           input: payload,
         });
@@ -268,7 +268,7 @@ export const notificationRouter = createTRPCRouter({
   sendRankingUpdateToGroups: moderatorProcedure.mutation(async ({ ctx }) => {
     try {
       return await sendRanking({
-        db: ctx.prisma,
+        db: ctx.db,
         userId: ctx.session.user.id,
       });
     } catch (error) {
@@ -289,7 +289,7 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const group = await ctx.prisma.group.findFirst({
+        const group = await ctx.db.group.findFirst({
           where: { id: input.groupId },
         });
         if (!group) {
@@ -299,7 +299,7 @@ export const notificationRouter = createTRPCRouter({
           });
         }
 
-        const members = await ctx.prisma.user.findMany({
+        const members = await ctx.db.user.findMany({
           where: {
             OR: [
               { group: { id: input.groupId } },
@@ -322,7 +322,7 @@ export const notificationRouter = createTRPCRouter({
           url: notificationData.url,
         };
         return await send({
-          db: ctx.prisma,
+          db: ctx.db,
           userId: ctx.session.user.id,
           input: payload,
         });
@@ -347,7 +347,7 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const group = await ctx.prisma.group.findFirst({
+        const group = await ctx.db.group.findFirst({
           where: { id: input.groupId },
         });
         if (!group) {
@@ -357,7 +357,7 @@ export const notificationRouter = createTRPCRouter({
           });
         }
 
-        const members = await ctx.prisma.user.findMany({
+        const members = await ctx.db.user.findMany({
           where: {
             OR: [
               { group: { id: input.groupId } },
@@ -380,7 +380,7 @@ export const notificationRouter = createTRPCRouter({
           url: notificationData.url,
         };
         return await send({
-          db: ctx.prisma,
+          db: ctx.db,
           userId: ctx.session.user.id,
           input: payload,
         });
@@ -404,7 +404,7 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const group = await ctx.prisma.group.findFirst({
+        const group = await ctx.db.group.findFirst({
           where: { id: input.groupId },
         });
         if (!group) {
@@ -413,7 +413,7 @@ export const notificationRouter = createTRPCRouter({
             message: "Group not found",
           });
         }
-        const user = await ctx.prisma.user.findFirst({
+        const user = await ctx.db.user.findFirst({
           where: { id: input.userId },
         });
         if (!user) {
@@ -422,7 +422,7 @@ export const notificationRouter = createTRPCRouter({
             message: "User not found",
           });
         }
-        const members = await ctx.prisma.user.findMany({
+        const members = await ctx.db.user.findMany({
           where: { group: { id: group.id } },
           select: { id: true },
         });
@@ -439,7 +439,7 @@ export const notificationRouter = createTRPCRouter({
           url: notificationData.url,
         };
         return await send({
-          db: ctx.prisma,
+          db: ctx.db,
           userId: ctx.session.user.id,
           input: payload,
         });
@@ -465,7 +465,7 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const members = await ctx.prisma.user.findMany({
+        const members = await ctx.db.user.findMany({
           where: { group: { id: input.groupId } },
           select: { id: true },
         });
@@ -477,7 +477,7 @@ export const notificationRouter = createTRPCRouter({
           url: input.url,
         };
         return await send({
-          db: ctx.prisma,
+          db: ctx.db,
           userId: ctx.session.user.id,
           input: payload,
         });
@@ -498,10 +498,10 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const notification = await ctx.prisma.notification.findFirst({
+        const notification = await ctx.db.notification.findFirst({
           where: { id: input.notificationId },
         });
-        const pushes = await ctx.prisma.notificationPush.findMany({
+        const pushes = await ctx.db.notificationPush.findMany({
           where: { notificationId: input.notificationId, status: "failed" },
         });
         if (!notification) {
@@ -523,7 +523,7 @@ export const notificationRouter = createTRPCRouter({
           url: notification.url,
         };
         return await send({
-          db: ctx.prisma,
+          db: ctx.db,
           userId: ctx.session.user.id,
           input: payload,
         });
@@ -544,7 +544,7 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        await ctx.prisma.notification.delete({
+        await ctx.db.notification.delete({
           where: { id: input.notificationId },
         });
         return { success: true };

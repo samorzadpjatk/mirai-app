@@ -9,7 +9,7 @@ import {
 
 export const groupRouter = createTRPCRouter({
   getAllNames: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.group.findMany({
+    return await ctx.db.group.findMany({
       select: {
         id: true,
         name: true,
@@ -17,7 +17,7 @@ export const groupRouter = createTRPCRouter({
     });
   }),
   getMy: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.prisma.user.findUnique({
+    const user = await ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
       select: {
         group: { select: { id: true, name: true } },
@@ -28,7 +28,7 @@ export const groupRouter = createTRPCRouter({
     const memberGroupId = user.group?.id;
     const id = memberGroupId;
     if (!id) return null;
-    return await ctx.prisma.group.findUnique({
+    return await ctx.db.group.findUnique({
       where: { id },
       include: {
         members: {
@@ -60,7 +60,7 @@ export const groupRouter = createTRPCRouter({
     });
   }),
   getAll: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.group.findMany({
+    return await ctx.db.group.findMany({
       include: {
         members: {
           select: {
@@ -93,7 +93,7 @@ export const groupRouter = createTRPCRouter({
     });
   }),
   getGroupList: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.group.findMany({
+    return await ctx.db.group.findMany({
       select: {
         id: true,
         name: true,
@@ -111,14 +111,14 @@ export const groupRouter = createTRPCRouter({
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.prisma.group.findUnique({
+      return await ctx.db.group.findUnique({
         where: { id: input.id },
       });
     }),
   getByIdWithOrganizer: moderatorProcedure
     .input(z.object({ groupId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.prisma.group.findUnique({
+      return await ctx.db.group.findUnique({
         where: { id: input.groupId },
         select: {
           id: true,
@@ -140,7 +140,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const group = await ctx.prisma.group.create({
+      const group = await ctx.db.group.create({
         data: {
           name: input.name,
           code: input.code,
@@ -171,7 +171,7 @@ export const groupRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
-      return await ctx.prisma.group.update({
+      return await ctx.db.group.update({
         where: { id },
         data: updateData,
         include: {
@@ -191,23 +191,23 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // First, delete all related records
-      await ctx.prisma.user.updateMany({
+      await ctx.db.user.updateMany({
         where: { groupId: input.id },
         data: { groupId: null },
       });
 
-      await ctx.prisma.coinTransaction.deleteMany({
+      await ctx.db.coinTransaction.deleteMany({
         where: { groupId: input.id },
       });
 
-      return await ctx.prisma.group.delete({
+      return await ctx.db.group.delete({
         where: { id: input.id },
       });
     }),
   join: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const group = await ctx.prisma.group.findUnique({
+      const group = await ctx.db.group.findUnique({
         where: { id: input.id },
         include: { members: true },
       });
@@ -222,7 +222,7 @@ export const groupRouter = createTRPCRouter({
         throw new Error("Użytkownik już należy do tej grupy");
       }
 
-      return await ctx.prisma.user.update({
+      return await ctx.db.user.update({
         where: { id: ctx.session.user.id },
         data: {
           groupId: group.id,
@@ -237,7 +237,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const group = await ctx.prisma.group.findUnique({
+      const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
         include: { members: true },
       });
@@ -252,7 +252,7 @@ export const groupRouter = createTRPCRouter({
         throw new Error("Użytkownik już należy do tej grupy");
       }
 
-      return await ctx.prisma.user.update({
+      return await ctx.db.user.update({
         where: { id: input.userId },
         data: {
           groupId: input.groupId,
@@ -268,7 +268,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.prisma.user.update({
+      return await ctx.db.user.update({
         where: {
           id: input.userId,
         },
@@ -281,13 +281,13 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ groupId: z.string(), amount: z.number() }))
     .mutation(async ({ ctx, input }) => {
       // Update group coins
-      await ctx.prisma.group.update({
+      await ctx.db.group.update({
         where: { id: input.groupId },
         data: { coins: { increment: input.amount } },
       });
 
       // Create transaction record
-      const transaction = await ctx.prisma.coinTransaction.create({
+      const transaction = await ctx.db.coinTransaction.create({
         data: {
           groupId: input.groupId,
           amount: input.amount,
@@ -308,7 +308,7 @@ export const groupRouter = createTRPCRouter({
     }),
   ranking: protectedProcedure.query(async ({ ctx }) => {
     const currentDate = new Date();
-    const data = await ctx.prisma.group.findMany({
+    const data = await ctx.db.group.findMany({
       orderBy: { coins: "desc" },
       include: {
         members: {

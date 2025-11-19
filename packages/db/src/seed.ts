@@ -1,5 +1,5 @@
-import { env } from "./env.js";
-import { prisma } from "./index.js";
+import { env } from "./env.ts";
+import { db } from "./index.ts";
 
 type AuthentikResponse = {
   results: {
@@ -42,7 +42,7 @@ async function main() {
   for (const group of groupResults) {
     for (const user of group.users_obj) {
       // Upsert the information of each user in groups related to the trip into the database
-      const result = await prisma.user.upsert({
+      const result = await db.user.upsert({
         where: { email: user.email },
         update: {
           emailVerified: new Date(),

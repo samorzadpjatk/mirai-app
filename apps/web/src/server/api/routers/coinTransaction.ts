@@ -4,8 +4,8 @@ import { createTRPCRouter, moderatorProcedure } from "~/server/api/trpc";
 export const coinTransactionRouter = createTRPCRouter({
   getStatistics : moderatorProcedure.query(async ({ ctx }) => {
     const [transactionCount, addedCoins, removedCoins] = await Promise.all([
-      ctx.prisma.coinTransaction.count(),
-      ctx.prisma.coinTransaction.aggregate({
+      ctx.db.coinTransaction.count(),
+      ctx.db.coinTransaction.aggregate({
         _sum: {
           amount: true,
         },
@@ -15,7 +15,7 @@ export const coinTransactionRouter = createTRPCRouter({
           },
         },
       }),
-      ctx.prisma.coinTransaction.aggregate({
+      ctx.db.coinTransaction.aggregate({
         _sum: {
           amount: true,
         },
@@ -35,7 +35,7 @@ export const coinTransactionRouter = createTRPCRouter({
     };
   }),
   getMostActiveAdminStats: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.coinTransaction.groupBy({
+    return await ctx.db.coinTransaction.groupBy({
       by: ["adminId"],
       _sum: {
         amount: true,
@@ -52,7 +52,7 @@ export const coinTransactionRouter = createTRPCRouter({
     });
   }),
   getAll: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.coinTransaction.findMany({
+    return await ctx.db.coinTransaction.findMany({
       select: {
         id: true,
         amount: true,
@@ -64,7 +64,7 @@ export const coinTransactionRouter = createTRPCRouter({
     });
   }),
   getQuickStats: moderatorProcedure.query(async ({ ctx }) => {
-    const totalCoins = await ctx.prisma.coinTransaction.aggregate({
+    const totalCoins = await ctx.db.coinTransaction.aggregate({
       _sum: {
         amount: true,
       },
@@ -76,7 +76,7 @@ export const coinTransactionRouter = createTRPCRouter({
     const averageCoinsPerGroup = totalCoins._count.id
       ? Math.round(totalCoins._sum.amount / totalCoins._count.id)
       : 0;
-    const richestGroupId = await ctx.prisma.coinTransaction.groupBy({
+    const richestGroupId = await ctx.db.coinTransaction.groupBy({
       by: ["groupId"],
       _sum: {
         amount: true,
@@ -88,7 +88,7 @@ export const coinTransactionRouter = createTRPCRouter({
       },
       take: 1,
     });
-    const richestGroupName = await ctx.prisma.group.findUnique({
+    const richestGroupName = await ctx.db.group.findUnique({
       where: {
         id: richestGroupId[0]?.groupId,
       },
@@ -107,7 +107,7 @@ export const coinTransactionRouter = createTRPCRouter({
   }),
   getAdditionalInsights: moderatorProcedure.query(async ({ ctx }) => {
     const [recentTransactions, mostActiveAdminStats] = await Promise.all([
-      ctx.prisma.coinTransaction.findMany({
+      ctx.db.coinTransaction.findMany({
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -118,7 +118,7 @@ export const coinTransactionRouter = createTRPCRouter({
         },
         take: 5,
       }),
-      ctx.prisma.coinTransaction.groupBy({
+      ctx.db.coinTransaction.groupBy({
         by: ["adminId"],
         _count: {
           id: true,
@@ -133,7 +133,7 @@ export const coinTransactionRouter = createTRPCRouter({
     ]);
     if (recentTransactions.length === 0 || !mostActiveAdminStats[0])
       return null;
-    const mostActiveAdmin = await ctx.prisma.user.findUnique({
+    const mostActiveAdmin = await ctx.db.user.findUnique({
       where: { id: mostActiveAdminStats[0].adminId },
       select: { name: true },
     });
@@ -154,7 +154,7 @@ export const coinTransactionRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      return await ctx.prisma.coinTransaction.findMany({
+      return await ctx.db.coinTransaction.findMany({
         where: input.groupId ? { groupId: input.groupId } : undefined,
         include: {
           group: {

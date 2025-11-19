@@ -14,4 +14,4 @@ export function getPrisma(): _PrismaClient {
   return _prisma;
 }
 
-export const prisma = getPrisma();
+export const db = getPrisma();

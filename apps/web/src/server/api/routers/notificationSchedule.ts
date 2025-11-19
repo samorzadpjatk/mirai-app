@@ -11,7 +11,7 @@ import { send, sendRanking } from "../utils/webPush";
 export const notificationScheduleRouter = createTRPCRouter({
   // Get all notification schedules
   getAll: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.notificationSchedule.findMany({
+    return await ctx.db.notificationSchedule.findMany({
       include: {
         notification: true,
         createdBy: {
@@ -30,7 +30,7 @@ export const notificationScheduleRouter = createTRPCRouter({
   getActiveSchedules: moderatorProcedure.query(async ({ ctx }) => {
     const now = new Date();
 
-    return await ctx.prisma.notificationSchedule.findMany({
+    return await ctx.db.notificationSchedule.findMany({
       where: {
         isActive: true,
         startDate: { lte: now },
@@ -51,7 +51,7 @@ export const notificationScheduleRouter = createTRPCRouter({
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const schedule = await ctx.prisma.notificationSchedule.findUnique({
+      const schedule = await ctx.db.notificationSchedule.findUnique({
         where: { id: input.id },
         include: {
           createdBy: {
@@ -112,7 +112,7 @@ export const notificationScheduleRouter = createTRPCRouter({
                 "Title, body, and URL are required for custom notifications",
             });
           }
-          const notification = await ctx.prisma.notification.create({
+          const notification = await ctx.db.notification.create({
             data: {
               title: input.notificationTitle,
               body: input.notificationBody,
@@ -127,7 +127,7 @@ export const notificationScheduleRouter = createTRPCRouter({
               message: "Failed to create notification",
             });
           }
-          schedule = await ctx.prisma.notificationSchedule.create({
+          schedule = await ctx.db.notificationSchedule.create({
             data: {
               name: input.name,
               notificationType: input.notificationType,
@@ -153,7 +153,7 @@ export const notificationScheduleRouter = createTRPCRouter({
 
         case "ranking":
           // Ranking notification logic
-          schedule = await ctx.prisma.notificationSchedule.create({
+          schedule = await ctx.db.notificationSchedule.create({
             data: {
               name: input.name,
               notificationType: input.notificationType,
@@ -206,7 +206,7 @@ export const notificationScheduleRouter = createTRPCRouter({
         }
       }
 
-      const schedule = await ctx.prisma.notificationSchedule.update({
+      const schedule = await ctx.db.notificationSchedule.update({
         where: { id },
         data: updateData,
         include: {
@@ -227,7 +227,7 @@ export const notificationScheduleRouter = createTRPCRouter({
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const schedule = await ctx.prisma.notificationSchedule.findUnique({
+      const schedule = await ctx.db.notificationSchedule.findUnique({
         where: { id: input.id },
       });
 
@@ -238,7 +238,7 @@ export const notificationScheduleRouter = createTRPCRouter({
         });
       }
 
-      await ctx.prisma.notificationSchedule.delete({
+      await ctx.db.notificationSchedule.delete({
         where: { id: input.id },
       });
 
@@ -249,7 +249,7 @@ export const notificationScheduleRouter = createTRPCRouter({
   toggleActive: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const schedule = await ctx.prisma.notificationSchedule.findUnique({
+      const schedule = await ctx.db.notificationSchedule.findUnique({
         where: { id: input.id },
       });
 
@@ -260,7 +260,7 @@ export const notificationScheduleRouter = createTRPCRouter({
         });
       }
 
-      const updatedSchedule = await ctx.prisma.notificationSchedule.update({
+      const updatedSchedule = await ctx.db.notificationSchedule.update({
         where: { id: input.id },
         data: { isActive: !schedule.isActive },
         include: {
@@ -281,7 +281,7 @@ export const notificationScheduleRouter = createTRPCRouter({
   updateLastRun: adminProcedure
     .input(z.object({ id: z.string(), lastRun: z.date() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.prisma.notificationSchedule.update({
+      return await ctx.db.notificationSchedule.update({
         where: { id: input.id },
         data: { lastRun: input.lastRun },
       });
@@ -290,7 +290,7 @@ export const notificationScheduleRouter = createTRPCRouter({
   sendScheduledNotifications: serviceAccountProcedure.mutation(
     async ({ ctx }) => {
       const now = new Date();
-      const activeSchedules = await ctx.prisma.notificationSchedule.findMany({
+      const activeSchedules = await ctx.db.notificationSchedule.findMany({
         where: {
           isActive: true,
           startDate: { lte: now },
@@ -309,14 +309,14 @@ export const notificationScheduleRouter = createTRPCRouter({
       const results = await Promise.all(
         activeSchedules.map(async (schedule) => {
           try {
-            await ctx.prisma.notificationSchedule.update({
+            await ctx.db.notificationSchedule.update({
               where: { id: schedule.id },
               data: { lastRun: now },
             });
             switch (schedule.notificationType) {
               case "ranking":
                 return await sendRanking({
-                  db: ctx.prisma,
+                  db: ctx.db,
                   userId: ctx.session.user.id,
                 });
               case "custom":
@@ -335,7 +335,7 @@ export const notificationScheduleRouter = createTRPCRouter({
                   url: schedule.notification.url,
                 };
                 return await send({
-                  db: ctx.prisma,
+                  db: ctx.db,
                   userId: ctx.session.user.id,
                   input: payload,
                 });

@@ -12,7 +12,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { auth } from "~/server/auth";
-import { prisma } from "@integral-2025-app/db";
+import { db } from "@integral-2025-app/db";
 import { supabase } from "~/server/supabase"
 
 /**
@@ -31,7 +31,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   const session = await auth();
 
   return {
-    prisma,
+    db,
     supabase,
     session,
     ...opts,

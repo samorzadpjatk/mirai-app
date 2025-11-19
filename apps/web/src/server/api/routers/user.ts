@@ -9,14 +9,14 @@ export const userRouter = createTRPCRouter({
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.prisma.user.findUnique({
+      return await ctx.db.user.findUnique({
         where: { id: input.id },
       });
     }),
   getByIdWithGroup: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.prisma.user.findUnique({
+      return await ctx.db.user.findUnique({
         where: { id: input.id },
         select: {
           id: true,
@@ -27,12 +27,12 @@ export const userRouter = createTRPCRouter({
       });
     }),
   getMy: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.user.findUnique({
+    return await ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
     });
   }),
   getAll: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.user.findMany({
+    return await ctx.db.user.findMany({
       select: {
         id: true,
         name: true,
@@ -46,7 +46,7 @@ export const userRouter = createTRPCRouter({
     });
   }),
   getAllAdminsNames: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.prisma.user.findMany({
+    return await ctx.db.user.findMany({
       where: { isAdmin: true },
       select: {
         id: true,
@@ -69,7 +69,7 @@ export const userRouter = createTRPCRouter({
         throw new Error("Nie możesz usunąć swoich uprawnień administratora");
       }
 
-      return await ctx.prisma.user.update({
+      return await ctx.db.user.update({
         where: { id: input.userId },
         data: { isAdmin: input.isAdmin },
         select: {
@@ -94,7 +94,7 @@ export const userRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Check if wrist number is already taken by another user
-      const existingUser = await ctx.prisma.user.findUnique({
+      const existingUser = await ctx.db.user.findUnique({
         where: { wristNumber: input.wristNumber },
         select: { id: true, name: true },
       });
@@ -105,7 +105,7 @@ export const userRouter = createTRPCRouter({
         );
       }
 
-      return await ctx.prisma.user.update({
+      return await ctx.db.user.update({
         where: { id: input.userId },
         data: { wristNumber: input.wristNumber },
         select: {
@@ -126,7 +126,7 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.prisma.user.update({
+      return await ctx.db.user.update({
         where: { id: input.userId },
         data: { wristNumber: null },
         select: {
@@ -151,7 +151,7 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.prisma.user.update({
+      return await ctx.db.user.update({
         where: { id: input.userId },
         data: { houseNumber: input.houseNumber },
         select: {
@@ -172,7 +172,7 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.prisma.user.update({
+      return await ctx.db.user.update({
         where: { id: input.userId },
         data: { houseNumber: null },
         select: {
@@ -248,12 +248,12 @@ export const userRouter = createTRPCRouter({
       }
 
       // Get total count for pagination
-      const totalCount = await ctx.prisma.user.count({
+      const totalCount = await ctx.db.user.count({
         where: searchConditions,
       });
 
       // Get paginated results
-      const users = await ctx.prisma.user.findMany({
+      const users = await ctx.db.user.findMany({
         where: searchConditions,
         select: {
           id: true,

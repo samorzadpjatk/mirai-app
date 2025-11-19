@@ -13,13 +13,13 @@ export const coinRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Update group coins
-      await ctx.prisma.group.update({
+      await ctx.db.group.update({
         where: { id: input.groupId },
         data: { coins: { increment: input.amount } },
       });
 
       // Create transaction record
-      const transaction = await ctx.prisma.coinTransaction.create({
+      const transaction = await ctx.db.coinTransaction.create({
         data: {
           groupId: input.groupId,
           amount: input.amount,
@@ -57,7 +57,7 @@ export const coinRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Check if group has enough coins
-      const group = await ctx.prisma.group.findUnique({
+      const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
         select: { coins: true },
       });
@@ -66,12 +66,12 @@ export const coinRouter = createTRPCRouter({
         throw new Error("Guild does not have enough coins");
       }
 
-      await ctx.prisma.group.update({
+      await ctx.db.group.update({
         where: { id: input.groupId },
         data: { coins: { decrement: input.amount } },
       });
 
-      const transaction = await ctx.prisma.coinTransaction.create({
+      const transaction = await ctx.db.coinTransaction.create({
         data: {
           groupId: input.groupId,
           amount: -input.amount, // Negative amount for removal
