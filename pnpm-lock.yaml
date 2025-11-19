@@ -284,6 +284,10 @@ importers:
       ws:
         specifier: ^8.18.3
         version: 8.18.3
+    devDependencies:
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
 
   packages/jest-config: {}
 
