@@ -1,5 +1,5 @@
 import { env } from "./env.ts";
-import { db } from "./index.ts";
+import { db } from "../index.ts";
 
 type AuthentikResponse = {
   results: {
