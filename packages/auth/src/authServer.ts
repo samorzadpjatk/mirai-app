@@ -86,3 +86,135 @@ export function hasRequiredRole(
 ): boolean {
   return groups.includes(requiredRole);
 }
+
+/**
+ * Get the current session with user information
+ * @param supabase - Supabase client instance
+ * @param getUserFromDb - Function to fetch user from database by authUserId
+ * @returns Session object with user and authUserId, or null if not authenticated
+ */
+export async function getSession(
+  supabase: SupabaseClient,
+  getUserFromDb: (authUserId: string) => Promise<User | null>,
+): Promise<{
+  user: AuthUser | null;
+  authUserId: string | null;
+} | null> {
+  const supabaseUser = await getAuthServerUser(supabase);
+
+  if (!supabaseUser) {
+    return null;
+  }
+
+  const dbUser = await getUserFromDb(supabaseUser.id);
+
+  if (!dbUser) {
+    return {
+      user: null,
+      authUserId: supabaseUser.id,
+    };
+  }
+
+  const authUser = mapDatabaseUserToAuthUser(dbUser);
+
+  return {
+    user: authUser,
+    authUserId: supabaseUser.id,
+  };
+}
+
+export async function requireAuth(
+  supabase: SupabaseClient,
+  getUserFromDb: (authUserId: string) => Promise<User | null>,
+): Promise<{
+  user: AuthUser;
+  dbUser: User;
+}> {
+  const session = await getSession(supabase, getUserFromDb);
+
+  if (!session?.user) {
+    throw new AuthenticationError("Unauthorized");
+  }
+
+  const dbUser = await getUserFromDb(session.authUserId!);
+
+  if (!dbUser) {
+    throw new AuthenticationError("User not found in database");
+  }
+
+  const { user } = session;
+
+  return {
+    user,
+    dbUser,
+  };
+}
+
+export async function requireAdmin(
+  supabase: SupabaseClient,
+  getUserFromDb: (authUserId: string) => Promise<User | null>,
+): Promise<User> {
+  const { dbUser } = await requireAuth(supabase, getUserFromDb);
+
+  if (!dbUser.isAdmin) {
+    throw new AuthorizationError("Admin access required");
+  }
+
+  return dbUser;
+}
+
+export async function requireModerator(
+  supabase: SupabaseClient,
+  getUserFromDb: (authUserId: string) => Promise<User | null>,
+): Promise<User> {
+  const { dbUser } = await requireAuth(supabase, getUserFromDb);
+
+  if (!dbUser.isModerator && !dbUser.isAdmin) {
+    throw new AuthorizationError("Moderator access required");
+  }
+
+  return dbUser;
+}
+
+/**
+ * Sync Supabase user to database
+ * Creates or updates a user record in the database based on Supabase user data
+ * @param supabaseUser - Supabase user object
+ * @param upsertUser - Function to upsert user in database
+ * @returns The synced database user
+ */
+export async function syncUserToDatabase(
+  supabaseUser: SupabaseUser,
+  upsertUser: (data: {
+    authUserId: string;
+    email: string;
+    name: string | null;
+    emailVerified: Date | null;
+    isAdmin: boolean;
+    isModerator: boolean;
+    isServiceAccount: boolean;
+  }) => Promise<User>,
+): Promise<User> {
+  const role =
+    (supabaseUser.app_metadata?.role as string | undefined) ??
+    (supabaseUser.user_metadata?.role as string | undefined) ??
+    "user";
+  const isAdmin = role === "admin" || role === "tech";
+  const isModerator = role === "moderator";
+  const isServiceAccount = role === "service";
+
+  return await upsertUser({
+    authUserId: supabaseUser.id,
+    email: supabaseUser.email!,
+    name:
+      (supabaseUser.user_metadata?.name as string | undefined) ??
+      supabaseUser.email?.split("@")[0] ??
+      null,
+    emailVerified: supabaseUser.email_confirmed_at
+      ? new Date(supabaseUser.email_confirmed_at)
+      : null,
+    isAdmin,
+    isModerator,
+    isServiceAccount,
+  });
+}

@@ -15,6 +15,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "~/server/db";
 import { env } from "~/env";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { syncUserToDatabase } from "@integral-2025-app/auth";
+import type { DatabaseUser } from "@integral-2025-app/auth";
 
 export default async function SignInPage(props: {
   searchParams: Promise<{ callbackUrl?: string; error?: string }>;
@@ -43,43 +45,14 @@ export default async function SignInPage(props: {
       );
     }
 
-    // Sync user to database
+    // Sync user to database using auth package utility
     if (data.user) {
-      const role =
-        (data.user.app_metadata?.role as string | undefined) ??
-        (data.user.user_metadata?.role as string | undefined) ??
-        "user";
-      const isAdmin = role === "admin" || role === "tech";
-      const isModerator = role === "moderator";
-      const isServiceAccount = role === "service";
-
-      await db.user.upsert({
-        where: { authUserId: data.user.id },
-        create: {
-          authUserId: data.user.id,
-          email: data.user.email!,
-          name:
-            (data.user.user_metadata?.name as string | undefined) ??
-            data.user.email?.split("@")[0],
-          emailVerified: data.user.email_confirmed_at
-            ? new Date(data.user.email_confirmed_at)
-            : null,
-          isAdmin,
-          isModerator,
-          isServiceAccount,
-        },
-        update: {
-          email: data.user.email!,
-          name:
-            (data.user.user_metadata?.name as string | undefined) ??
-            data.user.email?.split("@")[0],
-          emailVerified: data.user.email_confirmed_at
-            ? new Date(data.user.email_confirmed_at)
-            : null,
-          isAdmin,
-          isModerator,
-          isServiceAccount,
-        },
+      await syncUserToDatabase(data.user, async (userData) => {
+        return (await db.user.upsert({
+          where: { authUserId: userData.authUserId },
+          create: userData,
+          update: userData,
+        })) as DatabaseUser;
       });
     }
 

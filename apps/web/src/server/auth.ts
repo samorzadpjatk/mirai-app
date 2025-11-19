@@ -1,84 +1,41 @@
 import {
-  getServerUser,
-  mapDatabaseUserToAuthUser,
+  getSession as getAuthSession,
+  requireAuth as requireAuthBase,
+  requireAdmin as requireAdminBase,
+  requireModerator as requireModeratorBase,
 } from "@integral-2025-app/auth";
-import type { AuthUser } from "@integral-2025-app/auth";
-import type { DatabaseUser } from "@integral-2025-app/common-types";
+import type { AuthUser, DatabaseUser } from "@integral-2025-app/auth";
 import { db } from "~/server/db";
 import { createServerSupabaseClient } from "~/lib/supabase/server";
+
+async function getUserFromDb(authUserId: string): Promise<DatabaseUser | null> {
+  return db.user.findUnique({
+    where: { authUserId },
+  }) as Promise<DatabaseUser | null>;
+}
 
 export async function getSession(): Promise<{
   user: AuthUser | null;
   authUserId: string | null;
 } | null> {
   const supabase = await createServerSupabaseClient();
-  const supabaseUser = await getServerUser(supabase);
-
-  if (!supabaseUser) {
-    return null;
-  }
-
-  const dbUser = await db.user.findUnique({
-    where: { authUserId: supabaseUser.id },
-  });
-
-  if (!dbUser) {
-    return {
-      user: null,
-      authUserId: supabaseUser.id,
-    };
-  }
-
-  const authUser = mapDatabaseUserToAuthUser(dbUser as DatabaseUser);
-
-  return {
-    user: authUser,
-    authUserId: supabaseUser.id,
-  };
+  return getAuthSession(supabase, getUserFromDb);
 }
 
 export async function requireAuth(): Promise<{
   user: AuthUser;
   dbUser: DatabaseUser;
 }> {
-  const session = await getSession();
-
-  if (!session?.user) {
-    throw new Error("Unauthorized");
-  }
-
-  const dbUser = await db.user.findUnique({
-    where: { authUserId: session.authUserId! },
-  });
-
-  if (!dbUser) {
-    throw new Error("User not found in database");
-  }
-
-  const { user } = session;
-
-  return {
-    user,
-    dbUser,
-  };
+  const supabase = await createServerSupabaseClient();
+  return requireAuthBase(supabase, getUserFromDb);
 }
 
 export async function requireAdmin(): Promise<DatabaseUser> {
-  const { dbUser } = await requireAuth();
-
-  if (!dbUser.isAdmin) {
-    throw new Error("Admin access required");
-  }
-
-  return dbUser;
+  const supabase = await createServerSupabaseClient();
+  return requireAdminBase(supabase, getUserFromDb);
 }
 
 export async function requireModerator(): Promise<DatabaseUser> {
-  const { dbUser } = await requireAuth();
-
-  if (!dbUser.isModerator && !dbUser.isAdmin) {
-    throw new Error("Moderator access required");
-  }
-
-  return dbUser;
+  const supabase = await createServerSupabaseClient();
+  return requireModeratorBase(supabase, getUserFromDb);
 }

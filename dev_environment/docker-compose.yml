@@ -677,20 +677,6 @@ services:
       - ./volumes/authentik/certs:/certs
       - ./volumes/authentik/custom-templates:/templates
 
-  # Nginx proxy to translate Keycloak URLs to Authentik endpoints
-  authentik-proxy:
-    container_name: authentik-proxy
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "9001:9001"
-    volumes:
-      - ./nginx-authentik-proxy.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - authentik-server
-    networks:
-      - default
-
   authentik-db-restore:
     container_name: authentik-db-restore
     image: postgres:15-alpine

@@ -11,7 +11,12 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { getSession } from "~/server/auth";
+import {
+  getSession,
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+} from "~/server/auth";
 import { db } from "~/server/db";
 
 /**
@@ -120,25 +125,19 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  */
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
-  .use(async ({ ctx, next }) => {
-    if (!ctx.session?.user) {
+  .use(async ({ next }) => {
+    try {
+      const { user, dbUser } = await requireAuth();
+
+      return next({
+        ctx: {
+          session: { user, authUserId: dbUser.authUserId! },
+          user: dbUser,
+        },
+      });
+    } catch {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
-
-    const dbUser = await ctx.db.user.findUnique({
-      where: { authUserId: ctx.session.authUserId! },
-    });
-
-    if (!dbUser) {
-      throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found" });
-    }
-
-    return next({
-      ctx: {
-        session: ctx.session,
-        user: dbUser,
-      },
-    });
   });
 
 /**
@@ -151,54 +150,62 @@ export const protectedProcedure = t.procedure
  */
 export const moderatorProcedure = t.procedure
   .use(timingMiddleware)
-  .use(async ({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
+  .use(async ({ next }) => {
+    try {
+      const dbUser = await requireModerator();
 
-    const dbUser = await ctx.db.user.findUnique({
-      where: { authUserId: ctx.session.authUserId! },
-    });
-
-    if (!dbUser || (!dbUser.isAdmin && !dbUser.isModerator)) {
+      return next({
+        ctx: {
+          session: {
+            user: {
+              id: dbUser.id,
+              authUserId: dbUser.authUserId!,
+              email: dbUser.email,
+              name: dbUser.name,
+              emailVerified: dbUser.emailVerified,
+            },
+            authUserId: dbUser.authUserId!,
+          },
+          user: dbUser,
+        },
+      });
+    } catch (error) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: "Moderator access required",
+        message:
+          error instanceof Error ? error.message : "Moderator access required",
       });
     }
-
-    return next({
-      ctx: {
-        session: ctx.session,
-        user: dbUser,
-      },
-    });
   });
 
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
-  .use(async ({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
+  .use(async ({ next }) => {
+    try {
+      const dbUser = await requireAdmin();
 
-    const dbUser = await ctx.db.user.findUnique({
-      where: { authUserId: ctx.session.authUserId! },
-    });
-
-    if (!dbUser?.isAdmin) {
+      return next({
+        ctx: {
+          session: {
+            user: {
+              id: dbUser.id,
+              authUserId: dbUser.authUserId!,
+              email: dbUser.email,
+              name: dbUser.name,
+              emailVerified: dbUser.emailVerified,
+            },
+            authUserId: dbUser.authUserId!,
+          },
+          user: dbUser,
+        },
+      });
+    } catch (error) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
-        message: "Admin access required",
+        message:
+          error instanceof Error ? error.message : "Admin access required",
       });
     }
-
-    return next({
-      ctx: {
-        session: ctx.session,
-        user: dbUser,
-      },
-    });
   });
 
 export const serviceAccountProcedure = t.procedure

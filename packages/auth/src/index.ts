@@ -25,6 +25,11 @@ export {
   hasRequiredRole,
   AuthenticationError,
   AuthorizationError,
+  getSession,
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+  syncUserToDatabase,
 } from "./authServer";
 
 export { useAuth, useUser, useSession, useIsAuthenticated } from "./authHooks";
