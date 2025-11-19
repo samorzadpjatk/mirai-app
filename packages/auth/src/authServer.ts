@@ -176,13 +176,6 @@ export async function requireModerator(
   return dbUser;
 }
 
-/**
- * Sync Supabase user to database
- * Creates or updates a user record in the database based on Supabase user data
- * @param supabaseUser - Supabase user object
- * @param upsertUser - Function to upsert user in database
- * @returns The synced database user
- */
 export async function syncUserToDatabase(
   supabaseUser: SupabaseUser,
   upsertUser: (data: {
