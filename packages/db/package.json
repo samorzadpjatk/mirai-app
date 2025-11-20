@@ -1,0 +1,44 @@
+{
+  "name": "@integral-2025-app/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "prisma": {
+    "schema": "./prisma/schema.prisma",
+    "seed": "tsx ./src/seed.ts"
+  },
+  "files": [
+    "src",
+    "prisma"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:reset": "prisma migrate reset",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.5.0",
+    "@t3-oss/env-core": "^0.13.8",
+    "zod": "^4.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@vitest/ui": "^4.0.11",
+    "prisma": "^6.15.0",
+    "server-only": "^0.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.2",
+    "vitest": "^4.0.11"
+  }
+}

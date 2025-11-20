@@ -1,0 +1,17 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClientOptions } from "./types";
+
+export default function createSupabaseClient(
+  url: string,
+  anonKey: string,
+  options?: SupabaseClientOptions,
+): SupabaseClient {
+  return createClient(url, anonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      ...options?.auth,
+    },
+  }) as SupabaseClient;
+}

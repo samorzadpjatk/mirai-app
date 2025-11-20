@@ -58,14 +58,16 @@ Spójrz na jego [dokumentację](dev_environment/README.md)
 
 ```bash
 # Generate Prisma client
-pnpm --filter @integral-2025-app/web postinstall
+pnpm --filter @integral-2025-app/db postinstall
 
 # Push the schema to the database
-pnpm --filter @integral-2025-app/web db:push
+pnpm --filter @integral-2025-app/db db:push
 
 # Optional: Open Prisma Studio to view the database
-pnpm --filter @integral-2025-app/web db:studio
+pnpm --filter @integral-2025-app/db db:studio
 ```
+
+> 📖 **Więcej informacji o komendach bazodanowych**: Zobacz [packages/db/README.md](packages/db/README.md)
 
 ### 5. Uruchom wybraną aplikację
 

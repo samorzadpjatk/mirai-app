@@ -13,6 +13,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  transpilePackages: [
+    "@integral-2025-app/auth",
+    "@integral-2025-app/common-types",
+  ],
 };
 
 // Serwist Configuration

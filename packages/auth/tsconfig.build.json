@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {},
+    "composite": false,
+    "noEmit": false,
+    "module": "ESNext",
+    "moduleResolution": "node"
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}
