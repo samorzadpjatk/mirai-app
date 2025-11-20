@@ -1,5 +1,3 @@
-import "server-only";
-
 export { Prisma } from "@prisma/client";
 
 // Re-export all Prisma types

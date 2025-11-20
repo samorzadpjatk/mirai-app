@@ -7,16 +7,6 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    DATABASE_URL: z.url(),
-    NODE_ENV: z
-      .enum(["development", "test", "production"])
-      .default("development"),
-    AUTHENTIK_SERVICE_ACCOUNT_TOKEN: z.string(),
-    AUTHENTIK_ISSUER: z.url(),
-    ADMIN_ROLE: z.string(),
-    MODERATOR_ROLE: z.string(),
-    TECH_ROLE: z.string(),
-    SERVICE_ACCOUNT_ROLE: z.string(),
     NEXT_PUBLIC_SUPABASE_URL: z.url(),
     SUPABASE_SERVICE_ROLE_KEY: z.string(),
   },
@@ -26,15 +16,6 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
-    DATABASE_URL: process.env.DATABASE_URL,
-    NODE_ENV: process.env.NODE_ENV,
-    AUTHENTIK_SERVICE_ACCOUNT_TOKEN:
-      process.env.AUTHENTIK_SERVICE_ACCOUNT_TOKEN,
-    AUTHENTIK_ISSUER: process.env.AUTHENTIK_ISSUER,
-    ADMIN_ROLE: process.env.ADMIN_ROLE,
-    MODERATOR_ROLE: process.env.MODERATOR_ROLE,
-    TECH_ROLE: process.env.TECH_ROLE,
-    SERVICE_ACCOUNT_ROLE: process.env.SERVICE_ACCOUNT_ROLE,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   },
