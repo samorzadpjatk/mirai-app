@@ -1,7 +1,7 @@
 import { Button, Grid, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { getSession } from "~/server/auth";
-import { db } from "~/server/db";
+import { db } from "@integral-2025-app/db";
 
 export default async function NavGrid() {
   const session = await getSession();

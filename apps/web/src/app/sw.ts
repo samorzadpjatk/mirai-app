@@ -37,7 +37,7 @@ self.addEventListener("push", (event) => {
 
   try {
     if (event.data) {
-      notificationData = event.data.json();
+      notificationData = event.data.json() as typeof notificationData;
     }
   } catch (error) {
     console.error("SW: Error parsing push data:", error);
@@ -103,7 +103,8 @@ self.addEventListener("notificationclick", (event) => {
 
   event.notification.close();
 
-  const url = event.notification.data?.url ?? "/";
+  const notificationData = event.notification.data as { url?: string } | undefined;
+  const url = notificationData?.url ?? "/";
 
   event.waitUntil(
     self.clients

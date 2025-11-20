@@ -5,7 +5,7 @@ import {
   requireModerator as requireModeratorBase,
 } from "@integral-2025-app/auth";
 import type { AuthUser, DatabaseUser } from "@integral-2025-app/auth";
-import { db } from "~/server/db";
+import { db } from "@integral-2025-app/db";
 import { createServerSupabaseClient } from "~/lib/supabase/server";
 
 async function getUserFromDb(authUserId: string): Promise<DatabaseUser | null> {

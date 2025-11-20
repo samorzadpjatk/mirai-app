@@ -11,13 +11,13 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import { db } from "@integral-2025-app/db";
 import {
   getSession,
   requireAuth,
   requireAdmin,
   requireModerator,
 } from "~/server/auth";
-import { db } from "~/server/db";
 
 /**
  * 1. CONTEXT

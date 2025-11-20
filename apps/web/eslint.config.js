@@ -8,7 +8,7 @@ const compat = new FlatCompat({
 const config = [
   ...baseConfig,
   {
-    ignores: [".next", "public/**/*", "coverage/**"],
+    ignores: [".next", "public/**/*", "next-env.d.ts", "coverage/**"],
   },
   ...compat.extends("next/core-web-vitals"),
   {

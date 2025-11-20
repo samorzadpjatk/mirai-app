@@ -5,7 +5,7 @@ import { Button, Card, Flex, Text, Badge, Dialog, Heading, Table, TextArea } fro
 import { api } from "~/trpc/react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
-import type { NotificationSchedule } from "@prisma/client";
+import type { NotificationSchedule } from "@integral-2025-app/db";
 
 export default function NotificationScheduleList() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);

@@ -3,7 +3,7 @@
  */
 import { GET } from "../route";
 import { createServerSupabaseClient } from "~/lib/supabase/server";
-import { db } from "~/server/db";
+import { db } from "@integral-2025-app/db";
 import { NextRequest, NextResponse } from "next/server";
 
 jest.mock("~/env", () => ({
@@ -16,7 +16,7 @@ jest.mock("~/env", () => ({
 }));
 
 jest.mock("~/lib/supabase/server");
-jest.mock("~/server/db", () => ({
+jest.mock("@integral-2025-app/db", () => ({
   db: {
     user: {
       upsert: jest.fn(),

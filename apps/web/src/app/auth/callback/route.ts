@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from "~/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
-import { db } from "~/server/db";
+import { db } from "@integral-2025-app/db";
 import { env } from "~/env";
 
 export async function GET(request: NextRequest) {
