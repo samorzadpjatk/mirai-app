@@ -17,6 +17,8 @@ export const env = createEnv({
     MODERATOR_ROLE: z.string(),
     TECH_ROLE: z.string(),
     SERVICE_ACCOUNT_ROLE: z.string(),
+    NEXT_PUBLIC_SUPABASE_URL: z.url(),
+    SUPABASE_SERVICE_ROLE_KEY: z.string(),
   },
 
   /**
@@ -33,6 +35,8 @@ export const env = createEnv({
     MODERATOR_ROLE: process.env.MODERATOR_ROLE,
     TECH_ROLE: process.env.TECH_ROLE,
     SERVICE_ACCOUNT_ROLE: process.env.SERVICE_ACCOUNT_ROLE,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

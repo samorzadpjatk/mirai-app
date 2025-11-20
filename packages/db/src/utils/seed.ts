@@ -22,7 +22,7 @@ const prisma = db
 const SUPABASE_URL =
   env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
 const SERVICE_ROLE_KEY =
-  env.SUPABASE_SERVICE_ROLE_KEY ?? env.SERVICE_ROLE_KEY;
+  env.SUPABASE_SERVICE_ROLE_KEY;
 
 async function main() {
   if (!SERVICE_ROLE_KEY) {
