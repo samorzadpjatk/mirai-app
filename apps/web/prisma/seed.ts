@@ -1,69 +1,113 @@
 import { PrismaClient } from "@prisma/client";
 
-type AuthentikResponse = {
-  results: {
-    id: string;
-    name: string;
-    users_obj: {
-      id: string;
-      email: string;
-      name: string;
-    }[];
-  }[];
+type SupabaseUser = {
+  id: string;
+  email: string;
+  user_metadata: {
+    name?: string;
+    role?: string;
+  };
+  app_metadata: {
+    role?: string;
+  };
+};
+
+type SupabaseUsersResponse = {
+  users: SupabaseUser[];
 };
 
 const prisma = new PrismaClient();
 
-const AUTHENTIK_SERVICE_ACCOUNT_TOKEN =
-  process.env.AUTHENTIK_SERVICE_ACCOUNT_TOKEN;
-const AUTHENTIK_API_SEARCH_URL = new URL(
-  "/api/v3/core/groups/",
-  process.env.AUTHENTIK_ISSUER,
-);
-AUTHENTIK_API_SEARCH_URL.searchParams.append("search", "PJAPP");
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
+const SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SERVICE_ROLE_KEY;
 
 async function main() {
-  if (!AUTHENTIK_SERVICE_ACCOUNT_TOKEN) {
-    throw new Error("Missing AUTHENTIK_SERVICE_ACCOUNT_TOKEN");
+  if (!SERVICE_ROLE_KEY) {
+    console.error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY or SERVICE_ROLE_KEY environment variable",
+    );
+    console.log("Skipping auth users sync...");
+    console.log("Database seeding completed. 🌱");
+    return;
   }
 
-  // Request data from auth system
-  const response = await fetch(AUTHENTIK_API_SEARCH_URL, {
+  console.log("Fetching users from Supabase Auth...");
+
+  // Fetch all users from Supabase Auth
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${AUTHENTIK_SERVICE_ACCOUNT_TOKEN}`,
+      APIKey: SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
     },
   });
 
-  const data: AuthentikResponse | undefined = (await response.json()) as
-    | AuthentikResponse
-    | undefined;
-  const groupResults = data?.results ?? [];
-  console.log(`Found ${groupResults.length} groups`);
-  for (const group of groupResults) {
-    for (const user of group.users_obj) {
-      // Upsert the information of each user in groups related to the trip into the database
-      const result = await prisma.user.upsert({
-        where: { email: user.email },
-        update: {
-          emailVerified: new Date(),
-          isAdmin: group.name === process.env.ADMIN_ROLE || group.name === process.env.TECH_ROLE,
-          isModerator: group.name === process.env.MODERATOR_ROLE,
-          isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
-        },
-        create: {
-          email: user.email,
-          name: user.name,
-          emailVerified: new Date(),
-          isAdmin: group.name === process.env.ADMIN_ROLE || group.name === process.env.TECH_ROLE,
-          isModerator: group.name === process.env.MODERATOR_ROLE,
-          isServiceAccount: group.name === process.env.SERVICE_ACCOUNT_ROLE,
-          // securityCode:
+  if (!response.ok) {
+    console.error(`Failed to fetch users: ${response.statusText}`);
+    console.log("Skipping auth users sync...");
+    console.log("Database seeding completed. 🌱");
+    return;
+  }
+
+  const data: SupabaseUsersResponse = await response.json();
+  const users = data.users ?? [];
+
+  console.log(`Found ${users.length} users in Supabase Auth`);
+
+  for (const user of users) {
+    const role = user.app_metadata?.role ?? user.user_metadata?.role ?? "user";
+    const name = user.user_metadata?.name ?? user.email.split("@")[0];
+
+    // Determine permissions based on role
+    const isAdmin = role === "admin" || role === "tech";
+    const isModerator = role === "moderator";
+    const isServiceAccount = role === "service";
+
+    try {
+      // First, try to find existing user by email or authUserId
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [{ email: user.email }, { authUserId: user.id }],
         },
       });
-      console.log(`Upserted user: ${result.email} (${group.name})`);
+
+      if (existingUser) {
+        // Update existing user
+        const result = await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            authUserId: user.id,
+            email: user.email,
+            name,
+            emailVerified: new Date(),
+            isAdmin,
+            isModerator,
+            isServiceAccount,
+          },
+        });
+        console.log(`✓ Updated user: ${result.email} (${role})`);
+      } else {
+        // Create new user
+        const result = await prisma.user.create({
+          data: {
+            authUserId: user.id,
+            email: user.email,
+            name,
+            emailVerified: new Date(),
+            isAdmin,
+            isModerator,
+            isServiceAccount,
+          },
+        });
+        console.log(`✓ Created user: ${result.email} (${role})`);
+      }
+    } catch (error) {
+      console.error(`✗ Failed to sync user ${user.email}:`, error);
     }
   }
+
   console.log("Database has been seeded. 🌱");
 }
 
