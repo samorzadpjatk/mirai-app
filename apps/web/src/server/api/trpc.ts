@@ -11,9 +11,13 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { auth } from "~/server/auth";
 import { db } from "@integral-2025-app/db";
-import { supabase } from "~/server/supabase"
+import {
+  getSession,
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+} from "~/server/auth";
 
 /**
  * 1. CONTEXT
@@ -28,11 +32,10 @@ import { supabase } from "~/server/supabase"
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const session = await auth();
+  const session = await getSession();
 
   return {
     db,
-    supabase,
     session,
     ...opts,
   };
@@ -122,16 +125,19 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  */
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user) {
+  .use(async ({ next }) => {
+    try {
+      const { user, dbUser } = await requireAuth();
+
+      return next({
+        ctx: {
+          session: { user, authUserId: dbUser.authUserId! },
+          user: dbUser,
+        },
+      });
+    } catch {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
-    return next({
-      ctx: {
-        // infers the `session` as non-nullable
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    });
   });
 
 /**
@@ -144,49 +150,80 @@ export const protectedProcedure = t.procedure
  */
 export const moderatorProcedure = t.procedure
   .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user?.isAdmin && !ctx.session?.user?.isModerator) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
+  .use(async ({ next }) => {
+    try {
+      const dbUser = await requireModerator();
+
+      return next({
+        ctx: {
+          session: {
+            user: {
+              id: dbUser.id,
+              authUserId: dbUser.authUserId!,
+              email: dbUser.email,
+              name: dbUser.name,
+              emailVerified: dbUser.emailVerified,
+            },
+            authUserId: dbUser.authUserId!,
+          },
+          user: dbUser,
+        },
+      });
+    } catch (error) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message:
+          error instanceof Error ? error.message : "Moderator access required",
+      });
     }
-    return next({
-      ctx: {
-        // infers the `session` as non-nullable
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    });
   });
 
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.session?.user?.isAdmin) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
+  .use(async ({ next }) => {
+    try {
+      const dbUser = await requireAdmin();
+
+      return next({
+        ctx: {
+          session: {
+            user: {
+              id: dbUser.id,
+              authUserId: dbUser.authUserId!,
+              email: dbUser.email,
+              name: dbUser.name,
+              emailVerified: dbUser.emailVerified,
+            },
+            authUserId: dbUser.authUserId!,
+          },
+          user: dbUser,
+        },
+      });
+    } catch (error) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message:
+          error instanceof Error ? error.message : "Admin access required",
+      });
     }
-    return next({
-      ctx: {
-        // infers the `session` as non-nullable
-        session: { ...ctx.session, user: ctx.session.user },
-      },
-    });
   });
 
 export const serviceAccountProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    // Optional: Add some basic authentication/API key check
     const authHeader = ctx.headers.get("authorization");
     const expectedAuth = process.env.SCHEDULER_API_KEY;
 
     if (authHeader !== `Bearer ${expectedAuth}`) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
-    const user = await prisma.user.findFirstOrThrow({
+    const user = await db.user.findFirstOrThrow({
       where: { isServiceAccount: true },
     });
     return next({
       ctx: {
-        // infers the `session` as non-nullable
-        session: { ...ctx.session, user: user },
+        session: ctx.session,
+        user: user,
       },
     });
   });

@@ -7,13 +7,10 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    AUTH_SECRET:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
     AUTHENTIK_ID: z.string(),
     AUTHENTIK_SECRET: z.string(),
     AUTHENTIK_ISSUER: z.string().url(),
+    AUTHENTIK_SERVICE_ACCOUNT_TOKEN: z.string().optional(),
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -26,8 +23,7 @@ export const env = createEnv({
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_EMAIL: z.string().email().optional(),
     SCHEDULER_API_KEY: z.string().optional(),
-    SUPABASE_PROJECT_URL: z.string().url(),
-    SUPABASE_PROJECT_KEY: z.string(),
+    SUPABASE_SERVICE_ROLE_KEY: z.string(),
   },
 
   /**
@@ -37,6 +33,9 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
+    NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
+    NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   },
 
   /**
@@ -44,10 +43,11 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
-    AUTH_SECRET: process.env.AUTH_SECRET,
     AUTHENTIK_ID: process.env.AUTHENTIK_ID,
     AUTHENTIK_SECRET: process.env.AUTHENTIK_SECRET,
     AUTHENTIK_ISSUER: process.env.AUTHENTIK_ISSUER,
+    AUTHENTIK_SERVICE_ACCOUNT_TOKEN:
+      process.env.AUTHENTIK_SERVICE_ACCOUNT_TOKEN,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     ADMIN_ROLE: process.env.ADMIN_ROLE,
@@ -59,8 +59,10 @@ export const env = createEnv({
     VAPID_EMAIL: process.env.VAPID_EMAIL,
     SCHEDULER_API_KEY: process.env.SCHEDULER_API_KEY,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    SUPABASE_PROJECT_URL: process.env.SUPABASE_PROJECT_URL,
-    SUPABASE_PROJECT_KEY: process.env.SUPABASE_PROJECT_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
