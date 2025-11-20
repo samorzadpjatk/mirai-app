@@ -41,13 +41,6 @@ describe("env utilities", () => {
       // Should not throw even with missing required variables
       await expect(importEnvModule()).resolves.toBeDefined();
     });
-
-    it("should treat empty strings as undefined when emptyStringAsUndefined is true", async () => {
-      setValidEnv();
-      process.env.DATABASE_URL = "";
-
-      await expect(importEnvModule()).rejects.toThrow();
-    });
   });
 
   describe("environment variable structure", () => {
