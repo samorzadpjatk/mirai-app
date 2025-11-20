@@ -1,5 +1,4 @@
-import { env } from "./env.ts";
-import { db } from "../index.ts";
+import { PrismaClient } from "@prisma/client";
 
 type SupabaseUser = {
   id: string;
@@ -17,12 +16,11 @@ type SupabaseUsersResponse = {
   users: SupabaseUser[];
 };
 
-const prisma = db
+const prisma = new PrismaClient();
 
 const SUPABASE_URL =
-  env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
-const SERVICE_ROLE_KEY =
-  env.SUPABASE_SERVICE_ROLE_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 async function main() {
   if (!SERVICE_ROLE_KEY) {
