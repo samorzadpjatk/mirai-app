@@ -1,8 +1,17 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { PrismaClient } from "@prisma/client";
+
+const originalEnv = process.env;
+const TEST_DATABASE_URL = "postgresql://user:pass@localhost:5432/db";
 
 // Clear module cache before each test to test singleton behavior
 beforeEach(() => {
-  jest.resetModules();
+  vi.resetModules();
+  process.env = { ...originalEnv, DATABASE_URL: TEST_DATABASE_URL };
+});
+
+afterEach(() => {
+  process.env = originalEnv;
 });
 
 describe("db package", () => {
@@ -25,7 +34,7 @@ describe("db package", () => {
       const { getPrisma: getPrisma1 } = await import("../index");
       const prisma1 = getPrisma1();
       
-      jest.resetModules();
+      vi.resetModules();
       
       const { getPrisma: getPrisma2 } = await import("../index");
       const prisma2 = getPrisma2();
