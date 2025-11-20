@@ -28,7 +28,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@prisma/client": "^6.5.0",
+    "@prisma/client": "^7.0.0",
     "@t3-oss/env-core": "^0.13.8",
     "zod": "^4.1.4"
   },
