@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { createTRPCContext } from "../trpc";
 import { getSession } from "~/server/auth";
-import { db } from "~/server/db";
+import { db } from "@integral-2025-app/db";
 
 jest.mock("superjson", () => ({
   default: {
@@ -11,7 +11,7 @@ jest.mock("superjson", () => ({
 }));
 
 jest.mock("~/server/auth");
-jest.mock("~/server/db", () => ({
+jest.mock("@integral-2025-app/db", () => ({
   db: {
     user: {
       findUnique: jest.fn(),

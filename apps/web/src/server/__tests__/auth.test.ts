@@ -13,7 +13,7 @@ import {
 } from "@integral-2025-app/auth";
 
 jest.mock("~/lib/supabase/server");
-jest.mock("~/server/db", () => ({
+jest.mock("@integral-2025-app/db", () => ({
   db: {
     user: {
       findUnique: jest.fn(),

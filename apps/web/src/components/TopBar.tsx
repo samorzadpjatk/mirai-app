@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "~/server/auth";
 import { createServerSupabaseClient } from "~/lib/supabase/server";
-import { db } from "~/server/db";
+import { db } from "@integral-2025-app/db";
 
 export default async function TopBar() {
   const session = await getSession();

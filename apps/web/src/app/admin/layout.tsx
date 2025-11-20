@@ -1,7 +1,7 @@
 import { Box, Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { redirect } from "next/navigation";
 import { getSession } from "~/server/auth";
-import { db } from "~/server/db";
+import { db } from "@integral-2025-app/db";
 
 import Unauthorized from "~/components/Unauthorized";
 import AdminNavMenu from "~/components/admin/AdminNavMenu";
