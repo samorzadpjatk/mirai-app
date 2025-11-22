@@ -34,9 +34,6 @@ export function ThemeSwitcher({ onToggle, currentTheme }: ThemeSwitcherProps) {
         aria-label="Toggle theme"
         cursor="pointer"
       />
-      <Text color="$color" fontSize="$5" fontWeight="600">
-        {isDark ? "Dark" : "Light"} Mode
-      </Text>
     </XStack>
   );
 }
