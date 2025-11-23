@@ -21,13 +21,17 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.80.0",
+    "@tamagui/babel-plugin": "^1.138.0",
+    "@tamagui/config": "^1.138.1",
+    "@tamagui/lucide-icons": "^1.138.1",
     "expo": "~54.0.22",
     "expo-router": "^6.0.14",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-web": "^0.21.2"
+    "react-native-web": "^0.21.2",
+    "tamagui": "^1.138.1"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.5",
