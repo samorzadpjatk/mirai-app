@@ -3,23 +3,35 @@ import { TamaguiProvider, YStack } from "tamagui";
 import tamaguiConfig from "../../tamagui.config";
 import { useState } from "react";
 import { ThemeSwitcher } from "../components/ThemeSwitcher";
+import { AuthProvider } from "@integral-2025-app/auth";
+import { authStorage } from "../lib/storage";
+
+const SUPABASE_URL =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 export default function RootLayout() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
-      <YStack flex={1} backgroundColor="$background">
-        <YStack padding="$4" paddingTop="$6">
-          <ThemeSwitcher
-            onToggle={() => setTheme(theme === "light" ? "dark" : "light")}
-            currentTheme={theme}
-          />
+      <AuthProvider
+        supabaseUrl={SUPABASE_URL}
+        supabaseKey={SUPABASE_ANON_KEY}
+        storageOptions={{ storage: authStorage }}
+      >
+        <YStack flex={1} backgroundColor="$background">
+          <YStack padding="$4" paddingTop="$6">
+            <ThemeSwitcher
+              onToggle={() => setTheme(theme === "light" ? "dark" : "light")}
+              currentTheme={theme}
+            />
+          </YStack>
+          <Stack screenOptions={{ headerShown: false }}>
+            {/* Routing here */}
+          </Stack>
         </YStack>
-        <Stack screenOptions={{ headerShown: false }}>
-          {/* Routing here */}
-        </Stack>
-      </YStack>
+      </AuthProvider>
     </TamaguiProvider>
   );
 }
