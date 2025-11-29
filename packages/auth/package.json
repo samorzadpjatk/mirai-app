@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@integral-2025-app/common-types": "workspace:*",
-    "@supabase/supabase-js": "^2.80.0",
+    "@supabase/supabase-js": "^2.86.0",
     "zod": "^4.1.4"
   },
   "devDependencies": {
