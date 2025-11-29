@@ -1,4 +1,4 @@
-import { Button, XStack, Text } from "tamagui";
+import { Button, XStack } from "tamagui";
 import { Moon, Sun } from "@tamagui/lucide-icons";
 
 interface ThemeSwitcherProps {

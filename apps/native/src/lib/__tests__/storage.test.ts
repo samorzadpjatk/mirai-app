@@ -113,15 +113,16 @@ describe("authStorage", () => {
     });
 
     it("should handle undefined window on web SSR", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
       const originalWindow = (globalThis as any).window;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
       delete (globalThis as any).window;
 
       const result = await authStorage.getItem("test-key");
 
       expect(result).toBeNull();
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
       (globalThis as any).window = originalWindow;
     });
 

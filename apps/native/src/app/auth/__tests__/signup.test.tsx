@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { TamaguiProvider } from "tamagui";
@@ -41,7 +40,7 @@ describe("SignupScreen", () => {
     mockUseRouter.mockReturnValue({
       replace: mockRouterReplace,
       push: mockRouterPush,
-    } as any);
+    } as unknown as ReturnType<typeof useRouter>);
 
     mockUseSignupForm.mockReturnValue({
       formState: {

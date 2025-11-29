@@ -6,9 +6,14 @@ import { ThemeSwitcher } from "../components/ThemeSwitcher";
 import { AuthProvider } from "@integral-2025-app/auth";
 import { authStorage } from "../lib/storage";
 
-const SUPABASE_URL =
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const SUPABASE_URL: string =
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const SUPABASE_ANON_KEY: string =
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 export default function RootLayout() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
