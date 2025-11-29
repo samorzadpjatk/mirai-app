@@ -46,6 +46,15 @@ bash ./reset.sh
 
 > 📖 **Pełna lista komend**: Zobacz [packages/db/README.md](../packages/db/README.md)
 
+## Seedowane konta do supabase-auth
+
+ROLE: email / password
+Admin: admin@pjatk.dev / admin123
+Developer: dev@pjatk.dev / dev123
+User: user@pjatk.dev / user123
+Student: student@pjatk.dev / student123
+Staff: staff@pjatk.dev / staff123
+
 ## Hasło do fikcyjnych kont
 
 `MockUser123`

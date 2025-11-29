@@ -1,8 +1,49 @@
-import { YStack, H1, Text, View } from "tamagui";
+import { YStack, XStack, H1, Text, View, Button, Spinner } from "tamagui";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useEffect } from "react";
+import { useAuth } from "@integral-2025-app/auth";
+import { useRouter } from "expo-router";
+import { LogOut, User } from "@tamagui/lucide-icons";
 
 export default function Home() {
+  const { session, isLoading, signOut } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !session) {
+      router.replace("/auth/login");
+    }
+  }, [isLoading, session, router]);
+
+  if (isLoading) {
+    return (
+      <YStack
+        flex={1}
+        backgroundColor="$background"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Spinner size="large" color="$red9" />
+        <Text color="$gray11" marginTop="$4">
+          Loading...
+        </Text>
+      </YStack>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.replace("/auth/login");
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+    }
+  };
+
   return (
     <>
       <StatusBar style="auto" />
@@ -41,21 +82,47 @@ export default function Home() {
                 y={0}
                 opacity={1}
               >
-                Welcome to PJapp
+                Welcome Back!
               </H1>
-              <Text
-                color="$gray11"
-                fontSize="$5"
-                textAlign="center"
-                opacity={0.7}
-                fontWeight="500"
-                animation="quick"
-                enterStyle={{ y: -10, opacity: 0 }}
-                y={0}
-              >
-                Development in progress...
-              </Text>
+              <XStack space="$2" alignItems="center">
+                <User size={16} color="$gray11" />
+                <Text
+                  color="$gray11"
+                  fontSize="$4"
+                  fontWeight="600"
+                  opacity={0.8}
+                >
+                  {session?.user?.email ?? "User"}
+                </Text>
+              </XStack>
             </YStack>
+          </YStack>
+
+          <YStack space="$3">
+            <Button
+              size="$4"
+              backgroundColor="$red9"
+              color="white"
+              fontWeight="700"
+              icon={LogOut}
+              onPress={handleSignOut}
+              hoverStyle={{ backgroundColor: "$red10" }}
+              pressStyle={{ backgroundColor: "$red8", scale: 0.98 }}
+              animation="quick"
+            >
+              Sign Out
+            </Button>
+          </YStack>
+
+          <YStack flex={1} justifyContent="flex-end" alignItems="center">
+            <Text
+              color="$gray11"
+              fontSize="$2"
+              opacity={0.5}
+              textAlign="center"
+            >
+              PJapp Native • v0.0.0
+            </Text>
           </YStack>
         </YStack>
       </YStack>

@@ -2,6 +2,7 @@
   "name": "@integral-2025-app/native",
   "version": "1.0.0",
   "main": "index.ts",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "expo start",
@@ -20,15 +21,20 @@
     "clean": "rm -rf .expo .turbo node_modules dist"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~4.0.0",
+    "@integral-2025-app/auth": "workspace:*",
+    "@react-native-async-storage/async-storage": "^2.1.0",
     "@supabase/supabase-js": "^2.80.0",
     "@tamagui/babel-plugin": "^1.138.0",
     "@tamagui/config": "^1.138.1",
     "@tamagui/lucide-icons": "^1.138.1",
     "expo": "~54.0.22",
+    "expo-constants": "~17.0.8",
     "expo-router": "^6.0.14",
+    "expo-secure-store": "~14.0.0",
     "expo-status-bar": "~3.0.8",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-native": "0.81.5",
     "react-native-web": "^0.21.2",
     "tamagui": "^1.138.1"
@@ -52,6 +58,9 @@
     "typescript-eslint": "^8.27.0"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "moduleNameMapper": {
+      "^@integral-2025-app/auth$": "<rootDir>/../../packages/auth/src"
+    }
   }
 }

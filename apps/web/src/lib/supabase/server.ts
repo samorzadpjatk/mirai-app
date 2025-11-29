@@ -11,11 +11,24 @@ export async function createServerSupabaseClient() {
       auth: {
         storage: {
           getItem: async (key: string) => {
-            return cookieStore.get(key)?.value ?? null;
+            const value = cookieStore.get(key)?.value;
+            if (!value) return null;
+
+            if (value.startsWith("base64-")) {
+              try {
+                return atob(value.substring(7));
+              } catch (error) {
+                console.error("Failed to decode base64 cookie:", error);
+                return null;
+              }
+            }
+
+            return value;
           },
           setItem: async (key: string, value: string) => {
             try {
-              cookieStore.set(key, value, {
+              const encodedValue = `base64-${btoa(value)}`;
+              cookieStore.set(key, encodedValue, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
