@@ -204,23 +204,27 @@ describe("useSignupForm", () => {
       result.current.setConfirmPassword("password123");
     });
 
-    // Start submission without awaiting
-    void act(async () => {
-      await result.current.handleSubmit();
-    });
+    // Verify initial state
+    expect(result.current.formState.isLoading).toBe(false);
 
-    // Wait for loading state to update
+    // Start submission - don't await yet
+    const submitPromise = result.current.handleSubmit();
+
+    // Loading should be true immediately after calling handleSubmit
     await waitFor(() => {
       expect(result.current.formState.isLoading).toBe(true);
     });
 
-    act(() => {
-      resolveSignUp!();
+    // Resolve the sign up
+    resolveSignUp!();
+
+    // Wait for submission to complete
+    await act(async () => {
+      await submitPromise;
     });
 
-    await waitFor(() => {
-      expect(result.current.formState.isLoading).toBe(false);
-    });
+    // Loading should be false after completion
+    expect(result.current.formState.isLoading).toBe(false);
   });
 
   it("should handle submission error", async () => {
