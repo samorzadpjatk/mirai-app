@@ -55,7 +55,7 @@
     "jest-expo": "^54.0.13",
     "prettier": "^3.5.3",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.27.0"
+    "typescript-eslint": "^8.48.0"
   },
   "jest": {
     "preset": "jest-expo",
