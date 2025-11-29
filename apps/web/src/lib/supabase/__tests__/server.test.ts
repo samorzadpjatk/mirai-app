@@ -113,7 +113,7 @@ describe("lib/supabase/server", () => {
         await storage.setItem("test-key", "test-value");
         expect(mockCookieStore.set).toHaveBeenCalledWith(
           "test-key",
-          "test-value",
+          "base64-dGVzdC12YWx1ZQ==",
           {
             httpOnly: true,
             secure: true,
@@ -145,7 +145,7 @@ describe("lib/supabase/server", () => {
         await storage.setItem("test-key", "test-value");
         expect(mockCookieStore.set).toHaveBeenCalledWith(
           "test-key",
-          "test-value",
+          "base64-dGVzdC12YWx1ZQ==",
           {
             httpOnly: true,
             secure: false,
