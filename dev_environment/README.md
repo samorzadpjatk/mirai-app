@@ -46,6 +46,15 @@ bash ./reset.sh
 
 > 📖 **Pełna lista komend**: Zobacz [packages/db/README.md](../packages/db/README.md)
 
+## Seedowane konta do supabase-auth
+
+ROLE: email / password
+Admin: admin@pjatk.dev / admin123
+Developer: dev@pjatk.dev / dev123
+User: user@pjatk.dev / user123
+Student: student@pjatk.dev / student123
+Staff: staff@pjatk.dev / staff123
+
 ## Hasło do fikcyjnych kont
 
 `MockUser123`
@@ -53,3 +62,6 @@ bash ./reset.sh
 ## Hasło do konta administracyjnego `akadmin` w Authentik
 
 zmienna środowiskowa `AUTHENTIK_BOOTSTRAP_PASSWORD` w pliku `.env.example`
+
+## Problemy z Windows
+W przypadku problemów, upewnij się, że masz skonfigurowane LF End of Line sequences, [follow this gist to fix](https://gist.github.com/tjsudarsan/f2bfe4c4d567243e302cf8ba40e1c7e5).

@@ -41,10 +41,10 @@
   "dependencies": {
     "@integral-2025-app/common-types": "workspace:*",
     "@supabase/supabase-js": "^2.80.0",
-    "react": "^19.1.1",
     "zod": "^4.1.4"
   },
   "devDependencies": {
+    "react": "^19.1.1",
     "@integral-2025-app/jest-config": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
