@@ -24,7 +24,7 @@
     "@expo/metro-runtime": "~4.0.0",
     "@integral-2025-app/auth": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.1.0",
-    "@supabase/supabase-js": "^2.80.0",
+    "@supabase/supabase-js": "^2.86.0",
     "@tamagui/babel-plugin": "^1.138.0",
     "@tamagui/config": "^1.138.1",
     "@tamagui/lucide-icons": "^1.138.1",
