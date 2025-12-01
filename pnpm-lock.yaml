@@ -169,8 +169,8 @@ importers:
         specifier: ^9.2.0
         version: 9.2.1(typescript@5.9.3)
       '@serwist/sw':
-        specifier: ^9.2.0
-        version: 9.2.1(typescript@5.9.3)
+        specifier: ^9.2.3
+        version: 9.2.3(typescript@5.9.3)
       '@supabase/ssr':
         specifier: ^0.7.0
         version: 0.7.0(@supabase/supabase-js@2.80.0)
@@ -3108,8 +3108,8 @@ packages:
       typescript:
         optional: true
 
-  '@serwist/sw@9.2.1':
-    resolution: {integrity: sha512-SQygNDTB4w4HRjKiGH+Ybme+dy2rynt6RPFHw27SANQRK1rEzqYUZ1S4SyKjiwJgIoy+mQOA7+T23OqAfW7Eqg==}
+  '@serwist/sw@9.2.3':
+    resolution: {integrity: sha512-79LYI3XOOJ8Sa0TXgGLsalF0aSkm81Ykhol+yr0Xv7vH6KBPzzgffPtxse77GWaxZ87kPE3pNpQPv2WgTe6RKA==}
     peerDependencies:
       typescript: '>=5.0.0'
     peerDependenciesMeta:
@@ -4044,6 +4044,9 @@ packages:
 
   '@types/node@24.10.0':
     resolution: {integrity: sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==}
+
+  '@types/node@24.10.1':
+    resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
 
   '@types/phoenix@1.6.6':
     resolution: {integrity: sha512-PIzZZlEppgrpoT2QgbnDU+MMzuR6BbCjllj0bM70lWoejMeNJAxCchxnv7J3XFkI8MpygtRpzXrIlmWUBclP5A==}
@@ -7820,6 +7823,14 @@ packages:
 
   serwist@9.2.1:
     resolution: {integrity: sha512-icp1GQB3h9q1OqYeSw+iTTY0OZ3io+fzNG0Ot3p6Xe5DEZlSRn61FmGx9mq76q0CeMtZYBmmuw4tyIS1O76Lbw==}
+    peerDependencies:
+      typescript: '>=5.0.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  serwist@9.2.3:
+    resolution: {integrity: sha512-menorUH09SpLvU7R25TvG0TuQ12MUDpQ5NKGohbtREF8YI+0D++Abn59XCmvvMp2n740rBizIkeqWq0m6U+++g==}
     peerDependencies:
       typescript: '>=5.0.0'
     peerDependenciesMeta:
@@ -12254,9 +12265,9 @@ snapshots:
     optionalDependencies:
       typescript: 5.9.3
 
-  '@serwist/sw@9.2.1(typescript@5.9.3)':
+  '@serwist/sw@9.2.3(typescript@5.9.3)':
     dependencies:
-      serwist: 9.2.1(typescript@5.9.3)
+      serwist: 9.2.3(typescript@5.9.3)
     optionalDependencies:
       typescript: 5.9.3
 
@@ -13802,6 +13813,10 @@ snapshots:
       undici-types: 6.21.0
 
   '@types/node@24.10.0':
+    dependencies:
+      undici-types: 7.16.0
+
+  '@types/node@24.10.1':
     dependencies:
       undici-types: 7.16.0
 
@@ -16809,7 +16824,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 24.10.0
+      '@types/node': 24.10.1
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -18509,6 +18524,12 @@ snapshots:
   server-only@0.0.1: {}
 
   serwist@9.2.1(typescript@5.9.3):
+    dependencies:
+      idb: 8.0.3
+    optionalDependencies:
+      typescript: 5.9.3
+
+  serwist@9.2.3(typescript@5.9.3):
     dependencies:
       idb: 8.0.3
     optionalDependencies:
