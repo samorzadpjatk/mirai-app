@@ -3,7 +3,7 @@ const baseConfig = require("@integral-2025-app/jest-config");
 module.exports = {
   ...baseConfig,
   transformIgnorePatterns: [
-    "/node_modules/(?!(@integral-2025-app|superjson|copy-anything|is-what)/)",
+    "/node_modules/(?!(@integral-2025-app|superjson|copy-anything|is-what))/",
   ],
   moduleNameMapper: {
     "^~/(.*)$": "<rootDir>/src/$1",

@@ -48,6 +48,7 @@
     "zod": "^4.1.4"
   },
   "devDependencies": {
+    "@integral-2025-app/jest-config": "workspace:*",
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",

@@ -1,14 +1,12 @@
-import { TRPCError } from "@trpc/server";
+import superjson from "superjson";
+
 import { createTRPCContext } from "../trpc";
 import { getSession } from "~/server/auth";
 import { db } from "@integral-2025-app/db";
 
-jest.mock("superjson", () => ({
-  default: {
-    serialize: jest.fn((data) => ({ json: data, meta: undefined })),
-    deserialize: jest.fn((data) => data.json),
-  },
-}));
+jest.spyOn(superjson, "serialize").mockImplementation((data) => ({ json: data, meta: undefined }));
+jest.spyOn(superjson, "deserialize").mockImplementation((data) => data.json);
+jest.spyOn(superjson, "registerCustom").mockImplementation(jest.fn());
 
 jest.mock("~/server/auth");
 jest.mock("@integral-2025-app/db", () => ({
