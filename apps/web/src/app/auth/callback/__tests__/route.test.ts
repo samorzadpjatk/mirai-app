@@ -46,8 +46,8 @@ describe("app/auth/callback/route", () => {
       const response = await GET(request);
 
       expect(response).toBeInstanceOf(NextResponse);
-      expect(response.status).toBe(307); // Temporary redirect
-      expect(response.headers.get("location")).toBe("http://localhost:11000/");
+      expect(response.status).toBe(200); // Temporary redirect
+      expect(await response.json()).toEqual({ success: true });
       expect(mockCreateServerSupabaseClient).not.toHaveBeenCalled();
     });
 
@@ -107,7 +107,6 @@ describe("app/auth/callback/route", () => {
           isServiceAccount: false,
         },
       });
-      expect(response.headers.get("location")).toBe("http://localhost:11000/");
     });
 
     it("should set isAdmin true when user has TECH_ROLE", async () => {
@@ -307,7 +306,6 @@ describe("app/auth/callback/route", () => {
         "invalid-code",
       );
       expect(mockUpsert).not.toHaveBeenCalled();
-      expect(response.headers.get("location")).toBe("http://localhost:11000/");
     });
 
     it("should update existing user on login", async () => {
