@@ -19,6 +19,15 @@ import {
   requireModerator,
 } from "~/server/auth";
 
+superjson.registerCustom<Date, number>(
+  {
+    isApplicable: (v): v is Date => v instanceof Date,
+    serialize: (v) => v.getTime(),
+    deserialize: (v) => new Date(v),
+  },
+  "date-as-timestamp"
+)
+
 /**
  * 1. CONTEXT
  *
