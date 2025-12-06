@@ -9,7 +9,7 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "types": ["node", "jest", "@testing-library/jest-dom"],
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
     "paths": {
       "~/*": ["./src/*"],
       "@integral-2025-app/common-types": ["../common-types/src/index.ts"]

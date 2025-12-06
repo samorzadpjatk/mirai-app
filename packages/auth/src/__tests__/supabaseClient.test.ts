@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from "vitest";
 import createSupabaseClient from "~/supabaseClient";
 
 describe("createSupabaseClient", () => {
@@ -13,9 +14,9 @@ describe("createSupabaseClient", () => {
 
   it("should accept custom storage options", () => {
     const mockStorage = {
-      getItem: jest.fn(),
-      setItem: jest.fn(),
-      removeItem: jest.fn(),
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
     };
 
     const client = createSupabaseClient(

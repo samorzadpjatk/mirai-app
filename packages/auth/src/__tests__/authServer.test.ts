@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from "vitest";
 import {
   parseRolesFromToken,
   hasRequiredRole,
@@ -7,14 +8,13 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "../authServer";
-import type { User } from "@integral-2025-app/common-types";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 const mockSupabaseClient = () => {
   return {
     auth: {
-      getUser: jest.fn(),
-      getSession: jest.fn(),
+      getUser: vi.fn(),
+      getSession: vi.fn(),
     },
   } as unknown as SupabaseClient;
 };
@@ -54,7 +54,7 @@ describe("auth server", () => {
         email: "test@example.com",
         created_at: "2024-01-01",
       };
-      (client.auth.getUser as jest.Mock).mockResolvedValue({
+      (client.auth.getUser as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
@@ -65,9 +65,9 @@ describe("auth server", () => {
 
     it("should return null on error", async () => {
       const client = mockSupabaseClient();
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
 
-      (client.auth.getUser as jest.Mock).mockResolvedValue({
+      (client.auth.getUser as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { user: null },
         error: new Error("Auth error"),
       });
@@ -91,7 +91,7 @@ describe("auth server", () => {
         refresh_token: "refresh",
         user: { id: "user-123" },
       };
-      (client.auth.getSession as jest.Mock).mockResolvedValue({
+      (client.auth.getSession as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { session: mockSession },
         error: null,
       });
@@ -102,9 +102,9 @@ describe("auth server", () => {
 
     it("should return null on error", async () => {
       const client = mockSupabaseClient();
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation();
 
-      (client.auth.getSession as jest.Mock).mockResolvedValue({
+      (client.auth.getSession as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { session: null },
         error: new Error("Session error"),
       });
@@ -154,7 +154,7 @@ describe("auth server", () => {
 
   describe("mapDatabaseUserToAuthUser", () => {
     it("should map database user to auth user with only auth-relevant fields", () => {
-      const dbUser: User = {
+      const dbUser = {
         id: "1",
         authUserId: "sub-1",
         email: "user@test.com",
@@ -185,7 +185,7 @@ describe("auth server", () => {
     });
 
     it("should return null if authUserId is missing", () => {
-      const dbUser: User = {
+      const dbUser = {
         id: "1",
         authUserId: null,
         email: "user@test.com",

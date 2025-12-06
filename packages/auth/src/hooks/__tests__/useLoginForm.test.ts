@@ -1,15 +1,20 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useLoginForm } from "../useLoginForm";
 import { useAuth } from "../../authHooks";
 
-jest.mock("../../authHooks");
+vi.mock("../../authHooks", () => ({
+  useAuth: vi.fn(),
+}));
+
+const mockedUseAuth = vi.mocked(useAuth);
 
 describe("useLoginForm", () => {
-  const mockSignInWithEmail = jest.fn();
+  const mockSignInWithEmail = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useAuth as jest.Mock).mockReturnValue({
+    vi.clearAllMocks();
+    mockedUseAuth.mockReturnValue({
       signInWithEmail: mockSignInWithEmail,
     });
   });
@@ -81,7 +86,7 @@ describe("useLoginForm", () => {
 
   it("should successfully submit login form", async () => {
     mockSignInWithEmail.mockResolvedValue(undefined);
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {
@@ -122,7 +127,10 @@ describe("useLoginForm", () => {
     expect(result.current.formState.isLoading).toBe(false);
 
     // Start submission - don't await yet
-    const submitPromise = result.current.handleSubmit();
+    let submitPromise: Promise<void>;
+    act(() => {
+      submitPromise = result.current.handleSubmit();
+    });
 
     // Loading should be true immediately after calling handleSubmit
     await waitFor(() => {
@@ -134,7 +142,7 @@ describe("useLoginForm", () => {
 
     // Wait for submission to complete
     await act(async () => {
-      await submitPromise;
+      await submitPromise!;
     });
 
     // Loading should be false after completion
@@ -202,7 +210,7 @@ describe("useLoginForm", () => {
 
   it("should not call onSuccess if submission fails", async () => {
     mockSignInWithEmail.mockRejectedValue(new Error("Network error"));
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {
