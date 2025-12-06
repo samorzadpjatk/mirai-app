@@ -1,16 +1,12 @@
-import { defineConfig } from "vitest/config";
-import path from "path";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createVitestConfig } from "@integral-2025-app/vitest-config";
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: "node",
-    setupFiles: ["./vitest.setup.ts"],
-    include: ["src/**/__tests__/**/*.test.ts"],
-  },
-  resolve: {
-    alias: {
-      "~": path.resolve(__dirname, "./src"),
-    },
-  },
+const rootDir = dirname(fileURLToPath(import.meta.url));
+
+export default createVitestConfig({
+  dirname: rootDir,
+  environment: "node",
+  setupFiles: ["./vitest.setup.ts"],
+  include: ["src/**/__tests__/**/*.test.ts"],
 });

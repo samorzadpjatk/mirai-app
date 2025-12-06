@@ -33,12 +33,12 @@
     "zod": "^4.1.4"
   },
   "devDependencies": {
+    "@integral-2025-app/vitest-config": "workspace:*",
     "@types/node": "^24.3.0",
-    "@vitest/ui": "^4.0.11",
+    "@vitest/coverage-v8": "^4.0.15",
     "prisma": "^6.15.0",
-    "server-only": "^0.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.8.2",
-    "vitest": "^4.0.11"
+    "vitest": "^4.0.15"
   }
 }
