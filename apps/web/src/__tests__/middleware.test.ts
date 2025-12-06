@@ -2,7 +2,7 @@
  * @vitest-environment node
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, type NextResponse } from "next/server";
 
 // Mock the @supabase/ssr package
 const mockCreateServerClient = vi.fn();

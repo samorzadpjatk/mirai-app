@@ -8,7 +8,7 @@ import {
   AuthenticationError,
   AuthorizationError,
 } from "../authServer";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { type SupabaseClient } from "@supabase/supabase-js";
 
 const mockSupabaseClient = () => {
   return {
