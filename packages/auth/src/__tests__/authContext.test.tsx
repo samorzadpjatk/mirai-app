@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { renderHook, act } from "@testing-library/react";
-import { AuthProvider, AuthContext } from "../AuthContext";
+import { AuthProvider } from "../AuthContext";
 import { useAuth } from "../authHooks";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AuthUser } from "../types";
