@@ -1,17 +1,21 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { executeWithRetry } from "../resilience";
 
 const err = new Error("TEST_ERR");
-const onError = jest.fn((_err: unknown, _attempt: number) => void 0);
 
 describe("resilience", () => {
   describe("executeWithRetry", () => {
+    let onError: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      onError = vi.fn();
+    });
     it("should execute once when succeeds on first try", async () => {
-      const toExecute = jest.fn(async () => "success");
+      const toExecute = vi.fn(async () => "success");
 
       const result = await executeWithRetry(
         toExecute,
-        onError,
+        onError as (err: unknown, attempt: number) => void,
         undefined,
         3,
         10,
@@ -24,7 +28,7 @@ describe("resilience", () => {
 
     it("should retry on failure", async () => {
       let attempts = 0;
-      const toExecute = jest.fn(async () => {
+      const toExecute = vi.fn(async () => {
         attempts++;
         if (attempts === 1) throw err;
         return "success";
@@ -32,7 +36,7 @@ describe("resilience", () => {
 
       const result = await executeWithRetry(
         toExecute,
-        onError,
+        onError as (err: unknown, attempt: number) => void,
         undefined,
         3,
         10,
@@ -48,12 +52,12 @@ describe("resilience", () => {
     });
 
     it("should stop and throw after max retries", async () => {
-      const toExecute = jest.fn(async () => {
+      const toExecute = vi.fn(async () => {
         throw err;
       });
 
       await expect(
-        executeWithRetry(toExecute, onError, undefined, 2, 10),
+        executeWithRetry(toExecute, onError as (err: unknown, attempt: number) => void, undefined, 2, 10),
       ).rejects.toThrow(err.message);
 
       expect(toExecute).toHaveBeenCalledTimes(2);
@@ -63,7 +67,7 @@ describe("resilience", () => {
 
     it("should retry until valid result", async () => {
       let attempts = 0;
-      const toExecute = jest.fn(async () => {
+      const toExecute = vi.fn(async () => {
         attempts++;
         return { status: attempts === 2 ? "success" : "pending" };
       });
@@ -72,7 +76,7 @@ describe("resilience", () => {
 
       const result = await executeWithRetry(
         toExecute,
-        onError,
+        onError as (err: unknown, attempt: number) => void,
         isValidResult,
         3,
         10,
@@ -84,12 +88,12 @@ describe("resilience", () => {
     });
 
     it("should fail if no valid result after max retries", async () => {
-      const toExecute = jest.fn(async () => ({ status: "pending" }));
+      const toExecute = vi.fn(async () => ({ status: "pending" }));
       const isValidResult = (result: { status: string }) =>
         result.status === "success";
 
       await expect(
-        executeWithRetry(toExecute, onError, isValidResult, 2, 10),
+        executeWithRetry(toExecute, onError as (err: unknown, attempt: number) => void, isValidResult, 2, 10),
       ).rejects.toThrow("None of the 2 retry attempts provided a valid result");
 
       expect(toExecute).toHaveBeenCalledTimes(2);

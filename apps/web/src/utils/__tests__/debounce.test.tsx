@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import React, { useState } from 'react'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import useDebounce from '../debounce'
 
 describe('useDebounce', () => {
     beforeEach(() => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
     })
 
     afterEach(() => {
-        jest.useRealTimers()
+        vi.useRealTimers()
     })
 
     it('should return initial value immediately and update after delay when prop changes', async () => {
@@ -36,7 +37,7 @@ describe('useDebounce', () => {
 
         // advance timers by delay and run pending timers
         act(() => {
-            jest.advanceTimersByTime(500)
+            vi.advanceTimersByTime(500)
         })
 
         expect(out.textContent).toBe('changed')

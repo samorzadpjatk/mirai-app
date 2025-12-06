@@ -1,12 +1,14 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { MockedFunction } from "vitest";
 import { GET } from "../route";
 import { createServerSupabaseClient } from "~/lib/supabase/server";
 import { db } from "@integral-2025-app/db";
 import { NextRequest, NextResponse } from "next/server";
 
-jest.mock("~/env", () => ({
+vi.mock("~/env", () => ({
   env: {
     ADMIN_ROLE: "admin",
     TECH_ROLE: "tech",
@@ -15,24 +17,24 @@ jest.mock("~/env", () => ({
   },
 }));
 
-jest.mock("~/lib/supabase/server");
-jest.mock("@integral-2025-app/db", () => ({
+vi.mock("~/lib/supabase/server");
+vi.mock("@integral-2025-app/db", () => ({
   db: {
     user: {
-      upsert: jest.fn(),
+      upsert: vi.fn(),
     },
   },
 }));
 
 const mockCreateServerSupabaseClient =
-  createServerSupabaseClient as jest.MockedFunction<
+  createServerSupabaseClient as MockedFunction<
     typeof createServerSupabaseClient
   >;
-const mockUpsert = db.user.upsert as jest.MockedFunction<typeof db.user.upsert>;
+const mockUpsert = db.user.upsert as MockedFunction<typeof db.user.upsert>;
 
 describe("app/auth/callback/route", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     process.env.ADMIN_ROLE = "admin";
     process.env.TECH_ROLE = "tech";
     process.env.MODERATOR_ROLE = "moderator";
@@ -65,7 +67,7 @@ describe("app/auth/callback/route", () => {
 
       const mockSupabase = {
         auth: {
-          exchangeCodeForSession: jest.fn().mockResolvedValue({
+          exchangeCodeForSession: vi.fn().mockResolvedValue({
             data: { user: mockSupabaseUser },
             error: null,
           }),
@@ -122,7 +124,7 @@ describe("app/auth/callback/route", () => {
 
       const mockSupabase = {
         auth: {
-          exchangeCodeForSession: jest.fn().mockResolvedValue({
+          exchangeCodeForSession: vi.fn().mockResolvedValue({
             data: { user: mockSupabaseUser },
             error: null,
           }),
@@ -167,7 +169,7 @@ describe("app/auth/callback/route", () => {
 
       const mockSupabase = {
         auth: {
-          exchangeCodeForSession: jest.fn().mockResolvedValue({
+          exchangeCodeForSession: vi.fn().mockResolvedValue({
             data: { user: mockSupabaseUser },
             error: null,
           }),
@@ -212,7 +214,7 @@ describe("app/auth/callback/route", () => {
 
       const mockSupabase = {
         auth: {
-          exchangeCodeForSession: jest.fn().mockResolvedValue({
+          exchangeCodeForSession: vi.fn().mockResolvedValue({
             data: { user: mockSupabaseUser },
             error: null,
           }),
@@ -256,7 +258,7 @@ describe("app/auth/callback/route", () => {
 
       const mockSupabase = {
         auth: {
-          exchangeCodeForSession: jest.fn().mockResolvedValue({
+          exchangeCodeForSession: vi.fn().mockResolvedValue({
             data: { user: mockSupabaseUser },
             error: null,
           }),
@@ -287,7 +289,7 @@ describe("app/auth/callback/route", () => {
     it("should handle Supabase auth error", async () => {
       const mockSupabase = {
         auth: {
-          exchangeCodeForSession: jest.fn().mockResolvedValue({
+          exchangeCodeForSession: vi.fn().mockResolvedValue({
             data: { user: null },
             error: { message: "Invalid code" },
           }),
@@ -322,7 +324,7 @@ describe("app/auth/callback/route", () => {
 
       const mockSupabase = {
         auth: {
-          exchangeCodeForSession: jest.fn().mockResolvedValue({
+          exchangeCodeForSession: vi.fn().mockResolvedValue({
             data: { user: mockSupabaseUser },
             error: null,
           }),

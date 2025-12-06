@@ -1,11 +1,12 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 
 // Mock the @supabase/ssr package
-const mockCreateServerClient = jest.fn();
-jest.mock("@supabase/ssr", () => ({
+const mockCreateServerClient = vi.fn();
+vi.mock("@supabase/ssr", () => ({
   createServerClient: mockCreateServerClient,
 }));
 
@@ -13,8 +14,8 @@ describe("middleware", () => {
   let middleware: (request: NextRequest) => Promise<NextResponse>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-    jest.resetModules();
+    vi.clearAllMocks();
+    vi.resetModules();
 
     process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost:8000";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
@@ -26,7 +27,7 @@ describe("middleware", () => {
   });
 
   it("should call supabase getUser", async () => {
-    const mockGetUser = jest.fn().mockResolvedValue({
+    const mockGetUser = vi.fn().mockResolvedValue({
       data: { user: null },
       error: null,
     });
@@ -46,7 +47,7 @@ describe("middleware", () => {
   });
 
   it("should create supabase client with correct configuration", async () => {
-    const mockGetUser = jest.fn().mockResolvedValue({
+    const mockGetUser = vi.fn().mockResolvedValue({
       data: { user: null },
       error: null,
     });
@@ -78,7 +79,7 @@ describe("middleware", () => {
       email: "test@example.com",
     };
 
-    const mockGetUser = jest.fn().mockResolvedValue({
+    const mockGetUser = vi.fn().mockResolvedValue({
       data: { user: mockUser },
       error: null,
     });
@@ -97,7 +98,7 @@ describe("middleware", () => {
   });
 
   it("should handle requests without user", async () => {
-    const mockGetUser = jest.fn().mockResolvedValue({
+    const mockGetUser = vi.fn().mockResolvedValue({
       data: { user: null },
       error: null,
     });
@@ -117,7 +118,7 @@ describe("middleware", () => {
   });
 
   it("should implement cookies getAll", async () => {
-    const mockGetUser = jest.fn().mockResolvedValue({
+    const mockGetUser = vi.fn().mockResolvedValue({
       data: { user: null },
       error: null,
     });
@@ -143,7 +144,7 @@ describe("middleware", () => {
   });
 
   it("should implement cookies setAll", async () => {
-    const mockGetUser = jest.fn().mockResolvedValue({
+    const mockGetUser = vi.fn().mockResolvedValue({
       data: { user: null },
       error: null,
     });

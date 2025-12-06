@@ -1,3 +1,5 @@
+import { describe, expect, it, beforeEach, vi } from "vitest";
+import type { MockedFunction } from "vitest";
 import {
   getSession,
   requireAuth,
@@ -12,41 +14,41 @@ import {
   requireModerator as requireModeratorBase,
 } from "@integral-2025-app/auth";
 
-jest.mock("~/lib/supabase/server");
-jest.mock("@integral-2025-app/db", () => ({
+vi.mock("~/lib/supabase/server");
+vi.mock("@integral-2025-app/db", () => ({
   db: {
     user: {
-      findUnique: jest.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
-jest.mock("@integral-2025-app/auth", () => ({
-  getSession: jest.fn(),
-  requireAuth: jest.fn(),
-  requireAdmin: jest.fn(),
-  requireModerator: jest.fn(),
+vi.mock("@integral-2025-app/auth", () => ({
+  getSession: vi.fn(),
+  requireAuth: vi.fn(),
+  requireAdmin: vi.fn(),
+  requireModerator: vi.fn(),
 }));
 
 const mockCreateServerSupabaseClient =
-  createServerSupabaseClient as jest.MockedFunction<
+  createServerSupabaseClient as MockedFunction<
     typeof createServerSupabaseClient
   >;
-const mockGetAuthSession = getAuthSession as jest.MockedFunction<
+const mockGetAuthSession = getAuthSession as MockedFunction<
   typeof getAuthSession
 >;
-const mockRequireAuthBase = requireAuthBase as jest.MockedFunction<
+const mockRequireAuthBase = requireAuthBase as MockedFunction<
   typeof requireAuthBase
 >;
-const mockRequireAdminBase = requireAdminBase as jest.MockedFunction<
+const mockRequireAdminBase = requireAdminBase as MockedFunction<
   typeof requireAdminBase
 >;
-const mockRequireModeratorBase = requireModeratorBase as jest.MockedFunction<
+const mockRequireModeratorBase = requireModeratorBase as MockedFunction<
   typeof requireModeratorBase
 >;
 
 describe("server/auth", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("getSession", () => {

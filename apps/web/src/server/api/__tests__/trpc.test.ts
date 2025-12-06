@@ -1,30 +1,32 @@
+import { describe, expect, it, beforeEach, vi } from "vitest";
+import type { MockedFunction } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { createTRPCContext } from "../trpc";
 import { getSession } from "~/server/auth";
 import { db } from "@integral-2025-app/db";
 
-jest.mock("superjson", () => ({
+vi.mock("superjson", () => ({
   default: {
-    serialize: jest.fn((data) => ({ json: data, meta: undefined })),
-    deserialize: jest.fn((data) => data.json),
+    serialize: vi.fn((data) => ({ json: data, meta: undefined })),
+    deserialize: vi.fn((data) => data.json),
   },
 }));
 
-jest.mock("~/server/auth");
-jest.mock("@integral-2025-app/db", () => ({
+vi.mock("~/server/auth");
+vi.mock("@integral-2025-app/db", () => ({
   db: {
     user: {
-      findUnique: jest.fn(),
-      findFirstOrThrow: jest.fn(),
+      findUnique: vi.fn(),
+      findFirstOrThrow: vi.fn(),
     },
   },
 }));
 
-const mockGetSession = getSession as jest.MockedFunction<typeof getSession>;
+const mockGetSession = getSession as MockedFunction<typeof getSession>;
 
 describe("server/api/trpc", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("createTRPCContext", () => {

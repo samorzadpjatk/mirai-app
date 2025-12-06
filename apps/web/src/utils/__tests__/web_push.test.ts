@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "vitest";
 import { arrayBufferToBase64 } from "../web_push";
 
 describe("arrayBufferToBase64", () => {

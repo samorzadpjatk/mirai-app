@@ -93,7 +93,7 @@ pnpm --filter @integral-2025-app/db db:reset           # Resetuj bazę danych
 # Quality
 pnpm --filter @integral-2025-app/web lint               # Sprawdź kod (ESLint)
 pnpm --filter @integral-2025-app/web typecheck          # Sprawdź typy (TypeScript)
-pnpm --filter @integral-2025-app/web test               # Uruchom testy (Jest)
+pnpm --filter @integral-2025-app/web test               # Uruchom testy (Vitest)
 pnpm --filter @integral-2025-app/web format:check       # Sprawdź formatowanie (Prettier)
 pnpm --filter @integral-2025-app/web format:write       # Napraw formatowanie
 ```

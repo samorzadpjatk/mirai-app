@@ -1,12 +1,13 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { MockedFunction, Mocked } from "vitest";
 import { send, sendRanking } from "../webPush";
 import webpush, { WebPushError } from "web-push";
 import { NotificationService } from "~/server/services/notificationService";
 import { type Prisma } from "@integral-2025-app/db";
 
-jest.mock("web-push");
-jest.mock("~/server/services/notificationService");
-jest.mock("~/utils/resilience", () => ({
+vi.mock("web-push");
+vi.mock("~/server/services/notificationService");
+vi.mock("~/utils/resilience", () => ({
   executeWithRetry: async (
     toExecute: () => Promise<unknown>,
     onError: (err: unknown, retryAttempt: number) => void,
@@ -30,28 +31,28 @@ type MockPushSubscription = {
 type MockNotification = { id: string };
 type MockGroup = { id: string; name: string; coins: number };
 
-const notificationCreateMock = jest.fn() as jest.MockedFunction<
+const notificationCreateMock = vi.fn() as MockedFunction<
   (args: unknown) => Promise<MockNotification>
 >;
-const pushSubscriptionFindManyMock = jest.fn() as jest.MockedFunction<
+const pushSubscriptionFindManyMock = vi.fn() as MockedFunction<
   () => Promise<MockPushSubscription[]>
 >;
-const pushSubscriptionDeleteMock = jest.fn() as jest.MockedFunction<
+const pushSubscriptionDeleteMock = vi.fn() as MockedFunction<
   (args: { where: { id: string } }) => Promise<unknown>
 >;
-const notificationPushCreateManyMock = jest.fn() as jest.MockedFunction<
+const notificationPushCreateManyMock = vi.fn() as MockedFunction<
   (args: unknown) => Promise<unknown>
 >;
-const groupFindManyMock = jest.fn() as jest.MockedFunction<
+const groupFindManyMock = vi.fn() as MockedFunction<
   () => Promise<MockGroup[]>
 >;
-const userFindManyMock = jest.fn() as jest.MockedFunction<
+const userFindManyMock = vi.fn() as MockedFunction<
   () => Promise<unknown[]>
 >;
-const mockWebPush = webpush as jest.Mocked<typeof webpush>;
+const mockWebPush = webpush as Mocked<typeof webpush>;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 
   mockWebPush.sendNotification.mockImplementation(async () => {
     return { statusCode: 201 } as unknown as ReturnType<
@@ -84,7 +85,7 @@ describe("webPush", () => {
   } as unknown as Prisma.TransactionClient;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("send", () => {
@@ -209,10 +210,10 @@ describe("webPush", () => {
   });
 
   describe("sendRanking", () => {
-    let createRankingSpy: ReturnType<typeof jest.spyOn>;
+    let createRankingSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      createRankingSpy = jest
+      createRankingSpy = vi
         .spyOn(NotificationService, "createRankingUpdateNotification")
         .mockReturnValue({
           title: "Ranking Update",

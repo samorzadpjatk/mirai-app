@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { describe, it, expect } from "vitest";
 import { formatDate, formatAmount, formatDateTime, getBaseUrl } from '../format';
 
 describe('formatDate', () => {
