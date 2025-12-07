@@ -1,18 +1,18 @@
 import { Button, Grid, Text } from "@radix-ui/themes";
 import Link from "next/link";
-import { getSession } from "~/server/auth";
+import { requireAuth } from "@integral-2025-app/auth";
 import { db } from "@integral-2025-app/db";
+import { supabase } from "@integral-2025-app/supabase";
 
 export default async function NavGrid() {
-  const session = await getSession();
-  const dbUser = session?.authUserId
-    ? await db.user.findUnique({
-        where: { authUserId: session.authUserId },
-      })
-    : null;
+  const { user, dbUser } = await requireAuth(supabase, async (authUserId: string) => {
+    return await db.user.findUnique({
+      where: { authUserId },
+    });
+  });
   return (
     <>
-      {session?.user && dbUser && (
+      {user && dbUser && (
         <>
           <Grid columns={"1"} gap={"2"} rows={"repeat(2, 1fr)"} width={"100%"}>
             {!dbUser.isAdmin && (

@@ -2,22 +2,21 @@ import { HomeIcon } from "@radix-ui/react-icons";
 import { Flex, Avatar, Button, IconButton, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSession } from "~/server/auth";
-import { createServerSupabaseClient } from "~/lib/supabase/server";
+import { requireAuth } from "@integral-2025-app/auth";
+import { supabase } from "@integral-2025-app/supabase";
 import { db } from "@integral-2025-app/db";
 
 export default async function TopBar() {
-  const session = await getSession();
-  const dbUser = session?.authUserId
-    ? await db.user.findUnique({
-        where: { authUserId: session.authUserId },
-      })
-    : null;
+  const { user, dbUser } = await requireAuth(supabase, async (authUserId: string) => {
+    const user = await db.user.findFirst({
+      where: { authUserId },
+    });
+    return user;
+  });
 
   async function handleSign() {
     "use server";
-    if (session?.user) {
-      const supabase = await createServerSupabaseClient();
+    if (user) {
       await supabase.auth.signOut();
       redirect("/");
     } else {
@@ -40,7 +39,7 @@ export default async function TopBar() {
         </IconButton>
       </Link>
       <Flex direction="row" align="center" gap="2">
-        {session?.user && dbUser && (
+        {user && dbUser && (
           <Flex direction="row" align="center" justify="center" gap="2">
             <Avatar
               variant={"solid"}
@@ -66,7 +65,7 @@ export default async function TopBar() {
           <Button>
             <input
               type="submit"
-              value={session?.user ? "Sign Out" : "Sign In"}
+              value={user ? "Sign Out" : "Sign In"}
             />
           </Button>
         </form>
