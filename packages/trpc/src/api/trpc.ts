@@ -11,9 +11,14 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-// import { auth } from "~/server/auth";
-// import { db } from "~/server/db";
-// import { supabase } from "~/server/supabase"
+import {
+  getServerSession,
+  requireAdmin,
+  requireAuth,
+  requireModerator,
+} from "@integral-2025-app/auth";
+import { createSupabaseClient } from "@integral-2025-app/supabase";
+import { db } from "@integral-2025-app/db";
 
 /**
  * 1. CONTEXT
@@ -28,12 +33,13 @@ import { ZodError } from "zod";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  // const session = await auth();
+  const supabase = createSupabaseClient();
+  const session = await getServerSession(supabase);
 
   return {
-    // db,
-    // supabase,
-    // session,
+    db,
+    supabase,
+    session,
     ...opts,
   };
 };
@@ -122,14 +128,17 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  */
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    // if (!ctx.session?.user) {
-    //   throw new TRPCError({ code: "UNAUTHORIZED" });
-    // }
+  .use(async ({ ctx, next }) => {
+    const user = await requireAuth(ctx.supabase, async (authUserId: string) => {
+      const user = await ctx.db.user.findFirst({
+        where: { authUserId },
+      });
+      return user;
+    });
     return next({
       ctx: {
         // infers the `session` as non-nullable
-        // session: { ...ctx.session, user: ctx.session.user },
+        session: { ...ctx.session, user: user },
       },
     });
   });
@@ -144,49 +153,40 @@ export const protectedProcedure = t.procedure
  */
 export const moderatorProcedure = t.procedure
   .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    // if (!ctx.session?.user?.isAdmin && !ctx.session?.user?.isModerator) {
-    //   throw new TRPCError({ code: "UNAUTHORIZED" });
-    // }
+  .use(async ({ ctx, next }) => {
+    const user = await requireModerator(
+      ctx.supabase,
+      async (authUserId: string) => {
+        const user = await ctx.db.user.findFirst({
+          where: { authUserId },
+        });
+        return user;
+      },
+    );
     return next({
       ctx: {
         // infers the `session` as non-nullable
-        // session: { ...ctx.session, user: ctx.session.user },
+        session: { ...ctx.session, user: user },
       },
     });
   });
 
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    // if (!ctx.session?.user?.isAdmin) {
-    //   throw new TRPCError({ code: "UNAUTHORIZED" });
-    // }
-    return next({
-      ctx: {
-        // infers the `session` as non-nullable
-        // session: { ...ctx.session, user: ctx.session.user },
-      },
-    });
-  });
-
-export const serviceAccountProcedure = t.procedure
-  .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    // Optional: Add some basic authentication/API key check
-    const authHeader = ctx.headers.get("authorization");
-    // const expectedAuth = process.env.SCHEDULER_API_KEY;
-
-    // if (authHeader !== `Bearer ${expectedAuth}`) {
-    //   throw new TRPCError({ code: "UNAUTHORIZED" });
-    // }
-    // const user = await db.user.findFirstOrThrow({
-    //   where: { isServiceAccount: true },
-    // });
+    const user = await requireAdmin(
+      ctx.supabase,
+      async (authUserId: string) => {
+        const user = await ctx.db.user.findFirst({
+          where: { authUserId },
+        });
+        return user;
+      },
+    );
     return next({
       ctx: {
         // infers the `session` as non-nullable
-        // session: { ...ctx.session, user: user },
+        session: { ...ctx.session, user: user },
       },
     });
   });

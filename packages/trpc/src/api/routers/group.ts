@@ -18,7 +18,7 @@ export const groupRouter = createTRPCRouter({
   }),
   getMy: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
-      where: { id: ctx.session.user.id },
+      where: { id: ctx.session.user.dbUser.id },
       select: {
         group: { select: { id: true, name: true } },
         organizerGroup: { select: { id: true, name: true } },
