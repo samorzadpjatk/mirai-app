@@ -5,7 +5,7 @@
     "composite": false,
     "noEmit": false,
     "module": "ESNext",
-    "moduleResolution": "node"
+    "moduleResolution": "bundler"
   },
   "exclude": [
     "node_modules",
