@@ -55,13 +55,5 @@ User: user@pjatk.dev / user123
 Student: student@pjatk.dev / student123
 Staff: staff@pjatk.dev / staff123
 
-## Hasło do fikcyjnych kont
-
-`MockUser123`
-
-## Hasło do konta administracyjnego `akadmin` w Authentik
-
-zmienna środowiskowa `AUTHENTIK_BOOTSTRAP_PASSWORD` w pliku `.env.example`
-
 ## Problemy z Windows
 W przypadku problemów, upewnij się, że masz skonfigurowane LF End of Line sequences, [follow this gist to fix](https://gist.github.com/tjsudarsan/f2bfe4c4d567243e302cf8ba40e1c7e5).

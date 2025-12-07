@@ -19,7 +19,7 @@ Progressive Web App zbudowana na bazie T3 Stack z obsługą powiadomień push i 
 
 ## Szybki Start
 
-Najpierw upewnij się, że ukończyłeś wszystkie kroki z inicjalizacji [środowiska deweloperskiego](../../dev_environment/README.md)
+Najpierw upewnij się, że ukończyłeś wszystkie kroki z inicjalizacji [środowiska deweloperskiego](../../environment/dev/README.md)
 
 ```bash
 # Uruchom serwer deweloperski

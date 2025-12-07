@@ -1,5 +1,5 @@
 # =============================================================================
-# PJApp Development Environment - Supabase + Authentik Integration
+# PJApp Production Environment - Supabase + Authentik Integration
 # =============================================================================
 #
 # This Docker Compose configuration provides a complete local development
