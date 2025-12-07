@@ -3,10 +3,12 @@ import { Flex, Avatar, Button, IconButton, Text } from "@radix-ui/themes";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAuth } from "@integral-2025-app/auth";
-import { supabase } from "@integral-2025-app/supabase";
+import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { db } from "@integral-2025-app/db";
+import { env } from "~/env";
 
 export default async function TopBar() {
+  const supabase = createSupabaseClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
   const { user, dbUser } = await requireAuth(supabase, async (authUserId: string) => {
     const user = await db.user.findFirst({
       where: { authUserId },

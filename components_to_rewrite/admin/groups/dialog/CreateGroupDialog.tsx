@@ -2,7 +2,6 @@
 
 import { Dialog, Flex, TextField, Select, Button, Text, Skeleton } from "@radix-ui/themes";
 import { useState } from "react";
-import { api } from "~/trpc/react";
 import { PlusIcon } from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
 

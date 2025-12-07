@@ -4,7 +4,6 @@ import { MinusIcon } from "@radix-ui/react-icons";
 import { AlertDialog, Flex, Button, Skeleton } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { api } from "~/trpc/react";
 
 const RemoveUserFromGroupFormDialog = ({
     selectedUserId,

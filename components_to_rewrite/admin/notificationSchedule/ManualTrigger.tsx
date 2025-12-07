@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button, Card, Flex, Text, Heading, Select, TextField, TextArea } from "@radix-ui/themes";
-import { api } from "~/trpc/react";
 
 interface ManualTriggerResult {
   success: boolean,

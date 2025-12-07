@@ -5,7 +5,6 @@ import { Card, Heading, Flex, Button, Select, TextField, TextArea, Text } from "
 import { useRouter } from "next/navigation"
 
 import { useState } from "react"
-import { api } from "~/trpc/react"
 
 const CoinOperationFormCard = () => {
     const router = useRouter();

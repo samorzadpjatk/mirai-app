@@ -1,10 +1,8 @@
 "use client"
 
-import useDebounce from "~/utils/debounce";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Box, Card, Flex, Heading, Text, TextField } from "@radix-ui/themes";
 import { useState } from "react";
-import { api } from "~/trpc/react";
 import TransactionCardList from "./TransactionCardList";
 import TransactionListFilterPopover from "./popover/TransactionListFilterPopover";
 
@@ -17,7 +15,7 @@ const TransactionCardListView = () => {
         groupId: selectedGroupId && selectedGroupId !== "all" ? selectedGroupId : undefined,
         limit,
     });
-    const [filteredTransactions, setFilteredTransactions] = useDebounce(transactions, 300);
+    const [filteredTransactions, setFilteredTransactions] = useState(transactions);
 
     return (
         <Card>

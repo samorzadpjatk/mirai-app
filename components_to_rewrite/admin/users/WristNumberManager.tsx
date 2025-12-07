@@ -3,26 +3,25 @@
 import { useState } from "react";
 import { Button, Flex, TextField, Text, Dialog } from "@radix-ui/themes";
 import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
-import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 
-interface HouseNumberManagerProps {
+interface WristNumberManagerProps {
   userId: string;
   userName: string;
-  currentHouseNumber?: string | null;
+  currentWristNumber?: string | null;
 }
 
-export default function HouseNumberManager({ 
+export default function WristNumberManager({ 
   userId, 
   userName, 
-  currentHouseNumber 
-}: HouseNumberManagerProps) {
+  currentWristNumber 
+}: WristNumberManagerProps) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [houseNumber, setHouseNumber] = useState(currentHouseNumber ?? "");
+  const [wristNumber, setWristNumber] = useState(currentWristNumber ?? "");
   const [error, setError] = useState("");
 
-  const updateHouseNumberMutation = api.user.updateHouseNumber.useMutation({
+  const updateWristNumberMutation = api.user.updateWristNumber.useMutation({
     onSuccess: () => {
       setIsDialogOpen(false);
       setError("");
@@ -33,7 +32,7 @@ export default function HouseNumberManager({
     },
   });
 
-  const removeHouseNumberMutation = api.user.removeHouseNumber.useMutation({
+  const removeWristNumberMutation = api.user.removeWristNumber.useMutation({
     onSuccess: () => {
       setIsDialogOpen(false);
       setError("");
@@ -45,25 +44,25 @@ export default function HouseNumberManager({
   });
 
   const handleSave = () => {
-    if (!houseNumber.trim()) {
-      setError("House number cannot be empty");
+    if (!wristNumber.trim()) {
+      setError("Wrist number cannot be empty");
       return;
     }
     
     setError("");
-    updateHouseNumberMutation.mutate({
+    updateWristNumberMutation.mutate({
       userId,
-      houseNumber: houseNumber.trim(),
+      wristNumber: wristNumber.trim(),
     });
   };
 
   const handleRemove = () => {
     setError("");
-    removeHouseNumberMutation.mutate({ userId });
+    removeWristNumberMutation.mutate({ userId });
   };
 
   const handleOpenDialog = () => {
-    setHouseNumber(currentHouseNumber ?? "");
+    setWristNumber(currentWristNumber ?? "");
     setError("");
     setIsDialogOpen(true);
   };
@@ -73,34 +72,34 @@ export default function HouseNumberManager({
       <Button
         size="1"
         variant="soft"
-        color={currentHouseNumber ? "green" : "gray"}
+        color={currentWristNumber ? "green" : "gray"}
         onClick={handleOpenDialog}
       >
         <PlusIcon />
-        {currentHouseNumber ? "Change house number" : "Assign house number"}
+        {currentWristNumber ? "Change wrist number" : "Assign wrist number"}
       </Button>
 
       <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <Dialog.Content style={{ maxWidth: 450 }}>
           <Dialog.Title>
-            {currentHouseNumber ? "Change house number" : "Assign house number"}
+            {currentWristNumber ? "Change wrist number" : "Assign wrist number"}
           </Dialog.Title>
           <Dialog.Description size="2" mb="4">
-            {currentHouseNumber 
-              ? `Change house number for user: ${userName}`
-              : `Assign house number for user: ${userName}`
+            {currentWristNumber 
+              ? `Change wrist number for user: ${userName}`
+              : `Assign wrist number for user: ${userName}`
             }
           </Dialog.Description>
 
           <Flex direction="column" gap="3">
             <div>
               <Text as="div" size="2" mb="1" weight="bold">
-                Numer domku
+                Numer opaski
               </Text>
               <TextField.Root
-                value={houseNumber}
-                onChange={(e) => setHouseNumber(e.target.value)}
-                placeholder="Type house number..."
+                value={wristNumber}
+                onChange={(e) => setWristNumber(e.target.value)}
+                placeholder="Type wrist number..."
                 style={{ width: "100%" }}
               />
               {error && (
@@ -113,15 +112,15 @@ export default function HouseNumberManager({
 
           <Flex gap="3" mt="4" justify="between">
             <div>
-              {currentHouseNumber && (
+              {currentWristNumber && (
                 <Button
                   variant="soft"
                   color="red"
                   onClick={handleRemove}
-                  disabled={removeHouseNumberMutation.isPending}
+                  disabled={removeWristNumberMutation.isPending}
                 >
                   <TrashIcon />
-                  {removeHouseNumberMutation.isPending ? "Removing..." : "Remove house number"}
+                  {removeWristNumberMutation.isPending ? "Removing..." : "Remove wrist number"}
                 </Button>
               )}
             </div>
@@ -134,9 +133,9 @@ export default function HouseNumberManager({
               </Dialog.Close>
               <Button
                 onClick={handleSave}
-                disabled={updateHouseNumberMutation.isPending || !houseNumber.trim()}
+                disabled={updateWristNumberMutation.isPending || !wristNumber.trim()}
               >
-                {updateHouseNumberMutation.isPending ? "Saving..." : "Save"}
+                {updateWristNumberMutation.isPending ? "Saving..." : "Save"}
               </Button>
             </Flex>
           </Flex>

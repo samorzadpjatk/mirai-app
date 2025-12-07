@@ -1,7 +1,6 @@
 import { Card, DataList, Heading, Text } from "@radix-ui/themes";
 import { Suspense } from "react";
 import TransactionStatisticsDataListSkeleton from "~/components/skelethons/TransactionStatisticsDataListSkeleton";
-import { api } from "~/trpc/server";
 
 const TransactionStatisticsDataList = async () => {
     const transactionsStatistics = await api.coinTransaction.getStatistics();

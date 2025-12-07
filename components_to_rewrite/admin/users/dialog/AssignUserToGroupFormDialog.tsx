@@ -4,7 +4,6 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import { Flex, Button, Select, Text, Dialog, Skeleton } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { api } from "~/trpc/react";
 
 const AssignUserToGroupFormDialog = ({
   selectedUserId,
@@ -22,9 +21,9 @@ const AssignUserToGroupFormDialog = ({
 
   const availableGroups =
     groups?.filter(
-      (group) =>
+      (group: any) =>
         user?.group?.id !== group.id &&
-        !user?.organizerGroup?.some((og) => og.id === group.id),
+        !user?.organizerGroup?.some((og: any) => og.id === group.id),
     ) ?? [];
 
   const assignUserMutation = api.group.assignUserToGroup.useMutation({
@@ -78,7 +77,7 @@ const AssignUserToGroupFormDialog = ({
               >
                 <Select.Trigger placeholder="Select guild..." />
                 <Select.Content>
-                  {availableGroups.map((group) => (
+                  {availableGroups.map((group: any) => (
                     <Select.Item key={group.id} value={group.id}>
                       {group.name}
                     </Select.Item>

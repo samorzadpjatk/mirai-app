@@ -1,6 +1,5 @@
 import { Flex, Card, Strong, Badge, Text } from "@radix-ui/themes";
 import { Suspense } from "react";
-import { api } from "~/trpc/server";
 import EditGroupDialog from "./dialog/EditGroupDialog";
 import DeleteGroupDialog from "./dialog/DeleteGroupDialog";
 import GroupCardListSkeleton from "~/components/skelethons/GroupCardListSkelethon";

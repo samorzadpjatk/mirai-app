@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { MagnifyingGlassIcon, Cross2Icon } from "@radix-ui/react-icons";
 import { TextField, Button, Flex, Text, Badge } from "@radix-ui/themes";
-import useDebounce from "~/utils/debounce";
 
 interface UserSearchBarProps {
   onSearch: (searchTerm: string) => void;

@@ -3,7 +3,6 @@
 import { TrashIcon, StarIcon } from "@radix-ui/react-icons";
 import { Button, Skeleton } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
-import { api } from "~/trpc/react";
 
 const ChangeUserAdminButton = ({ selectedUserId }: { selectedUserId: string }) => {
     const router = useRouter();

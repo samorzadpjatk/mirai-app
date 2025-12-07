@@ -1,6 +1,5 @@
 import { Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { formatAmount, formatDate } from "~/utils/format";
-import { api } from "~/trpc/server";
 import { Suspense } from "react";
 import TransactionAdditionalInsightsSkelethon from "~/components/skelethons/TransactionAdditionalInsightsSkelethon";
 

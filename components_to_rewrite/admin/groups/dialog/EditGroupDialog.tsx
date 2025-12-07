@@ -4,7 +4,6 @@ import { Pencil1Icon } from "@radix-ui/react-icons";
 import { Dialog, Flex, TextField, Select, Separator, Badge, Button, Text, Skeleton } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { api } from "~/trpc/react";
 
 const EditGroupDialog = ({
     selectedGroupId,

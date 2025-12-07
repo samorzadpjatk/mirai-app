@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button, Card, Flex, Text, Badge, Dialog, Heading, Table, TextArea } from "@radix-ui/themes";
-import { api } from "~/trpc/react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import type { NotificationSchedule } from "@integral-2025-app/db";

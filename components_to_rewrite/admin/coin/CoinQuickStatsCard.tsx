@@ -1,7 +1,6 @@
 import { Card, Heading, Text, DataList } from "@radix-ui/themes";
 import { Suspense } from "react";
 import { formatDate } from "~/utils/format";
-import { api } from "~/trpc/server";
 import CoinQuickStatsCardSkeleton from "~/components/skelethons/CoinQuickStatsCardSkelethon";
 
 const CoinQuickStatsCard = async () => {

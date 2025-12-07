@@ -8,7 +8,6 @@ import RemoveUserFromGroupFormDialog from "./dialog/RemoveUserFromGroupFormDialo
 import WristNumberManager from "./WristNumberManager";
 import UserSearchBar from "./UserSearchBar";
 import UserPagination from "./UserPagination";
-import { api } from "~/trpc/react";
 import HouseNumberManager from "./HouseNumberManager";
 import UserSearchFieldDropdownMenu from "./UserSearchFieldDropdownMenu";
 

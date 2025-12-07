@@ -3,13 +3,11 @@
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Card, Heading, Flex, Strong, Badge, Text, DataList, TextField } from "@radix-ui/themes";
 import { Suspense } from "react";
-import useDebounce from "~/utils/debounce";
-import { api } from "~/trpc/react";
 import CoinOperationCardListSkeleton from "~/components/skelethons/CoinOperationCardListSkelethon";
 
 const CoinOperationCardList = () => {
     const { data: groups } = api.group.getAll.useQuery();
-    const [filteredGroups, setFilteredGroups] = useDebounce(groups, 300);
+    const [filteredGroups, setFilteredGroups] = useState(groups);
 
     if (!groups) return null;
 
