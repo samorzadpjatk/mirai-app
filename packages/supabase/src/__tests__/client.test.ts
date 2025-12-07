@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createSupabaseClient } from "../client";
 
 const createBaseSupabaseClientMock = vi.hoisted(() => vi.fn(() => ({ id: "client" })));
 
@@ -6,11 +7,8 @@ vi.mock("../base", () => ({
   default: createBaseSupabaseClientMock,
 }));
 
-const DEFAULT_ENV = {
-  SUPABASE_URL: "https://test.supabase.co",
-  SUPABASE_ANON_KEY: "test-anon-key",
-  NODE_ENV: "test",
-};
+const TEST_URL = "https://test.supabase.co";
+const TEST_ANON_KEY = "test-anon-key";
 
 type StorageLike = {
   getItem: (key: string) => string | null;
@@ -25,19 +23,6 @@ const getLatestAuthOptions = () => {
   return call?.[2]?.auth;
 };
 
-const loadClientModule = async (envOverrides: Partial<typeof DEFAULT_ENV> = {}) => {
-  vi.resetModules();
-  createBaseSupabaseClientMock.mockClear();
-  vi.doMock("../utils/env", () => ({
-    env: {
-      ...DEFAULT_ENV,
-      ...envOverrides,
-    },
-  }));
-
-  return import("../client");
-};
-
 describe("createSupabaseClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -48,41 +33,36 @@ describe("createSupabaseClient", () => {
     delete (globalThis as { window?: unknown }).window;
   });
 
-  it("passes env configuration to the base factory", async () => {
-    const { createSupabaseClient } = await loadClientModule();
-
-    createSupabaseClient();
+  it("passes URL and key to the base factory", () => {
+    createSupabaseClient(TEST_URL, TEST_ANON_KEY);
 
     expect(createBaseSupabaseClientMock).toHaveBeenCalledWith(
-      DEFAULT_ENV.SUPABASE_URL,
-      DEFAULT_ENV.SUPABASE_ANON_KEY,
+      TEST_URL,
+      TEST_ANON_KEY,
       expect.anything()
     );
   });
 
-  it("exposes the value returned by the base factory", async () => {
-    const { createSupabaseClient } = await loadClientModule();
-
-    const client = createSupabaseClient();
+  it("exposes the value returned by the base factory", () => {
+    const client = createSupabaseClient(TEST_URL, TEST_ANON_KEY);
 
     expect(client).toEqual({ id: "client" });
   });
 
-  it("prefers a user-provided storage adapter", async () => {
-    const { createSupabaseClient } = await loadClientModule();
+  it("prefers a user-provided storage adapter", () => {
     const storage = {
       getItem: vi.fn(),
       setItem: vi.fn(),
       removeItem: vi.fn(),
     };
 
-    createSupabaseClient(storage);
+    createSupabaseClient(TEST_URL, TEST_ANON_KEY, storage);
 
     const latestAuth = getLatestAuthOptions();
     expect(latestAuth?.storage).toBe(storage);
   });
 
-  it("uses browser localStorage when available", async () => {
+  it("uses browser localStorage when available", () => {
     const mockLocalStorage = {
       getItem: vi.fn(),
       setItem: vi.fn(),
@@ -96,17 +76,14 @@ describe("createSupabaseClient", () => {
       localStorage: mockLocalStorage,
     } as unknown as Window & typeof globalThis;
 
-    const { createSupabaseClient } = await loadClientModule();
-    createSupabaseClient();
+    createSupabaseClient(TEST_URL, TEST_ANON_KEY);
 
     const latestAuth = getLatestAuthOptions();
     expect(latestAuth?.storage).toBe(mockLocalStorage);
   });
 
-  it("falls back to an in-memory storage implementation", async () => {
-    const { createSupabaseClient } = await loadClientModule();
-
-    createSupabaseClient();
+  it("falls back to an in-memory storage implementation", () => {
+    createSupabaseClient(TEST_URL, TEST_ANON_KEY);
 
     const latestAuth = getLatestAuthOptions();
     const storage = latestAuth?.storage as StorageLike | undefined;
@@ -119,16 +96,15 @@ describe("createSupabaseClient", () => {
     expect(storage?.getItem("key")).toBeNull();
   });
 
-  it("re-reads env configuration on each module load", async () => {
-    const { createSupabaseClient } = await loadClientModule({
-      SUPABASE_URL: "https://override.supabase.co",
-    });
+  it("accepts different URL and key values", () => {
+    const customUrl = "https://custom.supabase.co";
+    const customKey = "custom-anon-key";
 
-    createSupabaseClient();
+    createSupabaseClient(customUrl, customKey);
 
     expect(createBaseSupabaseClientMock).toHaveBeenCalledWith(
-      "https://override.supabase.co",
-      DEFAULT_ENV.SUPABASE_ANON_KEY,
+      customUrl,
+      customKey,
       expect.anything()
     );
   });
