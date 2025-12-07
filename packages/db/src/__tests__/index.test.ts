@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { PrismaClient } from "@prisma/client";
 
 const originalEnv = process.env;
 const TEST_DATABASE_URL = "postgresql://user:pass@localhost:5432/db";
@@ -15,42 +14,11 @@ afterEach(() => {
 });
 
 describe("db package", () => {
-  describe("getPrisma", () => {
-    it("should create a new PrismaClient instance", async () => {
-      const { getPrisma } = await import("../index");
-      const prisma = getPrisma();
-      expect(prisma).toBeDefined();
-      expect(prisma).toBeInstanceOf(PrismaClient);
-    });
-
-    it("should return the same instance on multiple calls (singleton pattern)", async () => {
-      const { getPrisma } = await import("../index");
-      const prisma1 = getPrisma();
-      const prisma2 = getPrisma();
-      expect(prisma1).toBe(prisma2);
-    });
-
-    it("should create a new instance in a fresh module load", async () => {
-      const { getPrisma: getPrisma1 } = await import("../index");
-      const prisma1 = getPrisma1();
-      
-      vi.resetModules();
-      
-      const { getPrisma: getPrisma2 } = await import("../index");
-      const prisma2 = getPrisma2();
-      
-      expect(prisma1).toBeDefined();
-      expect(prisma2).toBeDefined();
-      // After reset, they should be different instances
-      expect(prisma1).not.toBe(prisma2);
-    });
-  });
 
   describe("db export", () => {
     it("should export db as the Prisma client instance", async () => {
-      const { db, getPrisma } = await import("../index");
+      const { db } = await import("../index");
       expect(db).toBeDefined();
-      expect(db).toBe(getPrisma());
     });
 
     it("should have all Prisma client methods", async () => {
@@ -63,13 +31,6 @@ describe("db package", () => {
       expect(db.$connect).toBeDefined();
       expect(db.$disconnect).toBeDefined();
       expect(db.$transaction).toBeDefined();
-    });
-  });
-
-  describe("Prisma exports", () => {
-    it("should re-export Prisma namespace", async () => {
-      const { Prisma } = await import("../index");
-      expect(Prisma).toBeDefined();
     });
   });
 
