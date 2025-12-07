@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from "vitest";
 import {
   parseRolesFromToken,
   hasRequiredRole,
@@ -8,13 +9,13 @@ import {
   AuthorizationError,
 } from "../authServer";
 import type { User } from "@integral-2025-app/common-types";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@integral-2025-app/supabase";
 
 const mockSupabaseClient = () => {
   return {
     auth: {
-      getUser: jest.fn(),
-      getSession: jest.fn(),
+      getUser: vi.fn(),
+      getSession: vi.fn(),
     },
   } as unknown as SupabaseClient;
 };
@@ -54,7 +55,7 @@ describe("auth server", () => {
         email: "test@example.com",
         created_at: "2024-01-01",
       };
-      (client.auth.getUser as jest.Mock).mockResolvedValue({
+      (client.auth.getUser as any).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
@@ -65,9 +66,11 @@ describe("auth server", () => {
 
     it("should return null on error", async () => {
       const client = mockSupabaseClient();
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {}); // eslint-disable-line @typescript-eslint/no-empty-function
 
-      (client.auth.getUser as jest.Mock).mockResolvedValue({
+      (client.auth.getUser as any).mockResolvedValue({
         data: { user: null },
         error: new Error("Auth error"),
       });
@@ -91,7 +94,7 @@ describe("auth server", () => {
         refresh_token: "refresh",
         user: { id: "user-123" },
       };
-      (client.auth.getSession as jest.Mock).mockResolvedValue({
+      (client.auth.getSession as any).mockResolvedValue({
         data: { session: mockSession },
         error: null,
       });
@@ -102,9 +105,11 @@ describe("auth server", () => {
 
     it("should return null on error", async () => {
       const client = mockSupabaseClient();
-      const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {}); // eslint-disable-line @typescript-eslint/no-empty-function
 
-      (client.auth.getSession as jest.Mock).mockResolvedValue({
+      (client.auth.getSession as any).mockResolvedValue({
         data: { session: null },
         error: new Error("Session error"),
       });

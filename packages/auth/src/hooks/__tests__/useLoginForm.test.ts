@@ -1,15 +1,16 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useLoginForm } from "../useLoginForm";
 import { useAuth } from "../../authHooks";
 
-jest.mock("../../authHooks");
+vi.mock("../../authHooks");
 
 describe("useLoginForm", () => {
-  const mockSignInWithEmail = jest.fn();
+  const mockSignInWithEmail = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useAuth as jest.Mock).mockReturnValue({
+    vi.clearAllMocks();
+    (useAuth as any).mockReturnValue({
       signInWithEmail: mockSignInWithEmail,
     });
   });
@@ -81,7 +82,7 @@ describe("useLoginForm", () => {
 
   it("should successfully submit login form", async () => {
     mockSignInWithEmail.mockResolvedValue(undefined);
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {
@@ -202,7 +203,7 @@ describe("useLoginForm", () => {
 
   it("should not call onSuccess if submission fails", async () => {
     mockSignInWithEmail.mockRejectedValue(new Error("Network error"));
-    const onSuccess = jest.fn();
+    const onSuccess = vi.fn();
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {

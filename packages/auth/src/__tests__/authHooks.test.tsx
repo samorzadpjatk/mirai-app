@@ -1,23 +1,24 @@
+import { describe, it, expect, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useAuth, useUser, useSession, useIsAuthenticated } from "../authHooks";
 import { AuthProvider } from "../AuthContext";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@integral-2025-app/supabase";
 
 const mockSupabaseClient = () => {
   return {
     auth: {
-      getSession: jest.fn().mockResolvedValue({
+      getSession: vi.fn().mockResolvedValue({
         data: { session: null },
         error: null,
       }),
-      onAuthStateChange: jest.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: jest.fn() } },
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
       }),
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-      signInWithOAuth: jest.fn(),
-      signOut: jest.fn(),
-      refreshSession: jest.fn(),
+      signInWithPassword: vi.fn(),
+      signUp: vi.fn(),
+      signInWithOAuth: vi.fn(),
+      signOut: vi.fn(),
+      refreshSession: vi.fn(),
     },
   } as unknown as SupabaseClient;
 };

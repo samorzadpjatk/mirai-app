@@ -1,7 +1,7 @@
 import type {
   SupabaseClient,
-  User as SupabaseUser,
-} from "@supabase/supabase-js";
+  SupabaseUser,
+} from "@integral-2025-app/supabase";
 import type { User } from "@integral-2025-app/common-types";
 import type { AuthUser } from "./types";
 

@@ -1,5 +1,3 @@
-import createSupabaseClient from "./supabaseClient";
-
 export type {
   User as DatabaseUser,
   Role,
@@ -12,10 +10,7 @@ export type {
   SignInWithEmailOptions,
   SignUpWithEmailOptions,
   SignInWithOAuthOptions,
-  SupabaseClientOptions,
 } from "./types";
-
-export { createSupabaseClient };
 
 export {
   getAuthServerUser as getServerUser,
