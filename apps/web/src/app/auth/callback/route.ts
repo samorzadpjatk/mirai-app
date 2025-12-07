@@ -1,4 +1,4 @@
-import { supabase } from "@integral-2025-app/supabase";
+import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@integral-2025-app/db";
 import { env } from "~/env";
@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
       { status: 400 },
     );
   }
-
+  const supabase = createSupabaseClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data) {
     return NextResponse.json(
-      { success: false, error: error?.message || "Authentication failed" },
+      { success: false, error: error?.message ?? "Authentication failed" },
       { status: 400 },
     );
   }
