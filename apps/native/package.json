@@ -37,7 +37,7 @@
     "react-dom": "^19.2.0",
     "react-native": "^0.82.1",
     "react-native-web": "^0.21.2",
-    "tamagui": "^1.138.6"
+    "tamagui": "^1.139.1"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.5",
