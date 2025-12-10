@@ -17,12 +17,12 @@ describe("db package", () => {
 
   describe("db export", () => {
     it("should export db as the Prisma client instance", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       expect(db).toBeDefined();
     });
 
     it("should have all Prisma client methods", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       expect(db.user).toBeDefined();
       expect(db.group).toBeDefined();
       expect(db.event).toBeDefined();
@@ -36,7 +36,7 @@ describe("db package", () => {
 
   describe("Prisma Client operations", () => {
     it("should support user operations", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       
       expect(db.user.findMany).toBeDefined();
       expect(db.user.findUnique).toBeDefined();
@@ -47,7 +47,7 @@ describe("db package", () => {
     });
 
     it("should support group operations", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       
       expect(db.group.findMany).toBeDefined();
       expect(db.group.findUnique).toBeDefined();
@@ -57,7 +57,7 @@ describe("db package", () => {
     });
 
     it("should support event operations", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       
       expect(db.event.findMany).toBeDefined();
       expect(db.event.findUnique).toBeDefined();
@@ -67,14 +67,14 @@ describe("db package", () => {
     });
 
     it("should support coinTransaction operations", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       
       expect(db.coinTransaction.findMany).toBeDefined();
       expect(db.coinTransaction.create).toBeDefined();
     });
 
     it("should support notification operations", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       
       expect(db.notification.findMany).toBeDefined();
       expect(db.notification.create).toBeDefined();
@@ -83,19 +83,19 @@ describe("db package", () => {
 
   describe("Database connection", () => {
     it("should have connect method", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       expect(db.$connect).toBeDefined();
       expect(typeof db.$connect).toBe("function");
     });
 
     it("should have disconnect method", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       expect(db.$disconnect).toBeDefined();
       expect(typeof db.$disconnect).toBe("function");
     });
 
     it("should have transaction method", async () => {
-      const { db } = await import("../index");
+        const { db } = await import("../index");
       expect(db.$transaction).toBeDefined();
       expect(typeof db.$transaction).toBe("function");
     });
