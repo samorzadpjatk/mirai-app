@@ -2,7 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { useAuth, useUser, useSession, useIsAuthenticated } from "../authHooks";
 import { AuthProvider } from "../AuthContext";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@integral-2025-app/supabase";
 
 const mockSupabaseClient = () => {
   return {

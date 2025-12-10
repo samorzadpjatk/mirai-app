@@ -9,6 +9,8 @@ vi.mock("../../authHooks", () => ({
 
 const mockedUseAuth = vi.mocked(useAuth);
 
+type AuthContextValue = ReturnType<typeof useAuth>;
+
 describe("useSignupForm", () => {
   const mockSignUpWithEmail = vi.fn();
 
@@ -16,7 +18,7 @@ describe("useSignupForm", () => {
     vi.clearAllMocks();
     mockedUseAuth.mockReturnValue({
       signUpWithEmail: mockSignUpWithEmail,
-    });
+    } as unknown as AuthContextValue);
   });
 
   it("should initialize with empty form state", () => {

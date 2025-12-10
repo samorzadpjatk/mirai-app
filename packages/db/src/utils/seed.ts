@@ -51,7 +51,7 @@ async function main() {
     return;
   }
 
-  const data: SupabaseUsersResponse = await response.json();
+  const data: SupabaseUsersResponse = await response.json(); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
   const users = data.users ?? [];
 
   console.log(`Found ${users.length} users in Supabase Auth`);

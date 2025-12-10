@@ -1,4 +1,4 @@
-import { authStorage } from "../storage";
+import { authStorage } from "~/lib/storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 jest.mock("@react-native-async-storage/async-storage", () => ({

@@ -12,4 +12,13 @@ export default createVitestConfig({
     "@integral-2025-app/auth/client": "../../packages/auth/src/supabaseClient.ts",
     "@integral-2025-app/common-types": "../../packages/common-types/src/index.ts",
   },
+  coverage: {
+    exclude: [
+      "node_modules/",
+      "src/**/__tests__/**",
+      "**/*.config.*",
+      "**/index.ts",
+      "**/*.d.ts",
+    ],
+  },
 });

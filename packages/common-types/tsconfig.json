@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./src/*"]
+    },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "target": "es2022",
@@ -19,6 +23,6 @@
     "lib": ["ES2022"],
     "moduleResolution": "bundler"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts"],
   "exclude": ["node_modules", "dist"]
 }

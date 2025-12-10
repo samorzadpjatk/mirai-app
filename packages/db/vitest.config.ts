@@ -9,4 +9,7 @@ export default createVitestConfig({
   environment: "node",
   setupFiles: ["./vitest.setup.ts"],
   include: ["src/**/__tests__/**/*.test.ts"],
+  coverage: {
+    exclude: ["prisma/lib/**"],
+  },
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { arrayBufferToBase64 } from "../web_push";
+import { arrayBufferToBase64 } from "~/utils/web_push";
 
 describe("arrayBufferToBase64", () => {
   beforeEach(() => {

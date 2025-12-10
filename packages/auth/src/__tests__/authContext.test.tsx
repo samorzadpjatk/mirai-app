@@ -1,10 +1,9 @@
-import { render, waitFor } from "@testing-library/react";
-import { renderHook, act } from "@testing-library/react";
+import { render, waitFor, renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import type { Mock } from "vitest";
 import { AuthProvider } from "../AuthContext";
 import { useAuth } from "../authHooks";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@integral-2025-app/supabase";
 import type { AuthUser } from "../types";
 
 const mockSupabaseClient = () => {
@@ -174,12 +173,14 @@ describe("AuthContext", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      await expect(
-        result.current.signInWithEmail({
-          email: "test@example.com",
-          password: "wrong",
-        }),
-      ).rejects.toThrow("Invalid credentials");
+      await act(async () => {
+        await expect(
+          result.current.signInWithEmail({
+            email: "test@example.com",
+            password: "wrong",
+          }),
+        ).rejects.toThrow("Invalid credentials");
+      });
     });
   });
 
@@ -244,12 +245,14 @@ describe("AuthContext", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      await expect(
-        result.current.signUpWithEmail({
-          email: "existing@example.com",
-          password: "password123",
-        }),
-      ).rejects.toThrow("Email already registered");
+      await act(async () => {
+        await expect(
+          result.current.signUpWithEmail({
+            email: "existing@example.com",
+            password: "password123",
+          }),
+        ).rejects.toThrow("Email already registered");
+      });
     });
   });
 
@@ -377,9 +380,11 @@ describe("AuthContext", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      await expect(result.current.refreshSession()).rejects.toThrow(
-        "Refresh token expired",
-      );
+      await act(async () => {
+        await expect(result.current.refreshSession()).rejects.toThrow(
+          "Refresh token expired",
+        );
+      });
     });
   });
 });
