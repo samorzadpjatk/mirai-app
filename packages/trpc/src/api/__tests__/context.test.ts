@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createTRPCContext, createTRPCRouter, publicProcedure } from "../api/trpc";
+import { createTRPCContext, createTRPCRouter, publicProcedure } from "../trpc";
 
 vi.mock("@integral-2025-app/supabase", () => {
   return {

@@ -1,8 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createTRPCContext } from "../api/trpc";
-import { getServerSession } from "@integral-2025-app/auth";
-import { db } from "@integral-2025-app/db";
-import { supabase } from "@integral-2025-app/supabase";
 
 vi.mock("superjson", () => ({
   default: {
@@ -13,9 +9,21 @@ vi.mock("superjson", () => ({
 
 vi.mock("@integral-2025-app/auth");
 vi.mock("@integral-2025-app/db");
-vi.mock("@integral-2025-app/supabase");
+vi.mock("@integral-2025-app/supabase", () => ({
+  createSupabaseClient: vi.fn(() => ({
+    auth: {
+      getUser: vi.fn(),
+    },
+  })),
+}));
+
+import { createTRPCContext } from "../trpc";
+import { getServerSession } from "@integral-2025-app/auth";
+import { db } from "@integral-2025-app/db";
+import { createSupabaseClient } from "@integral-2025-app/supabase";
 
 const mockGetServerSession = vi.mocked(getServerSession);
+const mockCreateSupabaseClient = vi.mocked(createSupabaseClient);
 
 describe("server/api/trpc", () => {
   beforeEach(() => {
@@ -24,6 +32,13 @@ describe("server/api/trpc", () => {
 
   describe("createTRPCContext", () => {
     it("should create context with session and headers", async () => {
+      const mockSupabaseClient = {
+        auth: {
+          getUser: vi.fn(),
+        },
+      };
+      mockCreateSupabaseClient.mockReturnValue(mockSupabaseClient as any);
+
       const mockSession = {
         user: {
           id: "1",
@@ -53,16 +68,24 @@ describe("server/api/trpc", () => {
 
       expect(context).toEqual({
         db,
-        supabase,
+        supabase: mockSupabaseClient,
         session: mockSession,
         headers: mockHeaders,
         accessToken: "mock-token",
       });
+      expect(mockCreateSupabaseClient).toHaveBeenCalledWith("http://localhost:8000", "test-key");
       expect(mockGetServerSession).toHaveBeenCalledTimes(1);
-      expect(mockGetServerSession).toHaveBeenCalledWith(supabase, "mock-token");
+      expect(mockGetServerSession).toHaveBeenCalledWith(mockSupabaseClient, "mock-token");
     });
 
     it("should create context with null session when not authenticated", async () => {
+      const mockSupabaseClient = {
+        auth: {
+          getUser: vi.fn(),
+        },
+      };
+      mockCreateSupabaseClient.mockReturnValue(mockSupabaseClient as any);
+
       const mockHeaders = new Headers();
       mockGetServerSession.mockResolvedValue(null);
 
@@ -74,7 +97,7 @@ describe("server/api/trpc", () => {
 
       expect(context.session).toBeNull();
       expect(context.db).toBe(db);
-      expect(context.supabase).toBe(supabase);
+      expect(context.supabase).toBe(mockSupabaseClient);
       expect(context.accessToken).toBeNull();
       expect(mockGetServerSession).not.toHaveBeenCalled();
     });
