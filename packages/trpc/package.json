@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@t3-oss/env-core": "^0.13.8",
-    "@types/node": "^24.10.2",
+    "@types/node": "^24.10.3",
     "@types/react": "^19.2.7",
     "@types/web-push": "^3.6.4",
     "@vitest/coverage-v8": "^4.0.15",
