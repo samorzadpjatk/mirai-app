@@ -1,0 +1,29 @@
+{
+  "name": "@integral-2025-app/supabase",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.10.2",
+    "@vitest/coverage-v8": "^4.0.15",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.87.1"
+  },
+  "peerDependencies": {
+    "next": "^15.5.2"
+  }
+}

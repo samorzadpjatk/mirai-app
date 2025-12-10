@@ -1,4 +1,4 @@
-import type { Session as SupabaseSession } from "@supabase/supabase-js";
+import type { SupabaseSession } from "@integral-2025-app/supabase";
 
 export interface AuthUser {
   id: string;
@@ -37,17 +37,4 @@ export interface AuthContextValue extends AuthState {
   signInWithOAuth: (options: SignInWithOAuthOptions) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
-}
-
-export interface SupabaseClientOptions {
-  auth?: {
-    storage?: {
-      getItem: (key: string) => Promise<string | null> | string | null;
-      setItem: (key: string, value: string) => Promise<void> | void;
-      removeItem: (key: string) => Promise<void> | void;
-    };
-    autoRefreshToken?: boolean;
-    persistSession?: boolean;
-    detectSessionInUrl?: boolean;
-  };
 }
