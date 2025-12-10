@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { Buffer } from "node:buffer";
 import {
   parseRolesFromToken,
   hasRequiredRole,
@@ -19,6 +20,13 @@ const mockSupabaseClient = () => {
     },
   } as unknown as SupabaseClient;
 };
+
+const encodePayload = (payload: unknown) =>
+  Buffer.from(JSON.stringify(payload))
+    .toString("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
 
 describe("auth server", () => {
   describe("AuthenticationError", () => {
@@ -64,6 +72,21 @@ describe("auth server", () => {
       expect(user).toEqual(mockUser);
     });
 
+    it("should forward access token when provided", async () => {
+      const client = mockSupabaseClient();
+      const mockUser = { id: "user-123" } as any;
+      (client.auth.getUser as any).mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      });
+
+      const token = "test-token";
+      const user = await getAuthServerUser(client, token);
+
+      expect(user).toEqual(mockUser);
+      expect(client.auth.getUser).toHaveBeenCalledWith(token);
+    });
+
     it("should return null on error", async () => {
       const client = mockSupabaseClient();
       const consoleErrorSpy = vi
@@ -103,6 +126,25 @@ describe("auth server", () => {
       expect(session).toEqual(mockSession);
     });
 
+    it("should build session from bearer token", async () => {
+      const client = mockSupabaseClient();
+      const mockUser = { id: "user-123" } as any;
+      (client.auth.getUser as any).mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      });
+
+      const session = await getAuthServerSession(client, "jwt-token");
+
+      expect(session).toMatchObject({
+        user: mockUser,
+        authUserId: mockUser.id,
+        access_token: "jwt-token",
+        token_type: "bearer",
+      });
+      expect(client.auth.getUser).toHaveBeenCalledWith("jwt-token");
+    });
+
     it("should return null on error", async () => {
       const client = mockSupabaseClient();
       const consoleErrorSpy = vi
@@ -127,7 +169,7 @@ describe("auth server", () => {
   describe("parseRolesFromToken", () => {
     it("should parse roles from valid JWT", () => {
       const payload = { groups: ["admin", "users"] };
-      const base64Payload = btoa(JSON.stringify(payload));
+      const base64Payload = encodePayload(payload);
       const token = `header.${base64Payload}.signature`;
 
       const roles = parseRolesFromToken(token);

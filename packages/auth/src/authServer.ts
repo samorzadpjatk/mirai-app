@@ -5,6 +5,64 @@ import type {
 import type { User } from "@integral-2025-app/common-types";
 import type { AuthUser } from "./types";
 
+type MinimalBuffer = {
+  from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };
+};
+
+const getGlobalBuffer = () =>
+  (globalThis as typeof globalThis & { Buffer?: MinimalBuffer }).Buffer;
+
+const getGlobalAtob = () =>
+  (globalThis as typeof globalThis & { atob?: (data: string) => string }).atob;
+
+function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unknown>>(
+  token: string,
+): T | null {
+  const [, payload] = token.split(".");
+  if (!payload) {
+    return null;
+  }
+
+  const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const atobFn = getGlobalAtob();
+  const buffer = getGlobalBuffer();
+
+  try {
+    if (buffer) {
+      const decoded = buffer.from(normalizedPayload, "base64").toString("utf-8");
+      return JSON.parse(decoded) as T;
+    }
+
+    if (atobFn) {
+      const binary = atobFn(normalizedPayload);
+      const percentEncoded = Array.from(binary)
+        .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`)
+        .join("");
+      const decoded = decodeURIComponent(percentEncoded);
+      return JSON.parse(decoded) as T;
+    }
+
+    console.error("Unable to decode JWT payload: missing base64 decoder");
+    return null;
+  } catch (error) {
+    console.error("Error decoding JWT payload:", error);
+    return null;
+  }
+}
+
+function getTokenExpiry(accessToken: string) {
+  const payload = decodeJwtPayload<{ exp?: number }>(accessToken);
+  if (!payload?.exp) {
+    return { expiresAt: null as number | null, expiresIn: null as number | null };
+  }
+
+  const expiresAt = payload.exp;
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  const expiresIn = Math.max(expiresAt - nowInSeconds, 0);
+
+  return { expiresAt, expiresIn };
+}
+
 export class AuthenticationError extends Error {
   constructor(message = "Not Authenticated") {
     super(message);
@@ -21,11 +79,15 @@ export class AuthorizationError extends Error {
 
 export async function getAuthServerUser(
   supabase: SupabaseClient,
+  accessToken?: string,
 ): Promise<SupabaseUser | null> {
+  const response = accessToken
+    ? await supabase.auth.getUser(accessToken)
+    : await supabase.auth.getUser();
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser();
+  } = response;
 
   if (error) {
     console.error("Error occurred while fetching user:", error);
@@ -35,7 +97,36 @@ export async function getAuthServerUser(
   return user;
 }
 
-export async function getAuthServerSession(supabase: SupabaseClient) {
+export async function getAuthServerSession(
+  supabase: SupabaseClient,
+  accessToken?: string,
+) {
+  if (accessToken) {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(accessToken);
+
+    if (error || !user) {
+      if (error) {
+        console.error("Error occurred while fetching user from token:", error);
+      }
+      return null;
+    }
+
+    const { expiresAt, expiresIn } = getTokenExpiry(accessToken);
+
+    return {
+      user,
+      authUserId: user.id,
+      access_token: accessToken,
+      refresh_token: null,
+      token_type: "bearer",
+      expires_in: expiresIn,
+      expires_at: expiresAt ?? null,
+    } as const;
+  }
+
   const {
     data: { session },
     error,
@@ -68,16 +159,13 @@ export function mapDatabaseUserToAuthUser(
 export function parseRolesFromToken(token: string | undefined): string[] {
   if (!token) return [];
 
-  try {
-    const [, payload] = token.split(".");
-    if (!payload) return [];
+  const payload = decodeJwtPayload<{ groups?: string[] }>(token);
 
-    const decoded = JSON.parse(atob(payload)) as { groups?: string[] };
-    return decoded.groups ?? [];
-  } catch (error) {
-    console.error("Error parsing roles from token:", error);
+  if (!payload?.groups) {
     return [];
   }
+
+  return payload.groups;
 }
 
 export function hasRequiredRole(
@@ -96,11 +184,12 @@ export function hasRequiredRole(
 export async function getSession(
   supabase: SupabaseClient,
   getUserFromDb: (authUserId: string) => Promise<User | null>,
+  accessToken?: string,
 ): Promise<{
   user: AuthUser | null;
   authUserId: string | null;
 } | null> {
-  const supabaseUser = await getAuthServerUser(supabase);
+  const supabaseUser = await getAuthServerUser(supabase, accessToken);
 
   if (!supabaseUser) {
     return null;
@@ -126,11 +215,12 @@ export async function getSession(
 export async function requireAuth(
   supabase: SupabaseClient,
   getUserFromDb: (authUserId: string) => Promise<User | null>,
+  accessToken?: string,
 ): Promise<{
   user: AuthUser;
   dbUser: User;
 }> {
-  const session = await getSession(supabase, getUserFromDb);
+  const session = await getSession(supabase, getUserFromDb, accessToken);
 
   if (!session?.user) {
     throw new AuthenticationError("Unauthorized");
@@ -153,8 +243,9 @@ export async function requireAuth(
 export async function requireAdmin(
   supabase: SupabaseClient,
   getUserFromDb: (authUserId: string) => Promise<User | null>,
+  accessToken?: string,
 ): Promise<User> {
-  const { dbUser } = await requireAuth(supabase, getUserFromDb);
+  const { dbUser } = await requireAuth(supabase, getUserFromDb, accessToken);
 
   if (!dbUser.isAdmin) {
     throw new AuthorizationError("Admin access required");
@@ -166,8 +257,9 @@ export async function requireAdmin(
 export async function requireModerator(
   supabase: SupabaseClient,
   getUserFromDb: (authUserId: string) => Promise<User | null>,
+  accessToken?: string,
 ): Promise<User> {
-  const { dbUser } = await requireAuth(supabase, getUserFromDb);
+  const { dbUser } = await requireAuth(supabase, getUserFromDb, accessToken);
 
   if (!dbUser.isModerator && !dbUser.isAdmin) {
     throw new AuthorizationError("Moderator access required");
