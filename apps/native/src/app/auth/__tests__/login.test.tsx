@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import React from "react";
+
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { TamaguiProvider } from "tamagui";
-import tamaguiConfig from "../../../../tamagui.config";
-import LoginScreen from "../login";
+import tamaguiConfig from "tamagui.config";
+import LoginScreen from "~/app/auth/login";
 import { useRouter } from "expo-router";
 import type { UseLoginFormResult } from "@integral-2025-app/auth";
 
