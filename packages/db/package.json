@@ -28,7 +28,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.0",
+    "@prisma/client": "^7.1.0",
     "@t3-oss/env-core": "^0.13.8",
     "zod": "^4.1.13"
   },
