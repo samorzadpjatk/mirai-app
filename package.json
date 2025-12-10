@@ -6,6 +6,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "build": "turbo run build",
+    "build:packages": "pnpm --filter './packages/*' build",
     "dev": "turbo run dev",
     "dev:web": "pnpm --filter @integral-2025-app/web dev",
     "dev:native": "pnpm --filter @integral-2025-app/native dev",
@@ -14,35 +15,31 @@
     "format:check": "turbo run format:check",
     "format:write": "turbo run format:write",
     "test": "turbo run test",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "clean:packages": "pnpm --filter './packages/*' clean",
+    "test:ci": "turbo run test -- --silent --no-coverage"
   },
   "devDependencies": {
-    "turbo": "^2.3.3",
-    "prettier": "^3.5.3",
-    "prettier-plugin-tailwindcss": "^0.6.11",
-    "typescript": "^5.8.2",
-    "typescript-eslint": "^8.27.0",
-    "eslint": "^9.23.0"
+    "eslint": "^9.39.1",
+    "prettier": "^3.7.4",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "turbo": "^2.6.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.49.0"
   },
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">=18.0.0"
   },
   "pnpm": {
-    "overrides": {
-      "@auth/core": "0.37.2",
-      "@trpc/client": "^11.0.0",
-      "@trpc/react-query": "^11.0.0",
-      "@trpc/server": "^11.0.0",
-      "react-test-renderer": "19.1.0"
-    },
     "onlyBuiltDependencies": [
       "@prisma/client",
       "@prisma/engines",
       "@tailwindcss/oxide",
       "prisma",
       "sharp",
-      "unrs-resolver"
+      "unrs-resolver",
+      "esbuild"
     ]
   }
 }

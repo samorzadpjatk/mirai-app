@@ -19,7 +19,7 @@ Progressive Web App zbudowana na bazie T3 Stack z obsługą powiadomień push i 
 
 ## Szybki Start
 
-Najpierw upewnij się, że ukończyłeś wszystkie kroki z inicjalizacji [środowiska deweloperskiego](../../dev_environment/README.md)
+Najpierw upewnij się, że ukończyłeś wszystkie kroki z inicjalizacji [środowiska deweloperskiego](../../environment/dev/README.md)
 
 ```bash
 # Uruchom serwer deweloperski
@@ -82,11 +82,13 @@ pnpm --filter @integral-2025-app/web dev                # Uruchom serwer dewelop
 pnpm --filter @integral-2025-app/web build              # Zbuduj aplikację produkcyjną
 pnpm --filter @integral-2025-app/web start              # Uruchom serwer produkcyjny (port 11001)
 
-# Database
-pnpm --filter @integral-2025-app/web db:generate        # Uruchom migracje Prisma
-pnpm --filter @integral-2025-app/web db:studio          # Otwórz Prisma Studio
-pnpm --filter @integral-2025-app/web db:seed            # Załaduj przykładowe dane
-pnpm --filter @integral-2025-app/web db:reset           # Resetuj bazę danych
+# Database (teraz w @integral-2025-app/db)
+pnpm --filter @integral-2025-app/db db:generate        # Uruchom migracje Prisma
+pnpm --filter @integral-2025-app/db db:studio          # Otwórz Prisma Studio
+pnpm --filter @integral-2025-app/db db:seed            # Załaduj przykładowe dane
+pnpm --filter @integral-2025-app/db db:reset           # Resetuj bazę danych
+
+# 📖 Pełna dokumentacja komend bazodanowych: packages/db/README.md
 
 # Quality
 pnpm --filter @integral-2025-app/web lint               # Sprawdź kod (ESLint)

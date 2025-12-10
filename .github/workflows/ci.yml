@@ -24,11 +24,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Test web app
-        run: pnpm --filter @integral-2025-app/web test:ci
-
-      - name: Test native app
-        run: pnpm --filter @integral-2025-app/native test:ci
+      - name: Test all
+        run: pnpm test:ci
 
       - name: Run ESLint web app
         uses: reviewdog/action-eslint@v1.33.2
@@ -43,6 +40,9 @@ jobs:
           reporter: github-check
           workdir: apps/native
           eslint_flags: "."
+
+      - name: Run ESLint for monorepo
+        run: pnpm lint
 
       - name: Run `tsc`
         uses: EPMatt/reviewdog-action-tsc@v1.8.0

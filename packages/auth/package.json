@@ -1,0 +1,65 @@
+{
+  "name": "@integral-2025-app/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./src/index.ts"
+    },
+    "./client": {
+      "types": "./src/client.d.ts",
+      "import": "./src/client.js"
+    },
+    "./server": {
+      "types": "./src/server.d.ts",
+      "import": "./src/server.js"
+    },
+    "./hooks": {
+      "types": "./src/hooks.d.ts",
+      "import": "./src/hooks.js"
+    },
+    "./context": {
+      "types": "./src/context.d.ts",
+      "import": "./src/context.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "check": "eslint . && tsc --noEmit",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "dev": "tsc --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "dependencies": {
+    "@integral-2025-app/common-types": "workspace:*",
+    "@integral-2025-app/supabase": "workspace:*",
+    "react": "^19.2.1",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.10.2",
+    "@types/react": "^19.2.7",
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/ui": "^4.0.15",
+    "eslint": "^9.39.1",
+    "jsdom": "^25.0.1",
+    "react": "^19.2.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.49.0",
+    "vitest": "^4.0.15"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0"
+  }
+}
