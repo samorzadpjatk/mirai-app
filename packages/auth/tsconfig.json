@@ -10,12 +10,7 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "types": ["node", "vitest", "@testing-library/jest-dom"],
-    "paths": {
-      "~/*": ["./src/*"],
-      "@integral-2025-app/common-types": ["../common-types/src/index.ts"],
-      "@integral-2025-app/supabase": ["../supabase/src/index.ts"]
-    }
+    "types": ["node", "vitest", "@testing-library/jest-dom"]
   },
   "include": ["src/**/*","vitest.setup.ts","vitest.config.ts"],
   "exclude": ["node_modules", "dist"],
