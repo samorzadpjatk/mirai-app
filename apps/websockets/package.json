@@ -2,21 +2,32 @@
   "name": "websockets",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@integral-2025-app/db": "workspace:*",
     "@fastify/websocket": "^11.2.0",
+    "@integral-2025-app/trpc": "workspace:*",
     "@trpc/server": "^11.0.0",
     "fastify": "^5.6.2",
     "ws": "^8.18.3"
   },
   "devDependencies": {
-    "@types/ws": "^8.18.1"
+    "@types/node": "^24.10.2",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.0.15",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.15"
   }
 }

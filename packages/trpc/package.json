@@ -8,15 +8,18 @@
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
-      "import": "./src/index.ts"
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     },
     "./client": {
       "types": "./dist/src/client/index.d.ts",
-      "import": "./src/client/index.ts"
+      "import": "./src/client/index.ts",
+      "default": "./src/client/index.ts"
     },
     "./client/expo": {
       "types": "./dist/src/client/expo.d.ts",
-      "import": "./src/client/expo.ts"
+      "import": "./src/client/expo.ts",
+      "default": "./src/client/expo.ts"
     }
   },
   "scripts": {

@@ -8,23 +8,8 @@
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
-      "import": "./src/index.ts"
-    },
-    "./client": {
-      "types": "./src/client.d.ts",
-      "import": "./src/client.js"
-    },
-    "./server": {
-      "types": "./src/server.d.ts",
-      "import": "./src/server.js"
-    },
-    "./hooks": {
-      "types": "./src/hooks.d.ts",
-      "import": "./src/hooks.js"
-    },
-    "./context": {
-      "types": "./src/context.d.ts",
-      "import": "./src/context.js"
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   },
   "scripts": {
