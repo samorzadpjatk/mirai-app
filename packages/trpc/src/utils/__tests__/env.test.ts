@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { env } from "../env";
+import { describe, it, expect } from "vitest";
+import { env } from "~/utils/env";
 
 describe("env utilities", () => {
   describe("environment variable validation", () => {

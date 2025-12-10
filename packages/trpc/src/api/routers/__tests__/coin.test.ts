@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { coinRouter } from "../coin";
-import { db } from "@integral-2025-app/db";
+import { coinRouter } from "~/api/routers/coin";
 
 vi.mock("@integral-2025-app/db");
 

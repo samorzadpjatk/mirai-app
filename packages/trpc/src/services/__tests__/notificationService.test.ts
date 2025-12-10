@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { NotificationService } from "../notificationService";
+import { NotificationService } from "~/services/notificationService";
 
 describe("NotificationService", () => {
   describe("createCoinsAddedNotification", () => {

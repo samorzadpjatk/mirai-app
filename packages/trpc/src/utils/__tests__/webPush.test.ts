@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { send, sendRanking } from "../webPush";
+import { send, sendRanking } from "~/utils/webPush";
 import webpush from "web-push";
-import { db } from "@integral-2025-app/db";
 
 vi.mock("web-push");
 vi.mock("@integral-2025-app/db");

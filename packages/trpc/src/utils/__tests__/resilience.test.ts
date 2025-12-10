@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { executeWithRetry } from "../resilience";
+import { executeWithRetry } from "~/utils/resilience";
 
 describe("resilience utilities", () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { appRouter } from "../root";
+import { describe, it, expect } from "vitest";
+import { appRouter } from "~/api/root";
 
 describe("appRouter", () => {
   it("should export appRouter", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { userRouter } from "../user";
+import { userRouter } from "~/api/routers/user";
 
 vi.mock("@integral-2025-app/db");
 
