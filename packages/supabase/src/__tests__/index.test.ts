@@ -8,15 +8,15 @@ import type {
   SupabaseClient,
   SupabaseSession,
   SupabaseUser,
-} from "../index";
+} from "~/index";
 
 const createSupabaseClientMock = vi.hoisted(() => vi.fn());
 
-vi.mock("../client", () => ({
+vi.mock("~/client", () => ({
   createSupabaseClient: createSupabaseClientMock,
 }));
 
-const importIndex = () => import("../index");
+const importIndex = () => import("~/index");
 
 describe("supabase package entry point", () => {
   beforeEach(() => {

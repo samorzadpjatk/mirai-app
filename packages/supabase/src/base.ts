@@ -13,5 +13,5 @@ export default function createBaseSupabaseClient(
       detectSessionInUrl: true,
       ...options?.auth,
     },
-  });
+  }) as SupabaseClient;
 }

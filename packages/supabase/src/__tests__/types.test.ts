@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { SupabaseClientOptions } from "../types";
+import type { SupabaseClientOptions } from "~/types";
 
 describe("SupabaseClientOptions", () => {
   it("treats auth configuration as optional", () => {

@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSupabaseClient } from "../client";
+import { createSupabaseClient } from "~/client";
 
 const createBaseSupabaseClientMock = vi.hoisted(() => vi.fn(() => ({ id: "client" })));
 
-vi.mock("../base", () => ({
+vi.mock("~/base", () => ({
   default: createBaseSupabaseClientMock,
 }));
 

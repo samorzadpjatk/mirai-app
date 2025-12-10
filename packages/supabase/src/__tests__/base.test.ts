@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import createBaseSupabaseClient from "../base";
+import createBaseSupabaseClient from "~/base";
 
 const mockSupabaseClient = {
   auth: { getSession: vi.fn(), getUser: vi.fn() },
