@@ -6,6 +6,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "test": "vitest run --coverage",
     "test:watch": "vitest"
   },
@@ -13,13 +15,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@vitest/coverage-v8": "^4.0.11",
-    "typescript": "^5.8.2",
-    "vitest": "^4.0.14"
+    "@types/node": "^24.10.2",
+    "@vitest/coverage-v8": "^4.0.15",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.80.0"
+    "@supabase/supabase-js": "^2.87.1"
   },
   "peerDependencies": {
     "next": "^15.5.2"
