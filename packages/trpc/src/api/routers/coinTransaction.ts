@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, moderatorProcedure } from "../trpc";
+import { createTRPCRouter, moderatorProcedure } from "../../api/trpc";
 
 export const coinTransactionRouter = createTRPCRouter({
   getStatistics : moderatorProcedure.query(async ({ ctx }) => {

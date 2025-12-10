@@ -3,7 +3,7 @@ import {
   createTRPCRouter,
   moderatorProcedure,
   adminProcedure,
-} from "../trpc";
+} from "../../api/trpc";
 
 export const userRouter = createTRPCRouter({
   getById: moderatorProcedure

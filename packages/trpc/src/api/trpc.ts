@@ -7,7 +7,7 @@
  * need to use are documented accordingly near the end.
  */
 
-import { initTRPC, TRPCError } from "@trpc/server";
+import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
@@ -19,6 +19,20 @@ import {
 } from "@integral-2025-app/auth";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { db } from "@integral-2025-app/db";
+
+const getAccessTokenFromHeaders = (headers: Headers): string | null => {
+  const authorization = headers.get("authorization") ?? headers.get("Authorization");
+  if (!authorization) {
+    return null;
+  }
+
+  const [scheme, token] = authorization.split(" ");
+  if (!scheme || scheme.toLowerCase() !== "bearer" || !token) {
+    return null;
+  }
+
+  return token.trim();
+};
 
 /**
  * 1. CONTEXT
@@ -32,15 +46,21 @@ import { db } from "@integral-2025-app/db";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const supabase = createSupabaseClient();
-  const session = await getServerSession(supabase);
+export const createTRPCContext = async (opts: {
+  headers: Headers;
+  supabaseUrl: string;
+  supabaseKey: string;
+}) => {
+  const supabase = createSupabaseClient(opts.supabaseUrl, opts.supabaseKey);
+  const accessToken = getAccessTokenFromHeaders(opts.headers);
+  const session: ReturnType<typeof getServerSession> | null = accessToken ? await getServerSession(supabase, accessToken) : null;
 
   return {
     db,
     supabase,
     session,
-    ...opts,
+    headers: opts.headers,
+    accessToken,
   };
 };
 
@@ -129,16 +149,20 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    const user = await requireAuth(ctx.supabase, async (authUserId: string) => {
-      const user = await ctx.db.user.findFirst({
-        where: { authUserId },
-      });
-      return user;
-    });
+    const user = await requireAuth(
+      ctx.supabase,
+      async (authUserId: string) => {
+        const user = await ctx.db.user.findFirst({
+          where: { authUserId },
+        });
+        return user;
+      },
+      ctx.accessToken ?? undefined,
+    );
     return next({
       ctx: {
         // infers the `session` as non-nullable
-        session: { ...ctx.session, user: user },
+        session: { ...(ctx.session ?? {}), user },
       },
     });
   });
@@ -162,11 +186,12 @@ export const moderatorProcedure = t.procedure
         });
         return user;
       },
+      ctx.accessToken ?? undefined,
     );
     return next({
       ctx: {
         // infers the `session` as non-nullable
-        session: { ...ctx.session, user: user },
+        session: { ...(ctx.session ?? {}), user },
       },
     });
   });
@@ -182,11 +207,12 @@ export const adminProcedure = t.procedure
         });
         return user;
       },
+      ctx.accessToken ?? undefined,
     );
     return next({
       ctx: {
         // infers the `session` as non-nullable
-        session: { ...ctx.session, user: user },
+        session: { ...(ctx.session ?? {}), user },
       },
     });
   });

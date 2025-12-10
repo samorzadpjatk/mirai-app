@@ -1,6 +1,11 @@
 import { vi } from "vitest";
+import type {
+  MockDbUser,
+  MockGetUserFromDb,
+  MockSession,
+} from "./src/test-utils/mockAuthTypes";
 
-const mockSession = {
+const mockSession: MockSession = {
   user: {
     id: "mock-user-id",
     email: "mock.user@example.com",
@@ -13,9 +18,9 @@ const mockSession = {
   refresh_token: "mock-refresh-token",
   expires_in: 3600,
   token_type: "bearer",
-} as const;
+};
 
-const baseDbUser = {
+const baseDbUser: MockDbUser = {
   id: mockSession.user.id,
   authUserId: mockSession.user.authUserId,
   email: mockSession.user.email,
@@ -24,21 +29,34 @@ const baseDbUser = {
   isAdmin: true,
   isModerator: true,
   isServiceAccount: false,
-} as const;
+  image: null,
+  wristNumber: null,
+  houseNumber: null,
+  groupId: null,
+};
 
-const toDbUser = (overrides?: Partial<typeof baseDbUser>) => ({
-  ...baseDbUser,
-  ...overrides,
-  authUserId: overrides?.authUserId ?? baseDbUser.authUserId,
-  emailVerified:
-    overrides && "emailVerified" in overrides
-      ? overrides.emailVerified ?? null
-      : baseDbUser.emailVerified,
-});
+const toDbUser = (overrides?: Partial<MockDbUser>): MockDbUser => {
+  const merged = {
+    ...baseDbUser,
+    ...overrides,
+  } as MockDbUser;
+
+  return {
+    ...merged,
+    authUserId:
+      overrides && "authUserId" in overrides
+        ? overrides.authUserId ?? null
+        : baseDbUser.authUserId,
+    emailVerified:
+      overrides && "emailVerified" in overrides
+        ? overrides.emailVerified ?? null
+        : baseDbUser.emailVerified,
+  };
+};
 
 const resolveDbUser = async (
-  getUserFromDb?: (authUserId: string) => Promise<any>,
-) => {
+  getUserFromDb?: MockGetUserFromDb,
+): Promise<MockDbUser> => {
   if (!getUserFromDb) {
     return toDbUser();
   }
@@ -55,46 +73,58 @@ const resolveDbUser = async (
 vi.mock("@integral-2025-app/auth", () => {
   const getServerSession = vi.fn().mockResolvedValue(mockSession);
 
-  const requireAuth = vi
-    .fn()
-    .mockImplementation(async (_supabase, getUserFromDb) => {
-      const dbUser = await resolveDbUser(getUserFromDb);
+  const requireAuthImpl = async (
+    _supabase: unknown,
+    getUserFromDb?: MockGetUserFromDb,
+    _accessToken?: string,
+  ) => {
+    const dbUser = await resolveDbUser(getUserFromDb);
 
-      return {
-        user: {
-          id: dbUser.id,
-          authUserId: dbUser.authUserId,
-          email: dbUser.email,
-          name: dbUser.name,
-          emailVerified: dbUser.emailVerified ?? null,
-        },
-        dbUser,
-      };
-    });
+    return {
+      user: {
+        id: dbUser.id,
+        authUserId: dbUser.authUserId,
+        email: dbUser.email,
+        name: dbUser.name,
+        emailVerified: dbUser.emailVerified ?? null,
+      },
+      dbUser,
+    };
+  };
 
-  const requireModerator = vi
-    .fn()
-    .mockImplementation(async (_supabase, getUserFromDb) => {
-      const { dbUser } = await requireAuth(_supabase, getUserFromDb);
+  const requireAuth = vi.fn(requireAuthImpl);
 
-      if (!dbUser.isModerator && !dbUser.isAdmin) {
-        throw new Error("Moderator access required");
-      }
+  const requireModeratorImpl = async (
+    _supabase: unknown,
+    getUserFromDb?: MockGetUserFromDb,
+    _accessToken?: string,
+  ) => {
+    const { dbUser } = await requireAuth(_supabase, getUserFromDb, _accessToken);
 
-      return dbUser;
-    });
+    if (!dbUser.isModerator && !dbUser.isAdmin) {
+      throw new Error("Moderator access required");
+    }
 
-  const requireAdmin = vi
-    .fn()
-    .mockImplementation(async (_supabase, getUserFromDb) => {
-      const { dbUser } = await requireAuth(_supabase, getUserFromDb);
+    return dbUser;
+  };
 
-      if (!dbUser.isAdmin) {
-        throw new Error("Admin access required");
-      }
+  const requireModerator = vi.fn(requireModeratorImpl);
 
-      return dbUser;
-    });
+  const requireAdminImpl = async (
+    _supabase: unknown,
+    getUserFromDb?: MockGetUserFromDb,
+    _accessToken?: string,
+  ) => {
+    const { dbUser } = await requireAuth(_supabase, getUserFromDb, _accessToken);
+
+    if (!dbUser.isAdmin) {
+      throw new Error("Admin access required");
+    }
+
+    return dbUser;
+  };
+
+  const requireAdmin = vi.fn(requireAdminImpl);
 
   return {
     getServerSession,

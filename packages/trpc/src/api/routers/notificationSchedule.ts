@@ -4,7 +4,7 @@ import {
   createTRPCRouter,
   adminProcedure,
   moderatorProcedure,
-} from "../trpc";
+} from "../../api/trpc";
 
 export const notificationScheduleRouter = createTRPCRouter({
   // Get all notification schedules

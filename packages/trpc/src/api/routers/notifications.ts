@@ -7,7 +7,7 @@ import {
   moderatorProcedure,
   protectedProcedure,
   publicProcedure,
-} from "../trpc";
+} from "../../api/trpc";
 import { env } from "../../utils/env";
 import { NotificationService } from "../../services/notificationService";
 import { send, sendRanking } from "../../utils/webPush";
