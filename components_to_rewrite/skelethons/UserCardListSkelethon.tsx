@@ -1,8 +1,8 @@
 import { StarIcon, PersonIcon } from "@radix-ui/react-icons";
 import { Flex, Card, Strong, Badge, Text, Skeleton, DataList } from "@radix-ui/themes";
-import ChangeUserAdminButton from "../admin/users/ChangeUserAdminButton";
-import AssignUserToGroupFormDialog from "../admin/users/dialog/AssignUserToGroupFormDialog";
-import RemoveUserFromGroupFormDialog from "../admin/users/dialog/RemoveUserFromGroupFormDialog";
+import ChangeUserAdminButton from "~/admin/users/ChangeUserAdminButton";
+import AssignUserToGroupFormDialog from "~/admin/users/dialog/AssignUserToGroupFormDialog";
+import RemoveUserFromGroupFormDialog from "~/admin/users/dialog/RemoveUserFromGroupFormDialog";
 
 
 const UserCardListSkelethon = () => {

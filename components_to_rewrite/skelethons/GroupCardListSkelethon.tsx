@@ -1,7 +1,7 @@
 import { Flex, Card, Strong, Badge, Text, Skeleton } from "@radix-ui/themes";
 
-import DeleteGroupDialog from "../admin/groups/dialog/DeleteGroupDialog";
-import EditGroupDialog from "../admin/groups/dialog/EditGroupDialog";
+import DeleteGroupDialog from "~/admin/groups/dialog/DeleteGroupDialog";
+import EditGroupDialog from "~/admin/groups/dialog/EditGroupDialog";
 
 const GroupCardListSkeleton = () => {
     const group = {
