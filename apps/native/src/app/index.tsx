@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth";
 import { useRouter } from "expo-router";
-import { LogOut, User } from "@tamagui/lucide-icons";
+import { LogOut, User, Users } from "@tamagui/lucide-icons";
 
 export default function Home() {
   const { session, isLoading, signOut } = useAuth();
@@ -99,6 +99,19 @@ export default function Home() {
           </YStack>
 
           <YStack space="$3">
+            <Button
+              size="$4"
+              backgroundColor="$blue9"
+              color="white"
+              fontWeight="700"
+              icon={Users}
+              onPress={() => router.push("/users")}
+              hoverStyle={{ backgroundColor: "$blue10" }}
+              pressStyle={{ backgroundColor: "$blue8", scale: 0.98 }}
+              animation="quick"
+            >
+              View Users (tRPC Example)
+            </Button>
             <Button
               size="$4"
               backgroundColor="$red9"

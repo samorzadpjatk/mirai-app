@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useEffect, useState, type ReactNode } from "react";
-import type { SupabaseClient, Session } from "@supabase/supabase-js";
-import createSupabaseClient from "./supabaseClient";
+import { createSupabaseClient } from "@integral-2025-app/supabase";
+import type { SupabaseClient, SupabaseSession } from "@integral-2025-app/supabase";
 import type {
   AuthContextValue,
   AuthUser,
@@ -35,19 +35,17 @@ export function AuthProvider({
   supabaseUrl,
   supabaseKey,
   supabaseClient,
-  storageOptions,
   onUserFetch,
+  storageOptions,
 }: AuthProviderProps) {
   const [client] = useState<SupabaseClient>(
     () =>
       supabaseClient ??
-      createSupabaseClient(supabaseUrl, supabaseKey, {
-        auth: storageOptions,
-      }),
+      createSupabaseClient(supabaseUrl, supabaseKey, storageOptions?.storage),
   );
 
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<SupabaseSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

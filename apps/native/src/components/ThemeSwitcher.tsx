@@ -1,4 +1,4 @@
-import { Button, XStack } from "tamagui";
+import { Button, Paragraph, XStack } from "tamagui";
 import { Moon, Sun } from "@tamagui/lucide-icons";
 
 interface ThemeSwitcherProps {
@@ -8,6 +8,7 @@ interface ThemeSwitcherProps {
 
 export function ThemeSwitcher({ onToggle, currentTheme }: ThemeSwitcherProps) {
   const isDark = currentTheme === "dark";
+  const label = isDark ? "Dark Mode" : "Light Mode";
 
   return (
     <XStack
@@ -34,6 +35,14 @@ export function ThemeSwitcher({ onToggle, currentTheme }: ThemeSwitcherProps) {
         aria-label="Toggle theme"
         cursor="pointer"
       />
+      <Paragraph
+        size="$4"
+        fontWeight="600"
+        color="$color"
+        accessibilityRole="text"
+      >
+        {label}
+      </Paragraph>
     </XStack>
   );
 }

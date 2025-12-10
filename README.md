@@ -52,7 +52,7 @@ pnpm install
 
 ### 3. Uruchomienie środowiska deweloperskiego
 
-Spójrz na jego [dokumentację](dev_environment/README.md)
+Spójrz na jego [dokumentację](environment/dev/README.md)
 
 ### 4. Przygotowuj schemat bazy danych
 

@@ -1,8 +1,8 @@
-import { render, waitFor } from "@testing-library/react";
-import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, waitFor, renderHook, act } from "@testing-library/react";
 import { AuthProvider } from "../AuthContext";
 import { useAuth } from "../authHooks";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@integral-2025-app/supabase";
 import type { AuthUser } from "../types";
 
 const mockSupabaseClient = () => {
@@ -21,29 +21,29 @@ const mockSupabaseClient = () => {
 
   return {
     auth: {
-      getSession: jest.fn().mockResolvedValue({
+      getSession: vi.fn().mockResolvedValue({
         data: { session: mockSession },
         error: null,
       }),
-      onAuthStateChange: jest.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: jest.fn() } },
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
       }),
-      signInWithPassword: jest.fn().mockResolvedValue({
+      signInWithPassword: vi.fn().mockResolvedValue({
         data: { user: mockSession.user, session: mockSession },
         error: null,
       }),
-      signUp: jest.fn().mockResolvedValue({
+      signUp: vi.fn().mockResolvedValue({
         data: { user: mockSession.user, session: mockSession },
         error: null,
       }),
-      signInWithOAuth: jest.fn().mockResolvedValue({
+      signInWithOAuth: vi.fn().mockResolvedValue({
         data: { url: "https://provider.com/oauth" },
         error: null,
       }),
-      signOut: jest.fn().mockResolvedValue({
+      signOut: vi.fn().mockResolvedValue({
         error: null,
       }),
-      refreshSession: jest.fn().mockResolvedValue({
+      refreshSession: vi.fn().mockResolvedValue({
         data: { session: mockSession },
         error: null,
       }),
@@ -55,7 +55,7 @@ describe("AuthContext", () => {
   describe("AuthProvider", () => {
     it("should initialize with loading state", async () => {
       const client = mockSupabaseClient();
-      const mockOnUserFetch = jest.fn().mockResolvedValue({
+      const mockOnUserFetch = vi.fn().mockResolvedValue({
         id: "db-1",
         authUserId: "user-123",
         email: "test@example.com",
@@ -88,7 +88,7 @@ describe("AuthContext", () => {
         name: "Test User",
         emailVerified: new Date(),
       };
-      const mockOnUserFetch = jest.fn().mockResolvedValue(mockUser);
+      const mockOnUserFetch = vi.fn().mockResolvedValue(mockUser);
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -116,7 +116,7 @@ describe("AuthContext", () => {
   describe("signInWithEmail", () => {
     it("should sign in with email and password", async () => {
       const client = mockSupabaseClient();
-      const mockOnUserFetch = jest.fn().mockResolvedValue(null);
+      const mockOnUserFetch = vi.fn().mockResolvedValue(null);
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -151,7 +151,7 @@ describe("AuthContext", () => {
     it("should throw error on failed sign in", async () => {
       const client = mockSupabaseClient();
       const mockError = new Error("Invalid credentials");
-      (client.auth.signInWithPassword as jest.Mock).mockResolvedValue({
+      (client.auth.signInWithPassword as any).mockResolvedValue({
         data: { user: null, session: null },
         error: mockError,
       });
@@ -172,12 +172,14 @@ describe("AuthContext", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      await expect(
-        result.current.signInWithEmail({
-          email: "test@example.com",
-          password: "wrong",
-        }),
-      ).rejects.toThrow("Invalid credentials");
+      await act(async () => {
+        await expect(
+          result.current.signInWithEmail({
+            email: "test@example.com",
+            password: "wrong",
+          }),
+        ).rejects.toThrow("Invalid credentials");
+      });
     });
   });
 
@@ -221,7 +223,7 @@ describe("AuthContext", () => {
     it("should throw error on failed sign up", async () => {
       const client = mockSupabaseClient();
       const mockError = new Error("Email already registered");
-      (client.auth.signUp as jest.Mock).mockResolvedValue({
+      (client.auth.signUp as any).mockResolvedValue({
         data: { user: null, session: null },
         error: mockError,
       });
@@ -242,12 +244,14 @@ describe("AuthContext", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      await expect(
-        result.current.signUpWithEmail({
-          email: "existing@example.com",
-          password: "password123",
-        }),
-      ).rejects.toThrow("Email already registered");
+      await act(async () => {
+        await expect(
+          result.current.signUpWithEmail({
+            email: "existing@example.com",
+            password: "password123",
+          }),
+        ).rejects.toThrow("Email already registered");
+      });
     });
   });
 
@@ -297,7 +301,7 @@ describe("AuthContext", () => {
         name: "Test User",
         emailVerified: new Date(),
       };
-      const mockOnUserFetch = jest.fn().mockResolvedValue(mockUser);
+      const mockOnUserFetch = vi.fn().mockResolvedValue(mockUser);
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: ({ children }) => (
@@ -354,7 +358,7 @@ describe("AuthContext", () => {
     it("should throw error on failed refresh", async () => {
       const client = mockSupabaseClient();
       const mockError = new Error("Refresh token expired");
-      (client.auth.refreshSession as jest.Mock).mockResolvedValue({
+      (client.auth.refreshSession as any).mockResolvedValue({
         data: { session: null },
         error: mockError,
       });
@@ -375,9 +379,11 @@ describe("AuthContext", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      await expect(result.current.refreshSession()).rejects.toThrow(
-        "Refresh token expired",
-      );
+      await act(async () => {
+        await expect(result.current.refreshSession()).rejects.toThrow(
+          "Refresh token expired",
+        );
+      });
     });
   });
 });
