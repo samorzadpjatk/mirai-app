@@ -54,12 +54,12 @@
     "@vitest/ui": "^4.0.15",
     "eslint": "^9.39.1",
     "jsdom": "^25.0.1",
-    "react": "^19.2.0",
+    "react": "^19.2.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0",
     "vitest": "^4.0.15"
   },
   "peerDependencies": {
-    "react": "^19.2.0"
+    "react": "^19.2.1"
   }
 }
