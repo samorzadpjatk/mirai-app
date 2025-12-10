@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "skipLibCheck": true
+    /* Removed defaults (emitDeclarationOnly/composite/noEmit) for cleanliness */
+  },
+  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts"]
+}

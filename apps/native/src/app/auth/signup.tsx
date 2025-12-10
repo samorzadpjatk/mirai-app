@@ -291,6 +291,7 @@ export default function SignupScreen() {
               hoverStyle={{ backgroundColor: "$red10" }}
               pressStyle={{ backgroundColor: "$red8", scale: 0.98 }}
               animation="quick"
+              testID="signup-submit-button"
             >
               {isLoading ? (
                 <XStack space="$2" alignItems="center">

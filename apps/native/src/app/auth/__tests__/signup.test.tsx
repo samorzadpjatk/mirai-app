@@ -2,10 +2,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import React from "react";
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
+
+import {
+  render,
+  fireEvent,
+  waitFor,
+  within,
+  act,
+} from "@testing-library/react-native";
 import { TamaguiProvider } from "tamagui";
-import tamaguiConfig from "../../../../tamagui.config";
-import SignupScreen from "../signup";
+import tamaguiConfig from "tamagui.config";
+import SignupScreen from "~/app/auth/signup";
 import { useRouter } from "expo-router";
 import type { UseSignupFormResult } from "@integral-2025-app/auth";
 
@@ -66,13 +73,13 @@ describe("SignupScreen", () => {
   });
 
   it("should render signup form", () => {
-    const { getByText, getByPlaceholderText } = render(
+    const { getAllByText, getByText, getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
       </TestWrapper>,
     );
 
-    expect(getByText("Create Account")).toBeTruthy();
+    expect(getAllByText("Create Account")).toHaveLength(2);
     expect(getByText("Join PJapp today")).toBeTruthy();
     expect(getByPlaceholderText("John Doe")).toBeTruthy();
     expect(getByPlaceholderText("your.email@example.com")).toBeTruthy();
@@ -80,7 +87,7 @@ describe("SignupScreen", () => {
     expect(getByPlaceholderText("Re-enter password")).toBeTruthy();
   });
 
-  it("should update name when typing", () => {
+  it("should update name when typing", async () => {
     const { getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -88,12 +95,14 @@ describe("SignupScreen", () => {
     );
 
     const nameInput = getByPlaceholderText("John Doe");
-    fireEvent.changeText(nameInput, "Jane Smith");
+    await act(async () => {
+      fireEvent.changeText(nameInput, "Jane Smith");
+    });
 
     expect(mockSetName).toHaveBeenCalledWith("Jane Smith");
   });
 
-  it("should update email when typing", () => {
+  it("should update email when typing", async () => {
     const { getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -101,12 +110,14 @@ describe("SignupScreen", () => {
     );
 
     const emailInput = getByPlaceholderText("your.email@example.com");
-    fireEvent.changeText(emailInput, "test@example.com");
+    await act(async () => {
+      fireEvent.changeText(emailInput, "test@example.com");
+    });
 
     expect(mockSetEmail).toHaveBeenCalledWith("test@example.com");
   });
 
-  it("should update password when typing", () => {
+  it("should update password when typing", async () => {
     const { getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -114,12 +125,14 @@ describe("SignupScreen", () => {
     );
 
     const passwordInput = getByPlaceholderText("At least 6 characters");
-    fireEvent.changeText(passwordInput, "password123");
+    await act(async () => {
+      fireEvent.changeText(passwordInput, "password123");
+    });
 
     expect(mockSetPassword).toHaveBeenCalledWith("password123");
   });
 
-  it("should update confirm password when typing", () => {
+  it("should update confirm password when typing", async () => {
     const { getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -127,7 +140,9 @@ describe("SignupScreen", () => {
     );
 
     const confirmInput = getByPlaceholderText("Re-enter password");
-    fireEvent.changeText(confirmInput, "password123");
+    await act(async () => {
+      fireEvent.changeText(confirmInput, "password123");
+    });
 
     expect(mockSetConfirmPassword).toHaveBeenCalledWith("password123");
   });
@@ -137,14 +152,16 @@ describe("SignupScreen", () => {
       onSuccess?.();
     });
 
-    const { getByText } = render(
+    const { getByTestId } = render(
       <TestWrapper>
         <SignupScreen />
       </TestWrapper>,
     );
 
-    const createButton = getByText("Create Account");
-    fireEvent.press(createButton);
+    const createButton = getByTestId("signup-submit-button");
+    await act(async () => {
+      fireEvent.press(createButton);
+    });
 
     await waitFor(() => {
       expect(mockHandleSubmit).toHaveBeenCalled();
@@ -156,20 +173,24 @@ describe("SignupScreen", () => {
       onSuccess?.();
     });
 
-    const { getByText } = render(
+    const { getByTestId } = render(
       <TestWrapper>
         <SignupScreen />
       </TestWrapper>,
     );
 
-    const createButton = getByText("Create Account");
-    fireEvent.press(createButton);
+    const createButton = getByTestId("signup-submit-button");
+    await act(async () => {
+      fireEvent.press(createButton);
+    });
 
     await waitFor(() => {
       expect(mockHandleSubmit).toHaveBeenCalled();
     });
 
-    jest.advanceTimersByTime(2000);
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
 
     expect(mockRouterReplace).toHaveBeenCalledWith("/");
   });
@@ -221,14 +242,15 @@ describe("SignupScreen", () => {
       clearError: jest.fn(),
     });
 
-    const { getByText, queryByText } = render(
+    const { getByText, getByTestId } = render(
       <TestWrapper>
         <SignupScreen />
       </TestWrapper>,
     );
 
     expect(getByText("Creating Account...")).toBeTruthy();
-    expect(queryByText("Create Account")).toBeNull();
+    const submitButton = getByTestId("signup-submit-button");
+    expect(within(submitButton).queryByText("Create Account")).toBeNull();
   });
 
   it("should disable inputs when loading", () => {
@@ -299,7 +321,7 @@ describe("SignupScreen", () => {
     expect(queryByPlaceholderText("John Doe")).toBeNull();
   });
 
-  it("should navigate to login when sign in link is pressed", () => {
+  it("should navigate to login when sign in link is pressed", async () => {
     const { getByText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -307,7 +329,9 @@ describe("SignupScreen", () => {
     );
 
     const signInLink = getByText("Sign In");
-    fireEvent.press(signInLink);
+    await act(async () => {
+      fireEvent.press(signInLink);
+    });
 
     expect(mockRouterPush).toHaveBeenCalledWith("/auth/login");
   });

@@ -1,5 +1,5 @@
-import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { formatDate, formatAmount, formatDateTime, getBaseUrl } from '../format';
+import { describe, it, expect } from "vitest";
+import { formatDate, formatAmount, formatDateTime, getBaseUrl } from '~/utils/format';
 
 describe('formatDate', () => {
     it('should return empty string for null', () => {
