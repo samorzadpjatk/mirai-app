@@ -45,6 +45,6 @@ jobs:
         run: pnpm lint
 
       - name: Run `tsc`
-        uses: EPMatt/reviewdog-action-tsc@v1.8.0
+        uses: EPMatt/reviewdog-action-tsc@v1.11.0
         with:
           reporter: github-check
