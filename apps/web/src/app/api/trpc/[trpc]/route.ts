@@ -15,8 +15,15 @@ const createContext = async (req: NextRequest) =>
     supabaseKey: env.SUPABASE_SERVICE_ROLE_KEY,
   });
 
-const handler = (req: NextRequest) =>
-  fetchRequestHandler({
+const setCorsHeaders = (res: Response) => {
+  res.headers.set("Access-Control-Allow-Origin", "*");
+  res.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.headers.set("Access-Control-Allow-Headers", "content-type, x-trpc-source");
+  res.headers.set("Access-Control-Max-Age", "86400");
+};
+
+const handler = async (req: NextRequest) => {
+  const response = await fetchRequestHandler({
     endpoint: "/api/trpc",
     req,
     router: appRouter,
@@ -30,4 +37,14 @@ const handler = (req: NextRequest) =>
         : undefined,
   });
 
-export { handler as GET, handler as POST };
+  setCorsHeaders(response);
+  return response;
+};
+
+export const GET = handler;
+export const POST = handler;
+export const OPTIONS = async () => {
+  const response = new Response(null, { status: 204 });
+  setCorsHeaders(response);
+  return response;
+};
