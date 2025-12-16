@@ -24,7 +24,7 @@ export const coinRouter = createTRPCRouter({
           groupId: input.groupId,
           amount: input.amount,
           reason: input.reason,
-          adminId: ctx.session.user.id,
+          adminId: ctx.dbUser.id,
         },
         include: {
           group: {
@@ -76,7 +76,7 @@ export const coinRouter = createTRPCRouter({
           groupId: input.groupId,
           amount: -input.amount, // Negative amount for removal
           reason: input.reason,
-          adminId: ctx.session.user.id,
+          adminId: ctx.dbUser.id,
         },
         include: {
           group: {

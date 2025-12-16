@@ -12,20 +12,13 @@ describe("userRouter", () => {
   };
 
   const createMockContext = (sessionOverrides: SessionOverrides = {}) => {
-    const sessionUser = {
+    const dbUser = {
       id: sessionOverrides.id ?? "user-1",
+      authUserId: "supabase-mock-user",
+      email: `${sessionOverrides.id ?? "user-1"}@test.com`,
       name: sessionOverrides.name ?? "Test User",
       isAdmin: sessionOverrides.isAdmin ?? false,
       isModerator: sessionOverrides.isModerator ?? true,
-    };
-
-    const dbUser = {
-      id: sessionUser.id,
-      authUserId: "supabase-mock-user",
-      email: `${sessionUser.id}@test.com`,
-      name: sessionUser.name,
-      isAdmin: sessionUser.isAdmin,
-      isModerator: sessionUser.isModerator,
       isServiceAccount: false,
     };
 
@@ -39,9 +32,7 @@ describe("userRouter", () => {
           findFirst: vi.fn().mockResolvedValue(dbUser),
         },
       },
-      session: {
-        user: sessionUser,
-      },
+      dbUser,
       supabase: {} as any,
     } as any;
   };
@@ -106,7 +97,7 @@ describe("userRouter", () => {
   describe("getMy", () => {
     it("should return current user", async () => {
       const mockUser = {
-        id: "user-1",
+        id: "mock-user-id",
         name: "Test User",
         email: "test@example.com",
         isAdmin: false,
@@ -119,7 +110,7 @@ describe("userRouter", () => {
 
       expect(result).toEqual(mockUser);
       expect(mockContext.db.user.findUnique).toHaveBeenCalledWith({
-        where: { id: "user-1" },
+        where: { id: "mock-user-id" },
       });
     });
   });
@@ -204,13 +195,13 @@ describe("userRouter", () => {
     });
 
     it("should prevent admin from removing their own status", async () => {
-      const adminContext = createMockContext({ id: "admin-1", isAdmin: true });
+      const adminContext = createMockContext({ id: "mock-user-id", isAdmin: true });
 
       const caller = userRouter.createCaller(adminContext);
 
       await expect(
         caller.updateUserAdminStatus({
-          userId: "admin-1",
+          userId: "mock-user-id",
           isAdmin: false,
         })
       ).rejects.toThrow("Nie możesz usunąć swoich uprawnień administratora");

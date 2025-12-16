@@ -2,30 +2,16 @@ import { vi } from "vitest";
 import type {
   MockDbUser,
   MockGetUserFromDb,
-  MockSession,
 } from "./src/test-utils/mockAuthTypes";
 
-const mockSession: MockSession = {
-  user: {
-    id: "mock-user-id",
-    email: "mock.user@example.com",
-    name: "Mock User",
-    authUserId: "supabase-mock-user",
-    emailVerified: new Date("2023-01-01T00:00:00.000Z"),
-  },
-  authUserId: "supabase-mock-user",
-  access_token: "mock-access-token",
-  refresh_token: "mock-refresh-token",
-  expires_in: 3600,
-  token_type: "bearer",
-};
+const MOCK_AUTH_USER_ID = "supabase-mock-user";
 
 const baseDbUser: MockDbUser = {
-  id: mockSession.user.id,
-  authUserId: mockSession.user.authUserId,
-  email: mockSession.user.email,
-  name: mockSession.user.name,
-  emailVerified: mockSession.user.emailVerified,
+  id: "mock-user-id",
+  authUserId: MOCK_AUTH_USER_ID,
+  email: "mock.user@example.com",
+  name: "Mock User",
+  emailVerified: new Date("2023-01-01T00:00:00.000Z"),
   isAdmin: true,
   isModerator: true,
   isServiceAccount: false,
@@ -61,7 +47,7 @@ const resolveDbUser = async (
     return toDbUser();
   }
 
-  const user = await getUserFromDb(mockSession.user.authUserId);
+  const user = await getUserFromDb(MOCK_AUTH_USER_ID);
   if (user) {
     return toDbUser(user);
   }
@@ -71,14 +57,11 @@ const resolveDbUser = async (
 
 // Mock @integral-2025-app/auth
 vi.mock("@integral-2025-app/auth", () => {
-  const getServerSession = vi.fn().mockResolvedValue(mockSession);
-
   const requireAuthImpl = async (
     _supabase: unknown,
-    getUserFromDb?: MockGetUserFromDb,
     _accessToken?: string,
   ) => {
-    const dbUser = await resolveDbUser(getUserFromDb);
+    const dbUser = await resolveDbUser();
 
     return {
       user: {
@@ -96,10 +79,9 @@ vi.mock("@integral-2025-app/auth", () => {
 
   const requireModeratorImpl = async (
     _supabase: unknown,
-    getUserFromDb?: MockGetUserFromDb,
     _accessToken?: string,
   ) => {
-    const { dbUser } = await requireAuth(_supabase, getUserFromDb, _accessToken);
+    const { dbUser } = await requireAuth(_supabase, _accessToken);
 
     if (!dbUser.isModerator && !dbUser.isAdmin) {
       throw new Error("Moderator access required");
@@ -112,10 +94,9 @@ vi.mock("@integral-2025-app/auth", () => {
 
   const requireAdminImpl = async (
     _supabase: unknown,
-    getUserFromDb?: MockGetUserFromDb,
     _accessToken?: string,
   ) => {
-    const { dbUser } = await requireAuth(_supabase, getUserFromDb, _accessToken);
+    const { dbUser } = await requireAuth(_supabase, _accessToken);
 
     if (!dbUser.isAdmin) {
       throw new Error("Admin access required");
@@ -127,7 +108,6 @@ vi.mock("@integral-2025-app/auth", () => {
   const requireAdmin = vi.fn(requireAdminImpl);
 
   return {
-    getServerSession,
     requireAuth,
     requireModerator,
     requireAdmin,

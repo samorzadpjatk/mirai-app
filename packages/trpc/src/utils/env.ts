@@ -10,7 +10,10 @@ export const env = createEnv({
     VAPID_PUBLIC_KEY: z.string().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_EMAIL: z.email().optional(),
-    NODE_ENV: z.enum(["development", "production", "test"]),
+    // Accept any NODE_ENV but coerce invalid/missing values to "development"
+    NODE_ENV: z
+      .enum(["development", "production", "test"])
+      .catch("development"),
   },
 
   /**

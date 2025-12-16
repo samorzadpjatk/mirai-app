@@ -4,6 +4,7 @@ import type {
 } from "@integral-2025-app/supabase";
 import type { User } from "@integral-2025-app/common-types";
 import type { AuthUser } from "./types";
+import { db } from "@integral-2025-app/db";
 
 type MinimalBuffer = {
   from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };
@@ -81,9 +82,16 @@ export async function getAuthServerUser(
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<SupabaseUser | null> {
-  const response = accessToken
-    ? await supabase.auth.getUser(accessToken)
-    : await supabase.auth.getUser();
+  // On the server (Node, WebSockets, API routes) we generally authenticate
+  // using an explicit access token (e.g. Authorization header or WS
+  // connection params). If there is no token, treat the request as
+  // unauthenticated instead of querying Supabase Auth with an empty session,
+  // which would cause an AuthSessionMissingError noise in logs.
+  if (!accessToken) {
+    return null;
+  }
+
+  const response = await supabase.auth.getUser(accessToken);
   const {
     data: { user },
     error,
@@ -178,12 +186,10 @@ export function hasRequiredRole(
 /**
  * Get the current session with user information
  * @param supabase - Supabase client instance
- * @param getUserFromDb - Function to fetch user from database by authUserId
  * @returns Session object with user and authUserId, or null if not authenticated
  */
 export async function getSession(
   supabase: SupabaseClient,
-  getUserFromDb: (authUserId: string) => Promise<User | null>,
   accessToken?: string,
 ): Promise<{
   user: AuthUser | null;
@@ -195,7 +201,9 @@ export async function getSession(
     return null;
   }
 
-  const dbUser = await getUserFromDb(supabaseUser.id);
+  const dbUser = await db.user.findFirst({
+    where: { authUserId: supabaseUser.id },
+  });
 
   if (!dbUser) {
     return {
@@ -214,19 +222,20 @@ export async function getSession(
 
 export async function requireAuth(
   supabase: SupabaseClient,
-  getUserFromDb: (authUserId: string) => Promise<User | null>,
   accessToken?: string,
 ): Promise<{
   user: AuthUser;
   dbUser: User;
 }> {
-  const session = await getSession(supabase, getUserFromDb, accessToken);
+  const session = await getSession(supabase, accessToken);
 
   if (!session?.user) {
     throw new AuthenticationError("Unauthorized");
   }
 
-  const dbUser = await getUserFromDb(session.authUserId!);
+  const dbUser = await db.user.findFirst({
+    where: { authUserId: session.authUserId! },
+  });
 
   if (!dbUser) {
     throw new AuthenticationError("User not found in database");
@@ -242,10 +251,9 @@ export async function requireAuth(
 
 export async function requireAdmin(
   supabase: SupabaseClient,
-  getUserFromDb: (authUserId: string) => Promise<User | null>,
   accessToken?: string,
 ): Promise<User> {
-  const { dbUser } = await requireAuth(supabase, getUserFromDb, accessToken);
+  const { dbUser } = await requireAuth(supabase, accessToken);
 
   if (!dbUser.isAdmin) {
     throw new AuthorizationError("Admin access required");
@@ -256,10 +264,9 @@ export async function requireAdmin(
 
 export async function requireModerator(
   supabase: SupabaseClient,
-  getUserFromDb: (authUserId: string) => Promise<User | null>,
   accessToken?: string,
 ): Promise<User> {
-  const { dbUser } = await requireAuth(supabase, getUserFromDb, accessToken);
+  const { dbUser } = await requireAuth(supabase, accessToken);
 
   if (!dbUser.isModerator && !dbUser.isAdmin) {
     throw new AuthorizationError("Moderator access required");

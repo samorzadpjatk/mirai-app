@@ -14,7 +14,6 @@ export type {
 
 export {
   getAuthServerUser as getServerUser,
-  getAuthServerSession as getServerSession,
   mapDatabaseUserToAuthUser,
   parseRolesFromToken,
   hasRequiredRole,
