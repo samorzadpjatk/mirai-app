@@ -68,7 +68,8 @@ describe("auth server", () => {
         error: null,
       });
 
-      const user = await getAuthServerUser(client);
+      const token = "test-token";
+      const user = await getAuthServerUser(client, token);
       expect(user).toEqual(mockUser);
     });
 
@@ -98,7 +99,8 @@ describe("auth server", () => {
         error: new Error("Auth error"),
       });
 
-      const user = await getAuthServerUser(client);
+      const token = "test-token";
+      const user = await getAuthServerUser(client, token);
       expect(user).toBeNull();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Error occurred while fetching user:",
