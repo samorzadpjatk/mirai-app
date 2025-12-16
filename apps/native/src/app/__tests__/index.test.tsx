@@ -17,7 +17,7 @@ jest.mock("expo-router", () => ({
   useRouter: () => mockRouter,
 }));
 
-const mockUseAuth = useAuth;
+const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 const wrapWithProvider = (ui: React.ReactElement) => (
   <TamaguiProvider config={tamaguiConfig}>{ui}</TamaguiProvider>
