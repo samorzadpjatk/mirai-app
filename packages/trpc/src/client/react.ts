@@ -20,7 +20,9 @@ export const useTRPCClient = trpcContext.useTRPCClient;
 const wsClient = (wsUrl: string, authorizationToken?: string) =>
   createWSClient({
     url: wsUrl,
-    connectionParams: authorizationToken ? { authToken: authorizationToken } : undefined,
+    connectionParams: authorizationToken
+      ? { authToken: authorizationToken }
+      : undefined,
     lazy: { enabled: true, closeMs: 60_000 },
   });
 
@@ -35,7 +37,7 @@ const getTRPCClient = (
         condition(op) {
           return op.type === "subscription";
         },
-        
+
         true: wsLink({
           client: wsClient(wsUrl, authorizationToken),
           transformer: SuperJSON,

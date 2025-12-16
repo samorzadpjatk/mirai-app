@@ -1,5 +1,5 @@
 import { YStack, XStack, Button, Input, Text, View, Spinner } from "tamagui";
-import { useLoginForm } from "@integral-2025-app/auth";
+import { useLoginForm } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { Lock, Mail, AlertCircle } from "@tamagui/lucide-icons";
 import { StatusBar } from "expo-status-bar";

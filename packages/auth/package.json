@@ -10,6 +10,16 @@
       "types": "./dist/src/index.d.ts",
       "import": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./server": {
+      "types": "./dist/src/server.d.ts",
+      "import": "./src/server.ts",
+      "default": "./src/server.ts"
+    },
+    "./client": {
+      "types": "./dist/src/client.d.ts",
+      "import": "./src/client.ts",
+      "default": "./src/client.ts"
     }
   },
   "scripts": {

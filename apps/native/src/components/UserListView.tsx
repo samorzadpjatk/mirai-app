@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import React, { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -40,31 +43,27 @@ type UserSearchData = {
 
 /**
  * UserListView Component
- * 
+ *
  * This component demonstrates how to utilize tRPC with Tanstack React Query
  * in an Expo React Native application.
  */
 export function UserListView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchField] = useState<"name" | "email" | "wristNumber" | "houseNumber" | "groupName">("name");
+  const [searchField] = useState<
+    "name" | "email" | "wristNumber" | "houseNumber" | "groupName"
+  >("name");
   const trpc = useTRPC();
   // tRPC Query - Fetching Data
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useQuery<UserSearchData>(
-    trpc.user.searchWithPagination.queryOptions({
-      field: searchField,
-      searchTerm: searchTerm || undefined,
-      page: currentPage,
-      limit: 10,
-    })
-  );
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useQuery<UserSearchData>(
+      trpc.user.searchWithPagination.queryOptions({
+        field: searchField,
+        searchTerm: searchTerm || undefined,
+        page: currentPage,
+        limit: 10,
+      }),
+    );
 
   const updateAdminStatus = useMutation<
     unknown,
@@ -77,7 +76,7 @@ export function UserListView() {
       },
       onError: (err) => {
         console.error("Error updating admin status:", err);
-      }
+      },
     }),
   );
 
@@ -152,15 +151,15 @@ export function UserListView() {
           onChangeText={setSearchTerm}
           onSubmitEditing={handleSearch}
         />
-        <Button
-          icon={Search}
-          onPress={handleSearch}
-          disabled={isFetching}
-        />
+        <Button icon={Search} onPress={handleSearch} disabled={isFetching} />
       </XStack>
 
       {pagination && (
-        <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          marginBottom="$3"
+        >
           <Text fontSize="$3" color="$gray11">
             Page {pagination.currentPage} of {pagination.totalPages}
           </Text>
@@ -208,7 +207,11 @@ export function UserListView() {
                 )}
               </XStack>
 
-              <XStack justifyContent="space-between" alignItems="center" marginTop="$2">
+              <XStack
+                justifyContent="space-between"
+                alignItems="center"
+                marginTop="$2"
+              >
                 <Text
                   fontSize="$2"
                   color={item.isAdmin ? "$green10" : "$gray10"}
