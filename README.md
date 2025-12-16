@@ -12,19 +12,19 @@ Spójrz na [zasady współpracy wewnątrz repo](CONTRIBUTING.md)!
 
 Obecnie repozytorium pełni funkcję monorepo zaimplementowanego z użyciem **Turborepo** dla orchiestracji budowy kodu oraz **pnpm workspaces** dla zarządzania pakietami.
 
-Sprawdź szczegóły ich konfiguracji wewnątrz plików [`turbo.json`](../turbo.json) oraz [`pnpm-workspace.yaml`](../pnpm-workspace.yaml)
+Sprawdź szczegóły ich konfiguracji wewnątrz plików [`turbo.json`](turbo.json) oraz [`pnpm-workspace.yaml`](pnpm-workspace.yaml)
 
 Znajduje się w nim:
 
-- **Aplikacja natywna** (Expo) → [`@integral-2025-app/native`](../apps/native/)
-- **Strona internetowa PWA** (Next.js) → [`@integral-2025-app/web`](../apps/web/)
-- **Współdzielone biblioteki** → [`packages`](../packages/)
+- **Aplikacja natywna** (Expo / React Native) → [`@integral-2025-app/native`](apps/native/)
+- **Backend serwerowy** (Fastify + tRPC) → [`@integral-2025-app/backend-server`](apps/backend-server/)
+- **Współdzielone biblioteki** → [`packages`](packages/)
 
-Wszystkie skrypty mogą zostać wywoałenie z katalogu głównego projektu za pomocą `pnpm <script>`.
+Wszystkie skrypty mogą zostać wywołane z katalogu głównego projektu za pomocą `pnpm <script>`.
 
 Aby uruchomić skrypt przypisany danemu komponentowi używamy `pnpm --filter`:
 ```bash
-pnpm --filter @integral-2025-app/web db:push
+pnpm --filter @integral-2025-app/native dev
 ```
 
 ## Wymagania techniczne
@@ -72,7 +72,7 @@ pnpm --filter @integral-2025-app/db db:studio
 ### 5. Uruchom wybraną aplikację
 
 Przed uruchomieniem: 
-- spójrz na dokumentację [aplikacji natywnej](apps/native/README.md) lub [aplikacji webowej](apps/web/README.md)
+- spójrz na dokumentację [aplikacji natywnej](apps/native/README.md) oraz [backendu](apps/backend-server/README.md)
 - wywołaj testy za pomocą `pnpm test`
 - sprawdź, czy monorepo buduje aplikację za pomocą `pnpm build`
 
@@ -80,13 +80,13 @@ Przed uruchomieniem:
 
 Uruchamia wszystkie aplikacje w trybie developerskim jednocześnie:
 
-- Web app on `http://localhost:11000`
+- Backend server on `http://localhost:2022`
 - Native app (Expo dev server)
 
 #### `pnpm dev:web`
 
-Uruchamia tylko stronę internetową PWA w trybie deweloperskim (port 11000).
+Uruchamia tylko serwer backendowy (Fastify + tRPC) w trybie deweloperskim (domyślnie port 2022).
 
 #### `pnpm dev:native`
 
-Uruchamia tylko aplikacje natywną (Expo dev server).
+Uruchamia tylko aplikację natywną (Expo dev server).
