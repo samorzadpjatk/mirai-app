@@ -4,7 +4,7 @@ import { TamaguiProvider } from "tamagui";
 import Home from "~/app/index";
 import tamaguiConfig from "tamagui.config";
 
-jest.mock("@integral-2025-app/auth", () => ({
+jest.mock("@integral-2025-app/auth/client", () => ({
   useAuth: jest.fn(),
 }));
 
