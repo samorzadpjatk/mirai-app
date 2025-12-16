@@ -48,7 +48,10 @@ export function UserListView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchField] = useState<"name" | "email" | "wristNumber" | "houseNumber" | "groupName">("name");
-  const trpc = useTRPC();
+  // Use tRPC client; cast to any to avoid overly strict union types in hooks typing
+  const trpcRoot = useTRPC() as unknown;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const userTrpc = (trpcRoot as any).user;
   // tRPC Query - Fetching Data
   const {
     data,
@@ -58,12 +61,13 @@ export function UserListView() {
     refetch,
     isFetching,
   } = useQuery<UserSearchData>(
-    trpc.user.searchWithPagination.queryOptions({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    userTrpc.searchWithPagination.queryOptions({
       field: searchField,
       searchTerm: searchTerm || undefined,
       page: currentPage,
       limit: 10,
-    })
+    }),
   );
 
   const updateAdminStatus = useMutation<
@@ -71,13 +75,14 @@ export function UserListView() {
     Error,
     { userId: string; isAdmin: boolean }
   >(
-    trpc.user.updateUserAdminStatus.mutationOptions({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    userTrpc.updateUserAdminStatus.mutationOptions({
       onSuccess: () => {
         void refetch();
       },
-      onError: (err) => {
+      onError: (err: unknown) => {
         console.error("Error updating admin status:", err);
-      }
+      },
     }),
   );
 
