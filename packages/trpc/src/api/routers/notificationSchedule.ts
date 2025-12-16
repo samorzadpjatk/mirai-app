@@ -115,7 +115,7 @@ export const notificationScheduleRouter = createTRPCRouter({
               title: input.notificationTitle,
               body: input.notificationBody,
               url: input.notificationUrl,
-              createdById: ctx.session.user.id,
+              createdById: ctx.dbUser.id,
             },
           });
 
@@ -135,7 +135,7 @@ export const notificationScheduleRouter = createTRPCRouter({
               hour: input.hour,
               minute: input.minute,
               isActive: input.isActive,
-              createdById: ctx.session.user.id,
+              createdById: ctx.dbUser.id,
             },
             include: {
               createdBy: {
@@ -160,7 +160,7 @@ export const notificationScheduleRouter = createTRPCRouter({
               hour: input.hour,
               minute: input.minute,
               isActive: input.isActive,
-              createdById: ctx.session.user.id,
+              createdById: ctx.dbUser.id,
             },
             include: {
               createdBy: {
