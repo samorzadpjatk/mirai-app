@@ -55,6 +55,7 @@
     "@types/web-push": "^3.6.4",
     "@vitest/coverage-v8": "^4.0.15",
     "@vitest/ui": "^4.0.15",
+    "postcss": "^8.5.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
   }

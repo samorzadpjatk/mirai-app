@@ -10,5 +10,5 @@
     /* Removed defaults (emitDeclarationOnly/composite/noEmit) for cleanliness */
   },
   "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts", "prisma"],
-  "exclude": ["prisma/**/*"]
+  "exclude": ["node_modules", "dist", "prisma/lib/**/*"]
 }

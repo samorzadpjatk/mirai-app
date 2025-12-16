@@ -1,5 +1,5 @@
+import { renderHook, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { renderHook } from "@testing-library/react";
 import { useAuth, useUser, useSession, useIsAuthenticated } from "../authHooks";
 import { AuthProvider } from "../AuthContext";
 import type { SupabaseClient } from "@integral-2025-app/supabase";
@@ -31,7 +31,7 @@ describe("Auth Hooks", () => {
       }).toThrow("useAuth hook cannot be used outside of AuthProvider");
     });
 
-    it("should return auth context when used inside AuthProvider", () => {
+    it("should return auth context when used inside AuthProvider", async () => {
       const client = mockSupabaseClient();
 
       const { result } = renderHook(() => useAuth(), {
@@ -44,6 +44,10 @@ describe("Auth Hooks", () => {
             {children}
           </AuthProvider>
         ),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
       });
 
       expect(result.current).toHaveProperty("user");
@@ -59,7 +63,7 @@ describe("Auth Hooks", () => {
   });
 
   describe("useUser", () => {
-    it("should return user from auth context", () => {
+    it("should return user from auth context", async () => {
       const client = mockSupabaseClient();
 
       const { result } = renderHook(() => useUser(), {
@@ -74,12 +78,14 @@ describe("Auth Hooks", () => {
         ),
       });
 
-      expect(result.current).toBeNull();
+      await waitFor(() => {
+        expect(result.current).toBeNull();
+      });
     });
   });
 
   describe("useSession", () => {
-    it("should return session from auth context", () => {
+    it("should return session from auth context", async () => {
       const client = mockSupabaseClient();
 
       const { result } = renderHook(() => useSession(), {
@@ -94,12 +100,14 @@ describe("Auth Hooks", () => {
         ),
       });
 
-      expect(result.current).toBeNull();
+      await waitFor(() => {
+        expect(result.current).toBeNull();
+      });
     });
   });
 
   describe("useIsAuthenticated", () => {
-    it("should return false when not authenticated", () => {
+    it("should return false when not authenticated", async () => {
       const client = mockSupabaseClient();
 
       const { result } = renderHook(() => useIsAuthenticated(), {
@@ -114,7 +122,9 @@ describe("Auth Hooks", () => {
         ),
       });
 
-      expect(result.current).toBe(false);
+      await waitFor(() => {
+        expect(result.current).toBe(false);
+      });
     });
   });
 });

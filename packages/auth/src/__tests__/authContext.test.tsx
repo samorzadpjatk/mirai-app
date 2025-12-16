@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, waitFor, renderHook, act } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import type { Mock } from "vitest";
 import { AuthProvider } from "../AuthContext";
 import { useAuth } from "../authHooks";
 import type { SupabaseClient } from "@integral-2025-app/supabase";
@@ -151,7 +152,7 @@ describe("AuthContext", () => {
     it("should throw error on failed sign in", async () => {
       const client = mockSupabaseClient();
       const mockError = new Error("Invalid credentials");
-      (client.auth.signInWithPassword as any).mockResolvedValue({
+      (client.auth.signInWithPassword as Mock).mockResolvedValue({
         data: { user: null, session: null },
         error: mockError,
       });
@@ -223,7 +224,7 @@ describe("AuthContext", () => {
     it("should throw error on failed sign up", async () => {
       const client = mockSupabaseClient();
       const mockError = new Error("Email already registered");
-      (client.auth.signUp as any).mockResolvedValue({
+      (client.auth.signUp as Mock).mockResolvedValue({
         data: { user: null, session: null },
         error: mockError,
       });
@@ -358,7 +359,7 @@ describe("AuthContext", () => {
     it("should throw error on failed refresh", async () => {
       const client = mockSupabaseClient();
       const mockError = new Error("Refresh token expired");
-      (client.auth.refreshSession as any).mockResolvedValue({
+      (client.auth.refreshSession as Mock).mockResolvedValue({
         data: { session: null },
         error: mockError,
       });
