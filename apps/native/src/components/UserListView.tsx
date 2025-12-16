@@ -51,7 +51,7 @@ export function UserListView() {
   // Use tRPC client; cast to avoid overly strict union types in hooks typing
   const trpcRoot = useTRPC() as unknown;
   // Type assertion needed due to complex union types in tRPC hooks
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
   const userTrpc = (trpcRoot as { user: any }).user;
   // tRPC Query - Fetching Data
   const {
