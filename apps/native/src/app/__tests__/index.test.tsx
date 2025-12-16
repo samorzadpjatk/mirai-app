@@ -1,6 +1,5 @@
-
 import { render } from "@testing-library/react-native";
-import { useAuth, type AuthContextValue } from "@integral-2025-app/auth";
+import { useAuth, type AuthContextValue } from "@integral-2025-app/auth/client";
 import { TamaguiProvider } from "tamagui";
 import Home from "~/app/index";
 import tamaguiConfig from "tamagui.config";
@@ -18,13 +17,14 @@ jest.mock("expo-router", () => ({
   useRouter: () => mockRouter,
 }));
 
-const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
+const mockUseAuth = useAuth;
 
 const wrapWithProvider = (ui: React.ReactElement) => (
   <TamaguiProvider config={tamaguiConfig}>{ui}</TamaguiProvider>
 );
 
-const renderWithProvider = (ui: React.ReactElement) => render(wrapWithProvider(ui));
+const renderWithProvider = (ui: React.ReactElement) =>
+  render(wrapWithProvider(ui));
 
 const createAuthValue = (
   overrides: Partial<AuthContextValue> = {},

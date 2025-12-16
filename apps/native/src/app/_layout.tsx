@@ -3,7 +3,7 @@ import { TamaguiProvider, YStack } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import { useState } from "react";
 import { ThemeSwitcher } from "~/components/ThemeSwitcher";
-import { AuthProvider } from "@integral-2025-app/auth";
+import { AuthProvider } from "@integral-2025-app/auth/client";
 import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { APIProvider } from "@integral-2025-app/trpc/client";
@@ -50,4 +50,3 @@ export default function RootLayout() {
     </TamaguiProvider>
   );
 }
-
