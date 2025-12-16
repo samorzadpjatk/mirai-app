@@ -1,18 +1,24 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useLoginForm } from "../useLoginForm";
 import { useAuth } from "../../authHooks";
 
-vi.mock("../../authHooks");
+vi.mock("../../authHooks", () => ({
+  useAuth: vi.fn(),
+}));
+
+const mockedUseAuth = vi.mocked(useAuth);
+
+type AuthContextValue = ReturnType<typeof useAuth>;
 
 describe("useLoginForm", () => {
   const mockSignInWithEmail = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useAuth as any).mockReturnValue({
+    mockedUseAuth.mockReturnValue({
       signInWithEmail: mockSignInWithEmail,
-    });
+    } as unknown as AuthContextValue);
   });
 
   it("should initialize with empty form state", () => {
@@ -123,7 +129,10 @@ describe("useLoginForm", () => {
     expect(result.current.formState.isLoading).toBe(false);
 
     // Start submission - don't await yet
-    const submitPromise = result.current.handleSubmit();
+    let submitPromise: Promise<void>;
+    act(() => {
+      submitPromise = result.current.handleSubmit();
+    });
 
     // Loading should be true immediately after calling handleSubmit
     await waitFor(() => {
@@ -135,7 +144,7 @@ describe("useLoginForm", () => {
 
     // Wait for submission to complete
     await act(async () => {
-      await submitPromise;
+      await submitPromise!;
     });
 
     // Loading should be false after completion

@@ -6,13 +6,16 @@
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "types": ["node", "vitest", "@testing-library/jest-dom"]
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*","vitest.setup.ts","vitest.config.ts"],
+  "include": ["src/**/*", "vitest.setup.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"],
   "references": [
     {
