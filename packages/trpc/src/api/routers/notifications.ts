@@ -51,7 +51,7 @@ export const notificationRouter = createTRPCRouter({
         // Store the subscription in the database
         const subscription = await ctx.db.pushSubscription.upsert({
           where: {
-            userId: ctx.session.user.dbUser.id,
+            userId: ctx.dbUser.id,
           },
           update: {
             endpoint: input.subscription.endpoint,
@@ -60,7 +60,7 @@ export const notificationRouter = createTRPCRouter({
             updatedAt: new Date(),
           },
           create: {
-            userId: ctx.session.user.dbUser.id,
+            userId: ctx.dbUser.id,
             endpoint: input.subscription.endpoint,
             p256dh: input.subscription.keys.p256dh,
             auth: input.subscription.keys.auth,
@@ -82,7 +82,7 @@ export const notificationRouter = createTRPCRouter({
     try {
       await ctx.db.pushSubscription.deleteMany({
         where: {
-          userId: ctx.session.user.dbUser.id,
+          userId: ctx.dbUser.id,
         },
       });
 
@@ -100,7 +100,7 @@ export const notificationRouter = createTRPCRouter({
   getSubscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
     const subscription = await ctx.db.pushSubscription.findFirst({
       where: {
-        userId: ctx.session.user.dbUser.id,
+        userId: ctx.dbUser.id,
       },
     });
 
@@ -120,7 +120,7 @@ export const notificationRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const count = await ctx.db.notification.count({
-        where: { pushes: { some: { targetUserId: ctx.session.user.dbUser.id } } },
+        where: { pushes: { some: { targetUserId: ctx.dbUser.id } } },
       });
       const totalPages = Math.ceil(count / input.pageSize);
       if (input.page > totalPages && totalPages > 0) {
@@ -130,7 +130,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
       const notifications = await ctx.db.notification.findMany({
-        where: { pushes: { some: { targetUserId: ctx.session.user.dbUser.id } } },
+        where: { pushes: { some: { targetUserId: ctx.dbUser.id } } },
         orderBy: { createdAt: "desc" },
         include: { createdBy: { select: { id: true, name: true } } },
         take: input.pageSize,
@@ -220,7 +220,7 @@ export const notificationRouter = createTRPCRouter({
         };
         return await send({
           db: ctx.db,
-          userId: ctx.session.user.id,
+          userId: ctx.dbUser.id,
           input: payload,
         });
       } catch (error) {
@@ -253,7 +253,7 @@ export const notificationRouter = createTRPCRouter({
         };
         return await send({
           db: ctx.db,
-          userId: ctx.session.user.id,
+          userId: ctx.dbUser.id,
           input: payload,
         });
       } catch (error) {
@@ -269,7 +269,7 @@ export const notificationRouter = createTRPCRouter({
     try {
       return await sendRanking({
         db: ctx.db,
-        userId: ctx.session.user.id,
+        userId: ctx.dbUser.id,
       });
     } catch (error) {
       console.error("Error sending ranking update notifications:", error);
@@ -323,7 +323,7 @@ export const notificationRouter = createTRPCRouter({
         };
         return await send({
           db: ctx.db,
-          userId: ctx.session.user.id,
+          userId: ctx.dbUser.id,
           input: payload,
         });
       } catch (error) {
@@ -381,7 +381,7 @@ export const notificationRouter = createTRPCRouter({
         };
         return await send({
           db: ctx.db,
-          userId: ctx.session.user.id,
+          userId: ctx.dbUser.id,
           input: payload,
         });
       } catch (error) {
@@ -440,7 +440,7 @@ export const notificationRouter = createTRPCRouter({
         };
         return await send({
           db: ctx.db,
-          userId: ctx.session.user.id,
+          userId: ctx.dbUser.id,
           input: payload,
         });
       } catch (error) {
@@ -478,7 +478,7 @@ export const notificationRouter = createTRPCRouter({
         };
         return await send({
           db: ctx.db,
-          userId: ctx.session.user.id,
+          userId: ctx.dbUser.id,
           input: payload,
         });
       } catch (error) {
@@ -524,7 +524,7 @@ export const notificationRouter = createTRPCRouter({
         };
         return await send({
           db: ctx.db,
-          userId: ctx.session.user.id,
+          userId: ctx.dbUser.id,
           input: payload,
         });
       } catch (error) {

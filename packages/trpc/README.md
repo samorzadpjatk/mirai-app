@@ -23,7 +23,7 @@ pnpm add @integral-2025-app/trpc
 Install peer dependencies:
 
 ```bash
-pnpm add @tanstack/react-query @trpc/client @trpc/react-query
+pnpm add @tanstack/react-query @trpc/client @trpc/tanstack-react-query
 ```
 
 ## Usage
@@ -68,10 +68,11 @@ export default function App() {
 Then in components:
 
 ```tsx
-import { api } from "@integral-2025-app/trpc/client";
+import { useTRPC } from "@integral-2025-app/trpc/client";
 
 function MyComponent() {
-  const { data, isLoading } = api.user.getMy.useQuery();
+  const trpc = useTRPC();
+  const { data, isLoading } = trpc.user.getMy.useQuery();
   
   if (isLoading) return <Text>Loading...</Text>;
   return <Text>Hello, {data?.name}!</Text>;
@@ -252,7 +253,7 @@ pnpm typecheck
 ### Peer Dependencies (Client)
 - `@tanstack/react-query` - Data fetching for React
 - `@trpc/client` - tRPC client
-- `@trpc/react-query` - tRPC React Query integration
+- `@trpc/tanstack-react-query` - tRPC React Query integration
 - `react` - React library
 
 ## Contributing

@@ -3,6 +3,7 @@
 import { useContext } from "react";
 import type { AuthUser, AuthContextValue } from "./types";
 import { AuthContext } from "./AuthContext";
+import type { SupabaseSession as Session } from "@integral-2025-app/supabase";
 
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
@@ -19,7 +20,7 @@ export function useUser(): AuthUser | null {
   return user;
 }
 
-export function useSession() {
+export function useSession(): Session | null {
   const { session } = useAuth();
   return session;
 }

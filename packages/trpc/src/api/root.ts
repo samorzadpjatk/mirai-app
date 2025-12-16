@@ -16,8 +16,8 @@ export const appRouter: ReturnType<typeof createTRPCRouter> = createTRPCRouter({
   user: userRouter,
   coin: coinRouter,
   coinTransaction: coinTransactionRouter,
-  // notifications: notificationRouter,
-  // notificationSchedule: notificationScheduleRouter,
+  notifications: notificationRouter,
+  notificationSchedule: notificationScheduleRouter,
 });
 
 // export type definition of API

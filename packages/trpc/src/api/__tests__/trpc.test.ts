@@ -1,8 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createTRPCContext } from "../api/trpc";
-import { getServerSession } from "@integral-2025-app/auth";
-import { db } from "@integral-2025-app/db";
-import { supabase } from "@integral-2025-app/supabase";
 
 vi.mock("superjson", () => ({
   default: {
@@ -13,9 +9,19 @@ vi.mock("superjson", () => ({
 
 vi.mock("@integral-2025-app/auth");
 vi.mock("@integral-2025-app/db");
-vi.mock("@integral-2025-app/supabase");
+vi.mock("@integral-2025-app/supabase", () => ({
+  createSupabaseClient: vi.fn(() => ({
+    auth: {
+      getUser: vi.fn(),
+    },
+  })),
+}));
 
-const mockGetServerSession = vi.mocked(getServerSession);
+import { createTRPCContext } from "../trpc";
+import { db } from "@integral-2025-app/db";
+import { createSupabaseClient } from "@integral-2025-app/supabase";
+
+const mockCreateSupabaseClient = vi.mocked(createSupabaseClient);
 
 describe("server/api/trpc", () => {
   beforeEach(() => {
@@ -23,27 +29,18 @@ describe("server/api/trpc", () => {
   });
 
   describe("createTRPCContext", () => {
-    it("should create context with session and headers", async () => {
-      const mockSession = {
-        user: {
-          id: "1",
-          email: "test@example.com",
-          name: "Test User",
-          authUserId: "supabase-123",
-          emailVerified: new Date(),
+    it("should create context with accessToken and headers when authenticated", async () => {
+      const mockSupabaseClient = {
+        auth: {
+          getUser: vi.fn(),
         },
-        authUserId: "supabase-123",
-        access_token: "mock-access-token",
-        refresh_token: "mock-refresh-token",
-        expires_in: 3600,
-        token_type: "bearer",
-      } as any;
+      };
+      mockCreateSupabaseClient.mockReturnValue(mockSupabaseClient as any);
+
       const mockHeaders = new Headers({
         "content-type": "application/json",
         Authorization: "Bearer mock-token",
       });
-
-      mockGetServerSession.mockResolvedValue(mockSession);
 
       const context = await createTRPCContext({
         headers: mockHeaders,
@@ -53,18 +50,22 @@ describe("server/api/trpc", () => {
 
       expect(context).toEqual({
         db,
-        supabase,
-        session: mockSession,
+        supabase: mockSupabaseClient,
         headers: mockHeaders,
         accessToken: "mock-token",
       });
-      expect(mockGetServerSession).toHaveBeenCalledTimes(1);
-      expect(mockGetServerSession).toHaveBeenCalledWith(supabase, "mock-token");
+      expect(mockCreateSupabaseClient).toHaveBeenCalledWith("http://localhost:8000", "test-key");
     });
 
-    it("should create context with null session when not authenticated", async () => {
+    it("should create context without accessToken when not authenticated", async () => {
+      const mockSupabaseClient = {
+        auth: {
+          getUser: vi.fn(),
+        },
+      };
+      mockCreateSupabaseClient.mockReturnValue(mockSupabaseClient as any);
+
       const mockHeaders = new Headers();
-      mockGetServerSession.mockResolvedValue(null);
 
       const context = await createTRPCContext({
         headers: mockHeaders,
@@ -72,11 +73,36 @@ describe("server/api/trpc", () => {
         supabaseKey: "test-key",
       });
 
-      expect(context.session).toBeNull();
       expect(context.db).toBe(db);
-      expect(context.supabase).toBe(supabase);
+      expect(context.supabase).toBe(mockSupabaseClient);
       expect(context.accessToken).toBeNull();
-      expect(mockGetServerSession).not.toHaveBeenCalled();
+    });
+
+    it("should read accessToken from connectionParams when headers are missing", async () => {
+      const mockSupabaseClient = {
+        auth: {
+          getUser: vi.fn(),
+        },
+      };
+      mockCreateSupabaseClient.mockReturnValue(mockSupabaseClient as any);
+
+      const mockHeaders = new Headers();
+
+      const context = await createTRPCContext({
+        headers: mockHeaders,
+        supabaseUrl: "http://localhost:8000",
+        supabaseKey: "test-key",
+        connectionParams: {
+          authToken: "ws-token",
+        },
+      });
+
+      expect(context).toEqual({
+        db,
+        supabase: mockSupabaseClient,
+        headers: mockHeaders,
+        accessToken: "ws-token",
+      });
     });
   });
 });

@@ -1,80 +1,60 @@
-import { createTRPCReact } from "@trpc/react-query";
-import { httpBatchLink, loggerLink } from "@trpc/client";
+"use client";
+
+import { createTRPCContext } from "@trpc/tanstack-react-query";
+import type { AppRouter } from "../api/root";
+import {
+  createTRPCClient,
+  createWSClient,
+  httpBatchLink,
+  splitLink,
+  wsLink,
+} from "@trpc/client";
 import SuperJSON from "superjson";
-import type { AppRouter } from "~/api/root";
 
-/**
- * Create tRPC React hooks for your API.
- * This is the base client that can be used in any React environment.
- */
-export const api: ReturnType<typeof createTRPCReact<AppRouter>> =
-  createTRPCReact<AppRouter>();
+const trpcContext = createTRPCContext<AppRouter>();
 
-/**
- * Configuration options for creating a tRPC client.
- */
-export interface TRPCClientConfig {
-  /**
-   * The base URL for the tRPC API endpoint.
-   * @example "http://localhost:3000"
-   */
-  baseUrl: string;
+export const TRPCProvider = trpcContext.TRPCProvider;
+export const useTRPC = trpcContext.useTRPC;
+export const useTRPCClient = trpcContext.useTRPCClient;
 
-  /**
-   * Optional custom headers to include with requests.
-   * Can be an object or a function returning headers (sync or async).
-   */
-  headers?:
-    | Record<string, string>
-    | (() => Promise<Record<string, string>> | Record<string, string>);
+const wsClient = (wsUrl: string, authorizationToken?: string) =>
+  createWSClient({
+    url: wsUrl,
+    connectionParams: authorizationToken ? { authToken: authorizationToken } : undefined,
+    lazy: { enabled: true, closeMs: 60_000 },
+  });
 
-  /**
-   * Source identifier for the client (used in headers).
-   * @default "react-client"
-   */
-  source?: string;
-}
-
-/**
- * Create a tRPC client for React Query.
- * 
- * @param config - Configuration options for the client
- * @returns A configured tRPC client instance
- * 
- * @example
- * ```tsx
- * const client = createTRPCClient({
- *   baseUrl: "http://localhost:3000",
- *   source: "web-app"
- * });
- * ```
- */
-export function createTRPCClient(config: TRPCClientConfig) {
-  const { baseUrl, headers, source = "react-client" } = config;
-
-  return api.createClient({
+const getTRPCClient = (
+  httpUrl: string,
+  wsUrl: string,
+  authorizationToken?: string,
+) =>
+  createTRPCClient<AppRouter>({
     links: [
-      loggerLink({
-        enabled: (opts) =>
-          process.env.NODE_ENV === "development" ||
-          (opts.direction === "down" && opts.result instanceof Error),
-      }),
-      httpBatchLink({
-        url: `${baseUrl}/api/trpc`,
-        transformer: SuperJSON,
-        async headers() {
-          let resolvedHeaders: Record<string, string> = {};
-          if (typeof headers === "function") {
-            resolvedHeaders = await headers();
-          } else if (headers) {
-            resolvedHeaders = headers;
-          }
-          return {
-            "x-trpc-source": source,
-            ...resolvedHeaders,
-          };
+      splitLink({
+        condition(op) {
+          return op.type === "subscription";
         },
+        
+        true: wsLink({
+          client: wsClient(wsUrl, authorizationToken),
+          transformer: SuperJSON,
+        }),
+
+        false: httpBatchLink({
+          url: httpUrl,
+          headers() {
+            if (!authorizationToken) {
+              return {};
+            }
+            return {
+              Authorization: `Bearer ${authorizationToken}`,
+            };
+          },
+          transformer: SuperJSON,
+        }),
       }),
     ],
   });
-}
+
+export { getTRPCClient };

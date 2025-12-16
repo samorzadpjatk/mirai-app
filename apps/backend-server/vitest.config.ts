@@ -1,12 +1,10 @@
 import { defineConfig } from "vitest/config";
 import path from "path";
-import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
     globals: true,
-    environment: "jsdom",
+    environment: "node",
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/__tests__/**/*.test.{ts,tsx}"],
     coverage: {
@@ -24,18 +22,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "~": path.resolve(__dirname, "./src"),
-      "@integral-2025-app/auth": path.resolve(
-        __dirname,
-        "../../packages/auth/src/index.ts",
-      ),
-      "@integral-2025-app/auth/client": path.resolve(
-        __dirname,
-        "../../packages/auth/src/supabaseClient.ts",
-      ),
-      "@integral-2025-app/common-types": path.resolve(
-        __dirname,
-        "../../packages/common-types/src/index.ts",
-      ),
     },
   },
 });
