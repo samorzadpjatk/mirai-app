@@ -48,10 +48,11 @@ export function UserListView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchField] = useState<"name" | "email" | "wristNumber" | "houseNumber" | "groupName">("name");
-  // Use tRPC client; cast to any to avoid overly strict union types in hooks typing
+  // Use tRPC client; cast to avoid overly strict union types in hooks typing
   const trpcRoot = useTRPC() as unknown;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const userTrpc = (trpcRoot as any).user;
+  // Type assertion needed due to complex union types in tRPC hooks
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  const userTrpc = (trpcRoot as { user: any }).user;
   // tRPC Query - Fetching Data
   const {
     data,
