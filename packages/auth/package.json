@@ -26,25 +26,25 @@
   },
   "dependencies": {
     "@integral-2025-app/common-types": "workspace:*",
+    "@integral-2025-app/db": "workspace:*",
     "@integral-2025-app/supabase": "workspace:*",
-    "react": "^19.2.1",
-    "zod": "^4.1.13"
+    "zod": "^4.2.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0",
-    "@types/node": "^24.10.3",
-    "@types/react": "^19.2.7",
+    "@testing-library/react": "^16.3.1",
+    "@types/node": "^24.10.4",
+    "@types/react": "~19.1.0",
     "@vitest/coverage-v8": "^4.0.15",
     "@vitest/ui": "^4.0.15",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "jsdom": "^25.0.1",
-    "react": "^19.2.0",
+    "react": "19.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.49.0",
+    "typescript-eslint": "^8.50.0",
     "vitest": "^4.0.15"
   },
   "peerDependencies": {
-    "react": "^19.2.0"
+    "react": "^19.1.0"
   }
 }
