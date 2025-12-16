@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Use Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 
@@ -27,24 +27,10 @@ jobs:
       - name: Test all
         run: pnpm test:ci
 
-      - name: Run ESLint web app
-        uses: reviewdog/action-eslint@v1.33.2
-        with:
-          reporter: github-check
-          workdir: apps/web
-          eslint_flags: "."
-
-      - name: Run ESLint native app
-        uses: reviewdog/action-eslint@v1.33.2
-        with:
-          reporter: github-check
-          workdir: apps/native
-          eslint_flags: "."
-
       - name: Run ESLint for monorepo
         run: pnpm lint
 
       - name: Run `tsc`
-        uses: EPMatt/reviewdog-action-tsc@v1.8.0
+        uses: EPMatt/reviewdog-action-tsc@v1.11.0
         with:
           reporter: github-check

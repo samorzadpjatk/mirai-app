@@ -28,7 +28,7 @@ export const userRouter = createTRPCRouter({
     }),
   getMy: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findUnique({
-      where: { id: ctx.session.user.id },
+      where: { id: ctx.dbUser.id },
     });
   }),
   getAll: moderatorProcedure.query(async ({ ctx }) => {
@@ -65,7 +65,7 @@ export const userRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Prevent admin from removing their own admin status
-      if (input.userId === ctx.session.user.id && !input.isAdmin) {
+      if (input.userId === ctx.dbUser.id && !input.isAdmin) {
         throw new Error("Nie możesz usunąć swoich uprawnień administratora");
       }
 

@@ -8,15 +8,18 @@
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
-      "import": "./src/index.ts"
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     },
     "./client": {
       "types": "./dist/src/client/index.d.ts",
-      "import": "./src/client/index.ts"
+      "import": "./src/client/index.ts",
+      "default": "./src/client/index.ts"
     },
     "./client/expo": {
       "types": "./dist/src/client/expo.d.ts",
-      "import": "./src/client/expo.ts"
+      "import": "./src/client/expo.ts",
+      "default": "./src/client/expo.ts"
     }
   },
   "scripts": {
@@ -33,18 +36,22 @@
     "@integral-2025-app/db": "workspace:*",
     "@integral-2025-app/supabase": "workspace:*",
     "@tanstack/react-query": "^5.90.12",
-    "@trpc/client": "^11.7.2",
-    "@trpc/react-query": "^11.7.2",
-    "@trpc/server": "^11.7.2",
-    "react": "^19.2.1",
+    "@trpc/client": "^11.8.0",
+    "@trpc/server": "^11.8.0",
+    "@trpc/tanstack-react-query": "^11.8.0",
     "superjson": "^2.2.6",
     "web-push": "^3.6.7",
-    "zod": "^4.1.13"
+    "zod": "^4.2.0"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@t3-oss/env-core": "^0.13.8",
-    "@types/node": "^24.10.2",
-    "@types/react": "^19.2.7",
+    "@t3-oss/env-core": "^0.13.10",
+    "@types/node": "^24.10.4",
+    "@types/react": "~19.1.0",
+    "@types/react-dom": "~19.1.0",
     "@types/web-push": "^3.6.4",
     "@vitest/coverage-v8": "^4.0.15",
     "@vitest/ui": "^4.0.15",

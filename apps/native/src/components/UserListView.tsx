@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   YStack,
   XStack,
@@ -13,7 +14,29 @@ import {
   Separator,
 } from "tamagui";
 import { User, Search, ChevronLeft, ChevronRight } from "@tamagui/lucide-icons";
-import { api } from "~/lib/trpc";
+import { useTRPC } from "@integral-2025-app/trpc/client";
+
+type UserListItem = {
+  id: string;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  houseNumber: string | null;
+  wristNumber: string | null;
+  group: { id: string; name: string } | null;
+};
+
+type UserSearchData = {
+  users: UserListItem[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    limit: number;
+  };
+};
 
 /**
  * UserListView Component
@@ -25,7 +48,7 @@ export function UserListView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchField] = useState<"name" | "email" | "wristNumber" | "houseNumber" | "groupName">("name");
-
+  const trpc = useTRPC();
   // tRPC Query - Fetching Data
   const {
     data,
@@ -34,30 +57,29 @@ export function UserListView() {
     error,
     refetch,
     isFetching,
-  } = api.user.searchWithPagination.useQuery(
-    {
+  } = useQuery<UserSearchData>(
+    trpc.user.searchWithPagination.queryOptions({
       field: searchField,
       searchTerm: searchTerm || undefined,
       page: currentPage,
       limit: 10,
-    },
-    {
-      staleTime: 30 * 1000,
-      retry: 2,
-      refetchOnWindowFocus: false,
-    }
+    })
   );
 
-  // tRPC Mutation - Updating Data
-  const utils = api.useUtils();
-  const updateAdminStatus = api.user.updateUserAdminStatus.useMutation({
-    onSuccess: () => {
-      void utils.user.searchWithPagination.invalidate();
-    },
-    onError: (error) => {
-      console.error("Failed to update admin status:", error);
-    },
-  });
+  const updateAdminStatus = useMutation<
+    unknown,
+    Error,
+    { userId: string; isAdmin: boolean }
+  >(
+    trpc.user.updateUserAdminStatus.mutationOptions({
+      onSuccess: () => {
+        void refetch();
+      },
+      onError: (err) => {
+        console.error("Error updating admin status:", err);
+      }
+    }),
+  );
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -148,7 +170,7 @@ export function UserListView() {
         </XStack>
       )}
 
-      <FlatList
+      <FlatList<UserListItem>
         data={users}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -161,7 +183,7 @@ export function UserListView() {
           >
             <YStack gap="$2">
               <H4 color="$gray12">{item.name}</H4>
-              
+
               <Text fontSize="$3" color="$gray11">
                 {item.email}
               </Text>
@@ -194,17 +216,17 @@ export function UserListView() {
                 >
                   {item.isAdmin ? "ADMIN" : "USER"}
                 </Text>
-                
+
                 <Button
                   size="$2"
                   onPress={() => handleToggleAdmin(item.id, item.isAdmin)}
                   disabled={updateAdminStatus.isPending}
                   theme={item.isAdmin ? "red" : "green"}
                 >
-                  {updateAdminStatus.isPending 
-                    ? "Updating..." 
-                    : item.isAdmin 
-                      ? "Remove Admin" 
+                  {updateAdminStatus.isPending
+                    ? "Updating..."
+                    : item.isAdmin
+                      ? "Remove Admin"
                       : "Make Admin"}
                 </Button>
               </XStack>

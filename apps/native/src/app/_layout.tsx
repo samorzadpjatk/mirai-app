@@ -5,11 +5,18 @@ import { useState } from "react";
 import { ThemeSwitcher } from "~/components/ThemeSwitcher";
 import { AuthProvider } from "@integral-2025-app/auth";
 import { authStorage } from "~/lib/storage";
-import { TRPCProvider, createTRPCClientConfig } from "~/lib/trpc";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
+import { APIProvider } from "@integral-2025-app/trpc/client";
 
-const SUPABASE_URL: string = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";  
-const SUPABASE_ANON_KEY: string = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";  
+const SUPABASE_URL: string =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
+const SUPABASE_ANON_KEY: string =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+// Both HTTP and WebSocket tRPC are served by the Fastify server
+// under the same path. Only the protocol differs.
+const TRPC_HTTP_URL: string =
+  process.env.EXPO_PUBLIC_TRPC_API_URL ?? "http://localhost:2022/api/trpc";
+const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 
 const supabaseClient = createSupabaseClient(
   SUPABASE_URL,
@@ -17,40 +24,16 @@ const supabaseClient = createSupabaseClient(
   authStorage,
 );
 
-const createAuthHeaders = async (): Promise<Record<string, string>> => {
-  const { data, error } = await supabaseClient.auth.getSession();
-
-  if (error) {
-    console.error("Failed to read Supabase session for tRPC headers:", error);
-    return {};
-  }
-
-  const accessToken = data.session?.access_token;
-  if (!accessToken) {
-    return {};
-  }
-
-  return {
-    Authorization: `Bearer ${accessToken}`,
-  };
-};
-
 export default function RootLayout() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
-
   return (
-    <TRPCProvider
-      client={{
-        ...createTRPCClientConfig(),
-        headers: createAuthHeaders,
-      }}
-    >
-      <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
-        <AuthProvider
-          supabaseUrl={SUPABASE_URL}
-          supabaseKey={SUPABASE_ANON_KEY}
-          supabaseClient={supabaseClient}
-        >
+    <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
+      <AuthProvider
+        supabaseUrl={SUPABASE_URL}
+        supabaseKey={SUPABASE_ANON_KEY}
+        supabaseClient={supabaseClient}
+      >
+        <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
           <YStack flex={1} backgroundColor="$background">
             <YStack padding="$4" paddingTop="$6">
               <ThemeSwitcher
@@ -62,8 +45,9 @@ export default function RootLayout() {
               {/* Routing here */}
             </Stack>
           </YStack>
-        </AuthProvider>
-      </TamaguiProvider>
-    </TRPCProvider>
+        </APIProvider>
+      </AuthProvider>
+    </TamaguiProvider>
   );
 }
+
