@@ -9,7 +9,7 @@ import {
   Spinner,
   ScrollView,
 } from "tamagui";
-import { useSignupForm } from "@integral-2025-app/auth";
+import { useSignupForm } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import {
   Lock,
