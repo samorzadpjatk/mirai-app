@@ -35,6 +35,9 @@ importers:
       '@integral-2025-app/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
+      '@integral-2025-app/vitest-config':
+        specifier: workspace:*
+        version: link:../../packages/vitest-config
       '@trpc/server':
         specifier: ^11.8.0
         version: 11.8.0(typescript@5.9.3)

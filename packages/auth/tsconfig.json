@@ -6,14 +6,13 @@
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
     "composite": true,
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
     "paths": {
-      "~/*": ["./src/*"],
-      "@integral-2025-app/common-types": ["../common-types/src/index.ts"]
+      "~/*": ["./src/*"]
     }
   },
   "include": ["src/**/*", "vitest.setup.ts", "vitest.config.ts"],
