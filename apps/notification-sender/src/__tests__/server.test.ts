@@ -27,8 +27,7 @@ describe("tRPC WS server", () => {
       WebSocket: WebSocketImpl as any,
     });
     const client = createTRPCClient<AppRouter>({
-      links: [wsLink({ client: wsClient })],
-      transformer: superjson,
+      links: [wsLink({ client: wsClient, transformer: superjson })],
     });
 
     const res = await client.health.query();

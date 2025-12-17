@@ -6,7 +6,7 @@ import { db } from "@integral-2025-app/db";
 export function createContext() {
   return { db };
 }
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
 

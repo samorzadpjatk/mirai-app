@@ -114,7 +114,7 @@ describe("sendNotifications", () => {
       { id: "s1", userId: "u1", endpoint: "e", p256dh: "k", auth: "a" },
     ]);
 
-    const error = new WebPushError("Gone", 410, {} as any, Buffer.from(""));
+    const error = new WebPushError("Gone", 410, {} as any, "", "");
     vi.spyOn(webpush, "sendNotification").mockRejectedValue(error);
 
     const res = await sendNotifications(db, "n1");

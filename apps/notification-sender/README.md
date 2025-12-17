@@ -12,7 +12,7 @@ pnpm -w i
 
 2. Configure env
 
-Copy `.env.example` to `.env`. Fill in the vapid public keys - generate them using `node -e "console.log(require('web-push').generateVAPIDKeys())"`
+Copy `.env.example` to `.env`. Fill in the vapid public keys - generate them using `node -e "console.log(require('web-push').generateVAPIDKeys())"` (run from `apps/notification-sender` dir)
 
 3. Run locally
 
