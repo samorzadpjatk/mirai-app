@@ -1,0 +1,34 @@
+{
+  "name": "@integral-2025-app/notification-sender",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node --enable-source-maps --loader tsx src/index.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@integral-2025-app/db": "workspace:*",
+    "@integral-2025-app/trpc": "workspace:*",
+    "@supabase/supabase-js": "^2.47.10",
+    "@trpc/server": "^11.8.0",
+    "@trpc/client": "^11.8.0",
+    "superjson": "^2.2.6",
+    "ws": "^8.18.0",
+    "zod": "^4.2.0",
+    "dotenv": "^16.4.5",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "tsx": "^4.19.2",
+    "@types/ws": "^8.5.12",
+    "vitest": "^4.0.15",
+    "@vitest/coverage-v8": "^4.0.15"
+  }
+}

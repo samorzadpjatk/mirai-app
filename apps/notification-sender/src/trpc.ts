@@ -1,0 +1,14 @@
+import { initTRPC } from "@trpc/server";
+import superjson from "superjson";
+import type { inferAsyncReturnType } from "@trpc/server";
+import { db } from "@integral-2025-app/db";
+
+export function createContext() {
+  return { db };
+}
+export type Context = inferAsyncReturnType<typeof createContext>;
+
+const t = initTRPC.context<Context>().create({ transformer: superjson });
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
