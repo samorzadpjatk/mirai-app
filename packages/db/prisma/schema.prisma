@@ -31,6 +31,7 @@ model User {
   notificationSchedules     NotificationSchedule[] @relation("NotificationScheduleAdmin")
   receivedPushNotifications NotificationPush[]
   sentPushNotifications     Notification[]         @relation("WebPushNotificationAdmin")
+  mobilePushSubscriptions   MobilePushSubscription[]
   createdEvents             Event[]
 }
 
@@ -124,4 +125,16 @@ model NotificationPush {
   failureReason  String? // Reason for failure if status is 'failed'
 
   @@id([targetUserId, notificationId])
+}
+
+model MobilePushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform  String   // 'expo' | 'fcm' | 'apns'
+  token     String   // Device push token
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, token])
 }

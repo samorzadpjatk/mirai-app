@@ -5,6 +5,7 @@ import webpush from "web-push";
 import { db } from "@integral-2025-app/db";
 import { startWsServer } from "./server";
 import { sendNotifications } from "./sender";
+import { sendMobileNotifications } from "./mobileSender";
 
 interface NotificationRow {
   id: string;
@@ -43,7 +44,9 @@ async function main() {
         try {
           const id = (payload.new as NotificationRow).id;
           await db.$transaction(async (tx) => {
-            await sendNotifications(tx, id);
+            const web = await sendNotifications(tx, id);
+            const mobile = await sendMobileNotifications(tx, id);
+            console.log("Delivery summary:", { web, mobile });
           });
         } catch (err) {
           console.error("Failed handling Notification INSERT:", err);

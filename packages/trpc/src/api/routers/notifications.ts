@@ -96,6 +96,42 @@ export const notificationRouter = createTRPCRouter({
     }
   }),
 
+  mobileSubscribe: protectedProcedure
+    .input(
+      z.object({
+        platform: z.enum(["expo", "fcm", "apns"]),
+        token: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const subscription = await ctx.db.mobilePushSubscription.upsert({
+          where: {
+            userId_token: {
+              userId: ctx.dbUser.id,
+              token: input.token,
+            },
+          },
+          update: {
+            platform: input.platform,
+            updatedAt: new Date(),
+          },
+          create: {
+            userId: ctx.dbUser.id,
+            platform: input.platform,
+            token: input.token,
+          },
+        });
+        return { success: true, id: subscription.id };
+      } catch (error) {
+        console.error("Error saving mobile push subscription:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to save mobile push subscription",
+        });
+      }
+    }),
+
   // Get user's notification preferences/subscription status
   getSubscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
     const subscription = await ctx.db.pushSubscription.findFirst({
