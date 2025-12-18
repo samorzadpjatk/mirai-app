@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createTRPCContext, createTRPCRouter, publicProcedure } from "../api/trpc";
+import { createTRPCContext, createTRPCRouter, publicProcedure } from "../trpc";
 
 vi.mock("@integral-2025-app/supabase", () => {
   return {
@@ -25,7 +25,7 @@ describe("tRPC setup", () => {
       expect(context.supabase).toBeDefined();
     });
 
-    it("should include session in context", async () => {
+    it("should include accessToken in context", async () => {
       const headers = new Headers();
       const context = await createTRPCContext({
         headers,
@@ -33,7 +33,7 @@ describe("tRPC setup", () => {
         supabaseKey: "test-key",
       });
 
-      expect(context).toHaveProperty("session");
+      expect(context).toHaveProperty("accessToken");
     });
   });
 

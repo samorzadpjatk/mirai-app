@@ -12,7 +12,6 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import {
-  getServerSession,
   requireAdmin,
   requireAuth,
   requireModerator,
@@ -34,6 +33,30 @@ const getAccessTokenFromHeaders = (headers: Headers): string | null => {
   return token.trim();
 };
 
+const getAccessToken = (
+  headers: Headers,
+  connectionParams?: unknown,
+): string | null => {
+  const headerToken = getAccessTokenFromHeaders(headers);
+  if (headerToken) {
+    return headerToken;
+  }
+
+  if (
+    connectionParams &&
+    typeof connectionParams === "object" &&
+    "authToken" in connectionParams
+  ) {
+    const token = (connectionParams as { authToken?: unknown }).authToken;
+
+    if (typeof token === "string" && token.trim().length > 0) {
+      return token.trim();
+    }
+  }
+
+  return null;
+};
+
 /**
  * 1. CONTEXT
  *
@@ -50,15 +73,14 @@ export const createTRPCContext = async (opts: {
   headers: Headers;
   supabaseUrl: string;
   supabaseKey: string;
+  connectionParams?: unknown;
 }) => {
   const supabase = createSupabaseClient(opts.supabaseUrl, opts.supabaseKey);
-  const accessToken = getAccessTokenFromHeaders(opts.headers);
-  const session: ReturnType<typeof getServerSession> | null = accessToken ? await getServerSession(supabase, accessToken) : null;
-
+  const accessToken = getAccessToken(opts.headers, opts.connectionParams);
+  console.log("Creating tRPC context with access token:", accessToken ? "YES" : "NO");
   return {
     db,
     supabase,
-    session,
     headers: opts.headers,
     accessToken,
   };
@@ -107,36 +129,13 @@ export const createCallerFactory = t.createCallerFactory;
 export const createTRPCRouter = t.router;
 
 /**
- * Middleware for timing procedure execution and adding an artificial delay in development.
- *
- * You can remove this if you don't like it, but it can help catch unwanted waterfalls by simulating
- * network latency that would occur in production but not in local development.
- */
-const timingMiddleware = t.middleware(async ({ next, path }) => {
-  const start = Date.now();
-
-  if (t._config.isDev) {
-    // artificial delay in dev
-    const waitMs = Math.floor(Math.random() * 400) + 100;
-    await new Promise((resolve) => setTimeout(resolve, waitMs));
-  }
-
-  const result = await next();
-
-  const end = Date.now();
-  console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
-
-  return result;
-});
-
-/**
  * Public (unauthenticated) procedure
  *
  * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure.use(timingMiddleware);
+export const publicProcedure = t.procedure;
 
 /**
  * Protected (authenticated) procedure
@@ -147,22 +146,15 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  * @see https://trpc.io/docs/procedures
  */
 export const protectedProcedure = t.procedure
-  .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    const user = await requireAuth(
+    const { user, dbUser } = await requireAuth(
       ctx.supabase,
-      async (authUserId: string) => {
-        const user = await ctx.db.user.findFirst({
-          where: { authUserId },
-        });
-        return user;
-      },
       ctx.accessToken ?? undefined,
     );
     return next({
       ctx: {
-        // infers the `session` as non-nullable
-        session: { ...(ctx.session ?? {}), user },
+        user,
+        dbUser,
       },
     });
   });
@@ -176,43 +168,27 @@ export const protectedProcedure = t.procedure
  * @see https://trpc.io/docs/procedures
  */
 export const moderatorProcedure = t.procedure
-  .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    const user = await requireModerator(
+    const dbUser = await requireModerator(
       ctx.supabase,
-      async (authUserId: string) => {
-        const user = await ctx.db.user.findFirst({
-          where: { authUserId },
-        });
-        return user;
-      },
       ctx.accessToken ?? undefined,
     );
     return next({
       ctx: {
-        // infers the `session` as non-nullable
-        session: { ...(ctx.session ?? {}), user },
+        dbUser,
       },
     });
   });
 
 export const adminProcedure = t.procedure
-  .use(timingMiddleware)
   .use(async ({ ctx, next }) => {
-    const user = await requireAdmin(
+    const dbUser = await requireAdmin(
       ctx.supabase,
-      async (authUserId: string) => {
-        const user = await ctx.db.user.findFirst({
-          where: { authUserId },
-        });
-        return user;
-      },
       ctx.accessToken ?? undefined,
     );
     return next({
       ctx: {
-        // infers the `session` as non-nullable
-        session: { ...(ctx.session ?? {}), user },
+        dbUser,
       },
     });
   });

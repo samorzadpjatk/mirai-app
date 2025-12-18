@@ -27,20 +27,6 @@ jobs:
       - name: Test all
         run: pnpm test:ci
 
-      - name: Run ESLint web app
-        uses: reviewdog/action-eslint@v1.33.2
-        with:
-          reporter: github-check
-          workdir: apps/web
-          eslint_flags: "."
-
-      - name: Run ESLint native app
-        uses: reviewdog/action-eslint@v1.33.2
-        with:
-          reporter: github-check
-          workdir: apps/native
-          eslint_flags: "."
-
       - name: Run ESLint for monorepo
         run: pnpm lint
 

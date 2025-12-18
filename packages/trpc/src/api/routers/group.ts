@@ -18,7 +18,7 @@ export const groupRouter = createTRPCRouter({
   }),
   getMy: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
-      where: { id: ctx.session.user.dbUser.id },
+      where: { id: ctx.dbUser.id },
       select: {
         group: { select: { id: true, name: true } },
         organizerGroup: { select: { id: true, name: true } },
@@ -144,7 +144,7 @@ export const groupRouter = createTRPCRouter({
         data: {
           name: input.name,
           code: input.code,
-          organizerId: input.organizerId ?? ctx.session.user.id,
+          organizerId: input.organizerId ?? ctx.dbUser.id,
         },
         include: {
           organizer: {
@@ -215,7 +215,7 @@ export const groupRouter = createTRPCRouter({
 
       // Check if user is already in the group
       const existingMembership = group.members.find(
-        (member) => member.id === ctx.session.user.id,
+        (member) => member.id === ctx.dbUser.id,
       );
 
       if (existingMembership) {
@@ -223,7 +223,7 @@ export const groupRouter = createTRPCRouter({
       }
 
       return await ctx.db.user.update({
-        where: { id: ctx.session.user.id },
+        where: { id: ctx.dbUser.id },
         data: {
           groupId: group.id,
         },
@@ -245,7 +245,7 @@ export const groupRouter = createTRPCRouter({
 
       // Check if user is already in the group
       const existingMembership = group.members.find(
-        (member) => member.id === ctx.session.user.id,
+        (member) => member.id === ctx.dbUser.id,
       );
 
       if (existingMembership) {
@@ -291,7 +291,7 @@ export const groupRouter = createTRPCRouter({
         data: {
           groupId: input.groupId,
           amount: input.amount,
-          adminId: ctx.session.user.id,
+          adminId: ctx.dbUser.id,
         },
         include: {
           group: {

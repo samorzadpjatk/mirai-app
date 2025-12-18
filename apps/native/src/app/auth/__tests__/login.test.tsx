@@ -8,7 +8,7 @@ import { TamaguiProvider } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import LoginScreen from "~/app/auth/login";
 import { useRouter } from "expo-router";
-import type { UseLoginFormResult } from "@integral-2025-app/auth";
+import type { UseLoginFormResult } from "@integral-2025-app/auth/client";
 
 const mockUseLoginForm = jest.fn<UseLoginFormResult, []>();
 jest.mock("@integral-2025-app/auth", () => ({

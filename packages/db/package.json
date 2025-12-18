@@ -29,12 +29,15 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.1",
-    "@t3-oss/env-core": "^0.13.8",
-    "zod": "^4.1.13"
+    "@t3-oss/env-core": "^0.13.10",
+    "zod": "^4.2.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.3",
+    "@integral-2025-app/vitest-config": "workspace:*",
+    "@vitest/coverage-v8": "^4.0.15",
     "@vitest/ui": "^4.0.15",
+    "postcss": "^8.5.6",
+    "@types/node": "^24.10.4",
     "prisma": "^6.19.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

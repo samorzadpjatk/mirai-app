@@ -1,7 +1,7 @@
 import { YStack, XStack, H1, Text, View, Button, Spinner } from "tamagui";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { useAuth } from "@integral-2025-app/auth";
+import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { LogOut, User, Users } from "@tamagui/lucide-icons";
 
