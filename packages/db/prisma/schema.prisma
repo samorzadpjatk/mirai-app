@@ -34,19 +34,6 @@ model User {
   userEvents                UserEvent[]
 }
 
-// model Event {
-//   id             String   @id @default(uuid())
-//   title          String
-//   startTime      DateTime
-//   endTime        DateTime
-//   location       String
-//   description    String
-//   organizerGroup Group    @relation(fields: [groupId], references: [id])
-//   creatorUser    User     @relation(fields: [userId], references: [id])
-//   groupId        String
-//   userId         String
-// }
-
 model Event {
   id               String      @id @default(cuid())
   creator          User        @relation(fields: [creatorId], references: [id])
