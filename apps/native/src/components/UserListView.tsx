@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import React, { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -40,48 +43,38 @@ type UserSearchData = {
 
 /**
  * UserListView Component
- * 
+ *
  * This component demonstrates how to utilize tRPC with Tanstack React Query
  * in an Expo React Native application.
  */
 export function UserListView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchField] = useState<"name" | "email" | "wristNumber" | "houseNumber" | "groupName">("name");
-  // Use tRPC client; cast to avoid overly strict union types in hooks typing
-  const trpcRoot = useTRPC() as unknown;
-  // Type assertion needed due to complex union types in tRPC hooks
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-  const userTrpc = (trpcRoot as { user: any }).user;
+  const [searchField] = useState<
+    "name" | "email" | "wristNumber" | "houseNumber" | "groupName"
+  >("name");
+  const trpc = useTRPC();
   // tRPC Query - Fetching Data
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetching,
-  } = useQuery<UserSearchData>(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    userTrpc.searchWithPagination.queryOptions({
-      field: searchField,
-      searchTerm: searchTerm || undefined,
-      page: currentPage,
-      limit: 10,
-    }),
-  );
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useQuery<UserSearchData>(
+      trpc.user.searchWithPagination.queryOptions({
+        field: searchField,
+        searchTerm: searchTerm || undefined,
+        page: currentPage,
+        limit: 10,
+      }),
+    );
 
   const updateAdminStatus = useMutation<
     unknown,
     Error,
     { userId: string; isAdmin: boolean }
   >(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    userTrpc.updateUserAdminStatus.mutationOptions({
+    trpc.user.updateUserAdminStatus.mutationOptions({
       onSuccess: () => {
         void refetch();
       },
-      onError: (err: unknown) => {
+      onError: (err) => {
         console.error("Error updating admin status:", err);
       },
     }),
@@ -158,15 +151,15 @@ export function UserListView() {
           onChangeText={setSearchTerm}
           onSubmitEditing={handleSearch}
         />
-        <Button
-          icon={Search}
-          onPress={handleSearch}
-          disabled={isFetching}
-        />
+        <Button icon={Search} onPress={handleSearch} disabled={isFetching} />
       </XStack>
 
       {pagination && (
-        <XStack justifyContent="space-between" alignItems="center" marginBottom="$3">
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          marginBottom="$3"
+        >
           <Text fontSize="$3" color="$gray11">
             Page {pagination.currentPage} of {pagination.totalPages}
           </Text>
