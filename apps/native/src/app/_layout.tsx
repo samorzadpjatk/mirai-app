@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import { Stack } from "expo-router";
+import MapboxGL from "@rnmapbox/maps";
 import { TamaguiProvider, YStack } from "tamagui";
 import tamaguiConfig from "tamagui.config";
-import { useState } from "react";
 import { ThemeSwitcher } from "~/components/ThemeSwitcher";
 import { AuthProvider } from "@integral-2025-app/auth/client";
 import { authStorage } from "~/lib/storage";
@@ -18,6 +20,10 @@ const TRPC_HTTP_URL: string =
   process.env.EXPO_PUBLIC_TRPC_API_URL ?? "http://localhost:2022/api/trpc";
 const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 
+// Prefer EXPO_PUBLIC_ env for bundlers, fallback to plain MAPBOX_ACCESS_TOKEN
+const MAPBOX_ACCESS_TOKEN: string =
+  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? process.env.MAPBOX_ACCESS_TOKEN ?? "";
+
 const supabaseClient = createSupabaseClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
@@ -26,6 +32,26 @@ const supabaseClient = createSupabaseClient(
 
 export default function RootLayout() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    if (!MAPBOX_ACCESS_TOKEN) {
+      console.warn(
+        "[Mapbox] Missing MAPBOX_ACCESS_TOKEN / EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN – map tiles will not load.",
+      );
+      return;
+    }
+
+    MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
+    if (Platform.OS !== "web" && typeof (MapboxGL as any).setAccessToken === "function") {
+      // ensure native side connects to Mapbox services
+      try {
+        (MapboxGL as any).setConnected?.(true);
+      } catch {
+        // ignore if not supported
+      }
+    }
+  }, []);
+
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
       <AuthProvider

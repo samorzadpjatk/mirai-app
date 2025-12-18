@@ -114,6 +114,19 @@ export default function Home() {
             </Button>
             <Button
               size="$4"
+              backgroundColor="$gray4"
+              color="$gray12"
+              fontWeight="700"
+              icon={Users}
+              onPress={() => router.push("/map")}
+              hoverStyle={{ backgroundColor: "$gray5" }}
+              pressStyle={{ backgroundColor: "$gray3", scale: 0.98 }}
+              animation="quick"
+            >
+              Open Map
+            </Button>
+            <Button
+              size="$4"
               backgroundColor="$red9"
               color="white"
               fontWeight="700"
