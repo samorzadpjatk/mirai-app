@@ -3,7 +3,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output = "./lib"
 }
 
 datasource db {
@@ -32,19 +31,46 @@ model User {
   receivedPushNotifications NotificationPush[]
   sentPushNotifications     Notification[]         @relation("WebPushNotificationAdmin")
   createdEvents             Event[]
+  userEvents                UserEvent[]
 }
 
+// model Event {
+//   id             String   @id @default(uuid())
+//   title          String
+//   startTime      DateTime
+//   endTime        DateTime
+//   location       String
+//   description    String
+//   organizerGroup Group    @relation(fields: [groupId], references: [id])
+//   creatorUser    User     @relation(fields: [userId], references: [id])
+//   groupId        String
+//   userId         String
+// }
+
 model Event {
-  id             String   @id @default(uuid())
-  title          String
-  startTime      DateTime
-  endTime        DateTime
-  location       String
-  description    String
-  organizerGroup Group    @relation(fields: [groupId], references: [id])
-  creatorUser    User     @relation(fields: [userId], references: [id])
-  groupId        String
-  userId         String
+  id               String      @id @default(cuid())
+  creator          User        @relation(fields: [creatorId], references: [id])
+  creatorId        String
+  organizerGroup   Group?      @relation(fields: [organizerGroupId], references: [id])
+  organizerGroupId String?
+  title            String
+  startTime        DateTime
+  endTime          DateTime
+  location         String
+  description      String
+  files            String[]
+  userEvents       UserEvent[]
+}
+
+model UserEvent {
+  user         User    @relation(fields: [userId], references: [id])
+  userId       String
+  event        Event   @relation(fields: [eventId], references: [id])
+  eventId      String
+  interestedIn Boolean @default(false)
+  enlistedIn   Boolean @default(false)
+
+  @@id([userId, eventId])
 }
 
 model Group {
