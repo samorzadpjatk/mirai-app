@@ -207,7 +207,11 @@ export function UserListView() {
                 )}
               </XStack>
 
-              <XStack justifyContent="space-between" alignItems="center" marginTop="$2">
+              <XStack
+                justifyContent="space-between"
+                alignItems="center"
+                marginTop="$2"
+              >
                 <Text
                   fontSize="$2"
                   color={item.isAdmin ? "$green10" : "$gray10"}

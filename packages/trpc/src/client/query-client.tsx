@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getTRPCClient, TRPCProvider } from "./react";
 import React, { useMemo } from "react";
-import { useSession } from "@integral-2025-app/auth";
+import { useSession } from "@integral-2025-app/auth/client";
 
 function makeQueryClient() {
     return new QueryClient({
