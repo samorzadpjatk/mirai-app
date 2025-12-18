@@ -1,0 +1,49 @@
+## Line endings normalization
+# Set the default behavior, in case people don't have core.autocrlf set.
+# This makes Git treat files as text by default and normalize line endings
+# to LF in the repository, while checking out with native endings per OS.
+* text=auto
+
+## Text files that should always be normalized
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.md text
+*.yml text
+*.yaml text
+*.css text
+*.scss text
+*.html text
+*.cjs text
+*.mjs text
+
+## Files that must keep LF line endings (scripts, configs)
+*.sh text eol=lf
+*.bash text eol=lf
+*.ps1 text eol=lf
+Dockerfile* text eol=lf
+
+## Binary files (no line ending conversion)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.svg binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.7z binary
+*.exe binary
+*.dll binary
+
+
