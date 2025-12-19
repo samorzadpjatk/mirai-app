@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet, View, Text } from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 
 export type UserLocation = {
@@ -91,6 +91,17 @@ export const UserMap: React.FC<UserMapProps> = ({
   onUserPress,
   initialZoomLevel = 14,
 }) => {
+  // Web support for @rnmapbox/maps is limited and often requires extra setup.
+  // Since głównym celem są smartfony, na webie pokazujemy prosty placeholder,
+  // żeby nie wywalać całej aplikacji błędem Reacta.
+  if (Platform.OS === "web") {
+    return (
+      <View style={styles.webPlaceholder}>
+        <Text>Mapa jest dostępna tylko w aplikacji mobilnej.</Text>
+      </View>
+    );
+  }
+
   const featureCollection: UserFeatureCollection = useMemo(() => {
     const now = Date.now();
 
@@ -230,6 +241,11 @@ const IMAGE_GL_PREFIX = `${IMAGE_LAYER_ID}-`;
 const styles = StyleSheet.create({
   map: {
     flex: 1,
+  },
+  webPlaceholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

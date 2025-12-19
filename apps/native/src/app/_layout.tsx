@@ -24,6 +24,21 @@ const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 const MAPBOX_ACCESS_TOKEN: string =
   process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? process.env.MAPBOX_ACCESS_TOKEN ?? "";
 
+// Configure Mapbox access token at module load time so that both native and web
+// implementations (including underlying mapbox-gl) see it before any map is created.
+if (MAPBOX_ACCESS_TOKEN) {
+  try {
+    MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
+  } catch (err) {
+    console.warn("[Mapbox] Failed to set access token:", err);
+  }
+} else {
+  // This will show up once at startup in Metro / native logs
+  console.warn(
+    "[Mapbox] Missing MAPBOX_ACCESS_TOKEN / EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN – map tiles will not load.",
+  );
+}
+
 const supabaseClient = createSupabaseClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
@@ -34,15 +49,20 @@ export default function RootLayout() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    if (!MAPBOX_ACCESS_TOKEN) {
-      console.warn(
-        "[Mapbox] Missing MAPBOX_ACCESS_TOKEN / EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN – map tiles will not load.",
-      );
-      return;
+    // Load Mapbox GL CSS for Web platform via CDN
+    if (Platform.OS === "web") {
+      const linkId = "mapbox-gl-css";
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement("link");
+        link.id = linkId;
+        link.rel = "stylesheet";
+        link.href = "https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css";
+        document.head.appendChild(link);
+      }
     }
 
-    MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
-    if (Platform.OS !== "web" && typeof (MapboxGL as any).setAccessToken === "function") {
+    // Ensure native side connects to Mapbox services (no-op on web)
+    if (Platform.OS !== "web" && typeof (MapboxGL as any).setConnected === "function") {
       // ensure native side connects to Mapbox services
       try {
         (MapboxGL as any).setConnected?.(true);
