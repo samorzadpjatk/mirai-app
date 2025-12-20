@@ -50,7 +50,7 @@ export async function sendMobileNotifications(
     } catch {
       tickets.push(
         ...chunk.map(
-          () => ({ status: "error", message: "network error" }) as any,
+          (): ExpoPushTicket => ({ status: "error", message: "network error" }),
         ),
       );
     }

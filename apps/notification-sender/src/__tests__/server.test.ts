@@ -24,7 +24,7 @@ describe("tRPC WS server", () => {
   it("responds to health query over websocket", async () => {
     const wsClient = createWSClient({
       url: baseUrl,
-      WebSocket: WebSocketImpl as any,
+      WebSocket: WebSocketImpl as unknown as typeof WebSocket,
     });
     const client = createTRPCClient<AppRouter>({
       links: [wsLink({ client: wsClient, transformer: superjson })],
@@ -33,6 +33,6 @@ describe("tRPC WS server", () => {
     const res = await client.health.query();
     expect(res).toEqual({ ok: true });
 
-    wsClient.close();
+    await wsClient.close();
   });
 });

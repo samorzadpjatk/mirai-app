@@ -1,6 +1,5 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
-import type { inferAsyncReturnType } from "@trpc/server";
 import { db } from "@integral-2025-app/db";
 
 export function createContext() {

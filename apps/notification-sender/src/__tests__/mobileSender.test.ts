@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { sendMobileNotifications } from "../mobileSender";
+import type { Prisma } from "@integral-2025-app/db";
 
 // Mock expo-server-sdk
 vi.mock("expo-server-sdk", () => {
@@ -7,17 +8,17 @@ vi.mock("expo-server-sdk", () => {
     static isExpoPushToken(token: string) {
       return token.startsWith("ExpoPushToken[");
     }
-    chunkPushNotifications(msgs: any[]) {
+    chunkPushNotifications(msgs: unknown[]) {
       return [msgs];
     }
-    async sendPushNotificationsAsync(chunk: any[]) {
-      return chunk.map(() => ({ status: "ok" }));
+    async sendPushNotificationsAsync(_chunk: unknown[]) {
+      return _chunk.map(() => ({ status: "ok" }));
     }
   }
   return { Expo: ExpoMock };
 });
 
-const createMockDb = () => {
+const createMockDb = (): Prisma.TransactionClient => {
   return {
     notification: {
       findUnique: vi.fn(),
@@ -28,24 +29,28 @@ const createMockDb = () => {
     notificationPush: {
       createMany: vi.fn(),
     },
-  } as any;
+  } as unknown as Prisma.TransactionClient;
 };
 
 describe("sendMobileNotifications", () => {
-  let db: any;
+  let db: Prisma.TransactionClient;
 
   beforeEach(() => {
     db = createMockDb();
   });
 
   it("returns failure when notification not found", async () => {
-    db.notification.findUnique.mockResolvedValueOnce(null);
+    (
+      db.notification.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce(null);
     const res = await sendMobileNotifications(db, "n-1");
     expect(res).toEqual({ success: false, sent: 0, failed: 0, total: 0 });
   });
 
   it("returns success with zero when no subscriptions", async () => {
-    db.notification.findUnique.mockResolvedValueOnce({
+    (
+      db.notification.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce({
       id: "n-1",
       title: "t",
       body: "b",
@@ -58,7 +63,9 @@ describe("sendMobileNotifications", () => {
   });
 
   it("filters non-expo tokens and sends to expo", async () => {
-    db.notification.findUnique.mockResolvedValueOnce({
+    (
+      db.notification.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce({
       id: "n-2",
       title: "Hello",
       body: "World",
@@ -72,19 +79,30 @@ describe("sendMobileNotifications", () => {
     ]);
     const res = await sendMobileNotifications(db, "n-2");
     expect(res).toEqual({ success: true, sent: 2, failed: 0, total: 2 });
-    expect(db.notificationPush.createMany).toHaveBeenCalledTimes(1);
-    const payload = db.notificationPush.createMany.mock.calls[0][0].data;
-    expect(payload.filter((p: any) => p.status === "sent").length).toBe(2);
+    const createManyMock = db.notificationPush.createMany as ReturnType<
+      typeof vi.fn
+    >;
+    expect(createManyMock).toHaveBeenCalledTimes(1);
+    const calls = createManyMock.mock.calls as Array<
+      [{ data: Array<{ status: string }> }]
+    >;
+    const payload = calls[0]?.[0]?.data ?? [];
+    const sentCount = payload.filter((p) => p.status === "sent").length;
+    expect(sentCount).toBe(2);
   });
 
   it("records failures on network error", async () => {
     // Remock send to throw
     const { Expo } = await import("expo-server-sdk");
-    (Expo.prototype as any).sendPushNotificationsAsync = vi.fn(async () => {
+    (Expo.prototype.sendPushNotificationsAsync as unknown as ReturnType<
+      typeof vi.fn
+    >) = vi.fn(async () => {
       throw new Error("network error");
     });
 
-    db.notification.findUnique.mockResolvedValueOnce({
+    (
+      db.notification.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce({
       id: "n-3",
       title: "Hi",
       body: "There",
@@ -96,9 +114,16 @@ describe("sendMobileNotifications", () => {
 
     const res = await sendMobileNotifications(db, "n-3");
     expect(res).toEqual({ success: false, sent: 0, failed: 1, total: 1 });
-    expect(db.notificationPush.createMany).toHaveBeenCalledTimes(1);
-    const payload = db.notificationPush.createMany.mock.calls[0][0].data;
-    expect(payload[0]).toMatchObject({
+    const createManyMock = db.notificationPush.createMany as ReturnType<
+      typeof vi.fn
+    >;
+    expect(createManyMock).toHaveBeenCalledTimes(1);
+    const calls = createManyMock.mock.calls as Array<
+      [{ data: Array<{ status: string; failureReason?: string }> }]
+    >;
+    const payload = calls[0]?.[0]?.data ?? [];
+    const firstItem = payload.length > 0 ? payload[0] : null;
+    expect(firstItem).toMatchObject({
       status: "failed",
       failureReason: "expo",
     });

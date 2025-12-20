@@ -1,6 +1,5 @@
 import { applyWSSHandler } from "@trpc/server/adapters/ws";
 import { WebSocketServer } from "ws";
-import type { AddressInfo } from "net";
 import type { AppRouter } from "./router";
 import { appRouter } from "./router";
 import { createContext } from "./trpc";
@@ -15,13 +14,11 @@ export async function startWsServer(port = Number(process.env.PORT ?? 3011)) {
   });
 
   await new Promise<void>((resolve) => {
-    if ((wss as any)._server?.listening) return resolve();
+    if (wss.address()) return resolve();
     wss.on("listening", () => resolve());
   });
 
-  const address = wss.address() as AddressInfo | null;
-  const actualPort = address?.port ?? port;
-  console.log(`tRPC WS server listening on ws://localhost:${actualPort}`);
+  console.log(`tRPC WS server listening on ws://localhost:${port}`);
 
   process.on("SIGTERM", () => {
     console.log("SIGTERM: closing tRPC WS server");
@@ -29,5 +26,5 @@ export async function startWsServer(port = Number(process.env.PORT ?? 3011)) {
     wss.close();
   });
 
-  return { wss, handler, port: actualPort };
+  return { wss, handler, port: port };
 }

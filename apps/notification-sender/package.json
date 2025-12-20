@@ -19,14 +19,13 @@
     "@trpc/client": "^11.8.0",
     "@trpc/server": "^11.8.0",
     "dotenv": "^16.4.5",
+    "expo-server-sdk": "^3.8.0",
     "superjson": "^2.2.6",
-    "web-push": "^3.6.7",
     "ws": "^8.18.0",
-    "zod": "^4.2.0",
-    "expo-server-sdk": "^3.8.0"
+    "zod": "^4.2.0"
   },
   "devDependencies": {
-    "@types/web-push": "^3.6.4",
+    "@types/node": "^22.10.5",
     "@types/ws": "^8.5.12",
     "@vitest/coverage-v8": "^4.0.15",
     "tsx": "^4.19.2",
