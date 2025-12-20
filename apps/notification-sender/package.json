@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "node --enable-source-maps --loader tsx src/index.ts",
+    "start": "node --enable-source-maps --import tsx src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "test": "vitest run",

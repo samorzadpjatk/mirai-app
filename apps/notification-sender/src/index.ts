@@ -43,8 +43,8 @@ async function main() {
         })();
       },
     )
-    .subscribe((_status) => {
-      console.log("Realtime channel status:", _status);
+    .subscribe((status) => {
+      console.log("Realtime channel status:", status);
     });
 
   process.on("SIGINT", () => {

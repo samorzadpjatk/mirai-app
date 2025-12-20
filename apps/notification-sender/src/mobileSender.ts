@@ -24,7 +24,12 @@ export async function sendMobileNotifications(
   const userByToken = new Map<string, string>();
 
   for (const s of subs) {
-    if (s.platform !== "expo") continue;
+    if (s.platform !== "expo") {
+      console.warn(
+        `sendMobileNotifications: skipping mobile push subscription for user ${s.userId} with unsupported platform '${s.platform}'.`,
+      );
+      continue;
+    }
     if (!Expo.isExpoPushToken(s.token)) continue;
     userByToken.set(s.token, s.userId);
     messages.push({
@@ -56,12 +61,23 @@ export async function sendMobileNotifications(
     }
   }
 
-  const results = tickets.map((t, idx) => {
-    const token = messages[idx]?.to as string;
-    const userId = userByToken.get(token)!;
-    const statusCode = t.status === "ok" ? 200 : 500;
-    return { userId, statusCode };
-  });
+  const results = tickets
+    .map((t, idx) => {
+      const token = messages[idx]?.to;
+      if (!token) return null;
+      const userId = userByToken.get(token);
+      if (!userId) return null;
+      const statusCode = t.status === "ok" ? 200 : 500;
+      return { userId, statusCode };
+    })
+    .filter(
+      (
+        r,
+      ): r is {
+        userId: string;
+        statusCode: number;
+      } => r !== null,
+    );
 
   const successful = results.filter(
     (r) => r.statusCode >= 200 && r.statusCode < 300,

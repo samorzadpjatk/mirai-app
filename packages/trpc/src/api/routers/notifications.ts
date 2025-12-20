@@ -124,10 +124,12 @@ export const notificationRouter = createTRPCRouter({
         });
         return { success: true, id: subscription.id };
       } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
         console.error("Error saving mobile push subscription:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to save mobile push subscription",
+          message: `Failed to save mobile push subscription: ${err.message}`,
+          cause: err,
         });
       }
     }),

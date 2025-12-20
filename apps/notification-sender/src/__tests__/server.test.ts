@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { startWsServer } from "../../src/server";
-import type { AppRouter } from "../../src/router";
+import { startWsServer } from "../server";
+import type { AppRouter } from "../router";
 import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
 import superjson from "superjson";
 import WebSocketImpl from "ws";
