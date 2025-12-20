@@ -56,7 +56,9 @@ describe("sendMobileNotifications", () => {
       body: "b",
       url: "/u",
     });
-    db.mobilePushSubscription.findMany.mockResolvedValueOnce([]);
+    (
+      db.mobilePushSubscription.findMany as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce([]);
     const res = await sendMobileNotifications(db, "n-1");
     expect(res).toEqual({ success: true, sent: 0, failed: 0, total: 0 });
     expect(db.notificationPush.createMany).not.toHaveBeenCalled();
@@ -71,7 +73,9 @@ describe("sendMobileNotifications", () => {
       body: "World",
       url: "/x",
     });
-    db.mobilePushSubscription.findMany.mockResolvedValueOnce([
+    (
+      db.mobilePushSubscription.findMany as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce([
       { userId: "u1", platform: "expo", token: "ExpoPushToken[abc]" },
       { userId: "u2", platform: "fcm", token: "fcm-token" },
       { userId: "u3", platform: "expo", token: "ExpoPushToken[def]" },
@@ -108,7 +112,9 @@ describe("sendMobileNotifications", () => {
       body: "There",
       url: "/y",
     });
-    db.mobilePushSubscription.findMany.mockResolvedValueOnce([
+    (
+      db.mobilePushSubscription.findMany as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce([
       { userId: "u1", platform: "expo", token: "ExpoPushToken[abc]" },
     ]);
 

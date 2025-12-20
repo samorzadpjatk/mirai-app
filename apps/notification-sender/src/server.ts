@@ -18,7 +18,11 @@ export async function startWsServer(port = Number(process.env.PORT ?? 3011)) {
     wss.on("listening", () => resolve());
   });
 
-  console.log(`tRPC WS server listening on ws://localhost:${port}`);
+  const address = wss.address();
+  const actualPort =
+    typeof address === "object" && address !== null ? address.port : port;
+
+  console.log(`tRPC WS server listening on ws://localhost:${actualPort}`);
 
   process.on("SIGTERM", () => {
     console.log("SIGTERM: closing tRPC WS server");
@@ -26,5 +30,5 @@ export async function startWsServer(port = Number(process.env.PORT ?? 3011)) {
     wss.close();
   });
 
-  return { wss, handler, port: port };
+  return { wss, handler, port: actualPort };
 }
