@@ -33,7 +33,7 @@ model User {
   sentPushNotifications     Notification[]         @relation("WebPushNotificationAdmin")
   createdEvents             Event[]
   userEvents                UserEvent[]
-  locations                 Location?
+  location                  Location?
 }
 
 model Event {
@@ -147,11 +147,11 @@ model Location {
   userId           String   @unique
   user             User     @relation(fields: [userId], references: [id])
   timestamp        DateTime @default(now())
-  accuracy         Decimal?
-  altitude         Decimal?
-  altitudeAccuracy Decimal?
-  heading          Decimal?
-  latitude         Decimal
-  longitude        Decimal
-  speed            Decimal?
+  accuracy         Decimal? @db.Decimal(10, 8)
+  altitude         Decimal? @db.Decimal(10, 8)
+  altitudeAccuracy Decimal? @db.Decimal(10, 8)
+  heading          Decimal? @db.Decimal(10, 8)
+  latitude         Decimal  @db.Decimal(10, 8)
+  longitude        Decimal  @db.Decimal(10, 8)
+  speed            Decimal? @db.Decimal(10, 8)
 }
