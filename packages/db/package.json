@@ -23,6 +23,7 @@
     "db:reset": "prisma migrate reset",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
+    "db:format": "prisma format",
     "postinstall": "prisma generate",
     "test": "vitest run --coverage",
     "test:watch": "vitest"
