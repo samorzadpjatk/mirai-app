@@ -39,11 +39,19 @@ if (MAPBOX_ACCESS_TOKEN) {
   );
 }
 
-const supabaseClient = createSupabaseClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  authStorage,
-);
+// Clear stale Supabase session when the base URL changes (helps when switching
+// between 54321 CLI default and 8000 Kong reverse proxy).
+if (typeof window !== "undefined" && window.localStorage) {
+  const lastUrlKey = "supabase.last_url";
+  const lastUrl = window.localStorage.getItem(lastUrlKey);
+  if (lastUrl && lastUrl !== SUPABASE_URL) {
+    window.localStorage.removeItem("supabase.auth.token");
+    window.localStorage.removeItem("supabase.auth.expires_at");
+  }
+  window.localStorage.setItem(lastUrlKey, SUPABASE_URL);
+}
+
+const supabaseClient = createSupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, authStorage);
 
 export default function RootLayout() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
