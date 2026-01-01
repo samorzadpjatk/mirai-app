@@ -1,20 +1,51 @@
-'use client';
+import { Select, Adapt, Sheet } from "tamagui";
 
-import { Select } from "@radix-ui/themes";
+type SearchField = "name" | "email" | "wristNumber" | "houseNumber" | "groupName";
 
+interface UserSearchFieldDropdownMenuProps {
+    onValueChange: (field: SearchField) => void;
+}
 
-const UserSearchFieldDropdownMenu = ({ onValueChange }: { onValueChange: (field: "name" | "email" | "wristNumber" | "houseNumber" | "groupName") => void }) => {
+const UserSearchFieldDropdownMenu = ({ onValueChange }: UserSearchFieldDropdownMenuProps) => {
     return (
-        <Select.Root defaultValue="name" onValueChange={onValueChange}>
-            <Select.Trigger placeholder="Select a search field" />
-            <Select.Content>
-                <Select.Item value="name">Name</Select.Item>
-                <Select.Item value="email">Email</Select.Item>
-                <Select.Item value="wristNumber">Wrist Number</Select.Item>
-                <Select.Item value="houseNumber">House Number</Select.Item>
-                <Select.Item value="groupName">Group Name</Select.Item>
+        <Select defaultValue="name" onValueChange={onValueChange}>
+            <Select.Trigger width="$15" iconAfter={null}>
+                <Select.Value placeholder="Select a search field" />
+            </Select.Trigger>
+
+            <Adapt when="sm" platform="touch">
+                <Sheet modal dismissOnSnapToBottom>
+                    <Sheet.Frame>
+                        <Sheet.ScrollView>
+                            <Adapt.Contents />
+                        </Sheet.ScrollView>
+                    </Sheet.Frame>
+                    <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+                </Sheet>
+            </Adapt>
+
+            <Select.Content zIndex={200000}>
+                <Select.ScrollUpButton />
+                <Select.Viewport>
+                    <Select.Item value="name" index={0}>
+                        <Select.ItemText>Name</Select.ItemText>
+                    </Select.Item>
+                    <Select.Item value="email" index={1}>
+                        <Select.ItemText>Email</Select.ItemText>
+                    </Select.Item>
+                    <Select.Item value="wristNumber" index={2}>
+                        <Select.ItemText>Wrist Number</Select.ItemText>
+                    </Select.Item>
+                    <Select.Item value="houseNumber" index={3}>
+                        <Select.ItemText>House Number</Select.ItemText>
+                    </Select.Item>
+                    <Select.Item value="groupName" index={4}>
+                        <Select.ItemText>Group Name</Select.ItemText>
+                    </Select.Item>
+                </Select.Viewport>
+                <Select.ScrollDownButton />
             </Select.Content>
-        </Select.Root>
+        </Select>
     );
 }
 

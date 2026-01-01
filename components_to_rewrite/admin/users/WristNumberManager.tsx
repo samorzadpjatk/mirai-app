@@ -1,47 +1,25 @@
-"use client";
-
 import { useState } from "react";
-import { Button, Flex, TextField, Text, Dialog } from "@radix-ui/themes";
-import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
-import { useRouter } from "next/navigation";
+import { Button, XStack, YStack, Input, Paragraph, Dialog, Adapt, Sheet } from "tamagui";
+import { Plus, Trash2 } from "@tamagui/lucide-icons";
 
 interface WristNumberManagerProps {
   userId: string;
   userName: string;
   currentWristNumber?: string | null;
+  onUpdate?: (userId: string, wristNumber: string) => void;
+  onRemove?: (userId: string) => void;
 }
 
 export default function WristNumberManager({ 
   userId, 
   userName, 
-  currentWristNumber 
+  currentWristNumber,
+  onUpdate,
+  onRemove 
 }: WristNumberManagerProps) {
-  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [wristNumber, setWristNumber] = useState(currentWristNumber ?? "");
   const [error, setError] = useState("");
-
-  const updateWristNumberMutation = api.user.updateWristNumber.useMutation({
-    onSuccess: () => {
-      setIsDialogOpen(false);
-      setError("");
-      router.refresh();
-    },
-    onError: (error) => {
-      setError(error.message);
-    },
-  });
-
-  const removeWristNumberMutation = api.user.removeWristNumber.useMutation({
-    onSuccess: () => {
-      setIsDialogOpen(false);
-      setError("");
-      router.refresh();
-    },
-    onError: (error) => {
-      setError(error.message);
-    },
-  });
 
   const handleSave = () => {
     if (!wristNumber.trim()) {
@@ -50,97 +28,78 @@ export default function WristNumberManager({
     }
     
     setError("");
-    updateWristNumberMutation.mutate({
-      userId,
-      wristNumber: wristNumber.trim(),
-    });
+    if (onUpdate) {
+      onUpdate(userId, wristNumber.trim());
+    }
+    setIsDialogOpen(false);
   };
 
   const handleRemove = () => {
     setError("");
-    removeWristNumberMutation.mutate({ userId });
-  };
-
-  const handleOpenDialog = () => {
-    setWristNumber(currentWristNumber ?? "");
-    setError("");
-    setIsDialogOpen(true);
+    if (onRemove) {
+      onRemove(userId);
+    }
+    setIsDialogOpen(false);
   };
 
   return (
-    <>
-      <Button
-        size="1"
-        variant="soft"
-        color={currentWristNumber ? "green" : "gray"}
-        onClick={handleOpenDialog}
-      >
-        <PlusIcon />
-        {currentWristNumber ? "Change wrist number" : "Assign wrist number"}
-      </Button>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog.Trigger asChild>
+        <Button
+          size="$3"
+          icon={currentWristNumber ? <Trash2 size={16} /> : <Plus size={16} />}
+        >
+          {currentWristNumber ? "Remove Wrist #" : "Add Wrist #"}
+        </Button>
+      </Dialog.Trigger>
 
-      <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <Dialog.Content style={{ maxWidth: 450 }}>
-          <Dialog.Title>
-            {currentWristNumber ? "Change wrist number" : "Assign wrist number"}
-          </Dialog.Title>
-          <Dialog.Description size="2" mb="4">
-            {currentWristNumber 
-              ? `Change wrist number for user: ${userName}`
-              : `Assign wrist number for user: ${userName}`
-            }
+      <Adapt when="sm" platform="touch">
+        <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
+          <Sheet.Frame padding="$4" gap="$4">
+            <Adapt.Contents />
+          </Sheet.Frame>
+          <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+        </Sheet>
+      </Adapt>
+
+      <Dialog.Portal>
+        <Dialog.Overlay key="overlay" animation="quick" opacity={0.5} />
+        <Dialog.Content bordered elevate key="content" gap="$4">
+          <Dialog.Title>Manage Wrist Number</Dialog.Title>
+          <Dialog.Description>
+            Manage wrist number for {userName}
           </Dialog.Description>
 
-          <Flex direction="column" gap="3">
-            <div>
-              <Text as="div" size="2" mb="1" weight="bold">
-                Numer opaski
-              </Text>
-              <TextField.Root
+          <YStack gap="$4">
+            <YStack gap="$2">
+              <Paragraph>Wrist Number</Paragraph>
+              <Input
                 value={wristNumber}
-                onChange={(e) => setWristNumber(e.target.value)}
-                placeholder="Type wrist number..."
-                style={{ width: "100%" }}
+                onChangeText={setWristNumber}
+                placeholder="Enter wrist number"
               />
-              {error && (
-                <Text size="1" color="red" mt="1">
-                  {error}
-                </Text>
-              )}
-            </div>
-          </Flex>
+            </YStack>
 
-          <Flex gap="3" mt="4" justify="between">
-            <div>
-              {currentWristNumber && (
-                <Button
-                  variant="soft"
-                  color="red"
-                  onClick={handleRemove}
-                  disabled={removeWristNumberMutation.isPending}
-                >
-                  <TrashIcon />
-                  {removeWristNumberMutation.isPending ? "Removing..." : "Remove wrist number"}
-                </Button>
-              )}
-            </div>
-            
-            <Flex gap="3">
-              <Dialog.Close>
-                <Button variant="soft" color="gray">
-                  Cancel
-                </Button>
-              </Dialog.Close>
-              <Button
-                onClick={handleSave}
-                disabled={updateWristNumberMutation.isPending || !wristNumber.trim()}
-              >
-                {updateWristNumberMutation.isPending ? "Saving..." : "Save"}
+            {error && (
+              <Paragraph color="$red10">{error}</Paragraph>
+            )}
+          </YStack>
+
+          <XStack gap="$3" justifyContent="flex-end">
+            {currentWristNumber && (
+              <Button theme="red" onPress={handleRemove}>
+                Remove
               </Button>
-            </Flex>
-          </Flex>
+            )}
+            <Dialog.Close asChild>
+              <Button theme="alt1">Cancel</Button>
+            </Dialog.Close>
+            <Button onPress={handleSave}>
+              Save
+            </Button>
+          </XStack>
         </Dialog.Content>
-      </Dialog.Root>
-    </>
+      </Dialog.Portal>
+    </Dialog>
   );
 }

@@ -1,47 +1,25 @@
-"use client";
-
 import { useState } from "react";
-import { Button, Flex, TextField, Text, Dialog } from "@radix-ui/themes";
-import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
-import { useRouter } from "next/navigation";
+import { Button, XStack, YStack, Input, Paragraph, Dialog, Adapt, Sheet } from "tamagui";
+import { Plus, Trash2 } from "@tamagui/lucide-icons";
 
 interface HouseNumberManagerProps {
   userId: string;
   userName: string;
   currentHouseNumber?: string | null;
+  onUpdate?: (userId: string, houseNumber: string) => void;
+  onRemove?: (userId: string) => void;
 }
 
 export default function HouseNumberManager({ 
   userId, 
   userName, 
-  currentHouseNumber 
+  currentHouseNumber,
+  onUpdate,
+  onRemove 
 }: HouseNumberManagerProps) {
-  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [houseNumber, setHouseNumber] = useState(currentHouseNumber ?? "");
   const [error, setError] = useState("");
-
-  const updateHouseNumberMutation = api.user.updateHouseNumber.useMutation({
-    onSuccess: () => {
-      setIsDialogOpen(false);
-      setError("");
-      router.refresh();
-    },
-    onError: (error) => {
-      setError(error.message);
-    },
-  });
-
-  const removeHouseNumberMutation = api.user.removeHouseNumber.useMutation({
-    onSuccess: () => {
-      setIsDialogOpen(false);
-      setError("");
-      router.refresh();
-    },
-    onError: (error) => {
-      setError(error.message);
-    },
-  });
 
   const handleSave = () => {
     if (!houseNumber.trim()) {
@@ -50,97 +28,78 @@ export default function HouseNumberManager({
     }
     
     setError("");
-    updateHouseNumberMutation.mutate({
-      userId,
-      houseNumber: houseNumber.trim(),
-    });
+    if (onUpdate) {
+      onUpdate(userId, houseNumber.trim());
+    }
+    setIsDialogOpen(false);
   };
 
   const handleRemove = () => {
     setError("");
-    removeHouseNumberMutation.mutate({ userId });
-  };
-
-  const handleOpenDialog = () => {
-    setHouseNumber(currentHouseNumber ?? "");
-    setError("");
-    setIsDialogOpen(true);
+    if (onRemove) {
+      onRemove(userId);
+    }
+    setIsDialogOpen(false);
   };
 
   return (
-    <>
-      <Button
-        size="1"
-        variant="soft"
-        color={currentHouseNumber ? "green" : "gray"}
-        onClick={handleOpenDialog}
-      >
-        <PlusIcon />
-        {currentHouseNumber ? "Change house number" : "Assign house number"}
-      </Button>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog.Trigger asChild>
+        <Button
+          size="$3"
+          icon={currentHouseNumber ? <Trash2 size={16} /> : <Plus size={16} />}
+        >
+          {currentHouseNumber ? "Remove House #" : "Add House #"}
+        </Button>
+      </Dialog.Trigger>
 
-      <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <Dialog.Content style={{ maxWidth: 450 }}>
-          <Dialog.Title>
-            {currentHouseNumber ? "Change house number" : "Assign house number"}
-          </Dialog.Title>
-          <Dialog.Description size="2" mb="4">
-            {currentHouseNumber 
-              ? `Change house number for user: ${userName}`
-              : `Assign house number for user: ${userName}`
-            }
+      <Adapt when="sm" platform="touch">
+        <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
+          <Sheet.Frame padding="$4" gap="$4">
+            <Adapt.Contents />
+          </Sheet.Frame>
+          <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+        </Sheet>
+      </Adapt>
+
+      <Dialog.Portal>
+        <Dialog.Overlay key="overlay" animation="quick" opacity={0.5} />
+        <Dialog.Content bordered elevate key="content" gap="$4">
+          <Dialog.Title>Manage House Number</Dialog.Title>
+          <Dialog.Description>
+            Manage house number for {userName}
           </Dialog.Description>
 
-          <Flex direction="column" gap="3">
-            <div>
-              <Text as="div" size="2" mb="1" weight="bold">
-                Numer domku
-              </Text>
-              <TextField.Root
+          <YStack gap="$4">
+            <YStack gap="$2">
+              <Paragraph>House Number</Paragraph>
+              <Input
                 value={houseNumber}
-                onChange={(e) => setHouseNumber(e.target.value)}
-                placeholder="Type house number..."
-                style={{ width: "100%" }}
+                onChangeText={setHouseNumber}
+                placeholder="Enter house number"
               />
-              {error && (
-                <Text size="1" color="red" mt="1">
-                  {error}
-                </Text>
-              )}
-            </div>
-          </Flex>
+            </YStack>
 
-          <Flex gap="3" mt="4" justify="between">
-            <div>
-              {currentHouseNumber && (
-                <Button
-                  variant="soft"
-                  color="red"
-                  onClick={handleRemove}
-                  disabled={removeHouseNumberMutation.isPending}
-                >
-                  <TrashIcon />
-                  {removeHouseNumberMutation.isPending ? "Removing..." : "Remove house number"}
-                </Button>
-              )}
-            </div>
-            
-            <Flex gap="3">
-              <Dialog.Close>
-                <Button variant="soft" color="gray">
-                  Cancel
-                </Button>
-              </Dialog.Close>
-              <Button
-                onClick={handleSave}
-                disabled={updateHouseNumberMutation.isPending || !houseNumber.trim()}
-              >
-                {updateHouseNumberMutation.isPending ? "Saving..." : "Save"}
+            {error && (
+              <Paragraph color="$red10">{error}</Paragraph>
+            )}
+          </YStack>
+
+          <XStack gap="$3" justifyContent="flex-end">
+            {currentHouseNumber && (
+              <Button theme="red" onPress={handleRemove}>
+                Remove
               </Button>
-            </Flex>
-          </Flex>
+            )}
+            <Dialog.Close asChild>
+              <Button theme="alt1">Cancel</Button>
+            </Dialog.Close>
+            <Button onPress={handleSave}>
+              Save
+            </Button>
+          </XStack>
         </Dialog.Content>
-      </Dialog.Root>
-    </>
+      </Dialog.Portal>
+    </Dialog>
   );
 }

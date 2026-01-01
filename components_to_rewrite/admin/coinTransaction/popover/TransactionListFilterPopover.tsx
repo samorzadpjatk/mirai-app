@@ -1,59 +1,81 @@
-"use client"
-
-import { GearIcon } from "@radix-ui/react-icons";
-import { Popover, Button, Flex, Select, Text, Skeleton } from "@radix-ui/themes";
 import { useState } from "react";
+import { Button, Popover, YStack, Select, Adapt, Sheet } from "tamagui";
+import { Settings } from "@tamagui/lucide-icons";
 
-const TransactionListFilterPopover = ({ groups, selectedGroupId, setSelectedGroupId, limit, setLimit, loading }: {
-    groups: Array<{ id: string, name: string }> | undefined,
-    selectedGroupId: string,
-    setSelectedGroupId: (id: string) => void,
-    limit: number,
-    setLimit: (limit: number) => void,
-    loading: boolean
-}) => {
-    const [open, setOpen] = useState(false);
-    return (<Skeleton loading={loading}><Popover.Root open={open} onOpenChange={setOpen}>
-        <Popover.Trigger>
-            <Button size={{ "initial": "1", "xs": "2", "sm": "3" }} onClick={() => setOpen(!open)}>
-                <GearIcon />
-            </Button>
-        </Popover.Trigger>
-        <Popover.Content>
-            <Flex direction="column" gap="2">
-                <>
-                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                        Guild
-                    </Text>
-                    <Select.Root size={{ "initial": "1", "xs": "2", "sm": "3" }} value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                        <Select.Trigger placeholder="All Guilds" />
-                        <Select.Content>
-                            <Select.Item value="all">All Guilds</Select.Item>
-                            {groups?.map((group) => (
-                                <Select.Item key={group.id} value={group.id}>
-                                    {group.name}
-                                </Select.Item>
-                            ))}
-                        </Select.Content>
-                    </Select.Root>
-                </>
-
-                <>
-                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold">
-                        Results Limit
-                    </Text>
-                    <Select.Root size={{ "initial": "1", "xs": "2", "sm": "3" }} value={limit.toString()} onValueChange={(value) => setLimit(parseInt(value))}>
-                        <Select.Trigger />
-                        <Select.Content>
-                            <Select.Item value="10">Last 10</Select.Item>
-                            <Select.Item value="25">Last 25</Select.Item>
-                            <Select.Item value="50">Last 50</Select.Item>
-                            <Select.Item value="100">Last 100</Select.Item>
-                        </Select.Content>
-                    </Select.Root>
-                </></Flex>
-        </Popover.Content>
-    </Popover.Root></Skeleton>)
+interface TransactionListFilterPopoverProps {
+    onFilterChange?: (filter: string) => void;
 }
+
+const TransactionListFilterPopover = ({ onFilterChange }: TransactionListFilterPopoverProps) => {
+    const [filter, setFilter] = useState("all");
+
+    const handleFilterChange = (value: string) => {
+        setFilter(value);
+        if (onFilterChange) {
+            onFilterChange(value);
+        }
+    };
+
+    return (
+        <Popover size="$5" allowFlip>
+            <Popover.Trigger asChild>
+                <Button icon={<Settings size={16} />} size="$3">
+                    Filter
+                </Button>
+            </Popover.Trigger>
+
+            <Popover.Content
+                borderWidth={1}
+                borderColor="$borderColor"
+                enterStyle={{ y: -10, opacity: 0 }}
+                exitStyle={{ y: -10, opacity: 0 }}
+                elevate
+                animation={[
+                    'quick',
+                    {
+                        opacity: {
+                            overshootClamping: true,
+                        },
+                    },
+                ]}
+            >
+                <YStack gap="$3" padding="$3">
+                    <Select value={filter} onValueChange={handleFilterChange}>
+                        <Select.Trigger width="$15" iconAfter={null}>
+                            <Select.Value />
+                        </Select.Trigger>
+
+                        <Adapt when="sm" platform="touch">
+                            <Sheet modal dismissOnSnapToBottom>
+                                <Sheet.Frame>
+                                    <Sheet.ScrollView>
+                                        <Adapt.Contents />
+                                    </Sheet.ScrollView>
+                                </Sheet.Frame>
+                                <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+                            </Sheet>
+                        </Adapt>
+
+                        <Select.Content zIndex={200000}>
+                            <Select.ScrollUpButton />
+                            <Select.Viewport>
+                                <Select.Item value="all" index={0}>
+                                    <Select.ItemText>All Transactions</Select.ItemText>
+                                </Select.Item>
+                                <Select.Item value="positive" index={1}>
+                                    <Select.ItemText>Positive Only</Select.ItemText>
+                                </Select.Item>
+                                <Select.Item value="negative" index={2}>
+                                    <Select.ItemText>Negative Only</Select.ItemText>
+                                </Select.Item>
+                            </Select.Viewport>
+                            <Select.ScrollDownButton />
+                        </Select.Content>
+                    </Select>
+                </YStack>
+            </Popover.Content>
+        </Popover>
+    );
+};
 
 export default TransactionListFilterPopover;

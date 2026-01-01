@@ -1,77 +1,62 @@
-"use client"
-
-import { MinusIcon } from "@radix-ui/react-icons";
-import { AlertDialog, Flex, Button, Skeleton } from "@radix-ui/themes";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button, XStack, AlertDialog, Paragraph } from "tamagui";
+import { Minus } from "@tamagui/lucide-icons";
+
+interface RemoveUserFromGroupFormDialogProps {
+    selectedUserId: string;
+    isLoading?: boolean;
+    onRemove?: (userId: string) => void;
+}
 
 const RemoveUserFromGroupFormDialog = ({
     selectedUserId,
-}: {
-    selectedUserId: string;
-}) => {
-    const router = useRouter();
-    const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
-    const { data: selectedUser, isLoading: isLoadingUser } = api.user.getByIdWithGroup.useQuery({ id: selectedUserId });
-    const removeUserMutation = api.group.removeUserFromGroup.useMutation({
-        onSuccess: () => {
-            setIsRemoveDialogOpen(false);
-            router.refresh();
-        },
-    });
-    if (!selectedUser?.group) return null;
+    isLoading,
+    onRemove,
+}: RemoveUserFromGroupFormDialogProps) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleRemove = () => {
+        if (onRemove) {
+            onRemove(selectedUserId);
+            setIsOpen(false);
+        }
+    };
+
     return (
-        <Skeleton loading={isLoadingUser}>
-            <AlertDialog.Root open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
-                <AlertDialog.Trigger>
-                    <AlertDialog.Trigger>
-                        <Button
-                            size={{ "initial": "1", "xs": "2", "sm": "3" }}
-                            variant="soft"
-                            onClick={() => {
-                                setIsRemoveDialogOpen(true);
-                            }}
-                        >
-                            <>
-                                <MinusIcon />
-                                Banish from the Guild
-                            </>
-                        </Button>
-                    </AlertDialog.Trigger>
-                </AlertDialog.Trigger>
-                <AlertDialog.Content>
-                    <AlertDialog.Title>Banish from the Guild</AlertDialog.Title>
+        <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+            <AlertDialog.Trigger asChild>
+                <Button
+                    size="$3"
+                    theme="red"
+                    icon={<Minus size={16} />}
+                    disabled={isLoading}
+                >
+                    Remove from Guild
+                </Button>
+            </AlertDialog.Trigger>
+
+            <AlertDialog.Portal>
+                <AlertDialog.Overlay key="overlay" animation="quick" opacity={0.5} />
+                <AlertDialog.Content bordered elevate key="content" gap="$4">
+                    <AlertDialog.Title>Remove from Guild</AlertDialog.Title>
                     <AlertDialog.Description>
-                        Do you dare to banish &quot;{selectedUser?.name}&quot;
-                        from the guild &quot;{selectedUser?.group?.name ?? "Unknown"}&quot;?
+                        Are you sure you want to remove this user from their guild?
                     </AlertDialog.Description>
-                    <Flex gap="3" mt="4" justify="end">
-                        <AlertDialog.Cancel>
-                            <Button variant="soft" color="gray">
-                                Cancel
-                            </Button>
+
+                    <XStack gap="$3" justifyContent="flex-end">
+                        <AlertDialog.Cancel asChild>
+                            <Button theme="alt1">Cancel</Button>
                         </AlertDialog.Cancel>
-                        <AlertDialog.Action>
-                            <Button
-                                variant="solid"
-                                color="red"
-                                onClick={() => {
-                                    if (selectedUser) {
-                                        removeUserMutation.mutate({
-                                            userId: selectedUser.id,
-                                        });
-                                    }
-                                }}
-                                disabled={removeUserMutation.isPending}
-                            >
-                                {removeUserMutation.isPending ? "Banishing..." : "BANISH"}
+                        <AlertDialog.Action asChild>
+                            <Button theme="red" onPress={handleRemove}>
+                                Remove
                             </Button>
                         </AlertDialog.Action>
-                    </Flex>
+                    </XStack>
                 </AlertDialog.Content>
-            </AlertDialog.Root>
-        </Skeleton>
+            </AlertDialog.Portal>
+        </AlertDialog>
     );
-}
+};
 
 export default RemoveUserFromGroupFormDialog;

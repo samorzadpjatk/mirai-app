@@ -1,118 +1,104 @@
-"use client";
-
-import { PlusIcon } from "@radix-ui/react-icons";
-import { Flex, Button, Select, Text, Dialog, Skeleton } from "@radix-ui/themes";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button, YStack, XStack, Select, Dialog, Adapt, Sheet, Paragraph } from "tamagui";
+import { Plus } from "@tamagui/lucide-icons";
+
+interface Group {
+    id: string;
+    name: string;
+}
+
+interface AssignUserToGroupFormDialogProps {
+    selectedUserId: string;
+    groups?: Group[];
+    isLoading?: boolean;
+    onAssign?: (userId: string, groupId: string) => void;
+}
 
 const AssignUserToGroupFormDialog = ({
-  selectedUserId,
-}: {
-  selectedUserId: string;
-}) => {
-  const router = useRouter();
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState("");
+    selectedUserId,
+    groups,
+    isLoading,
+    onAssign,
+}: AssignUserToGroupFormDialogProps) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedGroupId, setSelectedGroupId] = useState("");
 
-  const { data: user, isLoading: isLoadingUser } =
-    api.user.getByIdWithGroup.useQuery({ id: selectedUserId });
-  const { data: groups, isLoading: isLoadingGroups } =
-    api.group.getAll.useQuery();
+    const handleAssign = () => {
+        if (selectedGroupId && onAssign) {
+            onAssign(selectedUserId, selectedGroupId);
+            setIsOpen(false);
+            setSelectedGroupId("");
+        }
+    };
 
-  const availableGroups =
-    groups?.filter(
-      (group: any) =>
-        user?.group?.id !== group.id &&
-        !user?.organizerGroup?.some((og: any) => og.id === group.id),
-    ) ?? [];
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <Dialog.Trigger asChild>
+                <Button size="$3" icon={<Plus size={16} />} disabled={isLoading}>
+                    Assign to Guild
+                </Button>
+            </Dialog.Trigger>
 
-  const assignUserMutation = api.group.assignUserToGroup.useMutation({
-    onSuccess: () => {
-      setIsAssignDialogOpen(false);
-      router.refresh();
-    },
-  });
+            <Adapt when="sm" platform="touch">
+                <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
+                    <Sheet.Frame padding="$4" gap="$4">
+                        <Adapt.Contents />
+                    </Sheet.Frame>
+                    <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+                </Sheet>
+            </Adapt>
 
-  if (!user || !groups) return null;
+            <Dialog.Portal>
+                <Dialog.Overlay key="overlay" animation="quick" opacity={0.5} />
+                <Dialog.Content bordered elevate key="content" gap="$4">
+                    <Dialog.Title>Assign User to Guild</Dialog.Title>
+                    <Dialog.Description>
+                        Select a guild to assign this user to
+                    </Dialog.Description>
 
-  if (availableGroups.length === 0) return null;
+                    <YStack gap="$4">
+                        <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                            <Select.Trigger width="100%" iconAfter={null}>
+                                <Select.Value placeholder="Select a guild" />
+                            </Select.Trigger>
 
-  return (
-    <Skeleton loading={isLoadingUser || isLoadingGroups}>
-      <Dialog.Root
-        open={isAssignDialogOpen}
-        onOpenChange={setIsAssignDialogOpen}
-      >
-        <Dialog.Trigger>
-          <Button
-            size={{ initial: "1", xs: "2", sm: "3" }}
-            variant="soft"
-            onClick={() => {
-              setIsAssignDialogOpen(true);
-            }}
-          >
-            <>
-              <PlusIcon />
-              Enlist into the Guild
-            </>
-          </Button>
-        </Dialog.Trigger>
-        <Dialog.Content>
-          <Dialog.Title>Enlist into the Guild</Dialog.Title>
-          <Dialog.Description>
-            Enlist companion &quot;{user?.name}&quot; into the Guild.
-          </Dialog.Description>
-          <Flex direction="column" gap="4" mt="4">
-            <div>
-              <Text
-                as="label"
-                size={{ initial: "1", xs: "2", sm: "3" }}
-                weight="bold"
-              >
-                Choose a Guild
-              </Text>
-              <Select.Root
-                value={selectedGroupId}
-                onValueChange={setSelectedGroupId}
-              >
-                <Select.Trigger placeholder="Select guild..." />
-                <Select.Content>
-                  {availableGroups.map((group: any) => (
-                    <Select.Item key={group.id} value={group.id}>
-                      {group.name}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </div>
+                            <Adapt when="sm" platform="touch">
+                                <Sheet modal dismissOnSnapToBottom>
+                                    <Sheet.Frame>
+                                        <Sheet.ScrollView>
+                                            <Adapt.Contents />
+                                        </Sheet.ScrollView>
+                                    </Sheet.Frame>
+                                    <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+                                </Sheet>
+                            </Adapt>
 
-            <Flex gap="3" justify="end">
-              <Button
-                variant="soft"
-                color="gray"
-                onClick={() => setIsAssignDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() =>
-                  assignUserMutation.mutate({
-                    userId: user.id,
-                    groupId: selectedGroupId,
-                  })
-                }
-                disabled={!selectedGroupId || assignUserMutation.isPending}
-              >
-                {assignUserMutation.isPending
-                  ? "Enlisting..."
-                  : "Enlist into the Guild"}
-              </Button>
-            </Flex>
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
-    </Skeleton>
-  );
+                            <Select.Content zIndex={200000}>
+                                <Select.ScrollUpButton />
+                                <Select.Viewport>
+                                    {groups?.map((group, index) => (
+                                        <Select.Item key={group.id} value={group.id} index={index}>
+                                            <Select.ItemText>{group.name}</Select.ItemText>
+                                        </Select.Item>
+                                    ))}
+                                </Select.Viewport>
+                                <Select.ScrollDownButton />
+                            </Select.Content>
+                        </Select>
+                    </YStack>
+
+                    <XStack gap="$3" justifyContent="flex-end">
+                        <Dialog.Close asChild>
+                            <Button theme="alt1">Cancel</Button>
+                        </Dialog.Close>
+                        <Button onPress={handleAssign} disabled={!selectedGroupId}>
+                            Assign
+                        </Button>
+                    </XStack>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog>
+    );
 };
 
 export default AssignUserToGroupFormDialog;
