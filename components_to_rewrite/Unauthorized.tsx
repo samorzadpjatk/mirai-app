@@ -1,22 +1,22 @@
-import { Flex, Card, Heading, Text } from "@radix-ui/themes";
+import { YStack, Card, H2, Paragraph } from "tamagui";
 
 const Unauthorized = () => {
     return (
-        <Flex direction="column" align="center" justify="center" style={{ minHeight: "60vh" }}>
-            <Card size="4">
-                <Flex direction="column" align="center" gap="4">
-                    <Heading size={{ "initial": "4", "xs": "5", "sm": "6" }} style={{ color: "var(--red-9)" }}>
+        <YStack flex={1} alignItems="center" justifyContent="center" padding="$4" minHeight="60vh">
+            <Card elevate bordered padding="$6" maxWidth={500}>
+                <YStack alignItems="center" gap="$4">
+                    <H2 color="$red10" textAlign="center">
                         🚫 Access Denied
-                    </Heading>
-                    <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} align="center">
+                    </H2>
+                    <Paragraph size="$5" textAlign="center">
                         You are not granted the rights to access this chamber.
-                    </Text>
-                    <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }} align="center">
+                    </Paragraph>
+                    <Paragraph size="$4" opacity={0.7} textAlign="center">
                         Seek the counsel of the system administrator should you deem this an error.
-                    </Text>
-                </Flex>
+                    </Paragraph>
+                </YStack>
             </Card>
-        </Flex>
+        </YStack>
     );
 }
 

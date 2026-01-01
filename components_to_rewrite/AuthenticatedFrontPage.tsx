@@ -1,17 +1,22 @@
-import { Card, Flex, Heading, Separator } from "@radix-ui/themes";
+import { Card, YStack, H2, Separator } from "tamagui";
 import NavGrid from "./NavGrid";
 
-// Component for authenticated users - the main dashboard
-const AuthenticatedDashboard = () => {
+interface AuthenticatedFrontPageProps {
+  isAdmin?: boolean;
+  isModerator?: boolean;
+  onNavigate: (path: string) => void;
+}
+
+const AuthenticatedFrontPage = ({ isAdmin, isModerator, onNavigate }: AuthenticatedFrontPageProps) => {
     return (
-        <Card>
-            <Flex gap={{ initial: "3", md: "4" }} direction="column" align="center" justify="center">
-                <Heading size={{ initial: "4", md: "5", lg: "6" }} style={{ fontFamily: "Roboto Slab" }}>Welcome to the Treasure Bank!</Heading>
-                <Separator orientation="horizontal" size={{ initial: "2", md: "3", lg: "4" }} />
-                <NavGrid />
-            </Flex>
+        <Card elevate bordered padding="$6">
+            <YStack gap="$4" alignItems="center" justifyContent="center">
+                <H2 fontFamily="$heading">Welcome to the Treasure Bank!</H2>
+                <Separator />
+                <NavGrid isAdmin={isAdmin} isModerator={isModerator} onNavigate={onNavigate} />
+            </YStack>
         </Card>
     );
 }
 
-export default AuthenticatedDashboard;
+export default AuthenticatedFrontPage;

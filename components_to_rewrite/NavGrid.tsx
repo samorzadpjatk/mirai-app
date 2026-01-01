@@ -1,53 +1,33 @@
-import { Button, Grid, Text } from "@radix-ui/themes";
-import Link from "next/link";
-import { requireAuth } from "@integral-2025-app/auth";
-import { db } from "@integral-2025-app/db";
-import { supabase } from "@integral-2025-app/supabase";
+import { Button, YStack, Paragraph } from "tamagui";
 
-export default async function NavGrid() {
-  const { user, dbUser } = await requireAuth(supabase, async (authUserId: string) => {
-    return await db.user.findUnique({
-      where: { authUserId },
-    });
-  });
+interface NavGridProps {
+  isAdmin?: boolean;
+  isModerator?: boolean;
+  onNavigate: (path: string) => void;
+}
+
+export default function NavGrid({ isAdmin = false, isModerator = false, onNavigate }: NavGridProps) {
   return (
-    <>
-      {user && dbUser && (
-        <>
-          <Grid columns={"1"} gap={"2"} rows={"repeat(2, 1fr)"} width={"100%"}>
-            {!dbUser.isAdmin && (
-              <Button size={"4"} variant="outline">
-                <Link href={"/group/my"}>
-                  <Text>Your Guild Hall</Text>
-                </Link>
-              </Button>
-            )}
-            <Button size={"4"} variant="outline">
-              <Link href={"/ranking"}>
-                <Text>Leaderboard of Guilds</Text>
-              </Link>
-            </Button>
-            {(dbUser.isAdmin || dbUser.isModerator) && (
-              <Button size={"4"} variant="outline">
-                <Link href={"/admin/groups"}>
-                  <Text>Chamber of Administration</Text>
-                </Link>
-              </Button>
-            )}
-            {/* Notifications section for all users */}
-            <Button size={"4"} variant="outline">
-              <Link href={"/notifications"}>
-                <Text>Notifications</Text>
-              </Link>
-            </Button>
-            <Button size={"4"} variant="outline">
-              <Link href={"/map"}>
-                <Text>Map Viewer</Text>
-              </Link>
-            </Button>
-          </Grid>
-        </>
+    <YStack gap="$2" width="100%">
+      {!isAdmin && (
+        <Button size="$5" onPress={() => onNavigate("/group/my")}>
+          <Paragraph>Your Guild Hall</Paragraph>
+        </Button>
       )}
-    </>
+      <Button size="$5" onPress={() => onNavigate("/ranking")}>
+        <Paragraph>Leaderboard of Guilds</Paragraph>
+      </Button>
+      {(isAdmin || isModerator) && (
+        <Button size="$5" onPress={() => onNavigate("/admin/groups")}>
+          <Paragraph>Chamber of Administration</Paragraph>
+        </Button>
+      )}
+      <Button size="$5" onPress={() => onNavigate("/notifications")}>
+        <Paragraph>Notifications</Paragraph>
+      </Button>
+      <Button size="$5" onPress={() => onNavigate("/map")}>
+        <Paragraph>Map Viewer</Paragraph>
+      </Button>
+    </YStack>
   );
 }

@@ -1,23 +1,20 @@
-import Image from "next/image";
+import { Image } from "tamagui";
 
 const BackgroundImage = () => {
   return (
     <Image
-      src="/background.jpg"
-      alt="Background"
-      width="5504"
-      height="4625"
+      source={{ uri: "/background.jpg" }}
+      position="absolute"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
+      width="100%"
+      height="100%"
+      resizeMode="cover"
+      zIndex={-1}
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
         mixBlendMode: 'multiply',
-        zIndex: -1,
       }}
     />
   );

@@ -1,17 +1,17 @@
-"use client"
+import { RefreshCw } from "@tamagui/lucide-icons";
+import { Button } from "tamagui";
 
-import { ReloadIcon } from "@radix-ui/react-icons";
-import { Button } from "@radix-ui/themes";
-import { useRouter } from "next/navigation";
+interface RefreshButtonProps {
+  onRefresh: () => void;
+}
 
-const RefreshButton = () => {
-    const router = useRouter();
+const RefreshButton = ({ onRefresh }: RefreshButtonProps) => {
     return (
         <Button
-            variant="soft"
-            onClick={() => router.refresh()}
+            size="$3"
+            icon={RefreshCw}
+            onPress={onRefresh}
         >
-            <ReloadIcon />
             Refresh
         </Button>
     );

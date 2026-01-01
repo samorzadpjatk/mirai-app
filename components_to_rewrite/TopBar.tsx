@@ -1,77 +1,57 @@
-import { HomeIcon } from "@radix-ui/react-icons";
-import { Flex, Avatar, Button, IconButton, Text } from "@radix-ui/themes";
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { requireAuth } from "@integral-2025-app/auth";
-import { createSupabaseClient } from "@integral-2025-app/supabase";
-import { db } from "@integral-2025-app/db";
-import { env } from "~/env";
+import { Home } from "@tamagui/lucide-icons";
+import { XStack, Avatar, Button, Paragraph, Circle } from "tamagui";
 
-export default async function TopBar() {
-  const supabase = createSupabaseClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-  const { user, dbUser } = await requireAuth(supabase, async (authUserId: string) => {
-    const user = await db.user.findFirst({
-      where: { authUserId },
-    });
-    return user;
-  });
+interface TopBarProps {
+  user?: {
+    name?: string | null;
+    image?: string | null;
+  };
+  isAuthenticated: boolean;
+  onHomePress: () => void;
+  onSignPress: () => void;
+}
 
-  async function handleSign() {
-    "use server";
-    if (user) {
-      await supabase.auth.signOut();
-      redirect("/");
-    } else {
-      redirect("/auth/login");
-    }
-  }
+export default function TopBar({ user, isAuthenticated, onHomePress, onSignPress }: TopBarProps) {
+  const getInitials = (name?: string | null) => {
+    if (!name) return "";
+    return name.split(" ").map(n => n[0]).join("");
+  };
 
   return (
-    <Flex
-      position={{ initial: "sticky" }}
-      direction="row"
-      justify="between"
-      align="center"
-      gap="2"
+    <XStack
+      position="sticky"
+      justifyContent="space-between"
+      alignItems="center"
+      gap="$2"
       width="100%"
+      paddingHorizontal="$3"
+      paddingVertical="$2"
     >
-      <Link href="/">
-        <IconButton>
-          <HomeIcon />
-        </IconButton>
-      </Link>
-      <Flex direction="row" align="center" gap="2">
-        {user && dbUser && (
-          <Flex direction="row" align="center" justify="center" gap="2">
-            <Avatar
-              variant={"solid"}
-              size={{ initial: "1", xs: "2", sm: "3" }}
-              fallback={
-                dbUser.name
-                  ?.split(" ")
-                  .map((name) => name[0])
-                  .join("") ?? ""
-              }
-              src={dbUser.image ?? undefined}
-            />
-            <Text
-              size={{ initial: "1", xs: "2", sm: "3" }}
-              weight="bold"
-              wrap="pretty"
-            >
-              {dbUser.name}
-            </Text>
-          </Flex>
+      <Button size="$3" circular icon={Home} onPress={onHomePress} />
+      <XStack alignItems="center" gap="$2">
+        {isAuthenticated && user && (
+          <XStack alignItems="center" justifyContent="center" gap="$2">
+            {user.image ? (
+              <Avatar circular size="$4">
+                <Avatar.Image src={user.image} />
+                <Avatar.Fallback backgroundColor="$blue10">
+                  <Paragraph color="$background">{getInitials(user.name)}</Paragraph>
+                </Avatar.Fallback>
+              </Avatar>
+            ) : (
+              <Circle size="$4" backgroundColor="$blue10">
+                <Paragraph color="$background">{getInitials(user.name)}</Paragraph>
+              </Circle>
+            )}
+            <Paragraph size="$5" fontWeight="bold">
+              {user.name}
+            </Paragraph>
+          </XStack>
         )}
-        <form action={handleSign}>
-          <Button>
-            <input
-              type="submit"
-              value={user ? "Sign Out" : "Sign In"}
-            />
-          </Button>
-        </form>
-      </Flex>
-    </Flex>
+        <Button size="$3" onPress={onSignPress}>
+          {isAuthenticated ? "Sign Out" : "Sign In"}
+        </Button>
+      </XStack>
+    </XStack>
   );
 }
