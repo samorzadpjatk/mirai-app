@@ -1,48 +1,31 @@
-"use client"
+import { Plus, Minus } from "@tamagui/lucide-icons";
+import { Card, H3, YStack, XStack, Button, Select, Input, TextArea, Paragraph, Label, Adapt, Sheet } from "tamagui";
+import { useState } from "react";
 
-import { PlusIcon, MinusIcon } from "@radix-ui/react-icons"
-import { Card, Heading, Flex, Button, Select, TextField, TextArea, Text } from "@radix-ui/themes"
-import { useRouter } from "next/navigation"
+interface Group {
+    id: string;
+    name: string;
+    coins: number;
+}
 
-import { useState } from "react"
+interface CoinOperationFormCardProps {
+    groups?: Group[];
+    isLoading?: boolean;
+    onAddCoins?: (groupId: string, amount: number, reason?: string) => void;
+    onRemoveCoins?: (groupId: string, amount: number, reason?: string) => void;
+}
 
-const CoinOperationFormCard = () => {
-    const router = useRouter();
-    const { data: groups } = api.group.getAll.useQuery();
+const CoinOperationFormCard = ({
+    groups,
+    isLoading,
+    onAddCoins,
+    onRemoveCoins,
+}: CoinOperationFormCardProps) => {
     const [selectedGroupId, setSelectedGroupId] = useState("");
     const [amount, setAmount] = useState("");
     const [reason, setReason] = useState("");
     const [operation, setOperation] = useState<"add" | "remove">("add");
-
-    const sendCoinAddedNotificationMutation = api.notifications.sendCoinAddedToGroup.useMutation()
-    const sendCoinRemovedNotificationMutation = api.notifications.sendCoinRemovedFromGroup.useMutation()
-
-    // Mutations
-    const addCoinsMutation = api.coin.addCoins.useMutation({
-        onSuccess: async () => {
-            await sendCoinAddedNotificationMutation.mutateAsync({
-                groupId: selectedGroupId,
-                coins: parseInt(amount),
-                reason: reason,
-            });
-            resetForm();
-            router.refresh();
-        },
-    });
-
-    const removeCoinsMutation = api.coin.removeCoins.useMutation({
-        onSuccess: async () => {
-            await sendCoinRemovedNotificationMutation.mutateAsync({
-                groupId: selectedGroupId,
-                coins: parseInt(amount),
-                reason: reason,
-            });
-            resetForm();
-            router.refresh();
-        },
-    });
-
-    const isLoading = addCoinsMutation.isPending || removeCoinsMutation.isPending;
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const resetForm = () => {
         setSelectedGroupId("");
@@ -50,136 +33,134 @@ const CoinOperationFormCard = () => {
         setReason("");
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!selectedGroupId || !amount || parseInt(amount) <= 0) return;
 
+        setIsSubmitting(true);
         const coinData = {
             groupId: selectedGroupId,
             amount: parseInt(amount),
             reason: reason || undefined,
         };
 
-        if (operation === "add") {
-            addCoinsMutation.mutate(coinData);
-        } else {
-            removeCoinsMutation.mutate(coinData);
+        if (operation === "add" && onAddCoins) {
+            onAddCoins(coinData.groupId, coinData.amount, coinData.reason);
+        } else if (operation === "remove" && onRemoveCoins) {
+            onRemoveCoins(coinData.groupId, coinData.amount, coinData.reason);
         }
+
+        resetForm();
+        setIsSubmitting(false);
     };
 
-    return (
-        <Card size={{ "initial": "1", "xs": "2", "sm": "3" }}>
-            <Heading size={{ "initial": "1", "xs": "2", "sm": "3" }} mb="4">Treasury Operations</Heading>
+    const selectedGroup = groups?.find(g => g.id === selectedGroupId);
+    const requestedAmount = parseInt(amount) || 0;
+    const currentCoins = selectedGroup?.coins ?? 0;
+    const showWarning = operation === "remove" && selectedGroupId && amount && requestedAmount > currentCoins;
 
-            <Flex direction="column" gap="4">
-                {/* Operation Type */}
-                <Flex gap="3">
+    return (
+        <Card bordered padding="$4">
+            <H3 marginBottom="$4">Treasury Operations</H3>
+
+            <YStack gap="$4">
+                <XStack gap="$3">
                     <Button
-                        size={{ "initial": "1", "xs": "2", "sm": "3" }}
-                        variant={operation === "add" ? "solid" : "soft"}
-                        color="green"
-                        onClick={() => setOperation("add")}
-                        style={{ flex: 1 }}
+                        flex={1}
+                        theme={operation === "add" ? "green" : undefined}
+                        onPress={() => setOperation("add")}
+                        icon={<Plus size={16} />}
                     >
-                        <PlusIcon />
                         Add coins
                     </Button>
                     <Button
-                        size={{ "initial": "1", "xs": "2", "sm": "3" }}
-                        variant={operation === "remove" ? "solid" : "soft"}
-                        color="red"
-                        onClick={() => setOperation("remove")}
-                        style={{ flex: 1 }}
+                        flex={1}
+                        theme={operation === "remove" ? "red" : undefined}
+                        onPress={() => setOperation("remove")}
+                        icon={<Minus size={16} />}
                     >
-                        <MinusIcon />
                         Seize coins
                     </Button>
-                </Flex>
+                </XStack>
 
-                {/* Group Selection */}
-                <div>
-                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
-                        Select Guild
-                    </Text>
-                    <Select.Root value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                        <Select.Trigger placeholder="Select Guild..." />
-                        <Select.Content>
-                            {groups?.map((group) => (
-                                <Select.Item key={group.id} value={group.id}>
-                                    {group.name} (💰 {group.coins} coins)
-                                </Select.Item>
-                            ))}
+                <YStack gap="$2">
+                    <Label fontWeight="bold">Select Guild</Label>
+                    <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                        <Select.Trigger width="100%" iconAfter={null}>
+                            <Select.Value placeholder="Select Guild..." />
+                        </Select.Trigger>
+
+                        <Adapt when="sm" platform="touch">
+                            <Sheet modal dismissOnSnapToBottom>
+                                <Sheet.Frame>
+                                    <Sheet.ScrollView>
+                                        <Adapt.Contents />
+                                    </Sheet.ScrollView>
+                                </Sheet.Frame>
+                                <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+                            </Sheet>
+                        </Adapt>
+
+                        <Select.Content zIndex={200000}>
+                            <Select.ScrollUpButton />
+                            <Select.Viewport>
+                                {groups?.map((group, index) => (
+                                    <Select.Item key={group.id} value={group.id} index={index}>
+                                        <Select.ItemText>
+                                            {group.name} (💰 {group.coins} coins)
+                                        </Select.ItemText>
+                                    </Select.Item>
+                                ))}
+                            </Select.Viewport>
+                            <Select.ScrollDownButton />
                         </Select.Content>
-                    </Select.Root>
-                </div>
+                    </Select>
+                </YStack>
 
-                {/* Amount */}
-                <div>
-                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
-                        Treasury
-                    </Text>
-                    <TextField.Root
-                        type="number"
+                <YStack gap="$2">
+                    <Label fontWeight="bold">Treasury</Label>
+                    <Input
+                        keyboardType="numeric"
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChangeText={setAmount}
                         placeholder="e.g. 100"
-                        min="1"
                     />
-                </div>
+                </YStack>
 
-                {/* Reason (Optional) */}
-                <div>
-                    <Text as="label" size={{ "initial": "1", "xs": "2", "sm": "3" }} weight="bold" style={{ display: "block", marginBottom: "8px" }}>
-                        Justification (optional)
-                    </Text>
+                <YStack gap="$2">
+                    <Label fontWeight="bold">Justification (optional)</Label>
                     <TextArea
                         value={reason}
-                        onChange={(e) => setReason(e.target.value)}
+                        onChangeText={setReason}
                         placeholder="e.g. Reward for Victory in the Tournament"
-                        rows={3}
+                        numberOfLines={3}
                     />
-                </div>
+                </YStack>
 
-                {/* Submit Button */}
                 <Button
-                    size={{ "initial": "1", "xs": "2", "sm": "3" }}
-                    onClick={handleSubmit}
-                    disabled={!selectedGroupId || !amount || parseInt(amount) <= 0 || isLoading}
-                    color={operation === "add" ? "green" : "red"}
-                    variant="solid"
+                    onPress={handleSubmit}
+                    disabled={!selectedGroupId || !amount || requestedAmount <= 0 || isSubmitting || isLoading}
+                    theme={operation === "add" ? "green" : "red"}
                 >
-                    {isLoading ? (
+                    {isSubmitting || isLoading ? (
                         operation === "add" ? "Adding..." : "Seizing..."
                     ) : (
                         operation === "add" ?
-                            `💰 Add ${amount || 0} coins` :
-                            `💸 Seize ${amount || 0} coins`
+                            `💰 Add ${requestedAmount} coins` :
+                            `💸 Seize ${requestedAmount} coins`
                     )}
                 </Button>
 
-                {/* Show validation warnings */}
-                {operation === "remove" && selectedGroupId && amount && groups && (
-                    (() => {
-                        const selectedGroup = groups.find(g => g.id === selectedGroupId);
-                        const requestedAmount = parseInt(amount);
-                        const currentCoins = selectedGroup?.coins ?? 0;
-
-                        if (requestedAmount > currentCoins) {
-                            return (
-                                <Card variant="surface" style={{ backgroundColor: "var(--red-2)", border: "1px solid var(--red-6)" }}>
-                                    <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} color="red">
-                                        ⚠️ Beware: The guild’s treasury holds a mere {currentCoins} coins,
-                                        yet you dare to seize {requestedAmount} coins!
-                                    </Text>
-                                </Card>
-                            );
-                        }
-
-                        return null;
-                    })()
+                {showWarning && (
+                    <Card backgroundColor="$red2" borderColor="$red6" bordered padding="$3">
+                        <Paragraph color="$red10">
+                            ⚠️ Beware: The guild's treasury holds a mere {currentCoins} coins,
+                            yet you dare to seize {requestedAmount} coins!
+                        </Paragraph>
+                    </Card>
                 )}
-            </Flex>
+            </YStack>
         </Card>
-    )
+    );
 }
 
 export default CoinOperationFormCard;
