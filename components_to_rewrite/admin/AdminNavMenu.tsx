@@ -1,34 +1,60 @@
-"use client"
+import { XStack, Button, Paragraph } from "tamagui";
 
-import { TabNav } from "@radix-ui/themes";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+interface AdminNavMenuProps {
+  isAdmin: boolean;
+  currentPath: string;
+  onNavigate: (path: string) => void;
+}
 
-const AdminNavMenu = ({isAdmin}: {isAdmin: boolean}) => {
-    const pathname = usePathname();
-
-    return (<TabNav.Root size={{ "initial": "1", "xs": "2", "sm": "2" }}>
-        <TabNav.Link asChild active={pathname?.includes("groups")}>
-            <Link href="groups">🏛️ Guilds</Link>
-        </TabNav.Link>
-        <TabNav.Link asChild active={pathname?.includes("users")}>
-            <Link href="users">👥 Companions</Link>
-        </TabNav.Link>
-        <TabNav.Link asChild active={pathname?.includes("coins")}>
-            <Link href="coins">💰 Coins</Link>
-        </TabNav.Link>
-        <TabNav.Link asChild active={pathname?.includes("transactions")}>
-            <Link href="transactions">📊 History</Link>
-        </TabNav.Link>
+const AdminNavMenu = ({ isAdmin, currentPath, onNavigate }: AdminNavMenuProps) => {
+    return (
+      <XStack gap="$2" flexWrap="wrap">
+        <Button
+          size="$3"
+          theme={currentPath.includes("groups") ? "active" : undefined}
+          onPress={() => onNavigate("groups")}
+        >
+          <Paragraph>🏛️ Guilds</Paragraph>
+        </Button>
+        <Button
+          size="$3"
+          theme={currentPath.includes("users") ? "active" : undefined}
+          onPress={() => onNavigate("users")}
+        >
+          <Paragraph>👥 Companions</Paragraph>
+        </Button>
+        <Button
+          size="$3"
+          theme={currentPath.includes("coins") ? "active" : undefined}
+          onPress={() => onNavigate("coins")}
+        >
+          <Paragraph>💰 Coins</Paragraph>
+        </Button>
+        <Button
+          size="$3"
+          theme={currentPath.includes("transactions") ? "active" : undefined}
+          onPress={() => onNavigate("transactions")}
+        >
+          <Paragraph>📊 History</Paragraph>
+        </Button>
         {isAdmin && (
-            <TabNav.Link asChild active={pathname?.includes("schedules")}>
-                <Link href="schedules">🔔 Schedules</Link>
-            </TabNav.Link>
+          <Button
+            size="$3"
+            theme={currentPath.includes("schedules") ? "active" : undefined}
+            onPress={() => onNavigate("schedules")}
+          >
+            <Paragraph>🔔 Schedules</Paragraph>
+          </Button>
         )}
-        <TabNav.Link asChild active={pathname?.includes("notifications")}>
-            <Link href="notifications">📨 Notifications</Link>
-        </TabNav.Link>
-    </TabNav.Root>);
+        <Button
+          size="$3"
+          theme={currentPath.includes("notifications") ? "active" : undefined}
+          onPress={() => onNavigate("notifications")}
+        >
+          <Paragraph>📨 Notifications</Paragraph>
+        </Button>
+      </XStack>
+    );
 }
 
 export default AdminNavMenu;

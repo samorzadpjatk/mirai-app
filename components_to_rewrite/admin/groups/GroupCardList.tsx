@@ -1,55 +1,77 @@
-import { Flex, Card, Strong, Badge, Text } from "@radix-ui/themes";
+import { YStack, Card, Paragraph, XStack, Badge, Spinner } from "tamagui";
 import { Suspense } from "react";
 import EditGroupDialog from "./dialog/EditGroupDialog";
 import DeleteGroupDialog from "./dialog/DeleteGroupDialog";
 import GroupCardListSkeleton from "~/components/skelethons/GroupCardListSkelethon";
 
-const GroupCardList = async () => {
-    const groups = await api.group.getGroupList();
+interface Group {
+    id: string;
+    name: string;
+    coins: number;
+    organizer: {
+        name: string | null;
+    };
+    _count: {
+        members: number;
+    };
+}
+
+interface GroupCardListProps {
+    groups: Group[];
+    isLoading?: boolean;
+    onRefresh?: () => void;
+}
+
+const GroupCardList = ({ groups, isLoading, onRefresh }: GroupCardListProps) => {
+    if (isLoading) {
+        return <GroupCardListSkeleton />;
+    }
 
     return (
-        <Flex direction="column" justify="center">
+        <YStack justifyContent="center">
             <Suspense fallback={<GroupCardListSkeleton />}>
                 {groups?.length === 0 && (
-                    <Card style={{ padding: "1rem" }}>
-                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.6 }}>
+                    <Card padding="$4" bordered>
+                        <Paragraph opacity={0.6}>
                             There are no Guilds in realm to display
-                        </Text><br />
-                        <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.5 }}>
+                        </Paragraph>
+                        <Paragraph opacity={0.5} marginTop="$2">
                             Forge your first guild and embark on your path of leadership
-                        </Text>
+                        </Paragraph>
                     </Card>
                 )}
                 {groups?.map((group) => (
-                    <Card key={group.id} size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ width: "100%" }}>
-                        <Flex direction="column" gap={{ "initial": "1" }}>
-                            <Flex justify="between" align="center">
-                                <Strong>{group.name}</Strong>
-                                <Flex gap={{ "initial": "1" }} justify="end">
+                    <Card key={group.id} bordered padding="$3" width="100%" marginBottom="$2">
+                        <YStack gap="$2">
+                            <XStack justifyContent="space-between" alignItems="center">
+                                <Paragraph fontWeight="bold">{group.name}</Paragraph>
+                                <XStack gap="$2" justifyContent="flex-end">
                                     <EditGroupDialog
                                         selectedGroupId={group.id}
+                                        onRefresh={onRefresh}
                                     />
                                     <DeleteGroupDialog
                                         selectedGroupId={group.id}
+                                        onRefresh={onRefresh}
                                     />
-                                </Flex>
-                            </Flex>
-                            <Text size={{ "initial": "1", "xs": "2", "sm": "3" }} style={{ opacity: 0.7 }}>
+                                </XStack>
+                            </XStack>
+                            <Paragraph opacity={0.7}>
                                 Assigned: {group.organizer.name ?? "Unknown"}
-                            </Text>
-                            <Flex justify="between" align="center">
-                                <Badge variant="soft" color="green">
+                            </Paragraph>
+                            <XStack justifyContent="space-between" alignItems="center">
+                                <Badge backgroundColor="$green10" color="$background">
                                     {group._count.members} companions
                                 </Badge>
-                                <Badge variant="soft" color="gold">
+                                <Badge backgroundColor="$yellow10" color="$background">
                                     💰 {group.coins} coins
                                 </Badge>
-                            </Flex>
-                        </Flex>
+                            </XStack>
+                        </YStack>
                     </Card>
                 ))}
             </Suspense>
-        </Flex>
+        </YStack>
     );
 }
 

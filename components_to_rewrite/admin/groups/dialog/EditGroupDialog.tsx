@@ -1,125 +1,204 @@
-"use client"
-
-import { Pencil1Icon } from "@radix-ui/react-icons";
-import { Dialog, Flex, TextField, Select, Separator, Badge, Button, Text, Skeleton } from "@radix-ui/themes";
-import { useRouter } from "next/navigation";
+import { Pencil } from "@tamagui/lucide-icons";
+import { Dialog, YStack, XStack, Input, Select, Separator, Badge, Button, Paragraph, Label, Spinner, Adapt, Sheet } from "tamagui";
 import { useState } from "react";
+
+interface Admin {
+    id: string;
+    name: string | null;
+}
+
+interface Group {
+    id: string;
+    name: string;
+    code: string;
+    coins: number;
+    organizer: {
+        id: string;
+        name: string | null;
+    };
+    _count: {
+        members: number;
+    };
+}
+
+interface EditGroupDialogProps {
+    selectedGroupId: string;
+    group?: Group;
+    adminUsers?: Admin[];
+    isLoading?: boolean;
+    onRefresh?: () => void;
+    onUpdate?: (id: string, name: string, organizerId: string) => void;
+}
 
 const EditGroupDialog = ({
     selectedGroupId,
-}: {
-    selectedGroupId: string;
-}) => {
+    group,
+    adminUsers,
+    isLoading,
+    onRefresh,
+    onUpdate,
+}: EditGroupDialogProps) => {
     const [name, setName] = useState<string | undefined>(undefined);
     const [organizerId, setOrganizerId] = useState<string | undefined>(undefined);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
-    const router = useRouter();
-    const { data: adminUsers, isLoading: isLoadingAdmins } = api.user.getAllAdminsNames.useQuery();
-    const { data: group, isLoading: isLoadingGroup } = api.group.getByIdWithOrganizer.useQuery({ groupId: selectedGroupId });
-
-    const updateGroupMutation = api.group.update.useMutation({
-        onSuccess: async () => {
-            router.refresh();
-            setIsEditDialogOpen(false);
-        },
-        onError: (error) => {
-            console.error("Error updating group:", error);
-        },
-    });
-
-    const handleEditSubmit = () => {
-        if (!group) return;
-        updateGroupMutation.mutate({ id: group?.id, name: group?.name, organizerId: group?.organizer.id });
+    const handleEditSubmit = async () => {
+        if (!group || !name?.trim() || !organizerId) return;
+        
+        setIsUpdating(true);
+        if (onUpdate) {
+            onUpdate(group.id, name, organizerId);
+        }
+        setIsUpdating(false);
+        setIsEditDialogOpen(false);
+        if (onRefresh) {
+            onRefresh();
+        }
     };
 
-    return (
-        <Skeleton loading={isLoadingGroup || isLoadingAdmins}>
-            <Dialog.Root open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <Dialog.Trigger>
-                    <Button
-                        size={{ "initial": "1", "xs": "2", "sm": "3" }}
-                        variant="soft"
-                        onClick={() => {
-                            setName(group?.name);
-                            setOrganizerId(group?.organizer.id);
-                            setIsEditDialogOpen(true);
-                        }}
-                    >
-                        <Pencil1Icon />
-                    </Button>
-                </Dialog.Trigger>
-                <Dialog.Content>
+    const handleOpenChange = (open: boolean) => {
+        if (open && group) {
+            setName(group.name);
+            setOrganizerId(group.organizer.id);
+        }
+        setIsEditDialogOpen(open);
+    };
 
+    if (isLoading) {
+        return <Spinner />;
+    }
+
+    return (
+        <Dialog open={isEditDialogOpen} onOpenChange={handleOpenChange}>
+            <Dialog.Trigger asChild>
+                <Button
+                    size="$3"
+                    icon={<Pencil size={16} />}
+                />
+            </Dialog.Trigger>
+
+            <Adapt when="sm" platform="touch">
+                <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
+                    <Sheet.Frame padding="$4" gap="$4">
+                        <Adapt.Contents />
+                    </Sheet.Frame>
+                    <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+                </Sheet>
+            </Adapt>
+
+            <Dialog.Portal>
+                <Dialog.Overlay
+                    key="overlay"
+                    animation="quick"
+                    opacity={0.5}
+                    enterStyle={{ opacity: 0 }}
+                    exitStyle={{ opacity: 0 }}
+                />
+                <Dialog.Content
+                    bordered
+                    elevate
+                    key="content"
+                    animateOnly={['transform', 'opacity']}
+                    animation={[
+                        'quick',
+                        {
+                            opacity: {
+                                overshootClamping: true,
+                            },
+                        },
+                    ]}
+                    enterStyle={{ x: 0, y: -20, opacity: 0, scale: 0.9 }}
+                    exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
+                    gap="$4"
+                >
                     <Dialog.Title>Refine the Guild</Dialog.Title>
                     <Dialog.Description>
-                        Alter the Guild’s Records &quot;{group?.name}&quot;.
+                        Alter the Guild's Records "{group?.name}".
                     </Dialog.Description>
 
-                    <Flex direction="column" gap="4" mt="4">
-                        <div>
-                            <Text as="label" size="2" weight="bold">
-                                The Guild’s Heralded Name
-                            </Text>
-                            <TextField.Root
+                    <YStack gap="$4" marginTop="$4">
+                        <YStack gap="$2">
+                            <Label htmlFor="name" fontWeight="bold">
+                                The Guild's Heralded Name
+                            </Label>
+                            <Input
+                                id="name"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChangeText={setName}
                                 placeholder="e.g. Knights of the Round Table"
                             />
-                        </div>
+                        </YStack>
 
-                        <Flex gap={"2"} align={"center"}>
-                            <Text as="label" size="2" weight="bold">
+                        <XStack gap="$2" alignItems="center" flexWrap="wrap">
+                            <Label fontWeight="bold">
                                 Assigned
-                            </Text>
-                            <Select.Root value={organizerId} onValueChange={setOrganizerId}>
-                                <Select.Trigger />
-                                <Select.Content>
-                                    {adminUsers?.map((user) => (
-                                        <Select.Item key={user.id} value={user.id}>
-                                            {user.name}
-                                        </Select.Item>
-                                    ))}
+                            </Label>
+                            <Select value={organizerId} onValueChange={setOrganizerId}>
+                                <Select.Trigger width="$15" iconAfter={null}>
+                                    <Select.Value placeholder="Select organizer" />
+                                </Select.Trigger>
+
+                                <Adapt when="sm" platform="touch">
+                                    <Sheet modal dismissOnSnapToBottom>
+                                        <Sheet.Frame>
+                                            <Sheet.ScrollView>
+                                                <Adapt.Contents />
+                                            </Sheet.ScrollView>
+                                        </Sheet.Frame>
+                                        <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
+                                    </Sheet>
+                                </Adapt>
+
+                                <Select.Content zIndex={200000}>
+                                    <Select.ScrollUpButton />
+                                    <Select.Viewport>
+                                        {adminUsers?.map((user) => (
+                                            <Select.Item key={user.id} value={user.id} index={0}>
+                                                <Select.ItemText>{user.name ?? "Unknown"}</Select.ItemText>
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Viewport>
+                                    <Select.ScrollDownButton />
                                 </Select.Content>
-                            </Select.Root>
-                        </Flex>
+                            </Select>
+                        </XStack>
 
                         <Separator />
 
-                        <div>
-                            <Text size="2" weight="bold">Current Guild Stats:</Text>
-                            <Flex gap="4" mt="2">
-                                <Badge variant="soft" color="blue">
-                                    Kod: {group?.code}
+                        <YStack gap="$2">
+                            <Paragraph fontWeight="bold">Current Guild Stats:</Paragraph>
+                            <XStack gap="$4" marginTop="$2" flexWrap="wrap">
+                                <Badge backgroundColor="$blue10" color="$background">
+                                    Code: {group?.code}
                                 </Badge>
-                                <Badge variant="soft" color="green">
+                                <Badge backgroundColor="$green10" color="$background">
                                     {group?._count.members} companions
                                 </Badge>
-                                <Badge variant="soft" color="gold">
+                                <Badge backgroundColor="$yellow10" color="$background">
                                     💰 {group?.coins} coins
                                 </Badge>
-                            </Flex>
-                        </div>
-                    </Flex>
+                            </XStack>
+                        </YStack>
+                    </YStack>
 
-                    <Flex gap="3" mt="4" justify="end">
-                        <Dialog.Close>
-                            <Button variant="soft" color="gray">
+                    <XStack gap="$3" marginTop="$4" justifyContent="flex-end">
+                        <Dialog.Close asChild>
+                            <Button theme="alt1">
                                 Cancel
                             </Button>
                         </Dialog.Close>
                         <Button
-                            onClick={handleEditSubmit}
-                            disabled={!name?.trim() || updateGroupMutation.isPending}
+                            onPress={handleEditSubmit}
+                            disabled={!name?.trim() || isUpdating}
                         >
-                            {updateGroupMutation.isPending ? "Saving..." : "Save changes"}
+                            {isUpdating ? "Saving..." : "Save changes"}
                         </Button>
-                    </Flex>
+                    </XStack>
                 </Dialog.Content>
-            </Dialog.Root>
-        </Skeleton>
+            </Dialog.Portal>
+        </Dialog>
     );
 }
-
 
 export default EditGroupDialog;
