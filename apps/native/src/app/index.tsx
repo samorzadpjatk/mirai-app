@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
-import { LogOut, User, Users, Castle, Coins } from "@tamagui/lucide-icons";
+import { LogOut, User, Users, Castle, Coins, Receipt } from "@tamagui/lucide-icons";
 
 export default function Home() {
   const { session, isLoading, signOut } = useAuth();
@@ -137,6 +137,19 @@ export default function Home() {
               animation="quick"
             >
               Coin Operations
+            </Button>
+            <Button
+              size="$4"
+              backgroundColor="$green9"
+              color="white"
+              fontWeight="700"
+              icon={Receipt}
+              onPress={() => router.push("/transactions")}
+              hoverStyle={{ backgroundColor: "$green10" }}
+              pressStyle={{ backgroundColor: "$green8", scale: 0.98 }}
+              animation="quick"
+            >
+              Transaction History
             </Button>
             <Button
               size="$4"
