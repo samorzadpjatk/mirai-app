@@ -84,7 +84,7 @@ export default function CoinsScreen() {
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
   const requestedAmount = parseInt(amount) || 0;
   const currentCoins = selectedGroup?.coins ?? 0;
-  const showWarning = operation === "remove" && selectedGroupId && amount && requestedAmount > currentCoins;
+  const showWarning = operation === "remove" && selectedGroupId && amount && !isNaN(requestedAmount) && requestedAmount > currentCoins;
 
   return (
     <YStack flex={1} backgroundColor="$background">

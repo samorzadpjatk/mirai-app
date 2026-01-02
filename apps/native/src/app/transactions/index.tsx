@@ -64,8 +64,8 @@ export default function TransactionsScreen() {
     const search = searchTerm.toLowerCase();
     return (
       t.group.name.toLowerCase().includes(search) ||
-      t.admin.name?.toLowerCase().includes(search) ||
-      t.reason?.toLowerCase().includes(search)
+      (t.admin.name?.toLowerCase() ?? "").includes(search) ||
+      (t.reason?.toLowerCase() ?? "").includes(search)
     );
   });
 
