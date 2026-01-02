@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
-import { LogOut, User, Users } from "@tamagui/lucide-icons";
+import { LogOut, User, Users, Castle } from "@tamagui/lucide-icons";
 
 export default function Home() {
   const { session, isLoading, signOut } = useAuth();
@@ -110,7 +110,20 @@ export default function Home() {
               pressStyle={{ backgroundColor: "$blue8", scale: 0.98 }}
               animation="quick"
             >
-              View Users (tRPC Example)
+              View Users
+            </Button>
+            <Button
+              size="$4"
+              backgroundColor="$purple9"
+              color="white"
+              fontWeight="700"
+              icon={Castle}
+              onPress={() => router.push("/groups")}
+              hoverStyle={{ backgroundColor: "$purple10" }}
+              pressStyle={{ backgroundColor: "$purple8", scale: 0.98 }}
+              animation="quick"
+            >
+              View Guilds
             </Button>
             <Button
               size="$4"
