@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
-import { LogOut, User, Users, Castle } from "@tamagui/lucide-icons";
+import { LogOut, User, Users, Castle, Coins } from "@tamagui/lucide-icons";
 
 export default function Home() {
   const { session, isLoading, signOut } = useAuth();
@@ -124,6 +124,19 @@ export default function Home() {
               animation="quick"
             >
               View Guilds
+            </Button>
+            <Button
+              size="$4"
+              backgroundColor="$yellow9"
+              color="white"
+              fontWeight="700"
+              icon={Coins}
+              onPress={() => router.push("/coins")}
+              hoverStyle={{ backgroundColor: "$yellow10" }}
+              pressStyle={{ backgroundColor: "$yellow8", scale: 0.98 }}
+              animation="quick"
+            >
+              Coin Operations
             </Button>
             <Button
               size="$4"
