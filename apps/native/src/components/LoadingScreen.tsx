@@ -18,8 +18,8 @@ export default function LoadingScreen({
         alignItems="center"
         justifyContent="center"
       >
-        <Spinner size="large" color="$red9" />
-        <Text color="$gray11" marginTop="$4">
+        <Spinner size="large" />
+        <Text marginTop="$4">
           {message}
         </Text>
       </YStack>

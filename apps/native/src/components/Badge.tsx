@@ -2,11 +2,10 @@ import React from "react";
 import { XStack, Text, type XStackProps } from "tamagui";
 
 interface BadgeProps extends XStackProps {
-  color?: string;
   children: React.ReactNode;
 }
 
-export const Badge = ({ children, color = "white", ...props }: BadgeProps) => {
+export const Badge = ({ children, ...props }: BadgeProps) => {
   return (
     <XStack
       paddingHorizontal="$2"
@@ -17,7 +16,7 @@ export const Badge = ({ children, color = "white", ...props }: BadgeProps) => {
       {...props}
     >
       {typeof children === "string" || typeof children === "number" ? (
-        <Text color={color} fontSize="$2" fontWeight="bold">
+        <Text fontSize="$2" fontWeight="bold">
           {children}
         </Text>
       ) : (

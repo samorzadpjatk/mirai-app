@@ -169,13 +169,13 @@ const EditGroupDialog = ({
                         <YStack gap="$2">
                             <Paragraph fontWeight="bold">Current Guild Stats:</Paragraph>
                             <XStack gap="$4" marginTop="$2" flexWrap="wrap">
-                                <Badge backgroundColor="$blue10" color="$background">
+                                <Badge>
                                     Code: {group?.code}
                                 </Badge>
-                                <Badge backgroundColor="$green10" color="$background">
+                                <Badge>
                                     {group?._count.members} companions
                                 </Badge>
-                                <Badge backgroundColor="$yellow10" color="$background">
+                                <Badge>
                                     💰 {group?.coins} coins
                                 </Badge>
                             </XStack>

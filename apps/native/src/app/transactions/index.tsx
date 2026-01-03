@@ -39,8 +39,8 @@ export default function TransactionsScreen() {
   if (isLoading || isLoadingUser) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
-        <Spinner size="large" color="$blue10" />
-        <Text marginTop="$4" color="$gray11">
+        <Spinner size="large" />
+        <Text marginTop="$4">
           Loading transactions...
         </Text>
       </YStack>

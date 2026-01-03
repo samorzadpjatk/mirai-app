@@ -13,7 +13,6 @@ export default function Footer({
   return (
     <YStack flex={1} justifyContent="flex-end" alignItems="center">
       <Text
-        color="$gray11"
         fontSize="$2"
         opacity={0.5}
         textAlign="center"

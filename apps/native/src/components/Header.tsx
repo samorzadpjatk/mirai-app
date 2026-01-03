@@ -21,7 +21,6 @@ export default function Header({
       <Logo size={120} />
       <YStack space="$2" alignItems="center">
         <H1
-          color="$color"
           fontSize="$11"
           fontWeight="900"
           textAlign="center"
@@ -35,9 +34,8 @@ export default function Header({
         </H1>
         {showUserEmail && userEmail && (
           <XStack space="$2" alignItems="center">
-            <User size={16} color="$gray11" />
+            <User size={16} />
             <Text
-              color="$gray11"
               fontSize="$4"
               fontWeight="600"
               opacity={0.8}
@@ -47,7 +45,7 @@ export default function Header({
           </XStack>
         )}
         {subtitle && (
-          <Text color="$gray11" fontSize="$3" opacity={0.7}>
+          <Text fontSize="$3" opacity={0.7}>
             {subtitle}
           </Text>
         )}

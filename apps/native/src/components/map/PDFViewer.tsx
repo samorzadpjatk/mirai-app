@@ -42,7 +42,7 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
       {isLoading ? (
         <Spinner size="large" />
       ) : (
-        <Paragraph color="$gray11" textAlign="center">
+        <Paragraph textAlign="center">
           PDF Viewer not available in this environment.{"\n"}
           Use the download button to view the map.
         </Paragraph>

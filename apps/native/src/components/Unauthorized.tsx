@@ -5,7 +5,7 @@ const Unauthorized = () => {
         <YStack flex={1} alignItems="center" justifyContent="center" padding="$4" minHeight="60vh">
             <Card elevate bordered padding="$6" maxWidth={500}>
                 <YStack alignItems="center" gap="$4">
-                    <H2 color="$red10" textAlign="center">
+                    <H2 textAlign="center">
                         🚫 Access Denied
                     </H2>
                     <Paragraph size="$5" textAlign="center">

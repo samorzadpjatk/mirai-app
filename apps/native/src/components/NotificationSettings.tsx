@@ -23,11 +23,11 @@ export default function NotificationSettings() {
   const getPermissionBadge = () => {
     switch (permission) {
       case "granted":
-        return <Badge backgroundColor="$green10" color="$background">Granted</Badge>;
+        return <Badge>Granted</Badge>;
       case "denied":
-        return <Badge backgroundColor="$red10" color="$background">Denied</Badge>;
+        return <Badge>Denied</Badge>;
       default:
-        return <Badge backgroundColor="$gray10" color="$background">Not Requested</Badge>;
+        return <Badge>Not Requested</Badge>;
     }
   };
 
@@ -45,7 +45,7 @@ export default function NotificationSettings() {
           {!isSupported && (
             <XStack justifyContent="space-between" alignItems="center">
               <Paragraph>Browser Support:</Paragraph>
-              <Badge backgroundColor="$red10" color="$background">Not Supported</Badge>
+              <Badge>Not Supported</Badge>
             </XStack>
           )}
           {isSupported && permission !== "granted" && (
@@ -68,7 +68,7 @@ export default function NotificationSettings() {
           {permission === "granted" && (
             <XStack justifyContent="space-between" alignItems="center">
               <Paragraph>Subscription Status:</Paragraph>
-              <Badge backgroundColor={getStatusColor()} color="$background">
+              <Badge>
                 {isSubscribed ? "Subscribed" : isSubscribedElsewhere ? "Subscribed Elsewhere" : "Not Subscribed"}
               </Badge>
             </XStack>

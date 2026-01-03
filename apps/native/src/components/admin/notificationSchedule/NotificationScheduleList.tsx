@@ -25,7 +25,7 @@ const NotificationScheduleList = ({ schedules, onDelete }: NotificationScheduleL
                         <YStack gap="$2">
                             <XStack justifyContent="space-between" alignItems="center">
                                 <Paragraph fontWeight="bold">{schedule.title}</Paragraph>
-                                <Badge backgroundColor={schedule.sent ? "$green10" : "$yellow10"} color="$background">
+                                <Badge>
                                     {schedule.sent ? "Sent" : "Pending"}
                                 </Badge>
                             </XStack>

@@ -21,7 +21,7 @@ const TransactionCardList = ({ transactions }: TransactionCardListProps) => {
                     <YStack gap="$2">
                         <XStack justifyContent="space-between" alignItems="center">
                             <Paragraph fontWeight="bold">{transaction.group.name}</Paragraph>
-                            <Badge backgroundColor={transaction.amount > 0 ? "$green10" : "$red10"} color="$background">
+                            <Badge>
                                 {transaction.amount > 0 ? "+" : ""}{transaction.amount}
                             </Badge>
                         </XStack>

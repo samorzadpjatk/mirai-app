@@ -69,65 +69,40 @@ export default function Home() {
               <YStack space="$3">
                 <Button
                   size="$4"
-                  backgroundColor="$blue9"
-                  color="white"
-                  fontWeight="700"
                   icon={Users}
                   onPress={() => router.push("/users")}
-                  hoverStyle={{ backgroundColor: "$blue10" }}
-                  pressStyle={{ backgroundColor: "$blue8", scale: 0.98 }}
                   animation="quick"
                 >
                   View Users
                 </Button>
                 <Button
                   size="$4"
-                  backgroundColor="$purple9"
-                  color="white"
-                  fontWeight="700"
                   icon={Castle}
                   onPress={() => router.push("/groups")}
-                  hoverStyle={{ backgroundColor: "$purple10" }}
-                  pressStyle={{ backgroundColor: "$purple8", scale: 0.98 }}
                   animation="quick"
                 >
                   View Guilds
                 </Button>
                 <Button
                   size="$4"
-                  backgroundColor="$yellow9"
-                  color="white"
-                  fontWeight="700"
                   icon={Coins}
                   onPress={() => router.push("/coins")}
-                  hoverStyle={{ backgroundColor: "$yellow10" }}
-                  pressStyle={{ backgroundColor: "$yellow8", scale: 0.98 }}
                   animation="quick"
                 >
                   Coin Operations
                 </Button>
                 <Button
                   size="$4"
-                  backgroundColor="$green9"
-                  color="white"
-                  fontWeight="700"
                   icon={Receipt}
                   onPress={() => router.push("/transactions")}
-                  hoverStyle={{ backgroundColor: "$green10" }}
-                  pressStyle={{ backgroundColor: "$green8", scale: 0.98 }}
                   animation="quick"
                 >
                   Transaction History
                 </Button>
                 <Button
                   size="$4"
-                  backgroundColor="$orange9"
-                  color="white"
-                  fontWeight="700"
                   icon={Bell}
                   onPress={() => router.push("/notifications")}
-                  hoverStyle={{ backgroundColor: "$orange10" }}
-                  pressStyle={{ backgroundColor: "$orange8", scale: 0.98 }}
                   animation="quick"
                 >
                   Notifications
@@ -138,13 +113,8 @@ export default function Home() {
             {/* Available to all users */}
             <Button
               size="$4"
-              backgroundColor="$red9"
-              color="white"
-              fontWeight="700"
               icon={LogOut}
               onPress={handleSignOut}
-              hoverStyle={{ backgroundColor: "$red10" }}
-              pressStyle={{ backgroundColor: "$red8", scale: 0.98 }}
               animation="quick"
             >
               Sign Out

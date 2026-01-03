@@ -117,7 +117,7 @@ export default function NotificationsScreen() {
   if (isLoading || isLoadingUser) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
-        <Spinner size="large" color="$blue10" />
+        <Spinner size="large" />
         <Text marginTop="$4" color="$gray11">
           Loading notifications...
         </Text>
@@ -348,13 +348,13 @@ export default function NotificationsScreen() {
                 </XStack>
                 
                 <XStack gap="$2" flexWrap="wrap">
-                  <Text backgroundColor={schedule.isActive ? "$green10" : "$gray10"} color="white" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
+                  <Text paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
                     {schedule.isActive ? "Active" : "Inactive"}
                   </Text>
-                  <Text backgroundColor="$blue10" color="white" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
+                  <Text paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
                     {schedule.notificationType}
                   </Text>
-                  <Text backgroundColor="$purple10" color="white" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
+                  <Text paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
                     {String(schedule.hour).padStart(2, '0')}:{String(schedule.minute).padStart(2, '0')}
                   </Text>
                 </XStack>

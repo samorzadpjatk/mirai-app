@@ -89,7 +89,7 @@ const CoinOperationCardList = ({ groups, isLoading }: CoinOperationCardListProps
                                     </XStack>
                                     <XStack justifyContent="space-between" alignItems="center">
                                         <Paragraph opacity={0.7}>Companions</Paragraph>
-                                        <Badge backgroundColor="$green10" color="$background">
+                                        <Badge>
                                             {group.members.length} members
                                         </Badge>
                                     </XStack>

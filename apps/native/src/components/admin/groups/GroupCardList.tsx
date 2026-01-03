@@ -61,10 +61,10 @@ const GroupCardList = ({ groups, isLoading, onRefresh }: GroupCardListProps) => 
                                 Assigned: {group.organizer.name ?? "Unknown"}
                             </Paragraph>
                             <XStack justifyContent="space-between" alignItems="center">
-                                <Badge backgroundColor="$green10" color="$background">
+                                <Badge>
                                     {group._count.members} companions
                                 </Badge>
-                                <Badge backgroundColor="$yellow10" color="$background">
+                                <Badge>
                                     💰 {group.coins} coins
                                 </Badge>
                             </XStack>

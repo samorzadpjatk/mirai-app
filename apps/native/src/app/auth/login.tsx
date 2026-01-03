@@ -134,21 +134,16 @@ export default function LoginScreen() {
           </YStack>
 
           <Button
-            backgroundColor="$red9"
-            color="white"
             size="$5"
-            fontWeight="700"
             borderRadius="$4"
             onPress={onSubmit}
             disabled={isLoading}
-            hoverStyle={{ backgroundColor: "$red10" }}
-            pressStyle={{ backgroundColor: "$red8", scale: 0.98 }}
             animation="quick"
           >
             {isLoading ? (
               <XStack space="$2" alignItems="center">
-                <Spinner color="white" />
-                <Text color="white" fontWeight="700">
+                <Spinner />
+                <Text fontWeight="700">
                   Signing In...
                 </Text>
               </XStack>

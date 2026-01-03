@@ -143,8 +143,8 @@ export default function GroupsScreen() {
   if (isLoading || isLoadingUser) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
-        <Spinner size="large" color="$blue10" />
-        <Text marginTop="$4" color="$gray11">
+        <Spinner size="large" />
+        <Text marginTop="$4">
           Loading groups...
         </Text>
       </YStack>
@@ -306,13 +306,13 @@ export default function GroupsScreen() {
                 </Text>
                 
                 <XStack gap="$2" flexWrap="wrap">
-                  <Badge backgroundColor="$green10" color="white">
+                  <Badge>
                     {group.members.length} members
                   </Badge>
-                  <Badge backgroundColor="$yellow10" color="white">
+                  <Badge>
                     💰 {group.coins} coins
                   </Badge>
-                  <Badge backgroundColor="$blue10" color="white">
+                  <Badge>
                     Code: {group.code}
                   </Badge>
                 </XStack>
