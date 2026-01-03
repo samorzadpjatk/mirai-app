@@ -1,4 +1,5 @@
-import { Card, YStack, XStack, H3, Paragraph, Badge, Button } from "tamagui";
+import { Card, YStack, XStack, H3, Paragraph, Button } from "tamagui";
+import { Badge } from "../../Badge";
 import { Suspense } from "react";
 
 interface NotificationSchedule {

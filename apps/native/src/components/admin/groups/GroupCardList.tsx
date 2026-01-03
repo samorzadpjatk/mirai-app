@@ -1,4 +1,5 @@
-import { YStack, Card, Paragraph, XStack, Badge, Spinner } from "tamagui";
+import { YStack, Card, Paragraph, XStack, Spinner } from "tamagui";
+import { Badge } from "../../Badge";
 import { Suspense } from "react";
 import EditGroupDialog from "./dialog/EditGroupDialog";
 import DeleteGroupDialog from "./dialog/DeleteGroupDialog";

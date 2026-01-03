@@ -1,5 +1,6 @@
 import { Search } from "@tamagui/lucide-icons";
-import { Card, H3, YStack, XStack, Paragraph, Badge, Input } from "tamagui";
+import { Card, H3, YStack, XStack, Paragraph, Input } from "tamagui";
+import { Badge } from "../../Badge";
 import { Suspense, useState } from "react";
 import CoinOperationCardListSkeleton from "~/components/skelethons/CoinOperationCardListSkelethon";
 

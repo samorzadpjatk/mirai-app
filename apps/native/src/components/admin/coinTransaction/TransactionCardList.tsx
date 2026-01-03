@@ -1,4 +1,5 @@
-import { Card, YStack, XStack, Paragraph, Badge } from "tamagui";
+import { Card, YStack, XStack, Paragraph } from "tamagui";
+import { Badge } from "../../Badge";
 
 interface Transaction {
     id: string;

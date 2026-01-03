@@ -1,5 +1,6 @@
 import { Pencil } from "@tamagui/lucide-icons";
-import { Dialog, YStack, XStack, Input, Select, Separator, Badge, Button, Paragraph, Label, Spinner, Adapt, Sheet } from "tamagui";
+import { Dialog, YStack, XStack, Input, Select, Separator, Button, Paragraph, Label, Spinner, Adapt, Sheet } from "tamagui";
+import { Badge } from "../../../Badge";
 import { useState } from "react";
 
 interface Admin {

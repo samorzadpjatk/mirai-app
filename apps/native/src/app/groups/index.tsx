@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { YStack, H2, Spinner, Text, ScrollView, Button, XStack, Card, Badge, Dialog, Input, Select, Label, Adapt, Sheet, AlertDialog } from "tamagui";
+import { YStack, H2, Spinner, Text, ScrollView, Button, XStack, Card, Dialog, Input, Select, Label, Adapt, Sheet, AlertDialog } from "tamagui";
+import { Badge } from "../../components/Badge";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { RefreshControl } from "react-native";

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { YStack, H2, Spinner, Text, ScrollView, Button, XStack, Card, Badge, Switch, Dialog, Input, Label, Adapt, Sheet, AlertDialog, Select } from "tamagui";
+import { YStack, H2, Spinner, Text, ScrollView, Button, XStack, Card, Switch, Dialog, Input, Label, Adapt, Sheet, AlertDialog, Select } from "tamagui";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { RefreshControl } from "react-native";
@@ -371,15 +371,15 @@ export default function NotificationsScreen() {
                 </XStack>
                 
                 <XStack gap="$2" flexWrap="wrap">
-                  <Badge backgroundColor={schedule.isActive ? "$green10" : "$gray10"} color="white">
+                  <Text backgroundColor={schedule.isActive ? "$green10" : "$gray10"} color="white" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
                     {schedule.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                  <Badge backgroundColor="$blue10" color="white">
+                  </Text>
+                  <Text backgroundColor="$blue10" color="white" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
                     {schedule.notificationType}
-                  </Badge>
-                  <Badge backgroundColor="$purple10" color="white">
+                  </Text>
+                  <Text backgroundColor="$purple10" color="white" paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
                     {String(schedule.hour).padStart(2, '0')}:{String(schedule.minute).padStart(2, '0')}
-                  </Badge>
+                  </Text>
                 </XStack>
                 
                 <YStack gap="$2">
