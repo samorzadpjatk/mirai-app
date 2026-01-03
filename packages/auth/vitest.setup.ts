@@ -31,5 +31,5 @@ vi.mock("@supabase/supabase-js", () => ({
 
 vi.mock("@integral-2025-app/supabase", () => ({
   supabase: sharedSupabaseClient,
-  createServerSupabaseClient: vi.fn(async () => sharedSupabaseClient),
+  createServerSupabaseClient: vi.fn(() => Promise.resolve(sharedSupabaseClient)),
 }));
