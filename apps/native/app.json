@@ -33,6 +33,12 @@
       {
         "root": "./src/app"
       }
-    ]
+    ],
+    [
+        "expo-asset",
+        {
+          "assets": ["./assets/mirai_gradient.png"]
+        }
+      ]
   ]
 }

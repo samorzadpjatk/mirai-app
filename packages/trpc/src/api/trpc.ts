@@ -26,7 +26,7 @@ const getAccessTokenFromHeaders = (headers: Headers): string | null => {
   }
 
   const [scheme, token] = authorization.split(" ");
-  if (!scheme || scheme.toLowerCase() !== "bearer" || !token) {
+  if (scheme?.toLowerCase() !== "bearer" || !token) {
     return null;
   }
 
