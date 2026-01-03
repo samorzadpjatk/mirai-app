@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
-import { Stack } from "expo-router";
-import MapboxGL from "@rnmapbox/maps";
+import Constants from "expo-constants";
+import { Slot } from "expo-router";
 import { TamaguiProvider, YStack } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import { ThemeSwitcher } from "~/components/ThemeSwitcher";
@@ -14,6 +14,13 @@ const SUPABASE_URL: string =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
 const SUPABASE_ANON_KEY: string =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+
+// Validate Supabase configuration
+if (!SUPABASE_ANON_KEY) {
+  console.error(
+    "[Supabase] EXPO_PUBLIC_SUPABASE_ANON_KEY is missing. Please set it in your .env file."
+  );
+}
 // Both HTTP and WebSocket tRPC are served by the Fastify server
 // under the same path. Only the protocol differs.
 const TRPC_HTTP_URL: string =
@@ -24,20 +31,8 @@ const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 const MAPBOX_ACCESS_TOKEN: string =
   process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? process.env.MAPBOX_ACCESS_TOKEN ?? "";
 
-// Configure Mapbox access token at module load time so that both native and web
-// implementations (including underlying mapbox-gl) see it before any map is created.
-if (MAPBOX_ACCESS_TOKEN) {
-  try {
-    MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
-  } catch (err) {
-    console.warn("[Mapbox] Failed to set access token:", err);
-  }
-} else {
-  // This will show up once at startup in Metro / native logs
-  console.warn(
-    "[Mapbox] Missing MAPBOX_ACCESS_TOKEN / EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN – map tiles will not load.",
-  );
-}
+// Mapbox configuration is done in useEffect to avoid errors in Expo Go
+// where native code is not available
 
 // Clear stale Supabase session when the base URL changes (helps when switching
 // between 54321 CLI default and 8000 Kong reverse proxy).
@@ -60,7 +55,7 @@ export default function RootLayout() {
     // Load Mapbox GL CSS for Web platform via CDN
     if (Platform.OS === "web") {
       const linkId = "mapbox-gl-css";
-      if (!document.getElementById(linkId)) {
+      if (typeof document !== "undefined" && !document.getElementById(linkId)) {
         const link = document.createElement("link");
         link.id = linkId;
         link.rel = "stylesheet";
@@ -69,14 +64,32 @@ export default function RootLayout() {
       }
     }
 
-    // Ensure native side connects to Mapbox services (no-op on web)
-    if (Platform.OS !== "web" && typeof (MapboxGL as any).setConnected === "function") {
-      // ensure native side connects to Mapbox services
-      try {
-        (MapboxGL as any).setConnected?.(true);
-      } catch {
-        // ignore if not supported
-      }
+    const isExpoGo = Constants.appOwnership === "expo";
+    const hasToken =
+      MAPBOX_ACCESS_TOKEN && MAPBOX_ACCESS_TOKEN !== "your_mapbox_token_here";
+
+    // Configure Mapbox only on native builds (not Expo Go), with token present.
+    if (Platform.OS !== "web" && hasToken && !isExpoGo) {
+      (async () => {
+        try {
+          const mod = require("@rnmapbox/maps");
+          const MapboxGL = mod?.default ?? mod;
+          if (MapboxGL?.setAccessToken) {
+            MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
+          }
+          if (MapboxGL?.setConnected) {
+            MapboxGL.setConnected(true);
+          }
+        } catch (err) {
+          console.warn(
+            "[Mapbox] Failed to init native module. Build a dev client to use maps.",
+          );
+        }
+      })();
+    } else if (Platform.OS !== "web") {
+      console.warn(
+        "[Mapbox] Running in Expo Go or missing token. Maps disabled (requires dev build + token).",
+      );
     }
   }, []);
 
@@ -95,9 +108,7 @@ export default function RootLayout() {
                 currentTheme={theme}
               />
             </YStack>
-            <Stack screenOptions={{ headerShown: false }}>
-              {/* Routing here */}
-            </Stack>
+            <Slot />
           </YStack>
         </APIProvider>
       </AuthProvider>

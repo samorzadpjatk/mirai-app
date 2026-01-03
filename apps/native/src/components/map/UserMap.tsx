@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, View, Text } from "react-native";
-import MapboxGL from "@rnmapbox/maps";
+import Constants from "expo-constants";
 
 export type UserLocation = {
   id: string;
@@ -21,6 +21,10 @@ export type UserMapProps = {
    * Initial zoom level when centering on the user.
    */
   initialZoomLevel?: number;
+  /**
+   * Optional overlay (e.g., Slopes-like UI) rendered above the map.
+   */
+  overlay?: React.ReactNode;
 };
 
 type UserFeature = {
@@ -42,6 +46,14 @@ type UserFeatureCollection = {
   type: "FeatureCollection";
   features: UserFeature[];
 };
+
+// Basic Mapbox style & layer IDs
+const MAP_STYLE = "mapbox://styles/mapbox/outdoors-v12";
+const SOURCE_ID = "users-source";
+const LAYER_ID_POINTS = "users-points";
+const LAYER_ID_CLUSTERS = "users-clusters";
+const LAYER_ID_CLUSTER_COUNT = "users-clusters-count";
+const IMAGE_LAYER_ID = "user-avatar";
 
 type MapPressEvent = {
   features?: Array<{
@@ -78,18 +90,11 @@ export function getActivityOpacity(
   return Math.max(0, Math.min(1, ratio));
 }
 
-// Basic Mapbox style & layer IDs
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
-const SOURCE_ID = "users-source";
-const LAYER_ID_POINTS = "users-points";
-const LAYER_ID_CLUSTERS = "users-clusters";
-const LAYER_ID_CLUSTER_COUNT = "users-clusters-count";
-const IMAGE_LAYER_ID = "user-avatar";
-
 export const UserMap: React.FC<UserMapProps> = ({
   users,
   onUserPress,
   initialZoomLevel = 14,
+  overlay,
 }) => {
   // Web support for @rnmapbox/maps is limited and often requires extra setup.
   // Since głównym celem są smartfony, na webie pokazujemy prosty placeholder,
@@ -98,6 +103,36 @@ export const UserMap: React.FC<UserMapProps> = ({
     return (
       <View style={styles.webPlaceholder}>
         <Text>Mapa jest dostępna tylko w aplikacji mobilnej.</Text>
+      </View>
+    );
+  }
+
+  const isExpoGo = Constants.appOwnership === "expo";
+  if (isExpoGo) {
+    return (
+      <View style={styles.webPlaceholder}>
+        <Text>Mapbox wymaga dev build (Expo Go nie zawiera natywnego kodu).</Text>
+      </View>
+    );
+  }
+
+  // Attempt to load Mapbox native module at runtime.
+  // In Expo Go native code is not bundled, so we fall back to a placeholder.
+  const MapboxGL: any = useMemo(() => {
+    try {
+      const mod = require("@rnmapbox/maps");
+      return mod?.default ?? mod;
+    } catch (_err) {
+      return null;
+    }
+  }, []);
+
+  if (!MapboxGL) {
+    return (
+      <View style={styles.webPlaceholder}>
+        <Text>
+          Mapbox wymaga builda development (Expo Go nie zawiera natywnego kodu).
+        </Text>
       </View>
     );
   }
@@ -156,89 +191,109 @@ export const UserMap: React.FC<UserMapProps> = ({
   };
 
   return (
-    <MapboxGL.MapView
-      style={styles.map}
-      styleURL={MAP_STYLE}
-      logoEnabled={false}
-      compassEnabled
-      rotateEnabled
-      pitchEnabled
-      scrollEnabled
-      zoomEnabled
-    >
-      {/* Follow the user location on map start */}
-      <MapboxGL.Camera followUserLocation followZoomLevel={initialZoomLevel} />
-      <MapboxGL.UserLocation
-        visible
-        showsUserHeadingIndicator
-        androidRenderMode="compass"
-      />
-
-      <MapboxGL.Images images={images} />
-
-      <MapboxGL.ShapeSource
-        id={SOURCE_ID}
-        shape={featureCollection}
-        cluster
-        clusterRadius={40}
-        clusterMaxZoom={14}
-        onPress={handleOnPress}
+    <View style={styles.container}>
+      <MapboxGL.MapView
+        style={styles.map}
+        styleURL={MAP_STYLE}
+        logoEnabled={false}
+        compassEnabled
+        rotateEnabled
+        pitchEnabled
+        scrollEnabled
+        zoomEnabled
       >
-        {/* Cluster circles */}
-        <MapboxGL.CircleLayer
-          id={LAYER_ID_CLUSTERS}
-          filter={["has", "point_count"]}
-          style={{
-            circleColor: "#2563EB",
-            circleRadius: [
-              "step",
-              ["get", "point_count"],
-              18,
-              10,
-              22,
-              30,
-              28,
-            ],
-            circleOpacity: 0.9,
-          }}
+        {/* Follow the user location on map start, fallback to first user coordinate */}
+        <MapboxGL.Camera
+          followUserLocation
+          defaultSettings={
+            users[0]
+              ? { centerCoordinate: users[0].coordinate, zoomLevel: initialZoomLevel }
+              : undefined
+          }
+          followZoomLevel={initialZoomLevel}
+        />
+        <MapboxGL.UserLocation
+          visible
+          showsUserHeadingIndicator
+          androidRenderMode="compass"
         />
 
-        {/* Cluster count labels */}
-        <MapboxGL.SymbolLayer
-          id={LAYER_ID_CLUSTER_COUNT}
-          filter={["has", "point_count"]}
-          style={{
-            textField: ["get", "point_count_abbreviated"],
-            textColor: "white",
-            textSize: 12,
-            textFont: ["Open Sans Bold", "Arial Unicode MS Bold"],
-            textAllowOverlap: true,
-          }}
-        />
+        <MapboxGL.Images images={images} />
 
-        {/* Individual user avatars as symbols */}
-        <MapboxGL.SymbolLayer
-          id={LAYER_ID_POINTS}
-          filter={["!", ["has", "point_count"]]}
-          style={{
-            iconImage: [
-              "get",
-              ["concat", `${IMAGE_GL_PREFIX}`, ["get", "id"]],
-            ],
-            iconSize: 0.9,
-            iconAllowOverlap: true,
-            iconIgnorePlacement: true,
-            iconOpacity: ["get", "opacity"],
-          }}
-        />
-      </MapboxGL.ShapeSource>
-    </MapboxGL.MapView>
+        <MapboxGL.ShapeSource
+          id={SOURCE_ID}
+          shape={featureCollection}
+          cluster
+          clusterRadius={48}
+          clusterMaxZoom={14}
+          onPress={handleOnPress}
+        >
+          {/* Cluster circles - subtle blue like Slopes pill */}
+          <MapboxGL.CircleLayer
+            id={LAYER_ID_CLUSTERS}
+            filter={["has", "point_count"]}
+            style={{
+              circleColor: "#2563EB",
+              circleRadius: [
+                "step",
+                ["get", "point_count"],
+                16,
+                10,
+                22,
+                30,
+                28,
+              ],
+              circleOpacity: 0.85,
+            }}
+          />
+
+          {/* Cluster count labels */}
+          <MapboxGL.SymbolLayer
+            id={LAYER_ID_CLUSTER_COUNT}
+            filter={["has", "point_count"]}
+            style={{
+              textField: ["get", "point_count_abbreviated"],
+              textColor: "white",
+              textSize: 12,
+              textFont: ["Open Sans Bold", "Arial Unicode MS Bold"],
+              textAllowOverlap: true,
+            }}
+          />
+
+          {/* Individual user avatars as symbols */}
+          <MapboxGL.SymbolLayer
+            id={LAYER_ID_POINTS}
+            filter={["!", ["has", "point_count"]]}
+            style={{
+              iconImage: ["concat", IMAGE_GL_PREFIX, ["get", "id"]],
+              iconSize: [
+                "interpolate",
+                ["linear"],
+                ["get", "opacity"],
+                0,
+                0.5,
+                1,
+                1,
+              ],
+              iconAllowOverlap: true,
+              iconIgnorePlacement: true,
+              iconOpacity: ["get", "opacity"],
+            }}
+          />
+        </MapboxGL.ShapeSource>
+      </MapboxGL.MapView>
+
+      {overlay}
+    </View>
   );
 };
 
 const IMAGE_GL_PREFIX = `${IMAGE_LAYER_ID}-`;
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   map: {
     flex: 1,
   },
