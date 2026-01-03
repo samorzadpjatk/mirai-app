@@ -46,8 +46,76 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
         />
       </YStack>
       {!isAuthLoading && (
-        <Stack screenOptions={{ headerShown: false }}>
-          {/* Routing here */}
+        <Stack 
+          screenOptions={{ 
+            headerShown: false,
+            animation: "slide_from_right",
+            contentStyle: { backgroundColor: "transparent" }
+          }}
+        >
+          <Stack.Screen 
+            name="index" 
+            options={{ 
+              title: "Home",
+              headerShown: false
+            }} 
+          />
+          <Stack.Screen 
+            name="auth/login" 
+            options={{ 
+              title: "Sign In",
+              headerShown: false,
+              animation: "fade"
+            }} 
+          />
+          <Stack.Screen 
+            name="auth/signup" 
+            options={{ 
+              title: "Sign Up",
+              headerShown: false,
+              animation: "fade"
+            }} 
+          />
+          <Stack.Screen 
+            name="users/index" 
+            options={{ 
+              title: "Users",
+              headerShown: true,
+              headerTitle: "Users Management"
+            }} 
+          />
+          <Stack.Screen 
+            name="groups/index" 
+            options={{ 
+              title: "Guilds",
+              headerShown: true,
+              headerTitle: "Guilds"
+            }} 
+          />
+          <Stack.Screen 
+            name="coins/index" 
+            options={{ 
+              title: "Coin Operations",
+              headerShown: true,
+              headerTitle: "Treasury Management"
+            }} 
+          />
+          <Stack.Screen 
+            name="transactions/index" 
+            options={{ 
+              title: "Transactions",
+              headerShown: true,
+              headerTitle: "Transaction History"
+            }} 
+          />
+          <Stack.Screen 
+            name="notifications/index" 
+            options={{ 
+              title: "Notifications",
+              headerShown: true,
+              headerTitle: "Notification Schedules"
+            }} 
+          />
         </Stack>
       )}
     </YStack>
