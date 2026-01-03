@@ -37,16 +37,23 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
     const authToken = session?.access_token;
     const queryClient = getQueryClient();
 
-    // Don't initialize tRPC client until auth is loaded
-    if (isAuthLoading) {
+    // Recreate tRPC client when authToken changes to update WebSocket connectionParams
+    // Use useMemo unconditionally (always call hooks in same order)
+    const trpcClient = useMemo(
+        () => {
+            // Don't initialize tRPC client until auth is loaded
+            if (isAuthLoading) {
+                return null;
+            }
+            return getTRPCClient(httpUrl, wsUrl, authToken);
+        },
+        [authToken, httpUrl, wsUrl, isAuthLoading]
+    );
+
+    // Only render TRPCProvider when we have a valid client
+    if (isAuthLoading || !trpcClient) {
         return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
     }
-
-    // Recreate tRPC client when authToken changes to update WebSocket connectionParams
-    const trpcClient = useMemo(
-        () => getTRPCClient(httpUrl, wsUrl, authToken),
-        [authToken, httpUrl, wsUrl]
-    );
 
     return (
         <QueryClientProvider client={queryClient}>
