@@ -16,7 +16,7 @@ const TransactionCardListView = ({ children, onSearchChange }: TransactionCardLi
                 <YStack>
                     <Input
                         placeholder="Search transactions..."
-                        onChangeText={(e) => onSearchChange?.(e.nativeEvent.text)}
+                        onChangeText={onSearchChange}
                     />
                     <YStack position="absolute" r="$3" t="$3" pointerEvents="none">
                         <Search size={16} />

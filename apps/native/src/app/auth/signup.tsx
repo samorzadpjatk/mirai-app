@@ -159,7 +159,7 @@ export default function SignupScreen() {
                   unstyled
                   placeholder="John Doe"
                   value={name}
-                  onChangeText={(e) => setName(e.nativeEvent.text)}
+                  onChangeText={setName}
                   autoCapitalize="words"
                   editable={!isLoading}
                   bg="transparent"
@@ -190,7 +190,7 @@ export default function SignupScreen() {
                   unstyled
                   placeholder="your.email@example.com"
                   value={email}
-                  onChangeText={(e) => setEmail(e.nativeEvent.text)}
+                  onChangeText={setEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   editable={!isLoading}
@@ -222,7 +222,7 @@ export default function SignupScreen() {
                   unstyled
                   placeholder="At least 6 characters"
                   value={password}
-                  onChangeText={(e) => setPassword(e.nativeEvent.text)}
+                  onChangeText={setPassword}
                   secureTextEntry
                   editable={!isLoading}
                   bg="transparent"
@@ -253,7 +253,7 @@ export default function SignupScreen() {
                   unstyled
                   placeholder="Re-enter password"
                   value={confirmPassword}
-                  onChangeText={(e) => setConfirmPassword(e.nativeEvent.text)}
+                  onChangeText={setConfirmPassword}
                   secureTextEntry
                   editable={!isLoading}
                   bg="transparent"

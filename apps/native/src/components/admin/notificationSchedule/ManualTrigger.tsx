@@ -64,13 +64,13 @@ const ManualTrigger = ({ groups, onSend }: ManualTriggerProps) => {
                 <Input
                     placeholder="Title"
                     value={title}
-                    onChangeText={(e) => setTitle(e.nativeEvent.text)}
+                    onChangeText={setTitle}
                 />
 
                 <TextArea
                     placeholder="Message"
                     value={message}
-                    onChangeText={(e) => setMessage(e.nativeEvent.text)}
+                    onChangeText={setMessage}
                     numberOfLines={5}
                 />
 

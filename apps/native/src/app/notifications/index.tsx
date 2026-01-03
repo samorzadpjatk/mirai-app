@@ -193,7 +193,7 @@ export default function NotificationsScreen() {
                           <Input
                             placeholder="E.g., Daily Ranking Update"
                             value={createName}
-                            onChangeText={(e) => setCreateName(e.nativeEvent.text)}
+                            onChangeText={setCreateName}
                           />
                         </YStack>
                         
@@ -225,7 +225,7 @@ export default function NotificationsScreen() {
                               <Input
                                 placeholder="Title"
                                 value={createTitle}
-                                onChangeText={(e) => setCreateTitle(e.nativeEvent.text)}
+                                onChangeText={setCreateTitle}
                               />
                             </YStack>
                             
@@ -234,7 +234,7 @@ export default function NotificationsScreen() {
                               <Input
                                 placeholder="Message content"
                                 value={createBody}
-                                onChangeText={(e) => setCreateBody(e.nativeEvent.text)}
+                                onChangeText={setCreateBody}
                               />
                             </YStack>
                             
@@ -243,7 +243,7 @@ export default function NotificationsScreen() {
                               <Input
                                 placeholder="https://..."
                                 value={createUrl}
-                                onChangeText={(e) => setCreateUrl(e.nativeEvent.text)}
+                                onChangeText={setCreateUrl}
                               />
                             </YStack>
                           </>
@@ -255,7 +255,7 @@ export default function NotificationsScreen() {
                             <Input
                               placeholder="YYYY-MM-DD"
                               value={createStartDate}
-                              onChangeText={(e) => setCreateStartDate(e.nativeEvent.text)}
+                              onChangeText={setCreateStartDate}
                             />
                           </YStack>
                           
@@ -264,7 +264,7 @@ export default function NotificationsScreen() {
                             <Input
                               placeholder="YYYY-MM-DD"
                               value={createEndDate}
-                              onChangeText={(e) => setCreateEndDate(e.nativeEvent.text)}
+                              onChangeText={setCreateEndDate}
                             />
                           </YStack>
                         </XStack>
@@ -276,7 +276,7 @@ export default function NotificationsScreen() {
                               keyboardType="numeric"
                               placeholder="9"
                               value={createHour}
-                              onChangeText={(e) => setCreateHour(e.nativeEvent.text)}
+                              onChangeText={setCreateHour}
                             />
                           </YStack>
                           
@@ -286,7 +286,7 @@ export default function NotificationsScreen() {
                               keyboardType="numeric"
                               placeholder="0"
                               value={createMinute}
-                              onChangeText={(e) => setCreateMinute(e.nativeEvent.text)}
+                              onChangeText={setCreateMinute}
                             />
                           </YStack>
                         </XStack>

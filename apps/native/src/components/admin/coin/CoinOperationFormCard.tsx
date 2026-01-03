@@ -121,7 +121,7 @@ const CoinOperationFormCard = ({
                     <Input
                         keyboardType="numeric"
                         value={amount}
-                        onChangeText={(e) => setAmount(e.nativeEvent.text)}
+                        onChangeText={setAmount}
                         placeholder="e.g. 100"
                     />
                 </YStack>
@@ -130,7 +130,7 @@ const CoinOperationFormCard = ({
                     <Label fontWeight="bold">Justification (optional)</Label>
                     <TextArea
                         value={reason}
-                        onChangeText={(e) => setReason(e.nativeEvent.text)}
+                        onChangeText={setReason}
                         placeholder="e.g. Reward for Victory in the Tournament"
                         numberOfLines={3}
                     />

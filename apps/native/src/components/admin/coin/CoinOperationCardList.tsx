@@ -50,7 +50,7 @@ const CoinOperationCardList = ({ groups, isLoading }: CoinOperationCardListProps
                     <Input
                         placeholder="Filter Guilds..."
                         value={filterText}
-                        onChangeText={(e) => setFilterText(e.nativeEvent.text)}
+                        onChangeText={setFilterText}
                     />
                     <YStack position="absolute" r="$3" t="$3" pointerEvents="none">
                         <Search size={16} />

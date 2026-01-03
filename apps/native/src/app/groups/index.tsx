@@ -217,7 +217,7 @@ export default function GroupsScreen() {
                       <Input
                         placeholder="Enter guild name"
                         value={createName}
-                        onChangeText={(e) => setCreateName(e.nativeEvent.text)}
+                        onChangeText={setCreateName}
                       />
                     </YStack>
                     
@@ -226,7 +226,7 @@ export default function GroupsScreen() {
                       <Input
                         placeholder="Enter unique code"
                         value={createCode}
-                        onChangeText={(e) => setCreateCode(e.nativeEvent.text)}
+                        onChangeText={setCreateCode}
                       />
                     </YStack>
                     
@@ -338,7 +338,7 @@ export default function GroupsScreen() {
                 <Input
                   placeholder="Enter guild name"
                   value={editName}
-                  onChangeText={(e) => setEditName(e.nativeEvent.text)}
+                  onChangeText={setEditName}
                 />
               </YStack>
               

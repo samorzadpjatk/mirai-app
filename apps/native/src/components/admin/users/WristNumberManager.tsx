@@ -75,7 +75,7 @@ export default function WristNumberManager({
               <Paragraph>Wrist Number</Paragraph>
               <Input
                 value={wristNumber}
-                onChangeText={(e) => setWristNumber(e.nativeEvent.text)}
+                onChangeText={setWristNumber}
                 placeholder="Enter wrist number"
               />
             </YStack>

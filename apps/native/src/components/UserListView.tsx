@@ -133,7 +133,7 @@ export function UserListView() {
           flex={1}
           placeholder="Search by name..."
           value={searchTerm}
-          onChangeText={(e) => setSearchTerm(e.nativeEvent.text)}
+          onChangeText={setSearchTerm}
           onSubmitEditing={handleSearch}
         />
         <Button icon={Search} onPress={handleSearch} disabled={isFetching} />

@@ -124,7 +124,7 @@ export default function TransactionsScreen() {
               flex={1}
               placeholder="Search transactions..."
               value={searchTerm}
-              onChangeText={(e) => setSearchTerm(e.nativeEvent.text)}
+              onChangeText={setSearchTerm}
             />
             <Button icon={Search} disabled />
           </XStack>

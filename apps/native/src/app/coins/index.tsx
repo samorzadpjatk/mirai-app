@@ -219,7 +219,7 @@ export default function CoinsScreen() {
                 <Input
                   keyboardType="numeric"
                   value={amount}
-                  onChangeText={(e) => setAmount(e.nativeEvent.text)}
+                  onChangeText={setAmount}
                   placeholder="e.g. 100"
                 />
               </YStack>
@@ -229,7 +229,7 @@ export default function CoinsScreen() {
                 <Text fontWeight="bold">Justification (optional)</Text>
                 <TextArea
                   value={reason}
-                  onChangeText={(e) => setReason(e.nativeEvent.text)}
+                  onChangeText={setReason}
                   placeholder="e.g. Reward for Victory in the Tournament"
                   numberOfLines={3}
                 />

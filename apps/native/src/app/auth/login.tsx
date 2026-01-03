@@ -88,7 +88,7 @@ export default function LoginScreen() {
                 unstyled
                 placeholder="your.email@example.com"
                 value={email}
-                onChangeText={(e) => setEmail(e.nativeEvent.text)}
+                onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 editable={!isLoading}
@@ -120,7 +120,7 @@ export default function LoginScreen() {
                 unstyled
                 placeholder="Enter your password"
                 value={password}
-                onChangeText={(e) => setPassword(e.nativeEvent.text)}
+                onChangeText={setPassword}
                 secureTextEntry
                 editable={!isLoading}
                 bg="transparent"

@@ -125,7 +125,7 @@ const EditGroupDialog = ({
                             <Input
                                 id="name"
                                 value={name}
-                                onChangeText={(e) => setName(e.nativeEvent.text)}
+                                onChangeText={setName}
                                 placeholder="e.g. Knights of the Round Table"
                             />
                         </YStack>

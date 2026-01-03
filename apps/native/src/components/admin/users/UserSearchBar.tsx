@@ -14,7 +14,7 @@ const UserSearchBar = ({ searchTerm, onSearchChange }: UserSearchBarProps) => {
                     flex={1}
                     placeholder="Search users..."
                     value={searchTerm}
-                    onChangeText={(e) => onSearchChange(e.nativeEvent.text)}
+                    onChangeText={onSearchChange}
                 />
                 <XStack position="absolute" r="$3" pointerEvents="none">
                     <Search size={16} />

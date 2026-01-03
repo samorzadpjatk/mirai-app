@@ -75,7 +75,7 @@ export default function HouseNumberManager({
               <Paragraph>House Number</Paragraph>
               <Input
                 value={houseNumber}
-                onChangeText={(e) => setHouseNumber(e.nativeEvent.text)}
+                onChangeText={setHouseNumber}
                 placeholder="Enter house number"
               />
             </YStack>
