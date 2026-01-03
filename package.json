@@ -23,9 +23,9 @@
     "eslint": "^9.39.2",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "turbo": "^2.6.3",
+    "turbo": "^2.7.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.50.0"
+    "typescript-eslint": "^8.51.0"
   },
   "packageManager": "pnpm@10.24.0",
   "engines": {

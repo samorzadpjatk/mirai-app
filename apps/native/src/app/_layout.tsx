@@ -3,6 +3,16 @@ import { TamaguiProvider, YStack } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import { useState } from "react";
 import { ThemeSwitcher } from "~/components/ThemeSwitcher";
+import {
+  useFonts,
+  IBMPlexSans_100Thin,
+  IBMPlexSans_200ExtraLight,
+  IBMPlexSans_300Light,
+  IBMPlexSans_400Regular,
+  IBMPlexSans_500Medium,
+  IBMPlexSans_600SemiBold,
+  IBMPlexSans_700Bold,
+} from '@expo-google-fonts/ibm-plex-sans';
 import { AuthProvider } from "@integral-2025-app/auth/client";
 import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
@@ -26,6 +36,21 @@ const supabaseClient = createSupabaseClient(
 
 export default function RootLayout() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  
+  const [fontsLoaded] = useFonts({
+    IBMPlexSans_100Thin,
+    IBMPlexSans_200ExtraLight,
+    IBMPlexSans_300Light,
+    IBMPlexSans_400Regular,
+    IBMPlexSans_500Medium,
+    IBMPlexSans_600SemiBold,
+    IBMPlexSans_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
       <AuthProvider
