@@ -87,7 +87,7 @@ describe("SignupScreen", () => {
     expect(getByPlaceholderText("Re-enter password")).toBeTruthy();
   });
 
-  it("should update name when typing", async () => {
+  it("should update name when typing", () => {
     const { getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -95,14 +95,14 @@ describe("SignupScreen", () => {
     );
 
     const nameInput = getByPlaceholderText("John Doe");
-    await act(async () => {
+    act(() => {
       fireEvent.changeText(nameInput, "Jane Smith");
     });
 
     expect(mockSetName).toHaveBeenCalledWith("Jane Smith");
   });
 
-  it("should update email when typing", async () => {
+  it("should update email when typing", () => {
     const { getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -110,14 +110,14 @@ describe("SignupScreen", () => {
     );
 
     const emailInput = getByPlaceholderText("your.email@example.com");
-    await act(async () => {
+    act(() => {
       fireEvent.changeText(emailInput, "test@example.com");
     });
 
     expect(mockSetEmail).toHaveBeenCalledWith("test@example.com");
   });
 
-  it("should update password when typing", async () => {
+  it("should update password when typing", () => {
     const { getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -125,14 +125,14 @@ describe("SignupScreen", () => {
     );
 
     const passwordInput = getByPlaceholderText("At least 6 characters");
-    await act(async () => {
+    act(() => {
       fireEvent.changeText(passwordInput, "password123");
     });
 
     expect(mockSetPassword).toHaveBeenCalledWith("password123");
   });
 
-  it("should update confirm password when typing", async () => {
+  it("should update confirm password when typing", () => {
     const { getByPlaceholderText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -140,7 +140,7 @@ describe("SignupScreen", () => {
     );
 
     const confirmInput = getByPlaceholderText("Re-enter password");
-    await act(async () => {
+    act(() => {
       fireEvent.changeText(confirmInput, "password123");
     });
 
@@ -148,7 +148,7 @@ describe("SignupScreen", () => {
   });
 
   it("should call handleSubmit when create account button is pressed", async () => {
-    mockHandleSubmit.mockImplementation(async (onSuccess) => {
+    mockHandleSubmit.mockImplementation((onSuccess) => {
       onSuccess?.();
     });
 
@@ -159,7 +159,7 @@ describe("SignupScreen", () => {
     );
 
     const createButton = getByTestId("signup-submit-button");
-    await act(async () => {
+    act(() => {
       fireEvent.press(createButton);
     });
 
@@ -169,7 +169,7 @@ describe("SignupScreen", () => {
   });
 
   it("should navigate to home after successful signup with delay", async () => {
-    mockHandleSubmit.mockImplementation(async (onSuccess) => {
+    mockHandleSubmit.mockImplementation((onSuccess) => {
       onSuccess?.();
     });
 
@@ -180,7 +180,7 @@ describe("SignupScreen", () => {
     );
 
     const createButton = getByTestId("signup-submit-button");
-    await act(async () => {
+    act(() => {
       fireEvent.press(createButton);
     });
 
@@ -321,7 +321,7 @@ describe("SignupScreen", () => {
     expect(queryByPlaceholderText("John Doe")).toBeNull();
   });
 
-  it("should navigate to login when sign in link is pressed", async () => {
+  it("should navigate to login when sign in link is pressed", () => {
     const { getByText } = render(
       <TestWrapper>
         <SignupScreen />
@@ -329,7 +329,7 @@ describe("SignupScreen", () => {
     );
 
     const signInLink = getByText("Sign In");
-    await act(async () => {
+    act(() => {
       fireEvent.press(signInLink);
     });
 

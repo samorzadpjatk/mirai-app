@@ -95,7 +95,7 @@ describe("LoginScreen", () => {
   });
 
   it("should call handleSubmit when sign in button is pressed", async () => {
-    mockHandleSubmit.mockImplementation(async (onSuccess) => {
+    mockHandleSubmit.mockImplementation((onSuccess) => {
       onSuccess?.();
     });
 
@@ -114,7 +114,7 @@ describe("LoginScreen", () => {
   });
 
   it("should navigate to home on successful login", async () => {
-    mockHandleSubmit.mockImplementation(async (onSuccess) => {
+    mockHandleSubmit.mockImplementation((onSuccess) => {
       onSuccess?.();
     });
 
