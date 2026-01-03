@@ -11,6 +11,6 @@
     "composite": true,
     "types": ["node", "vitest", "ws"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts"],
   "exclude": ["node_modules", "dist"]
 }

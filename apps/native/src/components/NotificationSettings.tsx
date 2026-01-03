@@ -31,12 +31,6 @@ export default function NotificationSettings() {
     }
   };
 
-  const getStatusColor = () => {
-    if (isSubscribed) return "$green10";
-    if (isSubscribedElsewhere) return "$yellow10";
-    return "$gray10";
-  };
-
   return (
     <Card elevate bordered padding="$4">
       <YStack gap="$2">

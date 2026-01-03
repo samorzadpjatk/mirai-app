@@ -8,6 +8,6 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*", "prisma"],
+  "include": ["src/**/*", "prisma", "vitest.config.ts", "vitest.setup.ts"],
   "exclude": ["node_modules", "dist", "prisma/lib/**/*"]
 }
