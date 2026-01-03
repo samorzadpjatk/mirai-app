@@ -1,8 +1,7 @@
 import { Stack } from "expo-router";
 import { TamaguiProvider, YStack, type TamaguiInternalConfig, useTheme } from "tamagui";
 import tamaguiConfig from "tamagui.config";
-import { useState } from "react";
-import { ThemeSwitcher } from "~/components/ThemeSwitcher";
+import { useColorScheme } from "react-native";
 import {
   useFonts,
   IBMPlexSans_100Thin,
@@ -34,7 +33,7 @@ const supabaseClient = createSupabaseClient(
   authStorage,
 );
 
-function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTheme: (theme: "light" | "dark") => void }) {
+function RootLayoutContent() {
   const isAuthLoading = useAuthLoading();
   const tamaguiTheme = useTheme();
 
@@ -45,12 +44,6 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
 
   return (
     <YStack flex={1} bg="$background">
-      <YStack p="$4" pt="$6">
-        <ThemeSwitcher
-          onToggle={() => setTheme(theme === "light" ? "dark" : "light")}
-          currentTheme={theme}
-        />
-      </YStack>
       {!isAuthLoading && (
         <Stack 
           screenOptions={{ 
@@ -157,7 +150,8 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
 }
 
 export default function RootLayout() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const colorScheme = useColorScheme();
+  const theme = colorScheme === "dark" ? "dark" : "light";
   
   const [fontsLoaded] = useFonts({
     IBMPlexSans_100Thin,
@@ -181,7 +175,7 @@ export default function RootLayout() {
         supabaseClient={supabaseClient}
       >
         <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-          <RootLayoutContent theme={theme} setTheme={setTheme} />
+          <RootLayoutContent />
         </APIProvider>
       </AuthProvider>
     </TamaguiProvider>
