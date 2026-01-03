@@ -13,7 +13,7 @@ import {
   IBMPlexSans_600SemiBold,
   IBMPlexSans_700Bold,
 } from '@expo-google-fonts/ibm-plex-sans';
-import { AuthProvider } from "@integral-2025-app/auth/client";
+import { AuthProvider, useAuthLoading } from "@integral-2025-app/auth/client";
 import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { APIProvider } from "@integral-2025-app/trpc/client";
@@ -33,6 +33,26 @@ const supabaseClient = createSupabaseClient(
   SUPABASE_ANON_KEY,
   authStorage,
 );
+
+function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTheme: (theme: "light" | "dark") => void }) {
+  const isAuthLoading = useAuthLoading();
+
+  return (
+    <YStack flex={1} bg="$background">
+      <YStack p="$4" pt="$6">
+        <ThemeSwitcher
+          onToggle={() => setTheme(theme === "light" ? "dark" : "light")}
+          currentTheme={theme}
+        />
+      </YStack>
+      {!isAuthLoading && (
+        <Stack screenOptions={{ headerShown: false }}>
+          {/* Routing here */}
+        </Stack>
+      )}
+    </YStack>
+  );
+}
 
 export default function RootLayout() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -59,17 +79,7 @@ export default function RootLayout() {
         supabaseClient={supabaseClient}
       >
         <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-          <YStack flex={1} bg="$background">
-            <YStack p="$4" pt="$6">
-              <ThemeSwitcher
-                onToggle={() => setTheme(theme === "light" ? "dark" : "light")}
-                currentTheme={theme}
-              />
-            </YStack>
-            <Stack screenOptions={{ headerShown: false }}>
-              {/* Routing here */}
-            </Stack>
-          </YStack>
+          <RootLayoutContent theme={theme} setTheme={setTheme} />
         </APIProvider>
       </AuthProvider>
     </TamaguiProvider>
