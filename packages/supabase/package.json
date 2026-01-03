@@ -8,6 +8,7 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "test:watch": "vitest"
   },
@@ -23,8 +24,5 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0"
-  },
-  "peerDependencies": {
-    "next": "^15.5.2"
   }
 }

@@ -28,6 +28,7 @@
     "clean": "rm -rf dist *.tsbuildinfo",
     "dev": "tsc --watch",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",

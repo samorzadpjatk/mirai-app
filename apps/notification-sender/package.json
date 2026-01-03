@@ -9,6 +9,7 @@
     "start": "node --enable-source-maps --import tsx src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
