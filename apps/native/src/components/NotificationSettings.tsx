@@ -75,7 +75,7 @@ export default function NotificationSettings() {
                 size="$2"
                 onPress={subscribe}
                 disabled={isLoading}
-                theme="green"
+                
               >
                 {isLoading ? "Subscribing..." : "Enable Notifications"}
               </Button>
@@ -86,7 +86,7 @@ export default function NotificationSettings() {
                 size="$2"
                 onPress={unsubscribe}
                 disabled={isLoading}
-                theme="red"
+                
               >
                 {isLoading ? "Unsubscribing..." : "Disable Notifications"}
               </Button>

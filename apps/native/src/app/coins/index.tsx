@@ -162,7 +162,7 @@ export default function CoinsScreen() {
               <XStack gap="$3">
                 <Button
                   flex={1}
-                  theme={operation === "add" ? "green" : undefined}
+                  
                   onPress={() => setOperation("add")}
                   icon={<Plus size={16} />}
                 >
@@ -170,7 +170,7 @@ export default function CoinsScreen() {
                 </Button>
                 <Button
                   flex={1}
-                  theme={operation === "remove" ? "red" : undefined}
+                  
                   onPress={() => setOperation("remove")}
                   icon={<Minus size={16} />}
                 >
@@ -186,7 +186,7 @@ export default function CoinsScreen() {
                     <Select.Value placeholder="Select Guild..." />
                   </Select.Trigger>
 
-                  <Adapt when="sm" platform="touch">
+                  <Adapt when={true} platform="touch">
                     <Sheet modal dismissOnSnapToBottom>
                       <Sheet.Frame>
                         <Sheet.ScrollView>
@@ -248,7 +248,7 @@ export default function CoinsScreen() {
               <Button
                 onPress={handleSubmit}
                 disabled={!selectedGroupId || !amount || requestedAmount <= 0 || isSubmitting}
-                theme={operation === "add" ? "green" : "red"}
+                
               >
                 {isSubmitting ? (
                   operation === "add" ? "Adding..." : "Seizing..."

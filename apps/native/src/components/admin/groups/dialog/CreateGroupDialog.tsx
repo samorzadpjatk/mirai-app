@@ -43,7 +43,7 @@ const CreateGroupDialog = ({ adminUsers, isLoading, onRefresh, onCreate }: Creat
                 </Button>
             </Dialog.Trigger>
 
-            <Adapt when="sm" platform="touch">
+            <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
                     <Sheet.Frame padding="$4" gap="$4">
                         <Adapt.Contents />
@@ -104,7 +104,7 @@ const CreateGroupDialog = ({ adminUsers, isLoading, onRefresh, onCreate }: Creat
                                     <Select.Value placeholder="Leave empty = you become organizer" />
                                 </Select.Trigger>
 
-                                <Adapt when="sm" platform="touch">
+                                <Adapt when={true} platform="touch">
                                     <Sheet modal dismissOnSnapToBottom>
                                         <Sheet.Frame>
                                             <Sheet.ScrollView>
@@ -135,7 +135,7 @@ const CreateGroupDialog = ({ adminUsers, isLoading, onRefresh, onCreate }: Creat
 
                     <XStack gap="$2" marginTop="$4" justifyContent="flex-end">
                         <Dialog.Close asChild>
-                            <Button theme="alt1">
+                            <Button >
                                 Cancel
                             </Button>
                         </Dialog.Close>

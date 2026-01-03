@@ -66,7 +66,7 @@ const CoinOperationFormCard = ({
                 <XStack gap="$3">
                     <Button
                         flex={1}
-                        theme={operation === "add" ? "green" : undefined}
+                        
                         onPress={() => setOperation("add")}
                         icon={<Plus size={16} />}
                     >
@@ -74,7 +74,7 @@ const CoinOperationFormCard = ({
                     </Button>
                     <Button
                         flex={1}
-                        theme={operation === "remove" ? "red" : undefined}
+                        
                         onPress={() => setOperation("remove")}
                         icon={<Minus size={16} />}
                     >
@@ -89,7 +89,7 @@ const CoinOperationFormCard = ({
                             <Select.Value placeholder="Select Guild..." />
                         </Select.Trigger>
 
-                        <Adapt when="sm" platform="touch">
+                        <Adapt when={true} platform="touch">
                             <Sheet modal dismissOnSnapToBottom>
                                 <Sheet.Frame>
                                     <Sheet.ScrollView>
@@ -139,7 +139,7 @@ const CoinOperationFormCard = ({
                 <Button
                     onPress={handleSubmit}
                     disabled={!selectedGroupId || !amount || requestedAmount <= 0 || isSubmitting || isLoading}
-                    theme={operation === "add" ? "green" : "red"}
+                    
                 >
                     {isSubmitting || isLoading ? (
                         operation === "add" ? "Adding..." : "Seizing..."

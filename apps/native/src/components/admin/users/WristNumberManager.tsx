@@ -53,7 +53,7 @@ export default function WristNumberManager({
         </Button>
       </Dialog.Trigger>
 
-      <Adapt when="sm" platform="touch">
+      <Adapt when={true} platform="touch">
         <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
           <Sheet.Frame padding="$4" gap="$4">
             <Adapt.Contents />
@@ -87,12 +87,12 @@ export default function WristNumberManager({
 
           <XStack gap="$3" justifyContent="flex-end">
             {currentWristNumber && (
-              <Button theme="red" onPress={handleRemove}>
+              <Button  onPress={handleRemove}>
                 Remove
               </Button>
             )}
             <Dialog.Close asChild>
-              <Button theme="alt1">Cancel</Button>
+              <Button >Cancel</Button>
             </Dialog.Close>
             <Button onPress={handleSave}>
               Save

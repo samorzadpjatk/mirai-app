@@ -39,7 +39,7 @@ const AssignUserToGroupFormDialog = ({
                 </Button>
             </Dialog.Trigger>
 
-            <Adapt when="sm" platform="touch">
+            <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
                     <Sheet.Frame padding="$4" gap="$4">
                         <Adapt.Contents />
@@ -62,7 +62,7 @@ const AssignUserToGroupFormDialog = ({
                                 <Select.Value placeholder="Select a guild" />
                             </Select.Trigger>
 
-                            <Adapt when="sm" platform="touch">
+                            <Adapt when={true} platform="touch">
                                 <Sheet modal dismissOnSnapToBottom>
                                     <Sheet.Frame>
                                         <Sheet.ScrollView>
@@ -89,7 +89,7 @@ const AssignUserToGroupFormDialog = ({
 
                     <XStack gap="$3" justifyContent="flex-end">
                         <Dialog.Close asChild>
-                            <Button theme="alt1">Cancel</Button>
+                            <Button >Cancel</Button>
                         </Dialog.Close>
                         <Button onPress={handleAssign} disabled={!selectedGroupId}>
                             Assign

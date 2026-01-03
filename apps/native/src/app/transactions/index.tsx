@@ -147,8 +147,7 @@ export default function TransactionsScreen() {
                       {transaction.group.name}
                     </Text>
                     <Badge 
-                      backgroundColor={transaction.amount > 0 ? "$green10" : "$red10"} 
-                      color="$background"
+                      backgroundColor={transaction.amount > 0 ? "$green10" : "$red10"}
                     >
                       {transaction.amount > 0 ? "+" : ""}{transaction.amount}
                     </Badge>

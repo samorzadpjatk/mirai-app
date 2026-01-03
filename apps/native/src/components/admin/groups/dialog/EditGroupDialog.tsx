@@ -78,7 +78,7 @@ const EditGroupDialog = ({
                 />
             </Dialog.Trigger>
 
-            <Adapt when="sm" platform="touch">
+            <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
                     <Sheet.Frame padding="$4" gap="$4">
                         <Adapt.Contents />
@@ -139,7 +139,7 @@ const EditGroupDialog = ({
                                     <Select.Value placeholder="Select organizer" />
                                 </Select.Trigger>
 
-                                <Adapt when="sm" platform="touch">
+                                <Adapt when={true} platform="touch">
                                     <Sheet modal dismissOnSnapToBottom>
                                         <Sheet.Frame>
                                             <Sheet.ScrollView>
@@ -184,7 +184,7 @@ const EditGroupDialog = ({
 
                     <XStack gap="$3" marginTop="$4" justifyContent="flex-end">
                         <Dialog.Close asChild>
-                            <Button theme="alt1">
+                            <Button >
                                 Cancel
                             </Button>
                         </Dialog.Close>

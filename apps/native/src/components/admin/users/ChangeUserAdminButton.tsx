@@ -28,7 +28,7 @@ const ChangeUserAdminButton = ({
     return (
         <Button
             size="$3"
-            theme={user.isAdmin ? "red" : "blue"}
+            
             onPress={handleToggle}
             disabled={isLoading}
             icon={user.isAdmin ? <Trash2 size={16} /> : <Star size={16} />}

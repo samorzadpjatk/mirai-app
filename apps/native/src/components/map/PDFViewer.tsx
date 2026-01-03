@@ -33,7 +33,7 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
         <Button
           icon={<Download size={20} />}
           onPress={handleDownload}
-          theme="red"
+          
         >
           Download Map
         </Button>

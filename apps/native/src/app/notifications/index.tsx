@@ -163,12 +163,12 @@ export default function NotificationsScreen() {
             {/* Create Schedule Dialog */}
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <Dialog.Trigger asChild>
-                <Button size="$3" icon={<Plus size={16} />} theme="green">
+                <Button size="$3" icon={<Plus size={16} />} >
                   Create Schedule
                 </Button>
               </Dialog.Trigger>
 
-              <Adapt when="sm" platform="touch">
+              <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
                   <Sheet.Frame padding="$4" gap="$4">
                     <Adapt.Contents />
@@ -299,7 +299,7 @@ export default function NotificationsScreen() {
                       <Button>Cancel</Button>
                     </Dialog.Close>
                     <Button 
-                      theme="green" 
+                       
                       onPress={handleCreate}
                       disabled={!createName.trim() || !createStartDate || !createEndDate || createScheduleMutation.isPending}
                     >
@@ -335,12 +335,12 @@ export default function NotificationsScreen() {
                     <Button
                       size="$3"
                       icon={schedule.isActive ? <Bell size={16} /> : <BellOff size={16} />}
-                      theme={schedule.isActive ? "green" : "gray"}
+                      
                       onPress={() => handleToggleActive(schedule.id)}
                     />
                     <Button
                       size="$3"
-                      theme="red"
+                      
                       icon={<Trash2 size={16} />}
                       onPress={() => setDeletingScheduleId(schedule.id)}
                     />
@@ -402,7 +402,7 @@ export default function NotificationsScreen() {
               </AlertDialog.Cancel>
               <AlertDialog.Action asChild>
                 <Button 
-                  theme="red" 
+                   
                   onPress={() => deletingScheduleId && handleDelete(deletingScheduleId)}
                   disabled={deleteScheduleMutation.isPending}
                 >

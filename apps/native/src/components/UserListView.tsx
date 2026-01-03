@@ -209,7 +209,7 @@ export function UserListView() {
                   size="$2"
                   onPress={() => handleToggleAdmin(item.id, item.isAdmin)}
                   disabled={updateAdminStatus.isPending}
-                  theme={item.isAdmin ? "red" : "green"}
+                  
                 >
                   {updateAdminStatus.isPending
                     ? "Updating..."

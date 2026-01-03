@@ -13,7 +13,7 @@ const UserSearchFieldDropdownMenu = ({ onValueChange }: UserSearchFieldDropdownM
                 <Select.Value placeholder="Select a search field" />
             </Select.Trigger>
 
-            <Adapt when="sm" platform="touch">
+            <Adapt when={true} platform="touch">
                 <Sheet modal dismissOnSnapToBottom>
                     <Sheet.Frame>
                         <Sheet.ScrollView>

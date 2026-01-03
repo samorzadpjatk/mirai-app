@@ -36,7 +36,7 @@ const ManualTrigger = ({ groups, onSend }: ManualTriggerProps) => {
                             <Select.Value placeholder="Select a group" />
                         </Select.Trigger>
 
-                        <Adapt when="sm" platform="touch">
+                        <Adapt when={true} platform="touch">
                             <Sheet modal dismissOnSnapToBottom>
                                 <Sheet.Frame>
                                     <Sheet.ScrollView>

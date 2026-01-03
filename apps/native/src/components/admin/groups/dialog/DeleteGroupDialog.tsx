@@ -34,7 +34,7 @@ const DeleteGroupDialog = ({
             <AlertDialog.Trigger asChild>
                 <Button
                     size="$3"
-                    theme="red"
+                    
                     icon={isLoading ? <Spinner /> : <Trash2 size={16} />}
                     disabled={isLoading}
                 />
@@ -70,13 +70,13 @@ const DeleteGroupDialog = ({
                     </AlertDialog.Description>
                     <XStack gap="$2" marginTop="$4" justifyContent="flex-end">
                         <AlertDialog.Cancel asChild>
-                            <Button theme="alt1">
+                            <Button >
                                 Cancel
                             </Button>
                         </AlertDialog.Cancel>
                         <AlertDialog.Action asChild>
                             <Button
-                                theme="red"
+                                
                                 onPress={handleDelete}
                                 disabled={isLoading}
                             >

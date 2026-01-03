@@ -34,7 +34,7 @@ const NotificationScheduleList = ({ schedules, onDelete }: NotificationScheduleL
                                 Scheduled: {schedule.scheduledFor.toLocaleString()}
                             </Paragraph>
                             {onDelete && (
-                                <Button size="$2" theme="red" onPress={() => onDelete(schedule.id)}>
+                                <Button size="$2"  onPress={() => onDelete(schedule.id)}>
                                     Delete
                                 </Button>
                             )}

@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { TamaguiProvider, YStack } from "tamagui";
+import { TamaguiProvider, YStack, type TamaguiInternalConfig } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import { useState } from "react";
 import { ThemeSwitcher } from "~/components/ThemeSwitcher";
@@ -52,7 +52,7 @@ export default function RootLayout() {
   }
 
   return (
-    <TamaguiProvider config={tamaguiConfig} defaultTheme={theme}>
+    <TamaguiProvider config={tamaguiConfig as TamaguiInternalConfig} defaultTheme={theme}>
       <AuthProvider
         supabaseUrl={SUPABASE_URL}
         supabaseKey={SUPABASE_ANON_KEY}

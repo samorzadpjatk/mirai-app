@@ -45,7 +45,7 @@ const TransactionListFilterPopover = ({ onFilterChange }: TransactionListFilterP
                             <Select.Value />
                         </Select.Trigger>
 
-                        <Adapt when="sm" platform="touch">
+                        <Adapt when={true} platform="touch">
                             <Sheet modal dismissOnSnapToBottom>
                                 <Sheet.Frame>
                                     <Sheet.ScrollView>
