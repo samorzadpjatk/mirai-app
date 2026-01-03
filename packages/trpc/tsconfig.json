@@ -7,9 +7,8 @@
     "declaration": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "jsx": "react-jsx",
-    "skipLibCheck": true
-    /* Removed defaults (emitDeclarationOnly/composite/noEmit) for cleanliness */
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

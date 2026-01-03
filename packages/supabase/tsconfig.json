@@ -11,7 +11,7 @@
     "declarationMap": true,
     "composite": true,
     "moduleResolution": "bundler"
-    /* composite+declaration needed because this package is referenced by others */
   },
-  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts"],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

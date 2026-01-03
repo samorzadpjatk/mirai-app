@@ -4,9 +4,8 @@
     "rootDir": ".",
     "outDir": "dist",
     "moduleResolution": "bundler",
-    "types": ["node"],
-    "skipLibCheck": true
+    "types": ["node"]
   },
-  "include": ["src/**/*", "vitest.config.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
