@@ -1,8 +1,9 @@
-import { YStack, XStack, Button, Input, Text, View, Spinner } from "tamagui";
+import { YStack, XStack, Button, Input, Text, Spinner } from "tamagui";
 import { useLoginForm } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { Lock, Mail, AlertCircle } from "@tamagui/lucide-icons";
 import { StatusBar } from "expo-status-bar";
+import Logo from "../../components/Logo";
 
 export default function LoginScreen() {
   const { formState, setEmail, setPassword, handleSubmit } = useLoginForm();
@@ -27,22 +28,7 @@ export default function LoginScreen() {
       >
         <YStack space="$6" maxWidth={400} width="100%" alignSelf="center">
           <YStack space="$4" alignItems="center" marginBottom="$4">
-            <View
-              width={100}
-              height={100}
-              borderRadius={50}
-              borderWidth={5}
-              borderColor="$red9"
-              overflow="hidden"
-              animation="quick"
-              enterStyle={{ scale: 0, opacity: 0, rotate: "-180deg" }}
-              scale={1}
-              opacity={1}
-              rotate="0deg"
-            >
-              <View width="100%" height="50%" backgroundColor="white" />
-              <View width="100%" height="50%" backgroundColor="$red9" />
-            </View>
+            <Logo size={100} />
             <Text
               fontSize="$10"
               fontWeight="900"

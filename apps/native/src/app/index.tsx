@@ -1,9 +1,12 @@
-import { YStack, XStack, H1, Text, View, Button, Spinner } from "tamagui";
+import { YStack, Button } from "tamagui";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
-import { LogOut, User, Users } from "@tamagui/lucide-icons";
+import { LogOut, Users } from "@tamagui/lucide-icons";
+import Header from "../components/Header";
+import LoadingScreen from "../components/LoadingScreen";
+import Footer from "../components/Footer";
 
 export default function Home() {
   const { session, isLoading, signOut } = useAuth();
@@ -16,19 +19,7 @@ export default function Home() {
   }, [isLoading, session, router]);
 
   if (isLoading) {
-    return (
-      <YStack
-        flex={1}
-        backgroundColor="$background"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Spinner size="large" color="$red9" />
-        <Text color="$gray11" marginTop="$4">
-          Loading...
-        </Text>
-      </YStack>
-    );
+    return <LoadingScreen message="Loading..." />;
   }
 
   if (!session) {
@@ -54,49 +45,11 @@ export default function Home() {
         paddingTop="$12"
       >
         <YStack space="$6" flex={1}>
-          <YStack space="$4" alignItems="center">
-            <View
-              width={120}
-              height={120}
-              borderRadius={60}
-              borderWidth={6}
-              borderColor="$red9"
-              overflow="hidden"
-              animation="quick"
-              enterStyle={{ scale: 0, opacity: 0 }}
-              scale={1}
-              opacity={1}
-            >
-              <View width="100%" height="50%" backgroundColor="white" />
-              <View width="100%" height="50%" backgroundColor="$red9" />
-            </View>
-            <YStack space="$2" alignItems="center">
-              <H1
-                color="$color"
-                fontSize="$11"
-                fontWeight="900"
-                textAlign="center"
-                letterSpacing={-1}
-                animation="quick"
-                enterStyle={{ y: -20, opacity: 0 }}
-                y={0}
-                opacity={1}
-              >
-                Welcome Back!
-              </H1>
-              <XStack space="$2" alignItems="center">
-                <User size={16} color="$gray11" />
-                <Text
-                  color="$gray11"
-                  fontSize="$4"
-                  fontWeight="600"
-                  opacity={0.8}
-                >
-                  {session?.user?.email ?? "User"}
-                </Text>
-              </XStack>
-            </YStack>
-          </YStack>
+          <Header
+            title="Welcome Back!"
+            showUserEmail
+            userEmail={session?.user?.email ?? "User"}
+          />
 
           <YStack space="$3">
             <Button
@@ -127,16 +80,7 @@ export default function Home() {
             </Button>
           </YStack>
 
-          <YStack flex={1} justifyContent="flex-end" alignItems="center">
-            <Text
-              color="$gray11"
-              fontSize="$2"
-              opacity={0.5}
-              textAlign="center"
-            >
-              PJapp Native • v0.0.0
-            </Text>
-          </YStack>
+          <Footer appName="PJapp Native" version="v0.0.0" />
         </YStack>
       </YStack>
     </>
