@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
-import { LogOut, User, Users, Castle, Coins, Receipt } from "@tamagui/lucide-icons";
+import { LogOut, User, Users, Castle, Coins, Receipt, Bell } from "@tamagui/lucide-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 
@@ -165,6 +165,19 @@ export default function Home() {
                   animation="quick"
                 >
                   Transaction History
+                </Button>
+                <Button
+                  size="$4"
+                  backgroundColor="$orange9"
+                  color="white"
+                  fontWeight="700"
+                  icon={Bell}
+                  onPress={() => router.push("/notifications")}
+                  hoverStyle={{ backgroundColor: "$orange10" }}
+                  pressStyle={{ backgroundColor: "$orange8", scale: 0.98 }}
+                  animation="quick"
+                >
+                  Notifications
                 </Button>
               </>
             )}
