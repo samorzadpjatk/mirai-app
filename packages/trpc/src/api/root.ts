@@ -11,7 +11,7 @@ import { notificationScheduleRouter } from "./routers/notificationSchedule";
  *
  * All routers added in /api/routers should be manually added here.
  */
-export const appRouter: ReturnType<typeof createTRPCRouter> = createTRPCRouter({
+export const appRouter = createTRPCRouter({
   group: groupRouter,
   user: userRouter,
   coin: coinRouter,

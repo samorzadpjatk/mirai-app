@@ -9,11 +9,11 @@ vi.mock("@integral-2025-app/supabase", () => {
 
 describe("tRPC setup", () => {
   describe("createTRPCContext", () => {
-    it("should create context with headers", async () => {
+    it("should create context with headers", () => {
       const headers = new Headers();
       headers.set("user-agent", "test");
 
-      const context = await createTRPCContext({
+      const context = createTRPCContext({
         headers,
         supabaseUrl: "http://localhost:8000",
         supabaseKey: "test-key",
@@ -25,9 +25,9 @@ describe("tRPC setup", () => {
       expect(context.supabase).toBeDefined();
     });
 
-    it("should include accessToken in context", async () => {
+    it("should include accessToken in context", () => {
       const headers = new Headers();
-      const context = await createTRPCContext({
+      const context = createTRPCContext({
         headers,
         supabaseUrl: "http://localhost:8000",
         supabaseKey: "test-key",
