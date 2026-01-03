@@ -192,7 +192,6 @@ export default function SignupScreen() {
                   value={email}
                   onChangeText={(e) => setEmail(e.nativeEvent.text)}
                   autoCapitalize="none"
-                  
                   keyboardType="email-address"
                   editable={!isLoading}
                   bg="transparent"

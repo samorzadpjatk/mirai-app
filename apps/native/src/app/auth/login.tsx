@@ -90,7 +90,6 @@ export default function LoginScreen() {
                 value={email}
                 onChangeText={(e) => setEmail(e.nativeEvent.text)}
                 autoCapitalize="none"
-                
                 keyboardType="email-address"
                 editable={!isLoading}
                 bg="transparent"
