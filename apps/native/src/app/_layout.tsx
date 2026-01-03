@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { TamaguiProvider, YStack, type TamaguiInternalConfig } from "tamagui";
+import { TamaguiProvider, YStack, type TamaguiInternalConfig, useTheme } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import { useState } from "react";
 import { ThemeSwitcher } from "~/components/ThemeSwitcher";
@@ -36,6 +36,12 @@ const supabaseClient = createSupabaseClient(
 
 function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTheme: (theme: "light" | "dark") => void }) {
   const isAuthLoading = useAuthLoading();
+  const tamaguiTheme = useTheme();
+
+  // Get theme colors for headers
+  const headerBackgroundColor = tamaguiTheme.background.get();
+  const headerTintColor = tamaguiTheme.color.get();
+  const headerBorderColor = tamaguiTheme.borderColor.get();
 
   return (
     <YStack flex={1} bg="$background">
@@ -50,7 +56,15 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
           screenOptions={{ 
             headerShown: false,
             animation: "slide_from_right",
-            contentStyle: { backgroundColor: "transparent" }
+            contentStyle: { backgroundColor: "transparent" },
+            headerStyle: {
+              backgroundColor: headerBackgroundColor,
+            },
+            headerTintColor: headerTintColor,
+            headerShadowVisible: true,
+            headerTitleStyle: {
+              fontWeight: "600",
+            }
           }}
         >
           <Stack.Screen 
@@ -81,7 +95,11 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
             options={{ 
               title: "Users",
               headerShown: true,
-              headerTitle: "Users Management"
+              headerTitle: "Users Management",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
             }} 
           />
           <Stack.Screen 
@@ -89,7 +107,11 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
             options={{ 
               title: "Guilds",
               headerShown: true,
-              headerTitle: "Guilds"
+              headerTitle: "Guilds",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
             }} 
           />
           <Stack.Screen 
@@ -97,7 +119,11 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
             options={{ 
               title: "Coin Operations",
               headerShown: true,
-              headerTitle: "Treasury Management"
+              headerTitle: "Treasury Management",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
             }} 
           />
           <Stack.Screen 
@@ -105,7 +131,11 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
             options={{ 
               title: "Transactions",
               headerShown: true,
-              headerTitle: "Transaction History"
+              headerTitle: "Transaction History",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
             }} 
           />
           <Stack.Screen 
@@ -113,7 +143,11 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
             options={{ 
               title: "Notifications",
               headerShown: true,
-              headerTitle: "Notification Schedules"
+              headerTitle: "Notification Schedules",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
             }} 
           />
         </Stack>
