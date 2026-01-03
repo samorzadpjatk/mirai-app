@@ -3,10 +3,18 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@integral-2025-app/auth": ["../auth/src/index.ts"],
+      "@integral-2025-app/auth/*": ["../auth/src/*"],
+      "@integral-2025-app/auth/client": ["../auth/src/client.ts"],
+      "@integral-2025-app/db": ["../db/src/index.ts"],
+      "@integral-2025-app/db/*": ["../db/src/*"],
+      "@integral-2025-app/supabase": ["../supabase/src/index.ts"],
+      "@integral-2025-app/supabase/*": ["../supabase/src/*"],
+      "@integral-2025-app/common-types": ["../common-types/src/index.ts"],
+      "@integral-2025-app/common-types/*": ["../common-types/src/*"]
     },
     "outDir": "dist",
-    "rootDir": ".",
     "declaration": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

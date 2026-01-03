@@ -17,7 +17,10 @@
       "@integral-2025-app/supabase": ["../../packages/supabase/src/index.ts"],
       "@integral-2025-app/supabase/*": ["../../packages/supabase/src/*"],
       "@integral-2025-app/trpc": ["../../packages/trpc/src/index.ts"],
-      "@integral-2025-app/trpc/*": ["../../packages/trpc/src/*"]
+      "@integral-2025-app/trpc/*": ["../../packages/trpc/src/*"],
+      "@integral-2025-app/trpc/client": ["../../packages/trpc/src/client/index.ts"],
+      "@integral-2025-app/trpc/client/*": ["../../packages/trpc/src/client/*"],
+      "@integral-2025-app/trpc/client/expo": ["../../packages/trpc/src/client/expo.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
