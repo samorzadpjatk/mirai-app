@@ -142,9 +142,9 @@ export default function GroupsScreen() {
 
   if (isLoading || isLoadingUser) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Spinner size="large" />
-        <Text marginTop="$4">
+        <Text mt="$4">
           Loading groups...
         </Text>
       </YStack>
@@ -158,14 +158,14 @@ export default function GroupsScreen() {
 
   if (isError) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Text color="$red10" fontSize="$6" fontWeight="bold">
           Error loading groups
         </Text>
-        <Text color="$gray11" marginTop="$2" textAlign="center">
+        <Text color="$gray11" mt="$2" text="center">
           {error?.message || "Something went wrong"}
         </Text>
-        <Button marginTop="$4" onPress={() => void refetch()}>
+        <Button mt="$4" onPress={() => void refetch()}>
           Try Again
         </Button>
       </YStack>
@@ -173,7 +173,7 @@ export default function GroupsScreen() {
   }
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} bg="$background">
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -182,8 +182,8 @@ export default function GroupsScreen() {
           />
         }
       >
-        <YStack padding="$4" gap="$4">
-          <XStack justifyContent="space-between" alignItems="center">
+        <YStack p="$4" gap="$4">
+          <XStack justify="space-between" items="center">
             <H2 color="$gray12">Guilds</H2>
             
             {/* Create Guild Dialog */}
@@ -196,7 +196,7 @@ export default function GroupsScreen() {
 
               <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
-                  <Sheet.Frame padding="$4" gap="$4">
+                  <Sheet.Frame p="$4" gap="$4">
                     <Adapt.Contents />
                   </Sheet.Frame>
                   <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
@@ -217,7 +217,7 @@ export default function GroupsScreen() {
                       <Input
                         placeholder="Enter guild name"
                         value={createName}
-                        onChangeText={setCreateName}
+                        onChangeText={(e) => setCreateName(e.nativeEvent.text)}
                       />
                     </YStack>
                     
@@ -226,7 +226,7 @@ export default function GroupsScreen() {
                       <Input
                         placeholder="Enter unique code"
                         value={createCode}
-                        onChangeText={setCreateCode}
+                        onChangeText={(e) => setCreateCode(e.nativeEvent.text)}
                       />
                     </YStack>
                     
@@ -254,7 +254,7 @@ export default function GroupsScreen() {
                     </YStack>
                   </YStack>
                   
-                  <XStack gap="$3" justifyContent="flex-end">
+                  <XStack gap="$3" justify="flex-end">
                     <Dialog.Close asChild>
                       <Button>Cancel</Button>
                     </Dialog.Close>
@@ -272,17 +272,17 @@ export default function GroupsScreen() {
           </XStack>
           
           {groups?.length === 0 && (
-            <Card padding="$4" bordered>
-              <Text color="$gray11" textAlign="center">
+            <Card p="$4" bordered>
+              <Text color="$gray11" text="center">
                 No guilds found. Create your first guild!
               </Text>
             </Card>
           )}
           
           {groups?.map((group) => (
-            <Card key={group.id} bordered padding="$4">
+            <Card key={group.id} bordered p="$4">
               <YStack gap="$3">
-                <XStack justifyContent="space-between" alignItems="center">
+                <XStack justify="space-between" items="center">
                   <Text fontSize="$6" fontWeight="bold" color="$color">
                     {group.name}
                   </Text>
@@ -338,7 +338,7 @@ export default function GroupsScreen() {
                 <Input
                   placeholder="Enter guild name"
                   value={editName}
-                  onChangeText={setEditName}
+                  onChangeText={(e) => setEditName(e.nativeEvent.text)}
                 />
               </YStack>
               
@@ -363,7 +363,7 @@ export default function GroupsScreen() {
               </YStack>
             </YStack>
             
-            <XStack gap="$3" justifyContent="flex-end">
+            <XStack gap="$3" justify="flex-end">
               <Button onPress={() => setEditingGroup(null)}>Cancel</Button>
               <Button 
                  
@@ -388,7 +388,7 @@ export default function GroupsScreen() {
               All members will be removed from the guild.
             </AlertDialog.Description>
             
-            <XStack gap="$3" justifyContent="flex-end" marginTop="$4">
+            <XStack gap="$3" justify="flex-end" mt="$4">
               <AlertDialog.Cancel asChild>
                 <Button>Cancel</Button>
               </AlertDialog.Cancel>

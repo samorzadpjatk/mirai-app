@@ -43,7 +43,7 @@ const RemoveUserFromGroupFormDialog = ({
                         Are you sure you want to remove this user from their guild?
                     </AlertDialog.Description>
 
-                    <XStack gap="$3" justifyContent="flex-end">
+                    <XStack gap="$3" justify="flex-end">
                         <AlertDialog.Cancel asChild>
                             <Button >Cancel</Button>
                         </AlertDialog.Cancel>

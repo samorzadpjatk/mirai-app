@@ -22,23 +22,23 @@ const TransactionsAdditionalInsights = ({ insights, isLoading }: TransactionsAdd
 
     return (
         <Suspense fallback={<TransactionAdditionalInsightsSkelethon />}>
-            <Card bordered padding="$4">
-                <H3 marginBottom="$4">Additional Insights</H3>
+            <Card bordered p="$4">
+                <H3 mb="$4">Additional Insights</H3>
                 <YStack gap="$3">
                     {insights.mostActiveGroup && (
-                        <XStack justifyContent="space-between" alignItems="center">
+                        <XStack justify="space-between" items="center">
                             <Paragraph opacity={0.7}>Most Active Group</Paragraph>
                             <Paragraph fontWeight="bold">{insights.mostActiveGroup}</Paragraph>
                         </XStack>
                     )}
                     {insights.biggestTransaction && (
-                        <XStack justifyContent="space-between" alignItems="center">
+                        <XStack justify="space-between" items="center">
                             <Paragraph opacity={0.7}>Biggest Transaction</Paragraph>
                             <Paragraph fontWeight="bold">{insights.biggestTransaction}</Paragraph>
                         </XStack>
                     )}
                     {insights.averageTransaction && (
-                        <XStack justifyContent="space-between" alignItems="center">
+                        <XStack justify="space-between" items="center">
                             <Paragraph opacity={0.7}>Average Transaction</Paragraph>
                             <Paragraph fontWeight="bold">{insights.averageTransaction.toFixed(2)}</Paragraph>
                         </XStack>

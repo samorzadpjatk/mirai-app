@@ -33,9 +33,9 @@ export default function UsersScreen() {
 
   if (isLoadingUser) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Spinner size="large" />
-        <Text marginTop="$4">
+        <Text mt="$4">
           Loading...
         </Text>
       </YStack>

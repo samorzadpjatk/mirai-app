@@ -25,28 +25,28 @@ const CoinQuickStatsCard = ({ coinQuickStats, isLoading }: CoinQuickStatsCardPro
     
     return (
         <Suspense fallback={<CoinQuickStatsCardSkeleton />}>
-            <Card bordered padding="$4">
-                <H3 marginBottom="$4">Stats</H3>
+            <Card bordered p="$4">
+                <H3 mb="$4">Stats</H3>
                 <YStack gap="$3">
-                    <XStack justifyContent="space-between" alignItems="center">
+                    <XStack justify="space-between" items="center">
                         <Paragraph opacity={0.7}>Total Treasure</Paragraph>
                         <Paragraph fontWeight="bold">
                             💰 {coinQuickStats.totalCoins}
                         </Paragraph>
                     </XStack>
-                    <XStack justifyContent="space-between" alignItems="center">
+                    <XStack justify="space-between" items="center">
                         <Paragraph opacity={0.7}>Number of Guilds</Paragraph>
                         <Paragraph fontWeight="bold">
                             🏛️ {coinQuickStats.totalGroups}
                         </Paragraph>
                     </XStack>
-                    <XStack justifyContent="space-between" alignItems="center">
+                    <XStack justify="space-between" items="center">
                         <Paragraph opacity={0.7}>Average Treasure per Guild</Paragraph>
                         <Paragraph fontWeight="bold">
                             📊 {coinQuickStats.averageCoinsPerGroup}
                         </Paragraph>
                     </XStack>
-                    <XStack justifyContent="space-between" alignItems="center">
+                    <XStack justify="space-between" items="center">
                         <Paragraph opacity={0.7}>The Wealthiest Guild</Paragraph>
                         <Paragraph fontWeight="bold">
                             🏆 {coinQuickStats.richestGroupName}

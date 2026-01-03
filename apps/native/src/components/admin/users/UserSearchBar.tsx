@@ -8,15 +8,15 @@ interface UserSearchBarProps {
 
 const UserSearchBar = ({ searchTerm, onSearchChange }: UserSearchBarProps) => {
     return (
-        <XStack gap="$2" alignItems="center">
-            <XStack flex={1} alignItems="center">
+        <XStack gap="$2" items="center">
+            <XStack flex={1} items="center">
                 <Input
                     flex={1}
                     placeholder="Search users..."
                     value={searchTerm}
-                    onChangeText={onSearchChange}
+                    onChangeText={(e) => onSearchChange(e.nativeEvent.text)}
                 />
-                <XStack position="absolute" right="$3" pointerEvents="none">
+                <XStack position="absolute" r="$3" pointerEvents="none">
                     <Search size={16} />
                 </XStack>
             </XStack>

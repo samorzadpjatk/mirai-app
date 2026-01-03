@@ -50,13 +50,13 @@ const CoinOperationCardList = ({ groups, isLoading }: CoinOperationCardListProps
                     <Input
                         placeholder="Filter Guilds..."
                         value={filterText}
-                        onChangeText={setFilterText}
+                        onChangeText={(e) => setFilterText(e.nativeEvent.text)}
                     />
-                    <YStack position="absolute" right="$3" top="$3" pointerEvents="none">
+                    <YStack position="absolute" r="$3" t="$3" pointerEvents="none">
                         <Search size={16} />
                     </YStack>
                 </YStack>
-                <YStack justifyContent="center" gap="$3">
+                <YStack justify="center" gap="$3">
                     {filteredGroups?.length === 0 && (
                         <YStack>
                             <Paragraph opacity={0.6}>
@@ -70,11 +70,11 @@ const CoinOperationCardList = ({ groups, isLoading }: CoinOperationCardListProps
                     {filteredGroups
                         ?.sort((a, b) => b.coins - a.coins)
                         .map((group, index) => (
-                            <Card key={group.id} bordered padding="$3">
+                            <Card key={group.id} bordered p="$3">
                                 <YStack gap="$2">
-                                    <XStack justifyContent="space-between" alignItems="center">
+                                    <XStack justify="space-between" items="center">
                                         <Paragraph opacity={0.7}>Guild</Paragraph>
-                                        <XStack alignItems="center" gap="$2">
+                                        <XStack items="center" gap="$2">
                                             {index < 3 && (
                                                 <Paragraph>
                                                     {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
@@ -83,17 +83,17 @@ const CoinOperationCardList = ({ groups, isLoading }: CoinOperationCardListProps
                                             <Paragraph fontWeight="bold">{group.name}</Paragraph>
                                         </XStack>
                                     </XStack>
-                                    <XStack justifyContent="space-between" alignItems="center">
+                                    <XStack justify="space-between" items="center">
                                         <Paragraph opacity={0.7}>Organizer</Paragraph>
                                         <Paragraph>{group.organizer.name ?? "Unknown"}</Paragraph>
                                     </XStack>
-                                    <XStack justifyContent="space-between" alignItems="center">
+                                    <XStack justify="space-between" items="center">
                                         <Paragraph opacity={0.7}>Companions</Paragraph>
                                         <Badge>
                                             {group.members.length} members
                                         </Badge>
                                     </XStack>
-                                    <XStack justifyContent="space-between" alignItems="center">
+                                    <XStack justify="space-between" items="center">
                                         <Paragraph opacity={0.7}>Coins</Paragraph>
                                         <Paragraph fontWeight="bold">{group.coins}</Paragraph>
                                     </XStack>

@@ -29,24 +29,24 @@ const GroupCardList = ({ groups, isLoading, onRefresh }: GroupCardListProps) => 
     }
 
     return (
-        <YStack justifyContent="center">
+        <YStack justify="center">
             <Suspense fallback={<GroupCardListSkeleton />}>
                 {groups?.length === 0 && (
-                    <Card padding="$4" bordered>
+                    <Card p="$4" bordered>
                         <Paragraph opacity={0.6}>
                             There are no Guilds in realm to display
                         </Paragraph>
-                        <Paragraph opacity={0.5} marginTop="$2">
+                        <Paragraph opacity={0.5} mt="$2">
                             Forge your first guild and embark on your path of leadership
                         </Paragraph>
                     </Card>
                 )}
                 {groups?.map((group) => (
-                    <Card key={group.id} bordered padding="$3" width="100%" marginBottom="$2">
+                    <Card key={group.id} bordered p="$3" width="100%" mb="$2">
                         <YStack gap="$2">
-                            <XStack justifyContent="space-between" alignItems="center">
+                            <XStack justify="space-between" items="center">
                                 <Paragraph fontWeight="bold">{group.name}</Paragraph>
-                                <XStack gap="$2" justifyContent="flex-end">
+                                <XStack gap="$2" justify="flex-end">
                                     <EditGroupDialog
                                         selectedGroupId={group.id}
                                         onRefresh={onRefresh}
@@ -60,7 +60,7 @@ const GroupCardList = ({ groups, isLoading, onRefresh }: GroupCardListProps) => 
                             <Paragraph opacity={0.7}>
                                 Assigned: {group.organizer.name ?? "Unknown"}
                             </Paragraph>
-                            <XStack justifyContent="space-between" alignItems="center">
+                            <XStack justify="space-between" items="center">
                                 <Badge>
                                     {group._count.members} companions
                                 </Badge>

@@ -20,16 +20,16 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
   return (
     <YStack
       flex={1}
-      padding="$4"
-      borderRadius="$4"
+      p="$4"
+      rounded="$4"
       borderWidth={1}
       borderColor="$gray7"
-      backgroundColor="$background"
-      alignItems="center"
-      justifyContent="center"
-      minHeight={300}
+      bg="$background"
+      items="center"
+      justify="center"
+      minH={300}
     >
-      <XStack gap="$3" padding="$4">
+      <XStack gap="$3" p="$4">
         <Button
           icon={<Download size={20} />}
           onPress={handleDownload}
@@ -42,7 +42,7 @@ export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
       {isLoading ? (
         <Spinner size="large" />
       ) : (
-        <Paragraph textAlign="center">
+        <Paragraph text="center">
           PDF Viewer not available in this environment.{"\n"}
           Use the download button to view the map.
         </Paragraph>

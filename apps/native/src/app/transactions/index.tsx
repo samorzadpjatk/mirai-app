@@ -38,9 +38,9 @@ export default function TransactionsScreen() {
 
   if (isLoading || isLoadingUser) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Spinner size="large" />
-        <Text marginTop="$4">
+        <Text mt="$4">
           Loading transactions...
         </Text>
       </YStack>
@@ -54,14 +54,14 @@ export default function TransactionsScreen() {
 
   if (isError) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Text color="$red10" fontSize="$6" fontWeight="bold">
           Error loading transactions
         </Text>
-        <Text color="$gray11" marginTop="$2" textAlign="center">
+        <Text color="$gray11" mt="$2" text="center">
           {error?.message || "Something went wrong"}
         </Text>
-        <Button marginTop="$4" onPress={() => void refetch()}>
+        <Button mt="$4" onPress={() => void refetch()}>
           Try Again
         </Button>
       </YStack>
@@ -78,7 +78,7 @@ export default function TransactionsScreen() {
   });
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} bg="$background">
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -90,27 +90,27 @@ export default function TransactionsScreen() {
           />
         }
       >
-        <YStack padding="$4" gap="$4">
+        <YStack p="$4" gap="$4">
           <H2 color="$gray12">
             Transaction History
           </H2>
 
           {/* Statistics Card */}
           {stats && (
-            <Card bordered padding="$4">
-              <Text fontSize="$5" fontWeight="bold" marginBottom="$3">
+            <Card bordered p="$4">
+              <Text fontSize="$5" fontWeight="bold" mb="$3">
                 Overview
               </Text>
               <YStack gap="$2">
-                <XStack justifyContent="space-between">
+                <XStack justify="space-between">
                   <Text color="$gray11">Total Transactions:</Text>
                   <Text fontWeight="bold">{stats.transactionCount}</Text>
                 </XStack>
-                <XStack justifyContent="space-between">
+                <XStack justify="space-between">
                   <Text color="$gray11">Coins Added:</Text>
                   <Text fontWeight="bold" color="$green10">+{stats.addedCoins}</Text>
                 </XStack>
-                <XStack justifyContent="space-between">
+                <XStack justify="space-between">
                   <Text color="$gray11">Coins Removed:</Text>
                   <Text fontWeight="bold" color="$red10">{stats.removedCoins}</Text>
                 </XStack>
@@ -124,7 +124,7 @@ export default function TransactionsScreen() {
               flex={1}
               placeholder="Search transactions..."
               value={searchTerm}
-              onChangeText={setSearchTerm}
+              onChangeText={(e) => setSearchTerm(e.nativeEvent.text)}
             />
             <Button icon={Search} disabled />
           </XStack>
@@ -132,22 +132,22 @@ export default function TransactionsScreen() {
           {/* Transactions List */}
           <YStack gap="$3">
             {filteredTransactions?.length === 0 && (
-              <Card padding="$4" bordered>
-                <Text color="$gray11" textAlign="center">
+              <Card p="$4" bordered>
+                <Text color="$gray11" text="center">
                   No transactions found
                 </Text>
               </Card>
             )}
             
             {filteredTransactions?.map((transaction) => (
-              <Card key={transaction.id} bordered padding="$3">
+              <Card key={transaction.id} bordered p="$3">
                 <YStack gap="$2">
-                  <XStack justifyContent="space-between" alignItems="center">
+                  <XStack justify="space-between" items="center">
                     <Text fontSize="$5" fontWeight="bold">
                       {transaction.group.name}
                     </Text>
                     <Badge 
-                      backgroundColor={transaction.amount > 0 ? "$green10" : "$red10"}
+                      bg={transaction.amount > 0 ? "$green10" : "$red10"}
                     >
                       {transaction.amount > 0 ? "+" : ""}{transaction.amount}
                     </Badge>

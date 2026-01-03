@@ -9,7 +9,7 @@ interface UserPaginationProps {
 
 const UserPagination = ({ currentPage, totalPages, onPageChange }: UserPaginationProps) => {
     return (
-        <XStack justifyContent="space-between" alignItems="center" padding="$3" gap="$2">
+        <XStack justify="space-between" items="center" p="$3" gap="$2">
             <Button
                 size="$3"
                 icon={<ChevronLeft size={16} />}

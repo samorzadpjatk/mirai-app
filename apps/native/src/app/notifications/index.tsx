@@ -116,9 +116,9 @@ export default function NotificationsScreen() {
 
   if (isLoading || isLoadingUser) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Spinner size="large" />
-        <Text marginTop="$4" color="$gray11">
+        <Text mt="$4" color="$gray11">
           Loading notifications...
         </Text>
       </YStack>
@@ -132,14 +132,14 @@ export default function NotificationsScreen() {
 
   if (isError) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Text color="$red10" fontSize="$6" fontWeight="bold">
           Error loading notifications
         </Text>
-        <Text color="$gray11" marginTop="$2" textAlign="center">
+        <Text color="$gray11" mt="$2" text="center">
           {error?.message || "Something went wrong"}
         </Text>
-        <Button marginTop="$4" onPress={() => void refetch()}>
+        <Button mt="$4" onPress={() => void refetch()}>
           Try Again
         </Button>
       </YStack>
@@ -147,7 +147,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} bg="$background">
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -156,8 +156,8 @@ export default function NotificationsScreen() {
           />
         }
       >
-        <YStack padding="$4" gap="$4">
-          <XStack justifyContent="space-between" alignItems="center">
+        <YStack p="$4" gap="$4">
+          <XStack justify="space-between" items="center">
             <H2 color="$gray12">Notification Schedules</H2>
             
             {/* Create Schedule Dialog */}
@@ -170,7 +170,7 @@ export default function NotificationsScreen() {
 
               <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
-                  <Sheet.Frame padding="$4" gap="$4">
+                  <Sheet.Frame p="$4" gap="$4">
                     <Adapt.Contents />
                   </Sheet.Frame>
                   <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
@@ -179,9 +179,9 @@ export default function NotificationsScreen() {
 
               <Dialog.Portal>
                 <Dialog.Overlay key="overlay" animation="quick" opacity={0.5} />
-                <Dialog.Content bordered elevate key="content" gap="$4" animation="quick" maxHeight="80%">
+                <Dialog.Content bordered elevate key="content" gap="$4" animation="quick" maxH="80%">
                   <ScrollView>
-                    <YStack gap="$4" padding="$1">
+                    <YStack gap="$4" p="$1">
                       <Dialog.Title>Create Notification Schedule</Dialog.Title>
                       <Dialog.Description>
                         Schedule a notification to be sent at specific times
@@ -193,7 +193,7 @@ export default function NotificationsScreen() {
                           <Input
                             placeholder="E.g., Daily Ranking Update"
                             value={createName}
-                            onChangeText={setCreateName}
+                            onChangeText={(e) => setCreateName(e.nativeEvent.text)}
                           />
                         </YStack>
                         
@@ -225,7 +225,7 @@ export default function NotificationsScreen() {
                               <Input
                                 placeholder="Title"
                                 value={createTitle}
-                                onChangeText={setCreateTitle}
+                                onChangeText={(e) => setCreateTitle(e.nativeEvent.text)}
                               />
                             </YStack>
                             
@@ -234,7 +234,7 @@ export default function NotificationsScreen() {
                               <Input
                                 placeholder="Message content"
                                 value={createBody}
-                                onChangeText={setCreateBody}
+                                onChangeText={(e) => setCreateBody(e.nativeEvent.text)}
                               />
                             </YStack>
                             
@@ -243,7 +243,7 @@ export default function NotificationsScreen() {
                               <Input
                                 placeholder="https://..."
                                 value={createUrl}
-                                onChangeText={setCreateUrl}
+                                onChangeText={(e) => setCreateUrl(e.nativeEvent.text)}
                               />
                             </YStack>
                           </>
@@ -255,7 +255,7 @@ export default function NotificationsScreen() {
                             <Input
                               placeholder="YYYY-MM-DD"
                               value={createStartDate}
-                              onChangeText={setCreateStartDate}
+                              onChangeText={(e) => setCreateStartDate(e.nativeEvent.text)}
                             />
                           </YStack>
                           
@@ -264,7 +264,7 @@ export default function NotificationsScreen() {
                             <Input
                               placeholder="YYYY-MM-DD"
                               value={createEndDate}
-                              onChangeText={setCreateEndDate}
+                              onChangeText={(e) => setCreateEndDate(e.nativeEvent.text)}
                             />
                           </YStack>
                         </XStack>
@@ -276,7 +276,7 @@ export default function NotificationsScreen() {
                               keyboardType="numeric"
                               placeholder="9"
                               value={createHour}
-                              onChangeText={setCreateHour}
+                              onChangeText={(e) => setCreateHour(e.nativeEvent.text)}
                             />
                           </YStack>
                           
@@ -286,7 +286,7 @@ export default function NotificationsScreen() {
                               keyboardType="numeric"
                               placeholder="0"
                               value={createMinute}
-                              onChangeText={setCreateMinute}
+                              onChangeText={(e) => setCreateMinute(e.nativeEvent.text)}
                             />
                           </YStack>
                         </XStack>
@@ -294,7 +294,7 @@ export default function NotificationsScreen() {
                     </YStack>
                   </ScrollView>
                   
-                  <XStack gap="$3" justifyContent="flex-end">
+                  <XStack gap="$3" justify="flex-end">
                     <Dialog.Close asChild>
                       <Button>Cancel</Button>
                     </Dialog.Close>
@@ -312,22 +312,22 @@ export default function NotificationsScreen() {
           </XStack>
           
           {schedules?.length === 0 && (
-            <Card padding="$4" bordered>
-              <Text color="$gray11" textAlign="center">
+            <Card p="$4" bordered>
+              <Text color="$gray11" text="center">
                 No notification schedules found. Create your first schedule!
               </Text>
             </Card>
           )}
           
           {schedules?.map((schedule) => (
-            <Card key={schedule.id} bordered padding="$4">
+            <Card key={schedule.id} bordered p="$4">
               <YStack gap="$3">
-                <XStack justifyContent="space-between" alignItems="center">
+                <XStack justify="space-between" items="center">
                   <YStack flex={1}>
                     <Text fontSize="$6" fontWeight="bold" color="$color">
                       {schedule.name}
                     </Text>
-                    <Text fontSize="$2" color="$gray10" marginTop="$1">
+                    <Text fontSize="$2" color="$gray10" mt="$1">
                       Created by {schedule.createdBy.name ?? schedule.createdBy.email} • {formatRelativeTime(schedule.createdAt)}
                     </Text>
                   </YStack>
@@ -348,13 +348,13 @@ export default function NotificationsScreen() {
                 </XStack>
                 
                 <XStack gap="$2" flexWrap="wrap">
-                  <Text paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
+                  <Text px="$2" py="$1" rounded="$2" fontSize="$2">
                     {schedule.isActive ? "Active" : "Inactive"}
                   </Text>
-                  <Text paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
+                  <Text px="$2" py="$1" rounded="$2" fontSize="$2">
                     {schedule.notificationType}
                   </Text>
-                  <Text paddingHorizontal="$2" paddingVertical="$1" borderRadius="$2" fontSize="$2">
+                  <Text px="$2" py="$1" rounded="$2" fontSize="$2">
                     {String(schedule.hour).padStart(2, '0')}:{String(schedule.minute).padStart(2, '0')}
                   </Text>
                 </XStack>
@@ -365,7 +365,7 @@ export default function NotificationsScreen() {
                   </Text>
                   
                   {schedule.notification && (
-                    <YStack gap="$1" padding="$2" backgroundColor="$background" borderRadius="$2">
+                    <YStack gap="$1" p="$2" bg="$background" rounded="$2">
                       <Text fontSize="$3" fontWeight="bold">
                         {schedule.notification.title}
                       </Text>
@@ -373,7 +373,7 @@ export default function NotificationsScreen() {
                         {schedule.notification.body}
                       </Text>
                       {schedule.notification.url && (
-                        <Text fontSize="$2" color="$blue10">
+                        <Text fontSize="$2" color="#3b82f6">
                           {schedule.notification.url}
                         </Text>
                       )}
@@ -396,7 +396,7 @@ export default function NotificationsScreen() {
               Are you sure you want to delete this notification schedule? This action cannot be undone.
             </AlertDialog.Description>
             
-            <XStack gap="$3" justifyContent="flex-end" marginTop="$4">
+            <XStack gap="$3" justify="flex-end" mt="$4">
               <AlertDialog.Cancel asChild>
                 <Button>Cancel</Button>
               </AlertDialog.Cancel>

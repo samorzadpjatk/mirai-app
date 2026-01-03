@@ -59,8 +59,8 @@ const CoinOperationFormCard = ({
     const showWarning = operation === "remove" && selectedGroupId && amount && requestedAmount > currentCoins;
 
     return (
-        <Card bordered padding="$4">
-            <H3 marginBottom="$4">Treasury Operations</H3>
+        <Card bordered p="$4">
+            <H3 mb="$4">Treasury Operations</H3>
 
             <YStack gap="$4">
                 <XStack gap="$3">
@@ -121,7 +121,7 @@ const CoinOperationFormCard = ({
                     <Input
                         keyboardType="numeric"
                         value={amount}
-                        onChangeText={setAmount}
+                        onChangeText={(e) => setAmount(e.nativeEvent.text)}
                         placeholder="e.g. 100"
                     />
                 </YStack>
@@ -130,7 +130,7 @@ const CoinOperationFormCard = ({
                     <Label fontWeight="bold">Justification (optional)</Label>
                     <TextArea
                         value={reason}
-                        onChangeText={setReason}
+                        onChangeText={(e) => setReason(e.nativeEvent.text)}
                         placeholder="e.g. Reward for Victory in the Tournament"
                         numberOfLines={3}
                     />
@@ -151,7 +151,7 @@ const CoinOperationFormCard = ({
                 </Button>
 
                 {showWarning && (
-                    <Card backgroundColor="$red2" borderColor="$red6" bordered padding="$3">
+                    <Card bg="$red2" borderColor="$red6" bordered p="$3">
                         <Paragraph color="$red10">
                             ⚠️ Beware: The guild's treasury holds a mere {currentCoins} coins,
                             yet you dare to seize {requestedAmount} coins!

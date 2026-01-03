@@ -41,7 +41,7 @@ const AssignUserToGroupFormDialog = ({
 
             <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
-                    <Sheet.Frame padding="$4" gap="$4">
+                    <Sheet.Frame p="$4" gap="$4">
                         <Adapt.Contents />
                     </Sheet.Frame>
                     <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
@@ -87,7 +87,7 @@ const AssignUserToGroupFormDialog = ({
                         </Select>
                     </YStack>
 
-                    <XStack gap="$3" justifyContent="flex-end">
+                    <XStack gap="$3" justify="flex-end">
                         <Dialog.Close asChild>
                             <Button >Cancel</Button>
                         </Dialog.Close>

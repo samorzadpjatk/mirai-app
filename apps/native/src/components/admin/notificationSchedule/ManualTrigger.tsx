@@ -26,7 +26,7 @@ const ManualTrigger = ({ groups, onSend }: ManualTriggerProps) => {
     };
 
     return (
-        <Card bordered padding="$4">
+        <Card bordered p="$4">
             <YStack gap="$4">
                 <H3>Send Manual Notification</H3>
                 
@@ -64,13 +64,13 @@ const ManualTrigger = ({ groups, onSend }: ManualTriggerProps) => {
                 <Input
                     placeholder="Title"
                     value={title}
-                    onChangeText={setTitle}
+                    onChangeText={(e) => setTitle(e.nativeEvent.text)}
                 />
 
                 <TextArea
                     placeholder="Message"
                     value={message}
-                    onChangeText={setMessage}
+                    onChangeText={(e) => setMessage(e.nativeEvent.text)}
                     numberOfLines={5}
                 />
 

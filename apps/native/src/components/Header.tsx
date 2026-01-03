@@ -17,13 +17,13 @@ export default function Header({
   userEmail,
 }: HeaderProps) {
   return (
-    <YStack space="$4" alignItems="center">
+    <YStack space="$4" items="center">
       <Logo size={120} />
-      <YStack space="$2" alignItems="center">
+      <YStack space="$2" items="center">
         <H1
           fontSize="$11"
           fontWeight="900"
-          textAlign="center"
+          text="center"
           letterSpacing={-1}
           animation="quick"
           enterStyle={{ y: -20, opacity: 0 }}
@@ -33,7 +33,7 @@ export default function Header({
           {title}
         </H1>
         {showUserEmail && userEmail && (
-          <XStack space="$2" alignItems="center">
+          <XStack space="$2" items="center">
             <User size={16} />
             <Text
               fontSize="$4"

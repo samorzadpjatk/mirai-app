@@ -45,7 +45,7 @@ const CreateGroupDialog = ({ adminUsers, isLoading, onRefresh, onCreate }: Creat
 
             <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
-                    <Sheet.Frame padding="$4" gap="$4">
+                    <Sheet.Frame p="$4" gap="$4">
                         <Adapt.Contents />
                     </Sheet.Frame>
                     <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
@@ -82,7 +82,7 @@ const CreateGroupDialog = ({ adminUsers, isLoading, onRefresh, onCreate }: Creat
                         Forge a new Guild for the brave participants of the event.
                     </Dialog.Description>
 
-                    <YStack gap="$4" marginTop="$4">
+                    <YStack gap="$4" mt="$4">
                         <YStack gap="$2">
                             <Label htmlFor="name" fontWeight="bold">
                                 The Guild's Heralded Name
@@ -90,12 +90,12 @@ const CreateGroupDialog = ({ adminUsers, isLoading, onRefresh, onCreate }: Creat
                             <Input
                                 id="name"
                                 value={name}
-                                onChangeText={setName}
+                                onChangeText={(e) => setName(e.nativeEvent.text)}
                                 placeholder="e.g. Knights of the Round Table"
                             />
                         </YStack>
 
-                        <XStack gap="$2" alignItems="center" flexWrap="wrap">
+                        <XStack gap="$2" items="center" flexWrap="wrap">
                             <Label fontWeight="bold">
                                 Assigned <Paragraph size="$2" color="$gray11">(optional)</Paragraph>
                             </Label>
@@ -133,7 +133,7 @@ const CreateGroupDialog = ({ adminUsers, isLoading, onRefresh, onCreate }: Creat
                         </XStack>
                     </YStack>
 
-                    <XStack gap="$2" marginTop="$4" justifyContent="flex-end">
+                    <XStack gap="$2" mt="$4" justify="flex-end">
                         <Dialog.Close asChild>
                             <Button >
                                 Cancel

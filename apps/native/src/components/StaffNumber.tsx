@@ -9,7 +9,7 @@ const StaffNumber = () => {
 
     return (
         <Card size="$2" bordered>
-            <XStack alignItems="center" width="100%" justifyContent="flex-start" gap="$2">
+            <XStack items="center" width="100%" justify="flex-start" gap="$2">
                 <Smartphone size={16} />
                 <Paragraph>
                     Staff number: <Anchor textDecorationLine="underline" onPress={handlePress}>+48 734 095 706</Anchor>

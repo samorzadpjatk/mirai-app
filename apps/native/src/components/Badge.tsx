@@ -8,11 +8,11 @@ interface BadgeProps extends XStackProps {
 export const Badge = ({ children, ...props }: BadgeProps) => {
   return (
     <XStack
-      paddingHorizontal="$2"
-      paddingVertical="$1"
-      borderRadius="$4"
-      alignItems="center"
-      justifyContent="center"
+      px="$2"
+      py="$1"
+      rounded="$4"
+      items="center"
+      justify="center"
       {...props}
     >
       {typeof children === "string" || typeof children === "number" ? (

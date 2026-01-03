@@ -39,7 +39,7 @@ const TransactionListFilterPopover = ({ onFilterChange }: TransactionListFilterP
                     },
                 ]}
             >
-                <YStack gap="$3" padding="$3">
+                <YStack gap="$3" p="$3">
                     <Select value={filter} onValueChange={handleFilterChange}>
                         <Select.Trigger width="$15" iconAfter={null}>
                             <Select.Value />

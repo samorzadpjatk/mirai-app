@@ -51,10 +51,10 @@ export default function Home() {
     <>
       <StatusBar style="auto" />
       <YStack
-        backgroundColor="$background"
+        bg="$background"
         flex={1}
-        padding="$6"
-        paddingTop="$12"
+        p="$6"
+        pt="$12"
       >
         <YStack space="$6" flex={1}>
           <Header

@@ -32,21 +32,21 @@ export default function NotificationSettings() {
   };
 
   return (
-    <Card elevate bordered padding="$4">
+    <Card elevate bordered p="$4">
       <YStack gap="$2">
         <H3>Push Notifications</H3>
         <YStack gap="$3">
           {!isSupported && (
-            <XStack justifyContent="space-between" alignItems="center">
+            <XStack justify="space-between" items="center">
               <Paragraph>Browser Support:</Paragraph>
               <Badge>Not Supported</Badge>
             </XStack>
           )}
           {isSupported && permission !== "granted" && (
             <YStack gap="$2">
-              <XStack justifyContent="space-between" alignItems="center">
+              <XStack justify="space-between" items="center">
                 <Paragraph>Permission Status:</Paragraph>
-                <YStack gap="$2" alignItems="flex-end">
+                <YStack gap="$2" items="flex-end">
                   {getPermissionBadge()}
                   <Button
                     size="$2"
@@ -60,7 +60,7 @@ export default function NotificationSettings() {
             </YStack>
           )}
           {permission === "granted" && (
-            <XStack justifyContent="space-between" alignItems="center">
+            <XStack justify="space-between" items="center">
               <Paragraph>Subscription Status:</Paragraph>
               <Badge>
                 {isSubscribed ? "Subscribed" : isSubscribedElsewhere ? "Subscribed Elsewhere" : "Not Subscribed"}

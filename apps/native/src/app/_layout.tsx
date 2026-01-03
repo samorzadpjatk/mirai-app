@@ -59,8 +59,8 @@ export default function RootLayout() {
         supabaseClient={supabaseClient}
       >
         <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-          <YStack flex={1} backgroundColor="$background">
-            <YStack padding="$4" paddingTop="$6">
+          <YStack flex={1} bg="$background">
+            <YStack p="$4" pt="$6">
               <ThemeSwitcher
                 onToggle={() => setTheme(theme === "light" ? "dark" : "light")}
                 currentTheme={theme}

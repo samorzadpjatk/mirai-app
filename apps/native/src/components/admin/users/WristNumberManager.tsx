@@ -55,7 +55,7 @@ export default function WristNumberManager({
 
       <Adapt when={true} platform="touch">
         <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
-          <Sheet.Frame padding="$4" gap="$4">
+          <Sheet.Frame p="$4" gap="$4">
             <Adapt.Contents />
           </Sheet.Frame>
           <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
@@ -75,7 +75,7 @@ export default function WristNumberManager({
               <Paragraph>Wrist Number</Paragraph>
               <Input
                 value={wristNumber}
-                onChangeText={setWristNumber}
+                onChangeText={(e) => setWristNumber(e.nativeEvent.text)}
                 placeholder="Enter wrist number"
               />
             </YStack>
@@ -85,7 +85,7 @@ export default function WristNumberManager({
             )}
           </YStack>
 
-          <XStack gap="$3" justifyContent="flex-end">
+          <XStack gap="$3" justify="flex-end">
             {currentWristNumber && (
               <Button  onPress={handleRemove}>
                 Remove

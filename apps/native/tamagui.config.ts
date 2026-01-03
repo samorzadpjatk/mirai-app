@@ -1,4 +1,4 @@
-import { config as defaultConfig } from "@tamagui/config/v3";
+import { defaultConfig } from "@tamagui/config/v4";
 import { themes } from "./themes";
 import { createTamagui, createFont } from "tamagui";
 

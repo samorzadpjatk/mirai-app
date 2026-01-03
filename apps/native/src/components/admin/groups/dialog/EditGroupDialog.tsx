@@ -80,7 +80,7 @@ const EditGroupDialog = ({
 
             <Adapt when={true} platform="touch">
                 <Sheet animation="medium" zIndex={200000} modal dismissOnSnapToBottom>
-                    <Sheet.Frame padding="$4" gap="$4">
+                    <Sheet.Frame p="$4" gap="$4">
                         <Adapt.Contents />
                     </Sheet.Frame>
                     <Sheet.Overlay animation="lazy" enterStyle={{ opacity: 0 }} exitStyle={{ opacity: 0 }} />
@@ -117,7 +117,7 @@ const EditGroupDialog = ({
                         Alter the Guild's Records "{group?.name}".
                     </Dialog.Description>
 
-                    <YStack gap="$4" marginTop="$4">
+                    <YStack gap="$4" mt="$4">
                         <YStack gap="$2">
                             <Label htmlFor="name" fontWeight="bold">
                                 The Guild's Heralded Name
@@ -125,12 +125,12 @@ const EditGroupDialog = ({
                             <Input
                                 id="name"
                                 value={name}
-                                onChangeText={setName}
+                                onChangeText={(e) => setName(e.nativeEvent.text)}
                                 placeholder="e.g. Knights of the Round Table"
                             />
                         </YStack>
 
-                        <XStack gap="$2" alignItems="center" flexWrap="wrap">
+                        <XStack gap="$2" items="center" flexWrap="wrap">
                             <Label fontWeight="bold">
                                 Assigned
                             </Label>
@@ -168,7 +168,7 @@ const EditGroupDialog = ({
 
                         <YStack gap="$2">
                             <Paragraph fontWeight="bold">Current Guild Stats:</Paragraph>
-                            <XStack gap="$4" marginTop="$2" flexWrap="wrap">
+                            <XStack gap="$4" mt="$2" flexWrap="wrap">
                                 <Badge>
                                     Code: {group?.code}
                                 </Badge>
@@ -182,7 +182,7 @@ const EditGroupDialog = ({
                         </YStack>
                     </YStack>
 
-                    <XStack gap="$3" marginTop="$4" justifyContent="flex-end">
+                    <XStack gap="$3" mt="$4" justify="flex-end">
                         <Dialog.Close asChild>
                             <Button >
                                 Cancel

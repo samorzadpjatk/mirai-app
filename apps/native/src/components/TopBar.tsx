@@ -20,26 +20,26 @@ export default function TopBar({ user, isAuthenticated, onHomePress, onSignPress
   return (
     <XStack
       position="sticky"
-      justifyContent="space-between"
-      alignItems="center"
+      justify="space-between"
+      items="center"
       gap="$2"
       width="100%"
-      paddingHorizontal="$3"
-      paddingVertical="$2"
+      px="$3"
+      py="$2"
     >
       <Button size="$3" circular icon={Home} onPress={onHomePress} />
-      <XStack alignItems="center" gap="$2">
+      <XStack items="center" gap="$2">
         {isAuthenticated && user && (
-          <XStack alignItems="center" justifyContent="center" gap="$2">
+          <XStack items="center" justify="center" gap="$2">
             {user.image ? (
               <Avatar circular size="$4">
                 <Avatar.Image src={user.image} />
-                <Avatar.Fallback backgroundColor="$blue10">
+                <Avatar.Fallback bg="#3b82f6">
                   <Paragraph color="$background">{getInitials(user.name)}</Paragraph>
                 </Avatar.Fallback>
               </Avatar>
             ) : (
-              <Circle size="$4" backgroundColor="$blue10">
+              <Circle size="$4" bg="#3b82f6">
                 <Paragraph color="$background">{getInitials(user.name)}</Paragraph>
               </Circle>
             )}

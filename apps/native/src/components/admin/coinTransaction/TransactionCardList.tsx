@@ -17,9 +17,9 @@ const TransactionCardList = ({ transactions }: TransactionCardListProps) => {
     return (
         <YStack gap="$3">
             {transactions.map((transaction) => (
-                <Card key={transaction.id} bordered padding="$3">
+                <Card key={transaction.id} bordered p="$3">
                     <YStack gap="$2">
-                        <XStack justifyContent="space-between" alignItems="center">
+                        <XStack justify="space-between" items="center">
                             <Paragraph fontWeight="bold">{transaction.group.name}</Paragraph>
                             <Badge>
                                 {transaction.amount > 0 ? "+" : ""}{transaction.amount}

@@ -14,12 +14,12 @@ export default function LoadingScreen({
       <StatusBar style="auto" />
       <YStack
         flex={1}
-        backgroundColor="$background"
-        alignItems="center"
-        justifyContent="center"
+        bg="$background"
+        items="center"
+        justify="center"
       >
         <Spinner size="large" />
-        <Text marginTop="$4">
+        <Text mt="$4">
           {message}
         </Text>
       </YStack>

@@ -89,9 +89,9 @@ export default function CoinsScreen() {
 
   if (isLoading) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Spinner size="large" />
-        <Text marginTop="$4">
+        <Text mt="$4">
           Loading...
         </Text>
       </YStack>
@@ -109,7 +109,7 @@ export default function CoinsScreen() {
   const showWarning = operation === "remove" && selectedGroupId && amount && !isNaN(requestedAmount) && requestedAmount > currentCoins;
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} bg="$background">
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -121,30 +121,30 @@ export default function CoinsScreen() {
           />
         }
       >
-        <YStack padding="$4" gap="$4">
+        <YStack p="$4" gap="$4">
           <H2 color="$gray12">
             Coin Operations
           </H2>
 
           {/* Statistics Card */}
-          <Card bordered padding="$4">
-            <Text fontSize="$5" fontWeight="bold" marginBottom="$3">
+          <Card bordered p="$4">
+            <Text fontSize="$5" fontWeight="bold" mb="$3">
               Statistics
             </Text>
             <YStack gap="$2">
-              <XStack justifyContent="space-between">
+              <XStack justify="space-between">
                 <Text color="$gray11">Total Transactions:</Text>
                 <Text fontWeight="bold">{stats.transactionCount}</Text>
               </XStack>
-              <XStack justifyContent="space-between">
+              <XStack justify="space-between">
                 <Text color="$gray11">Coins Added:</Text>
                 <Text fontWeight="bold" color="$green10">+{stats.addedCoins}</Text>
               </XStack>
-              <XStack justifyContent="space-between">
+              <XStack justify="space-between">
                 <Text color="$gray11">Coins Removed:</Text>
                 <Text fontWeight="bold" color="$red10">{stats.removedCoins}</Text>
               </XStack>
-              <XStack justifyContent="space-between">
+              <XStack justify="space-between">
                 <Text color="$gray11">Net Balance:</Text>
                 <Text fontWeight="bold">{stats.netBalance}</Text>
               </XStack>
@@ -152,8 +152,8 @@ export default function CoinsScreen() {
           </Card>
 
           {/* Operation Form */}
-          <Card bordered padding="$4">
-            <Text fontSize="$5" fontWeight="bold" marginBottom="$3">
+          <Card bordered p="$4">
+            <Text fontSize="$5" fontWeight="bold" mb="$3">
               Treasury Operations
             </Text>
             
@@ -219,7 +219,7 @@ export default function CoinsScreen() {
                 <Input
                   keyboardType="numeric"
                   value={amount}
-                  onChangeText={setAmount}
+                  onChangeText={(e) => setAmount(e.nativeEvent.text)}
                   placeholder="e.g. 100"
                 />
               </YStack>
@@ -229,7 +229,7 @@ export default function CoinsScreen() {
                 <Text fontWeight="bold">Justification (optional)</Text>
                 <TextArea
                   value={reason}
-                  onChangeText={setReason}
+                  onChangeText={(e) => setReason(e.nativeEvent.text)}
                   placeholder="e.g. Reward for Victory in the Tournament"
                   numberOfLines={3}
                 />
@@ -237,7 +237,7 @@ export default function CoinsScreen() {
 
               {/* Warning Message */}
               {showWarning && (
-                <Card backgroundColor="$red2" borderColor="$red6" bordered padding="$3">
+                <Card bg="$red2" borderColor="$red6" bordered p="$3">
                   <Text color="$red10">
                     ⚠️ Warning: The guild's treasury holds {currentCoins} coins, but you're trying to seize {requestedAmount} coins!
                   </Text>
@@ -262,14 +262,14 @@ export default function CoinsScreen() {
           </Card>
 
           {/* Groups List */}
-          <Card bordered padding="$4">
-            <Text fontSize="$5" fontWeight="bold" marginBottom="$3">
+          <Card bordered p="$4">
+            <Text fontSize="$5" fontWeight="bold" mb="$3">
               Guild Treasuries
             </Text>
             <YStack gap="$3">
               {groups?.sort((a, b) => b.coins - a.coins).map((group, index) => (
-                <XStack key={group.id} justifyContent="space-between" alignItems="center">
-                  <XStack gap="$2" alignItems="center">
+                <XStack key={group.id} justify="space-between" items="center">
+                  <XStack gap="$2" items="center">
                     {index < 3 && (
                       <Text fontSize="$5">
                         {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}

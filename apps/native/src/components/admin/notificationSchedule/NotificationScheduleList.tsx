@@ -21,9 +21,9 @@ const NotificationScheduleList = ({ schedules, onDelete }: NotificationScheduleL
             <YStack gap="$4">
                 <H3>Scheduled Notifications</H3>
                 {schedules.map((schedule) => (
-                    <Card key={schedule.id} bordered padding="$4">
+                    <Card key={schedule.id} bordered p="$4">
                         <YStack gap="$2">
-                            <XStack justifyContent="space-between" alignItems="center">
+                            <XStack justify="space-between" items="center">
                                 <Paragraph fontWeight="bold">{schedule.title}</Paragraph>
                                 <Badge>
                                     {schedule.sent ? "Sent" : "Pending"}
