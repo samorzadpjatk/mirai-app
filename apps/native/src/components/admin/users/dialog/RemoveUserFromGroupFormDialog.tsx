@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, XStack, AlertDialog, Paragraph } from "tamagui";
+import { Button, XStack, AlertDialog } from "tamagui";
 import { Minus } from "@tamagui/lucide-icons";
 
 interface RemoveUserFromGroupFormDialogProps {

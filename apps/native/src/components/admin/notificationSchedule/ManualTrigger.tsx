@@ -1,4 +1,4 @@
-import { Card, YStack, XStack, H3, Input, TextArea, Select, Button, Adapt, Sheet } from "tamagui";
+import { Card, YStack, H3, Input, TextArea, Select, Button, Adapt, Sheet } from "tamagui";
 import { useState } from "react";
 
 interface Group {

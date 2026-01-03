@@ -33,7 +33,7 @@ const CoinOperationFormCard = ({
         setReason("");
     };
 
-    const handleSubmit = async () => {
+    const handleSubmit = () => {
         if (!selectedGroupId || !amount || parseInt(amount) <= 0) return;
 
         setIsSubmitting(true);

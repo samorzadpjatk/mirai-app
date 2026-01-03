@@ -32,7 +32,6 @@ interface EditGroupDialogProps {
 }
 
 const EditGroupDialog = ({
-    selectedGroupId,
     group,
     adminUsers,
     isLoading,
@@ -44,7 +43,7 @@ const EditGroupDialog = ({
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
 
-    const handleEditSubmit = async () => {
+    const handleEditSubmit = () => {
         if (!group || !name?.trim() || !organizerId) return;
         
         setIsUpdating(true);

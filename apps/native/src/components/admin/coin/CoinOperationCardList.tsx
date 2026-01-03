@@ -19,7 +19,7 @@ interface Group {
     organizer: {
         name: string | null;
     };
-    members: Array<{ id: string }>;
+    members: { id: string }[];
     coinTransactions: CoinTransaction[];
 }
 
@@ -46,12 +46,16 @@ const CoinOperationCardList = ({ groups, isLoading }: CoinOperationCardListProps
         <Suspense fallback={<CoinOperationCardListSkeleton />}>
             <YStack gap="$4">
                 <H3>Coins in Possession</H3>
-                <Input
-                    placeholder="Filter Guilds..."
-                    value={filterText}
-                    onChangeText={setFilterText}
-                    icon={<Search size={16} />}
-                />
+                <YStack>
+                    <Input
+                        placeholder="Filter Guilds..."
+                        value={filterText}
+                        onChangeText={setFilterText}
+                    />
+                    <YStack position="absolute" right="$3" top="$3" pointerEvents="none">
+                        <Search size={16} />
+                    </YStack>
+                </YStack>
                 <YStack justifyContent="center" gap="$3">
                     {filteredGroups?.length === 0 && (
                         <YStack>

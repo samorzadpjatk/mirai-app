@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, YStack, XStack, Select, Dialog, Adapt, Sheet, Paragraph } from "tamagui";
+import { Button, YStack, XStack, Select, Dialog, Adapt, Sheet } from "tamagui";
 import { Plus } from "@tamagui/lucide-icons";
 
 interface Group {

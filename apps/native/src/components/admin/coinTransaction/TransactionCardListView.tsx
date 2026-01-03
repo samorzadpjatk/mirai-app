@@ -1,4 +1,4 @@
-import { YStack, H3, Input, Card } from "tamagui";
+import { YStack, H3, Input } from "tamagui";
 import { Search } from "@tamagui/lucide-icons";
 import { Suspense } from "react";
 import TransactionCardListSkelethon from "~/components/skelethons/TransactionCardListSkelethon";
@@ -13,11 +13,15 @@ const TransactionCardListView = ({ children, onSearchChange }: TransactionCardLi
         <Suspense fallback={<TransactionCardListSkelethon />}>
             <YStack gap="$4">
                 <H3>Transaction History</H3>
-                <Input
-                    placeholder="Search transactions..."
-                    onChangeText={onSearchChange}
-                    icon={<Search size={16} />}
-                />
+                <YStack>
+                    <Input
+                        placeholder="Search transactions..."
+                        onChangeText={onSearchChange}
+                    />
+                    <YStack position="absolute" right="$3" top="$3" pointerEvents="none">
+                        <Search size={16} />
+                    </YStack>
+                </YStack>
                 {children}
             </YStack>
         </Suspense>

@@ -1,5 +1,5 @@
 import { XStack, Button, Paragraph } from "tamagui";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "@tamagui/lucide-icons";
+import { ChevronLeft, ChevronRight } from "@tamagui/lucide-icons";
 
 interface UserPaginationProps {
     currentPage: number;

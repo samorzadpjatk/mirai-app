@@ -20,7 +20,7 @@ const CreateGroupDialog = ({ adminUsers, isLoading, onRefresh, onCreate }: Creat
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
 
-    const handleCreateSubmit = async () => {
+    const handleCreateSubmit = () => {
         if (name.trim() && onCreate) {
             setIsCreating(true);
             const finalOrganizerId = organizerId === "__default__" ? undefined : organizerId || undefined;
