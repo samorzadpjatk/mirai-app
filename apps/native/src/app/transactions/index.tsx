@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { YStack, H2, Spinner, Text, ScrollView, Card, XStack, Badge, Input, Button } from "tamagui";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { RefreshControl } from "react-native";
 import { Search } from "@tamagui/lucide-icons";
 import { formatRelativeTime } from "~/utils/format";
+import { useRouter } from "expo-router";
 
 interface Transaction {
   id: string;
@@ -23,7 +24,23 @@ interface Transaction {
 
 export default function TransactionsScreen() {
   const trpc = useTRPC();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Check user permissions
+  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
+    trpc.user.getMy.queryOptions()
+  );
+
+  // Redirect if user doesn't have access
+  useEffect(() => {
+    if (!isLoadingUser && currentUser) {
+      const hasAccess = currentUser.isAdmin || currentUser.isModerator || currentUser.isServiceAccount;
+      if (!hasAccess) {
+        router.replace("/");
+      }
+    }
+  }, [currentUser, isLoadingUser, router]);
   
   const { data: transactions, isLoading, isError, error, refetch, isFetching } = useQuery<Transaction[]>(
     trpc.coinTransaction.getAll.queryOptions()
@@ -33,7 +50,7 @@ export default function TransactionsScreen() {
     trpc.coinTransaction.getStatistics.queryOptions()
   );
 
-  if (isLoading) {
+  if (isLoading || isLoadingUser) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Spinner size="large" color="$blue10" />
@@ -42,6 +59,11 @@ export default function TransactionsScreen() {
         </Text>
       </YStack>
     );
+  }
+
+  // Don't render if user doesn't have access
+  if (!currentUser?.isAdmin && !currentUser?.isModerator && !currentUser?.isServiceAccount) {
+    return null;
   }
 
   if (isError) {

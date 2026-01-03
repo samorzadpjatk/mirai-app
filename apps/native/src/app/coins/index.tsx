@@ -1,16 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { YStack, H2, Spinner, Text, ScrollView, Button, Card, XStack, Input, Select, TextArea, Adapt, Sheet } from "tamagui";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { RefreshControl } from "react-native";
 import { Plus, Minus } from "@tamagui/lucide-icons";
+import { useRouter } from "expo-router";
 
 export default function CoinsScreen() {
   const trpc = useTRPC();
+  const router = useRouter();
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [operation, setOperation] = useState<"add" | "remove">("add");
+  
+  // Check user permissions
+  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
+    trpc.user.getMy.queryOptions()
+  );
+
+  // Redirect if user doesn't have access
+  useEffect(() => {
+    if (!isLoadingUser && currentUser) {
+      const hasAccess = currentUser.isAdmin || currentUser.isModerator || currentUser.isServiceAccount;
+      if (!hasAccess) {
+        router.replace("/");
+      }
+    }
+  }, [currentUser, isLoadingUser, router]);
   
   const { data: groups, refetch: refetchGroups, isFetching: isFetchingGroups } = useQuery(
     trpc.group.getAll.queryOptions()
@@ -66,7 +83,7 @@ export default function CoinsScreen() {
     }
   };
 
-  const isLoading = !groups || !stats;
+  const isLoading = !groups || !stats || isLoadingUser;
   const isSubmitting = addCoinsMutation.isPending || removeCoinsMutation.isPending;
   const isFetching = isFetchingGroups || isFetchingStats;
 
@@ -79,6 +96,11 @@ export default function CoinsScreen() {
         </Text>
       </YStack>
     );
+  }
+
+  // Don't render if user doesn't have access
+  if (!currentUser?.isAdmin && !currentUser?.isModerator && !currentUser?.isServiceAccount) {
+    return null;
   }
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);

@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { YStack, H2, Spinner, Text, ScrollView, Button } from "tamagui";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { RefreshControl } from "react-native";
+import { useRouter } from "expo-router";
 
 interface Group {
   id: string;
@@ -31,6 +32,22 @@ interface Group {
 
 export default function GroupsScreen() {
   const trpc = useTRPC();
+  const router = useRouter();
+  
+  // Check user permissions
+  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
+    trpc.user.getMy.queryOptions()
+  );
+
+  // Redirect if user doesn't have access
+  useEffect(() => {
+    if (!isLoadingUser && currentUser) {
+      const hasAccess = currentUser.isAdmin || currentUser.isModerator || currentUser.isServiceAccount;
+      if (!hasAccess) {
+        router.replace("/");
+      }
+    }
+  }, [currentUser, isLoadingUser, router]);
   
   const { data: groups, isLoading, isError, error, refetch, isFetching } = useQuery<Group[]>(
     trpc.group.getAll.queryOptions()
@@ -66,7 +83,7 @@ export default function GroupsScreen() {
     updateGroupMutation.mutate({ id, name, organizerId });
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingUser) {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
         <Spinner size="large" color="$blue10" />
@@ -75,6 +92,11 @@ export default function GroupsScreen() {
         </Text>
       </YStack>
     );
+  }
+
+  // Don't render if user doesn't have access
+  if (!currentUser?.isAdmin && !currentUser?.isModerator && !currentUser?.isServiceAccount) {
+    return null;
   }
 
   if (isError) {
