@@ -113,7 +113,7 @@ export default function Home() {
           <YStack space="$3">
             {/* Admin/Moderator only features */}
             {hasAdminAccess && (
-              <>
+              <YStack space="$3">
                 <Button
                   size="$4"
                   backgroundColor="$blue9"
@@ -179,7 +179,7 @@ export default function Home() {
                 >
                   Notifications
                 </Button>
-              </>
+              </YStack>
             )}
             
             {/* Available to all users */}
