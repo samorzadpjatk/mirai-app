@@ -54,7 +54,7 @@ export default function Home() {
 
   // Check if user has admin/moderator privileges
   // Admin, Moderator, or Service Account can access admin features
-  const hasAdminAccess = currentUser?.isAdmin || currentUser?.isModerator || currentUser?.isServiceAccount;
+  const hasAdminAccess = currentUser?.isAdmin ?? currentUser?.isModerator ?? currentUser?.isServiceAccount;
 
   return (
     <>

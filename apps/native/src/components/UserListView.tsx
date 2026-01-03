@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
+ 
+ 
+ 
 import React, { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -19,27 +19,16 @@ import {
 import { User, Search, ChevronLeft, ChevronRight } from "@tamagui/lucide-icons";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 
-type UserListItem = {
+interface UserListItem {
   id: string;
-  name: string;
-  email: string;
+  name: string | null;
+  email: string | null;
   isAdmin: boolean;
   houseNumber: string | null;
   wristNumber: string | null;
   group: { id: string; name: string } | null;
-};
-
-type UserSearchData = {
-  users: UserListItem[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalCount: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-    limit: number;
-  };
-};
+  organizerGroup: { id: string; name: string }[];
+}
 
 /**
  * UserListView Component
@@ -56,7 +45,7 @@ export function UserListView() {
   const trpc = useTRPC();
   // tRPC Query - Fetching Data
   const { data, isLoading, isError, error, refetch, isFetching } =
-    useQuery<UserSearchData>(
+    useQuery(
       trpc.user.searchWithPagination.queryOptions({
         field: searchField,
         searchTerm: searchTerm || undefined,
@@ -65,11 +54,7 @@ export function UserListView() {
       }),
     );
 
-  const updateAdminStatus = useMutation<
-    unknown,
-    Error,
-    { userId: string; isAdmin: boolean }
-  >(
+  const updateAdminStatus = useMutation(
     trpc.user.updateUserAdminStatus.mutationOptions({
       onSuccess: () => {
         void refetch();

@@ -1,34 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { YStack, H2, Spinner, Text, ScrollView, Button, XStack, Card, Switch, Dialog, Input, Label, Adapt, Sheet, AlertDialog, Select } from "tamagui";
+import { YStack, H2, Spinner, Text, ScrollView, Button, XStack, Card, Dialog, Input, Label, Adapt, Sheet, AlertDialog, Select } from "tamagui";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import { Plus, Pencil, Trash2, Bell, BellOff } from "@tamagui/lucide-icons";
+import { Plus, Trash2, Bell, BellOff } from "@tamagui/lucide-icons";
 import { formatRelativeTime, formatDate } from "~/utils/format";
-
-interface NotificationSchedule {
-  id: string;
-  name: string;
-  notificationType: string;
-  startDate: Date;
-  endDate: Date;
-  hour: number;
-  minute: number;
-  isActive: boolean;
-  createdAt: Date;
-  createdBy: {
-    id: string;
-    name: string | null;
-    email: string | null;
-  };
-  notification?: {
-    id: string;
-    title: string;
-    body: string;
-    url?: string;
-  } | null;
-}
 
 export default function NotificationsScreen() {
   const trpc = useTRPC();
@@ -49,7 +26,7 @@ export default function NotificationsScreen() {
     }
   }, [currentUser, isLoadingUser, router]);
   
-  const { data: schedules, isLoading, isError, error, refetch, isFetching } = useQuery<NotificationSchedule[]>(
+  const { data: schedules, isLoading, isError, error, refetch, isFetching } = useQuery(
     trpc.notificationSchedule.getAll.queryOptions()
   );
 
@@ -83,7 +60,7 @@ export default function NotificationsScreen() {
         setCreateHour("9");
         setCreateMinute("0");
       },
-      onError: (err: Error) => {
+      onError: (err) => {
         console.error("Error creating schedule:", err);
       },
     })
@@ -95,7 +72,7 @@ export default function NotificationsScreen() {
         void refetch();
         setDeletingScheduleId(null);
       },
-      onError: (err: Error) => {
+      onError: (err) => {
         console.error("Error deleting schedule:", err);
       },
     })
@@ -106,7 +83,7 @@ export default function NotificationsScreen() {
       onSuccess: () => {
         void refetch();
       },
-      onError: (err: Error) => {
+      onError: (err) => {
         console.error("Error toggling schedule:", err);
       },
     })
@@ -222,7 +199,7 @@ export default function NotificationsScreen() {
                         
                         <YStack gap="$2">
                           <Label>Notification Type</Label>
-                          <Select value={createType} onValueChange={(val) => setCreateType(val as "custom" | "ranking")}>
+                          <Select value={createType} onValueChange={(val) => setCreateType(val)}>
                             <Select.Trigger>
                               <Select.Value />
                             </Select.Trigger>

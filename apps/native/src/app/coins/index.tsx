@@ -46,7 +46,7 @@ export default function CoinsScreen() {
         setAmount("");
         setReason("");
       },
-      onError: (err: Error) => {
+      onError: (err) => {
         console.error("Error adding coins:", err);
       },
     })
@@ -61,7 +61,7 @@ export default function CoinsScreen() {
         setAmount("");
         setReason("");
       },
-      onError: (err: Error) => {
+      onError: (err) => {
         console.error("Error removing coins:", err);
       },
     })

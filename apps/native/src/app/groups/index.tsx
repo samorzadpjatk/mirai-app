@@ -17,19 +17,19 @@ interface Group {
     name: string | null;
     email: string | null;
   };
-  members: Array<{
+  members: {
     id: string;
     name: string | null;
     email: string | null;
-  }>;
-  coinTransactions: Array<{
+  }[];
+  coinTransactions: {
     id: string;
     amount: number;
     admin: {
       id: string;
       name: string | null;
     };
-  }>;
+  }[];
 }
 
 export default function GroupsScreen() {
@@ -51,7 +51,7 @@ export default function GroupsScreen() {
     }
   }, [currentUser, isLoadingUser, router]);
   
-  const { data: groups, isLoading, isError, error, refetch, isFetching } = useQuery<Group[]>(
+  const { data: groups, isLoading, isError, error, refetch, isFetching } = useQuery(
     trpc.group.getAll.queryOptions()
   );
 
@@ -80,7 +80,7 @@ export default function GroupsScreen() {
         setCreateCode("");
         setCreateOrganizerId("");
       },
-      onError: (err: Error) => {
+      onError: (err) => {
         console.error("Error creating group:", err);
       },
     })
@@ -92,7 +92,7 @@ export default function GroupsScreen() {
         void refetch();
         setDeletingGroupId(null);
       },
-      onError: (err: Error) => {
+      onError: (err) => {
         console.error("Error deleting group:", err);
       },
     })
@@ -104,7 +104,7 @@ export default function GroupsScreen() {
         void refetch();
         setEditingGroup(null);
       },
-      onError: (err: Error) => {
+      onError: (err) => {
         console.error("Error updating group:", err);
       },
     })

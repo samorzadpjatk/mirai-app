@@ -1,4 +1,4 @@
-import { Button, Card, YStack, Paragraph, H3, XStack, Separator } from "tamagui";
+import { Button, Card, YStack, Paragraph, H3, XStack } from "tamagui";
 import { Badge } from "./Badge";
 import { useEffect } from "react";
 import { useNotifications } from "~/hooks/useNotifications";

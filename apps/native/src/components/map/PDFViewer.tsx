@@ -6,9 +6,9 @@ import { Linking } from "react-native";
 // Note: This is a simplified version for React Native.
 // For full PDF viewing on React Native, use react-native-pdf or similar library.
 
-type PDFViewerProps = {
+interface PDFViewerProps {
   src?: string;
-};
+}
 
 export default function PDFViewer({ src = "/dummy.pdf" }: PDFViewerProps) {
   const [isLoading] = useState(false);

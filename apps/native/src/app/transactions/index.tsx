@@ -8,21 +8,6 @@ import { Search } from "@tamagui/lucide-icons";
 import { formatRelativeTime } from "~/utils/format";
 import { useRouter } from "expo-router";
 
-interface Transaction {
-  id: string;
-  amount: number;
-  reason: string | null;
-  createdAt: Date;
-  admin: {
-    id: string;
-    name: string | null;
-  };
-  group: {
-    id: string;
-    name: string;
-  };
-}
-
 export default function TransactionsScreen() {
   const trpc = useTRPC();
   const router = useRouter();
@@ -43,7 +28,7 @@ export default function TransactionsScreen() {
     }
   }, [currentUser, isLoadingUser, router]);
   
-  const { data: transactions, isLoading, isError, error, refetch, isFetching } = useQuery<Transaction[]>(
+  const { data: transactions, isLoading, isError, error, refetch, isFetching } = useQuery(
     trpc.coinTransaction.getAll.queryOptions()
   );
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { XStack, Text, XStackProps } from "tamagui";
+import { XStack, Text, type XStackProps } from "tamagui";
 
 interface BadgeProps extends XStackProps {
   color?: string;
