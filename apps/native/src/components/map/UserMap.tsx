@@ -54,6 +54,7 @@ const LAYER_ID_POINTS = "users-points";
 const LAYER_ID_CLUSTERS = "users-clusters";
 const LAYER_ID_CLUSTER_COUNT = "users-clusters-count";
 const IMAGE_LAYER_ID = "user-avatar";
+type MapboxModule = typeof import("@rnmapbox/maps");
 
 type MapPressEvent = {
   features?: Array<{
@@ -96,8 +97,6 @@ export const UserMap: React.FC<UserMapProps> = ({
   initialZoomLevel = 14,
   overlay,
 }) => {
-  type MapboxModule = typeof import("@rnmapbox/maps");
-
   // Web support for @rnmapbox/maps is limited and often requires extra setup.
   // Since głównym celem są smartfony, na webie pokazujemy prosty placeholder,
   // żeby nie wywalać całej aplikacji błędem Reacta.
@@ -128,7 +127,7 @@ export const UserMap: React.FC<UserMapProps> = ({
 
     const loadMapbox = async () => {
       try {
-        const mod: MapboxModule = await import("@rnmapbox/maps");
+        const mod = await import("@rnmapbox/maps");
         const loaded = (mod?.default ?? mod) as MapboxModule;
         if (mounted) {
           setMapboxModule(loaded);
@@ -156,6 +155,8 @@ export const UserMap: React.FC<UserMapProps> = ({
       </View>
     );
   }
+
+  const MapboxGL = mapboxModule;
 
   const featureCollection: UserFeatureCollection = useMemo(() => {
     const now = Date.now();
@@ -212,7 +213,7 @@ export const UserMap: React.FC<UserMapProps> = ({
 
   return (
     <View style={styles.container}>
-      <mapboxModule.MapView
+      <MapboxGL.MapView
         style={styles.map}
         styleURL={MAP_STYLE}
         logoEnabled={false}
@@ -223,7 +224,7 @@ export const UserMap: React.FC<UserMapProps> = ({
         zoomEnabled
       >
         {/* Follow the user location on map start, fallback to first user coordinate */}
-        <mapboxModule.Camera
+        <MapboxGL.Camera
           followUserLocation
           defaultSettings={
             users[0]
@@ -232,15 +233,15 @@ export const UserMap: React.FC<UserMapProps> = ({
           }
           followZoomLevel={initialZoomLevel}
         />
-        <mapboxModule.UserLocation
+        <MapboxGL.UserLocation
           visible
           showsUserHeadingIndicator
           androidRenderMode="compass"
         />
 
-        <mapboxModule.Images images={images} />
+        <MapboxGL.Images images={images} />
 
-        <mapboxModule.ShapeSource
+        <MapboxGL.ShapeSource
           id={SOURCE_ID}
           shape={featureCollection}
           cluster
@@ -249,7 +250,7 @@ export const UserMap: React.FC<UserMapProps> = ({
           onPress={handleOnPress}
         >
           {/* Cluster circles - subtle blue like Slopes pill */}
-          <mapboxModule.CircleLayer
+          <MapboxGL.CircleLayer
             id={LAYER_ID_CLUSTERS}
             filter={["has", "point_count"]}
             style={{
@@ -268,7 +269,7 @@ export const UserMap: React.FC<UserMapProps> = ({
           />
 
           {/* Cluster count labels */}
-          <mapboxModule.SymbolLayer
+          <MapboxGL.SymbolLayer
             id={LAYER_ID_CLUSTER_COUNT}
             filter={["has", "point_count"]}
             style={{
@@ -281,7 +282,7 @@ export const UserMap: React.FC<UserMapProps> = ({
           />
 
           {/* Individual user avatars as symbols */}
-          <mapboxModule.SymbolLayer
+          <MapboxGL.SymbolLayer
             id={LAYER_ID_POINTS}
             filter={["!", ["has", "point_count"]]}
             style={{

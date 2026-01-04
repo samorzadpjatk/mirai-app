@@ -41,6 +41,11 @@ const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 const MAPBOX_ACCESS_TOKEN: string =
   process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? process.env.MAPBOX_ACCESS_TOKEN ?? "";
 
+type MapboxModule = {
+  setAccessToken?: (token: string) => void;
+  setConnected?: (connected: boolean) => void;
+};
+
 // Mapbox configuration is done in useEffect to avoid errors in Expo Go
 // where native code is not available
 
@@ -87,8 +92,7 @@ export default function RootLayout() {
       }
     }
 
-    const appOwnership = Constants.appOwnership ?? null;
-    const isExpoGo = appOwnership === "expo";
+    const isExpoGo = (Constants.appOwnership ?? "") === "expo";
     const hasToken =
       MAPBOX_ACCESS_TOKEN && MAPBOX_ACCESS_TOKEN !== "your_mapbox_token_here";
 
@@ -96,14 +100,9 @@ export default function RootLayout() {
     if (Platform.OS !== "web" && hasToken && !isExpoGo) {
       void (async () => {
         try {
-          const mod: typeof import("@rnmapbox/maps") = await import("@rnmapbox/maps");
-          const MapboxGL = mod?.default ?? mod;
-          if (MapboxGL?.setAccessToken) {
-            MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
-          }
-          if (MapboxGL?.setConnected) {
-            MapboxGL.setConnected(true);
-          }
+          const mod = (await import("@rnmapbox/maps")) as MapboxModule;
+          mod?.setAccessToken?.(MAPBOX_ACCESS_TOKEN);
+          mod?.setConnected?.(true);
         } catch (err: unknown) {
           console.warn(
             "[Mapbox] Failed to init native module. Build a dev client to use maps.",

@@ -25,7 +25,7 @@ type MapPressEvent = {
   }>;
 };
 
-const MAP_STYLE_OUTDOORS = MapboxGL.StyleURL.Outdoors;
+const MAP_STYLE_OUTDOORS = "mapbox://styles/mapbox/outdoors-v12";
 const SOURCE_ID = "advanced-users-source";
 const LAYER_ID_POINTS = "advanced-users-points";
 const LAYER_ID_CLUSTERS = "advanced-users-clusters";
@@ -72,8 +72,17 @@ type SimpleFeatureCollection = {
   features: SimpleUserFeature[];
 };
 
+type CameraRef = {
+  setCamera?: (options: {
+    centerCoordinate: [number, number];
+    zoomLevel?: number;
+    pitch?: number;
+    animationDuration?: number;
+  }) => void;
+};
+
 export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) => {
-  const cameraRef = useRef<MapboxGL.Camera | null>(null);
+  const cameraRef = useRef<CameraRef | null>(null);
   const [initialCentered, setInitialCentered] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserLocation | null>(null);
   const bottomSheetAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
@@ -132,7 +141,8 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
     const feature = event.features?.[0];
     if (!feature) return;
 
-    const userId = feature.properties?.id as string | undefined;
+    const rawId = feature.properties?.id;
+    const userId = typeof rawId === "string" ? rawId : undefined;
     if (!userId) return;
 
     const user = users.find((u) => u.id === userId);
