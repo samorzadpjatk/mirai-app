@@ -73,7 +73,7 @@ type SimpleFeatureCollection = {
 };
 
 export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) => {
-  const cameraRef = useRef<any>(null);
+  const cameraRef = useRef<MapboxGL.Camera | null>(null);
   const [initialCentered, setInitialCentered] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserLocation | null>(null);
   const bottomSheetAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
@@ -129,7 +129,7 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
   }, [selectedUser, bottomSheetAnim]);
 
   const handleUserPress = (event: MapPressEvent) => {
-    const feature = event.features && event.features[0];
+    const feature = event.features?.[0];
     if (!feature) return;
 
     const userId = feature.properties?.id as string | undefined;
@@ -142,7 +142,9 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
     if (onUserPress) onUserPress(user);
   };
 
-  const handleUserLocationUpdate = (loc: any) => {
+  const handleUserLocationUpdate = (loc: {
+    coords?: { longitude?: number | null; latitude?: number | null };
+  }) => {
     if (initialCentered || !loc.coords) return;
 
     const { longitude, latitude } = loc.coords;

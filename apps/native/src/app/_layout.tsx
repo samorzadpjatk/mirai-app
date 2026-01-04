@@ -87,15 +87,16 @@ export default function RootLayout() {
       }
     }
 
-    const isExpoGo = Constants.appOwnership === "expo";
+    const appOwnership = Constants.appOwnership ?? null;
+    const isExpoGo = appOwnership === "expo";
     const hasToken =
       MAPBOX_ACCESS_TOKEN && MAPBOX_ACCESS_TOKEN !== "your_mapbox_token_here";
 
     // Configure Mapbox only on native builds (not Expo Go), with token present.
     if (Platform.OS !== "web" && hasToken && !isExpoGo) {
-      (async () => {
+      void (async () => {
         try {
-          const mod = require("@rnmapbox/maps");
+          const mod: typeof import("@rnmapbox/maps") = await import("@rnmapbox/maps");
           const MapboxGL = mod?.default ?? mod;
           if (MapboxGL?.setAccessToken) {
             MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
@@ -103,9 +104,10 @@ export default function RootLayout() {
           if (MapboxGL?.setConnected) {
             MapboxGL.setConnected(true);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.warn(
             "[Mapbox] Failed to init native module. Build a dev client to use maps.",
+            err,
           );
         }
       })();
