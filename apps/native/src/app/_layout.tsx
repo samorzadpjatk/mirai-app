@@ -1,8 +1,7 @@
 import { Stack } from "expo-router";
-import { TamaguiProvider, YStack, type TamaguiInternalConfig } from "tamagui";
+import { TamaguiProvider, YStack, type TamaguiInternalConfig, useTheme } from "tamagui";
 import tamaguiConfig from "tamagui.config";
-import { useState } from "react";
-import { ThemeSwitcher } from "~/components/ThemeSwitcher";
+import { useColorScheme } from "react-native";
 import {
   useFonts,
   IBMPlexSans_100Thin,
@@ -34,20 +33,116 @@ const supabaseClient = createSupabaseClient(
   authStorage,
 );
 
-function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTheme: (theme: "light" | "dark") => void }) {
+function RootLayoutContent() {
   const isAuthLoading = useAuthLoading();
+  const tamaguiTheme = useTheme();
+
+  // Get theme colors for headers
+  const headerBackgroundColor = tamaguiTheme.background.get();
+  const headerTintColor = tamaguiTheme.color.get();
+  const headerBorderColor = tamaguiTheme.borderColor.get();
 
   return (
     <YStack flex={1} bg="$background">
-      <YStack p="$4" pt="$6">
-        <ThemeSwitcher
-          onToggle={() => setTheme(theme === "light" ? "dark" : "light")}
-          currentTheme={theme}
-        />
-      </YStack>
       {!isAuthLoading && (
-        <Stack screenOptions={{ headerShown: false }}>
-          {/* Routing here */}
+        <Stack 
+          screenOptions={{ 
+            headerShown: false,
+            animation: "slide_from_right",
+            contentStyle: { backgroundColor: "transparent" },
+            headerStyle: {
+              backgroundColor: headerBackgroundColor,
+            },
+            headerTintColor: headerTintColor,
+            headerShadowVisible: true,
+            headerTitleStyle: {
+              fontWeight: "600",
+            }
+          }}
+        >
+          <Stack.Screen 
+            name="index" 
+            options={{ 
+              title: "Home",
+              headerShown: false
+            }} 
+          />
+          <Stack.Screen 
+            name="auth/login" 
+            options={{ 
+              title: "Sign In",
+              headerShown: false,
+              animation: "fade"
+            }} 
+          />
+          <Stack.Screen 
+            name="auth/signup" 
+            options={{ 
+              title: "Sign Up",
+              headerShown: false,
+              animation: "fade"
+            }} 
+          />
+          <Stack.Screen 
+            name="users/index" 
+            options={{ 
+              title: "Users",
+              headerShown: true,
+              headerTitle: "Users Management",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
+            }} 
+          />
+          <Stack.Screen 
+            name="groups/index" 
+            options={{ 
+              title: "Guilds",
+              headerShown: true,
+              headerTitle: "Guilds",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
+            }} 
+          />
+          <Stack.Screen 
+            name="coins/index" 
+            options={{ 
+              title: "Coin Operations",
+              headerShown: true,
+              headerTitle: "Treasury Management",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
+            }} 
+          />
+          <Stack.Screen 
+            name="transactions/index" 
+            options={{ 
+              title: "Transactions",
+              headerShown: true,
+              headerTitle: "Transaction History",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
+            }} 
+          />
+          <Stack.Screen 
+            name="notifications/index" 
+            options={{ 
+              title: "Notifications",
+              headerShown: true,
+              headerTitle: "Notification Schedules",
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
+            }} 
+          />
         </Stack>
       )}
     </YStack>
@@ -55,7 +150,8 @@ function RootLayoutContent({ theme, setTheme }: { theme: "light" | "dark", setTh
 }
 
 export default function RootLayout() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const colorScheme = useColorScheme();
+  const theme = colorScheme === "dark" ? "dark" : "light";
   
   const [fontsLoaded] = useFonts({
     IBMPlexSans_100Thin,
@@ -79,7 +175,7 @@ export default function RootLayout() {
         supabaseClient={supabaseClient}
       >
         <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-          <RootLayoutContent theme={theme} setTheme={setTheme} />
+          <RootLayoutContent />
         </APIProvider>
       </AuthProvider>
     </TamaguiProvider>
