@@ -19,6 +19,7 @@ import {
   CheckCircle,
 } from "@tamagui/lucide-icons";
 import { StatusBar } from "expo-status-bar";
+import Logo from "../../components/Logo";
 
 export default function SignupScreen() {
   const {
@@ -97,22 +98,7 @@ export default function SignupScreen() {
           <YStack space="$6" maxWidth={400} width="100%" alignSelf="center">
             {/* Logo */}
             <YStack space="$4" alignItems="center" marginBottom="$2">
-              <View
-                width={100}
-                height={100}
-                borderRadius={50}
-                borderWidth={5}
-                borderColor="$red9"
-                overflow="hidden"
-                animation="quick"
-                enterStyle={{ scale: 0, opacity: 0, rotate: "-180deg" }}
-                scale={1}
-                opacity={1}
-                rotate="0deg"
-              >
-                <View width="100%" height="50%" backgroundColor="white" />
-                <View width="100%" height="50%" backgroundColor="$red9" />
-              </View>
+              <Logo size={100} />
               <H1
                 color="$color"
                 fontSize="$10"
