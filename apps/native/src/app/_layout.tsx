@@ -92,7 +92,8 @@ export default function RootLayout() {
       }
     }
 
-    const isExpoGo = (Constants.appOwnership ?? "") === "expo";
+    const appOwnership: string = Constants.appOwnership ?? "unknown";
+    const isExpoGo = appOwnership === "expo";
     const hasToken =
       MAPBOX_ACCESS_TOKEN && MAPBOX_ACCESS_TOKEN !== "your_mapbox_token_here";
 

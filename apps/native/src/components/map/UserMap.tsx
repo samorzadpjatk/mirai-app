@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, type ComponentType } from "react";
 import { Platform, StyleSheet, View, Text } from "react-native";
 import Constants from "expo-constants";
 
@@ -54,7 +54,30 @@ const LAYER_ID_POINTS = "users-points";
 const LAYER_ID_CLUSTERS = "users-clusters";
 const LAYER_ID_CLUSTER_COUNT = "users-clusters-count";
 const IMAGE_LAYER_ID = "user-avatar";
-type MapboxModule = typeof import("@rnmapbox/maps");
+type MapboxComponent = ComponentType<Record<string, unknown>>;
+type MapboxModule = {
+  MapView: MapboxComponent;
+  Camera: MapboxComponent;
+  UserLocation: MapboxComponent;
+  Images: MapboxComponent;
+  ShapeSource: MapboxComponent;
+  CircleLayer: MapboxComponent;
+  SymbolLayer: MapboxComponent;
+};
+
+function isMapboxModule(candidate: unknown): candidate is MapboxModule {
+  const mod = candidate as Record<string, unknown> | null;
+  return Boolean(
+    mod &&
+      typeof mod.MapView === "function" &&
+      typeof mod.Camera === "function" &&
+      typeof mod.UserLocation === "function" &&
+      typeof mod.Images === "function" &&
+      typeof mod.ShapeSource === "function" &&
+      typeof mod.CircleLayer === "function" &&
+      typeof mod.SymbolLayer === "function",
+  );
+}
 
 type MapPressEvent = {
   features?: Array<{
@@ -108,7 +131,7 @@ export const UserMap: React.FC<UserMapProps> = ({
     );
   }
 
-  const appOwnership = Constants.appOwnership ?? null;
+  const appOwnership: string = Constants.appOwnership ?? "unknown";
   const isExpoGo = appOwnership === "expo";
   if (isExpoGo) {
     return (
@@ -127,12 +150,15 @@ export const UserMap: React.FC<UserMapProps> = ({
 
     const loadMapbox = async () => {
       try {
-        const mod = await import("@rnmapbox/maps");
-        const loaded = (mod?.default ?? mod) as MapboxModule;
-        if (mounted) {
+        const modUnknown: unknown = await import("@rnmapbox/maps");
+        const loaded =
+          (modUnknown as { default?: unknown })?.default !== undefined
+            ? (modUnknown as { default?: unknown }).default
+            : modUnknown;
+        if (mounted && isMapboxModule(loaded)) {
           setMapboxModule(loaded);
         }
-      } catch (_err) {
+      } catch {
         if (mounted) {
           setMapboxModule(null);
         }
@@ -202,8 +228,9 @@ export const UserMap: React.FC<UserMapProps> = ({
     const feature = event.features?.[0];
     if (!feature) return;
 
-    const userId = feature.properties?.id as string | undefined;
-    if (!userId) return;
+    const rawId = feature.properties?.id;
+    if (typeof rawId !== "string") return;
+    const userId = rawId;
 
     const user = users.find((u) => u.id === userId);
     if (user) {
