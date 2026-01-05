@@ -37,7 +37,7 @@ export function createServer(opts: ServerOptions) {
       // For HTTP requests Fastify passes only { req }.
       // For WebSocket connections tRPC additionally forwards `connectionParams`
       // coming from the client-side `createWSClient`.
-      createContext: async (opts: {
+      createContext: (opts: {
         req: FastifyRequest;
         connectionParams?: unknown;
       }) => {
@@ -56,7 +56,7 @@ export function createServer(opts: ServerOptions) {
     } satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
   });
 
-  server.get("/health", async () => {
+  server.get("/health", () => {
     return "OK";
   });
 

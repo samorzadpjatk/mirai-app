@@ -9,27 +9,28 @@
     "start": "node --enable-source-maps --import tsx src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@integral-2025-app/db": "workspace:*",
     "@integral-2025-app/trpc": "workspace:*",
-    "@supabase/supabase-js": "^2.47.10",
-    "@trpc/client": "^11.8.0",
-    "@trpc/server": "^11.8.0",
-    "dotenv": "^16.4.5",
-    "expo-server-sdk": "^3.8.0",
+    "@supabase/supabase-js": "^2.89.0",
+    "@trpc/client": "^11.8.1",
+    "@trpc/server": "^11.8.1",
+    "dotenv": "^16.6.1",
+    "expo-server-sdk": "^3.15.0",
     "superjson": "^2.2.6",
-    "ws": "^8.18.0",
-    "zod": "^4.2.0"
+    "ws": "^8.18.3",
+    "zod": "^4.3.4"
   },
   "devDependencies": {
-    "@types/node": "^22.10.5",
-    "@types/ws": "^8.5.12",
-    "@vitest/coverage-v8": "^4.0.15",
-    "tsx": "^4.19.2",
+    "@types/node": "^22.19.3",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.0.16",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.16"
   }
 }

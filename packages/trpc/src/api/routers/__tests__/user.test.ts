@@ -4,12 +4,12 @@ import { userRouter } from "~/api/routers/user";
 vi.mock("@integral-2025-app/db");
 
 describe("userRouter", () => {
-  type SessionOverrides = {
+  interface SessionOverrides {
     id?: string;
     name?: string;
     isAdmin?: boolean;
     isModerator?: boolean;
-  };
+  }
 
   const createMockContext = (sessionOverrides: SessionOverrides = {}) => {
     const dbUser = {

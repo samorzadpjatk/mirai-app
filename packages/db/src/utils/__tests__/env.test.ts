@@ -18,7 +18,8 @@ const setValidEnv = () => {
   });
 };
 
-const importEnvModule = () => vi.importActual<typeof import("../env.ts")>("../env.ts");
+type EnvModule = typeof import("../env.ts");
+const importEnvModule = (): Promise<EnvModule> => vi.importActual("../env.ts");
 
 describe("env utilities", () => {
   const originalEnv = process.env;

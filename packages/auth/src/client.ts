@@ -1,4 +1,4 @@
-export { useAuth, useUser, useSession, useIsAuthenticated } from "./authHooks";
+export { useAuth, useUser, useSession, useIsAuthenticated, useAuthLoading } from "./authHooks";
 
 export { useLoginForm } from "./hooks/useLoginForm";
 export type {

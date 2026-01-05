@@ -47,19 +47,19 @@ export default function SignupScreen() {
     return (
       <YStack
         flex={1}
-        backgroundColor="$background"
-        justifyContent="center"
-        alignItems="center"
-        padding="$6"
+        bg="$background"
+        justify="center"
+        items="center"
+        p="$6"
       >
-        <YStack space="$4" alignItems="center" maxWidth={400}>
+        <YStack space="$4" items="center" maxW={400}>
           <View
             width={80}
             height={80}
-            borderRadius={40}
-            backgroundColor="$green3"
-            alignItems="center"
-            justifyContent="center"
+            rounded={40}
+            bg="$green3"
+            items="center"
+            justify="center"
             animation="quick"
             enterStyle={{ scale: 0, rotate: "-180deg" }}
             scale={1}
@@ -71,13 +71,13 @@ export default function SignupScreen() {
             color="$color"
             fontSize="$9"
             fontWeight="900"
-            textAlign="center"
+            text="center"
             animation="quick"
             enterStyle={{ y: 20, opacity: 0 }}
           >
             Welcome Aboard!
           </H1>
-          <Text color="$gray11" fontSize="$4" textAlign="center" opacity={0.8}>
+          <Text color="$gray11" fontSize="$4" text="center" opacity={0.8}>
             Your account has been created successfully
           </Text>
           <Spinner color="$red9" />
@@ -91,19 +91,19 @@ export default function SignupScreen() {
       <StatusBar style="auto" />
       <ScrollView
         flex={1}
-        backgroundColor="$background"
-        contentContainerStyle={{ flexGrow: 1 }}
+        bg="$background"
+        contentContainerStyle={{ grow: 1 }}
       >
-        <YStack flex={1} padding="$6" paddingTop="$12" justifyContent="center">
-          <YStack space="$6" maxWidth={400} width="100%" alignSelf="center">
+        <YStack flex={1} p="$6" pt="$12" justify="center">
+          <YStack space="$6" maxW={400} width="100%" self="center">
             {/* Logo */}
-            <YStack space="$4" alignItems="center" marginBottom="$2">
+            <YStack space="$4" items="center" mb="$2">
               <Logo size={100} />
               <H1
                 color="$color"
                 fontSize="$10"
                 fontWeight="900"
-                textAlign="center"
+                text="center"
                 animation="quick"
                 enterStyle={{ y: 20, opacity: 0 }}
                 y={0}
@@ -114,7 +114,7 @@ export default function SignupScreen() {
               <Text
                 color="$gray11"
                 fontSize="$4"
-                textAlign="center"
+                text="center"
                 opacity={0.8}
               >
                 Join PJapp today
@@ -123,13 +123,13 @@ export default function SignupScreen() {
 
             {error && (
               <XStack
-                backgroundColor="$red3"
-                padding="$3"
-                borderRadius="$4"
+                bg="$red3"
+                p="$3"
+                rounded="$4"
                 borderWidth={1}
                 borderColor="$red7"
                 space="$2"
-                alignItems="center"
+                items="center"
                 animation="quick"
                 enterStyle={{ y: -10, opacity: 0 }}
               >
@@ -145,12 +145,12 @@ export default function SignupScreen() {
                 Full Name
               </Text>
               <XStack
-                backgroundColor="$gray3"
-                borderRadius="$4"
+                bg="$gray3"
+                rounded="$4"
                 borderWidth={2}
                 borderColor="$gray7"
-                paddingHorizontal="$4"
-                alignItems="center"
+                px="$4"
+                items="center"
                 space="$3"
               >
                 <User size={20} color="$gray11" />
@@ -162,10 +162,10 @@ export default function SignupScreen() {
                   onChangeText={setName}
                   autoCapitalize="words"
                   editable={!isLoading}
-                  backgroundColor="transparent"
+                  bg="transparent"
                   color="$color"
                   placeholderTextColor="$gray11"
-                  paddingVertical="$3.5"
+                  py="$3.5"
                   focusStyle={{ outlineStyle: "none" }}
                 />
               </XStack>
@@ -176,12 +176,12 @@ export default function SignupScreen() {
                 Email
               </Text>
               <XStack
-                backgroundColor="$gray3"
-                borderRadius="$4"
+                bg="$gray3"
+                rounded="$4"
                 borderWidth={2}
                 borderColor="$gray7"
-                paddingHorizontal="$4"
-                alignItems="center"
+                px="$4"
+                items="center"
                 space="$3"
               >
                 <Mail size={20} color="$gray11" />
@@ -192,13 +192,12 @@ export default function SignupScreen() {
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
-                  autoCorrect={false}
                   keyboardType="email-address"
                   editable={!isLoading}
-                  backgroundColor="transparent"
+                  bg="transparent"
                   color="$color"
                   placeholderTextColor="$gray11"
-                  paddingVertical="$3.5"
+                  py="$3.5"
                   focusStyle={{ outlineStyle: "none" }}
                 />
               </XStack>
@@ -209,12 +208,12 @@ export default function SignupScreen() {
                 Password
               </Text>
               <XStack
-                backgroundColor="$gray3"
-                borderRadius="$4"
+                bg="$gray3"
+                rounded="$4"
                 borderWidth={2}
                 borderColor="$gray7"
-                paddingHorizontal="$4"
-                alignItems="center"
+                px="$4"
+                items="center"
                 space="$3"
               >
                 <Lock size={20} color="$gray11" />
@@ -226,10 +225,10 @@ export default function SignupScreen() {
                   onChangeText={setPassword}
                   secureTextEntry
                   editable={!isLoading}
-                  backgroundColor="transparent"
+                  bg="transparent"
                   color="$color"
                   placeholderTextColor="$gray11"
-                  paddingVertical="$3.5"
+                  py="$3.5"
                   focusStyle={{ outlineStyle: "none" }}
                 />
               </XStack>
@@ -240,12 +239,12 @@ export default function SignupScreen() {
                 Confirm Password
               </Text>
               <XStack
-                backgroundColor="$gray3"
-                borderRadius="$4"
+                bg="$gray3"
+                rounded="$4"
                 borderWidth={2}
                 borderColor="$gray7"
-                paddingHorizontal="$4"
-                alignItems="center"
+                px="$4"
+                items="center"
                 space="$3"
               >
                 <Lock size={20} color="$gray11" />
@@ -257,32 +256,27 @@ export default function SignupScreen() {
                   onChangeText={setConfirmPassword}
                   secureTextEntry
                   editable={!isLoading}
-                  backgroundColor="transparent"
+                  bg="transparent"
                   color="$color"
                   placeholderTextColor="$gray11"
-                  paddingVertical="$3.5"
+                  py="$3.5"
                   focusStyle={{ outlineStyle: "none" }}
                 />
               </XStack>
             </YStack>
 
             <Button
-              backgroundColor="$red9"
-              color="white"
               size="$5"
-              fontWeight="700"
-              borderRadius="$4"
+              rounded="$4"
               onPress={onSubmit}
               disabled={isLoading}
-              hoverStyle={{ backgroundColor: "$red10" }}
-              pressStyle={{ backgroundColor: "$red8", scale: 0.98 }}
               animation="quick"
               testID="signup-submit-button"
             >
               {isLoading ? (
-                <XStack space="$2" alignItems="center">
-                  <Spinner color="white" />
-                  <Text color="white" fontWeight="700">
+                <XStack space="$2" items="center">
+                  <Spinner />
+                  <Text fontWeight="700">
                     Creating Account...
                   </Text>
                 </XStack>
@@ -291,7 +285,7 @@ export default function SignupScreen() {
               )}
             </Button>
 
-            <XStack justifyContent="center" space="$2" paddingBottom="$6">
+            <XStack justify="center" space="$2" pb="$6">
               <Text color="$gray11" fontSize="$3">
                 Already have an account?
               </Text>

@@ -78,6 +78,60 @@ pnpm --filter @integral-2025-app/native ios
 
 Aplikacja używa [Expo Router](https://docs.expo.dev/router/introduction/) - routing oparty na systemie plików. Pliki w `src/app/` automatycznie stają się ekranami.
 
+### Struktura nawigacji
+
+```
+src/app/
+├── _layout.tsx           # Główny layout z konfiguracją Stack Navigation
+├── index.tsx             # Ekran główny (po zalogowaniu)
+├── auth/
+│   ├── login.tsx        # Ekran logowania
+│   └── signup.tsx       # Ekran rejestracji
+├── users/
+│   └── index.tsx        # Lista użytkowników (admin)
+├── groups/
+│   └── index.tsx        # Lista gildii (admin)
+├── coins/
+│   └── index.tsx        # Operacje na monetach (admin)
+├── transactions/
+│   └── index.tsx        # Historia transakcji (admin)
+└── notifications/
+    └── index.tsx         # Zarządzanie powiadomieniami (admin)
+```
+
+### Nawigacja między ekranami
+
+Expo Router zapewnia funkcję `useRouter()` do nawigacji programatycznej:
+
+```tsx
+import { useRouter } from "expo-router";
+
+function MyComponent() {
+  const router = useRouter();
+  
+  // Nawigacja do ekranu
+  router.push("/users");
+  
+  // Zamień aktualny ekran (np. po zalogowaniu)
+  router.replace("/");
+  
+  // Powrót
+  router.back();
+}
+```
+
+### Konfiguracja ekranów
+
+W pliku `_layout.tsx` każdy ekran jest skonfigurowany z własnymi opcjami:
+
+- **Auth screens** (`/auth/login`, `/auth/signup`) - bez nagłówka, animacja fade
+- **Admin screens** (`/users`, `/groups`, etc.) - z nagłówkiem i tytułem
+- **Home screen** (`/`) - bez nagłówka
+
+### Zabezpieczenia dostępu
+
+Każdy ekran administracyjny sprawdza uprawnienia użytkownika i automatycznie przekierowuje na ekran główny, jeśli użytkownik nie ma dostępu (nie jest Admin, Moderator lub Service Account).
+
 ## Testowanie
 
 ```bash

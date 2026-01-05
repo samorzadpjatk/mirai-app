@@ -29,3 +29,8 @@ export function useIsAuthenticated(): boolean {
   const { isAuthenticated } = useAuth();
   return isAuthenticated;
 }
+
+export function useAuthLoading(): boolean {
+  const { isLoading } = useAuth();
+  return isLoading;
+}

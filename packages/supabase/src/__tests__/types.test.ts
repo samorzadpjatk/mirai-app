@@ -31,9 +31,9 @@ describe("SupabaseClientOptions", () => {
     const options: SupabaseClientOptions = {
       auth: {
         storage: {
-          getItem: async () => "value",
-          setItem: async () => void 0,
-          removeItem: async () => void 0,
+          getItem: () => Promise.resolve("value"),
+          setItem: () => Promise.resolve(),
+          removeItem: () => Promise.resolve(),
         },
       },
     };

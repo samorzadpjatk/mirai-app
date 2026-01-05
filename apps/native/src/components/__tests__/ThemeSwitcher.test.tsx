@@ -1,12 +1,12 @@
 import React from "react";
 
 import { render, fireEvent, screen } from "@testing-library/react-native";
-import { TamaguiProvider } from "tamagui";
+import { TamaguiProvider, type TamaguiInternalConfig } from "tamagui";
 import { ThemeSwitcher } from "~/components/ThemeSwitcher";
 import tamaguiConfig from "tamagui.config";
 
 const wrapWithProvider = (ui: React.ReactElement) => (
-  <TamaguiProvider config={tamaguiConfig}>{ui}</TamaguiProvider>
+  <TamaguiProvider config={tamaguiConfig as TamaguiInternalConfig}>{ui}</TamaguiProvider>
 );
 
 const renderWithProvider = (ui: React.ReactElement) => render(wrapWithProvider(ui));

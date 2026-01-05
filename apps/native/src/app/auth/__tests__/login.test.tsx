@@ -4,7 +4,7 @@
 import React from "react";
 
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
-import { TamaguiProvider } from "tamagui";
+import { TamaguiProvider, type TamaguiInternalConfig } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import LoginScreen from "~/app/auth/login";
 import { useRouter } from "expo-router";
@@ -22,7 +22,7 @@ jest.mock("expo-status-bar", () => ({
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TamaguiProvider config={tamaguiConfig}>{children}</TamaguiProvider>
+  <TamaguiProvider config={tamaguiConfig as TamaguiInternalConfig}>{children}</TamaguiProvider>
 );
 
 describe("LoginScreen", () => {
@@ -95,7 +95,7 @@ describe("LoginScreen", () => {
   });
 
   it("should call handleSubmit when sign in button is pressed", async () => {
-    mockHandleSubmit.mockImplementation(async (onSuccess) => {
+    mockHandleSubmit.mockImplementation((onSuccess) => {
       onSuccess?.();
     });
 
@@ -114,7 +114,7 @@ describe("LoginScreen", () => {
   });
 
   it("should navigate to home on successful login", async () => {
-    mockHandleSubmit.mockImplementation(async (onSuccess) => {
+    mockHandleSubmit.mockImplementation((onSuccess) => {
       onSuccess?.();
     });
 

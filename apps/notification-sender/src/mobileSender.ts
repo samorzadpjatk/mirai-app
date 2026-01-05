@@ -64,7 +64,7 @@ export async function sendMobileNotifications(
   const results = tickets
     .map((t, idx) => {
       const token = messages[idx]?.to;
-      if (!token) return null;
+      if (!token || typeof token !== "string") return null;
       const userId = userByToken.get(token);
       if (!userId) return null;
       const statusCode = t.status === "ok" ? 200 : 500;
