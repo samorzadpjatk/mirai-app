@@ -160,7 +160,7 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
     const { longitude, latitude } = loc.coords;
     if (longitude == null || latitude == null) return;
 
-    cameraRef.current?.setCamera({
+    cameraRef.current?.setCamera?.({
       centerCoordinate: [longitude, latitude],
       zoomLevel: 14,
       pitch: 45,
