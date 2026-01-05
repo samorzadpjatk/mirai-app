@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getTRPCClient, TRPCProvider } from "./react";
 import React, { useMemo } from "react";
-import { useSession } from "@integral-2025-app/auth/client";
+import { useSession, useAuthLoading } from "@integral-2025-app/auth/client";
 
 function makeQueryClient() {
     return new QueryClient({
@@ -33,14 +33,27 @@ function getQueryClient() {
 
 const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: string; children: React.ReactNode }) => {
     const session = useSession();
+    const isAuthLoading = useAuthLoading();
     const authToken = session?.access_token;
     const queryClient = getQueryClient();
 
     // Recreate tRPC client when authToken changes to update WebSocket connectionParams
+    // Use useMemo unconditionally (always call hooks in same order)
     const trpcClient = useMemo(
-        () => getTRPCClient(httpUrl, wsUrl, authToken),
-        [authToken, httpUrl, wsUrl]
+        () => {
+            // Don't initialize tRPC client until auth is loaded
+            if (isAuthLoading) {
+                return null;
+            }
+            return getTRPCClient(httpUrl, wsUrl, authToken);
+        },
+        [authToken, httpUrl, wsUrl, isAuthLoading]
     );
+
+    // Only render TRPCProvider when we have a valid client
+    if (isAuthLoading || !trpcClient) {
+        return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    }
 
     return (
         <QueryClientProvider client={queryClient}>

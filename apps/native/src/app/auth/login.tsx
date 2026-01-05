@@ -22,17 +22,17 @@ export default function LoginScreen() {
       <StatusBar style="auto" />
       <YStack
         flex={1}
-        backgroundColor="$background"
-        padding="$6"
-        justifyContent="center"
+        bg="$background"
+        p="$6"
+        justify="center"
       >
-        <YStack space="$6" maxWidth={400} width="100%" alignSelf="center">
-          <YStack space="$4" alignItems="center" marginBottom="$4">
+        <YStack space="$6" maxW={400} width="100%" self="center">
+          <YStack space="$4" items="center" mb="$4">
             <Logo size={100} />
             <Text
               fontSize="$10"
               fontWeight="900"
-              textAlign="center"
+              text="center"
               animation="quick"
               enterStyle={{ y: 20, opacity: 0 }}
               y={0}
@@ -43,7 +43,7 @@ export default function LoginScreen() {
             <Text
               color="$gray11"
               fontSize="$4"
-              textAlign="center"
+              text="center"
               opacity={0.8}
             >
               Sign in to continue to PJapp
@@ -52,13 +52,13 @@ export default function LoginScreen() {
 
           {error && (
             <XStack
-              backgroundColor="$red3"
-              padding="$3"
-              borderRadius="$4"
+              bg="$red3"
+              p="$3"
+              rounded="$4"
               borderWidth={1}
               borderColor="$red7"
               space="$2"
-              alignItems="center"
+              items="center"
               animation="quick"
               enterStyle={{ y: -10, opacity: 0 }}
             >
@@ -74,12 +74,12 @@ export default function LoginScreen() {
               Email
             </Text>
             <XStack
-              backgroundColor="$gray3"
-              borderRadius="$4"
+              bg="$gray3"
+              rounded="$4"
               borderWidth={2}
               borderColor="$gray7"
-              paddingHorizontal="$4"
-              alignItems="center"
+              px="$4"
+              items="center"
               space="$3"
             >
               <Mail size={20} color="$gray11" />
@@ -90,13 +90,12 @@ export default function LoginScreen() {
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
-                autoCorrect={false}
                 keyboardType="email-address"
                 editable={!isLoading}
-                backgroundColor="transparent"
+                bg="transparent"
                 color="$color"
                 placeholderTextColor="$gray11"
-                paddingVertical="$3.5"
+                py="$3.5"
                 focusStyle={{ outlineStyle: "none" }}
               />
             </XStack>
@@ -107,12 +106,12 @@ export default function LoginScreen() {
               Password
             </Text>
             <XStack
-              backgroundColor="$gray3"
-              borderRadius="$4"
+              bg="$gray3"
+              rounded="$4"
               borderWidth={2}
               borderColor="$gray7"
-              paddingHorizontal="$4"
-              alignItems="center"
+              px="$4"
+              items="center"
               space="$3"
             >
               <Lock size={20} color="$gray11" />
@@ -124,31 +123,26 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 secureTextEntry
                 editable={!isLoading}
-                backgroundColor="transparent"
+                bg="transparent"
                 color="$color"
                 placeholderTextColor="$gray11"
-                paddingVertical="$3.5"
+                py="$3.5"
                 focusStyle={{ outlineStyle: "none" }}
               />
             </XStack>
           </YStack>
 
           <Button
-            backgroundColor="$red9"
-            color="white"
             size="$5"
-            fontWeight="700"
-            borderRadius="$4"
+            rounded="$4"
             onPress={onSubmit}
             disabled={isLoading}
-            hoverStyle={{ backgroundColor: "$red10" }}
-            pressStyle={{ backgroundColor: "$red8", scale: 0.98 }}
             animation="quick"
           >
             {isLoading ? (
-              <XStack space="$2" alignItems="center">
-                <Spinner color="white" />
-                <Text color="white" fontWeight="700">
+              <XStack space="$2" items="center">
+                <Spinner />
+                <Text fontWeight="700">
                   Signing In...
                 </Text>
               </XStack>
@@ -157,7 +151,7 @@ export default function LoginScreen() {
             )}
           </Button>
 
-          <XStack justifyContent="center" space="$2">
+          <XStack justify="center" space="$2">
             <Text color="$gray11" fontSize="$3">
               Don't have an account?
             </Text>

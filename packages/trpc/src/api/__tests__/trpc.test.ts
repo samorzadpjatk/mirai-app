@@ -29,7 +29,7 @@ describe("server/api/trpc", () => {
   });
 
   describe("createTRPCContext", () => {
-    it("should create context with accessToken and headers when authenticated", async () => {
+    it("should create context with accessToken and headers when authenticated", () => {
       const mockSupabaseClient = {
         auth: {
           getUser: vi.fn(),
@@ -42,7 +42,7 @@ describe("server/api/trpc", () => {
         Authorization: "Bearer mock-token",
       });
 
-      const context = await createTRPCContext({
+      const context = createTRPCContext({
         headers: mockHeaders,
         supabaseUrl: "http://localhost:8000",
         supabaseKey: "test-key",
@@ -57,7 +57,7 @@ describe("server/api/trpc", () => {
       expect(mockCreateSupabaseClient).toHaveBeenCalledWith("http://localhost:8000", "test-key");
     });
 
-    it("should create context without accessToken when not authenticated", async () => {
+    it("should create context without accessToken when not authenticated", () => {
       const mockSupabaseClient = {
         auth: {
           getUser: vi.fn(),
@@ -67,7 +67,7 @@ describe("server/api/trpc", () => {
 
       const mockHeaders = new Headers();
 
-      const context = await createTRPCContext({
+      const context = createTRPCContext({
         headers: mockHeaders,
         supabaseUrl: "http://localhost:8000",
         supabaseKey: "test-key",
@@ -78,7 +78,7 @@ describe("server/api/trpc", () => {
       expect(context.accessToken).toBeNull();
     });
 
-    it("should read accessToken from connectionParams when headers are missing", async () => {
+    it("should read accessToken from connectionParams when headers are missing", () => {
       const mockSupabaseClient = {
         auth: {
           getUser: vi.fn(),
@@ -88,7 +88,7 @@ describe("server/api/trpc", () => {
 
       const mockHeaders = new Headers();
 
-      const context = await createTRPCContext({
+      const context = createTRPCContext({
         headers: mockHeaders,
         supabaseUrl: "http://localhost:8000",
         supabaseKey: "test-key",

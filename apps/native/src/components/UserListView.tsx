@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
+ 
+ 
+ 
 import React, { useState } from "react";
 import { FlatList, RefreshControl } from "react-native";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -19,27 +19,16 @@ import {
 import { User, Search, ChevronLeft, ChevronRight } from "@tamagui/lucide-icons";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 
-type UserListItem = {
+interface UserListItem {
   id: string;
-  name: string;
-  email: string;
+  name: string | null;
+  email: string | null;
   isAdmin: boolean;
   houseNumber: string | null;
   wristNumber: string | null;
   group: { id: string; name: string } | null;
-};
-
-type UserSearchData = {
-  users: UserListItem[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalCount: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-    limit: number;
-  };
-};
+  organizerGroup: { id: string; name: string }[];
+}
 
 /**
  * UserListView Component
@@ -56,7 +45,7 @@ export function UserListView() {
   const trpc = useTRPC();
   // tRPC Query - Fetching Data
   const { data, isLoading, isError, error, refetch, isFetching } =
-    useQuery<UserSearchData>(
+    useQuery(
       trpc.user.searchWithPagination.queryOptions({
         field: searchField,
         searchTerm: searchTerm || undefined,
@@ -65,11 +54,7 @@ export function UserListView() {
       }),
     );
 
-  const updateAdminStatus = useMutation<
-    unknown,
-    Error,
-    { userId: string; isAdmin: boolean }
-  >(
+  const updateAdminStatus = useMutation(
     trpc.user.updateUserAdminStatus.mutationOptions({
       onSuccess: () => {
         void refetch();
@@ -106,9 +91,9 @@ export function UserListView() {
 
   if (isLoading) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
-        <Spinner size="large" color="$blue10" />
-        <Text marginTop="$4" color="$gray11">
+      <YStack flex={1} justify="center" items="center" p="$4">
+        <Spinner size="large" />
+        <Text mt="$4">
           Loading users...
         </Text>
       </YStack>
@@ -117,14 +102,14 @@ export function UserListView() {
 
   if (isError) {
     return (
-      <YStack flex={1} justifyContent="center" alignItems="center" padding="$4">
+      <YStack flex={1} justify="center" items="center" p="$4">
         <Text color="$red10" fontSize="$6" fontWeight="bold">
           Error loading users
         </Text>
-        <Text color="$gray11" marginTop="$2" textAlign="center">
+        <Text color="$gray11" mt="$2" text="center">
           {error?.message || "Something went wrong"}
         </Text>
-        <Button marginTop="$4" onPress={() => void refetch()}>
+        <Button mt="$4" onPress={() => void refetch()}>
           Try Again
         </Button>
       </YStack>
@@ -135,15 +120,15 @@ export function UserListView() {
   const pagination = data?.pagination;
 
   return (
-    <YStack flex={1} backgroundColor="$background" padding="$4">
-      <XStack alignItems="center" marginBottom="$4">
+    <YStack flex={1} bg="$background" p="$4">
+      <XStack items="center" mb="$4">
         <User size={24} color="$gray12" />
-        <H2 marginLeft="$2" color="$gray12">
+        <H2 ml="$2" color="$gray12">
           Users
         </H2>
       </XStack>
 
-      <XStack marginBottom="$4" gap="$2">
+      <XStack mb="$4" gap="$2">
         <Input
           flex={1}
           placeholder="Search by name..."
@@ -156,9 +141,9 @@ export function UserListView() {
 
       {pagination && (
         <XStack
-          justifyContent="space-between"
-          alignItems="center"
-          marginBottom="$3"
+          justify="space-between"
+          items="center"
+          mb="$3"
         >
           <Text fontSize="$3" color="$gray11">
             Page {pagination.currentPage} of {pagination.totalPages}
@@ -176,9 +161,9 @@ export function UserListView() {
           <Card
             elevate
             bordered
-            marginBottom="$3"
-            padding="$3"
-            backgroundColor="$background"
+            mb="$3"
+            p="$3"
+            bg="$background"
           >
             <YStack gap="$2">
               <H4 color="$gray12">{item.name}</H4>
@@ -187,9 +172,9 @@ export function UserListView() {
                 {item.email}
               </Text>
 
-              <Separator marginVertical="$2" />
+              <Separator my="$2" />
 
-              <XStack justifyContent="space-between" flexWrap="wrap" gap="$2">
+              <XStack justify="space-between" flexWrap="wrap" gap="$2">
                 {item.wristNumber && (
                   <Text fontSize="$2" color="$gray10">
                     Wrist: {item.wristNumber}
@@ -201,16 +186,16 @@ export function UserListView() {
                   </Text>
                 )}
                 {item.group && (
-                  <Text fontSize="$2" color="$blue10">
+                  <Text fontSize="$2" color="#3b82f6">
                     Group: {item.group.name}
                   </Text>
                 )}
               </XStack>
 
               <XStack
-                justifyContent="space-between"
-                alignItems="center"
-                marginTop="$2"
+                justify="space-between"
+                items="center"
+                mt="$2"
               >
                 <Text
                   fontSize="$2"
@@ -224,7 +209,7 @@ export function UserListView() {
                   size="$2"
                   onPress={() => handleToggleAdmin(item.id, item.isAdmin)}
                   disabled={updateAdminStatus.isPending}
-                  theme={item.isAdmin ? "red" : "green"}
+                  
                 >
                   {updateAdminStatus.isPending
                     ? "Updating..."
@@ -243,14 +228,14 @@ export function UserListView() {
           />
         }
         ListEmptyComponent={
-          <YStack alignItems="center" marginTop="$8">
+          <YStack items="center" mt="$8">
             <Text color="$gray11">No users found</Text>
           </YStack>
         }
       />
 
       {pagination && pagination.totalPages > 1 && (
-        <XStack justifyContent="space-between" marginTop="$4">
+        <XStack justify="space-between" mt="$4">
           <Button
             icon={ChevronLeft}
             onPress={handlePreviousPage}

@@ -1,7 +1,7 @@
 import { env } from "./env.ts";
 import { db } from "../index.ts";
 
-type SupabaseUser = {
+interface SupabaseUser {
   id: string;
   email: string;
   user_metadata: {
@@ -11,11 +11,11 @@ type SupabaseUser = {
   app_metadata: {
     role?: string;
   };
-};
+}
 
-type SupabaseUsersResponse = {
+interface SupabaseUsersResponse {
   users: SupabaseUser[];
-};
+}
 
 const prisma = db;
 

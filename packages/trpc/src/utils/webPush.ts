@@ -4,10 +4,10 @@ import webpush, { WebPushError } from "web-push";
 import { NotificationService } from "../services/notificationService";
 import { executeWithRetry } from "./resilience";
 
-type PushSubscriptionNotificationResult = {
+interface PushSubscriptionNotificationResult {
   userId: string;
   statusCode: number;
-};
+}
 
 export async function send({
   db,

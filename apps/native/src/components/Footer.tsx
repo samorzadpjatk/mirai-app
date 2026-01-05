@@ -11,12 +11,11 @@ export default function Footer({
   version = "v0.0.0",
 }: FooterProps) {
   return (
-    <YStack flex={1} justifyContent="flex-end" alignItems="center">
+    <YStack flex={1} justify="flex-end" items="center">
       <Text
-        color="$gray11"
         fontSize="$2"
         opacity={0.5}
-        textAlign="center"
+        text="center"
       >
         {appName} • {version}
       </Text>

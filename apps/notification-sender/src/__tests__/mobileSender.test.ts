@@ -11,8 +11,8 @@ vi.mock("expo-server-sdk", () => {
     chunkPushNotifications(msgs: unknown[]) {
       return [msgs];
     }
-    async sendPushNotificationsAsync(_chunk: unknown[]) {
-      return _chunk.map(() => ({ status: "ok" }));
+    sendPushNotificationsAsync(_chunk: unknown[]) {
+      return Promise.resolve(_chunk.map(() => ({ status: "ok" })));
     }
   }
   return { Expo: ExpoMock };
@@ -87,9 +87,7 @@ describe("sendMobileNotifications", () => {
       typeof vi.fn
     >;
     expect(createManyMock).toHaveBeenCalledTimes(1);
-    const calls = createManyMock.mock.calls as Array<
-      [{ data: Array<{ status: string }> }]
-    >;
+    const calls = createManyMock.mock.calls as [{ data: { status: string }[] }][];
     const payload = calls[0]?.[0]?.data ?? [];
     const sentCount = payload.filter((p) => p.status === "sent").length;
     expect(sentCount).toBe(2);
@@ -100,8 +98,8 @@ describe("sendMobileNotifications", () => {
     const { Expo } = await import("expo-server-sdk");
     (Expo.prototype.sendPushNotificationsAsync as unknown as ReturnType<
       typeof vi.fn
-    >) = vi.fn(async () => {
-      throw new Error("network error");
+    >) = vi.fn(() => {
+      return Promise.reject(new Error("network error"));
     });
 
     (
@@ -124,9 +122,7 @@ describe("sendMobileNotifications", () => {
       typeof vi.fn
     >;
     expect(createManyMock).toHaveBeenCalledTimes(1);
-    const calls = createManyMock.mock.calls as Array<
-      [{ data: Array<{ status: string; failureReason?: string }> }]
-    >;
+    const calls = createManyMock.mock.calls as [{ data: { status: string; failureReason?: string }[] }][];
     const payload = calls[0]?.[0]?.data ?? [];
     const firstItem = payload.length > 0 ? payload[0] : null;
     expect(firstItem).toMatchObject({

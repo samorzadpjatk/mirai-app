@@ -6,9 +6,9 @@ import type { User } from "@integral-2025-app/common-types";
 import type { AuthUser } from "./types";
 import { db } from "@integral-2025-app/db";
 
-type MinimalBuffer = {
+interface MinimalBuffer {
   from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };
-};
+}
 
 const getGlobalBuffer = () =>
   (globalThis as typeof globalThis & { Buffer?: MinimalBuffer }).Buffer;

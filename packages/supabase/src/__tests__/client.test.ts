@@ -10,11 +10,11 @@ vi.mock("~/base", () => ({
 const TEST_URL = "https://test.supabase.co";
 const TEST_ANON_KEY = "test-anon-key";
 
-type StorageLike = {
+interface StorageLike {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
   removeItem: (key: string) => void;
-};
+}
 
 const getLatestAuthOptions = () => {
   const call = createBaseSupabaseClientMock.mock.calls

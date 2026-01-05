@@ -2,6 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "paths": {
+      "~/*": ["./src/*"]
+    },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
@@ -9,16 +12,8 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
-    "paths": {
-      "~/*": ["./src/*"]
-    }
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src/**/*", "vitest.setup.ts", "vitest.config.ts"],
-  "exclude": ["node_modules", "dist"],
-  "references": [
-    {
-      "path": "../common-types"
-    }
-  ]
+  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts"],
+  "exclude": ["node_modules", "dist"]
 }
