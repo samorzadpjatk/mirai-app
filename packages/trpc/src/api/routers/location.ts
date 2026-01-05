@@ -7,6 +7,8 @@ import {
 import {
   locationDataSchema,
   calculateDistance,
+  latitudeSchema,
+  longitudeSchema,
 } from "../../utils/location-validation";
 
 export const locationRouter = createTRPCRouter({
@@ -138,8 +140,8 @@ export const locationRouter = createTRPCRouter({
   searchUsersInRadius: protectedProcedure
     .input(
       z.object({
-        latitude: z.number().min(-90).max(90),
-        longitude: z.number().min(-180).max(180),
+        latitude: latitudeSchema,
+        longitude: longitudeSchema,
         radiusKm: z.number().positive().max(1000), // Max 1000km
       }),
     )
