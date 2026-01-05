@@ -1,4 +1,10 @@
-export type { Session as SupabaseSession, SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js";
+export type {
+  Session as SupabaseSession,
+  SupabaseClient,
+  User as SupabaseUser,
+  RealtimePostgresChangesPayload,
+  RealtimeChannel,
+} from "@supabase/supabase-js";
 
 export interface SupabaseClientOptions {
   auth?: {

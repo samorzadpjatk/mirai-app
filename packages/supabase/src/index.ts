@@ -4,6 +4,8 @@ export type {
   SupabaseClient,
   SupabaseSession,
   SupabaseUser,
+  RealtimePostgresChangesPayload,
+  RealtimeChannel,
 } from "./types";
 
 export { createSupabaseClient };

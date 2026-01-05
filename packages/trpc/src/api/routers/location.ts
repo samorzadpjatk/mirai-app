@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { observable } from "@trpc/server/observable";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -10,6 +11,11 @@ import {
   latitudeSchema,
   longitudeSchema,
 } from "../../utils/location-validation";
+import {
+  createSupabaseClient,
+  type RealtimePostgresChangesPayload,
+  type RealtimeChannel,
+} from "@integral-2025-app/supabase";
 
 export const locationRouter = createTRPCRouter({
   /**
@@ -246,5 +252,183 @@ export const locationRouter = createTRPCRouter({
     });
 
     return users;
+  }),
+
+  /**
+   * Subscribe to real-time location updates of friends
+   * Uses Supabase Realtime to listen for Location table changes
+   */
+  onFriendsLocationUpdate: protectedProcedure.subscription(({ ctx }) => {
+    return observable<{
+      userId: string;
+      location: {
+        id: string;
+        userId: string;
+        latitude: number | null;
+        longitude: number | null;
+        accuracy: number | null;
+        altitude: number | null;
+        altitudeAccuracy: number | null;
+        heading: number | null;
+        speed: number | null;
+        timestamp: Date;
+        isSharingLocation: boolean;
+      };
+      user: {
+        id: string;
+        name: string | null;
+        image: string | null;
+      };
+      action: "INSERT" | "UPDATE" | "DELETE";
+    }>((emit) => {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        emit.error(
+          new Error("Supabase URL and Key are required for realtime subscriptions")
+        );
+        return;
+      }
+
+      const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
+      let channel: RealtimeChannel | null = null;
+
+      // Get list of user IDs that are sharing their location with current user
+      const setupSubscription = async () => {
+        try {
+          const locations = await ctx.db.location.findMany({
+            where: {
+              isSharingLocation: true,
+              usersToShareWith: {
+                some: {
+                  id: ctx.dbUser.id,
+                },
+              },
+            },
+            select: {
+              userId: true,
+            },
+          });
+
+          const sharedUserIds = locations.map((loc) => loc.userId);
+
+          // Subscribe to Location table changes
+          channel = supabase
+            .channel(`location_updates_${ctx.dbUser.id}`)
+            .on(
+              "postgres_changes",
+              {
+                event: "*",
+                schema: "public",
+                table: "Location",
+              },
+              (
+                payload: RealtimePostgresChangesPayload<{
+                  id: string;
+                  userId: string;
+                  latitude: string | null;
+                  longitude: string | null;
+                  accuracy: string | null;
+                  altitude: string | null;
+                  altitudeAccuracy: string | null;
+                  heading: string | null;
+                  speed: string | null;
+                  timestamp: string;
+                  isSharingLocation: boolean;
+                }>
+              ) => {
+                const eventType = payload.eventType;
+                
+                // Get the record from new or old depending on event type
+                interface LocationRecord {
+                  id: string;
+                  userId: string;
+                  latitude: string | null;
+                  longitude: string | null;
+                  accuracy: string | null;
+                  altitude: string | null;
+                  altitudeAccuracy: string | null;
+                  heading: string | null;
+                  speed: string | null;
+                  timestamp: string;
+                  isSharingLocation: boolean;
+                }
+                
+                const record = (payload.new as LocationRecord)?.userId
+                  ? payload.new as LocationRecord
+                  : payload.old as LocationRecord;
+
+                // Only emit if the location belongs to a user sharing with current user
+                if (!record?.userId || !sharedUserIds.includes(record.userId)) {
+                  return;
+                }
+
+                void (async () => {
+                  try {
+                    // Fetch complete location data with user information
+                    const location = await ctx.db.location.findUnique({
+                      where: { userId: record.userId },
+                      include: {
+                        user: {
+                          select: {
+                            id: true,
+                            name: true,
+                            image: true,
+                          },
+                        },
+                      },
+                    });
+
+                    if (!location) {
+                      return;
+                    }
+
+                    emit.next({
+                      userId: record.userId,
+                      location: {
+                        id: location.id,
+                        userId: location.userId,
+                        latitude: location.latitude ? Number(location.latitude) : null,
+                        longitude: location.longitude ? Number(location.longitude) : null,
+                        accuracy: location.accuracy ? Number(location.accuracy) : null,
+                        altitude: location.altitude ? Number(location.altitude) : null,
+                        altitudeAccuracy: location.altitudeAccuracy
+                          ? Number(location.altitudeAccuracy)
+                          : null,
+                        heading: location.heading ? Number(location.heading) : null,
+                        speed: location.speed ? Number(location.speed) : null,
+                        timestamp: location.timestamp,
+                        isSharingLocation: location.isSharingLocation,
+                      },
+                      user: location.user,
+                      action: eventType,
+                    });
+                  } catch (err) {
+                    console.error("Error fetching location update:", err);
+                  }
+                })();
+              }
+            )
+            .subscribe((status) => {
+              console.log(
+                `Realtime subscription status for user ${ctx.dbUser.id}:`,
+                status
+              );
+            });
+        } catch (err) {
+                    emit.error(err as Error);
+        }
+      };
+      
+      void setupSubscription();
+
+      // Cleanup function
+      return () => {
+        if (channel) {
+          void supabase.removeChannel(channel);
+        }
+      };
+    });
   }),
 });
