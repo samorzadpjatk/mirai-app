@@ -7,8 +7,7 @@
     "declaration": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true
-    /* Removed defaults (emitDeclarationOnly/composite/noEmit) for cleanliness */
   },
-  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts", "prisma"],
+  "include": ["src/**/*", "prisma", "vitest.config.ts", "vitest.setup.ts"],
   "exclude": ["node_modules", "dist", "prisma/lib/**/*"]
 }

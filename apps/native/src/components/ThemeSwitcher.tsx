@@ -13,22 +13,22 @@ export function ThemeSwitcher({ onToggle, currentTheme }: ThemeSwitcherProps) {
   return (
     <XStack
       space="$2"
-      alignItems="center"
-      padding="$3"
-      borderRadius="$4"
-      backgroundColor="$background"
+      items="center"
+      p="$3"
+      rounded="$4"
+      bg="$background"
     >
       <Button
         size="$4"
         circular
         icon={isDark ? Sun : Moon}
-        backgroundColor={isDark ? "$gray3" : "$gray11"}
+        bg={isDark ? "$gray3" : "$gray11"}
         color={isDark ? "$gray12" : "$gray1"}
         borderWidth={2}
         borderColor={isDark ? "$gray8" : "$gray9"}
         pressStyle={{ scale: 0.95, opacity: 0.8 }}
         hoverStyle={{
-          backgroundColor: isDark ? "$gray4" : "$gray10",
+          bg: isDark ? "$gray4" : "$gray10",
           opacity: 0.9,
         }}
         onPress={onToggle}
