@@ -68,25 +68,20 @@ export async function checkInactiveUsers(
     return result;
   }
 
-  // Create a single notification for all inactive users
-  const notification = await db.notification.create({
-    data: {
-      title: "Zobacz gdzie są twoi znajomi",
-      body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-      url: "/map",
-      createdById: firstUser.user.id, // Use first user as creator (system notification)
-    },
-  });
+  // Notification template
+  const notificationData = {
+    title: "Zobacz gdzie są twoi znajomi",
+    body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
+    url: "/map",
+  };
 
   // Send mobile notifications to each inactive user
   for (const location of inactiveUsers) {
     try {
-      // Create notification push record for this specific user
+      // Create notification for this specific user
       const userNotification = await db.notification.create({
         data: {
-          title: notification.title,
-          body: notification.body,
-          url: notification.url,
+          ...notificationData,
           createdById: location.user.id,
         },
       });

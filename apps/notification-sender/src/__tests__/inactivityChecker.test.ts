@@ -71,12 +71,6 @@ describe("checkInactiveUsers", () => {
         title: "Zobacz gdzie są twoi znajomi",
         body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
         url: "/map",
-      })
-      .mockResolvedValueOnce({
-        id: "notif-2",
-        title: "Zobacz gdzie są twoi znajomi",
-        body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-        url: "/map",
       });
 
     (db.location.update as ReturnType<typeof vi.fn>).mockResolvedValueOnce({});
@@ -85,7 +79,7 @@ describe("checkInactiveUsers", () => {
 
     expect(result.checked).toBe(1);
     expect(result.notified).toBe(1);
-    expect(db.notification.create).toHaveBeenCalledTimes(2);
+    expect(db.notification.create).toHaveBeenCalledTimes(1);
     expect(db.location.update).toHaveBeenCalledWith({
       where: { id: "loc-1" },
       data: { lastInactivityNotification: expect.any(Date) as Date },
@@ -137,12 +131,6 @@ describe("checkInactiveUsers", () => {
         title: "Zobacz gdzie są twoi znajomi",
         body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
         url: "/map",
-      })
-      .mockResolvedValueOnce({
-        id: "notif-2",
-        title: "Zobacz gdzie są twoi znajomi",
-        body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-        url: "/map",
       });
 
     (db.location.update as ReturnType<typeof vi.fn>).mockResolvedValueOnce({});
@@ -187,12 +175,6 @@ describe("checkInactiveUsers", () => {
         title: "Zobacz gdzie są twoi znajomi",
         body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
         url: "/map",
-      })
-      .mockResolvedValueOnce({
-        id: "notif-3",
-        title: "Zobacz gdzie są twoi znajomi",
-        body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-        url: "/map",
       });
 
     (db.location.update as ReturnType<typeof vi.fn>)
@@ -203,7 +185,7 @@ describe("checkInactiveUsers", () => {
 
     expect(result.checked).toBe(2);
     expect(result.notified).toBe(2);
-    expect(db.notification.create).toHaveBeenCalledTimes(3); // 1 initial + 2 per user
+    expect(db.notification.create).toHaveBeenCalledTimes(2); // 1 per user
     expect(db.location.update).toHaveBeenCalledTimes(2);
   });
 
@@ -230,15 +212,9 @@ describe("checkInactiveUsers", () => {
     ]);
 
     (db.notification.create as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({
-        id: "notif-1",
-        title: "Zobacz gdzie są twoi znajomi",
-        body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-        url: "/map",
-      })
       .mockRejectedValueOnce(new Error("Database error"))
       .mockResolvedValueOnce({
-        id: "notif-3",
+        id: "notif-2",
         title: "Zobacz gdzie są twoi znajomi",
         body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
         url: "/map",
@@ -280,12 +256,6 @@ describe("checkInactiveUsers", () => {
     (db.notification.create as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce({
         id: "notif-1",
-        title: "Zobacz gdzie są twoi znajomi",
-        body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-        url: "/map",
-      })
-      .mockResolvedValueOnce({
-        id: "notif-2",
         title: "Zobacz gdzie są twoi znajomi",
         body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
         url: "/map",
