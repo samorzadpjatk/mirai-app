@@ -2,13 +2,13 @@ import React from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
-type MapOverlayProps = {
+interface MapOverlayProps {
   activeCount: number;
   fadedCount: number;
   onRecenter?: () => void;
   title?: string;
   subtitle?: string;
-};
+}
 
 /**
  * Slopes-inspired overlay: subtle gradient top bar with counts and recenter action.

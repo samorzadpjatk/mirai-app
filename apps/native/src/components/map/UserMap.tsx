@@ -2,16 +2,16 @@ import React, { useEffect, useMemo, useState, type ComponentType } from "react";
 import { Platform, StyleSheet, View, Text } from "react-native";
 import Constants from "expo-constants";
 
-export type UserLocation = {
+export interface UserLocation {
   id: string;
   name: string;
   coordinate: [number, number]; // [longitude, latitude]
   avatarUrl: string;
   /** ISO string or millis since epoch */
   lastActiveAt: string | number;
-};
+}
 
-export type UserMapProps = {
+export interface UserMapProps {
   users: UserLocation[];
   /**
    * Called when user marker is pressed.
@@ -25,9 +25,9 @@ export type UserMapProps = {
    * Optional overlay (e.g., Slopes-like UI) rendered above the map.
    */
   overlay?: React.ReactNode;
-};
+}
 
-type UserFeature = {
+interface UserFeature {
   type: "Feature";
   id: string;
   properties: {
@@ -40,12 +40,12 @@ type UserFeature = {
     type: "Point";
     coordinates: [number, number];
   };
-};
+}
 
-type UserFeatureCollection = {
+interface UserFeatureCollection {
   type: "FeatureCollection";
   features: UserFeature[];
-};
+}
 
 // Basic Mapbox style & layer IDs
 const MAP_STYLE = "mapbox://styles/mapbox/outdoors-v12";
@@ -55,7 +55,7 @@ const LAYER_ID_CLUSTERS = "users-clusters";
 const LAYER_ID_CLUSTER_COUNT = "users-clusters-count";
 const IMAGE_LAYER_ID = "user-avatar";
 type MapboxComponent = ComponentType<Record<string, unknown>>;
-type MapboxModule = {
+interface MapboxModule {
   MapView: MapboxComponent;
   Camera: MapboxComponent;
   UserLocation: MapboxComponent;
@@ -63,7 +63,7 @@ type MapboxModule = {
   ShapeSource: MapboxComponent;
   CircleLayer: MapboxComponent;
   SymbolLayer: MapboxComponent;
-};
+}
 
 function isMapboxModule(candidate: unknown): candidate is MapboxModule {
   const mod = candidate as Record<string, unknown> | null;
@@ -79,14 +79,14 @@ function isMapboxModule(candidate: unknown): candidate is MapboxModule {
   );
 }
 
-type MapPressEvent = {
-  features?: Array<{
+interface MapPressEvent {
+  features?: {
     properties?: {
       id?: string;
       [key: string]: unknown;
     };
-  }>;
-};
+  }[];
+}
 
 /**
  * Compute opacity (0–1) based on last activity timestamp.

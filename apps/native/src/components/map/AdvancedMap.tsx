@@ -2,28 +2,28 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, StyleSheet, View, Text, Pressable } from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 
-export type UserLocation = {
+export interface UserLocation {
   id: string;
   latitude: number;
   longitude: number;
   avatarUrl: string;
   /** ISO string, millis or Date */
   lastActive: string | number | Date;
-};
+}
 
-export type AdvancedMapProps = {
+export interface AdvancedMapProps {
   users: UserLocation[];
   onUserPress?: (user: UserLocation) => void;
-};
+}
 
-type MapPressEvent = {
-  features?: Array<{
+interface MapPressEvent {
+  features?: {
     properties?: {
       id?: string;
       [key: string]: unknown;
     };
-  }>;
-};
+  }[];
+}
 
 const MAP_STYLE_OUTDOORS = "mapbox://styles/mapbox/outdoors-v12";
 const SOURCE_ID = "advanced-users-source";
@@ -53,7 +53,7 @@ export function getFreshness(lastActive: string | number | Date, now = Date.now(
   return Math.max(0, Math.min(1, ratio));
 }
 
-type SimpleUserFeature = {
+interface SimpleUserFeature {
   type: "Feature";
   id: string;
   properties: {
@@ -65,21 +65,21 @@ type SimpleUserFeature = {
     type: "Point";
     coordinates: [number, number];
   };
-};
+}
 
-type SimpleFeatureCollection = {
+interface SimpleFeatureCollection {
   type: "FeatureCollection";
   features: SimpleUserFeature[];
-};
+}
 
-type CameraRef = {
+interface CameraRef {
   setCamera?: (options: {
     centerCoordinate: [number, number];
     zoomLevel?: number;
     pitch?: number;
     animationDuration?: number;
   }) => void;
-};
+}
 
 export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) => {
   const cameraRef = useRef<CameraRef | null>(null);

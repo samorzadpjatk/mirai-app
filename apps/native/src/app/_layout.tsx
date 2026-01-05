@@ -40,10 +40,10 @@ const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 const MAPBOX_ACCESS_TOKEN: string =
   process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? process.env.MAPBOX_ACCESS_TOKEN ?? "";
 
-type MapboxModule = {
+interface MapboxModule {
   setAccessToken?: (token: string) => void;
   setConnected?: (connected: boolean) => void;
-};
+}
 
 // Mapbox configuration is done in useEffect to avoid errors in Expo Go
 // where native code is not available
