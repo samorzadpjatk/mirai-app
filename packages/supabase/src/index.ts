@@ -8,4 +8,6 @@ export type {
   RealtimeChannel,
 } from "./types";
 
+export { REALTIME_CHANNEL_STATES } from "./types";
+
 export { createSupabaseClient };
