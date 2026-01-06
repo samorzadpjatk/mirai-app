@@ -6,6 +6,7 @@ import {
   createTRPCClient,
   createWSClient,
   httpBatchLink,
+  retryLink,
   splitLink,
   wsLink,
 } from "@trpc/client";
@@ -33,6 +34,19 @@ const getTRPCClient = (
 ) =>
   createTRPCClient<AppRouter>({
     links: [
+      retryLink({
+        retry(opts) {
+          const { attempts, error } = opts;
+          // Retry on network errors or 5xx server errors
+          const shouldRetry: boolean =
+            attempts < 5 &&
+            (error?.name === "FetchError" ||
+              (error?.data?.httpStatus ? error.data.httpStatus >= 500 : false));
+          return shouldRetry;
+        },
+        retryDelayMs: (attemptIndex) =>
+          Math.min(1000 * 2 ** attemptIndex, 30_000),
+      }),
       splitLink({
         condition(op) {
           return op.type === "subscription";
