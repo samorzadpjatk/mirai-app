@@ -7,9 +7,6 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    VAPID_PUBLIC_KEY: z.string().optional(),
-    VAPID_PRIVATE_KEY: z.string().optional(),
-    VAPID_EMAIL: z.email().optional(),
     // Accept any NODE_ENV but coerce invalid/missing values to "development"
     NODE_ENV: z
       .enum(["development", "production", "test"])
@@ -22,9 +19,6 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
-    VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
-    VAPID_EMAIL: process.env.VAPID_EMAIL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
