@@ -157,17 +157,18 @@ model MobilePushSubscription {
 
 // https://docs.expo.dev/versions/latest/sdk/location/#locationobject
 model Location {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id])
-  timestamp         DateTime @default(now())
-  isSharingLocation Boolean  @default(false)
-  accuracy          Decimal? @db.Decimal(10, 8)
-  altitude          Decimal? @db.Decimal(10, 8)
-  altitudeAccuracy  Decimal? @db.Decimal(10, 8)
-  heading           Decimal? @db.Decimal(10, 8)
-  latitude          Decimal? @db.Decimal(10, 8)
-  longitude         Decimal? @db.Decimal(10, 8)
-  speed             Decimal? @db.Decimal(10, 8)
-  usersToShareWith  User[]   @relation("LocationSharingUsers")
+  id                         String    @id @default(cuid())
+  userId                     String    @unique
+  user                       User      @relation(fields: [userId], references: [id])
+  timestamp                  DateTime  @default(now())
+  isSharingLocation          Boolean   @default(false)
+  accuracy                   Decimal?  @db.Decimal(10, 8)
+  altitude                   Decimal?  @db.Decimal(10, 8)
+  altitudeAccuracy           Decimal?  @db.Decimal(10, 8)
+  heading                    Decimal?  @db.Decimal(10, 8)
+  latitude                   Decimal?  @db.Decimal(10, 8)
+  longitude                  Decimal?  @db.Decimal(10, 8)
+  speed                      Decimal?  @db.Decimal(10, 8)
+  usersToShareWith           User[]    @relation("LocationSharingUsers")
+  lastInactivityNotification DateTime?
 }
