@@ -1,5 +1,6 @@
 import type { Prisma } from "@integral-2025-app/db";
 import { sendMobileNotifications } from "./mobileSender";
+import { INACTIVITY_NOTIFICATION } from "./notificationTemplates";
 
 const INACTIVITY_THRESHOLD_MINUTES = 30;
 const NOTIFICATION_COOLDOWN_MINUTES = 30;
@@ -63,12 +64,8 @@ export async function checkInactiveUsers(
     return result;
   }
 
-  // Notification template
-  const notificationData = {
-    title: "Zobacz gdzie są twoi znajomi",
-    body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-    url: "/map",
-  };
+  // Notification template (shared)
+  const notificationData = INACTIVITY_NOTIFICATION;
 
   // Send mobile notifications to each inactive user
   for (const location of inactiveUsers) {
