@@ -4,6 +4,8 @@ import type { RealtimePostgresInsertPayload } from "@supabase/supabase-js";
 import { db } from "@integral-2025-app/db";
 import { startWsServer } from "./server";
 import { sendMobileNotifications } from "./mobileSender";
+import { checkInactiveUsers } from "./inactivityChecker";
+import { createInactivityScheduler } from "./scheduler";
 
 interface NotificationRow {
   id: string;
@@ -47,9 +49,18 @@ async function main() {
       console.log("Realtime channel status:", status);
     });
 
+  // Start the inactivity checker scheduler (runs every 5 minutes)
+  const inactivityScheduler = createInactivityScheduler(
+    db as never,
+    checkInactiveUsers,
+    5,
+  );
+  inactivityScheduler.start();
+
   process.on("SIGINT", () => {
     void (async () => {
       console.log("Shutting down...");
+      inactivityScheduler.stop();
       await supabase.removeChannel(channel);
       process.exit(0);
     })();
