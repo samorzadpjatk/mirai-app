@@ -1,7 +1,22 @@
-const defaultMaxRetriesCount =
-  Number(process.env.DEFAULT_MAX_RETRIES_COUNT) || 5;
-const defaultDelayInMs = Number(process.env.DEFAULT_DELAY_MS) || 1000;
+const getNumericEnvOrDefault = (
+  value: string | undefined,
+  fallback: number,
+): number => {
+  if (value === undefined) {
+    return fallback;
+  }
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
 
+const defaultMaxRetriesCount = getNumericEnvOrDefault(
+  process.env.DEFAULT_MAX_RETRIES_COUNT,
+  5,
+);
+const defaultDelayInMs = getNumericEnvOrDefault(
+  process.env.DEFAULT_DELAY_MS,
+  1000,
+);
 const getJitteredDelay = (delay: number) => delay * (0.5 + Math.random());
 
 export async function executeWithRetry<T>(
