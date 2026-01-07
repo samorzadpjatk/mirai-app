@@ -55,8 +55,8 @@ export async function sendMobileNotifications(
           );
         },
         undefined,
-        3, // Max 3 retries for push notifications
-        500, // Start with 500ms delay
+        3,
+        500,
       );
       tickets.push(...t);
     } catch {

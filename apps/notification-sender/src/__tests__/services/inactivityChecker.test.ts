@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { checkInactiveUsers } from "../inactivityChecker";
+import { checkInactiveUsers } from "../../services/inactivityChecker";
 import type { Prisma } from "@integral-2025-app/db";
 
 // Mock sendMobileNotifications
-vi.mock("../mobileSender", () => ({
+vi.mock("../../services/mobileSender", () => ({
   sendMobileNotifications: vi.fn().mockResolvedValue({
     success: true,
     sent: 1,
@@ -36,9 +36,9 @@ describe("checkInactiveUsers", () => {
   });
 
   it("returns zero counts when no inactive users found", async () => {
-    (
-      db.location.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([]);
+    (db.location.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      [],
+    );
 
     const result = await checkInactiveUsers(db);
 
@@ -52,9 +52,7 @@ describe("checkInactiveUsers", () => {
   });
 
   it("identifies users inactive for 30+ minutes with sharing enabled", async () => {
-    (
-      db.location.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
+    (db.location.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       {
         id: "loc-1",
         userId: "user-1",
@@ -65,13 +63,12 @@ describe("checkInactiveUsers", () => {
       },
     ]);
 
-    (db.notification.create as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({
-        id: "notif-1",
-        title: "Zobacz gdzie są twoi znajomi",
-        body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-        url: "/map",
-      });
+    (db.notification.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "notif-1",
+      title: "Zobacz gdzie są twoi znajomi",
+      body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
+      url: "/map",
+    });
 
     (db.location.update as ReturnType<typeof vi.fn>).mockResolvedValueOnce({});
 
@@ -88,9 +85,9 @@ describe("checkInactiveUsers", () => {
 
   it("skips users who are not sharing location", async () => {
     // This case should not be returned by the query since we filter by isSharingLocation: true
-    (
-      db.location.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([]);
+    (db.location.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      [],
+    );
 
     const result = await checkInactiveUsers(db);
 
@@ -101,9 +98,9 @@ describe("checkInactiveUsers", () => {
   it("respects notification cooldown period", async () => {
     // User who was notified 29 minutes ago should not be included in results
     // because the query filters them out
-    (
-      db.location.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([]);
+    (db.location.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      [],
+    );
 
     const result = await checkInactiveUsers(db);
 
@@ -112,9 +109,7 @@ describe("checkInactiveUsers", () => {
   });
 
   it("notifies user again after cooldown period has passed", async () => {
-    (
-      db.location.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
+    (db.location.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       {
         id: "loc-1",
         userId: "user-1",
@@ -125,13 +120,12 @@ describe("checkInactiveUsers", () => {
       },
     ]);
 
-    (db.notification.create as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({
-        id: "notif-1",
-        title: "Zobacz gdzie są twoi znajomi",
-        body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-        url: "/map",
-      });
+    (db.notification.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "notif-1",
+      title: "Zobacz gdzie są twoi znajomi",
+      body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
+      url: "/map",
+    });
 
     (db.location.update as ReturnType<typeof vi.fn>).mockResolvedValueOnce({});
 
@@ -142,9 +136,7 @@ describe("checkInactiveUsers", () => {
   });
 
   it("handles multiple inactive users", async () => {
-    (
-      db.location.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
+    (db.location.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       {
         id: "loc-1",
         userId: "user-1",
@@ -190,9 +182,7 @@ describe("checkInactiveUsers", () => {
   });
 
   it("handles errors gracefully and continues processing other users", async () => {
-    (
-      db.location.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
+    (db.location.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       {
         id: "loc-1",
         userId: "user-1",
@@ -230,7 +220,8 @@ describe("checkInactiveUsers", () => {
   });
 
   it("skips users when mobile notification sending fails", async () => {
-    const { sendMobileNotifications } = await import("../mobileSender");
+    const { sendMobileNotifications } =
+      await import("../../services/mobileSender");
     (sendMobileNotifications as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       {
         success: false,
@@ -240,9 +231,7 @@ describe("checkInactiveUsers", () => {
       },
     );
 
-    (
-      db.location.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
+    (db.location.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       {
         id: "loc-1",
         userId: "user-1",
@@ -253,13 +242,12 @@ describe("checkInactiveUsers", () => {
       },
     ]);
 
-    (db.notification.create as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({
-        id: "notif-1",
-        title: "Zobacz gdzie są twoi znajomi",
-        body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
-        url: "/map",
-      });
+    (db.notification.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: "notif-1",
+      title: "Zobacz gdzie są twoi znajomi",
+      body: "Twoi znajomi dzielą się swoją lokalizacją. Zobacz gdzie są!",
+      url: "/map",
+    });
 
     const result = await checkInactiveUsers(db);
 

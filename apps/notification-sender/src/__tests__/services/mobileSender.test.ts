@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { sendMobileNotifications } from "../mobileSender";
+import { sendMobileNotifications } from "../../services/mobileSender";
 import type { Prisma } from "@integral-2025-app/db";
 
 // Mock expo-server-sdk
