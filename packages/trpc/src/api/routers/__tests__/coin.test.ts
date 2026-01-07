@@ -162,7 +162,7 @@ describe("coinRouter", () => {
           groupId: "group-1",
           amount: 50,
         })
-      ).rejects.toThrow("Guild does not have enough coins");
+      ).rejects.toThrow("Group does not have enough coins");
     });
 
     it("should throw error if group not found", async () => {
@@ -175,7 +175,7 @@ describe("coinRouter", () => {
           groupId: "non-existent",
           amount: 50,
         })
-      ).rejects.toThrow("Guild does not have enough coins");
+      ).rejects.toThrow("Group does not have enough coins");
     });
   });
 });
