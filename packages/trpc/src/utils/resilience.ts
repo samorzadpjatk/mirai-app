@@ -2,6 +2,8 @@ const defaultMaxRetriesCount =
   Number(process.env.DEFAULT_MAX_RETRIES_COUNT) || 5;
 const defaultDelayInMs = Number(process.env.DEFAULT_DELAY_MS) || 1000;
 
+import { TRPCError } from "@trpc/server";
+
 const getJitteredDelay = (delay: number) => delay * (0.5 + Math.random());
 
 export async function executeWithRetry<T>(
@@ -38,7 +40,8 @@ export async function executeWithRetry<T>(
     }
   }
 
-  throw new Error(
-    `None of the ${maxRetriesCount} retry attempts provided a valid result.`,
-  );
+  throw new TRPCError({
+    code: "INTERNAL_SERVER_ERROR",
+    message: `None of the ${maxRetriesCount} retry attempts provided a valid result.`,
+  });
 }
