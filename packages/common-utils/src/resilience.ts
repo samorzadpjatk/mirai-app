@@ -30,7 +30,7 @@ export async function executeWithRetry<T>(
       return result;
     } catch (err: unknown) {
       await onError?.(err, retryAttempt);
-      if (retryAttempt == maxRetriesCount - 1) {
+      if (retryAttempt === maxRetriesCount - 1) {
         throw err;
       }
 
