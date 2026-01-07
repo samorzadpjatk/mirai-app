@@ -42,7 +42,7 @@ export async function checkInactiveUsers(
         { lastInactivityNotification: null },
         { lastInactivityNotification: { lt: notificationCooldown } },
       ],
-    },
+    } ,
     include: {
       user: true,
     },
@@ -74,7 +74,7 @@ export async function checkInactiveUsers(
       const userNotification = await db.notification.create({
         data: {
           ...notificationData,
-          createdById: location.user.id,
+          createdById: location.userId,
         },
       });
 
