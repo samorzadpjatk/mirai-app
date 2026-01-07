@@ -31,11 +31,6 @@ export async function checkInactiveUsers(
     now.getTime() - NOTIFICATION_COOLDOWN_MINUTES * 60 * 1000,
   );
 
-  // Find users who:
-  // 1. Have a location record
-  // 2. Haven't updated location in 30+ minutes
-  // 3. Are currently sharing location (not paused)
-  // 4. Either never received inactivity notification OR last notification was 30+ minutes ago
   const inactiveUsers = await db.location.findMany({
     where: {
       timestamp: {
