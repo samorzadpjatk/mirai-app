@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { observable } from "@trpc/server/observable";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -12,9 +11,14 @@ import {
   longitudeSchema,
 } from "../../utils/location-validation";
 import {
-  createSupabaseClient,
   type RealtimeChannel,
+  REALTIME_CHANNEL_STATES,
 } from "@integral-2025-app/supabase";
+import type {
+  Location as DbLocation,
+  PrismaClient,
+} from "@integral-2025-app/db";
+import { TRPCError, tracked } from "@trpc/server";
 
 /**
  * Expo-compliant location object type
@@ -37,7 +41,6 @@ export interface ExpoLocationObject {
  * Extended location object with user and sharing info
  */
 export interface LocationWithUser extends ExpoLocationObject {
-  userId: string;
   isSharingLocation: boolean;
   user?: {
     id: string;
@@ -46,27 +49,9 @@ export interface LocationWithUser extends ExpoLocationObject {
   };
 }
 
-/**
- * Database location type (simplified)
- */
-interface DbLocation {
-  id: string;
-  userId: string;
-  latitude: { toNumber: () => number } | null;
-  longitude: { toNumber: () => number } | null;
-  altitude: { toNumber: () => number } | null;
-  accuracy: { toNumber: () => number } | null;
-  altitudeAccuracy: { toNumber: () => number } | null;
-  heading: { toNumber: () => number } | null;
-  speed: { toNumber: () => number } | null;
-  timestamp: Date;
-  isSharingLocation: boolean;
-  user?: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  };
-}
+type FriendLocationEvent =
+  | { id: string; type: "upsert"; location: LocationWithUser }
+  | { id: string; type: "delete"; userId: string };
 
 /**
  * Convert database location to Expo-compliant format
@@ -74,13 +59,13 @@ interface DbLocation {
 function toExpoLocation(dbLocation: DbLocation): ExpoLocationObject {
   return {
     coords: {
-      latitude: dbLocation.latitude ? dbLocation.latitude.toNumber() : 0,
-      longitude: dbLocation.longitude ? dbLocation.longitude.toNumber() : 0,
-      altitude: dbLocation.altitude ? dbLocation.altitude.toNumber() : null,
-      accuracy: dbLocation.accuracy ? dbLocation.accuracy.toNumber() : null,
-      altitudeAccuracy: dbLocation.altitudeAccuracy ? dbLocation.altitudeAccuracy.toNumber() : null,
-      heading: dbLocation.heading ? dbLocation.heading.toNumber() : null,
-      speed: dbLocation.speed ? dbLocation.speed.toNumber() : null,
+      latitude: dbLocation.latitude?.toNumber() ?? 0,
+      longitude: dbLocation.longitude?.toNumber() ?? 0,
+      altitude: dbLocation.altitude?.toNumber() ?? null,
+      accuracy: dbLocation.accuracy?.toNumber() ?? null,
+      altitudeAccuracy: dbLocation.altitudeAccuracy?.toNumber() ?? null,
+      heading: dbLocation.heading?.toNumber() ?? null,
+      speed: dbLocation.speed?.toNumber() ?? null,
     },
     timestamp: dbLocation.timestamp.getTime(),
   };
@@ -89,13 +74,24 @@ function toExpoLocation(dbLocation: DbLocation): ExpoLocationObject {
 /**
  * Convert database location with user to extended format
  */
-function toLocationWithUser(dbLocation: DbLocation): LocationWithUser {
+async function toLocationWithUser(
+  db: PrismaClient,
+  dbLocation: DbLocation,
+): Promise<LocationWithUser> {
   const expoLocation = toExpoLocation(dbLocation);
+  const user = await db.user.findUnique({
+    where: { id: dbLocation.userId },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+    },
+  });
+
   return {
     ...expoLocation,
-    userId: dbLocation.userId,
     isSharingLocation: dbLocation.isSharingLocation,
-    user: dbLocation.user,
+    user: user ?? undefined,
   };
 }
 
@@ -106,10 +102,10 @@ export const locationRouter = createTRPCRouter({
    */
   updateLocationStream: protectedProcedure
     .input(locationDataSchema)
-    .subscription(async ({ ctx, input }) => {
+    .subscription(async function* ({ ctx, input }) {
       // Update location in database
       const location = await ctx.db.location.upsert({
-        where: { userId: ctx.dbUser.id },
+        where: { userId: ctx.dbUser.id, isSharingLocation: true },
         update: {
           latitude: input.latitude,
           longitude: input.longitude,
@@ -132,20 +128,216 @@ export const locationRouter = createTRPCRouter({
           timestamp: new Date(),
         },
       });
-
-      // Return Expo-compliant location object
-      return observable<ExpoLocationObject>((emit) => {
-        emit.next(toExpoLocation(location));
-        emit.complete();
-        return () => {
-          // Cleanup
-        };
-      });
+      yield toExpoLocation(location);
     }),
 
   /**
-   * @deprecated Use updateLocationStream with WebSocket for real-time updates
-   * Update current user's location (HTTP mutation for backwards compatibility)
+   * Update location sharing settings
+   */
+  updateSharingSettings: protectedProcedure
+    .input(
+      z.object({
+        isSharingLocation: z.boolean(),
+        userIdsToShareWith: z.array(z.string()).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { isSharingLocation, userIdsToShareWith } = input;
+
+      // Upsert location for user
+      const updatedLocation = await ctx.db.location.upsert({
+        where: { userId: ctx.dbUser.id },
+        update: {
+          isSharingLocation,
+          usersToShareWith: userIdsToShareWith
+            ? {
+                set: userIdsToShareWith.map((id) => ({ id })),
+              }
+            : undefined,
+              timestamp: new Date(),
+        },
+        create: {
+          userId: ctx.dbUser.id,
+          isSharingLocation,
+          timestamp: new Date(),
+          usersToShareWith: userIdsToShareWith
+            ? {
+                connect: userIdsToShareWith.map((id) => ({ id })),
+              }
+            : undefined,
+        },
+        select: {
+          isSharingLocation: true,
+          usersToShareWith: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      return updatedLocation;
+    }),
+
+  /**
+   * WebSocket subscription for getting locations of friends
+   * Returns real-time updates when friends' locations change.
+   * Optionally accepts a radius (latitude, longitude, radiusKm) to limit events to users within the given radius.
+   */
+  getFriendsLocationsStream: protectedProcedure
+    .input(
+      z.object({
+        connectionId: z.string().nullable(),
+        radiusKm: z.number().positive().max(1000).optional(),
+        latitude: latitudeSchema.optional(),
+        longitude: longitudeSchema.optional(),
+      }),
+    )
+    .subscription(async function* ({ ctx, input }) {
+      const supabase = ctx.supabase;
+      let channel: RealtimeChannel | null = null;
+      const queue: FriendLocationEvent[] = [];
+      const connectionId = input.connectionId ?? crypto.randomUUID();
+
+      const { radiusKm, latitude, longitude } = input;
+      if (radiusKm !== undefined && (latitude === undefined || longitude === undefined)) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: "When providing radiusKm, both latitude and longitude are required" });
+      }
+
+      // Emituj początkowe lokalizacje znajomych (filtrowane jeśli radius podany)
+      const locations = await ctx.db.location.findMany({
+        where: {
+          isSharingLocation: true,
+          usersToShareWith: {
+            some: { id: ctx.dbUser.id },
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      // Track which friends are currently within the radius (when radius filtering is used)
+      const inRadius = new Set<string>();
+
+      for (const location of locations) {
+        const lw = await toLocationWithUser(ctx.db, location);
+        if (radiusKm !== undefined) {
+          if (!location.latitude || !location.longitude) continue;
+          const dist = calculateDistance(
+            latitude!,
+            longitude!,
+            Number(location.latitude),
+            Number(location.longitude),
+          );
+          if (dist <= radiusKm) {
+            inRadius.add(location.userId);
+            yield { type: "upsert", location: { ...lw } };
+          }
+        } else {
+          yield { type: "upsert", location: lw };
+        }
+      }
+
+      const friendIds = locations.map((l) => l.userId);
+
+      if (friendIds.length > 0) {
+        // Subskrybuj zmiany tylko dla lokalizacji znajomych (jeden kanał, filtr in)
+        const filter = `userId=in.(${friendIds.join(",")})`;
+        channel = supabase
+          .channel(`friends_locations_${ctx.dbUser.id}`)
+          .on<DbLocation>(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "Location",
+              filter,
+            },
+            (payload) => {
+              switch (payload.eventType) {
+                case "DELETE": {
+                  const userId = payload.old.userId!;
+                  if (radiusKm !== undefined) {
+                    if (inRadius.has(userId)) {
+                      inRadius.delete(userId);
+                      queue.push({ id: connectionId, type: "delete", userId });
+                    }
+                  } else {
+                    queue.push({ id: connectionId, type: "delete", userId });
+                  }
+                  break;
+                }
+                default: {
+                  const newLocation = payload.new;
+
+                  void toLocationWithUser(ctx.db, newLocation).then((location) => {
+                    const userId = newLocation.userId;
+
+                    if (radiusKm !== undefined) {
+                      if (!newLocation?.latitude || !newLocation?.longitude) {
+                        if (inRadius.delete(userId)) {
+                          queue.push({ id: connectionId, type: "delete", userId });
+                        }
+                        return;
+                      }
+
+                      const dist = calculateDistance(
+                        latitude!,
+                        longitude!,
+                        Number(newLocation.latitude),
+                        Number(newLocation.longitude),
+                      );
+
+                      if (dist <= radiusKm) {
+                        inRadius.add(userId);
+                        queue.push({ id: connectionId, type: "upsert", location });
+                      } else {
+                        if (inRadius.delete(userId)) {
+                          queue.push({ id: connectionId, type: "delete", userId });
+                        }
+                      }
+                    } else {
+                      queue.push({ id: connectionId, type: "upsert", location });
+                    }
+                  });
+                  break;
+                }
+              }
+            },
+          )
+          .subscribe();
+      }
+
+      try {
+        while (
+          (channel?.state && channel?.state === REALTIME_CHANNEL_STATES.joined) ||
+          queue.length > 0
+        ) {
+          if (queue.length === 0) {
+            // Wait for new events
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            continue;
+          }
+          const event = queue.shift();
+          if (event) yield tracked(connectionId, event);
+        }
+      } finally {
+        if (channel) {
+          void supabase.removeChannel(channel);
+        }
+      }
+    }),
+
+  /**
+   * Mutation variant for updating current user's location (non-stream)
    */
   updateLocation: protectedProcedure
     .input(locationDataSchema)
@@ -179,8 +371,7 @@ export const locationRouter = createTRPCRouter({
     }),
 
   /**
-   * @deprecated Use Expo Location API directly on client side for device location
-   * Get current user's location (HTTP query for backwards compatibility)
+   * Query variant to get current user's location (non-stream)
    */
   getMyLocation: protectedProcedure.query(async ({ ctx }) => {
     const location = await ctx.db.location.findUnique({
@@ -191,342 +382,25 @@ export const locationRouter = createTRPCRouter({
   }),
 
   /**
-   * Update location sharing settings
-   * Note: This remains a mutation as it's a configuration change, not a location update
-   */
-  updateSharingSettings: protectedProcedure
-    .input(
-      z.object({
-        isSharingLocation: z.boolean(),
-        userIdsToShareWith: z.array(z.string()).optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { isSharingLocation, userIdsToShareWith } = input;
-
-      // Get or create location for user
-      let location = await ctx.db.location.findUnique({
-        where: { userId: ctx.dbUser.id },
-      });
-
-      location ??= await ctx.db.location.create({
-        data: {
-          userId: ctx.dbUser.id,
-          isSharingLocation,
-        },
-      });
-
-      // Update sharing settings
-      const updatedLocation = await ctx.db.location.update({
-        where: { userId: ctx.dbUser.id },
-        data: {
-          isSharingLocation,
-          usersToShareWith: userIdsToShareWith
-            ? {
-                set: userIdsToShareWith.map((id) => ({ id })),
-              }
-            : undefined,
-        },
-        include: {
-          usersToShareWith: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      });
-
-      return updatedLocation;
-    }),
-
-  /**
-   * WebSocket subscription for getting locations of friends
-   * Returns real-time updates when friends' locations change
-   */
-  getFriendsLocationsStream: protectedProcedure.subscription(({ ctx }) => {
-    return observable<LocationWithUser[]>((emit) => {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseKey) {
-        emit.error(
-          new Error("Supabase URL and Key are required for realtime subscriptions")
-        );
-        return;
-      }
-
-      const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
-      let channel: RealtimeChannel | null = null;
-
-      const fetchAndEmitLocations = async () => {
-        const locations = await ctx.db.location.findMany({
-          where: {
-            isSharingLocation: true,
-            usersToShareWith: {
-              some: {
-                id: ctx.dbUser.id,
-              },
-            },
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              },
-            },
-          },
-        });
-
-        emit.next(locations.map(toLocationWithUser));
-      };
-
-      const setupSubscription = async () => {
-        try {
-          // Send initial locations
-          await fetchAndEmitLocations();
-
-          // Subscribe to Location table changes
-          channel = supabase
-            .channel(`friends_locations_${ctx.dbUser.id}`)
-            .on(
-              "postgres_changes",
-              {
-                event: "*",
-                schema: "public",
-                table: "Location",
-              },
-              () => {
-                // Refresh all friend locations on any change
-                void fetchAndEmitLocations();
-              }
-            )
-            .subscribe();
-        } catch (err) {
-          emit.error(err as Error);
-        }
-      };
-
-      void setupSubscription();
-
-      return () => {
-        if (channel) {
-          void supabase.removeChannel(channel);
-        }
-      };
-    });
-  }),
-
-  /**
-   * @deprecated Use getFriendsLocationsStream with WebSocket for real-time updates
-   * Get locations of friends (HTTP query for backwards compatibility)
+   * Query to get friends' last known locations (non-stream)
    */
   getFriendsLocations: protectedProcedure.query(async ({ ctx }) => {
     const locations = await ctx.db.location.findMany({
       where: {
         isSharingLocation: true,
         usersToShareWith: {
-          some: {
-            id: ctx.dbUser.id,
-          },
+          some: { id: ctx.dbUser.id },
         },
       },
       include: {
         user: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
+          select: { id: true, name: true, image: true },
         },
       },
     });
 
     return locations;
   }),
-
-  /**
-   * WebSocket subscription for searching users within a radius
-   * Returns real-time updates as users move in/out of range
-   */
-  searchUsersInRadiusStream: protectedProcedure
-    .input(
-      z.object({
-        latitude: latitudeSchema,
-        longitude: longitudeSchema,
-        radiusKm: z.number().positive().max(1000), // Max 1000km
-      }),
-    )
-    .subscription(({ ctx, input }) => {
-      return observable<(LocationWithUser & { distance: number })[]>((emit) => {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
-
-        if (!supabaseUrl || !supabaseKey) {
-          emit.error(
-            new Error("Supabase URL and Key are required for realtime subscriptions")
-          );
-          return;
-        }
-
-        const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
-        let channel: RealtimeChannel | null = null;
-
-        const { latitude, longitude, radiusKm } = input;
-
-        const fetchAndEmitUsersInRadius = async () => {
-          // Get all locations that are sharing and include the current user in sharing list
-          const allLocations = await ctx.db.location.findMany({
-            where: {
-              isSharingLocation: true,
-              usersToShareWith: {
-                some: {
-                  id: ctx.dbUser.id,
-                },
-              },
-              latitude: { not: null },
-              longitude: { not: null },
-            },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
-                },
-              },
-            },
-          });
-
-          // Filter by distance and add distance property
-          const usersInRadius = allLocations
-            .filter((location) => {
-              if (!location.latitude || !location.longitude) return false;
-
-              const distance = calculateDistance(
-                latitude,
-                longitude,
-                Number(location.latitude),
-                Number(location.longitude),
-              );
-
-              return distance <= radiusKm;
-            })
-            .map((location) => ({
-              ...toLocationWithUser(location),
-              distance: calculateDistance(
-                latitude,
-                longitude,
-                Number(location.latitude!),
-                Number(location.longitude!),
-              ),
-            }))
-            .sort((a, b) => a.distance - b.distance);
-
-          emit.next(usersInRadius);
-        };
-
-        const setupSubscription = async () => {
-          try {
-            // Send initial results
-            await fetchAndEmitUsersInRadius();
-
-            // Subscribe to Location table changes
-            channel = supabase
-              .channel(`radius_search_${ctx.dbUser.id}`)
-              .on(
-                "postgres_changes",
-                {
-                  event: "*",
-                  schema: "public",
-                  table: "Location",
-                },
-                () => {
-                  // Recalculate users in radius on any location change
-                  void fetchAndEmitUsersInRadius();
-                }
-              )
-              .subscribe();
-          } catch (err) {
-            emit.error(err as Error);
-          }
-        };
-
-        void setupSubscription();
-
-        return () => {
-          if (channel) {
-            void supabase.removeChannel(channel);
-          }
-        };
-      });
-    }),
-
-  /**
-   * @deprecated Use searchUsersInRadiusStream with WebSocket for real-time updates
-   * Search for users within a radius (HTTP query for backwards compatibility)
-   */
-  searchUsersInRadius: protectedProcedure
-    .input(
-      z.object({
-        latitude: latitudeSchema,
-        longitude: longitudeSchema,
-        radiusKm: z.number().positive().max(1000),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const { latitude, longitude, radiusKm } = input;
-
-      const allLocations = await ctx.db.location.findMany({
-        where: {
-          isSharingLocation: true,
-          usersToShareWith: {
-            some: {
-              id: ctx.dbUser.id,
-            },
-          },
-          latitude: { not: null },
-          longitude: { not: null },
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-          },
-        },
-      });
-
-      const usersInRadius = allLocations
-        .filter((location) => {
-          if (!location.latitude || !location.longitude) return false;
-
-          const distance = calculateDistance(
-            latitude,
-            longitude,
-            Number(location.latitude),
-            Number(location.longitude),
-          );
-
-          return distance <= radiusKm;
-        })
-        .map((location) => ({
-          ...location,
-          distance: calculateDistance(
-            latitude,
-            longitude,
-            Number(location.latitude!),
-            Number(location.longitude!),
-          ),
-        }))
-        .sort((a, b) => a.distance - b.distance);
-
-      return usersInRadius;
-    }),
 
   /**
    * Get sharing settings for current user
