@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { sendMobileNotifications } from "../mobileSender";
+import { sendMobileNotifications } from "../../services/mobileSender";
 import type { Prisma } from "@integral-2025-app/db";
 
 // Mock expo-server-sdk
@@ -23,7 +23,7 @@ const createMockDb = (): Prisma.TransactionClient => {
     notification: {
       findUnique: vi.fn(),
     },
-    mobilePushSubscription: {
+    pushSubscription: {
       findMany: vi.fn(),
     },
     notificationPush: {
@@ -57,7 +57,7 @@ describe("sendMobileNotifications", () => {
       url: "/u",
     });
     (
-      db.mobilePushSubscription.findMany as ReturnType<typeof vi.fn>
+      db.pushSubscription.findMany as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce([]);
     const res = await sendMobileNotifications(db, "n-1");
     expect(res).toEqual({ success: true, sent: 0, failed: 0, total: 0 });
@@ -74,12 +74,12 @@ describe("sendMobileNotifications", () => {
       url: "/x",
     });
     (
-      db.mobilePushSubscription.findMany as ReturnType<typeof vi.fn>
+      db.pushSubscription.findMany as ReturnType<typeof vi.fn>
     ).mockResolvedValueOnce([
-      { userId: "u1", platform: "expo", token: "ExpoPushToken[abc]" },
-      { userId: "u2", platform: "fcm", token: "fcm-token" },
-      { userId: "u3", platform: "expo", token: "ExpoPushToken[def]" },
-      { userId: "u4", platform: "expo", token: "invalid-token" },
+      { userId: "u1", token: "ExpoPushToken[abc]" },
+      { userId: "u2", token: "fcm-token" },
+      { userId: "u3", token: "ExpoPushToken[def]" },
+      { userId: "u4", token: "invalid-token" },
     ]);
     const res = await sendMobileNotifications(db, "n-2");
     expect(res).toEqual({ success: true, sent: 2, failed: 0, total: 2 });
@@ -87,7 +87,9 @@ describe("sendMobileNotifications", () => {
       typeof vi.fn
     >;
     expect(createManyMock).toHaveBeenCalledTimes(1);
-    const calls = createManyMock.mock.calls as [{ data: { status: string }[] }][];
+    const calls = createManyMock.mock.calls as [
+      { data: { status: string }[] },
+    ][];
     const payload = calls[0]?.[0]?.data ?? [];
     const sentCount = payload.filter((p) => p.status === "sent").length;
     expect(sentCount).toBe(2);
@@ -111,10 +113,8 @@ describe("sendMobileNotifications", () => {
       url: "/y",
     });
     (
-      db.mobilePushSubscription.findMany as ReturnType<typeof vi.fn>
-    ).mockResolvedValueOnce([
-      { userId: "u1", platform: "expo", token: "ExpoPushToken[abc]" },
-    ]);
+      db.pushSubscription.findMany as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce([{ userId: "u1", token: "ExpoPushToken[abc]" }]);
 
     const res = await sendMobileNotifications(db, "n-3");
     expect(res).toEqual({ success: false, sent: 0, failed: 1, total: 1 });
@@ -122,7 +122,9 @@ describe("sendMobileNotifications", () => {
       typeof vi.fn
     >;
     expect(createManyMock).toHaveBeenCalledTimes(1);
-    const calls = createManyMock.mock.calls as [{ data: { status: string; failureReason?: string }[] }][];
+    const calls = createManyMock.mock.calls as [
+      { data: { status: string; failureReason?: string }[] },
+    ][];
     const payload = calls[0]?.[0]?.data ?? [];
     const firstItem = payload.length > 0 ? payload[0] : null;
     expect(firstItem).toMatchObject({

@@ -26,6 +26,7 @@ docker compose up -d
 
 ```bash
 pnpm --filter @integral-2025-app/db run db:generate
+pnpm --filter @integral-2025-app/db run db:push
 pnpm --filter @integral-2025-app/db run db:seed
 ```
 
@@ -56,4 +57,5 @@ Student: student@pjatk.dev / student123
 Staff: staff@pjatk.dev / staff123
 
 ## Problemy z Windows
+
 W przypadku problemów, upewnij się, że masz skonfigurowane LF End of Line sequences, [follow this gist to fix](https://gist.github.com/tjsudarsan/f2bfe4c4d567243e302cf8ba40e1c7e5).
