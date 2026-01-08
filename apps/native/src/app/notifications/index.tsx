@@ -390,11 +390,8 @@ export default function NotificationsScreen() {
                       {schedule.name}
                     </Text>
                     <Text fontSize="$2" color="$gray10" mt="$1">
-                      Created by{" "}
-                      {schedule.createdBy?.name ??
-                        schedule.createdBy?.email ??
-                        "Unknown"}{" "}
-                      • {formatRelativeTime(schedule.createdAt)}
+                      Created by {schedule.createdBy?.name}•{" "}
+                      {formatRelativeTime(schedule.createdAt)}
                     </Text>
                   </YStack>
                   <XStack gap="$2">
@@ -435,21 +432,10 @@ export default function NotificationsScreen() {
                     Period: {formatDate(schedule.startDate)} -{" "}
                     {formatDate(schedule.endDate)}
                   </Text>
-
-                  {schedule.notification && (
-                    <YStack gap="$1" p="$2" bg="$background" rounded="$2">
-                      <Text fontSize="$3" fontWeight="bold">
-                        {schedule.notification.title ?? ""}
-                      </Text>
-                      <Text fontSize="$2" color="$gray11">
-                        {schedule.notification.body ?? ""}
-                      </Text>
-                      {schedule.notification.url && (
-                        <Text fontSize="$2" color="#3b82f6">
-                          {schedule.notification.url}
-                        </Text>
-                      )}
-                    </YStack>
+                  {schedule.lastRun && (
+                    <Text fontSize="$3" color="$gray11">
+                      Last run: {formatRelativeTime(schedule.lastRun)}
+                    </Text>
                   )}
                 </YStack>
               </YStack>
