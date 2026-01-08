@@ -4,11 +4,7 @@ import type {
   SupabaseClient as ExternalSupabaseClient,
   User as ExternalUser,
 } from "@supabase/supabase-js";
-import type {
-  SupabaseClient,
-  SupabaseSession,
-  SupabaseUser,
-} from "~/index";
+import type { SupabaseClient, SupabaseSession, SupabaseUser } from "~/index";
 
 const createSupabaseClientMock = vi.hoisted(() => vi.fn());
 
@@ -34,7 +30,10 @@ describe("supabase package entry point", () => {
     const exports = await importIndex();
     const runtimeKeys = Object.keys(exports).sort();
 
-    expect(runtimeKeys).toEqual(["createSupabaseClient"]);
+    expect(runtimeKeys).toEqual([
+      "REALTIME_CHANNEL_STATES",
+      "createSupabaseClient",
+    ]);
   });
 
   it("re-exports Supabase types", () => {
