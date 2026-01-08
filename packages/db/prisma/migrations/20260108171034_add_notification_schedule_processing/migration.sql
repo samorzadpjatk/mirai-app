@@ -1,3 +1,16 @@
+ALTER TABLE "NotificationSchedule" DROP COLUMN IF EXISTS "notificationId";
+
+CREATE TABLE "NotificationScheduleExecution" (
+    "notificationId" TEXT NOT NULL,
+    "scheduleId" TEXT NOT NULL,
+    "executedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "NotificationScheduleExecution_pkey" PRIMARY KEY ("notificationId","scheduleId","executedAt")
+);
+
+ALTER TABLE "NotificationScheduleExecution" ADD CONSTRAINT "NotificationScheduleExecution_notificationId_fkey" FOREIGN KEY ("notificationId") REFERENCES "Notification"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "NotificationScheduleExecution" ADD CONSTRAINT "NotificationScheduleExecution_scheduleId_fkey" FOREIGN KEY ("scheduleId") REFERENCES "NotificationSchedule"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
 CREATE INDEX "idx_NotificationSchedule_active_time" ON "NotificationSchedule" ("isActive", "hour", "minute") WHERE "isActive" = true;
 
 CREATE OR REPLACE FUNCTION sp_process_notification_schedules()
@@ -8,6 +21,7 @@ SET search_path = ''
 AS $$
 DECLARE
   schedule_record RECORD;
+  new_notification_id TEXT;
 BEGIN
   FOR schedule_record IN
     SELECT * FROM public."NotificationSchedule"
@@ -36,6 +50,16 @@ BEGIN
       '',
       schedule_record."createdById",
       CURRENT_TIMESTAMP,
+      CURRENT_TIMESTAMP
+    ) RETURNING "id" INTO new_notification_id;
+
+    INSERT INTO public."NotificationScheduleExecution" (
+      "notificationId",
+      "scheduleId",
+      "executedAt"
+    ) VALUES (
+      new_notification_id,
+      schedule_record."id",
       CURRENT_TIMESTAMP
     );
 
