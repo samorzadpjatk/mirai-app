@@ -17,10 +17,11 @@ describe("appRouter", () => {
     expect(routerKeys).toContain("coinTransaction");
     expect(routerKeys).toContain("notifications");
     expect(routerKeys).toContain("notificationSchedule");
+    expect(routerKeys).toContain("location");
   });
 
   it("should have correct number of routers", () => {
     const routerKeys = Object.keys(appRouter._def.record);
-    expect(routerKeys).toHaveLength(6);
+    expect(routerKeys).toHaveLength(7);
   });
 });
