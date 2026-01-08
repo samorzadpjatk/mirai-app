@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   moderatorProcedure,
@@ -66,7 +67,10 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Prevent admin from removing their own admin status
       if (input.userId === ctx.dbUser.id && !input.isAdmin) {
-        throw new Error("Nie możesz usunąć swoich uprawnień administratora");
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Nie możesz usunąć swoich uprawnień administratora",
+        });
       }
 
       return await ctx.db.user.update({
@@ -100,9 +104,10 @@ export const userRouter = createTRPCRouter({
       });
 
       if (existingUser && existingUser.id !== input.userId) {
-        throw new Error(
-          `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${existingUser.name}`,
-        );
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${existingUser.name}`,
+        });
       }
 
       return await ctx.db.user.update({

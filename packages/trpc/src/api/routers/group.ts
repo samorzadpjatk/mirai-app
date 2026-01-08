@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 
 import {
   createTRPCRouter,
@@ -211,7 +212,8 @@ export const groupRouter = createTRPCRouter({
         where: { id: input.id },
         include: { members: true },
       });
-      if (!group) throw new Error("Group not found");
+      if (!group)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
 
       // Check if user is already in the group
       const existingMembership = group.members.find(
@@ -219,7 +221,10 @@ export const groupRouter = createTRPCRouter({
       );
 
       if (existingMembership) {
-        throw new Error("Użytkownik już należy do tej grupy");
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Użytkownik już należy do tej grupy",
+        });
       }
 
       return await ctx.db.user.update({
@@ -241,7 +246,8 @@ export const groupRouter = createTRPCRouter({
         where: { id: input.groupId },
         include: { members: true },
       });
-      if (!group) throw new Error("Group not found");
+      if (!group)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
 
       // Check if user is already in the group
       const existingMembership = group.members.find(
@@ -249,7 +255,10 @@ export const groupRouter = createTRPCRouter({
       );
 
       if (existingMembership) {
-        throw new Error("Użytkownik już należy do tej grupy");
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Użytkownik już należy do tej grupy",
+        });
       }
 
       return await ctx.db.user.update({
