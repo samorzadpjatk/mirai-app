@@ -27,11 +27,10 @@ model User {
   isServiceAccount          Boolean                @default(false)
   organizerGroup            Group[]                @relation("UserOrganizerGroups")
   coinTransactionsAdmin     CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
-  pushSubscriptions         PushSubscription[]
   notificationSchedules     NotificationSchedule[] @relation("NotificationScheduleAdmin")
   receivedPushNotifications NotificationPush[]
-  sentPushNotifications     Notification[]         @relation("WebPushNotificationAdmin")
-  mobilePushSubscriptions   MobilePushSubscription[]
+  sentPushNotifications     Notification[]         @relation("NotificationAdmin")
+  pushSubscriptions         PushSubscription[]
   createdEvents             Event[]
   userEvents                UserEvent[]
   location                  Location?
@@ -87,19 +86,6 @@ model CoinTransaction {
   admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])
 }
 
-model PushSubscription {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  endpoint  String
-  p256dh    String
-  auth      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId])
-}
-
 model NotificationSchedule {
   id               String        @id @default(cuid())
   name             String
@@ -127,7 +113,7 @@ model Notification {
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
   createdById String // Admin who created this notification
-  createdBy   User                   @relation("WebPushNotificationAdmin", fields: [createdById], references: [id])
+  createdBy   User                   @relation("NotificationAdmin", fields: [createdById], references: [id])
   schedules   NotificationSchedule[]
 }
 
@@ -143,12 +129,11 @@ model NotificationPush {
   @@id([targetUserId, notificationId])
 }
 
-model MobilePushSubscription {
+model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform  String   // 'expo' | 'fcm' | 'apns'
-  token     String   // Device push token
+  token     String   // Expo push token
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

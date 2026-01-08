@@ -1,111 +1,24 @@
 import { z } from "zod";
-import webpush from "web-push";
 import { TRPCError } from "@trpc/server";
 import {
   adminProcedure,
   createTRPCRouter,
   moderatorProcedure,
   protectedProcedure,
-  publicProcedure,
 } from "../../api/trpc";
-import { env } from "../../utils/env";
 import { NotificationService } from "../../services/notificationService";
-import { send, sendRanking } from "../../utils/webPush";
-
-// Configure web-push with VAPID keys
-if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_EMAIL) {
-  webpush.setVapidDetails(
-    `mailto:${env.VAPID_EMAIL}`,
-    env.VAPID_PUBLIC_KEY,
-    env.VAPID_PRIVATE_KEY,
-  );
-}
+import { sendNotification, sendRankingUpdate } from "../../utils/notifications";
 
 export const notificationRouter = createTRPCRouter({
-  // Get VAPID public key for client-side subscription
-  getVapidPublicKey: publicProcedure.query(() => {
-    if (!env.VAPID_PUBLIC_KEY) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "VAPID public key not configured",
-      });
-    }
-    return { publicKey: env.VAPID_PUBLIC_KEY };
-  }),
-
-  // Subscribe to push notifications
   subscribe: protectedProcedure
     .input(
       z.object({
-        subscription: z.object({
-          endpoint: z.string(),
-          keys: z.object({
-            p256dh: z.string(),
-            auth: z.string(),
-          }),
-        }),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Store the subscription in the database
-        const subscription = await ctx.db.pushSubscription.upsert({
-          where: {
-            userId: ctx.dbUser.id,
-          },
-          update: {
-            endpoint: input.subscription.endpoint,
-            p256dh: input.subscription.keys.p256dh,
-            auth: input.subscription.keys.auth,
-            updatedAt: new Date(),
-          },
-          create: {
-            userId: ctx.dbUser.id,
-            endpoint: input.subscription.endpoint,
-            p256dh: input.subscription.keys.p256dh,
-            auth: input.subscription.keys.auth,
-          },
-        });
-
-        return { success: true, subscriptionId: subscription.id };
-      } catch (error) {
-        console.error("Error saving push subscription:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to save push subscription",
-        });
-      }
-    }),
-
-  // Unsubscribe from push notifications
-  unsubscribe: protectedProcedure.mutation(async ({ ctx }) => {
-    try {
-      await ctx.db.pushSubscription.deleteMany({
-        where: {
-          userId: ctx.dbUser.id,
-        },
-      });
-
-      return { success: true };
-    } catch (error) {
-      console.error("Error removing push subscription:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to remove push subscription",
-      });
-    }
-  }),
-
-  mobileSubscribe: protectedProcedure
-    .input(
-      z.object({
-        platform: z.enum(["expo", "fcm", "apns"]),
         token: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const subscription = await ctx.db.mobilePushSubscription.upsert({
+        const subscription = await ctx.db.pushSubscription.upsert({
           where: {
             userId_token: {
               userId: ctx.dbUser.id,
@@ -113,39 +26,90 @@ export const notificationRouter = createTRPCRouter({
             },
           },
           update: {
-            platform: input.platform,
             updatedAt: new Date(),
           },
           create: {
             userId: ctx.dbUser.id,
-            platform: input.platform,
             token: input.token,
           },
         });
         return { success: true, id: subscription.id };
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
-        console.error("Error saving mobile push subscription:", error);
+        console.error("Error saving push subscription:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to save mobile push subscription: ${err.message}`,
+          message: `Failed to save push subscription: ${err.message}`,
           cause: err,
         });
       }
     }),
 
-  // Get user's notification preferences/subscription status
+  unsubscribe: protectedProcedure
+    .input(
+      z.object({
+        token: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const result = await ctx.db.pushSubscription.deleteMany({
+          where: {
+            userId: ctx.dbUser.id,
+            token: input.token,
+          },
+        });
+
+        if (result.count === 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "No subscription found with that token",
+          });
+        }
+
+        return { success: true, deletedCount: result.count };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        console.error("Error removing push subscription:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to remove push subscription",
+        });
+      }
+    }),
+
+  unsubscribeAll: protectedProcedure.mutation(async ({ ctx }) => {
+    try {
+      const result = await ctx.db.pushSubscription.deleteMany({
+        where: {
+          userId: ctx.dbUser.id,
+        },
+      });
+      return { success: true, deletedCount: result.count };
+    } catch (error) {
+      console.error("Error removing all push subscriptions:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to remove all push subscriptions",
+      });
+    }
+  }),
+
   getSubscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
-    const subscription = await ctx.db.pushSubscription.findFirst({
+    const subscriptions = await ctx.db.pushSubscription.findMany({
       where: {
         userId: ctx.dbUser.id,
       },
     });
 
     return {
-      isSubscribed: !!subscription,
-      subscriptionId: subscription?.id,
-      endpoint: subscription?.endpoint,
+      subscriptions: subscriptions.map((s) => ({
+        id: s.id,
+        token: s.token,
+        createdAt: s.createdAt,
+      })),
     };
   }),
 
@@ -228,7 +192,6 @@ export const notificationRouter = createTRPCRouter({
       };
     }),
 
-  // Send push notification to specific users
   sendToGroup: moderatorProcedure
     .input(
       z.object({
@@ -250,16 +213,15 @@ export const notificationRouter = createTRPCRouter({
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
-        const payload = {
-          userIds,
-          title: input.title,
-          body: input.body,
-          url: input.url,
-        };
-        return await send({
+        return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
-          input: payload,
+          input: {
+            userIds,
+            title: input.title,
+            body: input.body,
+            url: input.url,
+          },
         });
       } catch (error) {
         console.error("Error sending notification to group:", error);
@@ -269,6 +231,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
+
   sendToAll: moderatorProcedure
     .input(
       z.object({
@@ -283,29 +246,28 @@ export const notificationRouter = createTRPCRouter({
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
-        const payload = {
-          userIds,
-          title: input.title,
-          body: input.body,
-          url: input.url,
-        };
-        return await send({
+        return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
-          input: payload,
+          input: {
+            userIds,
+            title: input.title,
+            body: input.body,
+            url: input.url,
+          },
         });
       } catch (error) {
-        console.error("Error sending notification to group:", error);
+        console.error("Error sending notification to all:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send notification to group",
+          message: "Failed to send notification to all users",
         });
       }
     }),
 
   sendRankingUpdateToGroups: moderatorProcedure.mutation(async ({ ctx }) => {
     try {
-      return await sendRanking({
+      return await sendRankingUpdate({
         db: ctx.db,
         userId: ctx.dbUser.id,
       });
@@ -317,6 +279,7 @@ export const notificationRouter = createTRPCRouter({
       });
     }
   }),
+
   sendCoinAddedToGroup: moderatorProcedure
     .input(
       z.object({
@@ -353,16 +316,15 @@ export const notificationRouter = createTRPCRouter({
             input.coins,
             input.reason,
           );
-        const payload = {
-          userIds,
-          title: notificationData.title,
-          body: notificationData.body,
-          url: notificationData.url,
-        };
-        return await send({
+        return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
-          input: payload,
+          input: {
+            userIds,
+            title: notificationData.title,
+            body: notificationData.body,
+            url: notificationData.url,
+          },
         });
       } catch (error) {
         console.error(
@@ -375,6 +337,7 @@ export const notificationRouter = createTRPCRouter({
         });
       }
     }),
+
   sendCoinRemovedFromGroup: moderatorProcedure
     .input(
       z.object({
@@ -411,28 +374,28 @@ export const notificationRouter = createTRPCRouter({
             input.coins,
             input.reason,
           );
-        const payload = {
-          userIds,
-          title: notificationData.title,
-          body: notificationData.body,
-          url: notificationData.url,
-        };
-        return await send({
+        return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
-          input: payload,
+          input: {
+            userIds,
+            title: notificationData.title,
+            body: notificationData.body,
+            url: notificationData.url,
+          },
         });
       } catch (error) {
         console.error(
-          "Error sending coins added notification to group:",
+          "Error sending coins removed notification to group:",
           error,
         );
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send coins added notification to group",
+          message: "Failed to send coins removed notification to group",
         });
       }
     }),
+
   sendNewMemberToGroup: moderatorProcedure
     .input(
       z.object({
@@ -470,28 +433,25 @@ export const notificationRouter = createTRPCRouter({
             group.name,
             user.name ?? "A new member",
           );
-        const payload = {
-          userIds,
-          title: notificationData.title,
-          body: notificationData.body,
-          url: notificationData.url,
-        };
-        return await send({
+        return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
-          input: payload,
+          input: {
+            userIds,
+            title: notificationData.title,
+            body: notificationData.body,
+            url: notificationData.url,
+          },
         });
       } catch (error) {
-        console.error(
-          "Error sending coins added notification to group:",
-          error,
-        );
+        console.error("Error sending new member notification to group:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to send coins added notification to group",
+          message: "Failed to send new member notification to group",
         });
       }
     }),
+
   sendCustomToGroup: moderatorProcedure
     .input(
       z.object({
@@ -508,16 +468,15 @@ export const notificationRouter = createTRPCRouter({
           select: { id: true },
         });
         const userIds = members.map((m) => m.id);
-        const payload = {
-          userIds,
-          title: input.title,
-          body: input.body,
-          url: input.url,
-        };
-        return await send({
+        return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
-          input: payload,
+          input: {
+            userIds,
+            title: input.title,
+            body: input.body,
+            url: input.url,
+          },
         });
       } catch (error) {
         console.error("Error sending custom notification to group:", error);
@@ -554,16 +513,15 @@ export const notificationRouter = createTRPCRouter({
             message: "No failed pushes to retry",
           });
         }
-        const payload = {
-          userIds: pushes.map((p) => p.targetUserId),
-          title: notification.title,
-          body: notification.body,
-          url: notification.url,
-        };
-        return await send({
+        return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
-          input: payload,
+          input: {
+            userIds: pushes.map((p) => p.targetUserId),
+            title: notification.title,
+            body: notification.body,
+            url: notification.url,
+          },
         });
       } catch (error) {
         console.error("Error retrying notification:", error);
