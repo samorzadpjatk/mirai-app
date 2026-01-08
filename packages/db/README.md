@@ -129,9 +129,9 @@ Pakiet wymaga zmiennej środowiskowej `DATABASE_URL` zdefiniowanej w pliku `.env
 DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
 ```
 
-## PG Crons
+## PG Cron
 
-pg_crons must be managed manually from supabase dashboard (superuser permissions needed). To add NotificationSchedule processing cron go to supabase dashboard (http://localhost:8000) -> SQL Editor -> run [creating sql script](./sql/cron_process-notification-schedules.sql)
+pg_cron must be managed manually from supabase dashboard (superuser permissions needed). To add NotificationSchedule processing cron go to supabase dashboard (http://localhost:8000) -> SQL Editor -> run [creating sql script](./sql/cron_process-notification-schedules.sql)
 
 ## Używanie w aplikacjach
 

@@ -8,7 +8,6 @@ SET search_path = ''
 AS $$
 DECLARE
   schedule_record RECORD;
-  new_notification_id TEXT;
 BEGIN
   FOR schedule_record IN
     SELECT * FROM public."NotificationSchedule"
@@ -22,27 +21,23 @@ BEGIN
         OR "lastRun" < DATE_TRUNC('minute', CURRENT_TIMESTAMP)
       )
   LOOP
-    IF schedule_record."notificationId" IS NOT NULL THEN
-      new_notification_id := schedule_record."notificationId";
-    ELSE
-      INSERT INTO public."Notification" (
-        "id",
-        "title",
-        "body",
-        "url",
-        "createdById",
-        "createdAt",
-        "updatedAt"
-      ) VALUES (
-        gen_random_uuid()::text,
-        schedule_record."name",
-        'Scheduled notification: ' || schedule_record."notificationType",
-        '',
-        schedule_record."createdById",
-        CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
-      ) RETURNING "id" INTO new_notification_id;
-    END IF;
+    INSERT INTO public."Notification" (
+      "id",
+      "title",
+      "body",
+      "url",
+      "createdById",
+      "createdAt",
+      "updatedAt"
+    ) VALUES (
+      gen_random_uuid()::text,
+      schedule_record."name",
+      'Scheduled notification: ' || schedule_record."notificationType",
+      '',
+      schedule_record."createdById",
+      CURRENT_TIMESTAMP,
+      CURRENT_TIMESTAMP
+    );
 
     UPDATE public."NotificationSchedule"
     SET "lastRun" = CURRENT_TIMESTAMP
