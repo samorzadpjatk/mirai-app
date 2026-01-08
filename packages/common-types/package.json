@@ -4,22 +4,16 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./src/index.ts"
     },
     "./models/user": {
-      "types": "./dist/models/user.d.ts",
       "import": "./src/models/user.ts"
     }
   },
   "scripts": {
-    "build": "tsc",
     "check": "eslint . && tsc --noEmit",
-    "clean": "rm -rf dist *.tsbuildinfo",
-    "dev": "tsc --watch",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit"
