@@ -3,9 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import type { RealtimePostgresInsertPayload } from "@supabase/supabase-js";
 import { db } from "@integral-2025-app/db";
 import { startWsServer } from "./server";
-import { sendMobileNotifications } from "./mobileSender";
-import { checkInactiveUsers } from "./inactivityChecker";
-import { createInactivityScheduler } from "./scheduler";
+import { sendMobileNotifications } from "./services/mobileSender";
+import { checkInactiveUsers } from "./services/inactivityChecker";
+import { createInactivityScheduler } from "./utils/scheduler";
 
 interface NotificationRow {
   id: string;

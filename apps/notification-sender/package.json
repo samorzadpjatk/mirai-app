@@ -14,6 +14,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@integral-2025-app/common-utils": "workspace:*",
     "@integral-2025-app/db": "workspace:*",
     "@integral-2025-app/trpc": "workspace:*",
     "@supabase/supabase-js": "^2.89.0",

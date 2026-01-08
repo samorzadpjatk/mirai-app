@@ -4,6 +4,7 @@ import {
   type ExpoPushMessage,
   type ExpoPushTicket,
 } from "expo-server-sdk";
+import { executeWithRetry } from "@integral-2025-app/common-utils";
 
 export async function sendMobileNotifications(
   db: Prisma.TransactionClient,
@@ -14,7 +15,7 @@ export async function sendMobileNotifications(
   });
   if (!notification) return { success: false, sent: 0, failed: 0, total: 0 };
 
-  const subs = await db.mobilePushSubscription.findMany();
+  const subs = await db.pushSubscription.findMany();
   if (subs.length === 0) {
     return { success: true, sent: 0, failed: 0, total: 0 };
   }
@@ -24,12 +25,6 @@ export async function sendMobileNotifications(
   const userByToken = new Map<string, string>();
 
   for (const s of subs) {
-    if (s.platform !== "expo") {
-      console.warn(
-        `sendMobileNotifications: skipping mobile push subscription for user ${s.userId} with unsupported platform '${s.platform}'.`,
-      );
-      continue;
-    }
     if (!Expo.isExpoPushToken(s.token)) continue;
     userByToken.set(s.token, s.userId);
     messages.push({
@@ -48,9 +43,21 @@ export async function sendMobileNotifications(
 
   const chunks = expo.chunkPushNotifications(messages);
   const tickets: ExpoPushTicket[] = [];
+
   for (const chunk of chunks) {
     try {
-      const t = await expo.sendPushNotificationsAsync(chunk);
+      const t = await executeWithRetry(
+        () => expo.sendPushNotificationsAsync(chunk),
+        (err, retryAttempt) => {
+          console.error(
+            `Error sending push notification chunk (attempt ${retryAttempt + 1}):`,
+            err,
+          );
+        },
+        undefined,
+        3,
+        500,
+      );
       tickets.push(...t);
     } catch {
       tickets.push(
