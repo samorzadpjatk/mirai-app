@@ -26,6 +26,7 @@ pnpm --filter @integral-2025-app/db <komenda>
 ### Podstawowe komendy
 
 #### `db:generate`
+
 Generuje klienta Prisma na podstawie schematu. Uruchamiane automatycznie po `pnpm install`.
 
 ```bash
@@ -33,6 +34,7 @@ pnpm --filter @integral-2025-app/db db:generate
 ```
 
 #### `db:push`
+
 Wypycha zmiany schematu bezpośrednio do bazy danych bez tworzenia migracji. **Przydatne w środowisku deweloperskim**.
 
 ```bash
@@ -40,6 +42,7 @@ pnpm --filter @integral-2025-app/db db:push
 ```
 
 #### `db:studio`
+
 Otwiera Prisma Studio - graficzny interfejs do przeglądania i edycji danych w bazie.
 
 ```bash
@@ -47,6 +50,7 @@ pnpm --filter @integral-2025-app/db db:studio
 ```
 
 #### `db:seed`
+
 Wypełnia bazę danych przykładowymi danymi z pliku `prisma/seed.ts`.
 
 ```bash
@@ -56,6 +60,7 @@ pnpm --filter @integral-2025-app/db db:seed
 ### Komendy migracji (środowisko produkcyjne)
 
 #### `db:migrate:dev`
+
 Tworzy nową migrację na podstawie zmian w schemacie i aplikuje ją do bazy deweloperskiej.
 
 ```bash
@@ -65,6 +70,7 @@ pnpm --filter @integral-2025-app/db db:migrate:dev
 Po wywołaniu zostaniesz poproszony o nazwę migracji.
 
 #### `db:migrate`
+
 Aplikuje zaległe migracje do bazy danych. **Używane w środowisku produkcyjnym**.
 
 ```bash
@@ -72,6 +78,7 @@ pnpm --filter @integral-2025-app/db db:migrate
 ```
 
 #### `db:reset`
+
 Resetuje bazę danych: usuwa wszystkie dane, ponownie aplikuje wszystkie migracje i uruchamia seed.
 
 **⚠️ UWAGA: Usuwa wszystkie dane z bazy! Używaj tylko w środowisku deweloperskim!**
@@ -121,6 +128,10 @@ Pakiet wymaga zmiennej środowiskowej `DATABASE_URL` zdefiniowanej w pliku `.env
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
 ```
+
+## PG Cron
+
+pg_cron must be managed manually from supabase dashboard (superuser permissions needed). To add NotificationSchedule processing cron go to supabase dashboard (http://localhost:8000) -> SQL Editor -> run [creating sql script](./sql/cron_process-notification-schedules.sql)
 
 ## Używanie w aplikacjach
 

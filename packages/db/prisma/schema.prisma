@@ -87,34 +87,43 @@ model CoinTransaction {
 }
 
 model NotificationSchedule {
-  id               String        @id @default(cuid())
-  name             String
-  notificationType String // e.g., "daily-ranking"      
-  notificationId   String?
-  notification     Notification? @relation(fields: [notificationId], references: [id], onDelete: Cascade)
-  startDate        DateTime // When the schedule starts
-  endDate          DateTime // When the schedule ends
-  hour             Int // Hour of the day (0-23)
-  minute           Int           @default(0) // Minute of the hour (0-59)
-  isActive         Boolean       @default(true)
-  lastRun          DateTime? // When was this schedule last executed
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  createdById      String // Admin who created this schedule
-  createdBy        User          @relation("NotificationScheduleAdmin", fields: [createdById], references: [id])
+  id                      String                            @id @default(cuid())
+  name                    String
+  notificationType        String // e.g., "daily-ranking"
+  startDate               DateTime // When the schedule starts
+  endDate                 DateTime // When the schedule ends
+  hour                    Int // Hour of the day (0-23)
+  minute                  Int                               @default(0) // Minute of the hour (0-59)
+  isActive                Boolean                           @default(true)
+  lastRun                 DateTime? // When was this schedule last executed
+  createdAt               DateTime                          @default(now())
+  updatedAt               DateTime                          @updatedAt
+  createdById             String // Admin who created this schedule
+  createdBy               User                              @relation("NotificationScheduleAdmin", fields: [createdById], references: [id])
+  notificationExecutions  NotificationScheduleExecution[]
 }
 
 model Notification {
-  id          String                 @id @default(cuid())
-  title       String // Notification title
-  body        String // Notification body/message
-  url         String // Optional URL to open when the notification is clicked
-  pushes      NotificationPush[]
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
-  createdById String // Admin who created this notification
-  createdBy   User                   @relation("NotificationAdmin", fields: [createdById], references: [id])
-  schedules   NotificationSchedule[]
+  id                 String                          @id @default(cuid())
+  title              String // Notification title
+  body               String // Notification body/message
+  url                String // Optional URL to open when the notification is clicked
+  pushes             NotificationPush[]
+  createdAt          DateTime                        @default(now())
+  updatedAt          DateTime                        @updatedAt
+  createdById        String // Admin who created this notification
+  createdBy          User                            @relation("NotificationAdmin", fields: [createdById], references: [id])
+  scheduleExecutions NotificationScheduleExecution[]
+}
+
+model NotificationScheduleExecution {
+  notificationId String
+  notification   Notification         @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  scheduleId     String
+  schedule       NotificationSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  executedAt     DateTime             @default(now())
+
+  @@id([notificationId, scheduleId, executedAt])
 }
 
 model NotificationPush {
