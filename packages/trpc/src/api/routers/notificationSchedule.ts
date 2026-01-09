@@ -11,7 +11,6 @@ export const notificationScheduleRouter = createTRPCRouter({
   getAll: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.notificationSchedule.findMany({
       include: {
-        notification: true,
         createdBy: {
           select: {
             id: true,
@@ -129,7 +128,6 @@ export const notificationScheduleRouter = createTRPCRouter({
             data: {
               name: input.name,
               notificationType: input.notificationType,
-              notificationId: notification?.id,
               startDate: input.startDate,
               endDate: input.endDate,
               hour: input.hour,
@@ -183,7 +181,6 @@ export const notificationScheduleRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         name: z.string(),
-        notificationId: z.string(),
         startDate: z.date().optional(),
         endDate: z.date().optional(),
         hour: z.number().int().min(0).max(23).optional(),
