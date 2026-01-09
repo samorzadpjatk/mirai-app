@@ -9,6 +9,7 @@ export default [
     files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
     rules: {
       "@typescript-eslint/unbound-method": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
     },
   },
 ];
