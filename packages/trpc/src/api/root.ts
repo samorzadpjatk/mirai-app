@@ -5,6 +5,7 @@ import { coinRouter } from "./routers/coin";
 import { coinTransactionRouter } from "./routers/coinTransaction";
 import { notificationRouter } from "./routers/notifications";
 import { notificationScheduleRouter } from "./routers/notificationSchedule";
+import { notificationDeliveryRouter } from "./routers/notificationDelivery";
 import { locationRouter } from "./routers/location";
 
 /**
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   coinTransaction: coinTransactionRouter,
   notifications: notificationRouter,
   notificationSchedule: notificationScheduleRouter,
+  notificationDelivery: notificationDeliveryRouter,
   location: locationRouter,
 });
 
