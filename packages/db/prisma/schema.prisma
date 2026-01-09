@@ -114,6 +114,7 @@ model Notification {
   createdById        String // Admin who created this notification
   createdBy          User                            @relation("NotificationAdmin", fields: [createdById], references: [id])
   scheduleExecutions NotificationScheduleExecution[]
+  delivery           NotificationDelivery?
 }
 
 model NotificationScheduleExecution {
@@ -136,6 +137,24 @@ model NotificationPush {
   failureReason  String? // Reason for failure if status is 'failed'
 
   @@id([targetUserId, notificationId])
+}
+
+model NotificationDelivery {
+  id                   String       @id @default(cuid())
+  notificationId       String       @unique
+  notification         Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  scheduleId           String? 
+  deliveryStartedAt    DateTime     @default(now())
+  deliveryCompletedAt  DateTime?
+  totalRecipients      Int          @default(0)
+  successCount         Int          @default(0)
+  failureCount         Int          @default(0)
+  errors               String?
+  status               String       @default("pending") 
+  
+  @@index([deliveryStartedAt])
+  @@index([status])
+  @@index([scheduleId])
 }
 
 model PushSubscription {
