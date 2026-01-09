@@ -35,8 +35,8 @@ describe("DeliveryTracker", () => {
         status: "pending",
       });
 
-      mockTx.notificationScheduleExecution.findFirst = mockFindFirst;
-      mockTx.notificationDelivery.create = mockCreate;
+      mockTx.notificationScheduleExecution.findFirst = mockFindFirst as never;
+      mockTx.notificationDelivery.create = mockCreate as never;
 
       await trackDeliveryStart(mockTx, "notif-123");
 
@@ -64,8 +64,8 @@ describe("DeliveryTracker", () => {
         status: "pending",
       });
 
-      mockTx.notificationScheduleExecution.findFirst = mockFindFirst;
-      mockTx.notificationDelivery.create = mockCreate;
+      mockTx.notificationScheduleExecution.findFirst = mockFindFirst as never;
+      mockTx.notificationDelivery.create = mockCreate as never;
 
       await trackDeliveryStart(mockTx, "notif-456");
 
@@ -82,7 +82,7 @@ describe("DeliveryTracker", () => {
     it("should handle errors gracefully", async () => {
       const mockFindFirst = vi.fn().mockRejectedValue(new Error("DB error"));
 
-      mockTx.notificationScheduleExecution.findFirst = mockFindFirst;
+      mockTx.notificationScheduleExecution.findFirst = mockFindFirst as never;
 
       // Should not throw
       await expect(
@@ -98,7 +98,7 @@ describe("DeliveryTracker", () => {
         status: "success",
       });
 
-      mockTx.notificationDelivery.update = mockUpdate;
+      mockTx.notificationDelivery.update = mockUpdate as never;
 
       await trackDeliveryComplete(mockTx, {
         notificationId: "notif-123",
@@ -126,7 +126,7 @@ describe("DeliveryTracker", () => {
         status: "partial_failure",
       });
 
-      mockTx.notificationDelivery.update = mockUpdate;
+      mockTx.notificationDelivery.update = mockUpdate as never;
 
       await trackDeliveryComplete(mockTx, {
         notificationId: "notif-456",
@@ -155,7 +155,7 @@ describe("DeliveryTracker", () => {
         status: "failure",
       });
 
-      mockTx.notificationDelivery.update = mockUpdate;
+      mockTx.notificationDelivery.update = mockUpdate as never;
 
       await trackDeliveryComplete(mockTx, {
         notificationId: "notif-789",
@@ -181,7 +181,7 @@ describe("DeliveryTracker", () => {
     it("should handle errors gracefully", async () => {
       const mockUpdate = vi.fn().mockRejectedValue(new Error("DB error"));
 
-      mockTx.notificationDelivery.update = mockUpdate;
+      mockTx.notificationDelivery.update = mockUpdate as never;
 
       // Should not throw
       await expect(
@@ -207,8 +207,8 @@ describe("DeliveryTracker", () => {
         status: "failure",
       });
 
-      mockTx.notificationDelivery.findUnique = mockFindUnique;
-      mockTx.notificationDelivery.update = mockUpdate;
+      mockTx.notificationDelivery.findUnique = mockFindUnique as never;
+      mockTx.notificationDelivery.update = mockUpdate as never;
 
       const error = new Error("Network timeout");
       await trackDeliveryFailure(mockTx, "notif-123", error);
@@ -237,9 +237,9 @@ describe("DeliveryTracker", () => {
         status: "failure",
       });
 
-      mockTx.notificationDelivery.findUnique = mockFindUnique;
-      mockTx.notificationScheduleExecution.findFirst = mockFindFirst;
-      mockTx.notificationDelivery.create = mockCreate;
+      mockTx.notificationDelivery.findUnique = mockFindUnique as never;
+      mockTx.notificationScheduleExecution.findFirst = mockFindFirst as never;
+      mockTx.notificationDelivery.create = mockCreate as never;
 
       await trackDeliveryFailure(
         mockTx,
@@ -265,8 +265,8 @@ describe("DeliveryTracker", () => {
       });
       const mockUpdate = vi.fn().mockResolvedValue({});
 
-      mockTx.notificationDelivery.findUnique = mockFindUnique;
-      mockTx.notificationDelivery.update = mockUpdate;
+      mockTx.notificationDelivery.findUnique = mockFindUnique as never;
+      mockTx.notificationDelivery.update = mockUpdate as never;
 
       const error = new Error("Expo API error");
       await trackDeliveryFailure(mockTx, "notif-789", error);
@@ -285,8 +285,8 @@ describe("DeliveryTracker", () => {
       });
       const mockUpdate = vi.fn().mockResolvedValue({});
 
-      mockTx.notificationDelivery.findUnique = mockFindUnique;
-      mockTx.notificationDelivery.update = mockUpdate;
+      mockTx.notificationDelivery.findUnique = mockFindUnique as never;
+      mockTx.notificationDelivery.update = mockUpdate as never;
 
       await trackDeliveryFailure(mockTx, "notif-101", "Simple error message");
 
@@ -301,7 +301,7 @@ describe("DeliveryTracker", () => {
     it("should handle errors gracefully", async () => {
       const mockFindUnique = vi.fn().mockRejectedValue(new Error("DB error"));
 
-      mockTx.notificationDelivery.findUnique = mockFindUnique;
+      mockTx.notificationDelivery.findUnique = mockFindUnique as never;
 
       // Should not throw
       await expect(
