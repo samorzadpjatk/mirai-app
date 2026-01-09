@@ -131,7 +131,17 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
 
 ## PG Cron
 
-pg_cron must be managed manually from supabase dashboard (superuser permissions needed). To add NotificationSchedule processing cron go to supabase dashboard (http://localhost:8000) -> SQL Editor -> run [creating sql script](./sql/cron_process-notification-schedules.sql)
+pg_cron must be managed manually from supabase dashboard (superuser permissions needed).
+
+### Available Cron Jobs
+
+1. **NotificationSchedule Processing** - Processes scheduled notifications every minute
+   - Go to supabase dashboard (http://localhost:8000) -> SQL Editor
+   - Run [cron_process-notification-schedules.sql](./sql/cron_process-notification-schedules.sql)
+
+2. **Job Details Cleanup** - Cleans up succeeded pg_cron logs daily at 2 AM (default retention period is 7 days, to change edit the parameter passed to the sp in cron sql)
+   - Go to supabase dashboard (http://localhost:8000) -> SQL Editor
+   - Schedule the cron from supabase dashboard: [cron_cleanup_cron_logs_succeeded.sql](./sql/cron_cleanup_cron_logs_succeeded.sql)
 
 ## Używanie w aplikacjach
 
