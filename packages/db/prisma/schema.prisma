@@ -89,7 +89,9 @@ model CoinTransaction {
 model NotificationSchedule {
   id                      String                            @id @default(cuid())
   name                    String
-  notificationType        String // e.g., "daily-ranking"
+  notificationType        String // e.g., "custom", "ranking"
+  notificationTitle       String? // For custom notifications
+  notificationBody        String? // For custom notifications
   startDate               DateTime // When the schedule starts
   endDate                 DateTime // When the schedule ends
   hour                    Int // Hour of the day (0-23)
