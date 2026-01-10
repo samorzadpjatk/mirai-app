@@ -88,12 +88,13 @@ export function validateNotificationContent(
 export function validateReasonableDateRange(
   startDate: Date,
   endDate: Date,
+  allowPastStart = false,
 ): void {
   const now = new Date();
   const oneYearFromNow = new Date();
   oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
-  if (startDate < now) {
+  if (!allowPastStart && startDate < now) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: `Start date cannot be in the past. Current time: ${now.toISOString()}`,

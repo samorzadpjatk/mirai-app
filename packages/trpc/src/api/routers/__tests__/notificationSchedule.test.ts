@@ -595,6 +595,11 @@ describe("notificationScheduleRouter", () => {
 
   describe("bulkDelete", () => {
     it("should delete multiple schedules", async () => {
+      mockContext.db.notificationSchedule.findMany.mockResolvedValue([
+        { id: "schedule-1" },
+        { id: "schedule-2" },
+        { id: "schedule-3" },
+      ]);
       mockContext.db.notificationSchedule.deleteMany.mockResolvedValue({
         count: 3,
       });
@@ -606,6 +611,28 @@ describe("notificationScheduleRouter", () => {
 
       expect(result.success).toBe(true);
       expect(result.deletedCount).toBe(3);
+      expect(result.requestedCount).toBe(3);
+      expect(result.notFoundIds).toBeUndefined();
+    });
+
+    it("should report non-existent IDs", async () => {
+      mockContext.db.notificationSchedule.findMany.mockResolvedValue([
+        { id: "schedule-1" },
+        { id: "schedule-2" },
+      ]);
+      mockContext.db.notificationSchedule.deleteMany.mockResolvedValue({
+        count: 2,
+      });
+
+      const caller = notificationScheduleRouter.createCaller(mockContext);
+      const result = await caller.bulkDelete({
+        ids: ["schedule-1", "schedule-2", "non-existent"],
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.deletedCount).toBe(2);
+      expect(result.requestedCount).toBe(3);
+      expect(result.notFoundIds).toEqual(["non-existent"]);
     });
   });
 

@@ -286,7 +286,7 @@ export const notificationScheduleRouter = createTRPCRouter({
 
         validateFutureDates(finalStartDate, finalEndDate, true);
 
-        validateReasonableDateRange(finalStartDate, finalEndDate);
+        validateReasonableDateRange(finalStartDate, finalEndDate, true);
         validateMinimumDuration(finalStartDate, finalEndDate);
       }
 
@@ -303,7 +303,10 @@ export const notificationScheduleRouter = createTRPCRouter({
         }
       }
 
-      if (updateData.notificationTitle || updateData.notificationBody) {
+      if (
+        "notificationTitle" in updateData ||
+        "notificationBody" in updateData
+      ) {
         validateNotificationContent(
           existingSchedule.notificationType,
           updateData.notificationTitle ??
@@ -366,13 +369,23 @@ export const notificationScheduleRouter = createTRPCRouter({
   bulkDelete: adminProcedure
     .input(z.object({ ids: z.array(z.string()).min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.notificationSchedule.deleteMany({
+      const existingSchedules = await ctx.db.notificationSchedule.findMany({
         where: { id: { in: input.ids } },
+        select: { id: true },
+      });
+
+      const existingIds = existingSchedules.map((s) => s.id);
+      const notFoundIds = input.ids.filter((id) => !existingIds.includes(id));
+
+      const result = await ctx.db.notificationSchedule.deleteMany({
+        where: { id: { in: existingIds } },
       });
 
       return {
         success: true,
         deletedCount: result.count,
+        requestedCount: input.ids.length,
+        notFoundIds: notFoundIds.length > 0 ? notFoundIds : undefined,
       };
     }),
 
@@ -398,17 +411,16 @@ export const notificationScheduleRouter = createTRPCRouter({
       }
 
       const newStartDate = input.startDate ?? new Date();
-      const daysDifference = Math.ceil(
-        (originalSchedule.endDate.getTime() -
-          originalSchedule.startDate.getTime()) /
-          (1000 * 60 * 60 * 24),
-      );
+      const durationMs =
+        originalSchedule.endDate.getTime() -
+        originalSchedule.startDate.getTime();
       const newEndDate =
-        input.endDate ??
-        new Date(newStartDate.getTime() + daysDifference * 24 * 60 * 60 * 1000);
+        input.endDate ?? new Date(newStartDate.getTime() + durationMs);
 
       validateDateRange(newStartDate, newEndDate);
       validateFutureDates(newStartDate, newEndDate);
+      validateReasonableDateRange(newStartDate, newEndDate);
+      validateMinimumDuration(newStartDate, newEndDate);
       validateScheduleTime(
         newStartDate,
         originalSchedule.hour,
