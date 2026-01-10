@@ -306,8 +306,12 @@ export const notificationScheduleRouter = createTRPCRouter({
       if (updateData.notificationTitle || updateData.notificationBody) {
         validateNotificationContent(
           existingSchedule.notificationType,
-          updateData.notificationTitle ?? existingSchedule.notificationTitle,
-          updateData.notificationBody ?? existingSchedule.notificationBody,
+          updateData.notificationTitle ??
+            existingSchedule.notificationTitle ??
+            undefined,
+          updateData.notificationBody ??
+            existingSchedule.notificationBody ??
+            undefined,
         );
       }
 
