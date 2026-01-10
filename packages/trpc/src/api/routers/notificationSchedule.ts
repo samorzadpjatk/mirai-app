@@ -5,25 +5,109 @@ import {
   adminProcedure,
   moderatorProcedure,
 } from "../../api/trpc";
+import {
+  validateDateRange,
+  validateFutureDates,
+  validateScheduleTime,
+  validateMinimumDuration,
+  validateNotificationContent,
+  validateReasonableDateRange,
+  notificationScheduleCreateSchema,
+  notificationScheduleUpdateSchema,
+  paginationSchema,
+  filterSchema,
+} from "./notificationSchedule/validation";
 
 export const notificationScheduleRouter = createTRPCRouter({
-  // Get all notification schedules
-  getAll: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.db.notificationSchedule.findMany({
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-  }),
+  getAll: moderatorProcedure
+    .input(
+      z
+        .object({
+          pagination: paginationSchema.optional(),
+          filter: filterSchema.optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const { pagination, filter } = input ?? {};
+      const limit = pagination?.limit ?? 50;
+      const offset = pagination?.offset ?? 0;
 
-  // Get active schedules that should run
+      interface WhereClause {
+        notificationType?: string;
+        isActive?: boolean;
+        startDate?: {
+          gte?: Date;
+          lte?: Date;
+        };
+        name?: {
+          contains: string;
+          mode: "insensitive";
+        };
+      }
+
+      const where: WhereClause = {};
+
+      if (filter?.notificationType) {
+        where.notificationType = filter.notificationType;
+      }
+
+      if (filter?.isActive !== undefined) {
+        where.isActive = filter.isActive;
+      }
+
+      if (filter?.startDateFrom || filter?.startDateTo) {
+        where.startDate = {};
+        if (filter.startDateFrom) {
+          where.startDate.gte = filter.startDateFrom;
+        }
+        if (filter.startDateTo) {
+          where.startDate.lte = filter.startDateTo;
+        }
+      }
+
+      if (filter?.search) {
+        where.name = {
+          contains: filter.search,
+          mode: "insensitive" as const,
+        };
+      }
+
+      const [schedules, total] = await Promise.all([
+        ctx.db.notificationSchedule.findMany({
+          where,
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            _count: {
+              select: {
+                notificationExecutions: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.notificationSchedule.count({ where }),
+      ]);
+
+      return {
+        schedules,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
+        },
+      };
+    }),
+
   getActiveSchedules: moderatorProcedure.query(async ({ ctx }) => {
     const now = new Date();
 
@@ -41,10 +125,41 @@ export const notificationScheduleRouter = createTRPCRouter({
           },
         },
       },
+      orderBy: [{ hour: "asc" }, { minute: "asc" }],
     });
   }),
 
-  // Get schedule by ID
+  getUpcoming: moderatorProcedure
+    .input(
+      z
+        .object({
+          days: z.number().int().min(1).max(30).default(7),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + (input?.days ?? 7));
+
+      return await ctx.db.notificationSchedule.findMany({
+        where: {
+          isActive: true,
+          startDate: { lte: futureDate },
+          endDate: { gte: now },
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { startDate: "asc" },
+      });
+    }),
+
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -58,147 +173,142 @@ export const notificationScheduleRouter = createTRPCRouter({
               email: true,
             },
           },
+          _count: {
+            select: {
+              notificationExecutions: true,
+            },
+          },
         },
       });
 
       if (!schedule) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Notification schedule not found",
+          message: `Notification schedule with ID ${input.id} not found`,
         });
       }
 
       return schedule;
     }),
 
-  // Create new notification schedule
+  getExecutionHistory: moderatorProcedure
+    .input(
+      z.object({
+        scheduleId: z.string(),
+        limit: z.number().int().min(1).max(100).default(20),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.notificationScheduleExecution.findMany({
+        where: { scheduleId: input.scheduleId },
+        include: {
+          notification: {
+            select: {
+              id: true,
+              title: true,
+              body: true,
+              createdAt: true,
+            },
+          },
+        },
+        orderBy: { executedAt: "desc" },
+        take: input.limit,
+      });
+    }),
+
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string(),
-        notificationType: z.enum(["custom", "ranking"]),
-        notificationTitle: z.string().optional(),
-        notificationBody: z.string().optional(),
-        notificationUrl: z.string().optional(),
-        startDate: z.date(),
-        endDate: z.date(),
-        hour: z.number().int().min(0).max(23),
-        minute: z.number().int().min(0).max(59).default(0),
-        isActive: z.boolean().default(true),
-      }),
-    )
+    .input(notificationScheduleCreateSchema)
     .mutation(async ({ ctx, input }) => {
-      // Validate that end date is after start date
-      if (input.endDate <= input.startDate) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "End date must be after start date",
-        });
-      }
-      let schedule;
-      switch (input.notificationType) {
-        case "custom":
-          if (
-            !input.notificationTitle ||
-            !input.notificationBody ||
-            !input.notificationUrl
-          ) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message:
-                "Title, body, and URL are required for custom notifications",
-            });
-          }
-          const notification = await ctx.db.notification.create({
-            data: {
-              title: input.notificationTitle,
-              body: input.notificationBody,
-              url: input.notificationUrl,
-              createdById: ctx.dbUser.id,
-            },
-          });
+      validateNotificationContent(
+        input.notificationType,
+        input.notificationTitle,
+        input.notificationBody,
+      );
 
-          if (!notification) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Failed to create notification",
-            });
-          }
-          schedule = await ctx.db.notificationSchedule.create({
-            data: {
-              name: input.name,
-              notificationType: input.notificationType,
-              startDate: input.startDate,
-              endDate: input.endDate,
-              hour: input.hour,
-              minute: input.minute,
-              isActive: input.isActive,
-              createdById: ctx.dbUser.id,
-            },
-            include: {
-              createdBy: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          });
-          break;
+      validateDateRange(input.startDate, input.endDate);
 
-        case "ranking":
-          // Ranking notification logic
-          schedule = await ctx.db.notificationSchedule.create({
-            data: {
-              name: input.name,
-              notificationType: input.notificationType,
-              startDate: input.startDate,
-              endDate: input.endDate,
-              hour: input.hour,
-              minute: input.minute,
-              isActive: input.isActive,
-              createdById: ctx.dbUser.id,
+      validateFutureDates(input.startDate, input.endDate);
+
+      validateReasonableDateRange(input.startDate, input.endDate);
+
+      validateMinimumDuration(input.startDate, input.endDate);
+
+      validateScheduleTime(input.startDate, input.hour, input.minute);
+
+      const schedule = await ctx.db.notificationSchedule.create({
+        data: {
+          name: input.name,
+          notificationType: input.notificationType,
+          notificationTitle: input.notificationTitle,
+          notificationBody: input.notificationBody,
+          startDate: input.startDate,
+          endDate: input.endDate,
+          hour: input.hour,
+          minute: input.minute,
+          isActive: input.isActive,
+          createdById: ctx.dbUser.id,
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
-            include: {
-              createdBy: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          });
-          break;
-      }
+          },
+        },
+      });
+
       return schedule;
     }),
 
-  // Update notification schedule
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-        hour: z.number().int().min(0).max(23).optional(),
-        minute: z.number().int().min(0).max(59).optional(),
-        isActive: z.boolean().optional(),
-      }),
-    )
+    .input(notificationScheduleUpdateSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
-      // If both dates are provided, validate that end date is after start date
-      if (updateData.startDate && updateData.endDate) {
-        if (updateData.endDate <= updateData.startDate) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "End date must be after start date",
-          });
+      const existingSchedule = await ctx.db.notificationSchedule.findUnique({
+        where: { id },
+      });
+
+      if (!existingSchedule) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Notification schedule with ID ${id} not found`,
+        });
+      }
+
+      const finalStartDate = updateData.startDate ?? existingSchedule.startDate;
+      const finalEndDate = updateData.endDate ?? existingSchedule.endDate;
+
+      if (updateData.startDate || updateData.endDate) {
+        validateDateRange(finalStartDate, finalEndDate);
+
+        validateFutureDates(finalStartDate, finalEndDate, true);
+
+        validateReasonableDateRange(finalStartDate, finalEndDate);
+        validateMinimumDuration(finalStartDate, finalEndDate);
+      }
+
+      if (
+        updateData.startDate ||
+        updateData.hour !== undefined ||
+        updateData.minute !== undefined
+      ) {
+        const finalHour = updateData.hour ?? existingSchedule.hour;
+        const finalMinute = updateData.minute ?? existingSchedule.minute;
+
+        if (finalStartDate > new Date()) {
+          validateScheduleTime(finalStartDate, finalHour, finalMinute);
         }
+      }
+
+      if (updateData.notificationTitle || updateData.notificationBody) {
+        validateNotificationContent(
+          existingSchedule.notificationType,
+          updateData.notificationTitle ?? existingSchedule.notificationTitle,
+          updateData.notificationBody ?? existingSchedule.notificationBody,
+        );
       }
 
       const schedule = await ctx.db.notificationSchedule.update({
@@ -218,18 +328,24 @@ export const notificationScheduleRouter = createTRPCRouter({
       return schedule;
     }),
 
-  // Delete notification schedule
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const schedule = await ctx.db.notificationSchedule.findUnique({
         where: { id: input.id },
+        include: {
+          _count: {
+            select: {
+              notificationExecutions: true,
+            },
+          },
+        },
       });
 
       if (!schedule) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Notification schedule not found",
+          message: `Notification schedule with ID ${input.id} not found`,
         });
       }
 
@@ -237,10 +353,91 @@ export const notificationScheduleRouter = createTRPCRouter({
         where: { id: input.id },
       });
 
-      return { success: true };
+      return {
+        success: true,
+        message: `Schedule "${schedule.name}" deleted successfully. ${schedule._count.notificationExecutions} execution records were also removed.`,
+      };
     }),
 
-  // Toggle active status
+  bulkDelete: adminProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.db.notificationSchedule.deleteMany({
+        where: { id: { in: input.ids } },
+      });
+
+      return {
+        success: true,
+        deletedCount: result.count,
+      };
+    }),
+
+  duplicate: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const originalSchedule = await ctx.db.notificationSchedule.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!originalSchedule) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Notification schedule with ID ${input.id} not found`,
+        });
+      }
+
+      const newStartDate = input.startDate ?? new Date();
+      const daysDifference = Math.ceil(
+        (originalSchedule.endDate.getTime() -
+          originalSchedule.startDate.getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+      const newEndDate =
+        input.endDate ??
+        new Date(newStartDate.getTime() + daysDifference * 24 * 60 * 60 * 1000);
+
+      validateDateRange(newStartDate, newEndDate);
+      validateFutureDates(newStartDate, newEndDate);
+      validateScheduleTime(
+        newStartDate,
+        originalSchedule.hour,
+        originalSchedule.minute,
+      );
+
+      const newSchedule = await ctx.db.notificationSchedule.create({
+        data: {
+          name: input.name ?? `${originalSchedule.name} (Copy)`,
+          notificationType: originalSchedule.notificationType,
+          notificationTitle: originalSchedule.notificationTitle,
+          notificationBody: originalSchedule.notificationBody,
+          startDate: newStartDate,
+          endDate: newEndDate,
+          hour: originalSchedule.hour,
+          minute: originalSchedule.minute,
+          isActive: false,
+          createdById: ctx.dbUser.id,
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return newSchedule;
+    }),
+
   toggleActive: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -251,7 +448,7 @@ export const notificationScheduleRouter = createTRPCRouter({
       if (!schedule) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Notification schedule not found",
+          message: `Notification schedule with ID ${input.id} not found`,
         });
       }
 
@@ -272,10 +469,39 @@ export const notificationScheduleRouter = createTRPCRouter({
       return updatedSchedule;
     }),
 
-  // Update last run timestamp (used by scheduler)
+  bulkToggleActive: adminProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string()).min(1),
+        isActive: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.db.notificationSchedule.updateMany({
+        where: { id: { in: input.ids } },
+        data: { isActive: input.isActive },
+      });
+
+      return {
+        success: true,
+        updatedCount: result.count,
+      };
+    }),
+
   updateLastRun: adminProcedure
     .input(z.object({ id: z.string(), lastRun: z.date() }))
     .mutation(async ({ ctx, input }) => {
+      const schedule = await ctx.db.notificationSchedule.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!schedule) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Notification schedule with ID ${input.id} not found`,
+        });
+      }
+
       return await ctx.db.notificationSchedule.update({
         where: { id: input.id },
         data: { lastRun: input.lastRun },
