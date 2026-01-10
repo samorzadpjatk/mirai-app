@@ -553,6 +553,70 @@ describe("notificationScheduleRouter", () => {
         }),
       ).rejects.toThrow(/must be after start date/);
     });
+
+    it("should reject empty string for custom notification title", async () => {
+      const existingSchedule = {
+        id: "schedule-1",
+        name: "Test",
+        notificationType: "custom",
+        notificationTitle: "Valid Title",
+        notificationBody: "Valid Body",
+        startDate: new Date("2026-01-15T10:00:00.000Z"),
+        endDate: new Date("2026-01-20T10:00:00.000Z"),
+        hour: 10,
+        minute: 0,
+        isActive: true,
+        lastRun: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdById: "mock-user-id",
+      };
+
+      mockContext.db.notificationSchedule.findUnique.mockResolvedValue(
+        existingSchedule,
+      );
+
+      const caller = notificationScheduleRouter.createCaller(mockContext);
+
+      await expect(
+        caller.update({
+          id: "schedule-1",
+          notificationTitle: "",
+        }),
+      ).rejects.toThrow(/title is required/);
+    });
+
+    it("should reject empty string for custom notification body", async () => {
+      const existingSchedule = {
+        id: "schedule-1",
+        name: "Test",
+        notificationType: "custom",
+        notificationTitle: "Valid Title",
+        notificationBody: "Valid Body",
+        startDate: new Date("2026-01-15T10:00:00.000Z"),
+        endDate: new Date("2026-01-20T10:00:00.000Z"),
+        hour: 10,
+        minute: 0,
+        isActive: true,
+        lastRun: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdById: "mock-user-id",
+      };
+
+      mockContext.db.notificationSchedule.findUnique.mockResolvedValue(
+        existingSchedule,
+      );
+
+      const caller = notificationScheduleRouter.createCaller(mockContext);
+
+      await expect(
+        caller.update({
+          id: "schedule-1",
+          notificationBody: "   ",
+        }),
+      ).rejects.toThrow(/body is required/);
+    });
   });
 
   describe("delete", () => {
