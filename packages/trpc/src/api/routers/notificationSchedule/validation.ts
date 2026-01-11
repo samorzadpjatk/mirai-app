@@ -67,6 +67,7 @@ export function validateNotificationContent(
   notificationType: string,
   notificationTitle?: string,
   notificationBody?: string,
+  notificationUrl?: string,
 ): void {
   if (notificationType === "custom") {
     if (!notificationTitle?.trim()) {
@@ -82,6 +83,30 @@ export function validateNotificationContent(
         message: "Notification body is required for custom notifications",
       });
     }
+
+    if (notificationUrl !== undefined && notificationUrl !== null) {
+      const trimmedUrl = notificationUrl.trim();
+      if (trimmedUrl && !isValidUrl(trimmedUrl)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Notification URL must be a valid URL or path (e.g., /path or https://example.com)",
+        });
+      }
+    }
+  }
+}
+
+function isValidUrl(url: string): boolean {
+  if (url.startsWith("/")) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
   }
 }
 
@@ -114,6 +139,7 @@ export const notificationScheduleCreateSchema = z.object({
   notificationType: z.enum(["custom", "ranking"]),
   notificationTitle: z.string().optional(),
   notificationBody: z.string().optional(),
+  notificationUrl: z.string().optional(),
   startDate: z.date(),
   endDate: z.date(),
   hour: z.number().int().min(0).max(23),
@@ -126,6 +152,7 @@ export const notificationScheduleUpdateSchema = z.object({
   name: z.string().min(3).max(100).optional(),
   notificationTitle: z.string().optional(),
   notificationBody: z.string().optional(),
+  notificationUrl: z.string().optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   hour: z.number().int().min(0).max(23).optional(),

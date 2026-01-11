@@ -223,6 +223,7 @@ export const notificationScheduleRouter = createTRPCRouter({
         input.notificationType,
         input.notificationTitle,
         input.notificationBody,
+        input.notificationUrl,
       );
 
       validateDateRange(input.startDate, input.endDate);
@@ -241,6 +242,7 @@ export const notificationScheduleRouter = createTRPCRouter({
           notificationType: input.notificationType,
           notificationTitle: input.notificationTitle,
           notificationBody: input.notificationBody,
+          notificationUrl: input.notificationUrl,
           startDate: input.startDate,
           endDate: input.endDate,
           hour: input.hour,
@@ -305,8 +307,13 @@ export const notificationScheduleRouter = createTRPCRouter({
 
       if (
         "notificationTitle" in updateData ||
-        "notificationBody" in updateData
+        "notificationBody" in updateData ||
+        "notificationUrl" in updateData
       ) {
+        const finalUrl = (updateData.notificationUrl ??
+          existingSchedule.notificationUrl ??
+          undefined) as string | undefined;
+
         validateNotificationContent(
           existingSchedule.notificationType,
           updateData.notificationTitle ??
@@ -315,6 +322,7 @@ export const notificationScheduleRouter = createTRPCRouter({
           updateData.notificationBody ??
             existingSchedule.notificationBody ??
             undefined,
+          finalUrl,
         );
       }
 
@@ -433,6 +441,9 @@ export const notificationScheduleRouter = createTRPCRouter({
           notificationType: originalSchedule.notificationType,
           notificationTitle: originalSchedule.notificationTitle,
           notificationBody: originalSchedule.notificationBody,
+          notificationUrl: (originalSchedule.notificationUrl ?? undefined) as
+            | string
+            | undefined,
           startDate: newStartDate,
           endDate: newEndDate,
           hour: originalSchedule.hour,

@@ -344,6 +344,7 @@ describe("notificationScheduleRouter", () => {
         notificationType: "custom",
         notificationTitle: "Test Title",
         notificationBody: "Test Body",
+        notificationUrl: "/test",
         startDate: new Date("2026-01-15T10:00:00.000Z"),
         endDate: new Date("2026-01-20T10:00:00.000Z"),
         hour: 10,
@@ -404,6 +405,7 @@ describe("notificationScheduleRouter", () => {
           name: "Test",
           notificationType: "custom",
           notificationBody: "Test Body",
+          notificationUrl: "/test",
           startDate: new Date("2026-01-15T10:00:00.000Z"),
           endDate: new Date("2026-01-20T10:00:00.000Z"),
           hour: 10,
@@ -616,6 +618,39 @@ describe("notificationScheduleRouter", () => {
           notificationBody: "   ",
         }),
       ).rejects.toThrow(/body is required/);
+    });
+
+    it("should reject invalid URL format for custom notification", async () => {
+      const existingSchedule = {
+        id: "schedule-1",
+        name: "Test",
+        notificationType: "custom",
+        notificationTitle: "Valid Title",
+        notificationBody: "Valid Body",
+        notificationUrl: "/valid",
+        startDate: new Date("2026-01-15T10:00:00.000Z"),
+        endDate: new Date("2026-01-20T10:00:00.000Z"),
+        hour: 10,
+        minute: 0,
+        isActive: true,
+        lastRun: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdById: "mock-user-id",
+      };
+
+      mockContext.db.notificationSchedule.findUnique.mockResolvedValue(
+        existingSchedule,
+      );
+
+      const caller = notificationScheduleRouter.createCaller(mockContext);
+
+      await expect(
+        caller.update({
+          id: "schedule-1",
+          notificationUrl: "not-a-valid-url",
+        }),
+      ).rejects.toThrow(/must be a valid URL/);
     });
   });
 

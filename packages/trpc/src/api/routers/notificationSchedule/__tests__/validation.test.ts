@@ -172,55 +172,143 @@ describe("Notification Schedule Validation", () => {
     describe("for custom notifications", () => {
       it("should pass when all required fields are provided", () => {
         expect(() =>
-          validateNotificationContent("custom", "Test Title", "Test Body"),
+          validateNotificationContent(
+            "custom",
+            "Test Title",
+            "Test Body",
+            "/test",
+          ),
         ).not.toThrow();
       });
 
       it("should throw when title is missing", () => {
         expect(() =>
-          validateNotificationContent("custom", undefined, "Test Body"),
+          validateNotificationContent(
+            "custom",
+            undefined,
+            "Test Body",
+            "/test",
+          ),
         ).toThrow(TRPCError);
         expect(() =>
-          validateNotificationContent("custom", undefined, "Test Body"),
+          validateNotificationContent(
+            "custom",
+            undefined,
+            "Test Body",
+            "/test",
+          ),
         ).toThrow(/Notification title is required/);
       });
 
       it("should throw when title is empty string", () => {
         expect(() =>
-          validateNotificationContent("custom", "", "Test Body"),
+          validateNotificationContent("custom", "", "Test Body", "/test"),
         ).toThrow(TRPCError);
       });
 
       it("should throw when title is only whitespace", () => {
         expect(() =>
-          validateNotificationContent("custom", "   ", "Test Body"),
+          validateNotificationContent("custom", "   ", "Test Body", "/test"),
         ).toThrow(TRPCError);
       });
 
       it("should throw when body is missing", () => {
         expect(() =>
-          validateNotificationContent("custom", "Test Title", undefined),
+          validateNotificationContent(
+            "custom",
+            "Test Title",
+            undefined,
+            "/test",
+          ),
         ).toThrow(TRPCError);
         expect(() =>
-          validateNotificationContent("custom", "Test Title", undefined),
+          validateNotificationContent(
+            "custom",
+            "Test Title",
+            undefined,
+            "/test",
+          ),
         ).toThrow(/Notification body is required/);
       });
 
       it("should throw when body is empty string", () => {
         expect(() =>
-          validateNotificationContent("custom", "Test Title", ""),
+          validateNotificationContent("custom", "Test Title", "", "/test"),
         ).toThrow(TRPCError);
       });
 
       it("should throw when body is only whitespace", () => {
         expect(() =>
-          validateNotificationContent("custom", "Test Title", "   "),
+          validateNotificationContent("custom", "Test Title", "   ", "/test"),
         ).toThrow(TRPCError);
       });
 
-      it("should throw when both title and body are missing", () => {
+      it("should pass when URL is not provided", () => {
         expect(() =>
-          validateNotificationContent("custom", undefined, undefined),
+          validateNotificationContent(
+            "custom",
+            "Test Title",
+            "Test Body",
+            undefined,
+          ),
+        ).not.toThrow();
+      });
+
+      it("should pass when URL is empty string", () => {
+        expect(() =>
+          validateNotificationContent("custom", "Test Title", "Test Body", ""),
+        ).not.toThrow();
+      });
+
+      it("should pass with valid relative path URL", () => {
+        expect(() =>
+          validateNotificationContent(
+            "custom",
+            "Test Title",
+            "Test Body",
+            "/notifications",
+          ),
+        ).not.toThrow();
+      });
+
+      it("should pass with valid absolute URL", () => {
+        expect(() =>
+          validateNotificationContent(
+            "custom",
+            "Test Title",
+            "Test Body",
+            "https://example.com/path",
+          ),
+        ).not.toThrow();
+      });
+
+      it("should throw when URL is invalid format", () => {
+        expect(() =>
+          validateNotificationContent(
+            "custom",
+            "Test Title",
+            "Test Body",
+            "not-a-valid-url",
+          ),
+        ).toThrow(TRPCError);
+        expect(() =>
+          validateNotificationContent(
+            "custom",
+            "Test Title",
+            "Test Body",
+            "not-a-valid-url",
+          ),
+        ).toThrow(/must be a valid URL/);
+      });
+
+      it("should throw when all required fields are missing", () => {
+        expect(() =>
+          validateNotificationContent(
+            "custom",
+            undefined,
+            undefined,
+            undefined,
+          ),
         ).toThrow(TRPCError);
       });
     });
@@ -228,13 +316,18 @@ describe("Notification Schedule Validation", () => {
     describe("for ranking notifications", () => {
       it("should pass without requiring custom fields", () => {
         expect(() =>
-          validateNotificationContent("ranking", undefined, undefined),
+          validateNotificationContent(
+            "ranking",
+            undefined,
+            undefined,
+            undefined,
+          ),
         ).not.toThrow();
       });
 
       it("should pass even with empty strings", () => {
         expect(() =>
-          validateNotificationContent("ranking", "", ""),
+          validateNotificationContent("ranking", "", "", ""),
         ).not.toThrow();
       });
     });
@@ -242,7 +335,7 @@ describe("Notification Schedule Validation", () => {
     describe("for other notification types", () => {
       it("should pass without validation", () => {
         expect(() =>
-          validateNotificationContent("other", undefined, undefined),
+          validateNotificationContent("other", undefined, undefined, undefined),
         ).not.toThrow();
       });
     });
