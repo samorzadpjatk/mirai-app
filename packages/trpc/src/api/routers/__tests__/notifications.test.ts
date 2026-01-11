@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
-import type { inferProcedureInput } from "@trpc/server";
 import { notificationRouter } from "~/api/routers/notifications";
-import type { AppRouter } from "~/api/root";
 
 // Mock the mobile notifications utilities
 vi.mock("~/utils/notifications", () => ({

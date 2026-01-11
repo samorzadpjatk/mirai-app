@@ -310,9 +310,10 @@ export const notificationScheduleRouter = createTRPCRouter({
         "notificationBody" in updateData ||
         "notificationUrl" in updateData
       ) {
-        const finalUrl = (updateData.notificationUrl ??
+        const finalUrl =
+          updateData.notificationUrl ??
           existingSchedule.notificationUrl ??
-          undefined) as string | undefined;
+          undefined;
 
         validateNotificationContent(
           existingSchedule.notificationType,
@@ -441,9 +442,7 @@ export const notificationScheduleRouter = createTRPCRouter({
           notificationType: originalSchedule.notificationType,
           notificationTitle: originalSchedule.notificationTitle,
           notificationBody: originalSchedule.notificationBody,
-          notificationUrl: (originalSchedule.notificationUrl ?? undefined) as
-            | string
-            | undefined,
+          notificationUrl: originalSchedule.notificationUrl ?? undefined,
           startDate: newStartDate,
           endDate: newEndDate,
           hour: originalSchedule.hour,
