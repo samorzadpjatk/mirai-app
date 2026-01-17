@@ -19,8 +19,7 @@ interface SupabaseUsersResponse {
 
 const prisma = db;
 
-const SUPABASE_URL =
-  env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
+const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
 const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 
 async function main() {
@@ -56,14 +55,40 @@ async function main() {
 
   console.log(`Found ${users.length} users in Supabase Auth`);
 
-  for (const user of users) {
-    const role = user.app_metadata?.role ?? user.user_metadata?.role ?? "user";
-    const name = user.user_metadata?.name ?? user.email.split("@")[0];
+  type RoleValue = "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
 
-    // Determine permissions based on role
-    const isAdmin = role === "admin" || role === "tech";
-    const isModerator = role === "moderator";
-    const isServiceAccount = role === "service";
+  const parseName = (
+    fullName?: string | null,
+  ): { firstName?: string; lastName?: string } => {
+    if (!fullName?.trim()) return {};
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) {
+      return { firstName: parts[0] };
+    }
+    return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+  };
+
+  const mapRole = (role?: string | null): RoleValue => {
+    switch (role?.toLowerCase()) {
+      case "admin":
+      case "tech":
+        return "ADMIN";
+      case "moderator":
+        return "MODERATOR";
+      case "service":
+        return "SERVICE";
+      default:
+        return "USER";
+    }
+  };
+
+  for (const user of users) {
+    const rawRole =
+      user.app_metadata?.role ?? user.user_metadata?.role ?? "user";
+    const role = mapRole(rawRole);
+    const { firstName, lastName } = parseName(
+      user.user_metadata?.name ?? user.email.split("@")[0],
+    );
 
     try {
       // First, try to find existing user by email or authUserId
@@ -80,11 +105,10 @@ async function main() {
           data: {
             authUserId: user.id,
             email: user.email,
-            name,
+            firstName,
+            lastName,
             emailVerified: new Date(),
-            isAdmin,
-            isModerator,
-            isServiceAccount,
+            role,
           },
         });
         console.log(`✓ Updated user: ${result.email} (${role})`);
@@ -94,11 +118,10 @@ async function main() {
           data: {
             authUserId: user.id,
             email: user.email,
-            name,
+            firstName,
+            lastName,
             emailVerified: new Date(),
-            isAdmin,
-            isModerator,
-            isServiceAccount,
+            role,
           },
         });
         console.log(`✓ Created user: ${result.email} (${role})`);
