@@ -46,7 +46,7 @@ export default function NotificationsScreen() {
   }, [currentUser, isLoadingUser, router]);
 
   const {
-    data: schedules,
+    data: schedulesData,
     isLoading,
     isError,
     error,
@@ -54,13 +54,14 @@ export default function NotificationsScreen() {
     isFetching,
   } = useQuery(trpc.notificationSchedule.getAll.queryOptions());
 
+  const schedules = schedulesData?.schedules ?? [];
+
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createType, setCreateType] = useState<"custom" | "ranking">("custom");
   const [createTitle, setCreateTitle] = useState("");
   const [createBody, setCreateBody] = useState("");
-  const [createUrl, setCreateUrl] = useState("");
   const [createStartDate, setCreateStartDate] = useState("");
   const [createEndDate, setCreateEndDate] = useState("");
   const [createHour, setCreateHour] = useState("9");
@@ -80,7 +81,6 @@ export default function NotificationsScreen() {
         setCreateType("custom");
         setCreateTitle("");
         setCreateBody("");
-        setCreateUrl("");
         setCreateStartDate("");
         setCreateEndDate("");
         setCreateHour("9");
@@ -122,7 +122,6 @@ export default function NotificationsScreen() {
         notificationType: createType,
         notificationTitle: createType === "custom" ? createTitle : undefined,
         notificationBody: createType === "custom" ? createBody : undefined,
-        notificationUrl: createType === "custom" ? createUrl : undefined,
         startDate: new Date(createStartDate),
         endDate: new Date(createEndDate),
         hour: parseInt(createHour),
@@ -293,15 +292,6 @@ export default function NotificationsScreen() {
                                 onChangeText={setCreateBody}
                               />
                             </YStack>
-
-                            <YStack gap="$2">
-                              <Label>URL (optional)</Label>
-                              <Input
-                                placeholder="https://..."
-                                value={createUrl}
-                                onChangeText={setCreateUrl}
-                              />
-                            </YStack>
                           </>
                         )}
 
@@ -373,7 +363,7 @@ export default function NotificationsScreen() {
             </Dialog>
           </XStack>
 
-          {schedules?.length === 0 && (
+          {schedules.length === 0 && (
             <Card p="$4" bordered>
               <Text color="$gray11" text="center">
                 No notification schedules found. Create your first schedule!
