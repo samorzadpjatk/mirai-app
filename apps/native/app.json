@@ -39,7 +39,9 @@
       [
         "expo-asset",
         {
-          "assets": ["./assets/mirai_gradient.png"]
+          "assets": [
+            "./assets/mirai_logo.png"
+          ]
         }
       ],
       "@rnmapbox/maps"
