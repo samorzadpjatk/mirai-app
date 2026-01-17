@@ -1,0 +1,37 @@
+name: integral-dev
+
+include:
+  - path: ../../environment/dev/docker-compose.yml
+    project_directory: ../../environment/dev
+
+services:
+  backend-server:
+    build:
+      context: ../..                              # root monorepo (ważne dla workspace:*)
+      dockerfile: apps/backend-server/Dockerfile.dev
+    ports:
+      - "2022:2022"
+    environment:
+      PORT: "2022"
+
+      # W kontenerze NIE używaj localhost do supabase,
+      # tylko nazwę serwisu z compose (zwykle kong).
+      SUPABASE_URL: "http://kong:8000"
+      SUPABASE_KEY: "your-anon-key"
+
+      # dla entrypoint.dev.sh (żeby wiedział na co czekać)
+      SUPABASE_HOST: "kong"
+      SUPABASE_PORT: "8000"
+
+    # to ustawia Twój skrypt jako entrypoint (czyli "waiter")
+    entrypoint: ["sh", "/repo/apps/backend-server/docker/entrypoint.dev.sh"]
+
+    # depends_on tylko ustawia kolejność startu; "czekanie" robisz entrypointem
+    depends_on:
+      - kong
+
+    # opcjonalnie: jeśli masz hot-reload i chcesz bind-mount (zwykle tak)
+    volumes:
+      - ../..:/repo
+      - /repo/node_modules
+      - /repo/apps/backend-server/node_modules
