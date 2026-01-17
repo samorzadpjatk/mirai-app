@@ -9,6 +9,11 @@ import {
 export const tripRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.trip.findMany({
+      where: {
+        participants: {
+          some: { userId: ctx.dbUser.id },
+        },
+      },
       orderBy: { startDate: "asc" },
       include: {
         groups: {
@@ -20,6 +25,23 @@ export const tripRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      const isParticipant = await ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: {
+            userId: ctx.dbUser.id,
+            tripId: input.id,
+          },
+        },
+        select: { userId: true },
+      });
+
+      if (!isParticipant) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a participant of this trip",
+        });
+      }
+
       const trip = await ctx.db.trip.findUnique({
         where: { id: input.id },
         include: {
@@ -31,7 +53,8 @@ export const tripRouter = createTRPCRouter({
               user: {
                 select: {
                   id: true,
-                  name: true,
+                  firstName: true,
+                  lastName: true,
                   email: true,
                   role: true,
                 },

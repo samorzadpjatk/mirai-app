@@ -388,7 +388,8 @@ export const groupRouter = createTRPCRouter({
           organizer: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -397,7 +398,8 @@ export const groupRouter = createTRPCRouter({
               user: {
                 select: {
                   id: true,
-                  name: true,
+                  firstName: true,
+                  lastName: true,
                   email: true,
                 },
               },
@@ -408,7 +410,8 @@ export const groupRouter = createTRPCRouter({
               admin: {
                 select: {
                   id: true,
-                  name: true,
+                  firstName: true,
+                  lastName: true,
                 },
               },
             },
