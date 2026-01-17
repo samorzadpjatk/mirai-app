@@ -29,6 +29,7 @@ export default function MapScreen() {
   return (
     <YStack flex={1}>
       <UserMap
+        vectorSourceUrl="https://tiles.openfreemap.org/"
         users={users}
         initialZoomLevel={14}
         onUserPress={(user) => {

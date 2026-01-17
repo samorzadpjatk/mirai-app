@@ -36,18 +36,6 @@ const TRPC_HTTP_URL: string =
   process.env.EXPO_PUBLIC_TRPC_API_URL ?? "http://localhost:2022/api/trpc";
 const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 
-// Prefer EXPO_PUBLIC_ env for bundlers, fallback to plain MAPBOX_ACCESS_TOKEN
-const MAPBOX_ACCESS_TOKEN: string =
-  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? process.env.MAPBOX_ACCESS_TOKEN ?? "";
-
-interface MapboxModule {
-  setAccessToken?: (token: string) => void;
-  setConnected?: (connected: boolean) => void;
-}
-
-// Mapbox configuration is done in useEffect to avoid errors in Expo Go
-// where native code is not available
-
 // Clear stale Supabase session when the base URL changes (helps when switching
 // between 54321 CLI default and 8000 Kong reverse proxy).
 if (typeof window !== "undefined" && window.localStorage) {
@@ -197,40 +185,39 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    // Load Mapbox GL CSS for Web platform via CDN
+    // Load MapLibre GL CSS for Web platform via CDN
     if (Platform.OS === "web") {
-      const linkId = "mapbox-gl-css";
+      const linkId = "maplibre-gl-css";
       if (typeof document !== "undefined" && !document.getElementById(linkId)) {
         const link = document.createElement("link");
         link.id = linkId;
         link.rel = "stylesheet";
-        link.href = "https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css";
+        link.href = "https://unpkg.com/maplibre-gl@3.7.0/dist/maplibre-gl.css";
         document.head.appendChild(link);
       }
     }
 
     const appOwnership: string = Constants.appOwnership ?? "unknown";
     const isExpoGo = appOwnership === "expo";
-    const hasToken =
-      MAPBOX_ACCESS_TOKEN && MAPBOX_ACCESS_TOKEN !== "your_mapbox_token_here";
 
-    // Configure Mapbox only on native builds (not Expo Go), with token present.
-    if (Platform.OS !== "web" && hasToken && !isExpoGo) {
+    // Configure native map module only on native builds (not Expo Go).
+    if (Platform.OS !== "web" && !isExpoGo) {
       void (async () => {
         try {
-          const mod = (await import("@rnmapbox/maps")) as MapboxModule;
-          mod?.setAccessToken?.(MAPBOX_ACCESS_TOKEN);
-          mod?.setConnected?.(true);
+          // Try to load MapLibre native module if present; no token configuration required.
+          const mod = await import("@maplibre/maplibre-react-native");
+          // If module exposes helpers in the future, adapt here.
+          // No-op for now.
         } catch (err: unknown) {
           console.warn(
-            "[Mapbox] Failed to init native module. Build a dev client to use maps.",
+            "[Map] Native map module not available. Build a dev client to use native maps.",
             err,
           );
         }
       })();
     } else if (Platform.OS !== "web") {
       console.warn(
-        "[Mapbox] Running in Expo Go or missing token. Maps disabled (requires dev build + token).",
+        "[Map] Running in Expo Go or native module missing. Maps disabled (requires dev build).",
       );
     }
   }, []);

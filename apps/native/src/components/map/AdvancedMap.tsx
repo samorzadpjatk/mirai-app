@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, StyleSheet, View, Text, Pressable } from "react-native";
-import MapboxGL from "@rnmapbox/maps";
+import {
+  MapView,
+  Camera,
+  UserLocation,
+  Images,
+  ShapeSource,
+  CircleLayer,
+  SymbolLayer,
+} from "@maplibre/maplibre-react-native";
 
 export interface UserLocation {
   id: string;
@@ -25,7 +33,8 @@ interface MapPressEvent {
   }[];
 }
 
-const MAP_STYLE_OUTDOORS = "mapbox://styles/mapbox/outdoors-v12";
+// Public MapLibre demo style (no Mapbox dependency)
+const MAP_STYLE_OUTDOORS = "https://demotiles.maplibre.org/style.json";
 const SOURCE_ID = "advanced-users-source";
 const LAYER_ID_POINTS = "advanced-users-points";
 const LAYER_ID_CLUSTERS = "advanced-users-clusters";
@@ -176,16 +185,16 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
 
   return (
     <View style={styles.container}>
-      <MapboxGL.MapView
+      <MapView
         style={styles.map}
         styleURL={MAP_STYLE_OUTDOORS}
         logoEnabled={false}
         compassEnabled
         scaleBarEnabled={false}
       >
-        <MapboxGL.Camera ref={cameraRef} />
+        <Camera ref={cameraRef} />
 
-        <MapboxGL.UserLocation
+        <UserLocation
           visible
           showsUserHeadingIndicator
           androidRenderMode="compass"
@@ -193,9 +202,9 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
         />
 
         {/* Obrazy awatarów ładowane do warstwy GL */}
-        <MapboxGL.Images images={images} />
+        <Images images={images} />
 
-        <MapboxGL.ShapeSource
+        <ShapeSource
           id={SOURCE_ID}
           shape={featureCollection}
           cluster
@@ -204,7 +213,7 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
           onPress={handleUserPress}
         >
           {/* Klastry – minimalistyczne niebieskie bąbelki */}
-          <MapboxGL.CircleLayer
+          <CircleLayer
             id={LAYER_ID_CLUSTERS}
             filter={["has", "point_count"]}
             style={{
@@ -214,7 +223,7 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
             }}
           />
 
-          <MapboxGL.SymbolLayer
+          <SymbolLayer
             id={LAYER_ID_CLUSTER_COUNT}
             filter={["has", "point_count"]}
             style={{
@@ -227,7 +236,7 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
           />
 
           {/* Pojedyncze awatary użytkowników */}
-          <MapboxGL.SymbolLayer
+          <SymbolLayer
             id={LAYER_ID_POINTS}
             filter={["!", ["has", "point_count"]]}
             style={{
@@ -254,8 +263,8 @@ export const AdvancedMap: React.FC<AdvancedMapProps> = ({ users, onUserPress }) 
               ],
             }}
           />
-        </MapboxGL.ShapeSource>
-      </MapboxGL.MapView>
+        </ShapeSource>
+      </MapView>
 
       {/* Minimalistyczny bottom sheet z detalami użytkownika */}
       <Animated.View

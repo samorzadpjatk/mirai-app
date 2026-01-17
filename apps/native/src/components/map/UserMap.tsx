@@ -1,6 +1,17 @@
-import React, { useEffect, useMemo, useState, type ComponentType } from "react";
+import React, { useMemo } from "react";
 import { Platform, StyleSheet, View, Text } from "react-native";
 import Constants from "expo-constants";
+import {
+  MapView,
+  Camera,
+  UserLocation,
+  Images,
+  ShapeSource,
+  CircleLayer,
+  SymbolLayer,
+  StyleURL,
+  VectorSource,
+} from "@maplibre/maplibre-react-native";
 
 export interface UserLocation {
   id: string;
@@ -25,6 +36,19 @@ export interface UserMapProps {
    * Optional overlay (e.g., Slopes-like UI) rendered above the map.
    */
   overlay?: React.ReactNode;
+  /**
+   * Optional map style URL (overrides internal MAP_STYLE).
+   */
+  mapStyleURL?: string;
+  /**
+   * Optional vector tile source URL (e.g. OpenSkiMap vector tiles).
+   * If provided, ShapeSource will use `url` instead of a local GeoJSON `shape`.
+   */
+  vectorSourceUrl?: string;
+  /**
+   * Optional source layer name inside the vector tiles (if required).
+   */
+  vectorSourceLayer?: string;
 }
 
 interface UserFeature {
@@ -47,37 +71,13 @@ interface UserFeatureCollection {
   features: UserFeature[];
 }
 
-// Basic Mapbox style & layer IDs
-const MAP_STYLE = "mapbox://styles/mapbox/outdoors-v12";
+// Basic MapLibre style & layer IDs
+const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const SOURCE_ID = "users-source";
 const LAYER_ID_POINTS = "users-points";
 const LAYER_ID_CLUSTERS = "users-clusters";
 const LAYER_ID_CLUSTER_COUNT = "users-clusters-count";
 const IMAGE_LAYER_ID = "user-avatar";
-type MapboxComponent = ComponentType<Record<string, unknown>>;
-interface MapboxModule {
-  MapView: MapboxComponent;
-  Camera: MapboxComponent;
-  UserLocation: MapboxComponent;
-  Images: MapboxComponent;
-  ShapeSource: MapboxComponent;
-  CircleLayer: MapboxComponent;
-  SymbolLayer: MapboxComponent;
-}
-
-function isMapboxModule(candidate: unknown): candidate is MapboxModule {
-  const mod = candidate as Record<string, unknown> | null;
-  return Boolean(
-    mod &&
-      typeof mod.MapView === "function" &&
-      typeof mod.Camera === "function" &&
-      typeof mod.UserLocation === "function" &&
-      typeof mod.Images === "function" &&
-      typeof mod.ShapeSource === "function" &&
-      typeof mod.CircleLayer === "function" &&
-      typeof mod.SymbolLayer === "function",
-  );
-}
 
 interface MapPressEvent {
   features?: {
@@ -119,8 +119,10 @@ export const UserMap: React.FC<UserMapProps> = ({
   onUserPress,
   initialZoomLevel = 14,
   overlay,
+  vectorSourceUrl,
+  vectorSourceLayer,
 }) => {
-  // Web support for @rnmapbox/maps is limited and often requires extra setup.
+  // Web support for the native MapLibre wrapper is limited and often requires extra setup.
   // Since głównym celem są smartfony, na webie pokazujemy prosty placeholder,
   // żeby nie wywalać całej aplikacji błędem Reacta.
   if (Platform.OS === "web") {
@@ -136,53 +138,10 @@ export const UserMap: React.FC<UserMapProps> = ({
   if (isExpoGo) {
     return (
       <View style={styles.webPlaceholder}>
-        <Text>Mapbox wymaga dev build (Expo Go nie zawiera natywnego kodu).</Text>
+        <Text>MapLibre wymaga dev build (Expo Go nie zawiera natywnego kodu).</Text>
       </View>
     );
   }
-
-  // Attempt to load Mapbox native module at runtime.
-  // In Expo Go native code is not bundled, so we fall back to a placeholder.
-  const [mapboxModule, setMapboxModule] = useState<MapboxModule | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadMapbox = async () => {
-      try {
-        const modUnknown: unknown = await import("@rnmapbox/maps");
-        const loaded =
-          (modUnknown as { default?: unknown })?.default !== undefined
-            ? (modUnknown as { default?: unknown }).default
-            : modUnknown;
-        if (mounted && isMapboxModule(loaded)) {
-          setMapboxModule(loaded);
-        }
-      } catch {
-        if (mounted) {
-          setMapboxModule(null);
-        }
-      }
-    };
-
-    void loadMapbox();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (!mapboxModule) {
-    return (
-      <View style={styles.webPlaceholder}>
-        <Text>
-          Mapbox wymaga builda development (Expo Go nie zawiera natywnego kodu).
-        </Text>
-      </View>
-    );
-  }
-
-  const MapboxGL = mapboxModule;
 
   const featureCollection: UserFeatureCollection = useMemo(() => {
     const now = Date.now();
@@ -240,9 +199,9 @@ export const UserMap: React.FC<UserMapProps> = ({
 
   return (
     <View style={styles.container}>
-      <MapboxGL.MapView
+      <MapView
+        mapStyle={MAP_STYLE}
         style={styles.map}
-        styleURL={MAP_STYLE}
         logoEnabled={false}
         compassEnabled
         rotateEnabled
@@ -251,7 +210,7 @@ export const UserMap: React.FC<UserMapProps> = ({
         zoomEnabled
       >
         {/* Follow the user location on map start, fallback to first user coordinate */}
-        <MapboxGL.Camera
+        <Camera
           followUserLocation
           defaultSettings={
             users[0]
@@ -260,24 +219,23 @@ export const UserMap: React.FC<UserMapProps> = ({
           }
           followZoomLevel={initialZoomLevel}
         />
-        <MapboxGL.UserLocation
+        <UserLocation
           visible
           showsUserHeadingIndicator
           androidRenderMode="compass"
         />
 
-        <MapboxGL.Images images={images} />
-
-        <MapboxGL.ShapeSource
+        <Images images={images} />
+        <VectorSource
+          url={vectorSourceUrl} id={"map"} />
+        <ShapeSource
           id={SOURCE_ID}
           shape={featureCollection}
           cluster
           clusterRadius={48}
-          clusterMaxZoom={14}
-          onPress={handleOnPress}
         >
           {/* Cluster circles - subtle blue like Slopes pill */}
-          <MapboxGL.CircleLayer
+          <CircleLayer
             id={LAYER_ID_CLUSTERS}
             filter={["has", "point_count"]}
             style={{
@@ -296,7 +254,7 @@ export const UserMap: React.FC<UserMapProps> = ({
           />
 
           {/* Cluster count labels */}
-          <MapboxGL.SymbolLayer
+          <SymbolLayer
             id={LAYER_ID_CLUSTER_COUNT}
             filter={["has", "point_count"]}
             style={{
@@ -309,7 +267,7 @@ export const UserMap: React.FC<UserMapProps> = ({
           />
 
           {/* Individual user avatars as symbols */}
-          <MapboxGL.SymbolLayer
+          <SymbolLayer
             id={LAYER_ID_POINTS}
             filter={["!", ["has", "point_count"]]}
             style={{
@@ -328,8 +286,8 @@ export const UserMap: React.FC<UserMapProps> = ({
               iconOpacity: ["get", "opacity"],
             }}
           />
-        </MapboxGL.ShapeSource>
-      </MapboxGL.MapView>
+        </ShapeSource>
+      </MapView>
 
       {overlay}
     </View>
