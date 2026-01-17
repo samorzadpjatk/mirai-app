@@ -1,13 +1,13 @@
-import type {
-  SupabaseClient,
-  SupabaseUser,
-} from "@integral-2025-app/supabase";
-import type { User } from "@integral-2025-app/common-types";
+import type { SupabaseClient, SupabaseUser } from "@integral-2025-app/supabase";
+import type { User, Role } from "@integral-2025-app/db";
 import type { AuthUser } from "./types";
 import { db } from "@integral-2025-app/db";
 
 interface MinimalBuffer {
-  from(input: string, encoding: "base64"): { toString(encoding: "utf-8"): string };
+  from(
+    input: string,
+    encoding: "base64",
+  ): { toString(encoding: "utf-8"): string };
 }
 
 const getGlobalBuffer = () =>
@@ -16,9 +16,9 @@ const getGlobalBuffer = () =>
 const getGlobalAtob = () =>
   (globalThis as typeof globalThis & { atob?: (data: string) => string }).atob;
 
-function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unknown>>(
-  token: string,
-): T | null {
+function decodeJwtPayload<
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(token: string): T | null {
   const [, payload] = token.split(".");
   if (!payload) {
     return null;
@@ -30,7 +30,9 @@ function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unk
 
   try {
     if (buffer) {
-      const decoded = buffer.from(normalizedPayload, "base64").toString("utf-8");
+      const decoded = buffer
+        .from(normalizedPayload, "base64")
+        .toString("utf-8");
       return JSON.parse(decoded) as T;
     }
 
@@ -54,7 +56,10 @@ function decodeJwtPayload<T extends Record<string, unknown> = Record<string, unk
 function getTokenExpiry(accessToken: string) {
   const payload = decodeJwtPayload<{ exp?: number }>(accessToken);
   if (!payload?.exp) {
-    return { expiresAt: null as number | null, expiresIn: null as number | null };
+    return {
+      expiresAt: null as number | null,
+      expiresIn: null as number | null,
+    };
   }
 
   const expiresAt = payload.exp;
@@ -148,6 +153,16 @@ export async function getAuthServerSession(
   return session;
 }
 
+const toDisplayName = (
+  firstName: string | null,
+  lastName: string | null,
+  fallback?: string | null,
+): string | null => {
+  const parts = [firstName?.trim(), lastName?.trim()].filter(Boolean);
+  if (parts.length > 0) return parts.join(" ");
+  return fallback?.trim() ?? null;
+};
+
 export function mapDatabaseUserToAuthUser(
   dbUser: User | null,
 ): AuthUser | null {
@@ -155,12 +170,21 @@ export function mapDatabaseUserToAuthUser(
     return null;
   }
 
+  const displayName = toDisplayName(
+    dbUser.firstName,
+    dbUser.lastName,
+    dbUser.email?.split("@")[0] ?? null,
+  );
+
   return {
     id: dbUser.id,
     authUserId: dbUser.authUserId,
     email: dbUser.email,
-    name: dbUser.name,
+    firstName: dbUser.firstName ?? null,
+    lastName: dbUser.lastName ?? null,
+    name: displayName,
     emailVerified: dbUser.emailVerified,
+    role: dbUser.role,
   };
 }
 
@@ -255,7 +279,7 @@ export async function requireAdmin(
 ): Promise<User> {
   const { dbUser } = await requireAuth(supabase, accessToken);
 
-  if (!dbUser.isAdmin) {
+  if (dbUser.role !== "ADMIN") {
     throw new AuthorizationError("Admin access required");
   }
 
@@ -268,7 +292,7 @@ export async function requireModerator(
 ): Promise<User> {
   const { dbUser } = await requireAuth(supabase, accessToken);
 
-  if (!dbUser.isModerator && !dbUser.isAdmin) {
+  if (dbUser.role !== "MODERATOR" && dbUser.role !== "ADMIN") {
     throw new AuthorizationError("Moderator access required");
   }
 
@@ -280,33 +304,58 @@ export async function syncUserToDatabase(
   upsertUser: (data: {
     authUserId: string;
     email: string;
-    name: string | null;
+    firstName: string | null;
+    lastName: string | null;
     emailVerified: Date | null;
-    isAdmin: boolean;
-    isModerator: boolean;
-    isServiceAccount: boolean;
+    role: Role;
   }) => Promise<User>,
 ): Promise<User> {
-  const role =
+  const rawRole =
     (supabaseUser.app_metadata?.role as string | undefined) ??
     (supabaseUser.user_metadata?.role as string | undefined) ??
     "user";
-  const isAdmin = role === "admin" || role === "tech";
-  const isModerator = role === "moderator";
-  const isServiceAccount = role === "service";
+
+  const mapRole = (value: string | undefined): Role => {
+    switch (value?.toLowerCase()) {
+      case "admin":
+      case "tech":
+        return "ADMIN";
+      case "moderator":
+        return "MODERATOR";
+      case "service":
+        return "SERVICE";
+      default:
+        return "USER";
+    }
+  };
+
+  const role = mapRole(rawRole);
+
+  const parseName = (
+    fullName?: string | null,
+  ): { firstName: string | null; lastName: string | null } => {
+    if (!fullName?.trim()) return { firstName: null, lastName: null };
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) {
+      return { firstName: parts[0], lastName: null };
+    }
+    return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+  };
+
+  const { firstName, lastName } = parseName(
+    (supabaseUser.user_metadata?.name as string | undefined) ??
+      supabaseUser.email?.split("@")[0] ??
+      null,
+  );
 
   return await upsertUser({
     authUserId: supabaseUser.id,
     email: supabaseUser.email!,
-    name:
-      (supabaseUser.user_metadata?.name as string | undefined) ??
-      supabaseUser.email?.split("@")[0] ??
-      null,
+    firstName,
+    lastName,
     emailVerified: supabaseUser.email_confirmed_at
       ? new Date(supabaseUser.email_confirmed_at)
       : null,
-    isAdmin,
-    isModerator,
-    isServiceAccount,
+    role,
   });
 }
