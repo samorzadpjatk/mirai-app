@@ -337,9 +337,12 @@ export async function syncUserToDatabase(
     if (!fullName?.trim()) return { firstName: null, lastName: null };
     const parts = fullName.trim().split(/\s+/);
     if (parts.length === 1) {
-      return { firstName: parts[0], lastName: null };
+      return { firstName: parts[0] ?? null, lastName: null };
     }
-    return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+    return {
+      firstName: parts[0] ?? null,
+      lastName: parts.slice(1).join(" "),
+    };
   };
 
   const { firstName, lastName } = parseName(
@@ -348,11 +351,14 @@ export async function syncUserToDatabase(
       null,
   );
 
+  const safeFirstName = firstName ?? null;
+  const safeLastName = lastName ?? null;
+
   return await upsertUser({
     authUserId: supabaseUser.id,
     email: supabaseUser.email!,
-    firstName,
-    lastName,
+    firstName: safeFirstName,
+    lastName: safeLastName,
     emailVerified: supabaseUser.email_confirmed_at
       ? new Date(supabaseUser.email_confirmed_at)
       : null,
