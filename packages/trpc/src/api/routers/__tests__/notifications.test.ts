@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
-import type { inferProcedureInput } from "@trpc/server";
 import { notificationRouter } from "~/api/routers/notifications";
-import type { AppRouter } from "~/api/root";
 
 // Mock the mobile notifications utilities
 vi.mock("~/utils/notifications", () => ({
@@ -41,18 +39,21 @@ describe("notificationRouter", () => {
         notificationPush: {
           findMany: vi.fn(),
         },
+        tripParticipant: {
+          findMany: vi.fn(),
+        },
         user: {
           findMany: vi.fn(),
           findFirst: vi.fn(),
         },
         group: {
           findFirst: vi.fn(),
+          findUnique: vi.fn(),
         },
       },
       dbUser: {
         id: "mock-user-id",
-        isAdmin: true,
-        isModerator: true,
+        role: "ADMIN",
       },
       session: {
         user: {
@@ -257,7 +258,11 @@ describe("notificationRouter", () => {
           createdAt: new Date(),
           updatedAt: new Date(),
           createdById: "admin-123",
-          createdBy: { id: "admin-123", name: "Admin User" },
+          createdBy: {
+            id: "admin-123",
+            firstName: "Admin",
+            lastName: "User",
+          },
         },
       ];
 
@@ -297,6 +302,17 @@ describe("notificationRouter", () => {
         { id: "user-2" },
       ]);
 
+      mockContext.db.group.findUnique.mockResolvedValue({
+        id: "group-123",
+        name: "Test Group",
+        tripId: "trip-1",
+      });
+
+      mockContext.db.tripParticipant.findMany.mockResolvedValue([
+        { userId: "user-1" },
+        { userId: "user-2" },
+      ]);
+
       mockSendNotification.mockResolvedValue({
         success: true,
         notificationId: "notif-123",
@@ -305,6 +321,7 @@ describe("notificationRouter", () => {
       const caller = notificationRouter.createCaller(mockContext);
       const result = await caller.sendToGroup({
         groupId: "group-123",
+        tripId: "trip-1",
         title: "Group Notification",
         body: "Test message",
         url: "/group",
@@ -319,6 +336,7 @@ describe("notificationRouter", () => {
           title: "Group Notification",
           body: "Test message",
           url: "/group",
+          tripId: "trip-1",
         },
       });
     });
@@ -338,9 +356,12 @@ describe("notificationRouter", () => {
         id: "group-123",
         name: "Test Group",
         coins: 100,
+        tripId: "trip-1",
       });
 
-      mockContext.db.user.findMany.mockResolvedValue([{ id: "user-1" }]);
+      mockContext.db.tripParticipant.findMany.mockResolvedValue([
+        { userId: "user-1" },
+      ]);
 
       mockCreateNotification.mockReturnValue({
         title: "💰 Test Group received coins!",
@@ -358,6 +379,7 @@ describe("notificationRouter", () => {
         groupId: "group-123",
         coins: 50,
         reason: "Good performance",
+        tripId: "trip-1",
       });
 
       expect(mockCreateNotification).toHaveBeenCalledWith(
@@ -376,6 +398,7 @@ describe("notificationRouter", () => {
         caller.sendCoinAddedToGroup({
           groupId: "nonexistent-group",
           coins: 50,
+          tripId: "trip-1",
         }),
       ).rejects.toThrow();
     });

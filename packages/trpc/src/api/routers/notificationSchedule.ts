@@ -8,41 +8,47 @@ import {
 
 export const notificationScheduleRouter = createTRPCRouter({
   // Get all notification schedules
-  getAll: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.db.notificationSchedule.findMany({
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+  getAll: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.notificationSchedule.findMany({
+        where: { tripId: input.tripId },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-  }),
+        orderBy: { createdAt: "desc" },
+      });
+    }),
 
   // Get active schedules that should run
-  getActiveSchedules: moderatorProcedure.query(async ({ ctx }) => {
-    const now = new Date();
+  getActiveSchedules: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
 
-    return await ctx.db.notificationSchedule.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
+      return await ctx.db.notificationSchedule.findMany({
+        where: {
+          tripId: input.tripId,
+          isActive: true,
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
-    });
-  }),
+      });
+    }),
 
   // Get schedule by ID
   getById: moderatorProcedure
@@ -75,6 +81,7 @@ export const notificationScheduleRouter = createTRPCRouter({
   create: adminProcedure
     .input(
       z.object({
+        tripId: z.string(),
         name: z.string(),
         notificationType: z.enum(["custom", "ranking"]),
         notificationTitle: z.string().optional(),
@@ -115,6 +122,7 @@ export const notificationScheduleRouter = createTRPCRouter({
               body: input.notificationBody,
               url: input.notificationUrl,
               createdById: ctx.dbUser.id,
+              tripId: input.tripId,
             },
           });
 
@@ -126,6 +134,7 @@ export const notificationScheduleRouter = createTRPCRouter({
           }
           schedule = await ctx.db.notificationSchedule.create({
             data: {
+              tripId: input.tripId,
               name: input.name,
               notificationType: input.notificationType,
               startDate: input.startDate,
@@ -151,6 +160,7 @@ export const notificationScheduleRouter = createTRPCRouter({
           // Ranking notification logic
           schedule = await ctx.db.notificationSchedule.create({
             data: {
+              tripId: input.tripId,
               name: input.name,
               notificationType: input.notificationType,
               startDate: input.startDate,
@@ -180,6 +190,7 @@ export const notificationScheduleRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
+        tripId: z.string(),
         name: z.string(),
         startDate: z.date().optional(),
         endDate: z.date().optional(),
@@ -189,7 +200,17 @@ export const notificationScheduleRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...updateData } = input;
+      const { id, tripId, ...updateData } = input;
+
+      const existing = await ctx.db.notificationSchedule.findUnique({
+        where: { id },
+      });
+      if (existing?.tripId !== tripId) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Notification schedule not found",
+        });
+      }
 
       // If both dates are provided, validate that end date is after start date
       if (updateData.startDate && updateData.endDate) {

@@ -9,106 +9,127 @@ import {
 } from "../../api/trpc";
 
 export const groupRouter = createTRPCRouter({
-  getAllNames: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.db.group.findMany({
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-  }),
-  getMy: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.db.user.findUnique({
-      where: { id: ctx.dbUser.id },
-      select: {
-        group: { select: { id: true, name: true } },
-        organizerGroup: { select: { id: true, name: true } },
-      },
-    });
-    if (!user) return null;
-    const memberGroupId = user.group?.id;
-    const id = memberGroupId;
-    if (!id) return null;
-    return await ctx.db.group.findUnique({
-      where: { id },
-      include: {
-        members: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+  getAllNames: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.group.findMany({
+        select: {
+          id: true,
+          name: true,
         },
-        organizer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+        where: { tripId: input.tripId },
+      });
+    }),
+  getMy: protectedProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const participant = await ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: { userId: ctx.dbUser.id, tripId: input.tripId },
         },
-        coinTransactions: {
-          include: {
-            admin: {
-              select: {
-                id: true,
-                name: true,
+        select: { groupId: true },
+      });
+      if (!participant?.groupId) return null;
+      return await ctx.db.group.findUnique({
+        where: { id: participant.groupId },
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
               },
             },
           },
-          orderBy: { createdAt: "desc" },
-        },
-      },
-    });
-  }),
-  getAll: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.db.group.findMany({
-      include: {
-        members: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+          organizer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+          coinTransactions: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
           },
         },
-        organizer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        coinTransactions: {
-          include: {
-            admin: {
-              select: {
-                id: true,
-                name: true,
+      });
+    }),
+  getAll: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.group.findMany({
+        where: { tripId: input.tripId },
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
               },
             },
           },
-          orderBy: { createdAt: "desc" },
-          take: 10, // Last 10 transactions
+          organizer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+          coinTransactions: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 10, // Last 10 transactions
+          },
         },
-      },
-      orderBy: { name: "asc" },
-    });
-  }),
-  getGroupList: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.db.group.findMany({
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        coins: true,
-        organizer: {
-          select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      });
+    }),
+  getGroupList: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.group.findMany({
+        where: { tripId: input.tripId },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          coins: true,
+          organizer: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+          _count: {
+            select: { participants: true },
+          },
         },
-        _count: {
-          select: { members: true },
-        },
-      },
-    });
-  }),
+      });
+    }),
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -126,8 +147,8 @@ export const groupRouter = createTRPCRouter({
           name: true,
           code: true,
           coins: true,
-          _count: { select: { members: true } },
-          organizer: { select: { id: true, name: true } },
+          _count: { select: { participants: true } },
+          organizer: { select: { id: true, firstName: true, lastName: true } },
         },
       });
     }),
@@ -135,6 +156,7 @@ export const groupRouter = createTRPCRouter({
   create: adminProcedure
     .input(
       z.object({
+        tripId: z.string(),
         name: z.string().min(1),
         code: z.string().min(1),
         organizerId: z.string().optional(),
@@ -145,13 +167,15 @@ export const groupRouter = createTRPCRouter({
         data: {
           name: input.name,
           code: input.code,
+          tripId: input.tripId,
           organizerId: input.organizerId ?? ctx.dbUser.id,
         },
         include: {
           organizer: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -166,12 +190,17 @@ export const groupRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
+        tripId: z.string(),
         name: z.string().min(1).optional(),
         organizerId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...updateData } = input;
+      const { id, tripId, ...updateData } = input;
+      const group = await ctx.db.group.findUnique({ where: { id } });
+      if (group?.tripId !== tripId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
       return await ctx.db.group.update({
         where: { id },
         data: updateData,
@@ -179,7 +208,8 @@ export const groupRouter = createTRPCRouter({
           organizer: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -192,7 +222,7 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // First, delete all related records
-      await ctx.db.user.updateMany({
+      await ctx.db.tripParticipant.updateMany({
         where: { groupId: input.id },
         data: { groupId: null },
       });
@@ -206,18 +236,25 @@ export const groupRouter = createTRPCRouter({
       });
     }),
   join: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string(), tripId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
         where: { id: input.id },
-        include: { members: true },
+        include: { participants: true },
       });
       if (!group)
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
 
+      if (group.tripId !== input.tripId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Group not in trip",
+        });
+      }
+
       // Check if user is already in the group
-      const existingMembership = group.members.find(
-        (member) => member.id === ctx.dbUser.id,
+      const existingMembership = group.participants.find(
+        (member) => member.userId === input.userId,
       );
 
       if (existingMembership) {
@@ -227,31 +264,44 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      return await ctx.db.user.update({
-        where: { id: ctx.dbUser.id },
-        data: {
-          groupId: group.id,
+      return await ctx.db.tripParticipant.upsert({
+        where: {
+          userId_tripId: { userId: ctx.dbUser.id, tripId: input.tripId },
         },
+        create: {
+          userId: ctx.dbUser.id,
+          tripId: input.tripId,
+          groupId: input.id,
+        },
+        update: { groupId: input.id },
       });
     }),
   assignUserToGroup: adminProcedure
     .input(
       z.object({
         userId: z.string(),
+        tripId: z.string(),
         groupId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
-        include: { members: true },
+        include: { participants: true },
       });
       if (!group)
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
 
+      if (group.tripId !== input.tripId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Group not in trip",
+        });
+      }
+
       // Check if user is already in the group
-      const existingMembership = group.members.find(
-        (member) => member.id === ctx.dbUser.id,
+      const existingMembership = group.participants.find(
+        (member) => member.userId === ctx.dbUser.id,
       );
 
       if (existingMembership) {
@@ -261,11 +311,16 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      return await ctx.db.user.update({
-        where: { id: input.userId },
-        data: {
+      return await ctx.db.tripParticipant.upsert({
+        where: {
+          userId_tripId: { userId: input.userId, tripId: input.tripId },
+        },
+        create: {
+          userId: input.userId,
+          tripId: input.tripId,
           groupId: input.groupId,
         },
+        update: { groupId: input.groupId },
       });
     }),
 
@@ -274,21 +329,28 @@ export const groupRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
+        tripId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.user.update({
+      return await ctx.db.tripParticipant.update({
         where: {
-          id: input.userId,
+          userId_tripId: { userId: input.userId, tripId: input.tripId },
         },
-        data: {
-          groupId: null,
-        },
+        data: { groupId: null },
       });
     }),
   addCoins: moderatorProcedure
-    .input(z.object({ groupId: z.string(), amount: z.number() }))
+    .input(
+      z.object({ groupId: z.string(), amount: z.number(), tripId: z.string() }),
+    )
     .mutation(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+      });
+      if (group?.tripId !== input.tripId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
       // Update group coins
       await ctx.db.group.update({
         where: { id: input.groupId },
@@ -315,41 +377,48 @@ export const groupRouter = createTRPCRouter({
 
       return transaction;
     }),
-  ranking: protectedProcedure.query(async ({ ctx }) => {
-    const currentDate = new Date();
-    const data = await ctx.db.group.findMany({
-      orderBy: { coins: "desc" },
-      include: {
-        members: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+  ranking: protectedProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const currentDate = new Date();
+      const data = await ctx.db.group.findMany({
+        where: { tripId: input.tripId },
+        orderBy: { coins: "desc" },
+        include: {
+          organizer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
-        },
-        organizer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        coinTransactions: {
-          include: {
-            admin: {
-              select: {
-                id: true,
-                name: true,
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
               },
             },
           },
-          orderBy: { createdAt: "desc" },
+          coinTransactions: {
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          },
         },
-      },
-    });
-    return {
-      data,
-      currentDate,
-    };
-  }),
+      });
+      return {
+        data,
+        currentDate,
+      };
+    }),
 });

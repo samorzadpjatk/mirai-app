@@ -7,6 +7,7 @@ import { notificationRouter } from "./routers/notifications";
 import { notificationScheduleRouter } from "./routers/notificationSchedule";
 import { notificationDeliveryRouter } from "./routers/notificationDelivery";
 import { locationRouter } from "./routers/location";
+import { tripRouter } from "./routers/trip";
 
 /**
  * This is the primary router for your server.
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   notificationSchedule: notificationScheduleRouter,
   notificationDelivery: notificationDeliveryRouter,
   location: locationRouter,
+  trip: tripRouter,
 });
 
 // export type definition of API
