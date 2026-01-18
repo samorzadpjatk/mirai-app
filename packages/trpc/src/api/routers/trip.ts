@@ -46,7 +46,15 @@ export const tripRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           groups: {
-            select: { id: true, name: true, code: true },
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              coins: true,
+              _count: {
+                select: { participants: true }
+              }
+            },
           },
           participants: {
             include: {
@@ -59,7 +67,16 @@ export const tripRouter = createTRPCRouter({
                   role: true,
                 },
               },
-              group: { select: { id: true, name: true } },
+              group: {
+                select: {
+                  id: true,
+                  name: true,
+                  coins: true,
+                  _count: {
+                    select: { participants: true }
+                  }
+                }
+              },
             },
           },
         },

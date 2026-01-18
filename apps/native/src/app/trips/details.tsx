@@ -118,7 +118,10 @@ export default function TripDetailsScreen() {
             </TouchableOpacity>
 
             {/* Map Card */}
-            <TouchableOpacity style={styles.gridCard}>
+            <TouchableOpacity
+              style={styles.gridCard}
+              onPress={() => router.push('/map')}
+            >
               <View style={styles.gridIconWrapper}>
                 <MapIcon size={24} color={colors.primary} />
               </View>
@@ -129,7 +132,10 @@ export default function TripDetailsScreen() {
             </TouchableOpacity>
 
             {/* Challenges Card */}
-            <TouchableOpacity style={styles.gridCard}>
+            <TouchableOpacity
+              style={styles.gridCard}
+              onPress={() => router.push(`/trips/challenges?tripId=${trip.id}`)}
+            >
               <View style={styles.gridIconWrapper}>
                 <Target size={24} color={colors.primary} />
               </View>
@@ -140,10 +146,12 @@ export default function TripDetailsScreen() {
             </TouchableOpacity>
 
             {/* Leaderboard Card */}
-            <TouchableOpacity style={styles.gridCard}>
+            <TouchableOpacity
+              style={styles.gridCard}
+              onPress={() => router.push(`/trips/leaderboard?tripId=${trip.id}`)}
+            >
               <View style={styles.gridIconWrapper}>
                 <Trophy size={24} color={colors.primary} />
-                <View style={styles.notificationDot} />
               </View>
               <View style={styles.gridCardContent}>
                 <Text style={styles.gridCardTitle}>Leaderboard</Text>
