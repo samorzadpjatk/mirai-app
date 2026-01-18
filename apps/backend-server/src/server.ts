@@ -60,8 +60,17 @@ export function createServer(opts: ServerOptions) {
           );
         }
 
+        // Extract headers and add the original URL for auth token parsing
+        const headers = fastifyHeadersToFetchHeaders(req.headers);
+
+        // Add URL to headers for WebSocket auth token extraction from query params
+        // This is a workaround for WebSocket connections that can't send custom headers
+        if (req.url) {
+          headers.set("x-original-url", req.url);
+        }
+
         return createTRPCContext({
-          headers: fastifyHeadersToFetchHeaders(req.headers),
+          headers,
           supabaseUrl,
           supabaseKey,
           connectionParams,

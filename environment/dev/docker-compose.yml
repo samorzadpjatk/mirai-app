@@ -26,70 +26,70 @@ services:
   # BACKEND SERVICES
   # ===========================================================================
 
-  backend-server:
-    build:
-      context: ../..                              # root monorepo (ważne dla workspace:*)
-      dockerfile: apps/backend-server/Dockerfile.dev
-    ports:
-      - "2022:2022"
-    environment:
-      PORT: "2022"
-      TRPC_SERVER_HOST: "0.0.0.0"
-
-      SUPABASE_URL: "http://kong:${KONG_HTTP_PORT}"
-      SUPABASE_KEY: "${ANON_KEY}"
-      SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
-      ADMIN_ROLE: "PJAPP Admin"
-      MODERATOR_ROLE: "PJAPP Moderator"
-      TECH_ROLE: "PJAPP Tech"
-      SERVICE_ACCOUNT_ROLE: "PJAPP SA"
-      DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
-      
-    depends_on:
-      kong:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-
-    # opcjonalnie: jeśli masz hot-reload i chcesz bind-mount (zwykle tak)
-    volumes:
-      - ../..:/repo
-      - /repo/node_modules
-      - /repo/apps/backend-server/node_modules
-      - /repo/packages/db/node_modules
-
-  notification-sender:
-    build:
-      context: ../..                              # root monorepo (ważne dla workspace:*)
-      dockerfile: apps/notification-sender/Dockerfile.dev
-    ports:
-      - "3011:3011"
-    environment:
-      PORT: "3011"
-      HOST: "0.0.0.0"
-
-      SUPABASE_URL: "http://kong:${KONG_HTTP_PORT}"
-      SUPABASE_KEY: "${ANON_KEY}"
-      SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
-      ADMIN_ROLE: "PJAPP Admin"
-      MODERATOR_ROLE: "PJAPP Moderator"
-      TECH_ROLE: "PJAPP Tech"
-      SERVICE_ACCOUNT_ROLE: "PJAPP SA"
-      DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
-      
-    depends_on:
-      kong:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-
-    # opcjonalnie: jeśli masz hot-reload i chcesz bind-mount (zwykle tak)
-    volumes:
-      - ../..:/repo
-      - /repo/node_modules
-      - /repo/apps/notification-sender/node_modules
-      - /repo/packages/db/node_modules
-
+#  backend-server:
+#    build:
+#      context: ../..                              # root monorepo (ważne dla workspace:*)
+#      dockerfile: apps/backend-server/Dockerfile.dev
+#    ports:
+#      - "2022:2022"
+#    environment:
+#      PORT: "2022"
+#      TRPC_SERVER_HOST: "0.0.0.0"
+#
+#      SUPABASE_URL: "http://kong:${KONG_HTTP_PORT}"
+#      SUPABASE_KEY: "${ANON_KEY}"
+#      SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
+#      ADMIN_ROLE: "PJAPP Admin"
+#      MODERATOR_ROLE: "PJAPP Moderator"
+#      TECH_ROLE: "PJAPP Tech"
+#      SERVICE_ACCOUNT_ROLE: "PJAPP SA"
+#      DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
+#
+#    depends_on:
+#      kong:
+#        condition: service_healthy
+#      db:
+#        condition: service_healthy
+#
+#    # opcjonalnie: jeśli masz hot-reload i chcesz bind-mount (zwykle tak)
+#    volumes:
+#      - ../..:/repo
+#      - /repo/node_modules
+#      - /repo/apps/backend-server/node_modules
+#      - /repo/packages/db/node_modules
+#
+#  notification-sender:
+#    build:
+#      context: ../..                              # root monorepo (ważne dla workspace:*)
+#      dockerfile: apps/notification-sender/Dockerfile.dev
+#    ports:
+#      - "3011:3011"
+#    environment:
+#      PORT: "3011"
+#      HOST: "0.0.0.0"
+#
+#      SUPABASE_URL: "http://kong:${KONG_HTTP_PORT}"
+#      SUPABASE_KEY: "${ANON_KEY}"
+#      SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
+#      ADMIN_ROLE: "PJAPP Admin"
+#      MODERATOR_ROLE: "PJAPP Moderator"
+#      TECH_ROLE: "PJAPP Tech"
+#      SERVICE_ACCOUNT_ROLE: "PJAPP SA"
+#      DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
+#
+#    depends_on:
+#      kong:
+#        condition: service_healthy
+#      db:
+#        condition: service_healthy
+#
+#    # opcjonalnie: jeśli masz hot-reload i chcesz bind-mount (zwykle tak)
+#    volumes:
+#      - ../..:/repo
+#      - /repo/node_modules
+#      - /repo/apps/notification-sender/node_modules
+#      - /repo/packages/db/node_modules
+#
 
 
   # ===========================================================================

@@ -38,23 +38,50 @@ const getAccessToken = (
   headers: Headers,
   connectionParams?: unknown,
 ): string | null => {
+  // First try to get token from Authorization header
   const headerToken = getAccessTokenFromHeaders(headers);
   if (headerToken) {
+    console.log("[Auth] Token found in headers");
     return headerToken;
   }
 
+  console.log("[Auth] Checking connectionParams:", JSON.stringify(connectionParams));
+
+  // Try connectionParams (sent as first WebSocket message)
   if (
     connectionParams &&
     typeof connectionParams === "object" &&
     "authToken" in connectionParams
   ) {
     const token = (connectionParams as { authToken?: unknown }).authToken;
+    console.log("[Auth] authToken in connectionParams:", token ? "EXISTS" : "MISSING");
 
     if (typeof token === "string" && token.trim().length > 0) {
+      console.log("[Auth] Token found in connectionParams");
       return token.trim();
     }
   }
 
+  // Fallback: check for authorization query parameter (WebSocket upgrade workaround)
+  // This is used because WebSocket connections via browser/React Native don't support custom headers
+  const urlString = headers.get("x-original-url");
+  if (urlString) {
+    try {
+      const url = new URL(urlString, "http://dummy");
+      const authParam = url.searchParams.get("authorization");
+      if (authParam) {
+        const [scheme, token] = authParam.split(" ");
+        if (scheme?.toLowerCase() === "bearer" && token?.trim()) {
+          console.log("[Auth] Token found in URL query params");
+          return token.trim();
+        }
+      }
+    } catch (err) {
+      console.error("[Auth] Failed to parse URL:", err);
+    }
+  }
+
+  console.log("[Auth] No token found");
   return null;
 };
 
@@ -82,7 +109,7 @@ export const createTRPCContext = (opts: {
     "Creating tRPC context with access token:",
     accessToken ? "YES" : "NO",
   );
-  console.log("connectionParams:", opts.connectionParams);
+
   return {
     db,
     supabase,

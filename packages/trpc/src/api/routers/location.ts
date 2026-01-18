@@ -271,9 +271,15 @@ export const locationRouter = createTRPCRouter({
 
       const friendIds = locations.map((l) => l.userId);
 
+      console.log(`[Location Stream] Setting up subscription for user ${ctx.dbUser.id}, watching ${friendIds.length} friends`);
+      console.log(`[Location Stream] Friend IDs: [${friendIds.join(", ")}]`);
+
       if (friendIds.length > 0) {
         // Subskrybuj zmiany tylko dla lokalizacji znajomych (jeden kanał, filtr in)
         const filter = `userId=in.(${friendIds.join(",")})`;
+        console.log(`[Location Stream] Filter: ${filter}`);
+        console.log(`[Location Stream] Testing WITHOUT filter first...`);
+
         channel = supabase
           .channel(`friends_locations_${ctx.dbUser.id}`)
           .on<DbLocation>(
@@ -282,12 +288,16 @@ export const locationRouter = createTRPCRouter({
               event: "*",
               schema: "public",
               table: "Location",
-              filter,
+              // TEMPORARILY REMOVED FILTER FOR TESTING
+              // filter,
             },
             (payload) => {
+              console.log(`[Location Stream] Received ${payload.eventType} event for userId: ${payload.new?.userId || payload.old?.userId}`);
+              console.log(`[Location Stream] Full payload.new:`, JSON.stringify(payload.new, null, 2));
               switch (payload.eventType) {
                 case "DELETE": {
                   const userId = payload.old.userId!;
+                  console.log(`[Location Stream] DELETE event for userId: ${userId}`);
                   if (radiusKm !== undefined) {
                     if (inRadius.has(userId)) {
                       inRadius.delete(userId);
@@ -300,6 +310,98 @@ export const locationRouter = createTRPCRouter({
                 }
                 default: {
                   const newLocation = payload.new;
+                  console.log(`[Location Stream] ${payload.eventType} event for userId: ${newLocation.userId}, coords: [${newLocation.latitude}, ${newLocation.longitude}]`);
+
+                  // Workaround: Local Supabase Realtime doesn't send payload.new data
+                  // So we fetch from DB using the event as a trigger
+                  const userIdFromEvent = newLocation.userId || payload.old?.userId;
+                  if (!userIdFromEvent) {
+                    console.error(`[Location Stream] No userId in payload`);
+                    return;
+                  }
+
+                  if (!newLocation.userId || !newLocation.timestamp) {
+                    console.log(`[Location Stream] payload.new is incomplete, fetching from DB for userId: ${userIdFromEvent}`);
+                    void ctx.db.location.findUnique({
+                      where: { userId: userIdFromEvent },
+                      include: {
+                        user: {
+                          select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            image: true,
+                          },
+                        },
+                      },
+                    }).then((dbLocation) => {
+                      if (!dbLocation) {
+                        console.error(`[Location Stream] Location not found in DB for userId: ${userIdFromEvent}`);
+                        return;
+                      }
+
+                      const location: LocationWithUser = {
+                        coords: {
+                          latitude: dbLocation.latitude?.toNumber() ?? 0,
+                          longitude: dbLocation.longitude?.toNumber() ?? 0,
+                          altitude: dbLocation.altitude?.toNumber() ?? null,
+                          accuracy: dbLocation.accuracy?.toNumber() ?? null,
+                          altitudeAccuracy: dbLocation.altitudeAccuracy?.toNumber() ?? null,
+                          heading: dbLocation.heading?.toNumber() ?? null,
+                          speed: dbLocation.speed?.toNumber() ?? null,
+                        },
+                        timestamp: dbLocation.timestamp.getTime(),
+                        isSharingLocation: dbLocation.isSharingLocation,
+                        user: dbLocation.user ?? undefined,
+                      };
+
+                      const userId = dbLocation.userId;
+
+                      if (radiusKm !== undefined) {
+                        if (!dbLocation.latitude || !dbLocation.longitude) {
+                          if (inRadius.delete(userId)) {
+                            queue.push({
+                              id: connectionId,
+                              type: "delete",
+                              userId,
+                            });
+                          }
+                          return;
+                        }
+
+                        const dist = calculateDistance(
+                          latitude!,
+                          longitude!,
+                          Number(dbLocation.latitude),
+                          Number(dbLocation.longitude),
+                        );
+
+                        if (dist <= radiusKm) {
+                          inRadius.add(userId);
+                          queue.push({
+                            id: connectionId,
+                            type: "upsert",
+                            location,
+                          });
+                        } else {
+                          if (inRadius.delete(userId)) {
+                            queue.push({
+                              id: connectionId,
+                              type: "delete",
+                              userId,
+                            });
+                          }
+                        }
+                      } else {
+                        queue.push({
+                          id: connectionId,
+                          type: "upsert",
+                          location,
+                        });
+                      }
+                    });
+                    return;
+                  }
 
                   void toLocationWithUser(ctx.db, newLocation).then(
                     (location) => {
@@ -354,7 +456,19 @@ export const locationRouter = createTRPCRouter({
               }
             },
           )
-          .subscribe();
+          .subscribe((status, err) => {
+            console.log(`[Location Stream] Subscription status: ${status}`);
+            if (err) {
+              console.error(`[Location Stream] Subscription error:`, err);
+            }
+          });
+
+        console.log(`[Location Stream] Waiting for channel to join...`);
+        console.log(`[Location Stream] Channel state after subscribe: ${channel?.state}`);
+
+        // Wait a bit for subscription to establish
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        console.log(`[Location Stream] Channel state after 1s: ${channel?.state}`);
       }
 
       try {
