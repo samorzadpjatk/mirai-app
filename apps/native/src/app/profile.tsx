@@ -4,7 +4,7 @@ import { useAuth } from "@integral-2025-app/auth/client";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LogOut, Users, Castle, Coins, Receipt, Bell, ArrowLeft, Trophy } from "@tamagui/lucide-icons";
+import { LogOut, Users, Castle, Coins, Receipt, Bell, ArrowLeft, Trophy, Settings } from "@tamagui/lucide-icons";
 
 export default function Profile() {
   const { session, signOut } = useAuth();
@@ -30,6 +30,7 @@ export default function Profile() {
 
   const menuItems = [
     { icon: Trophy, label: "Trip Challenges", route: "/challenges" },
+    { icon: Settings, label: "Manage Challenges", route: "/admin/challenges" },
     { icon: Users, label: "View Users", route: "/users" },
     { icon: Castle, label: "View Guilds", route: "/groups" },
     { icon: Coins, label: "Coin Operations", route: "/coins" },

@@ -159,6 +159,14 @@ function RootLayoutContent() {
               animation: "slide_from_right",
             }} 
           />
+          <Stack.Screen 
+            name="admin/challenges" 
+            options={{ 
+              title: "Manage Challenges",
+              headerShown: false,
+              animation: "slide_from_right",
+            }} 
+          />
         </Stack>
       )}
     </YStack>
