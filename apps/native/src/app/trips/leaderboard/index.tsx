@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image, Platform, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft } from '@tamagui/lucide-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
+import BackNavbar from '../../../components/BackNavbar';
 import { colors, spacing, borderRadius, typography } from '../../../styles';
 import BottomMenu from '../../../components/BottomMenu';
 
@@ -277,49 +277,16 @@ export default function LeaderboardScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.backgroundDark }}>
-      {/* Header */}
-      <View style={{
-        backgroundColor: 'rgba(23, 24, 28, 0.8)',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-      }}>
-        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-          <ArrowLeft size={24} color={colors.primary} />
-        </TouchableOpacity>
-
-        <View style={{ flex: 1, alignItems: 'center', marginRight: 24 }}>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: typography.bold,
-            letterSpacing: 2,
-            color: colors.primary,
-            textTransform: 'uppercase'
-          }}>
-            {trip.name}
-          </Text>
-          <Text style={{
-            fontSize: typography.xl,
-            fontWeight: typography.bold,
-            color: colors.white,
-            letterSpacing: -0.5,
-            textTransform: 'uppercase'
-          }}>
-            Leaderboard
-          </Text>
-        </View>
-      </View>
+    <View style={styles.container}>
+      {/* Back Navbar */}
+      <BackNavbar title="Leaderboard" />
 
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+
         {/* Podium Section */}
         <View style={{
           paddingHorizontal: spacing.lg,
@@ -434,3 +401,34 @@ export default function LeaderboardScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundDark,
+  },
+  backButtonContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 10,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 80, // Space for BackNavbar
+    paddingBottom: 100,
+  },
+});

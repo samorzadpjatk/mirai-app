@@ -1,8 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { LayoutGrid, Map, Bell } from "@tamagui/lucide-icons";
+import { LayoutGrid, Map, Bell, User } from "@tamagui/lucide-icons";
 import { useRouter } from "expo-router";
 
-export type MenuTab = 'home' | 'trips' | 'notifications';
+export type MenuTab = 'home' | 'trips' | 'notifications' | 'alerts' | 'profile';
 
 interface BottomMenuProps {
   activeTab?: MenuTab;
@@ -27,6 +27,12 @@ export default function BottomMenu({ activeTab = 'home', onTabPress }: BottomMen
         case 'notifications':
           router.push('/notifications');
           break;
+        case 'alerts':
+          router.push('/alerts');
+          break;
+        case 'profile':
+          router.push('/profile');
+          break;
       }
     }
   };
@@ -39,7 +45,7 @@ export default function BottomMenu({ activeTab = 'home', onTabPress }: BottomMen
           onPress={() => handleTabPress('home')}
         >
           <LayoutGrid
-            size={24}
+            size={22}
             color={activeTab === 'home' ? "#00ced1" : "#64748b"}
             fill={activeTab === 'home' ? "#00ced1" : "transparent"}
           />
@@ -53,7 +59,7 @@ export default function BottomMenu({ activeTab = 'home', onTabPress }: BottomMen
           onPress={() => handleTabPress('trips')}
         >
           <Map
-            size={24}
+            size={22}
             color={activeTab === 'trips' ? "#00ced1" : "#64748b"}
           />
           <Text style={activeTab === 'trips' ? styles.navLabelActive : styles.navLabel}>
@@ -62,15 +68,28 @@ export default function BottomMenu({ activeTab = 'home', onTabPress }: BottomMen
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={activeTab === 'notifications' ? styles.navItemActive : styles.navItem}
-          onPress={() => handleTabPress('notifications')}
+          style={activeTab === 'alerts' ? styles.navItemActive : styles.navItem}
+          onPress={() => handleTabPress('alerts')}
         >
           <Bell
-            size={24}
-            color={activeTab === 'notifications' ? "#00ced1" : "#64748b"}
+            size={22}
+            color={activeTab === 'alerts' ? "#00ced1" : "#64748b"}
           />
-          <Text style={activeTab === 'notifications' ? styles.navLabelActive : styles.navLabel}>
-            NOTIFICATIONS
+          <Text style={activeTab === 'alerts' ? styles.navLabelActive : styles.navLabel}>
+            ALERTS
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={activeTab === 'profile' ? styles.navItemActive : styles.navItem}
+          onPress={() => handleTabPress('profile')}
+        >
+          <User
+            size={22}
+            color={activeTab === 'profile' ? "#00ced1" : "#64748b"}
+          />
+          <Text style={activeTab === 'profile' ? styles.navLabelActive : styles.navLabel}>
+            PROFILE
           </Text>
         </TouchableOpacity>
       </View>
@@ -90,7 +109,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(27, 40, 40, 0.7)",
     backdropFilter: "blur(12px)",
     borderRadius: 100,
-    paddingHorizontal: 24,
+    paddingHorizontal: 12,
     paddingVertical: 12,
     flexDirection: "row",
     justifyContent: "space-around",
@@ -106,18 +125,20 @@ const styles = StyleSheet.create({
   navItem: {
     alignItems: "center",
     gap: 4,
+    paddingHorizontal: 6,
   },
   navItemActive: {
     alignItems: "center",
     gap: 4,
+    paddingHorizontal: 6,
   },
   navLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "bold",
     color: "#64748b",
   },
   navLabelActive: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "bold",
     color: "#00ced1",
   },

@@ -6,8 +6,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Map as MapIcon, Grid3x3, Trophy, Info, ChevronRight, Clock, Star, UtensilsCrossed, Target } from "@tamagui/lucide-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import BackNavbar from "../../components/BackNavbar";
 import LoadingScreen from "../../components/LoadingScreen";
-import AppNavbar from "../../components/AppNavbar";
 import BottomMenu from "../../components/BottomMenu";
 import { colors, spacing, borderRadius, typography, shadows, commonStyles } from "../../styles";
 
@@ -45,7 +45,7 @@ export default function TripDetailsScreen() {
   if (!trip) {
     return (
       <View style={styles.container}>
-        <AppNavbar userEmail={currentUser?.email} onAvatarPress={() => router.push("/")} />
+        <BackNavbar title="Trip Details" />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Trip not found</Text>
           <TouchableOpacity onPress={() => router.back()}>
@@ -70,11 +70,8 @@ export default function TripDetailsScreen() {
     <>
       <StatusBar style="light" />
       <View style={styles.container}>
-        {/* Navbar */}
-        <AppNavbar
-          userEmail={currentUser?.email}
-          onAvatarPress={() => router.push("/")}
-        />
+        {/* Back Navbar */}
+        <BackNavbar title={trip.name} />
 
         {/* Main Content */}
         <ScrollView

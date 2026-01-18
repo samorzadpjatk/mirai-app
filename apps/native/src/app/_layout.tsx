@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Platform, useColorScheme } from "react-native";
 import Constants from "expo-constants";
 import { Stack } from "expo-router";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { TamaguiProvider, YStack, type TamaguiInternalConfig, useTheme } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import "../global.css";
@@ -67,10 +68,12 @@ function RootLayoutContent() {
   return (
     <YStack flex={1} bg="$background">
       {!isAuthLoading && (
-        <Stack 
-          screenOptions={{ 
+        <Stack
+          screenOptions={{
             headerShown: false,
             animation: "slide_from_right",
+            gestureEnabled: true,
+            gestureDirection: "horizontal",
             contentStyle: { backgroundColor: "transparent" },
             headerStyle: {
               backgroundColor: headerBackgroundColor,
@@ -153,9 +156,9 @@ function RootLayoutContent() {
               headerTintColor: headerTintColor,
             }} 
           />
-          <Stack.Screen 
-            name="notifications/index" 
-            options={{ 
+          <Stack.Screen
+            name="notifications/index"
+            options={{
               title: "Notifications",
               headerShown: true,
               headerTitle: "Notification Schedules",
@@ -163,15 +166,23 @@ function RootLayoutContent() {
                 backgroundColor: headerBackgroundColor,
               },
               headerTintColor: headerTintColor,
-            }} 
+            }}
           />
-          <Stack.Screen 
-            name="challenges" 
-            options={{ 
+          <Stack.Screen
+            name="alerts"
+            options={{
+              title: "Alerts",
+              headerShown: false,
+              animation: "slide_from_right",
+            }}
+          />
+          <Stack.Screen
+            name="challenges"
+            options={{
               title: "Challenges",
               headerShown: false,
               animation: "slide_from_right",
-            }} 
+            }}
           />
           <Stack.Screen 
             name="challenge/[id]" 
@@ -244,16 +255,18 @@ export default function RootLayout() {
   }
 
   return (
-    <TamaguiProvider config={tamaguiConfig as TamaguiInternalConfig} defaultTheme={theme}>
-      <AuthProvider
-        supabaseUrl={SUPABASE_URL}
-        supabaseKey={SUPABASE_ANON_KEY}
-        supabaseClient={supabaseClient}
-      >
-        <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-          <RootLayoutContent />
-        </APIProvider>
-      </AuthProvider>
-    </TamaguiProvider>
+    <SafeAreaProvider>
+      <TamaguiProvider config={tamaguiConfig as TamaguiInternalConfig} defaultTheme={theme}>
+        <AuthProvider
+          supabaseUrl={SUPABASE_URL}
+          supabaseKey={SUPABASE_ANON_KEY}
+          supabaseClient={supabaseClient}
+        >
+          <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+            <RootLayoutContent />
+          </APIProvider>
+        </AuthProvider>
+      </TamaguiProvider>
+    </SafeAreaProvider>
   );
 }
