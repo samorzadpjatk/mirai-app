@@ -59,13 +59,13 @@ export default function Home() {
             <View style={styles.heroGradient} />
             <View style={styles.heroImageContainer}>
               <Image
-                source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBL5DF1N6V5LmykkBQPT0XodIMX6BNSHTiv-ixtej3PcWsJnqjsxMnGGM6BATU-JZ3wuhZRy3jW3nFeyemkSqu_2t6YCi7kKqKfMrz7F_vz1NncsOIjkFuY-WqUhUEfQGBzasXQra3Pwym5hYMr0DPE4_-zUaGzJNdjuMv7u-zKATvWfJ3HMW596TyyiD3jeR7DvMYnMCHE_EsiYc7WCofVglZzZvqiHQA0feCbArrt_CcJW0FKqS4cyRqbItLuUidGuVir2lnImuU" }}
+                source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuByOUlLig-2IjrfVROMuWxtOKTaZJU93hKFSYG9rS9MpgZkPTGUYJ3ji7QskaEGx50eApLToqbB8SILw6jsYVnTOt8-DIr1oK0pDhGvd3n7kHjsvxVZdjn8uR-uqg3gGZ3xC1V0stUKkQ891sc4VqnGOUSw7VrMtyf4-hpwyAO6kcnRGCMk9TnoyO32RFtLjifjMyhRu_0Ez7YpR5KU2SJsYOcksKYeFIwnzmG2GRW9FOmhM2YCxvKA8nfCEDr7bgna-W6_OLyKsF0" }}
                 style={styles.heroImage}
               />
             </View>
             <View style={styles.heroContent}>
               <View style={styles.heroTextContainer}>
-                <Text style={styles.heroTitle}>WINTEGRAL</Text>
+                <Text style={styles.heroTitle}>WINTEGRAL 2026</Text>
                 <Text style={styles.heroSubtitle}>Bridge academic life & social adventures</Text>
               </View>
               <TouchableOpacity style={styles.heroButton}>
@@ -88,8 +88,8 @@ export default function Home() {
               </View>
               <View style={styles.quickCardContent}>
                 <Text style={styles.quickCardLabel}>Next Class</Text>
-                <Text style={styles.quickCardTitle}>Human-Computer Interaction</Text>
-                <Text style={styles.quickCardSubtitle}>Room A12 • 10:15 AM</Text>
+                <Text style={styles.quickCardTitle}>RBD</Text>
+                <Text style={styles.quickCardSubtitle}>Room A/1 • 10:15 AM</Text>
               </View>
             </View>
 
@@ -100,7 +100,7 @@ export default function Home() {
               </View>
               <View style={styles.quickCardContent}>
                 <Text style={styles.quickCardLabelMagenta}>Campus News</Text>
-                <Text style={styles.quickCardTitleSmall}>Hackathon 2024 registration is now open!</Text>
+                <Text style={styles.quickCardTitleSmall}>Hackathon 2026 registration is now open!</Text>
                 <Text style={styles.quickCardTime}>2 hours ago</Text>
               </View>
             </View>

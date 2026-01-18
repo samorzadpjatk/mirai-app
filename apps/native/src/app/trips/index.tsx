@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, ImageBackground } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
@@ -23,6 +23,22 @@ export default function TripsScreen() {
   const { data: trips, isLoading: tripsLoading } = useQuery(
     trpc.trip.getAll.queryOptions()
   );
+
+  // Static trip to display at the end
+  const wiatronaliaTrip = useMemo(() => ({
+    id: 'wiatronalia-static',
+    name: 'Wiatronalia',
+    description: 'Majówka żeglarska PJATKxATAx...',
+    startDate: new Date('2026-04-29'),
+    endDate: new Date('2026-05-03'),
+    groups: [],
+  }), []);
+
+  // Combine API trips with static trip
+  const allTrips = useMemo(() => {
+    const apiTrips = trips || [];
+    return [...apiTrips, wiatronaliaTrip];
+  }, [trips, wiatronaliaTrip]);
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -68,30 +84,49 @@ export default function TripsScreen() {
             <Text style={styles.subtitle}>Upcoming adventures & past memories</Text>
           </View>
 
-          {trips && trips.length > 0 ? (
-            trips.map((trip) => {
+          {allTrips && allTrips.length > 0 ? (
+            allTrips.map((trip) => {
               const status = getTripStatus(trip.startDate, trip.endDate);
+              const isStaticTrip = trip.id === 'wiatronalia-static';
               return (
                 <TouchableOpacity
                   key={trip.id}
                   style={styles.tripCard}
-                  onPress={() => router.push(`/trips/details?id=${trip.id}`)}
+                  onPress={() => !isStaticTrip && router.push(`/trips/details?id=${trip.id}`)}
+                  disabled={isStaticTrip}
+                  activeOpacity={isStaticTrip ? 1 : 0.7}
                 >
-                  <View style={styles.tripBadge}>
-                    <Text style={styles.tripBadgeText}>{status}</Text>
-                  </View>
-                  <Text style={styles.tripTitle}>{trip.name}</Text>
-                  {trip.description && (
-                    <Text style={styles.tripSubtitle}>{trip.description}</Text>
-                  )}
-                  <Text style={styles.tripDate}>
-                    {formatDateRange(trip.startDate, trip.endDate)}
-                  </Text>
-                  {trip.groups && trip.groups.length > 0 && (
-                    <Text style={styles.tripGroups}>
-                      {trip.groups.length} {trip.groups.length === 1 ? 'group' : 'groups'}
-                    </Text>
-                  )}
+                  <ImageBackground
+                    source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuByOUlLig-2IjrfVROMuWxtOKTaZJU93hKFSYG9rS9MpgZkPTGUYJ3ji7QskaEGx50eApLToqbB8SILw6jsYVnTOt8-DIr1oK0pDhGvd3n7kHjsvxVZdjn8uR-uqg3gGZ3xC1V0stUKkQ891sc4VqnGOUSw7VrMtyf4-hpwyAO6kcnRGCMk9TnoyO32RFtLjifjMyhRu_0Ez7YpR5KU2SJsYOcksKYeFIwnzmG2GRW9FOmhM2YCxvKA8nfCEDr7bgna-W6_OLyKsF0" }}
+                    style={styles.tripImageBackground}
+                    imageStyle={styles.tripImage}
+                  >
+                    <View style={styles.tripOverlay} />
+                    <View style={styles.tripContent}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.md }}>
+                        <View style={styles.tripBadge}>
+                          <Text style={styles.tripBadgeText}>{status}</Text>
+                        </View>
+                        {isStaticTrip && (
+                          <View style={styles.registerBadge}>
+                            <Text style={styles.registerBadgeText}>Zapisz się już teraz</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.tripTitle}>{trip.name}</Text>
+                      {trip.description && (
+                        <Text style={styles.tripSubtitle}>{trip.description}</Text>
+                      )}
+                      <Text style={styles.tripDate}>
+                        {formatDateRange(trip.startDate, trip.endDate)}
+                      </Text>
+                      {trip.groups && trip.groups.length > 0 && (
+                        <Text style={styles.tripGroups}>
+                          {trip.groups.length} {trip.groups.length === 1 ? 'group' : 'groups'}
+                        </Text>
+                      )}
+                    </View>
+                  </ImageBackground>
                 </TouchableOpacity>
               );
             })
@@ -136,11 +171,24 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   tripCard: {
-    backgroundColor: colors.cardDark,
-    padding: spacing.xl,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.primaryOpacity10,
+    overflow: 'hidden',
+  },
+  tripImageBackground: {
+    width: '100%',
+    minHeight: 180,
+  },
+  tripImage: {
+    borderRadius: borderRadius.md,
+  },
+  tripOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(23, 24, 28, 0.7)',
+  },
+  tripContent: {
+    padding: spacing.xl,
   },
   tripBadge: {
     backgroundColor: colors.primaryOpacity20,
@@ -150,7 +198,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primaryOpacity30,
     alignSelf: "flex-start",
-    marginBottom: spacing.md,
   },
   tripBadgeText: {
     fontSize: typography.xs,
@@ -158,6 +205,22 @@ const styles = StyleSheet.create({
     color: colors.primary,
     textTransform: "uppercase",
     letterSpacing: 2,
+  },
+  registerBadge: {
+    backgroundColor: '#10b981',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: '#059669',
+    alignSelf: "flex-start",
+  },
+  registerBadgeText: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    color: colors.white,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
   },
   tripTitle: {
     fontSize: typography.xxl,

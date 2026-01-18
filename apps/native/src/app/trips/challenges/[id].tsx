@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -180,7 +181,7 @@ export default function ChallengeDetailScreen() {
   ) : false;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <BackNavbar title={challenge.name} />
 
       <ScrollView
@@ -479,7 +480,7 @@ export default function ChallengeDetailScreen() {
       </ScrollView>
 
       <BottomMenu activeTab="trips" />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -493,7 +494,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: 80, // Space for BackNavbar
+    paddingTop: 70, // Space for BackNavbar
     paddingBottom: 100,
   },
 });

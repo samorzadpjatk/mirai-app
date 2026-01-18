@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
@@ -69,7 +70,7 @@ export default function TripDetailsScreen() {
   return (
     <>
       <StatusBar style="light" />
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         {/* Back Navbar */}
         <BackNavbar title={trip.name} />
 
@@ -157,7 +158,10 @@ export default function TripDetailsScreen() {
             </TouchableOpacity>
 
             {/* Trip Info Card - Full Width */}
-            <TouchableOpacity style={styles.gridCardWide}>
+            <TouchableOpacity
+              style={styles.gridCardWide}
+              onPress={() => router.push('/trips/info')}
+            >
               <View style={styles.gridIconWrapperLarge}>
                 <Info size={24} color={colors.primary} />
               </View>
@@ -230,7 +234,7 @@ export default function TripDetailsScreen() {
 
         {/* Floating Bottom Navigation */}
         <BottomMenu activeTab="trips" />
-      </View>
+      </SafeAreaView>
     </>
   );
 }
@@ -244,6 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
+    paddingTop: 70, // Space for BackNavbar
     paddingBottom: 120,
   },
 
