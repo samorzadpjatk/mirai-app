@@ -1,5 +1,6 @@
 volumes/db/data
 volumes/storage
+volumes/minio/data
 .env
 test.http
 docker-compose.override.yml
