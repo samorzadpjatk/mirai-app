@@ -24,7 +24,7 @@ services:
       SUPABASE_PORT: "8000"
 
     # to ustawia Twój skrypt jako entrypoint (czyli "waiter")
-    entrypoint: ["sh", "/repo/apps/backend-server/docker/entrypoint.dev.sh"]
+    entrypoint: ["sh", "/repo/apps/backend-server/entrypoint.dev.sh"]
 
     # depends_on tylko ustawia kolejność startu; "czekanie" robisz entrypointem
     depends_on:
@@ -35,3 +35,11 @@ services:
       - ../..:/repo
       - /repo/node_modules
       - /repo/apps/backend-server/node_modules
+      - /repo/packages/db/node_modules
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2022/api/trpc/health.ping"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
