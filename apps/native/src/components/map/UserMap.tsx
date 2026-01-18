@@ -1,13 +1,36 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Platform, StyleSheet, View, Text, Image } from "react-native";
 import Constants from "expo-constants";
-import {
-  MapView,
-  Camera,
-  UserLocation,
-  PointAnnotation,
-  VectorSource,
-} from "@maplibre/maplibre-react-native";
+
+// Import MapLibre types without importing the module itself
+type MapViewType = any;
+type CameraType = any;
+type MapLibreUserLocationType = any;
+type PointAnnotationType = any;
+type VectorSourceType = any;
+
+let MapView: MapViewType;
+let Camera: CameraType;
+let MapLibreUserLocation: MapLibreUserLocationType;
+let PointAnnotation: PointAnnotationType;
+let VectorSource: VectorSourceType;
+
+// Only import on non-Expo Go builds
+const appOwnership: string = Constants.appOwnership ?? "unknown";
+const isExpoGo = appOwnership === "expo";
+
+if (Platform.OS !== "web" && !isExpoGo) {
+  try {
+    const MapLibre = require("@maplibre/maplibre-react-native");
+    MapView = MapLibre.MapView;
+    Camera = MapLibre.Camera;
+    MapLibreUserLocation = MapLibre.UserLocation;
+    PointAnnotation = MapLibre.PointAnnotation;
+    VectorSource = MapLibre.VectorSource;
+  } catch (err) {
+    console.warn("[UserMap] MapLibre native module not available", err);
+  }
+}
 
 export interface UserLocation {
   id: string;
@@ -203,12 +226,14 @@ export const UserMap: React.FC<UserMapProps> = ({
               : undefined
           }
         />
-        <UserLocation
-          visible={false}
-          showsUserHeadingIndicator={false}
-          androidRenderMode="compass"
-          onUpdate={handleUserLocationUpdate}
-        />
+        {MapLibreUserLocation && (
+          <MapLibreUserLocation
+            visible={false}
+            showsUserHeadingIndicator={false}
+            androidRenderMode="compass"
+            onUpdate={handleUserLocationUpdate}
+          />
+        )}
 
         {vectorSourceUrl ? <VectorSource url={vectorSourceUrl} id="map" /> : null}
         {filteredUsers.map((user) => (
