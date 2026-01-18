@@ -6,6 +6,46 @@ import {
   adminProcedure,
   protectedProcedure,
 } from "../../api/trpc";
+const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
+
+interface PublicUser {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  role: z.infer<typeof roleSchema>;
+}
+
+interface TripParticipantWithUser {
+  user: PublicUser;
+  wristNumber: number | null;
+  houseNumber: number | null;
+  group: { id: string; name: string } | null;
+  tripId: string;
+}
+
+const userPublicSelect = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  role: true,
+} as const;
+
+const formatUserFullName = (user?: {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+}) => {
+  const fullName = [user?.firstName, user?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  if (fullName) return fullName;
+  if (user?.firstName) return user.firstName;
+  if (user?.lastName) return user.lastName;
+  return user?.email ?? "Unknown user";
+};
 
 export const userRouter = createTRPCRouter({
   getById: moderatorProcedure
@@ -16,79 +56,96 @@ export const userRouter = createTRPCRouter({
       });
     }),
   getByIdWithGroup: moderatorProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.user.findUnique({
         where: { id: input.id },
         select: {
           id: true,
-          name: true,
-          group: { select: { id: true, name: true } },
+          firstName: true,
+          lastName: true,
+          trips: {
+            where: { tripId: input.tripId },
+            include: {
+              group: { select: { id: true, name: true } },
+              trip: { select: { id: true, name: true } },
+            },
+          },
           organizerGroup: { select: { id: true, name: true } },
         },
       });
     }),
-  getMy: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.db.user.findUnique({
-      where: { id: ctx.dbUser.id },
-    });
-  }),
-  getAll: moderatorProcedure.query(async ({ ctx }) => {
-    return await ctx.db.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        isAdmin: true,
-        wristNumber: true,
-        group: { select: { id: true, name: true } },
-        organizerGroup: { select: { id: true, name: true } },
-      },
-      orderBy: { name: "asc" },
-    });
-  }),
-  getMapUsers: protectedProcedure.query(async ({ ctx }) => {
-    return await ctx.db.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        houseNumber: true,
-        location: {
-          select: {
-            latitude: true,
-            longitude: true,
-            timestamp: true,
-            isSharingLocation: true,
-          },
+  getMy: moderatorProcedure
+    .input(z.object({ tripId: z.string().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const baseUser = await ctx.db.user.findUnique({
+        where: { id: ctx.dbUser.id },
+      });
+      if (!baseUser) return null;
+      if (!input?.tripId) return baseUser;
+
+      const participant = await ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: { userId: ctx.dbUser.id, tripId: input.tripId },
         },
-      },
-      orderBy: { name: "asc" },
-    });
-  }),
+        include: {
+          group: { select: { id: true, name: true } },
+          trip: { select: { id: true, name: true } },
+        },
+      });
+
+      return { ...baseUser, tripContext: participant };
+    }),
+  getAll: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const participants = (await ctx.db.tripParticipant.findMany({
+        where: { tripId: input.tripId },
+        include: {
+          user: {
+            select: userPublicSelect,
+          },
+          group: { select: { id: true, name: true } },
+        },
+        orderBy: [
+          { user: { firstName: "asc" } },
+          { user: { lastName: "asc" } },
+        ],
+      })) as TripParticipantWithUser[];
+
+      return participants.map((participant) => ({
+        ...participant.user,
+        wristNumber: participant.wristNumber,
+        houseNumber: participant.houseNumber,
+        group: participant.group,
+        tripId: participant.tripId,
+      }));
+    }),
   getAllAdminsNames: moderatorProcedure.query(async ({ ctx }) => {
     return await ctx.db.user.findMany({
-      where: { isAdmin: true },
+      where: { role: roleSchema.enum.ADMIN },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     });
   }),
-  // Update user admin status
+  // Update user role
   updateUserAdminStatus: adminProcedure
     .input(
       z.object({
         userId: z.string(),
-        isAdmin: z.boolean(),
+        role: roleSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
       // Prevent admin from removing their own admin status
-      if (input.userId === ctx.dbUser.id && !input.isAdmin) {
+      if (
+        input.userId === ctx.dbUser.id &&
+        input.role !== roleSchema.enum.ADMIN
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Nie możesz usunąć swoich uprawnień administratora",
@@ -97,13 +154,8 @@ export const userRouter = createTRPCRouter({
 
       return await ctx.db.user.update({
         where: { id: input.userId },
-        data: { isAdmin: input.isAdmin },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          isAdmin: true,
-        },
+        data: { role: input.role },
+        select: userPublicSelect,
       });
     }),
 
@@ -112,6 +164,7 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
+        tripId: z.string(),
         wristNumber: z
           .string()
           .min(1, "Numer opaski nie może być pusty")
@@ -120,27 +173,38 @@ export const userRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Check if wrist number is already taken by another user
-      const existingUser = await ctx.db.user.findUnique({
-        where: { wristNumber: input.wristNumber },
-        select: { id: true, name: true },
+      const existingParticipant = await ctx.db.tripParticipant.findFirst({
+        where: {
+          tripId: input.tripId,
+          wristNumber: input.wristNumber,
+          NOT: { userId: input.userId },
+        },
+        select: { userId: true, user: { select: userPublicSelect } },
       });
 
-      if (existingUser && existingUser.id !== input.userId) {
+      if (existingParticipant) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${existingUser.name}`,
+          message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${formatUserFullName(existingParticipant.user)}`,
         });
       }
 
-      return await ctx.db.user.update({
-        where: { id: input.userId },
-        data: { wristNumber: input.wristNumber },
+      return await ctx.db.tripParticipant.upsert({
+        where: {
+          userId_tripId: { userId: input.userId, tripId: input.tripId },
+        },
+        update: { wristNumber: input.wristNumber },
+        create: {
+          userId: input.userId,
+          tripId: input.tripId,
+          wristNumber: input.wristNumber,
+        },
         select: {
-          id: true,
-          name: true,
-          email: true,
+          user: {
+            select: userPublicSelect,
+          },
           wristNumber: true,
-          isAdmin: true,
+          tripId: true,
         },
       });
     }),
@@ -150,18 +214,21 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
+        tripId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.user.update({
-        where: { id: input.userId },
+      return await ctx.db.tripParticipant.update({
+        where: {
+          userId_tripId: { userId: input.userId, tripId: input.tripId },
+        },
         data: { wristNumber: null },
         select: {
-          id: true,
-          name: true,
-          email: true,
+          user: {
+            select: userPublicSelect,
+          },
           wristNumber: true,
-          isAdmin: true,
+          tripId: true,
         },
       });
     }),
@@ -171,6 +238,7 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
+        tripId: z.string(),
         houseNumber: z
           .string()
           .min(1, "Numer domu nie może być pusty")
@@ -178,15 +246,22 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.user.update({
-        where: { id: input.userId },
-        data: { houseNumber: input.houseNumber },
+      return await ctx.db.tripParticipant.upsert({
+        where: {
+          userId_tripId: { userId: input.userId, tripId: input.tripId },
+        },
+        update: { houseNumber: input.houseNumber },
+        create: {
+          userId: input.userId,
+          tripId: input.tripId,
+          houseNumber: input.houseNumber,
+        },
         select: {
-          id: true,
-          name: true,
-          email: true,
+          user: {
+            select: userPublicSelect,
+          },
           houseNumber: true,
-          isAdmin: true,
+          tripId: true,
         },
       });
     }),
@@ -196,18 +271,21 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
+        tripId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.user.update({
-        where: { id: input.userId },
+      return await ctx.db.tripParticipant.update({
+        where: {
+          userId_tripId: { userId: input.userId, tripId: input.tripId },
+        },
         data: { houseNumber: null },
         select: {
-          id: true,
-          name: true,
-          email: true,
+          user: {
+            select: userPublicSelect,
+          },
           houseNumber: true,
-          isAdmin: true,
+          tripId: true,
         },
       });
     }),
@@ -216,8 +294,10 @@ export const userRouter = createTRPCRouter({
   searchWithPagination: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         field: z.enum([
-          "name",
+          "firstName",
+          "lastName",
           "email",
           "wristNumber",
           "houseNumber",
@@ -229,78 +309,80 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { searchTerm, page, limit, field } = input;
+      const { searchTerm, page, limit, field, tripId } = input;
       const skip = (page - 1) * limit;
+      const searchConditions = (() => {
+        if (!searchTerm) {
+          return undefined;
+        }
+        if (field === "groupName") {
+          return {
+            group: {
+              name: {
+                contains: searchTerm,
+                mode: "insensitive" as const,
+              },
+            },
+          };
+        }
+        if (
+          field === "firstName" ||
+          field === "lastName" ||
+          field === "email"
+        ) {
+          return {
+            user: {
+              [field]: {
+                contains: searchTerm,
+                mode: "insensitive" as const,
+              },
+            },
+          };
+        }
+        return {
+          [field]: {
+            contains: searchTerm,
+            mode: "insensitive" as const,
+          },
+        };
+      })();
 
-      // Build search conditions
-      let searchConditions;
-      if (field !== "groupName") {
-        searchConditions = searchTerm
-          ? {
-              OR: [
-                {
-                  [field]: {
-                    contains: searchTerm,
-                    mode: "insensitive" as const,
-                  },
-                },
-              ],
-            }
-          : {};
-      } else {
-        searchConditions = searchTerm
-          ? {
-              OR: [
-                {
-                  group: {
-                    name: {
-                      contains: searchTerm,
-                      mode: "insensitive" as const,
-                    },
-                  },
-                },
-                {
-                  organizerGroup: {
-                    some: {
-                      name: {
-                        contains: searchTerm,
-                        mode: "insensitive" as const,
-                      },
-                    },
-                  },
-                },
-              ],
-            }
-          : {};
-      }
+      const where = {
+        tripId,
+        ...(searchConditions ? { AND: searchConditions } : {}),
+      } as const;
 
-      // Get total count for pagination
-      const totalCount = await ctx.db.user.count({
-        where: searchConditions,
+      const totalCount = await ctx.db.tripParticipant.count({
+        where,
       });
 
-      // Get paginated results
-      const users = await ctx.db.user.findMany({
-        where: searchConditions,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          isAdmin: true,
-          houseNumber: true,
-          wristNumber: true,
+      const participants = (await ctx.db.tripParticipant.findMany({
+        where,
+        include: {
+          user: {
+            select: userPublicSelect,
+          },
           group: { select: { id: true, name: true } },
-          organizerGroup: { select: { id: true, name: true } },
         },
-        orderBy: [{ name: "asc" }, { email: "asc" }],
+        orderBy: [
+          { user: { firstName: "asc" } },
+          { user: { lastName: "asc" } },
+          { user: { email: "asc" } },
+        ],
         skip,
         take: limit,
-      });
+      })) as TripParticipantWithUser[];
 
       const totalPages = Math.ceil(totalCount / limit);
 
       return {
-        users,
+        users: participants.map((participant) => ({
+          ...participant.user,
+          wristNumber: participant.wristNumber,
+          houseNumber: participant.houseNumber,
+          group: participant.group,
+          tripId: participant.tripId,
+        })),
         pagination: {
           currentPage: page,
           totalPages,

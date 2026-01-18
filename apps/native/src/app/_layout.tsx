@@ -18,6 +18,7 @@ import { AuthProvider, useAuthLoading } from "@integral-2025-app/auth/client";
 import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { APIProvider } from "@integral-2025-app/trpc/client";
+import "../../global.css";
 
 const SUPABASE_URL: string =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";

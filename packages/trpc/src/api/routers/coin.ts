@@ -3,23 +3,29 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, moderatorProcedure } from "../../api/trpc";
 
 export const coinRouter = createTRPCRouter({
-    // Add coins to a group (enhanced version)
+  // Add coins to a group (enhanced version)
   addCoins: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         groupId: z.string(),
         amount: z.number().min(1),
         reason: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Update group coins
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+      });
+      if (group?.tripId !== input.tripId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
       await ctx.db.group.update({
         where: { id: input.groupId },
         data: { coins: { increment: input.amount } },
       });
 
-      // Create transaction record
       const transaction = await ctx.db.coinTransaction.create({
         data: {
           groupId: input.groupId,
@@ -38,7 +44,8 @@ export const coinRouter = createTRPCRouter({
           admin: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
             },
           },
         },
@@ -51,19 +58,22 @@ export const coinRouter = createTRPCRouter({
   removeCoins: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         groupId: z.string(),
         amount: z.number().min(1),
         reason: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if group has enough coins
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
-        select: { coins: true },
+        select: { coins: true, tripId: true },
       });
 
-      if (!group || group.coins < input.amount) {
+      if (
+        group?.tripId !== input.tripId ||
+        (group?.coins ?? 0) < input.amount
+      ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Group does not have enough coins",
@@ -93,7 +103,8 @@ export const coinRouter = createTRPCRouter({
           admin: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
             },
           },
         },
@@ -101,4 +112,4 @@ export const coinRouter = createTRPCRouter({
 
       return transaction;
     }),
-})
+});

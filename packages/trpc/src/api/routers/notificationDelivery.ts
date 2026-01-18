@@ -7,6 +7,7 @@ export const notificationDeliveryRouter = createTRPCRouter({
     .input(
       z
         .object({
+          tripId: z.string(),
           status: z
             .enum(["pending", "success", "partial_failure", "failure"])
             .optional(),
@@ -21,13 +22,14 @@ export const notificationDeliveryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const filters: {
+          tripId?: string;
           status?: string;
           scheduleId?: string;
           deliveryStartedAt?: {
             gte?: Date;
             lte?: Date;
           };
-        } = {};
+        } = { tripId: input?.tripId };
 
         if (input?.status) {
           filters.status = input.status;
@@ -92,6 +94,7 @@ export const notificationDeliveryRouter = createTRPCRouter({
     .input(
       z.object({
         notificationId: z.string(),
+        tripId: z.string(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -108,10 +111,12 @@ export const notificationDeliveryRouter = createTRPCRouter({
                 body: true,
                 url: true,
                 createdAt: true,
+                tripId: true,
                 createdBy: {
                   select: {
                     id: true,
-                    name: true,
+                    firstName: true,
+                    lastName: true,
                     email: true,
                   },
                 },
@@ -120,7 +125,7 @@ export const notificationDeliveryRouter = createTRPCRouter({
           },
         });
 
-        if (!delivery) {
+        if (delivery?.tripId !== input.tripId) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Notification delivery not found",
@@ -146,6 +151,7 @@ export const notificationDeliveryRouter = createTRPCRouter({
     .input(
       z
         .object({
+          tripId: z.string(),
           startDate: z.date().optional(),
           endDate: z.date().optional(),
           scheduleId: z.string().optional(),
@@ -155,12 +161,13 @@ export const notificationDeliveryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const filters: {
+          tripId?: string;
           deliveryStartedAt?: {
             gte?: Date;
             lte?: Date;
           };
           scheduleId?: string;
-        } = {};
+        } = { tripId: input?.tripId };
 
         if (input?.startDate || input?.endDate) {
           filters.deliveryStartedAt = {};
@@ -238,6 +245,7 @@ export const notificationDeliveryRouter = createTRPCRouter({
     .input(
       z
         .object({
+          tripId: z.string(),
           limit: z.number().min(1).max(100).default(20),
           offset: z.number().min(0).default(0),
         })
@@ -248,6 +256,7 @@ export const notificationDeliveryRouter = createTRPCRouter({
         const [deliveries, total] = await Promise.all([
           ctx.db.notificationDelivery.findMany({
             where: {
+              tripId: input?.tripId,
               OR: [{ status: "failure" }, { status: "partial_failure" }],
             },
             orderBy: {
@@ -265,7 +274,8 @@ export const notificationDeliveryRouter = createTRPCRouter({
                   createdBy: {
                     select: {
                       id: true,
-                      name: true,
+                      firstName: true,
+                      lastName: true,
                     },
                   },
                 },
@@ -274,6 +284,7 @@ export const notificationDeliveryRouter = createTRPCRouter({
           }),
           ctx.db.notificationDelivery.count({
             where: {
+              tripId: input?.tripId,
               OR: [{ status: "failure" }, { status: "partial_failure" }],
             },
           }),

@@ -20,8 +20,7 @@ describe("notificationDeliveryRouter", () => {
       },
       dbUser: {
         id: "admin-user-id",
-        isAdmin: true,
-        isModerator: true,
+        role: "ADMIN",
       },
       session: {
         user: {
@@ -60,7 +59,7 @@ describe("notificationDeliveryRouter", () => {
       mockContext.db.notificationDelivery.count.mockResolvedValue(1);
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      const result = await caller.getDeliveries();
+      const result = await caller.getDeliveries({ tripId: "trip-1" });
 
       expect(result).toEqual({
         deliveries: mockDeliveries,
@@ -71,7 +70,7 @@ describe("notificationDeliveryRouter", () => {
 
       expect(mockContext.db.notificationDelivery.findMany).toHaveBeenCalledWith(
         {
-          where: {},
+          where: { tripId: "trip-1" },
           orderBy: {
             deliveryStartedAt: "desc",
           },
@@ -96,11 +95,11 @@ describe("notificationDeliveryRouter", () => {
       mockContext.db.notificationDelivery.count.mockResolvedValue(0);
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      await caller.getDeliveries({ status: "success" });
+      await caller.getDeliveries({ status: "success", tripId: "trip-1" });
 
       expect(mockContext.db.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { status: "success" },
+          where: { tripId: "trip-1", status: "success" },
         }),
       );
     });
@@ -110,11 +109,14 @@ describe("notificationDeliveryRouter", () => {
       mockContext.db.notificationDelivery.count.mockResolvedValue(0);
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      await caller.getDeliveries({ scheduleId: "schedule-123" });
+      await caller.getDeliveries({
+        scheduleId: "schedule-123",
+        tripId: "trip-1",
+      });
 
       expect(mockContext.db.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { scheduleId: "schedule-123" },
+          where: { tripId: "trip-1", scheduleId: "schedule-123" },
         }),
       );
     });
@@ -127,11 +129,12 @@ describe("notificationDeliveryRouter", () => {
       const endDate = new Date("2026-01-09");
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      await caller.getDeliveries({ startDate, endDate });
+      await caller.getDeliveries({ startDate, endDate, tripId: "trip-1" });
 
       expect(mockContext.db.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
+            tripId: "trip-1",
             deliveryStartedAt: {
               gte: startDate,
               lte: endDate,
@@ -146,7 +149,11 @@ describe("notificationDeliveryRouter", () => {
       mockContext.db.notificationDelivery.count.mockResolvedValue(150);
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      const result = await caller.getDeliveries({ limit: 20, offset: 40 });
+      const result = await caller.getDeliveries({
+        limit: 20,
+        offset: 40,
+        tripId: "trip-1",
+      });
 
       expect(result).toMatchObject({
         limit: 20,
@@ -156,6 +163,7 @@ describe("notificationDeliveryRouter", () => {
 
       expect(mockContext.db.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { tripId: "trip-1" },
           take: 20,
           skip: 40,
         }),
@@ -186,6 +194,7 @@ describe("notificationDeliveryRouter", () => {
         failureCount: 0,
         errors: null,
         status: "success",
+        tripId: "trip-1",
         notification: {
           id: "notif-123",
           title: "Test",
@@ -194,7 +203,8 @@ describe("notificationDeliveryRouter", () => {
           createdAt: new Date(),
           createdBy: {
             id: "user-1",
-            name: "Admin User",
+            firstName: "Admin",
+            lastName: "User",
             email: "admin@example.com",
           },
         },
@@ -207,6 +217,7 @@ describe("notificationDeliveryRouter", () => {
       const caller = notificationDeliveryRouter.createCaller(mockContext);
       const result = await caller.getDeliveryByNotificationId({
         notificationId: "notif-123",
+        tripId: "trip-1",
       });
 
       expect(result).toEqual(mockDelivery);
@@ -225,10 +236,12 @@ describe("notificationDeliveryRouter", () => {
               body: true,
               url: true,
               createdAt: true,
+              tripId: true,
               createdBy: {
                 select: {
                   id: true,
-                  name: true,
+                  firstName: true,
+                  lastName: true,
                   email: true,
                 },
               },
@@ -246,6 +259,7 @@ describe("notificationDeliveryRouter", () => {
       await expect(
         caller.getDeliveryByNotificationId({
           notificationId: "non-existent",
+          tripId: "trip-1",
         }),
       ).rejects.toThrow(
         expect.objectContaining({
@@ -263,7 +277,10 @@ describe("notificationDeliveryRouter", () => {
       const caller = notificationDeliveryRouter.createCaller(mockContext);
 
       await expect(
-        caller.getDeliveryByNotificationId({ notificationId: "notif-123" }),
+        caller.getDeliveryByNotificationId({
+          notificationId: "notif-123",
+          tripId: "trip-1",
+        }),
       ).rejects.toThrow(TRPCError);
     });
   });
@@ -299,7 +316,7 @@ describe("notificationDeliveryRouter", () => {
       );
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      const result = await caller.getDeliveryStats();
+      const result = await caller.getDeliveryStats({ tripId: "trip-1" });
 
       expect(result).toEqual({
         totalDeliveries: 100,
@@ -329,18 +346,19 @@ describe("notificationDeliveryRouter", () => {
       const endDate = new Date("2026-01-09");
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      await caller.getDeliveryStats({ startDate, endDate });
+      await caller.getDeliveryStats({ startDate, endDate, tripId: "trip-1" });
 
       expect(
         mockContext.db.notificationDelivery.aggregate,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {
+          where: expect.objectContaining({
+            tripId: "trip-1",
             deliveryStartedAt: {
               gte: startDate,
               lte: endDate,
             },
-          },
+          }),
         }),
       );
     });
@@ -354,15 +372,19 @@ describe("notificationDeliveryRouter", () => {
       mockContext.db.notificationDelivery.groupBy.mockResolvedValue([]);
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      await caller.getDeliveryStats({ scheduleId: "schedule-123" });
+      await caller.getDeliveryStats({
+        scheduleId: "schedule-123",
+        tripId: "trip-1",
+      });
 
       expect(
         mockContext.db.notificationDelivery.aggregate,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {
+          where: expect.objectContaining({
+            tripId: "trip-1",
             scheduleId: "schedule-123",
-          },
+          }),
         }),
       );
     });
@@ -383,7 +405,7 @@ describe("notificationDeliveryRouter", () => {
       mockContext.db.notificationDelivery.groupBy.mockResolvedValue([]);
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      const result = await caller.getDeliveryStats();
+      const result = await caller.getDeliveryStats({ tripId: "trip-1" });
 
       expect(result.successRate).toBe(0);
     });
@@ -395,7 +417,9 @@ describe("notificationDeliveryRouter", () => {
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
 
-      await expect(caller.getDeliveryStats()).rejects.toThrow(TRPCError);
+      await expect(
+        caller.getDeliveryStats({ tripId: "trip-1" }),
+      ).rejects.toThrow(TRPCError);
     });
   });
 
@@ -413,7 +437,8 @@ describe("notificationDeliveryRouter", () => {
             createdAt: new Date(),
             createdBy: {
               id: "admin-1",
-              name: "Admin",
+              firstName: "Admin",
+              lastName: "User",
             },
           },
         },
@@ -428,7 +453,8 @@ describe("notificationDeliveryRouter", () => {
             createdAt: new Date(),
             createdBy: {
               id: "admin-1",
-              name: "Admin",
+              firstName: "Admin",
+              lastName: "User",
             },
           },
         },
@@ -440,7 +466,7 @@ describe("notificationDeliveryRouter", () => {
       mockContext.db.notificationDelivery.count.mockResolvedValue(2);
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
-      const result = await caller.getFailedDeliveries();
+      const result = await caller.getFailedDeliveries({ tripId: "trip-1" });
 
       expect(result).toEqual({
         deliveries: mockDeliveries,
@@ -452,6 +478,7 @@ describe("notificationDeliveryRouter", () => {
       expect(mockContext.db.notificationDelivery.findMany).toHaveBeenCalledWith(
         {
           where: {
+            tripId: "trip-1",
             OR: [{ status: "failure" }, { status: "partial_failure" }],
           },
           orderBy: {
@@ -469,7 +496,8 @@ describe("notificationDeliveryRouter", () => {
                 createdBy: {
                   select: {
                     id: true,
-                    name: true,
+                    firstName: true,
+                    lastName: true,
                   },
                 },
               },
@@ -485,6 +513,7 @@ describe("notificationDeliveryRouter", () => {
 
       const caller = notificationDeliveryRouter.createCaller(mockContext);
       const result = await caller.getFailedDeliveries({
+        tripId: "trip-1",
         limit: 10,
         offset: 20,
       });
@@ -497,6 +526,10 @@ describe("notificationDeliveryRouter", () => {
 
       expect(mockContext.db.notificationDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: {
+            tripId: "trip-1",
+            OR: [{ status: "failure" }, { status: "partial_failure" }],
+          },
           take: 10,
           skip: 20,
         }),
