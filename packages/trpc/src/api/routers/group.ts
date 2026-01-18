@@ -119,6 +119,8 @@ export const groupRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
+          description: true,
+          image: true,
           code: true,
           coins: true,
           organizer: {
@@ -158,6 +160,8 @@ export const groupRouter = createTRPCRouter({
       z.object({
         tripId: z.string(),
         name: z.string().min(1),
+        description: z.string().optional(),
+        image: z.string().url().optional(),
         code: z.string().min(1),
         organizerId: z.string().optional(),
       }),
@@ -166,6 +170,8 @@ export const groupRouter = createTRPCRouter({
       const group = await ctx.db.group.create({
         data: {
           name: input.name,
+          description: input.description,
+          image: input.image,
           code: input.code,
           tripId: input.tripId,
           organizerId: input.organizerId ?? ctx.dbUser.id,
@@ -192,6 +198,8 @@ export const groupRouter = createTRPCRouter({
         id: z.string(),
         tripId: z.string(),
         name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        image: z.string().url().optional(),
         organizerId: z.string().optional(),
       }),
     )
@@ -322,6 +330,72 @@ export const groupRouter = createTRPCRouter({
         },
         update: { groupId: input.groupId },
       });
+    }),
+
+  bulkAssignUsersToGroup: protectedProcedure
+    .input(
+      z.object({
+        tripId: z.string(),
+        groupId: z.string(),
+        userIds: z.array(z.string()).min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: { organizerId: true, tripId: true },
+      });
+
+      if (group?.tripId !== input.tripId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      if (group.organizerId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the organizer can assign users to this group",
+        });
+      }
+
+      const uniqueUserIds = Array.from(new Set(input.userIds));
+
+      await ctx.db.$transaction(
+        uniqueUserIds.map((userId) =>
+          ctx.db.tripParticipant.upsert({
+            where: {
+              userId_tripId: { userId, tripId: input.tripId },
+            },
+            create: {
+              userId,
+              tripId: input.tripId,
+              groupId: input.groupId,
+            },
+            update: { groupId: input.groupId },
+          }),
+        ),
+      );
+
+      const participants = await ctx.db.tripParticipant.findMany({
+        where: {
+          tripId: input.tripId,
+          userId: { in: uniqueUserIds },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return {
+        count: participants.length,
+        participants,
+      };
     }),
 
   // Remove user from a group

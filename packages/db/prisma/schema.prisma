@@ -55,6 +55,7 @@ model Trip {
   notifications Notification[]
   notificationSchedules NotificationSchedule[]
   notificationDeliveries NotificationDelivery[]
+  challenges   Challenge[]
 }
 
 model TripParticipant {
@@ -109,6 +110,8 @@ model Group {
   id               String            @id @default(uuid())
   tripId           String
   name             String
+  description      String?
+  image            String?
   organizerId      String
   organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
   code             String            @unique
@@ -117,8 +120,34 @@ model Group {
   coins            Int               @default(0)
   coinTransactions CoinTransaction[]
   organizedEvents  Event[]
+  challenges       ChallengeGroup[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+}
+
+model Challenge {
+  id          String            @id @default(cuid())
+  tripId      String
+  trip        Trip              @relation(fields: [tripId], references: [id])
+  name        String
+  description String?
+  image       String?
+  points      Int               @default(0)
+  groups      ChallengeGroup[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model ChallengeGroup {
+  id          String     @id @default(cuid())
+  challengeId String
+  groupId     String
+  challenge   Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  group       Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+
+  @@unique([challengeId, groupId])
+  @@index([groupId])
 }
 
 model CoinTransaction {
