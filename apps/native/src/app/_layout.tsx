@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Platform, useColorScheme } from "react-native";
 import Constants from "expo-constants";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { TamaguiProvider, YStack, type TamaguiInternalConfig, useTheme } from "tamagui";
 import tamaguiConfig from "tamagui.config";
@@ -16,7 +16,7 @@ import {
   IBMPlexSans_600SemiBold,
   IBMPlexSans_700Bold,
 } from '@expo-google-fonts/ibm-plex-sans';
-import { AuthProvider, useAuthLoading } from "@integral-2025-app/auth/client";
+import { AuthProvider, useAuthLoading, useAuth } from "@integral-2025-app/auth/client";
 import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { APIProvider } from "@integral-2025-app/trpc/client";
@@ -59,11 +59,27 @@ const supabaseClient = createSupabaseClient(
 
 function RootLayoutContent() {
   const isAuthLoading = useAuthLoading();
+  const { session } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
   const tamaguiTheme = useTheme();
 
   // Get theme colors for headers
   const headerBackgroundColor = tamaguiTheme.background.get();
   const headerTintColor = tamaguiTheme.color.get();
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+
+    const inAuthGroup = segments[0] === "auth";
+    const hasSession = !!session?.access_token;
+
+    if (!hasSession && !inAuthGroup) {
+      router.replace("/auth/login");
+    } else if (hasSession && inAuthGroup) {
+      router.replace("/");
+    }
+  }, [session, segments, isAuthLoading, router]);
 
   return (
     <YStack flex={1} bg="$background">

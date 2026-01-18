@@ -1,6 +1,6 @@
 "use client";
 
-import { createTRPCContext } from "@trpc/tanstack-react-query";
+import { createTRPCContext, useSubscription } from "@trpc/tanstack-react-query";
 import type { AppRouter } from "../api/root";
 import {
   createTRPCClient,
@@ -18,20 +18,42 @@ export const TRPCProvider = trpcContext.TRPCProvider;
 export const useTRPC = trpcContext.useTRPC;
 export const useTRPCClient = trpcContext.useTRPCClient;
 
-const wsClient = (wsUrl: string, authorizationToken?: string) =>
-  createWSClient({
-    url: wsUrl,
-    connectionParams: () =>
-      authorizationToken ? { authToken: authorizationToken } : null,
+export { useSubscription };
+
+const createWsClient = (wsUrl: string, authorizationToken?: string) => {
+  console.log("[WS Client] Creating WebSocket client with token:", authorizationToken ? "YES" : "NO");
+  if (authorizationToken) {
+    console.log("[WS Client] Token preview:", authorizationToken.substring(0, 20) + "...");
+  }
+
+  // For browser/React Native, we need to add auth via URL since WebSocket doesn't support custom headers
+  // The Fastify adapter will parse the Authorization header from the upgrade request
+  const wsUrlWithAuth = authorizationToken
+    ? `${wsUrl}?authorization=${encodeURIComponent(`Bearer ${authorizationToken}`)}`
+    : wsUrl;
+
+  return createWSClient({
+    url: wsUrlWithAuth,
+    connectionParams: () => ({
+      authToken: authorizationToken ?? undefined,
+    }),
     lazy: { enabled: true, closeMs: 60_000 },
   });
+};
+
+interface TRPCClientWithCleanup {
+  client: ReturnType<typeof createTRPCClient<AppRouter>>;
+  cleanup: () => Promise<void>;
+}
 
 const getTRPCClient = (
   httpUrl: string,
   wsUrl: string,
   authorizationToken?: string,
-) =>
-  createTRPCClient<AppRouter>({
+): TRPCClientWithCleanup => {
+  const ws = createWsClient(wsUrl, authorizationToken);
+
+  const client = createTRPCClient<AppRouter>({
     links: [
       retryLink({
         retry(opts) {
@@ -52,7 +74,7 @@ const getTRPCClient = (
         },
 
         true: wsLink({
-          client: wsClient(wsUrl, authorizationToken),
+          client: ws,
           transformer: SuperJSON,
         }),
 
@@ -71,5 +93,13 @@ const getTRPCClient = (
       }),
     ],
   });
+
+  return {
+    client,
+    cleanup: async () => {
+      await ws.close();
+    },
+  };
+};
 
 export { getTRPCClient };

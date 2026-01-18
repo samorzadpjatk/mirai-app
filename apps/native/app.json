@@ -3,6 +3,11 @@
     "name": "native",
     "slug": "native",
     "version": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "7059f615-7f5e-4f0b-b03c-1b3f223eef75"
+      }
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,6 +24,9 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app uses your location to provide nearby features.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location even when the app is in the background."
+      },
+      "entitlements": {
+        "aps-environment": "development"
       }
     },
     "android": {
@@ -48,7 +56,15 @@
           ]
         }
       ],
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#00ced1",
+          "sounds": []
+        }
+      ]
     ]
   }
 }

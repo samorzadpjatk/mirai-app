@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { Platform, StyleSheet, View, Text, Image } from "react-native";
+import { Platform, StyleSheet, View, Text } from "react-native";
 import Constants from "expo-constants";
+import { UserAvatar } from "./UserAvatar";
 
 // Import MapLibre types without importing the module itself
 type MapViewType = any;
@@ -36,7 +37,7 @@ export interface UserLocation {
   id: string;
   name: string;
   coordinate: [number, number]; // [longitude, latitude]
-  avatarUrl: string;
+  avatarUrl?: string | null;
   email?: string;
   address?: string;
   /** ISO string or millis since epoch */
@@ -114,7 +115,7 @@ const MAP_STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
 /**
  * Compute opacity (0–1) based on last activity timestamp.
  * 0 minutes ago  -> 1.0
- * 30+ minutes    -> 0.0 (invisible)
+ * 24+ hours      -> 0.0 (invisible)
  */
 export function getActivityOpacity(
   lastActiveAt: string | number,
@@ -128,11 +129,11 @@ export function getActivityOpacity(
   if (!Number.isFinite(last)) return 0;
 
   const diffMs = Math.max(0, now - last);
-  const diffMinutes = diffMs / 60000;
+  const diffHours = diffMs / 3600000; // milliseconds to hours
 
-  if (diffMinutes >= 30) return 0;
-  // Linear fade from 0–30 minutes
-  const ratio = 1 - diffMinutes / 30;
+  if (diffHours >= 24) return 0;
+  // Linear fade from 0–24 hours
+  const ratio = 1 - diffHours / 24;
   // Clamp to [0, 1]
   return Math.max(0, Math.min(1, ratio));
 }
@@ -181,7 +182,8 @@ export const UserMap: React.FC<UserMapProps> = ({
     cameraRef.current?.setCamera?.({
       centerCoordinate: focusedCoordinate,
       zoomLevel: initialZoomLevel,
-      animationDuration: 900,
+      animationDuration: 1200,
+      animationMode: "easeTo",
       padding: { paddingBottom: 220, paddingTop: 40, paddingLeft: 40, paddingRight: 40 },
     });
   }, [focusedCoordinate, initialZoomLevel]);
@@ -245,7 +247,11 @@ export const UserMap: React.FC<UserMapProps> = ({
           >
             <View style={styles.avatarShadow}>
               <View style={styles.avatarBorder}>
-                <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+                <UserAvatar
+                  imageUrl={user.avatarUrl}
+                  name={user.name}
+                  size={34}
+                />
               </View>
             </View>
           </PointAnnotation>
@@ -290,10 +296,6 @@ const styles = StyleSheet.create({
     borderColor: "#FFFFFF",
     overflow: "hidden",
     backgroundColor: "#0F172A",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
   },
 });
 

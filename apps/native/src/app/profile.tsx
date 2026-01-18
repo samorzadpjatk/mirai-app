@@ -6,6 +6,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { useAuth } from '@integral-2025-app/auth/client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { colors, spacing, borderRadius, typography } from '../styles';
 import BottomMenu from '../components/BottomMenu';
@@ -57,7 +58,7 @@ export default function ProfileScreen() {
     try {
       // Check current permission status
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+      const finalStatus = existingStatus;
 
       setNotificationStatus(existingStatus);
 
@@ -67,8 +68,9 @@ export default function ProfileScreen() {
       }
 
       // Get Expo push token
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+        projectId,
       });
 
       // Auto-subscribe if permission already granted
@@ -102,8 +104,9 @@ export default function ProfileScreen() {
         }
 
         // Get token and subscribe
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
         const tokenData = await Notifications.getExpoPushTokenAsync({
-          projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+          projectId,
         });
 
         if (tokenData.data) {

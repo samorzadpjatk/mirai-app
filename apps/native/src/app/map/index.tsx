@@ -1,26 +1,39 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Animated, Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
-import SuperJSON from "superjson";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { useMutation } from "@tanstack/react-query";
 import { YStack } from "tamagui";
+import * as Crypto from "expo-crypto";
 import { UserMap, type UserLocation } from "~/components/map/UserMap";
-import { useTRPC } from "@integral-2025-app/trpc/client";
-import type { AppRouter } from "@integral-2025-app/trpc";
+import { UserAvatar } from "~/components/map/UserAvatar";
+import BottomMenu from "~/components/BottomMenu";
+import { useTRPC, useSubscription } from "@integral-2025-app/trpc/client";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { formatRelativeTime } from "~/utils/format";
 import { useRouter } from "expo-router";
 
-const TRPC_HTTP_URL: string =
-  process.env.EXPO_PUBLIC_TRPC_API_URL ?? "http://localhost:2022/api/trpc";
-const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
+type FriendLocationEvent =
+  | { id: string; type: "upsert"; location: LocationWithUser }
+  | { id: string; type: "delete"; userId: string };
 
-type LocationPayload = {
-  userId: string;
-  latitude: number;
-  longitude: number;
-  updatedAt: string | number | Date;
-};
+interface LocationWithUser {
+  coords: {
+    latitude: number;
+    longitude: number;
+    altitude: number | null;
+    accuracy: number | null;
+    altitudeAccuracy: number | null;
+    heading: number | null;
+    speed: number | null;
+  };
+  timestamp: number;
+  isSharingLocation: boolean;
+  user?: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    image: string | null;
+  };
+}
 
 const toNumber = (value: unknown): number | null => {
   if (typeof value === "number") return value;
@@ -63,92 +76,82 @@ export default function MapScreen() {
   >({});
   const lastSentRef = useRef(0);
 
-  const fallbackAvatar = useMemo(
-    () => Image.resolveAssetSource(require("../../../assets/mirai_logo.png")).uri,
-    [],
-  );
 
-  const { data: mapUsers } = useQuery({
-    ...trpc.user.getMapUsers.queryOptions(),
-    enabled: Boolean(session?.access_token),
-  });
+  const [usersData, setUsersData] = useState<Record<string, {
+    name?: string;
+    email?: string;
+    image?: string;
+    houseNumber?: string;
+  }>>({});
 
-  useEffect(() => {
-    if (!mapUsers) return;
-    setLocationsByUserId((prev) => {
-      const next = { ...prev };
-      mapUsers.forEach((user) => {
-        const location = user.location;
-        const latitude = toNumber(location?.latitude);
-        const longitude = toNumber(location?.longitude);
-        if (latitude == null || longitude == null) return;
-        next[user.id] = {
-          latitude,
-          longitude,
-          updatedAt: location?.timestamp ?? new Date(),
-        };
-      });
-      return next;
-    });
-  }, [mapUsers]);
+  const connectionId = useMemo(() => Crypto.randomUUID(), []);
 
-  const wsClient = useMemo(
-    () =>
-      createWSClient({
-        url: TRPC_WS_URL,
-        connectionParams: session?.access_token
-          ? { authToken: session.access_token }
-          : undefined,
-        lazy: { enabled: true, closeMs: 60_000 },
-      }),
-    [session?.access_token],
-  );
-
-  const wsTrpcClient = useMemo(
-    () =>
-      createTRPCClient<AppRouter>({
-        links: [
-          wsLink({
-            client: wsClient,
-            transformer: SuperJSON,
-          }),
-        ],
-      }),
-    [wsClient],
-  );
-
-  useEffect(() => {
-    if (!session?.access_token) {
-      return;
-    }
-
-    const subscription = wsTrpcClient.location.subscribe.subscribe(undefined, {
-      onData: (payload: LocationPayload) => {
-        setLocationsByUserId((prev) => ({
-          ...prev,
-          [payload.userId]: {
-            latitude: payload.latitude,
-            longitude: payload.longitude,
-            updatedAt: payload.updatedAt,
-          },
-        }));
+  useSubscription(
+    trpc.location.getFriendsLocationsStream.subscriptionOptions(
+      {
+        connectionId,
+        radiusKm: undefined,
+        latitude: undefined,
+        longitude: undefined,
       },
-      onError: (error: unknown) => {
-        console.error("Location subscription error:", error);
+      {
+        enabled: !!session?.access_token,
+        onData: (event: FriendLocationEvent) => {
+          console.log("[Map] Received WebSocket event:", event.type, event);
+          if (event.type === "upsert") {
+            const { location } = event;
+            const userId = location.user?.id ?? "";
+            console.log(`[Map] Updating location for user ${userId}:`, location.coords);
+            setLocationsByUserId((prev) => ({
+              ...prev,
+              [userId]: {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                updatedAt: location.timestamp,
+              },
+            }));
+            if (location.user) {
+              setUsersData((prev) => ({
+                ...prev,
+                [userId]: {
+                  name: `${location.user.firstName ?? ""} ${location.user.lastName ?? ""}`.trim(),
+                  image: location.user.image ?? undefined,
+                },
+              }));
+            }
+          } else if (event.type === "delete") {
+            setLocationsByUserId((prev) => {
+              const next = { ...prev };
+              delete next[event.userId];
+              return next;
+            });
+            setUsersData((prev) => {
+              const next = { ...prev };
+              delete next[event.userId];
+              return next;
+            });
+          }
+        },
+        onError: (error: unknown) => {
+          console.error("Location subscription error:", error);
+        },
       },
-    });
-
-    return () => subscription.unsubscribe();
-  }, [wsTrpcClient, session?.access_token]);
+    ),
+  );
 
   const sendLocation = useMutation({
     mutationFn: (input: { latitude: number; longitude: number }) => {
       if (!session?.access_token) {
         return Promise.resolve(null);
       }
-      return wsTrpcClient.location.updateMy.mutate({
-        ...input,
-        updatedAt: new Date(),
+      return trpc.location.updateLocation.mutate({
+        latitude: input.latitude,
+        longitude: input.longitude,
+        accuracy: null,
+        altitude: null,
+        altitudeAccuracy: null,
+        heading: null,
+        speed: null,
       });
     },
   });
@@ -156,32 +159,29 @@ export default function MapScreen() {
   const users: UserLocation[] = useMemo(() => {
     const next: UserLocation[] = [];
     const currentUserId = session?.user?.id;
-    const currentUserData = mapUsers?.find((user) => user.id === currentUserId);
+
     if (currentCoordinate) {
       next.push({
         id: currentUserId ?? "me",
-        name: currentUserData?.name ?? session?.user?.email ?? "You",
-        email: currentUserData?.email ?? session?.user?.email ?? undefined,
-        address: currentUserData?.houseNumber
-          ? `House ${currentUserData.houseNumber}`
-          : "Your location",
+        name: session?.user?.email ?? "You",
+        email: session?.user?.email ?? undefined,
+        address: "Your location",
         coordinate: currentCoordinate,
-        avatarUrl: currentUserData?.image || fallbackAvatar,
+        avatarUrl: null,
         lastActiveAt: Date.now(),
       });
     }
 
-    mapUsers?.forEach((user) => {
-      if (user.id === currentUserId) return;
-      const location = locationsByUserId[user.id];
-      if (!location) return;
+    Object.entries(locationsByUserId).forEach(([userId, location]) => {
+      if (userId === currentUserId) return;
+      const userData = usersData[userId];
       next.push({
-        id: user.id,
-        name: user.name ?? user.email ?? "Unknown",
-        email: user.email ?? undefined,
-        address: user.houseNumber ? `House ${user.houseNumber}` : undefined,
+        id: userId,
+        name: userData?.name ?? "Unknown",
+        email: userData?.email,
+        address: userData?.houseNumber ? `House ${userData.houseNumber}` : undefined,
         coordinate: [location.longitude, location.latitude],
-        avatarUrl: user.image || fallbackAvatar,
+        avatarUrl: userData?.image ?? null,
         lastActiveAt:
           location.updatedAt instanceof Date
             ? location.updatedAt.getTime()
@@ -189,7 +189,7 @@ export default function MapScreen() {
       });
     });
     return next;
-  }, [mapUsers, locationsByUserId, fallbackAvatar, session?.user?.id, session?.user?.email, currentCoordinate]);
+  }, [locationsByUserId, usersData, session?.user?.id, session?.user?.email, currentCoordinate]);
 
   const selectedUser = useMemo(
     () => users.find((user) => user.id === selectedUserId) ?? null,
@@ -215,6 +215,10 @@ export default function MapScreen() {
     outputRange: [220, 0],
   });
 
+  if (!session?.access_token) {
+    return null;
+  }
+
   return (
     <YStack flex={1}>
       <UserMap
@@ -223,7 +227,8 @@ export default function MapScreen() {
         onUserPress={(user) => {
           setSelectedUserId(user.id);
           setFollowMode("user");
-          setFocusCoordinate(user.coordinate);
+          // Create new array reference to ensure useEffect triggers
+          setFocusCoordinate([...user.coordinate]);
         }}
         onLocationUpdate={({ latitude, longitude }) => {
           setCurrentCoordinate([longitude, latitude]);
@@ -250,7 +255,11 @@ export default function MapScreen() {
                   <View style={styles.cardHeader}>
                     <View style={styles.userHeader}>
                       <View style={styles.avatarWrapper}>
-                        <Image source={{ uri: selectedUser.avatarUrl }} style={styles.avatar} />
+                        <UserAvatar
+                          imageUrl={selectedUser.avatarUrl}
+                          name={selectedUser.name}
+                          size={60}
+                        />
                       </View>
                       <View style={styles.userDetails}>
                         <Text style={styles.userName}>
@@ -276,6 +285,9 @@ export default function MapScreen() {
                 </>
               ) : null}
             </Animated.View>
+            <Pressable style={styles.backButton} onPress={() => router.replace("/")}>
+              <Text style={styles.backButtonText}>←</Text>
+            </Pressable>
             <Pressable
               style={styles.recenterButton}
               onPress={() => {
@@ -286,9 +298,7 @@ export default function MapScreen() {
             >
               <Text style={styles.recenterText}>My location</Text>
             </Pressable>
-            <Pressable style={styles.menuButton} onPress={() => router.replace("/")}>
-              <Text style={styles.menuButtonText}>←</Text>
-            </Pressable>
+            <BottomMenu activeTab="trips" />
           </>
         }
       />
@@ -332,10 +342,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
-  },
-  avatar: {
-    width: "100%",
-    height: "100%",
   },
   userDetails: {
     flex: 1,
@@ -391,7 +397,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 12,
   },
-  menuButton: {
+  backButton: {
     position: "absolute",
     left: 16,
     top: 64,
@@ -400,7 +406,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  menuButtonText: {
+  backButtonText: {
     color: "#FFFFFF",
     fontSize: 20,
     fontWeight: "500",
