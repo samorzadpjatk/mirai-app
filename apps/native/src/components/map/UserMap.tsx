@@ -1,15 +1,11 @@
-import React, { useMemo } from "react";
-import { Platform, StyleSheet, View, Text } from "react-native";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { Platform, StyleSheet, View, Text, Image } from "react-native";
 import Constants from "expo-constants";
 import {
   MapView,
   Camera,
   UserLocation,
-  Images,
-  ShapeSource,
-  CircleLayer,
-  SymbolLayer,
-  StyleURL,
+  PointAnnotation,
   VectorSource,
 } from "@maplibre/maplibre-react-native";
 
@@ -18,6 +14,8 @@ export interface UserLocation {
   name: string;
   coordinate: [number, number]; // [longitude, latitude]
   avatarUrl: string;
+  email?: string;
+  address?: string;
   /** ISO string or millis since epoch */
   lastActiveAt: string | number;
 }
@@ -40,6 +38,14 @@ export interface UserMapProps {
    * Optional map style URL (overrides internal MAP_STYLE).
    */
   mapStyleURL?: string;
+  /**
+   * Coordinate to focus when a user is selected.
+   */
+  focusedCoordinate?: [number, number] | null;
+  /**
+   * Optional hook for current device location updates.
+   */
+  onLocationUpdate?: (coords: { longitude: number; latitude: number }) => void;
   /**
    * Optional vector tile source URL (e.g. OpenSkiMap vector tiles).
    * If provided, ShapeSource will use `url` instead of a local GeoJSON `shape`.
@@ -71,23 +77,17 @@ interface UserFeatureCollection {
   features: UserFeature[];
 }
 
-// Basic MapLibre style & layer IDs
-const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const SOURCE_ID = "users-source";
-const LAYER_ID_POINTS = "users-points";
-const LAYER_ID_CLUSTERS = "users-clusters";
-const LAYER_ID_CLUSTER_COUNT = "users-clusters-count";
-const IMAGE_LAYER_ID = "user-avatar";
-
-interface MapPressEvent {
-  features?: {
-    properties?: {
-      id?: string;
-      [key: string]: unknown;
-    };
-  }[];
+interface CameraRef {
+  setCamera?: (options: {
+    centerCoordinate: [number, number];
+    zoomLevel?: number;
+    animationDuration?: number;
+    padding?: { paddingTop?: number; paddingRight?: number; paddingBottom?: number; paddingLeft?: number };
+  }) => void;
 }
 
+// Basic MapLibre style & layer IDs
+const MAP_STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
 /**
  * Compute opacity (0–1) based on last activity timestamp.
  * 0 minutes ago  -> 1.0
@@ -120,7 +120,9 @@ export const UserMap: React.FC<UserMapProps> = ({
   initialZoomLevel = 14,
   overlay,
   vectorSourceUrl,
-  vectorSourceLayer,
+  mapStyleURL,
+  onLocationUpdate,
+  focusedCoordinate,
 }) => {
   // Web support for the native MapLibre wrapper is limited and often requires extra setup.
   // Since głównym celem są smartfony, na webie pokazujemy prosty placeholder,
@@ -143,64 +145,48 @@ export const UserMap: React.FC<UserMapProps> = ({
     );
   }
 
-  const featureCollection: UserFeatureCollection = useMemo(() => {
-    const now = Date.now();
+  const cameraRef = useRef<CameraRef | null>(null);
+  const hasCenteredRef = useRef(false);
 
-    return {
-      type: "FeatureCollection",
-      features: users
-        .map<UserFeature>((u) => ({
-          type: "Feature",
-          id: u.id,
-          properties: {
-            id: u.id,
-            name: u.name,
-            avatarUrl: u.avatarUrl,
-            opacity: getActivityOpacity(u.lastActiveAt, now),
-          },
-          geometry: {
-            type: "Point",
-            coordinates: u.coordinate,
-          },
-        }))
-        // Filter out fully expired users (opacity === 0)
-        .filter((f) => f.properties.opacity > 0),
-    };
+  const filteredUsers = useMemo(() => {
+    const now = Date.now();
+    return users.filter((user) => getActivityOpacity(user.lastActiveAt, now) > 0);
   }, [users]);
 
-  const images = useMemo(
-    () =>
-      featureCollection.features.reduce<Record<string, { uri: string }>>(
-        (acc, feature) => {
-          const key = `${IMAGE_LAYER_ID}-${feature.id}`;
-          acc[key] = { uri: feature.properties.avatarUrl };
-          return acc;
-        },
-        {},
-      ),
-    [featureCollection],
-  );
+  useEffect(() => {
+    if (!focusedCoordinate) return;
+    cameraRef.current?.setCamera?.({
+      centerCoordinate: focusedCoordinate,
+      zoomLevel: initialZoomLevel,
+      animationDuration: 900,
+      padding: { paddingBottom: 220, paddingTop: 40, paddingLeft: 40, paddingRight: 40 },
+    });
+  }, [focusedCoordinate, initialZoomLevel]);
 
-  const handleOnPress = (event: MapPressEvent) => {
-    if (!onUserPress) return;
+  const handleUserLocationUpdate = (loc: {
+    coords?: { longitude?: number | null; latitude?: number | null };
+  }) => {
+    if (!loc.coords) return;
 
-    const feature = event.features?.[0];
-    if (!feature) return;
+    const { longitude, latitude } = loc.coords;
+    if (longitude == null || latitude == null) return;
 
-    const rawId = feature.properties?.id;
-    if (typeof rawId !== "string") return;
-    const userId = rawId;
-
-    const user = users.find((u) => u.id === userId);
-    if (user) {
-      onUserPress(user);
+    if (!hasCenteredRef.current) {
+      cameraRef.current?.setCamera?.({
+        centerCoordinate: [longitude, latitude],
+        zoomLevel: initialZoomLevel,
+        animationDuration: 1600,
+      });
+      hasCenteredRef.current = true;
     }
+
+    onLocationUpdate?.({ longitude, latitude });
   };
 
   return (
     <View style={styles.container}>
       <MapView
-        mapStyle={MAP_STYLE}
+        mapStyle={mapStyleURL ?? MAP_STYLE_DARK}
         style={styles.map}
         logoEnabled={false}
         compassEnabled
@@ -209,92 +195,42 @@ export const UserMap: React.FC<UserMapProps> = ({
         scrollEnabled
         zoomEnabled
       >
-        {/* Follow the user location on map start, fallback to first user coordinate */}
         <Camera
-          followUserLocation
+          ref={cameraRef}
           defaultSettings={
             users[0]
               ? { centerCoordinate: users[0].coordinate, zoomLevel: initialZoomLevel }
               : undefined
           }
-          followZoomLevel={initialZoomLevel}
         />
         <UserLocation
-          visible
-          showsUserHeadingIndicator
+          visible={false}
+          showsUserHeadingIndicator={false}
           androidRenderMode="compass"
+          onUpdate={handleUserLocationUpdate}
         />
 
-        <Images images={images} />
-        <VectorSource
-          url={vectorSourceUrl} id={"map"} />
-        <ShapeSource
-          id={SOURCE_ID}
-          shape={featureCollection}
-          cluster
-          clusterRadius={48}
-        >
-          {/* Cluster circles - subtle blue like Slopes pill */}
-          <CircleLayer
-            id={LAYER_ID_CLUSTERS}
-            filter={["has", "point_count"]}
-            style={{
-              circleColor: "#2563EB",
-              circleRadius: [
-                "step",
-                ["get", "point_count"],
-                16,
-                10,
-                22,
-                30,
-                28,
-              ],
-              circleOpacity: 0.85,
-            }}
-          />
-
-          {/* Cluster count labels */}
-          <SymbolLayer
-            id={LAYER_ID_CLUSTER_COUNT}
-            filter={["has", "point_count"]}
-            style={{
-              textField: ["get", "point_count_abbreviated"],
-              textColor: "white",
-              textSize: 12,
-              textFont: ["Open Sans Bold", "Arial Unicode MS Bold"],
-              textAllowOverlap: true,
-            }}
-          />
-
-          {/* Individual user avatars as symbols */}
-          <SymbolLayer
-            id={LAYER_ID_POINTS}
-            filter={["!", ["has", "point_count"]]}
-            style={{
-              iconImage: ["concat", IMAGE_GL_PREFIX, ["get", "id"]],
-              iconSize: [
-                "interpolate",
-                ["linear"],
-                ["get", "opacity"],
-                0,
-                0.5,
-                1,
-                1,
-              ],
-              iconAllowOverlap: true,
-              iconIgnorePlacement: true,
-              iconOpacity: ["get", "opacity"],
-            }}
-          />
-        </ShapeSource>
+        {vectorSourceUrl ? <VectorSource url={vectorSourceUrl} id="map" /> : null}
+        {filteredUsers.map((user) => (
+          <PointAnnotation
+            key={user.id}
+            id={`user-${user.id}`}
+            coordinate={user.coordinate}
+            onSelected={() => onUserPress?.(user)}
+          >
+            <View style={styles.avatarShadow}>
+              <View style={styles.avatarBorder}>
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+              </View>
+            </View>
+          </PointAnnotation>
+        ))}
       </MapView>
 
       {overlay}
     </View>
   );
 };
-
-const IMAGE_GL_PREFIX = `${IMAGE_LAYER_ID}-`;
 
 const styles = StyleSheet.create({
   container: {
@@ -307,6 +243,32 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  avatarShadow: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  avatarBorder: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    overflow: "hidden",
+    backgroundColor: "#0F172A",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
 });
 

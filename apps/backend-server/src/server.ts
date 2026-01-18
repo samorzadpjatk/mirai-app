@@ -42,10 +42,26 @@ export function createServer(opts: ServerOptions) {
         connectionParams?: unknown;
       }) => {
         const { req, connectionParams } = opts;
+        const supabaseUrl =
+          process.env.SUPABASE_URL ??
+          process.env.EXPO_PUBLIC_SUPABASE_URL ??
+          "";
+        const supabaseKey =
+          process.env.SUPABASE_KEY ??
+          process.env.SUPABASE_ANON_KEY ??
+          process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
+          "";
+
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error(
+            "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_KEY (or SUPABASE_ANON_KEY).",
+          );
+        }
+
         return createTRPCContext({
           headers: fastifyHeadersToFetchHeaders(req.headers),
-          supabaseUrl: process.env.SUPABASE_URL ?? "",
-          supabaseKey: process.env.SUPABASE_KEY ?? "",
+          supabaseUrl,
+          supabaseKey,
           connectionParams,
         });
       },

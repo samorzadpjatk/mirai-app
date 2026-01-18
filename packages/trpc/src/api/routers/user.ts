@@ -3,6 +3,7 @@ import {
   createTRPCRouter,
   moderatorProcedure,
   adminProcedure,
+  protectedProcedure,
 } from "../../api/trpc";
 
 export const userRouter = createTRPCRouter({
@@ -37,10 +38,31 @@ export const userRouter = createTRPCRouter({
         id: true,
         name: true,
         email: true,
+        image: true,
         isAdmin: true,
         wristNumber: true,
         group: { select: { id: true, name: true } },
         organizerGroup: { select: { id: true, name: true } },
+      },
+      orderBy: { name: "asc" },
+    });
+  }),
+  getMapUsers: protectedProcedure.query(async ({ ctx }) => {
+    return await ctx.db.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        houseNumber: true,
+        location: {
+          select: {
+            latitude: true,
+            longitude: true,
+            timestamp: true,
+            isSharingLocation: true,
+          },
+        },
       },
       orderBy: { name: "asc" },
     });
