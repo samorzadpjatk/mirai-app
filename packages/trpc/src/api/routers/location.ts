@@ -44,7 +44,8 @@ export interface LocationWithUser extends ExpoLocationObject {
   isSharingLocation: boolean;
   user?: {
     id: string;
-    name: string | null;
+    firstName: string | null;
+    lastName: string | null;
     image: string | null;
   };
 }
@@ -52,6 +53,18 @@ export interface LocationWithUser extends ExpoLocationObject {
 type FriendLocationEvent =
   | { id: string; type: "upsert"; location: LocationWithUser }
   | { id: string; type: "delete"; userId: string };
+
+interface SharingUser {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  image: string | null;
+}
+
+interface SharingSettings {
+  isSharingLocation: boolean;
+  usersToShareWith: SharingUser[];
+}
 
 /**
  * Convert database location to Expo-compliant format
@@ -83,7 +96,8 @@ async function toLocationWithUser(
     where: { id: dbLocation.userId },
     select: {
       id: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       image: true,
     },
   });
@@ -154,7 +168,7 @@ export const locationRouter = createTRPCRouter({
                 set: userIdsToShareWith.map((id) => ({ id })),
               }
             : undefined,
-              timestamp: new Date(),
+          timestamp: new Date(),
         },
         create: {
           userId: ctx.dbUser.id,
@@ -171,7 +185,8 @@ export const locationRouter = createTRPCRouter({
           usersToShareWith: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
             },
           },
         },
@@ -201,8 +216,15 @@ export const locationRouter = createTRPCRouter({
       const connectionId = input.connectionId ?? crypto.randomUUID();
 
       const { radiusKm, latitude, longitude } = input;
-      if (radiusKm !== undefined && (latitude === undefined || longitude === undefined)) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: "When providing radiusKm, both latitude and longitude are required" });
+      if (
+        radiusKm !== undefined &&
+        (latitude === undefined || longitude === undefined)
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "When providing radiusKm, both latitude and longitude are required",
+        });
       }
 
       // Emituj początkowe lokalizacje znajomych (filtrowane jeśli radius podany)
@@ -217,7 +239,8 @@ export const locationRouter = createTRPCRouter({
           user: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               image: true,
             },
           },
@@ -278,36 +301,54 @@ export const locationRouter = createTRPCRouter({
                 default: {
                   const newLocation = payload.new;
 
-                  void toLocationWithUser(ctx.db, newLocation).then((location) => {
-                    const userId = newLocation.userId;
+                  void toLocationWithUser(ctx.db, newLocation).then(
+                    (location) => {
+                      const userId = newLocation.userId;
 
-                    if (radiusKm !== undefined) {
-                      if (!newLocation?.latitude || !newLocation?.longitude) {
-                        if (inRadius.delete(userId)) {
-                          queue.push({ id: connectionId, type: "delete", userId });
+                      if (radiusKm !== undefined) {
+                        if (!newLocation?.latitude || !newLocation?.longitude) {
+                          if (inRadius.delete(userId)) {
+                            queue.push({
+                              id: connectionId,
+                              type: "delete",
+                              userId,
+                            });
+                          }
+                          return;
                         }
-                        return;
-                      }
 
-                      const dist = calculateDistance(
-                        latitude!,
-                        longitude!,
-                        Number(newLocation.latitude),
-                        Number(newLocation.longitude),
-                      );
+                        const dist = calculateDistance(
+                          latitude!,
+                          longitude!,
+                          Number(newLocation.latitude),
+                          Number(newLocation.longitude),
+                        );
 
-                      if (dist <= radiusKm) {
-                        inRadius.add(userId);
-                        queue.push({ id: connectionId, type: "upsert", location });
+                        if (dist <= radiusKm) {
+                          inRadius.add(userId);
+                          queue.push({
+                            id: connectionId,
+                            type: "upsert",
+                            location,
+                          });
+                        } else {
+                          if (inRadius.delete(userId)) {
+                            queue.push({
+                              id: connectionId,
+                              type: "delete",
+                              userId,
+                            });
+                          }
+                        }
                       } else {
-                        if (inRadius.delete(userId)) {
-                          queue.push({ id: connectionId, type: "delete", userId });
-                        }
+                        queue.push({
+                          id: connectionId,
+                          type: "upsert",
+                          location,
+                        });
                       }
-                    } else {
-                      queue.push({ id: connectionId, type: "upsert", location });
-                    }
-                  });
+                    },
+                  );
                   break;
                 }
               }
@@ -318,7 +359,8 @@ export const locationRouter = createTRPCRouter({
 
       try {
         while (
-          (channel?.state && channel?.state === REALTIME_CHANNEL_STATES.joined) ||
+          (channel?.state &&
+            channel?.state === REALTIME_CHANNEL_STATES.joined) ||
           queue.length > 0
         ) {
           if (queue.length === 0) {
@@ -394,7 +436,7 @@ export const locationRouter = createTRPCRouter({
       },
       include: {
         user: {
-          select: { id: true, name: true, image: true },
+          select: { id: true, firstName: true, lastName: true, image: true },
         },
       },
     });
@@ -405,32 +447,46 @@ export const locationRouter = createTRPCRouter({
   /**
    * Get sharing settings for current user
    */
-  getMySharingSettings: protectedProcedure.query(async ({ ctx }) => {
-    const location = await ctx.db.location.findUnique({
-      where: { userId: ctx.dbUser.id },
-      include: {
-        usersToShareWith: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
+  getMySharingSettings: protectedProcedure.query(
+    async ({ ctx }): Promise<SharingSettings> => {
+      const location = await ctx.db.location.findUnique({
+        where: { userId: ctx.dbUser.id },
+        include: {
+          usersToShareWith: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!location) {
+      if (!location) {
+        return {
+          isSharingLocation: false,
+          usersToShareWith: [],
+        };
+      }
+
+      const usersToShareWith = Array.isArray(location.usersToShareWith)
+        ? location.usersToShareWith
+        : [];
+
       return {
-        isSharingLocation: false,
-        usersToShareWith: [],
+        isSharingLocation: Boolean(location.isSharingLocation),
+        usersToShareWith: usersToShareWith.map(
+          (user): SharingUser => ({
+            id: String(user.id),
+            firstName: user.firstName ?? null,
+            lastName: user.lastName ?? null,
+            image: user.image ?? null,
+          }),
+        ),
       };
-    }
-
-    return {
-      isSharingLocation: location.isSharingLocation,
-      usersToShareWith: location.usersToShareWith,
-    };
-  }),
+    },
+  ),
 
   /**
    * Get all users (for sharing selection) - moderator only
@@ -442,12 +498,22 @@ export const locationRouter = createTRPCRouter({
       },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         image: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     });
 
-    return users;
+    const safeUsers = Array.isArray(users) ? users : [];
+
+    return safeUsers.map(
+      (user): SharingUser => ({
+        id: String(user.id),
+        firstName: user.firstName ?? null,
+        lastName: user.lastName ?? null,
+        image: user.image ?? null,
+      }),
+    );
   }),
 });

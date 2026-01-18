@@ -9,10 +9,9 @@ describe("coinRouter", () => {
       id: "admin-1",
       authUserId: "supabase-mock-user",
       email: "admin@test.com",
-      name: "Admin User",
-      isAdmin: true,
-      isModerator: true,
-      isServiceAccount: false,
+      firstName: "Admin",
+      lastName: "User",
+      role: "ADMIN",
     };
 
     return {
@@ -32,8 +31,9 @@ describe("coinRouter", () => {
       session: {
         user: {
           id: dbUser.id,
-          name: dbUser.name,
-          isAdmin: dbUser.isAdmin,
+          firstName: dbUser.firstName,
+          lastName: dbUser.lastName,
+          role: dbUser.role,
         },
       },
       supabase: {} as any,
@@ -67,10 +67,16 @@ describe("coinRouter", () => {
         },
         admin: {
           id: "admin-1",
-          name: "Admin User",
+          firstName: "Admin",
+          lastName: "User",
         },
       };
 
+      mockContext.db.group.findUnique.mockResolvedValue({
+        id: "group-1",
+        tripId: "trip-1",
+        coins: 200,
+      });
       mockContext.db.group.update.mockResolvedValue({
         id: "group-1",
         coins: 200,
@@ -79,6 +85,7 @@ describe("coinRouter", () => {
 
       const caller = coinRouter.createCaller(mockContext);
       const result = await caller.addCoins({
+        tripId: "trip-1",
         groupId: "group-1",
         amount: 100,
         reason: "Good work",
@@ -101,6 +108,7 @@ describe("coinRouter", () => {
     it("should remove coins from a group", async () => {
       const mockGroup = {
         id: "group-1",
+        tripId: "trip-1",
         coins: 150,
       };
 
@@ -118,7 +126,8 @@ describe("coinRouter", () => {
         },
         admin: {
           id: "admin-1",
-          name: "Admin User",
+          firstName: "Admin",
+          lastName: "User",
         },
       };
 
@@ -131,6 +140,7 @@ describe("coinRouter", () => {
 
       const caller = coinRouter.createCaller(mockContext);
       const result = await caller.removeCoins({
+        tripId: "trip-1",
         groupId: "group-1",
         amount: 50,
         reason: "Penalty",
@@ -139,7 +149,7 @@ describe("coinRouter", () => {
       expect(result).toEqual(mockTransaction);
       expect(mockContext.db.group.findUnique).toHaveBeenCalledWith({
         where: { id: "group-1" },
-        select: { coins: true },
+        select: { coins: true, tripId: true },
       });
       expect(mockContext.db.group.update).toHaveBeenCalledWith({
         where: { id: "group-1" },
@@ -150,6 +160,7 @@ describe("coinRouter", () => {
     it("should throw error if group does not have enough coins", async () => {
       const mockGroup = {
         id: "group-1",
+        tripId: "trip-1",
         coins: 30,
       };
 
@@ -159,9 +170,10 @@ describe("coinRouter", () => {
 
       await expect(
         caller.removeCoins({
+          tripId: "trip-1",
           groupId: "group-1",
           amount: 50,
-        })
+        }),
       ).rejects.toThrow("Group does not have enough coins");
     });
 
@@ -172,9 +184,10 @@ describe("coinRouter", () => {
 
       await expect(
         caller.removeCoins({
+          tripId: "trip-1",
           groupId: "non-existent",
           amount: 50,
-        })
+        }),
       ).rejects.toThrow("Group does not have enough coins");
     });
   });
