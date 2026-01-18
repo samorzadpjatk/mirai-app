@@ -20,7 +20,8 @@ import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { db } from "@integral-2025-app/db";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
-  const authorization = headers.get("authorization") ?? headers.get("Authorization");
+  const authorization =
+    headers.get("authorization") ?? headers.get("Authorization");
   if (!authorization) {
     return null;
   }
@@ -77,7 +78,10 @@ export const createTRPCContext = (opts: {
 }) => {
   const supabase = createSupabaseClient(opts.supabaseUrl, opts.supabaseKey);
   const accessToken = getAccessToken(opts.headers, opts.connectionParams);
-  console.log("Creating tRPC context with access token:", accessToken ? "YES" : "NO");
+  console.log(
+    "Creating tRPC context with access token:",
+    accessToken ? "YES" : "NO",
+  );
   return {
     db,
     supabase,
@@ -145,50 +149,44 @@ export const publicProcedure = t.procedure;
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    const { user, dbUser } = await requireAuth(
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-    return next({
-      ctx: {
-        user,
-        dbUser,
-      },
-    });
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const { user, dbUser } = await requireAuth(
+    ctx.supabase,
+    ctx.accessToken ?? undefined,
+  );
+  return next({
+    ctx: {
+      user,
+      dbUser,
+    },
   });
+});
 
 /**
  * Admin (authenticated) procedure
  *
  * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user.isAdmin` is not null and is true.
+ * the session is valid and guarantees the caller has the required role.
  *
  * @see https://trpc.io/docs/procedures
  */
-export const moderatorProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    const dbUser = await requireModerator(
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-    return next({
-      ctx: {
-        dbUser,
-      },
-    });
+export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const dbUser = await requireModerator(
+    ctx.supabase,
+    ctx.accessToken ?? undefined,
+  );
+  return next({
+    ctx: {
+      dbUser,
+    },
   });
+});
 
-export const adminProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    const dbUser = await requireAdmin(
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-    return next({
-      ctx: {
-        dbUser,
-      },
-    });
+export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const dbUser = await requireAdmin(ctx.supabase, ctx.accessToken ?? undefined);
+  return next({
+    ctx: {
+      dbUser,
+    },
   });
+});
