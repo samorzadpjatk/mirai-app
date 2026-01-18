@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft } from '@tamagui/lucide-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
+import BackNavbar from '../../../components/BackNavbar';
 import { colors, spacing, borderRadius, typography } from '../../../styles';
 import BottomMenu from '../../../components/BottomMenu';
 
@@ -196,50 +196,13 @@ export default function ChallengesScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.backgroundDark }}>
-      {/* Header */}
-      <View style={{
-        backgroundColor: 'rgba(23, 24, 28, 0.8)',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-      }}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <ArrowLeft size={24} color={colors.primary} />
-        </TouchableOpacity>
-
-        <View>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: typography.bold,
-            letterSpacing: 2,
-            color: colors.primary,
-            textTransform: 'uppercase'
-          }}>
-            {trip.name}
-          </Text>
-          <Text style={{
-            fontSize: typography.xl,
-            fontWeight: typography.bold,
-            color: colors.white,
-            letterSpacing: -0.5,
-            textTransform: 'uppercase'
-          }}>
-            Challenges
-          </Text>
-        </View>
-      </View>
+    <View style={styles.container}>
+      {/* Back Navbar */}
+      <BackNavbar title="Challenges" />
 
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Group Info Card */}
@@ -380,3 +343,18 @@ export default function ChallengesScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundDark,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingTop: 80, // Space for BackNavbar
+    paddingBottom: 100,
+  },
+});

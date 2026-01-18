@@ -47,10 +47,7 @@ export default function Home() {
       <StatusBar style="light" />
       <View style={styles.container}>
         {/* Navbar */}
-        <AppNavbar
-          userEmail={currentUser?.email}
-          onAvatarPress={handleSignOut}
-        />
+        <AppNavbar />
 
         {/* Main Content */}
         <ScrollView

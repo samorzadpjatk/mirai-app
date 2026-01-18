@@ -13,9 +13,9 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
-import { ArrowLeft, Search } from "@tamagui/lucide-icons";
+import { Search } from "@tamagui/lucide-icons";
 import { colors, spacing, borderRadius, typography, shadows } from "../../../styles";
-import AppNavbar from "../../../components/AppNavbar";
+import BackNavbar from "../../../components/BackNavbar";
 import BottomMenu from "../../../components/BottomMenu";
 import { useAuth } from "@integral-2025-app/auth/client";
 
@@ -136,7 +136,7 @@ export default function CreateGroupScreen() {
 
   return (
     <View style={styles.container}>
-      <AppNavbar userEmail={currentUser?.email} />
+      <BackNavbar title="Create Group" />
 
       <ScrollView
         style={styles.scrollView}
@@ -271,22 +271,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.lg,
   },
-  backButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-  },
-  backButtonText: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.backgroundDark,
-  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: spacing.xl,
+    paddingTop: 80, // Space for BackNavbar
     paddingBottom: 100,
   },
   inputSection: {

@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Shield, Pencil } from "@tamagui/lucide-icons";
+import { Shield, Pencil } from "@tamagui/lucide-icons";
 import { colors, spacing, borderRadius, typography, shadows } from "../../../styles";
+import BackNavbar from "../../../components/BackNavbar";
 import BottomMenu from "../../../components/BottomMenu";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useAuth } from "@integral-2025-app/auth/client";
@@ -65,24 +66,20 @@ export default function GroupDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Custom Navbar with Back Button */}
-      <View style={styles.navbar}>
-        <View style={styles.navLeft}>
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-            <ArrowLeft size={24} color={colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.navTitle}>{group.trip?.name || "Trip"}</Text>
-        </View>
-        {isOrganizer && (
-          <TouchableOpacity
-            style={styles.editButton}
-            activeOpacity={0.7}
-            onPress={() => router.push(`/trips/groups/edit/${groupId}`)}
-          >
-            <Pencil size={20} color={colors.primary} />
-          </TouchableOpacity>
-        )}
-      </View>
+      <BackNavbar
+        title={group.name}
+        rightAction={
+          isOrganizer ? (
+            <TouchableOpacity
+              style={styles.editButton}
+              activeOpacity={0.7}
+              onPress={() => router.push(`/trips/groups/edit/${groupId}`)}
+            >
+              <Pencil size={20} color={colors.white} />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -206,43 +203,20 @@ const styles = StyleSheet.create({
     fontWeight: typography.bold,
     color: colors.backgroundDark,
   },
-  navbar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    backgroundColor: "rgba(23, 24, 28, 0.8)",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
-  },
-  navLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  navTitle: {
-    fontSize: typography.xl,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textTransform: "uppercase",
-    letterSpacing: -0.5,
-  },
   editButton: {
     width: 40,
     height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
+    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.3)",
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: spacing.lg,
+    paddingTop: 80, // Space for BackNavbar
     paddingBottom: 100,
   },
   heroCard: {

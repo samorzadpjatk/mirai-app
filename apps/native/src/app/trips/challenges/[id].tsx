@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft } from '@tamagui/lucide-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
+import BackNavbar from '../../../components/BackNavbar';
 import { colors, spacing, borderRadius, typography } from '../../../styles';
 import BottomMenu from '../../../components/BottomMenu';
 
@@ -157,21 +157,8 @@ export default function ChallengeDetailScreen() {
 
   if (!challenge) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.backgroundDark }}>
-        <View style={{
-          backgroundColor: 'rgba(23, 24, 28, 0.8)',
-          paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.lg,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.md,
-          borderBottomWidth: 1,
-          borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-        }}>
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7}>
-            <ArrowLeft size={24} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
+      <View style={styles.container}>
+        <BackNavbar title="Challenge" />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl }}>
           <Text style={{ color: colors.white, fontSize: typography.xl, fontWeight: typography.bold, marginBottom: spacing.md }}>
             Challenge not found
@@ -193,46 +180,12 @@ export default function ChallengeDetailScreen() {
   ) : false;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.backgroundDark }}>
-      {/* Header */}
-      <View style={{
-        backgroundColor: 'rgba(23, 24, 28, 0.8)',
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-      }}>
-        <TouchableOpacity onPress={handleBackPress} activeOpacity={0.7}>
-          <ArrowLeft size={24} color={colors.primary} />
-        </TouchableOpacity>
-
-        <View style={{ flex: 1 }}>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: typography.bold,
-            letterSpacing: 2,
-            color: colors.primary,
-            textTransform: 'uppercase'
-          }}>
-            Challenge Details
-          </Text>
-          <Text style={{
-            fontSize: typography.xl,
-            fontWeight: typography.bold,
-            color: colors.white,
-            letterSpacing: -0.5,
-          }}>
-            {challenge.name}
-          </Text>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <BackNavbar title={challenge.name} />
 
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Challenge Icon & Status */}
@@ -529,3 +482,18 @@ export default function ChallengeDetailScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundDark,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingTop: 80, // Space for BackNavbar
+    paddingBottom: 100,
+  },
+});

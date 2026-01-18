@@ -1,31 +1,19 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { SafeAreaTop } from "./SafeAreaWrapper";
 import Logo from "./Logo";
 
-interface AppNavbarProps {
-  userEmail?: string;
-  onAvatarPress?: () => void;
-}
-
-export default function AppNavbar({ userEmail, onAvatarPress }: AppNavbarProps) {
-  const avatarLetter = userEmail?.charAt(0).toUpperCase() || 'U';
-
+export default function AppNavbar() {
   return (
-    <View style={styles.navbar}>
+    <SafeAreaTop style={styles.navbar}>
       <View style={styles.navLeft}>
         <View style={styles.logoContainer}>
           <Logo size={40} />
         </View>
         <View>
           <Text style={styles.appName}>PJapp</Text>
-
         </View>
       </View>
-      <TouchableOpacity style={styles.avatarButton} onPress={onAvatarPress}>
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarText}>{avatarLetter}</Text>
-        </View>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaTop>
   );
 }
 
@@ -61,32 +49,5 @@ const styles = StyleSheet.create({
     color: "white",
     letterSpacing: -0.5,
     lineHeight: 24,
-  },
-  appSubtitle: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#00ced1",
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
-  avatarButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "rgba(0, 206, 209, 0.2)",
-    overflow: "hidden",
-  },
-  avatarPlaceholder: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#1b2828",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    color: "#00ced1",
-    fontSize: 16,
-    fontWeight: "bold",
   },
 });
