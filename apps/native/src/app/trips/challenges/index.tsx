@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -65,6 +66,31 @@ export default function ChallengesScreen() {
     const participant = trip.participants.find(p => p.user.id === currentUser.id);
     return participant?.group || null;
   }, [currentUser, trip]);
+
+  // Calculate leaderboard position and points difference
+  const leaderboardInfo = useMemo(() => {
+    if (!userGroup || !trip?.groups) return null;
+
+    // Sort groups by coins (descending)
+    const sortedGroups = [...trip.groups].sort((a, b) => (b.coins || 0) - (a.coins || 0));
+
+    // Find user's group position (1-indexed)
+    const position = sortedGroups.findIndex(g => g.id === userGroup.id) + 1;
+
+    // Find points difference
+    let pointsDifference = 0;
+    if (position === 1 && sortedGroups.length > 1) {
+      // If first place, show lead over 2nd place
+      const secondPlace = sortedGroups[1];
+      pointsDifference = (userGroup.coins || 0) - (secondPlace?.coins || 0);
+    } else if (position > 1) {
+      // If not first, show how many points behind the group ahead
+      const groupAhead = sortedGroups[position - 2]; // position - 1 - 1 (zero-indexed)
+      pointsDifference = (groupAhead?.coins || 0) - (userGroup.coins || 0);
+    }
+
+    return { position, pointsDifference, totalGroups: sortedGroups.length };
+  }, [userGroup, trip?.groups]);
 
   // Map database challenges to UI format
   const challenges: Challenge[] = useMemo(() => {
@@ -196,7 +222,7 @@ export default function ChallengesScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Back Navbar */}
       <BackNavbar title="Challenges" />
 
@@ -256,14 +282,14 @@ export default function ChallengesScreen() {
                   letterSpacing: 2,
                   marginBottom: 4
                 }}>
-                  Group Score
+                  Position
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
                   <Text style={{ fontSize: 24, fontWeight: typography.bold, color: colors.primary }}>
-                    {userGroup.coins?.toLocaleString() || 0}
+                    {leaderboardInfo?.position || '-'}
                   </Text>
                   <Text style={{ fontSize: 10, fontWeight: typography.bold, color: 'rgba(0, 206, 209, 0.7)', textTransform: 'uppercase' }}>
-                    pts
+                    / {leaderboardInfo?.totalGroups || 0}
                   </Text>
                 </View>
               </View>
@@ -284,14 +310,14 @@ export default function ChallengesScreen() {
                   letterSpacing: 2,
                   marginBottom: 4
                 }}>
-                  Members
+                  {leaderboardInfo?.position === 1 ? 'Leading By' : 'Behind By'}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-                  <Text style={{ fontSize: 24, fontWeight: typography.bold, color: colors.white }}>
-                    {userGroup._count?.participants || 0}
+                  <Text style={{ fontSize: 24, fontWeight: typography.bold, color: leaderboardInfo?.position === 1 ? '#10b981' : '#ef4444' }}>
+                    {leaderboardInfo?.pointsDifference || 0}
                   </Text>
                   <Text style={{ fontSize: 10, fontWeight: typography.bold, color: colors.textMuted, textTransform: 'uppercase' }}>
-                    people
+                    pts
                   </Text>
                 </View>
               </View>
@@ -340,7 +366,7 @@ export default function ChallengesScreen() {
       </ScrollView>
 
       <BottomMenu activeTab="trips" />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -354,7 +380,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: 80, // Space for BackNavbar
+    paddingTop: 70, // Space for BackNavbar
     paddingBottom: 100,
   },
 });

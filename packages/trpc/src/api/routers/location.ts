@@ -605,7 +605,7 @@ export const locationRouter = createTRPCRouter({
   /**
    * Get all users (for sharing selection) - moderator only
    */
-  getAllUsersForSharing: moderatorProcedure.query(async ({ ctx }) => {
+  getAllUsersForSharing: protectedProcedure.query(async ({ ctx }) => {
     const users = await ctx.db.user.findMany({
       where: {
         id: { not: ctx.dbUser.id }, // Exclude current user
@@ -630,4 +630,88 @@ export const locationRouter = createTRPCRouter({
       }),
     );
   }),
+
+  /**
+   * Add a user to sharing list
+   */
+  addUserToSharing: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const location = await ctx.db.location.upsert({
+        where: { userId: ctx.dbUser.id },
+        update: {
+          usersToShareWith: {
+            connect: { id: input.userId },
+          },
+        },
+        create: {
+          userId: ctx.dbUser.id,
+          timestamp: new Date(),
+          isSharingLocation: true,
+          usersToShareWith: {
+            connect: { id: input.userId },
+          },
+        },
+        include: {
+          usersToShareWith: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      return {
+        success: true,
+        usersToShareWith: location.usersToShareWith.map(
+          (user): SharingUser => ({
+            id: String(user.id),
+            firstName: user.firstName ?? null,
+            lastName: user.lastName ?? null,
+            image: user.image ?? null,
+          }),
+        ),
+      };
+    }),
+
+  /**
+   * Remove a user from sharing list
+   */
+  removeUserFromSharing: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const location = await ctx.db.location.update({
+        where: { userId: ctx.dbUser.id },
+        data: {
+          usersToShareWith: {
+            disconnect: { id: input.userId },
+          },
+        },
+        include: {
+          usersToShareWith: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      return {
+        success: true,
+        usersToShareWith: location.usersToShareWith.map(
+          (user): SharingUser => ({
+            id: String(user.id),
+            firstName: user.firstName ?? null,
+            lastName: user.lastName ?? null,
+            image: user.image ?? null,
+          }),
+        ),
+      };
+    }),
 });

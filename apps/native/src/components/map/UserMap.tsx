@@ -9,12 +9,18 @@ type CameraType = any;
 type MapLibreUserLocationType = any;
 type PointAnnotationType = any;
 type VectorSourceType = any;
+type ShapeSourceType = any;
+type LineLayerType = any;
+type SymbolLayerType = any;
 
 let MapView: MapViewType;
 let Camera: CameraType;
 let MapLibreUserLocation: MapLibreUserLocationType;
 let PointAnnotation: PointAnnotationType;
 let VectorSource: VectorSourceType;
+let ShapeSource: ShapeSourceType;
+let LineLayer: LineLayerType;
+let SymbolLayer: SymbolLayerType;
 
 // Only import on non-Expo Go builds
 const appOwnership: string = Constants.appOwnership ?? "unknown";
@@ -28,6 +34,9 @@ if (Platform.OS !== "web" && !isExpoGo) {
     MapLibreUserLocation = MapLibre.UserLocation;
     PointAnnotation = MapLibre.PointAnnotation;
     VectorSource = MapLibre.VectorSource;
+    ShapeSource = MapLibre.ShapeSource;
+    LineLayer = MapLibre.LineLayer;
+    SymbolLayer = MapLibre.SymbolLayer;
   } catch (err) {
     console.warn("[UserMap] MapLibre native module not available", err);
   }
@@ -50,6 +59,10 @@ export interface UserMapProps {
    * Called when user marker is pressed.
    */
   onUserPress?: (user: UserLocation) => void;
+  /**
+   * Called when the map itself is pressed (not a marker).
+   */
+  onMapPress?: () => void;
   /**
    * Initial zoom level when centering on the user.
    */
@@ -79,6 +92,18 @@ export interface UserMapProps {
    * Optional source layer name inside the vector tiles (if required).
    */
   vectorSourceLayer?: string;
+  /**
+   * GeoJSON data for ski resort (pistes, lifts, etc).
+   */
+  skiResortGeoJSON?: any;
+  /**
+   * Current map theme: 'dark' or 'light'.
+   */
+  mapTheme?: 'dark' | 'light';
+  /**
+   * Called when user toggles the map theme.
+   */
+  onToggleMapTheme?: () => void;
 }
 
 interface UserFeature {
@@ -112,6 +137,7 @@ interface CameraRef {
 
 // Basic MapLibre style & layer IDs
 const MAP_STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
+const MAP_STYLE_LIGHT = "https://tiles.openfreemap.org/styles/positron";
 /**
  * Compute opacity (0–1) based on last activity timestamp.
  * 0 minutes ago  -> 1.0
@@ -141,12 +167,15 @@ export function getActivityOpacity(
 export const UserMap: React.FC<UserMapProps> = ({
   users,
   onUserPress,
+  onMapPress,
   initialZoomLevel = 14,
   overlay,
   vectorSourceUrl,
   mapStyleURL,
   onLocationUpdate,
   focusedCoordinate,
+  skiResortGeoJSON,
+  mapTheme = 'dark',
 }) => {
   // Web support for the native MapLibre wrapper is limited and often requires extra setup.
   // Since głównym celem są smartfony, na webie pokazujemy prosty placeholder,
@@ -208,10 +237,12 @@ export const UserMap: React.FC<UserMapProps> = ({
     onLocationUpdate?.({ longitude, latitude });
   };
 
+  const currentMapStyle = mapStyleURL ?? (mapTheme === 'light' ? MAP_STYLE_LIGHT : MAP_STYLE_DARK);
+
   return (
     <View style={styles.container}>
       <MapView
-        mapStyle={mapStyleURL ?? MAP_STYLE_DARK}
+        mapStyle={currentMapStyle}
         style={styles.map}
         logoEnabled={false}
         compassEnabled
@@ -219,6 +250,7 @@ export const UserMap: React.FC<UserMapProps> = ({
         pitchEnabled
         scrollEnabled
         zoomEnabled
+        onPress={onMapPress}
       >
         <Camera
           ref={cameraRef}
@@ -238,6 +270,81 @@ export const UserMap: React.FC<UserMapProps> = ({
         )}
 
         {vectorSourceUrl ? <VectorSource url={vectorSourceUrl} id="map" /> : null}
+
+        {skiResortGeoJSON && ShapeSource && LineLayer && SymbolLayer && (
+          <ShapeSource id="ski-resort-source" shape={skiResortGeoJSON}>
+            <LineLayer
+              id="pistes-easy"
+              filter={['==', ['get', 'piste:difficulty'], 'easy']}
+              style={{
+                lineColor: '#4ade80',
+                lineWidth: 3,
+                lineOpacity: 0.8,
+              }}
+            />
+            <LineLayer
+              id="pistes-intermediate"
+              filter={['==', ['get', 'piste:difficulty'], 'intermediate']}
+              style={{
+                lineColor: '#3b82f6',
+                lineWidth: 3,
+                lineOpacity: 0.8,
+              }}
+            />
+            <LineLayer
+              id="pistes-advanced"
+              filter={['==', ['get', 'piste:difficulty'], 'advanced']}
+              style={{
+                lineColor: '#ef4444',
+                lineWidth: 3,
+                lineOpacity: 0.8,
+              }}
+            />
+            <LineLayer
+              id="pistes-expert"
+              filter={['==', ['get', 'piste:difficulty'], 'expert']}
+              style={{
+                lineColor: '#1f2937',
+                lineWidth: 3,
+                lineOpacity: 0.8,
+              }}
+            />
+            <LineLayer
+              id="pistes-other"
+              filter={['!', ['has', 'piste:difficulty']]}
+              style={{
+                lineColor: '#9ca3af',
+                lineWidth: 2,
+                lineOpacity: 0.6,
+              }}
+            />
+            <SymbolLayer
+              id="piste-labels"
+              minZoomLevel={13}
+              filter={['has', 'piste:name']}
+              style={{
+                textField: ['get', 'piste:name'],
+                textSize: 12,
+                textColor: [
+                  'match',
+                  ['get', 'piste:difficulty'],
+                  'easy', '#22c55e',
+                  'intermediate', '#3b82f6',
+                  'advanced', '#ef4444',
+                  'expert', '#1f2937',
+                  '#9ca3af'
+                ],
+                textHaloColor: '#ffffff',
+                textHaloWidth: 2,
+                symbolPlacement: 'line',
+                textMaxAngle: 38,
+                textRotationAlignment: 'map',
+                textPitchAlignment: 'viewport',
+              }}
+            />
+          </ShapeSource>
+        )}
+
         {filteredUsers.map((user) => (
           <PointAnnotation
             key={user.id}
