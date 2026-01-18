@@ -6,11 +6,9 @@ export interface User {
   image: string | null;
   wristNumber: string | null;
   houseNumber: string | null;
-  isAdmin: boolean;
-  isModerator: boolean;
-  isServiceAccount: boolean;
+  role: Role;
   groupId: string | null;
   emailVerified: Date | null;
 }
 
-export type Role = "admin" | "moderator" | "service-account";
+export type Role = "USER" | "ADMIN" | "MODERATOR" | "SERVICE";

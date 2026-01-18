@@ -11,20 +11,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+  SERVICE
+}
+
 model User {
   id                        String                 @id @default(cuid())
   authUserId                String?                @unique
-  name                      String?
+  firstName                 String?
+  lastName                  String?
   email                     String?                @unique
   emailVerified             DateTime?
   image                     String?
-  wristNumber               String?                @unique
-  houseNumber               String?
-  group                     Group?                 @relation(fields: [groupId], references: [id])
-  groupId                   String?
-  isAdmin                   Boolean                @default(false)
-  isModerator               Boolean                @default(false)
-  isServiceAccount          Boolean                @default(false)
+  role                      Role                   @default(USER)
   organizerGroup            Group[]                @relation("UserOrganizerGroups")
   coinTransactionsAdmin     CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
   notificationSchedules     NotificationSchedule[] @relation("NotificationScheduleAdmin")
@@ -35,6 +37,42 @@ model User {
   userEvents                UserEvent[]
   location                  Location?
   locationsSharedWithMe     Location[]             @relation("LocationSharingUsers")
+  trips                     TripParticipant[]
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+}
+
+model Trip {
+  id           String             @id @default(cuid())
+  name         String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  groups       Group[]
+  participants TripParticipant[]
+  notifications Notification[]
+  notificationSchedules NotificationSchedule[]
+  notificationDeliveries NotificationDelivery[]
+}
+
+model TripParticipant {
+  id          String   @id @default(cuid())
+  userId      String
+  tripId      String
+  groupId     String?
+  wristNumber String?
+  houseNumber String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  trip        Trip     @relation(fields: [tripId], references: [id])
+  group       Group?   @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, tripId])
+  @@unique([tripId, wristNumber])
+  @@index([tripId, groupId])
 }
 
 model Event {
@@ -50,6 +88,8 @@ model Event {
   description      String
   files            String[]
   userEvents       UserEvent[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model UserEvent {
@@ -59,20 +99,26 @@ model UserEvent {
   eventId      String
   interestedIn Boolean @default(false)
   enlistedIn   Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@id([userId, eventId])
 }
 
 model Group {
   id               String            @id @default(uuid())
+  tripId           String
   name             String
   organizerId      String
   organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
   code             String            @unique
-  members          User[]
+  trip             Trip              @relation(fields: [tripId], references: [id])
+  participants     TripParticipant[]
   coins            Int               @default(0)
   coinTransactions CoinTransaction[]
   organizedEvents  Event[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model CoinTransaction {
@@ -82,12 +128,15 @@ model CoinTransaction {
   amount    Int
   reason    String? // Optional reason for the transaction
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   adminId   String
   admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])
 }
 
 model NotificationSchedule {
   id                      String                            @id @default(cuid())
+  tripId                  String
+  trip                    Trip                              @relation(fields: [tripId], references: [id])
   name                    String
   notificationType        String // e.g., "custom", "ranking"
   notificationTitle       String? // For custom notifications
@@ -108,6 +157,8 @@ model NotificationSchedule {
 
 model Notification {
   id                 String                          @id @default(cuid())
+  tripId             String
+  trip               Trip                            @relation(fields: [tripId], references: [id])
   title              String // Notification title
   body               String // Notification body/message
   url                String // Optional URL to open when the notification is clicked
@@ -144,6 +195,8 @@ model NotificationPush {
 
 model NotificationDelivery {
   id                   String       @id @default(cuid())
+  tripId               String
+  trip                 Trip         @relation(fields: [tripId], references: [id])
   notificationId       String       @unique
   notification         Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   scheduleId           String? 
@@ -154,6 +207,8 @@ model NotificationDelivery {
   failureCount         Int          @default(0)
   errors               String?
   status               String       @default("pending") 
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
   
   @@index([deliveryStartedAt])
   @@index([status])

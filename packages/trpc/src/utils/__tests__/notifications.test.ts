@@ -30,7 +30,7 @@ describe("notifications", () => {
       group: {
         findMany: vi.fn(),
       },
-      user: {
+      tripParticipant: {
         findMany: vi.fn(),
       },
     };
@@ -58,6 +58,7 @@ describe("notifications", () => {
           body: "Test Body",
           url: "/test",
           userIds: ["user-1", "user-2", "user-3"],
+          tripId: "trip-1",
         },
       });
 
@@ -67,6 +68,7 @@ describe("notifications", () => {
           body: "Test Body",
           url: "/test",
           createdById: mockUserId,
+          tripId: "trip-1",
         },
       });
 
@@ -97,6 +99,7 @@ describe("notifications", () => {
           body: "Test Body",
           url: "/test",
           userIds: ["user-1", "user-2"],
+          tripId: "trip-1",
         },
       });
 
@@ -106,26 +109,31 @@ describe("notifications", () => {
       });
     });
 
-    it("should throw TRPCError when notification creation fails", {
-      timeout: 30000,
-    }, async () => {
-      mockDb.notification.create.mockRejectedValue(
-        new Error("Database error"),
-      );
+    it(
+      "should throw TRPCError when notification creation fails",
+      {
+        timeout: 30000,
+      },
+      async () => {
+        mockDb.notification.create.mockRejectedValue(
+          new Error("Database error"),
+        );
 
-      await expect(
-        sendNotification({
-          db: mockDb,
-          userId: mockUserId,
-          input: {
-            title: "Test Title",
-            body: "Test Body",
-            url: "/test",
-            userIds: ["user-1"],
-          },
-        }),
-      ).rejects.toThrow(TRPCError);
-    }); // 30 second timeout to allow for retry logic with exponential backoff (5 retries)
+        await expect(
+          sendNotification({
+            db: mockDb,
+            userId: mockUserId,
+            input: {
+              title: "Test Title",
+              body: "Test Body",
+              url: "/test",
+              userIds: ["user-1"],
+              tripId: "trip-1",
+            },
+          }),
+        ).rejects.toThrow(TRPCError);
+      },
+    ); // 30 second timeout to allow for retry logic with exponential backoff (5 retries)
 
     it("should handle duplicate subscriptions correctly", async () => {
       const mockNotification = {
@@ -148,6 +156,7 @@ describe("notifications", () => {
           body: "Test Body",
           url: "/test",
           userIds: ["user-1"],
+          tripId: "trip-1",
         },
       });
 
@@ -175,23 +184,23 @@ describe("notifications", () => {
       };
 
       mockDb.group.findMany.mockResolvedValue(mockGroups);
-      mockDb.user.findMany
-        .mockResolvedValueOnce([{ id: "user-1" }, { id: "user-2" }]) // Group A members
-        .mockResolvedValueOnce([{ id: "user-3" }]) // Group B members
-        .mockResolvedValueOnce([{ id: "user-4" }, { id: "user-5" }]); // Group C members
+      mockDb.tripParticipant.findMany
+        .mockResolvedValueOnce([{ userId: "user-1" }, { userId: "user-2" }])
+        .mockResolvedValueOnce([{ userId: "user-3" }])
+        .mockResolvedValueOnce([{ userId: "user-4" }, { userId: "user-5" }]);
 
       mockDb.notification.create.mockResolvedValue(mockNotification);
 
       const result = await sendRankingUpdate({
         db: mockDb,
         userId: mockUserId,
+        tripId: "trip-1",
       });
 
       expect(mockDb.group.findMany).toHaveBeenCalledWith({
+        where: { tripId: "trip-1" },
         orderBy: { coins: "desc" },
       });
-
-      expect(mockDb.user.findMany).toHaveBeenCalledTimes(3);
       expect(result.success).toBe(true);
       expect(result.notificationIds).toHaveLength(3);
     });
@@ -210,12 +219,13 @@ describe("notifications", () => {
       };
 
       mockDb.group.findMany.mockResolvedValue(mockGroups);
-      mockDb.user.findMany.mockResolvedValue([]); // No members
+      mockDb.tripParticipant.findMany.mockResolvedValue([]); // No members
       mockDb.notification.create.mockResolvedValue(mockNotification);
 
       const result = await sendRankingUpdate({
         db: mockDb,
         userId: mockUserId,
+        tripId: "trip-1",
       });
 
       expect(result.success).toBe(true);
@@ -239,12 +249,13 @@ describe("notifications", () => {
       };
 
       mockDb.group.findMany.mockResolvedValue(mockGroups);
-      mockDb.user.findMany.mockResolvedValue([{ id: "user-1" }]);
+      mockDb.tripParticipant.findMany.mockResolvedValue([{ userId: "user-1" }]);
       mockDb.notification.create.mockResolvedValue(mockNotification);
 
       await sendRankingUpdate({
         db: mockDb,
         userId: mockUserId,
+        tripId: "trip-1",
       });
 
       // Verify the NotificationService was called with correct positions

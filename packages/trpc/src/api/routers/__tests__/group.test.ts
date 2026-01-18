@@ -9,10 +9,9 @@ describe("groupRouter", () => {
       id: "db-user-1",
       authUserId: "supabase-mock-user",
       email: "user1@test.com",
-      name: "User 1",
-      isAdmin: false,
-      isModerator: true,
-      isServiceAccount: false,
+      firstName: "User",
+      lastName: "One",
+      role: "MODERATOR",
     };
 
     return {
@@ -25,16 +24,23 @@ describe("groupRouter", () => {
           update: vi.fn(),
           delete: vi.fn(),
         },
+        tripParticipant: {
+          findMany: vi.fn(),
+          findUnique: vi.fn(),
+          upsert: vi.fn(),
+          updateMany: vi.fn(),
+        },
         user: {
           findUnique: vi.fn(),
           findFirst: vi.fn().mockResolvedValue(dbUser),
         },
       },
+      dbUser,
       session: {
         user: {
           id: dbUser.id,
           dbUser,
-          isAdmin: dbUser.isAdmin,
+          role: dbUser.role,
         },
       },
       supabase: {} as any,
@@ -58,7 +64,7 @@ describe("groupRouter", () => {
       mockContext.db.group.findMany.mockResolvedValue(mockGroups);
 
       const caller = groupRouter.createCaller(mockContext);
-      const result = await caller.getAllNames();
+      const result = await caller.getAllNames({ tripId: "trip-1" });
 
       expect(result).toEqual(mockGroups);
       expect(mockContext.db.group.findMany).toHaveBeenCalledWith({
@@ -66,15 +72,15 @@ describe("groupRouter", () => {
           id: true,
           name: true,
         },
+        where: { tripId: "trip-1" },
       });
     });
   });
 
   describe("getMy", () => {
     it("should return user's group with details", async () => {
-      const mockUser = {
-        group: { id: "group-1", name: "My Group" },
-        organizerGroup: null,
+      const mockParticipant = {
+        groupId: "group-1",
       };
 
       const mockGroup = {
@@ -82,43 +88,52 @@ describe("groupRouter", () => {
         name: "My Group",
         code: "ABC123",
         coins: 100,
-        members: [
-          { id: "user-1", name: "User 1", email: "user1@test.com" },
+        participants: [
+          {
+            user: {
+              id: "user-1",
+              firstName: "User",
+              lastName: "One",
+              email: "user1@test.com",
+            },
+          },
         ],
         organizer: [
-          { id: "org-1", name: "Organizer", email: "org@test.com" },
+          {
+            id: "org-1",
+            firstName: "Org",
+            lastName: "One",
+            email: "org@test.com",
+          },
         ],
         coinTransactions: [],
       };
 
-      mockContext.db.user.findUnique.mockResolvedValue(mockUser);
+      mockContext.db.tripParticipant.findUnique.mockResolvedValue(
+        mockParticipant,
+      );
       mockContext.db.group.findUnique.mockResolvedValue(mockGroup);
 
       const caller = groupRouter.createCaller(mockContext);
-      const result = await caller.getMy();
+      const result = await caller.getMy({ tripId: "trip-1" });
 
       expect(result).toEqual(mockGroup);
     });
 
     it("should return null if user has no group", async () => {
-      const mockUser = {
-        group: null,
-        organizerGroup: null,
-      };
-
-      mockContext.db.user.findUnique.mockResolvedValue(mockUser);
+      mockContext.db.tripParticipant.findUnique.mockResolvedValue(null);
 
       const caller = groupRouter.createCaller(mockContext);
-      const result = await caller.getMy();
+      const result = await caller.getMy({ tripId: "trip-1" });
 
       expect(result).toBeNull();
     });
 
     it("should return null if user not found", async () => {
-      mockContext.db.user.findUnique.mockResolvedValue(null);
+      mockContext.db.tripParticipant.findUnique.mockResolvedValue(null);
 
       const caller = groupRouter.createCaller(mockContext);
-      const result = await caller.getMy();
+      const result = await caller.getMy({ tripId: "trip-1" });
 
       expect(result).toBeNull();
     });
@@ -141,13 +156,13 @@ describe("groupRouter", () => {
       mockContext.db.group.findMany.mockResolvedValue(mockGroups);
 
       const caller = groupRouter.createCaller(mockContext);
-      const result = await caller.getAll();
+      const result = await caller.getAll({ tripId: "trip-1" });
 
       expect(result).toEqual(mockGroups);
       expect(mockContext.db.group.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { name: "asc" },
-        })
+        }),
       );
     });
   });
@@ -181,18 +196,19 @@ describe("groupRouter", () => {
           name: "Group 1",
           code: "G1",
           coins: 100,
-          organizer: { id: "org-1", name: "Organizer 1" },
-          _count: { members: 5 },
+          organizer: { id: "org-1", firstName: "Organizer", lastName: "One" },
+          _count: { participants: 5 },
         },
       ];
 
       mockContext.db.group.findMany.mockResolvedValue(mockGroups);
 
       const caller = groupRouter.createCaller(mockContext);
-      const result = await caller.getGroupList();
+      const result = await caller.getGroupList({ tripId: "trip-1" });
 
       expect(result).toEqual(mockGroups);
       expect(mockContext.db.group.findMany).toHaveBeenCalledWith({
+        where: { tripId: "trip-1" },
         select: expect.objectContaining({
           id: true,
           name: true,
@@ -210,8 +226,8 @@ describe("groupRouter", () => {
         name: "Group 1",
         code: "G1",
         coins: 100,
-        _count: { members: 5 },
-        organizer: { id: "org-1", name: "Organizer" },
+        _count: { participants: 5 },
+        organizer: { id: "org-1", firstName: "Organizer", lastName: "Lead" },
       };
 
       mockContext.db.group.findUnique.mockResolvedValue(mockGroup);

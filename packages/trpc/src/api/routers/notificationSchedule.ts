@@ -18,6 +18,9 @@ import {
   filterSchema,
 } from "./notificationSchedule/validation";
 
+const toOptionalString = (value: unknown): string | undefined =>
+  typeof value === "string" ? value : undefined;
+
 export const notificationScheduleRouter = createTRPCRouter({
   getAll: moderatorProcedure
     .input(
@@ -80,7 +83,8 @@ export const notificationScheduleRouter = createTRPCRouter({
             createdBy: {
               select: {
                 id: true,
-                name: true,
+                firstName: true,
+                lastName: true,
                 email: true,
               },
             },
@@ -310,19 +314,22 @@ export const notificationScheduleRouter = createTRPCRouter({
         "notificationBody" in updateData ||
         "notificationUrl" in updateData
       ) {
-        const finalUrl =
-          updateData.notificationUrl ??
-          existingSchedule.notificationUrl ??
-          undefined;
+        const finalTitle =
+          toOptionalString(updateData.notificationTitle) ??
+          toOptionalString(existingSchedule.notificationTitle);
+
+        const finalBody =
+          toOptionalString(updateData.notificationBody) ??
+          toOptionalString(existingSchedule.notificationBody);
+
+        const finalUrl = toOptionalString(
+          updateData.notificationUrl ?? existingSchedule.notificationUrl,
+        );
 
         validateNotificationContent(
           existingSchedule.notificationType,
-          updateData.notificationTitle ??
-            existingSchedule.notificationTitle ??
-            undefined,
-          updateData.notificationBody ??
-            existingSchedule.notificationBody ??
-            undefined,
+          finalTitle,
+          finalBody,
           finalUrl,
         );
       }
@@ -440,9 +447,11 @@ export const notificationScheduleRouter = createTRPCRouter({
         data: {
           name: input.name ?? `${originalSchedule.name} (Copy)`,
           notificationType: originalSchedule.notificationType,
-          notificationTitle: originalSchedule.notificationTitle,
-          notificationBody: originalSchedule.notificationBody,
-          notificationUrl: originalSchedule.notificationUrl ?? undefined,
+          notificationTitle: toOptionalString(
+            originalSchedule.notificationTitle,
+          ),
+          notificationBody: toOptionalString(originalSchedule.notificationBody),
+          notificationUrl: toOptionalString(originalSchedule.notificationUrl),
           startDate: newStartDate,
           endDate: newEndDate,
           hour: originalSchedule.hour,
