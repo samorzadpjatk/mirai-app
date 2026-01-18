@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { SupabaseClientOptions } from "./types"
+import type { SupabaseClientOptions } from "./types";
 
 export default function createBaseSupabaseClient(
   url: string,

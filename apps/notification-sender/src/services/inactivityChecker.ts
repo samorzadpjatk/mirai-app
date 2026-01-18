@@ -1,6 +1,6 @@
 import type { Prisma } from "@integral-2025-app/db";
 import { sendMobileNotifications } from "./mobileSender";
-import { INACTIVITY_NOTIFICATION } from "./notificationTemplates";
+import { INACTIVITY_NOTIFICATION } from "../utils/notificationTemplates";
 
 const INACTIVITY_THRESHOLD_MINUTES = 30;
 const NOTIFICATION_COOLDOWN_MINUTES = 30;
@@ -14,7 +14,7 @@ interface InactivityCheckResult {
 
 /**
  * Checks for inactive users and sends notifications to remind them to check their friends' locations.
- * 
+ *
  * A user is considered inactive if:
  * - They have a location record
  * - Their location hasn't been updated for at least 30 minutes
@@ -42,7 +42,7 @@ export async function checkInactiveUsers(
         { lastInactivityNotification: null },
         { lastInactivityNotification: { lt: notificationCooldown } },
       ],
-    },
+    } ,
     include: {
       user: true,
     },
@@ -74,7 +74,7 @@ export async function checkInactiveUsers(
       const userNotification = await db.notification.create({
         data: {
           ...notificationData,
-          createdById: location.user.id,
+          createdById: location.userId,
         },
       });
 

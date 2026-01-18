@@ -6,7 +6,7 @@ interface AdminNavMenuProps {
   onNavigate: (path: string) => void;
 }
 
-const AdminNavMenu = ({ isAdmin, currentPath, onNavigate }: AdminNavMenuProps) => {
+const AdminNavMenu = ({ isAdmin, currentPath: _currentPath, onNavigate }: AdminNavMenuProps) => {
     return (
       <XStack gap="$2" flexWrap="wrap">
         <Button

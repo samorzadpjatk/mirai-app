@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import type * as EnvModule from "../env.ts";
 
 const REQUIRED_ENV_VALUES = {
   DATABASE_URL: "postgresql://user:pass@localhost:5432/db",
@@ -18,8 +19,8 @@ const setValidEnv = () => {
   });
 };
 
-type EnvModule = typeof import("../env.ts");
-const importEnvModule = (): Promise<EnvModule> => vi.importActual("../env.ts");
+const importEnvModule = async (): Promise<typeof EnvModule> =>
+  await vi.importActual("../env.ts");
 
 describe("env utilities", () => {
   const originalEnv = process.env;
@@ -51,14 +52,14 @@ describe("env utilities", () => {
 
     it("should export env object with all required properties", async () => {
       const { env } = await importEnvModule();
-      
+
       expect(env).toHaveProperty("NEXT_PUBLIC_SUPABASE_URL");
       expect(env).toHaveProperty("SUPABASE_SERVICE_ROLE_KEY");
     });
 
     it("should have correct types for environment variables", async () => {
       const { env } = await importEnvModule();
-      
+
       expect(typeof env.NEXT_PUBLIC_SUPABASE_URL).toBe("string");
       expect(typeof env.SUPABASE_SERVICE_ROLE_KEY).toBe("string");
     });

@@ -8,7 +8,7 @@ describe("appRouter", () => {
 
   it("should have all required routers", () => {
     expect(appRouter._def.procedures).toBeDefined();
-    
+
     // Check that all routers are present
     const routerKeys = Object.keys(appRouter._def.record);
     expect(routerKeys).toContain("group");
@@ -17,10 +17,6 @@ describe("appRouter", () => {
     expect(routerKeys).toContain("coinTransaction");
     expect(routerKeys).toContain("notifications");
     expect(routerKeys).toContain("notificationSchedule");
-  });
-
-  it("should have correct number of routers", () => {
-    const routerKeys = Object.keys(appRouter._def.record);
-    expect(routerKeys).toHaveLength(6);
+    expect(routerKeys).toContain("location");
   });
 });

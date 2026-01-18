@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { Scheduler, createInactivityScheduler } from "../scheduler";
+import { Scheduler, createInactivityScheduler } from "../../utils/scheduler";
 import type { Prisma } from "@integral-2025-app/db";
 
 describe("Scheduler", () => {
@@ -82,9 +82,11 @@ describe("Scheduler", () => {
   });
 
   it("handles task errors gracefully", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {
-      // Intentionally empty
-    });
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {
+        // Intentionally empty
+      });
     const task = vi.fn().mockRejectedValue(new Error("Task failed"));
     const scheduler = new Scheduler(task, 1);
 
@@ -130,7 +132,9 @@ describe("createInactivityScheduler", () => {
   });
 
   it("creates a scheduler with the correct interval", async () => {
-    const checkFunction = vi.fn().mockResolvedValue({ checked: 0, notified: 0 });
+    const checkFunction = vi
+      .fn()
+      .mockResolvedValue({ checked: 0, notified: 0 });
     const mockDb = {} as Prisma.TransactionClient;
 
     const scheduler = createInactivityScheduler(mockDb, checkFunction, 5);

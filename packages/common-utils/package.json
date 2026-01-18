@@ -1,0 +1,23 @@
+{
+  "name": "@integral-2025-app/common-utils",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "check": "eslint . && tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.4",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,10 +1,11 @@
 import { groupRouter } from "./routers/group";
-import { createCallerFactory, createTRPCRouter } from "../api/trpc";
+import { createCallerFactory, createTRPCRouter, publicProcedure } from "../api/trpc";
 import { userRouter } from "./routers/user";
 import { coinRouter } from "./routers/coin";
 import { coinTransactionRouter } from "./routers/coinTransaction";
 import { notificationRouter } from "./routers/notifications";
 import { notificationScheduleRouter } from "./routers/notificationSchedule";
+import { notificationDeliveryRouter } from "./routers/notificationDelivery";
 import { locationRouter } from "./routers/location";
 
 /**
@@ -19,7 +20,15 @@ export const appRouter = createTRPCRouter({
   coinTransaction: coinTransactionRouter,
   notifications: notificationRouter,
   notificationSchedule: notificationScheduleRouter,
+  notificationDelivery: notificationDeliveryRouter,
   location: locationRouter,
+  // Health checks for load balancers / uptime monitoring
+  health: createTRPCRouter({
+    ping: publicProcedure.query(() => ({
+      status: "ok",
+      time: new Date().toISOString(),
+    })),
+  }),
 });
 
 // export type definition of API

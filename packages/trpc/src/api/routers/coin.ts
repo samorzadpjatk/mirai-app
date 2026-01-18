@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, moderatorProcedure } from "../../api/trpc";
 
 export const coinRouter = createTRPCRouter({
@@ -63,7 +64,10 @@ export const coinRouter = createTRPCRouter({
       });
 
       if (!group || group.coins < input.amount) {
-        throw new Error("Guild does not have enough coins");
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Group does not have enough coins",
+        });
       }
 
       await ctx.db.group.update({

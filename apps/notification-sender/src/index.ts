@@ -3,9 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import type { RealtimePostgresInsertPayload } from "@supabase/supabase-js";
 import { db } from "@integral-2025-app/db";
 import { startWsServer } from "./server";
-import { sendMobileNotifications } from "./mobileSender";
-import { checkInactiveUsers } from "./inactivityChecker";
-import { createInactivityScheduler } from "./scheduler";
+import { sendMobileNotifications } from "./services/mobileSender";
+import { checkInactiveUsers } from "./services/inactivityChecker";
+import { createInactivityScheduler } from "./utils/scheduler";
+import {
+  trackDeliveryStart,
+  trackDeliveryComplete,
+  trackDeliveryFailure,
+} from "./services/deliveryTracker";
 
 interface NotificationRow {
   id: string;
@@ -33,14 +38,35 @@ async function main() {
       { event: "INSERT", schema: "public", table: "Notification" },
       (payload: RealtimePostgresInsertPayload<NotificationRow>) => {
         void (async () => {
+          const id = payload.new.id;
           try {
-            const id = payload.new.id;
             await db.$transaction(async (tx) => {
+              await trackDeliveryStart(tx, id);
+
               const mobile = await sendMobileNotifications(tx, id);
               console.log("Delivery summary:", { mobile });
+
+              await trackDeliveryComplete(tx, {
+                notificationId: id,
+                totalRecipients: mobile.total,
+                successCount: mobile.sent,
+                failureCount: mobile.failed,
+                errors: mobile.success ? undefined : "Some deliveries failed",
+              });
             });
           } catch (err) {
             console.error("Failed handling Notification INSERT:", err);
+            await db
+              .$transaction(async (tx) => {
+                await trackDeliveryFailure(
+                  tx,
+                  id,
+                  err instanceof Error ? err : String(err),
+                );
+              })
+              .catch((trackErr) => {
+                console.error("Failed to track delivery failure:", trackErr);
+              });
           }
         })();
       },

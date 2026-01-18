@@ -61,7 +61,6 @@ function RootLayoutContent() {
   // Get theme colors for headers
   const headerBackgroundColor = tamaguiTheme.background.get();
   const headerTintColor = tamaguiTheme.color.get();
-  const headerBorderColor = tamaguiTheme.borderColor.get();
 
   return (
     <YStack flex={1} bg="$background">
