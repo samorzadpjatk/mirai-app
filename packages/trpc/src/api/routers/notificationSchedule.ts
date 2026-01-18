@@ -83,7 +83,8 @@ export const notificationScheduleRouter = createTRPCRouter({
             createdBy: {
               select: {
                 id: true,
-                name: true,
+                firstName: true,
+                lastName: true,
                 email: true,
               },
             },

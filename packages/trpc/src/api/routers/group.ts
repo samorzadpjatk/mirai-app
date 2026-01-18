@@ -68,7 +68,7 @@ export const groupRouter = createTRPCRouter({
         },
       });
     }),
-  getAll: moderatorProcedure
+  getAll: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.db.group.findMany({
@@ -132,12 +132,50 @@ export const groupRouter = createTRPCRouter({
         },
       });
     }),
-  getById: moderatorProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.group.findUnique({
+      const group = await ctx.db.group.findUnique({
         where: { id: input.id },
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  role: true,
+                },
+              },
+            },
+          },
+          organizer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+          trip: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          _count: {
+            select: { participants: true },
+          },
+        },
       });
+
+      if (!group) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      return group;
     }),
   getByIdWithOrganizer: moderatorProcedure
     .input(z.object({ groupId: z.string() }))
@@ -154,8 +192,8 @@ export const groupRouter = createTRPCRouter({
         },
       });
     }),
-  // Create a new group (admin version with more control)
-  create: adminProcedure
+  // Create a new group
+  create: protectedProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -185,6 +223,24 @@ export const groupRouter = createTRPCRouter({
               email: true,
             },
           },
+        },
+      });
+
+      // Add creator as a member of the group
+      await ctx.db.tripParticipant.upsert({
+        where: {
+          userId_tripId: {
+            userId: ctx.dbUser.id,
+            tripId: input.tripId,
+          },
+        },
+        create: {
+          userId: ctx.dbUser.id,
+          tripId: input.tripId,
+          groupId: group.id,
+        },
+        update: {
+          groupId: group.id,
         },
       });
 
@@ -284,7 +340,7 @@ export const groupRouter = createTRPCRouter({
         update: { groupId: input.id },
       });
     }),
-  assignUserToGroup: adminProcedure
+  assignUserToGroup: protectedProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -309,7 +365,7 @@ export const groupRouter = createTRPCRouter({
 
       // Check if user is already in the group
       const existingMembership = group.participants.find(
-        (member) => member.userId === ctx.dbUser.id,
+        (member) => member.userId === input.userId,
       );
 
       if (existingMembership) {
