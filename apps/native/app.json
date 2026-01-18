@@ -7,13 +7,19 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "native",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.xnative",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to provide nearby features.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location even when the app is in the background."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +27,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.xnative"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,9 +43,12 @@
       [
         "expo-asset",
         {
-          "assets": ["./assets/mirai_gradient.png"]
+          "assets": [
+            "./assets/mirai_logo.png"
+          ]
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ]
   }
 }
