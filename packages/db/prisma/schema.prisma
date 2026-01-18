@@ -18,14 +18,24 @@ enum Role {
   SERVICE
 }
 
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+  SERVICE
+}
+
 model User {
   id                        String                 @id @default(cuid())
   authUserId                String?                @unique
   firstName                 String?
   lastName                  String?
+  firstName                 String?
+  lastName                  String?
   email                     String?                @unique
   emailVerified             DateTime?
   image                     String?
+  role                      Role                   @default(USER)
   role                      Role                   @default(USER)
   organizerGroup            Group[]                @relation("UserOrganizerGroups")
   coinTransactionsAdmin     CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
@@ -55,6 +65,7 @@ model Trip {
   notifications Notification[]
   notificationSchedules NotificationSchedule[]
   notificationDeliveries NotificationDelivery[]
+  challenges   Challenge[]
 }
 
 model TripParticipant {
@@ -90,6 +101,8 @@ model Event {
   userEvents       UserEvent[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model UserEvent {
@@ -101,6 +114,8 @@ model UserEvent {
   enlistedIn   Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@id([userId, eventId])
 }
@@ -108,17 +123,48 @@ model UserEvent {
 model Group {
   id               String            @id @default(uuid())
   tripId           String
+  tripId           String
   name             String
+  description      String?
+  image            String?
   organizerId      String
   organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
   code             String            @unique
   trip             Trip              @relation(fields: [tripId], references: [id])
   participants     TripParticipant[]
+  trip             Trip              @relation(fields: [tripId], references: [id])
+  participants     TripParticipant[]
   coins            Int               @default(0)
   coinTransactions CoinTransaction[]
   organizedEvents  Event[]
+  challenges       ChallengeGroup[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+}
+
+model Challenge {
+  id          String            @id @default(cuid())
+  tripId      String
+  trip        Trip              @relation(fields: [tripId], references: [id])
+  name        String
+  description String?
+  image       String?
+  points      Int               @default(0)
+  groups      ChallengeGroup[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model ChallengeGroup {
+  id          String     @id @default(cuid())
+  challengeId String
+  groupId     String
+  challenge   Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  group       Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+
+  @@unique([challengeId, groupId])
+  @@index([groupId])
 }
 
 model CoinTransaction {
@@ -129,12 +175,15 @@ model CoinTransaction {
   reason    String? // Optional reason for the transaction
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt
   adminId   String
   admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])
 }
 
 model NotificationSchedule {
   id                      String                            @id @default(cuid())
+  tripId                  String
+  trip                    Trip                              @relation(fields: [tripId], references: [id])
   tripId                  String
   trip                    Trip                              @relation(fields: [tripId], references: [id])
   name                    String
@@ -157,6 +206,8 @@ model NotificationSchedule {
 
 model Notification {
   id                 String                          @id @default(cuid())
+  tripId             String
+  trip               Trip                            @relation(fields: [tripId], references: [id])
   tripId             String
   trip               Trip                            @relation(fields: [tripId], references: [id])
   title              String // Notification title
@@ -197,6 +248,8 @@ model NotificationDelivery {
   id                   String       @id @default(cuid())
   tripId               String
   trip                 Trip         @relation(fields: [tripId], references: [id])
+  tripId               String
+  trip                 Trip         @relation(fields: [tripId], references: [id])
   notificationId       String       @unique
   notification         Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   scheduleId           String? 
@@ -207,6 +260,8 @@ model NotificationDelivery {
   failureCount         Int          @default(0)
   errors               String?
   status               String       @default("pending") 
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
   
