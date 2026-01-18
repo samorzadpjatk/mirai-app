@@ -4,6 +4,7 @@ import {
   createTRPCRouter,
   moderatorProcedure,
   adminProcedure,
+  protectedProcedure,
 } from "../../api/trpc";
 const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
 
