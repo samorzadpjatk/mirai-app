@@ -13,12 +13,14 @@ export interface ServerOptions {
   dev?: boolean;
   port?: number;
   prefix?: string;
+  host?: string;
 }
 
 export function createServer(opts: ServerOptions) {
   const dev = opts.dev ?? true;
   const port = opts.port ?? 3000;
   const prefix = opts.prefix ?? "/trpc";
+  const host = opts.host ?? "127.0.0.1";
   const server = fastify({ logger: dev });
 
   if (dev) {
@@ -81,8 +83,9 @@ export function createServer(opts: ServerOptions) {
   };
   const start = async () => {
     try {
-      await server.listen({ port });
+      await server.listen({ port, host });
       console.log("listening on port", port);
+      console.log(`tRPC endpoint ready at http://${host}:${port}${prefix}`);
     } catch (err) {
       server.log.error(err);
       process.exit(1);
