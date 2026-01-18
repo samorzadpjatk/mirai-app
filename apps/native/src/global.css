@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Bento Grid Layout */
+.bento-grid {
+  gap: 12px;
+}
+
+.bento-wide {
+  width: 100%;
+}
+
+.bento-tall {
+  min-height: 280px;
+}
+
+.tile-active {
+  border-width: 1px;
+  border-color: #00ced1;
+  box-shadow: 0 0 15px rgba(0, 206, 209, 0.2);
+}

@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { TamaguiProvider, YStack, type TamaguiInternalConfig, useTheme } from "tamagui";
 import tamaguiConfig from "tamagui.config";
 import { useColorScheme } from "react-native";
+import "../global.css";
 import {
   useFonts,
   IBMPlexSans_100Thin,
@@ -140,6 +141,22 @@ function RootLayoutContent() {
                 backgroundColor: headerBackgroundColor,
               },
               headerTintColor: headerTintColor,
+            }} 
+          />
+          <Stack.Screen 
+            name="challenges" 
+            options={{ 
+              title: "Challenges",
+              headerShown: false,
+              animation: "slide_from_right",
+            }} 
+          />
+          <Stack.Screen 
+            name="challenge/[id]" 
+            options={{ 
+              title: "Challenge Details",
+              headerShown: false,
+              animation: "slide_from_right",
             }} 
           />
         </Stack>
