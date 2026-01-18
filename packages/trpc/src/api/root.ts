@@ -30,13 +30,6 @@ export const appRouter = createTRPCRouter({
   location: locationRouter,
   trip: tripRouter,
   challenge: challengeRouter,
-  // Health checks for load balancers / uptime monitoring
-  health: createTRPCRouter({
-    ping: publicProcedure.query(() => ({
-      status: "ok",
-      time: new Date().toISOString(),
-    })),
-  }),
 });
 
 // export type definition of API

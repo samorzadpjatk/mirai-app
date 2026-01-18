@@ -21,9 +21,8 @@ export const useTRPCClient = trpcContext.useTRPCClient;
 const wsClient = (wsUrl: string, authorizationToken?: string) =>
   createWSClient({
     url: wsUrl,
-    connectionParams: authorizationToken
-      ? { authToken: authorizationToken }
-      : undefined,
+    connectionParams: () =>
+      authorizationToken ? { authToken: authorizationToken } : null,
     lazy: { enabled: true, closeMs: 60_000 },
   });
 

@@ -82,6 +82,7 @@ export const createTRPCContext = (opts: {
     "Creating tRPC context with access token:",
     accessToken ? "YES" : "NO",
   );
+  console.log("connectionParams:", opts.connectionParams);
   return {
     db,
     supabase,
