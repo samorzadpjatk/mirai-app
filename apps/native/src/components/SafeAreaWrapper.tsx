@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, type ViewStyle, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 interface SafeAreaTopProps {
   children: React.ReactNode;
@@ -12,7 +12,7 @@ interface SafeAreaTopProps {
  * Use this for back buttons and top navigation elements
  */
 export function SafeAreaTop({ children, style }: SafeAreaTopProps) {
-  const insets = useSafeAreaInsets();
+  const insets = useAppSafeAreaInsets();
   const flattenedStyle = StyleSheet.flatten(style);
   const existingPaddingTop = flattenedStyle?.paddingTop || 0;
 
