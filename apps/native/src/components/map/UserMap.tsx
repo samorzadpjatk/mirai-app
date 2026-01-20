@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { UserAvatar } from "./UserAvatar";
 import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource } from "@maplibre/maplibre-react-native";
+import type { CameraRef } from "@maplibre/maplibre-react-native";
 
 export interface UserLocation {
   id: string;
@@ -81,15 +82,6 @@ interface UserFeature {
 interface UserFeatureCollection {
   type: "FeatureCollection";
   features: UserFeature[];
-}
-
-interface CameraRef {
-  setCamera?: (options: {
-    centerCoordinate: [number, number];
-    zoomLevel?: number;
-    animationDuration?: number;
-    padding?: { paddingTop?: number; paddingRight?: number; paddingBottom?: number; paddingLeft?: number };
-  }) => void;
 }
 
 // Basic MapLibre style - OpenSnowMap for ski resorts with pistes overlay
@@ -204,7 +196,7 @@ export const UserMap: React.FC<UserMapProps> = ({
   mapTheme = 'dark',
 }) => {
   // All hooks must be called before any early returns
-  const cameraRef = useRef<CameraRef | null>(null);
+  const cameraRef = useRef<CameraRef>(null);
   const hasCenteredRef = useRef(false);
 
   const filteredUsers = useMemo(() => {
