@@ -292,8 +292,6 @@ export const locationRouter = createTRPCRouter({
               // filter,
             },
             (payload) => {
-              console.log(`[Location Stream] Received ${payload.eventType} event for userId: ${payload.new?.userId || payload.old?.userId}`);
-              console.log(`[Location Stream] Full payload.new:`, JSON.stringify(payload.new, null, 2));
               switch (payload.eventType) {
                 case "DELETE": {
                   const userId = payload.old.userId!;
@@ -310,11 +308,9 @@ export const locationRouter = createTRPCRouter({
                 }
                 default: {
                   const newLocation = payload.new;
-                  console.log(`[Location Stream] ${payload.eventType} event for userId: ${newLocation.userId}, coords: [${newLocation.latitude}, ${newLocation.longitude}]`);
-
-                  // Workaround: Local Supabase Realtime doesn't send payload.new data
-                  // So we fetch from DB using the event as a trigger
-                  const userIdFromEvent = newLocation.userId || payload.old?.userId;
+                  console.log(`[Location Stream] ${payload.eventType} event for userId: ${newLocation.userId}, coords: [${newLocation.latitude?.toString()}, ${newLocation.longitude?.toString()}]`);
+                  
+                  const userIdFromEvent = newLocation.userId;
                   if (!userIdFromEvent) {
                     console.error(`[Location Stream] No userId in payload`);
                     return;
