@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '../styles';
 
@@ -20,7 +20,7 @@ interface Notification {
 
 export default function AlertsScreen() {
   const trpc = useTRPC();
-  const insets = useSafeAreaInsets();
+  const insets = useAppSafeAreaInsets();
   const [page, setPage] = useState(1);
   const pageSize = 20;
 

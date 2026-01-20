@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useColorScheme, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaInsetsProvider } from '~/contexts/safeArea';
 import "../global.css";
 import {
   useFonts,
@@ -44,8 +45,6 @@ const TRPC_HTTP_URL: string =
   process.env.EXPO_PUBLIC_TRPC_API_URL ?? "http://localhost:2022/api/trpc";
 const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 
-// Clear stale Supabase session when the base URL changes (helps when switching
-// between 54321 CLI default and 8000 Kong reverse proxy).
 if (typeof window !== "undefined" && window.localStorage) {
   const lastUrlKey = "supabase.last_url";
   const lastUrl = window.localStorage.getItem(lastUrlKey);
@@ -70,6 +69,9 @@ function RootLayoutContent() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark" || colorScheme === null; // Default to dark
 
+  // Move safe area hook to root layout and provide it to children
+  const insets = useSafeAreaInsets();
+
   // Get theme colors for headers
   const headerBackgroundColor = isDark ? colors.backgroundDark : colors.backgroundLight;
   const headerTintColor = isDark ? colors.textDark : colors.textLight;
@@ -90,71 +92,69 @@ function RootLayoutContent() {
   return (
     <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
       {!isAuthLoading && (
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: "fade",
-            gestureEnabled: true,
-            gestureDirection: "horizontal",
-            contentStyle: { backgroundColor: headerBackgroundColor },
-            headerStyle: {
-              backgroundColor: headerBackgroundColor,
-            },
-            headerTintColor: headerTintColor,
-            headerShadowVisible: true,
-            headerTitleStyle: {
-              fontWeight: "600",
-            }
-          }}
-        >
-          <Stack.Screen 
-            name="(tabs)"
-            options={{
-              headerShown: false
-            }} 
-          />
-          <Stack.Screen 
-            name="auth/login" 
-            options={{ 
-              title: "Sign In",
+        <SafeAreaInsetsProvider value={insets}>
+          <Stack
+            screenOptions={{
               headerShown: false,
-              animation: "fade"
-            }} 
-          />
-          <Stack.Screen 
-            name="auth/signup" 
-            options={{ 
-              title: "Sign Up",
-              headerShown: false,
-              animation: "fade"
-            }} 
-          />
-          <Stack.Screen
-            name="alerts"
-            options={{
-              title: "Alerts",
-              headerShown: false,
-              animation: "slide_from_right",
+              animation: "fade",
+              gestureEnabled: true,
+              gestureDirection: "horizontal",
+              contentStyle: { backgroundColor: headerBackgroundColor },
+              headerStyle: {
+                backgroundColor: headerBackgroundColor,
+              },
+              headerTintColor: headerTintColor,
+              headerShadowVisible: true,
+              headerTitleStyle: {
+                fontWeight: "600",
+              }
             }}
-          />
-          <Stack.Screen
-            name="challenges"
-            options={{
-              title: "Challenges",
-              headerShown: false,
-              animation: "slide_from_right",
-            }}
-          />
-        </Stack>
-      )}
+          >
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false
+              }}
+            />
+            <Stack.Screen
+              name="auth/login"
+              options={{
+                title: "Sign In",
+                headerShown: false,
+                animation: "fade"
+              }}
+            />
+            <Stack.Screen
+              name="auth/signup"
+              options={{
+                title: "Sign Up",
+                headerShown: false,
+                animation: "fade"
+              }}
+            />
+            <Stack.Screen
+              name="alerts"
+              options={{
+                title: "Alerts",
+                headerShown: false,
+                animation: "slide_from_right",
+              }}
+            />
+            <Stack.Screen
+              name="challenges"
+              options={{
+                title: "Challenges",
+                headerShown: false,
+                animation: "slide_from_right",
+              }}
+            />
+          </Stack>
+        </SafeAreaInsetsProvider>)}
     </View>
   );
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === "dark" ? "dark" : "light";
-  
   const [fontsLoaded] = useFonts({
     IBMPlexSans_100Thin,
     IBMPlexSans_200ExtraLight,
