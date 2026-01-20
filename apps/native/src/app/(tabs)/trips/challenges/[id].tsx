@@ -77,11 +77,11 @@ export default function ChallengeDetailScreen() {
           },
           {
             text: "Choose from Gallery",
-            onPress: () => pickImageFromGallery()
+            onPress: () => void pickImageFromGallery()
           },
           {
             text: "Take Photo",
-            onPress: () => takePhoto()
+            onPress: () => void takePhoto()
           }
         ]
       );
@@ -441,7 +441,7 @@ export default function ChallengeDetailScreen() {
         {/* Camera Button */}
         {!capturedImage && (
           <TouchableOpacity
-            onPress={handleOpenCamera}
+            onPress={() => void handleOpenCamera()}
             disabled={isLoading}
             style={{
               backgroundColor: colors.primary,
