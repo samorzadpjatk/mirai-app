@@ -263,13 +263,13 @@ model Location {
   user                       User      @relation(fields: [userId], references: [id])
   timestamp                  DateTime  @default(now())
   isSharingLocation          Boolean   @default(false)
-  accuracy                   Decimal?  @db.Decimal(10, 8)
-  altitude                   Decimal?  @db.Decimal(10, 8)
-  altitudeAccuracy           Decimal?  @db.Decimal(10, 8)
-  heading                    Decimal?  @db.Decimal(10, 8)
-  latitude                   Decimal?  @db.Decimal(10, 8)
-  longitude                  Decimal?  @db.Decimal(10, 8)
-  speed                      Decimal?  @db.Decimal(10, 8)
+  accuracy                   Float?
+  altitude                   Float?
+  altitudeAccuracy           Float?
+  heading                    Float?
+  latitude                   Float?
+  longitude                  Float?
+  speed                      Float?
   usersToShareWith           User[]    @relation("LocationSharingUsers")
   lastInactivityNotification DateTime?
 }
