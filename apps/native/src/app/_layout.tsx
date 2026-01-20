@@ -1,10 +1,8 @@
 import { useEffect } from "react";
-import { Platform, useColorScheme } from "react-native";
+import { Platform, useColorScheme, View } from "react-native";
 import Constants from "expo-constants";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { TamaguiProvider, YStack, type TamaguiInternalConfig, useTheme } from "tamagui";
-import tamaguiConfig from "tamagui.config";
 import "../global.css";
 import {
   useFonts,
@@ -21,6 +19,14 @@ import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { APIProvider } from "@integral-2025-app/trpc/client";
 import "../../global.css";
+
+// Theme colors
+const colors = {
+  backgroundDark: "#17181c",
+  backgroundLight: "#f1f1f4",
+  textDark: "#ffffff",
+  textLight: "#000000",
+};
 
 const SUPABASE_URL: string =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
@@ -62,11 +68,12 @@ function RootLayoutContent() {
   const { session } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-  const tamaguiTheme = useTheme();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark" || colorScheme === null; // Default to dark
 
   // Get theme colors for headers
-  const headerBackgroundColor = tamaguiTheme.background.get();
-  const headerTintColor = tamaguiTheme.color.get();
+  const headerBackgroundColor = isDark ? colors.backgroundDark : colors.backgroundLight;
+  const headerTintColor = isDark ? colors.textDark : colors.textLight;
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -77,20 +84,20 @@ function RootLayoutContent() {
     if (!hasSession && !inAuthGroup) {
       router.replace("/auth/login");
     } else if (hasSession && inAuthGroup) {
-      router.replace("/");
+      router.replace("/(tabs)");
     }
   }, [session, segments, isAuthLoading, router]);
 
   return (
-    <YStack flex={1} bg="$background">
+    <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
       {!isAuthLoading && (
         <Stack
           screenOptions={{
             headerShown: false,
-            animation: "slide_from_right",
+            animation: "fade",
             gestureEnabled: true,
             gestureDirection: "horizontal",
-            contentStyle: { backgroundColor: "transparent" },
+            contentStyle: { backgroundColor: headerBackgroundColor },
             headerStyle: {
               backgroundColor: headerBackgroundColor,
             },
@@ -102,9 +109,8 @@ function RootLayoutContent() {
           }}
         >
           <Stack.Screen 
-            name="index" 
-            options={{ 
-              title: "Home",
+            name="(tabs)"
+            options={{
               headerShown: false
             }} 
           />
@@ -124,66 +130,6 @@ function RootLayoutContent() {
               animation: "fade"
             }} 
           />
-          <Stack.Screen 
-            name="users/index" 
-            options={{ 
-              title: "Users",
-              headerShown: true,
-              headerTitle: "Users Management",
-              headerStyle: {
-                backgroundColor: headerBackgroundColor,
-              },
-              headerTintColor: headerTintColor,
-            }} 
-          />
-          <Stack.Screen 
-            name="groups/index" 
-            options={{ 
-              title: "Guilds",
-              headerShown: true,
-              headerTitle: "Guilds",
-              headerStyle: {
-                backgroundColor: headerBackgroundColor,
-              },
-              headerTintColor: headerTintColor,
-            }} 
-          />
-          <Stack.Screen 
-            name="coins/index" 
-            options={{ 
-              title: "Coin Operations",
-              headerShown: true,
-              headerTitle: "Treasury Management",
-              headerStyle: {
-                backgroundColor: headerBackgroundColor,
-              },
-              headerTintColor: headerTintColor,
-            }} 
-          />
-          <Stack.Screen 
-            name="transactions/index" 
-            options={{ 
-              title: "Transactions",
-              headerShown: true,
-              headerTitle: "Transaction History",
-              headerStyle: {
-                backgroundColor: headerBackgroundColor,
-              },
-              headerTintColor: headerTintColor,
-            }} 
-          />
-          <Stack.Screen
-            name="notifications/index"
-            options={{
-              title: "Notifications",
-              headerShown: true,
-              headerTitle: "Notification Schedules",
-              headerStyle: {
-                backgroundColor: headerBackgroundColor,
-              },
-              headerTintColor: headerTintColor,
-            }}
-          />
           <Stack.Screen
             name="alerts"
             options={{
@@ -200,17 +146,9 @@ function RootLayoutContent() {
               animation: "slide_from_right",
             }}
           />
-          <Stack.Screen 
-            name="challenge/[id]" 
-            options={{ 
-              title: "Challenge Details",
-              headerShown: false,
-              animation: "slide_from_right",
-            }} 
-          />
         </Stack>
       )}
-    </YStack>
+    </View>
   );
 }
 
@@ -272,17 +210,15 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <TamaguiProvider config={tamaguiConfig as TamaguiInternalConfig} defaultTheme={theme}>
-        <AuthProvider
-          supabaseUrl={SUPABASE_URL}
-          supabaseKey={SUPABASE_ANON_KEY}
-          supabaseClient={supabaseClient}
-        >
-          <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-            <RootLayoutContent />
-          </APIProvider>
-        </AuthProvider>
-      </TamaguiProvider>
+      <AuthProvider
+        supabaseUrl={SUPABASE_URL}
+        supabaseKey={SUPABASE_ANON_KEY}
+        supabaseClient={supabaseClient}
+      >
+        <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+          <RootLayoutContent />
+        </APIProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

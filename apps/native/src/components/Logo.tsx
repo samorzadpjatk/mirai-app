@@ -1,6 +1,6 @@
-import { View } from "tamagui";
 import { Image } from "expo-image";
 import React from "react";
+import Animated, { ZoomIn } from "react-native-reanimated";
 import miraiLogo from "../../assets/mirai_logo.png";
 
 interface LogoProps {
@@ -9,19 +9,14 @@ interface LogoProps {
 
 export default function Logo({ size = 120 }: LogoProps) {
   return (
-    <View
-      width={size}
-      height={size}
-      overflow="hidden"
-      animation="quick"
-      enterStyle={{ scale: 0, opacity: 0 }}
-      scale={1}
-      opacity={1}
+    <Animated.View
+      entering={ZoomIn.duration(300).springify()}
+      style={{ width: size, height: size, overflow: 'hidden' }}
     >
       <Image
         source={miraiLogo}
         style={{ width: size, height: size }}
       />
-    </View>
+    </Animated.View>
   );
 }
