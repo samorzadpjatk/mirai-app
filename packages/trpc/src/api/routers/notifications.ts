@@ -106,6 +106,7 @@ export const notificationRouter = createTRPCRouter({
     });
 
     return {
+      isSubscribed: subscriptions.length > 0,
       subscriptions: subscriptions.map((s) => ({
         id: s.id,
         token: s.token,
