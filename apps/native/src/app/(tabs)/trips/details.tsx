@@ -8,12 +8,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing, borderRadius, typography, shadows, commonStyles } from "../../../styles";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function TripDetailsScreen() {
   const { session, isLoading } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams();
   const trpc = useTRPC();
+  const insets = useAppSafeAreaInsets();
 
   const tripId = typeof params.id === 'string' ? params.id : params.id?.[0];
 
@@ -69,7 +71,7 @@ export default function TripDetailsScreen() {
         {/* Main Content */}
         <ScrollView
           style={styles.mainContent}
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + spacing.xxxl }]}
         >
           {/* Hero Image */}
           <View style={styles.heroCard}>
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 120,
+    paddingBottom: spacing.xxxl,
   },
 
   // Hero Card

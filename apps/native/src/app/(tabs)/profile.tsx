@@ -132,7 +132,7 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Header */}
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: 120,
+    paddingBottom: spacing.xxxl,
   },
   profileHeader: {
     alignItems: 'center',

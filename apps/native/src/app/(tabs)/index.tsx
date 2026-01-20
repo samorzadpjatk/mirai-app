@@ -8,11 +8,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import LoadingScreen from "../../components/LoadingScreen";
 import AppNavbar from "../../components/AppNavbar";
+import { colors, spacing, borderRadius, typography } from "../../styles";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function Home() {
   const { session, isLoading, signOut } = useAuth();
   const router = useRouter();
   const trpc = useTRPC();
+  const insets = useAppSafeAreaInsets();
 
   const { data: currentUser } = useQuery(
     trpc.user.getMy.queryOptions()
@@ -27,7 +30,6 @@ export default function Home() {
   if (isLoading) {
     return <LoadingScreen message="Loading..." />;
   }
-
   if (!session) {
     return null;
   }
@@ -44,7 +46,9 @@ export default function Home() {
   return (
     <>
       <StatusBar style="light" />
-      <View style={styles.container}>
+      <View
+        style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      >
         {/* Navbar */}
         <AppNavbar />
 
@@ -163,7 +167,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 120,
+    paddingBottom: spacing.xxxl,
     gap: 24,
   },
   heroCard: {

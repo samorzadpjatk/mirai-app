@@ -4,10 +4,12 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
 import { Ionicons } from "@expo/vector-icons";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function LoginScreen() {
   const { formState, setEmail, setPassword, handleSubmit } = useLoginForm();
   const router = useRouter();
+  const insets = useAppSafeAreaInsets();
 
   const onSubmit = async () => {
     await handleSubmit(() => {
@@ -25,7 +27,7 @@ export default function LoginScreen() {
         contentContainerStyle={{ flexGrow: 1 }}
       >
         {/* Header Spacer */}
-        <View style={styles.headerSpacer} />
+        <View style={[styles.headerSpacer, { paddingTop: insets.top + 24 }]} />
 
         {/* Logo & Title */}
         <View style={styles.logoContainer}>
@@ -134,7 +136,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}> 
           {/* Sign Up Link */}
           <Text style={styles.signupText}>
             Don't have an account?{" "}

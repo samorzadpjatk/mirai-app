@@ -15,6 +15,7 @@ import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography, shadows } from "../../../../../styles";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function EditGroupScreen() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function EditGroupScreen() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { session } = useAuth();
+  const insets = useAppSafeAreaInsets();
 
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
@@ -185,7 +187,7 @@ export default function EditGroupScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Group Name Input */}

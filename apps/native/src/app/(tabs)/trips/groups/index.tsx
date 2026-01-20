@@ -14,12 +14,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography, shadows } from "../../../../styles";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function GroupsListScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0];
   const trpc = useTRPC();
+  const insets = useAppSafeAreaInsets();
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -48,7 +50,7 @@ export default function GroupsListScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Create Group Button */}
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.xl,
-    paddingBottom: 100,
+    paddingBottom: spacing.xxxl,
   },
   createButton: {
     backgroundColor: colors.primary,

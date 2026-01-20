@@ -8,6 +8,7 @@ import Pdf from 'react-native-pdf';
 import { Directory, File, Paths } from 'expo-file-system/next';
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function TripInfoScreen() {
   const router = useRouter();
@@ -43,6 +44,8 @@ export default function TripInfoScreen() {
 
     checkDownloadedFiles();
   }, []);
+
+  const insets = useAppSafeAreaInsets();
 
   const handleWhatsAppPress = () => {
     // Open WhatsApp group link
@@ -138,7 +141,7 @@ export default function TripInfoScreen() {
       <View style={styles.container}>
         <ScrollView
           style={styles.mainContent}
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[styles.contentContainer, { paddingTop: insets.top + 70, paddingBottom: insets.bottom + spacing.xxxl }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Hero Header */}
@@ -380,8 +383,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingTop: 70,
-    paddingBottom: 120,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxxl,
     paddingHorizontal: spacing.lg,
     gap: spacing.lg,
   },

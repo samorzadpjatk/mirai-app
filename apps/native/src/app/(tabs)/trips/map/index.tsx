@@ -8,6 +8,7 @@ import { UserAvatar } from "~/components/map/UserAvatar";
 import { useTRPC, useSubscription } from "@integral-2025-app/trpc/client";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { formatRelativeTime } from "~/utils/format";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function MapScreen() {
   const trpc = useTRPC();
@@ -34,6 +35,8 @@ export default function MapScreen() {
     ...trpc.location.getMySharingSettings.queryOptions(),
     enabled: !!session?.access_token,
   });
+
+  const insets = useAppSafeAreaInsets();
 
   const sharingUserIds = useMemo(() => {
     return sharingSettings?.usersToShareWith.map(u => u.id) ?? [];
@@ -248,7 +251,7 @@ export default function MapScreen() {
           <>
             <Animated.View
               pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
-              style={[styles.detailCard, panelStyle]}
+              style={[styles.detailCard, { bottom: insets.bottom + spacing.xxxl }, panelStyle]}
             >
               {selectedUser ? (
                 <>

@@ -5,8 +5,9 @@ import {
   adminProcedure,
   protectedProcedure,
 } from "../../api/trpc";
+import { type Prisma } from "@integral-2025-app/db";
 
-const challengeBaseSelect = {
+const challengeBaseSelect: Prisma.ChallengeSelect = {
   id: true,
   tripId: true,
   name: true,
@@ -17,7 +18,7 @@ const challengeBaseSelect = {
   updatedAt: true,
 } as const;
 
-const challengeSelect = {
+const challengeSelect: Prisma.ChallengeSelect = {
   ...challengeBaseSelect,
   groups: {
     include: {
@@ -57,7 +58,34 @@ export const challengeRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const challenge = await ctx.db.challenge.findFirst({
         where: { id: input.id, tripId: input.tripId },
-        select: challengeSelect,
+        select: {
+          name: true,
+          description: true,
+          image: true,
+          points: true,
+          groups: {
+            include: {
+              group: {
+                select: {
+                  id: true,
+                  name: true,
+                  organizer: {
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                    }
+                  },
+                  participants: {
+                    select: {
+                      id: true,
+                    }
+                  }
+                }
+              }
+            } 
+          }
+        },
       });
 
       if (!challenge) {
