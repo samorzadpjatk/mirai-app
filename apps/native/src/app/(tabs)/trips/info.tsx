@@ -141,7 +141,7 @@ export default function TripInfoScreen() {
       <View style={styles.container}>
         <ScrollView
           style={styles.mainContent}
-          contentContainerStyle={[styles.contentContainer, { paddingTop: insets.top + 70, paddingBottom: insets.bottom + spacing.xxxl }]}
+          contentContainerStyle={[styles.contentContainer]}
           showsVerticalScrollIndicator={false}
         >
           {/* Hero Header */}

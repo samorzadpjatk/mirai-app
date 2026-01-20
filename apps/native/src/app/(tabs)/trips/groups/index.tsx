@@ -46,11 +46,11 @@ export default function GroupsListScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container]}>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
+        contentContainerStyle={[styles.scrollContent]}
         showsVerticalScrollIndicator={false}
       >
         {/* Create Group Button */}

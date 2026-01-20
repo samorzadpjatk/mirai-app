@@ -182,7 +182,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View style={[styles.container,{paddingTop: insets.top , paddingBottom: insets.bottom }]}>
+    <View style={[styles.container]}>
       <ScrollView
         refreshControl={
           <RefreshControl
