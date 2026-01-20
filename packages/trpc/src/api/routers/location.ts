@@ -2,7 +2,6 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
-  moderatorProcedure,
 } from "../../api/trpc";
 import {
   locationDataSchema,
@@ -262,16 +261,21 @@ export const locationRouter = createTRPCRouter({
           );
           if (dist <= radiusKm) {
             inRadius.add(location.userId);
-            yield { type: "upsert", location: { ...lw } };
+            yield tracked(connectionId, {
+              type: "upsert",
+              location: { ...lw },
+            });
           }
         } else {
-          yield { type: "upsert", location: lw };
+          yield tracked(connectionId, { type: "upsert", location: lw });
         }
       }
 
       const friendIds = locations.map((l) => l.userId);
 
-      console.log(`[Location Stream] Setting up subscription for user ${ctx.dbUser.id}, watching ${friendIds.length} friends`);
+      console.log(
+        `[Location Stream] Setting up subscription for user ${ctx.dbUser.id}, watching ${friendIds.length} friends`,
+      );
       console.log(`[Location Stream] Friend IDs: [${friendIds.join(", ")}]`);
 
       if (friendIds.length > 0) {
@@ -295,7 +299,9 @@ export const locationRouter = createTRPCRouter({
               switch (payload.eventType) {
                 case "DELETE": {
                   const userId = payload.old.userId!;
-                  console.log(`[Location Stream] DELETE event for userId: ${userId}`);
+                  console.log(
+                    `[Location Stream] DELETE event for userId: ${userId}`,
+                  );
                   if (radiusKm !== undefined) {
                     if (inRadius.has(userId)) {
                       inRadius.delete(userId);
@@ -308,8 +314,10 @@ export const locationRouter = createTRPCRouter({
                 }
                 default: {
                   const newLocation = payload.new;
-                  console.log(`[Location Stream] ${payload.eventType} event for userId: ${newLocation.userId}, coords: [${newLocation.latitude?.toString()}, ${newLocation.longitude?.toString()}]`);
-                  
+                  console.log(
+                    `[Location Stream] ${payload.eventType} event for userId: ${newLocation.userId}, coords: [${newLocation.latitude?.toString()}, ${newLocation.longitude?.toString()}]`,
+                  );
+
                   const userIdFromEvent = newLocation.userId;
                   if (!userIdFromEvent) {
                     console.error(`[Location Stream] No userId in payload`);
@@ -317,85 +325,92 @@ export const locationRouter = createTRPCRouter({
                   }
 
                   if (!newLocation.userId || !newLocation.timestamp) {
-                    console.log(`[Location Stream] payload.new is incomplete, fetching from DB for userId: ${userIdFromEvent}`);
-                    void ctx.db.location.findUnique({
-                      where: { userId: userIdFromEvent },
-                      include: {
-                        user: {
-                          select: {
-                            id: true,
-                            firstName: true,
-                            lastName: true,
-                            image: true,
+                    console.log(
+                      `[Location Stream] payload.new is incomplete, fetching from DB for userId: ${userIdFromEvent}`,
+                    );
+                    void ctx.db.location
+                      .findUnique({
+                        where: { userId: userIdFromEvent },
+                        include: {
+                          user: {
+                            select: {
+                              id: true,
+                              firstName: true,
+                              lastName: true,
+                              image: true,
+                            },
                           },
                         },
-                      },
-                    }).then((dbLocation) => {
-                      if (!dbLocation) {
-                        console.error(`[Location Stream] Location not found in DB for userId: ${userIdFromEvent}`);
-                        return;
-                      }
-
-                      const location: LocationWithUser = {
-                        coords: {
-                          latitude: dbLocation.latitude?.toNumber() ?? 0,
-                          longitude: dbLocation.longitude?.toNumber() ?? 0,
-                          altitude: dbLocation.altitude?.toNumber() ?? null,
-                          accuracy: dbLocation.accuracy?.toNumber() ?? null,
-                          altitudeAccuracy: dbLocation.altitudeAccuracy?.toNumber() ?? null,
-                          heading: dbLocation.heading?.toNumber() ?? null,
-                          speed: dbLocation.speed?.toNumber() ?? null,
-                        },
-                        timestamp: dbLocation.timestamp.getTime(),
-                        isSharingLocation: dbLocation.isSharingLocation,
-                        user: dbLocation.user ?? undefined,
-                      };
-
-                      const userId = dbLocation.userId;
-
-                      if (radiusKm !== undefined) {
-                        if (!dbLocation.latitude || !dbLocation.longitude) {
-                          if (inRadius.delete(userId)) {
-                            queue.push({
-                              id: connectionId,
-                              type: "delete",
-                              userId,
-                            });
-                          }
+                      })
+                      .then((dbLocation) => {
+                        if (!dbLocation) {
+                          console.error(
+                            `[Location Stream] Location not found in DB for userId: ${userIdFromEvent}`,
+                          );
                           return;
                         }
 
-                        const dist = calculateDistance(
-                          latitude!,
-                          longitude!,
-                          Number(dbLocation.latitude),
-                          Number(dbLocation.longitude),
-                        );
+                        const location: LocationWithUser = {
+                          coords: {
+                            latitude: dbLocation.latitude?.toNumber() ?? 0,
+                            longitude: dbLocation.longitude?.toNumber() ?? 0,
+                            altitude: dbLocation.altitude?.toNumber() ?? null,
+                            accuracy: dbLocation.accuracy?.toNumber() ?? null,
+                            altitudeAccuracy:
+                              dbLocation.altitudeAccuracy?.toNumber() ?? null,
+                            heading: dbLocation.heading?.toNumber() ?? null,
+                            speed: dbLocation.speed?.toNumber() ?? null,
+                          },
+                          timestamp: dbLocation.timestamp.getTime(),
+                          isSharingLocation: dbLocation.isSharingLocation,
+                          user: dbLocation.user ?? undefined,
+                        };
 
-                        if (dist <= radiusKm) {
-                          inRadius.add(userId);
+                        const userId = dbLocation.userId;
+
+                        if (radiusKm !== undefined) {
+                          if (!dbLocation.latitude || !dbLocation.longitude) {
+                            if (inRadius.delete(userId)) {
+                              queue.push({
+                                id: connectionId,
+                                type: "delete",
+                                userId,
+                              });
+                            }
+                            return;
+                          }
+
+                          const dist = calculateDistance(
+                            latitude!,
+                            longitude!,
+                            Number(dbLocation.latitude),
+                            Number(dbLocation.longitude),
+                          );
+
+                          if (dist <= radiusKm) {
+                            inRadius.add(userId);
+                            queue.push({
+                              id: connectionId,
+                              type: "upsert",
+                              location,
+                            });
+                          } else {
+                            if (inRadius.delete(userId)) {
+                              queue.push({
+                                id: connectionId,
+                                type: "delete",
+                                userId,
+                              });
+                            }
+                          }
+                        } else {
                           queue.push({
                             id: connectionId,
                             type: "upsert",
                             location,
                           });
-                        } else {
-                          if (inRadius.delete(userId)) {
-                            queue.push({
-                              id: connectionId,
-                              type: "delete",
-                              userId,
-                            });
-                          }
                         }
-                      } else {
-                        queue.push({
-                          id: connectionId,
-                          type: "upsert",
-                          location,
-                        });
-                      }
-                    });
+                      });
                     return;
                   }
 
@@ -460,11 +475,15 @@ export const locationRouter = createTRPCRouter({
           });
 
         console.log(`[Location Stream] Waiting for channel to join...`);
-        console.log(`[Location Stream] Channel state after subscribe: ${channel?.state}`);
+        console.log(
+          `[Location Stream] Channel state after subscribe: ${channel?.state}`,
+        );
 
         // Wait a bit for subscription to establish
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        console.log(`[Location Stream] Channel state after 1s: ${channel?.state}`);
+        console.log(
+          `[Location Stream] Channel state after 1s: ${channel?.state}`,
+        );
       }
 
       try {
