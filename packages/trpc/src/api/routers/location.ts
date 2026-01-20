@@ -53,14 +53,14 @@ type FriendLocationEvent =
   | { id: string; type: "upsert"; location: LocationWithUser }
   | { id: string; type: "delete"; userId: string };
 
-interface SharingUser {
+export interface SharingUser {
   id: string;
   firstName: string | null;
   lastName: string | null;
   image: string | null;
 }
 
-interface SharingSettings {
+export interface SharingSettings {
   isSharingLocation: boolean;
   usersToShareWith: SharingUser[];
 }
