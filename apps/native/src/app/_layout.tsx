@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { Platform, useColorScheme, View } from "react-native";
-import Constants from "expo-constants";
+import { useColorScheme, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
@@ -165,44 +164,6 @@ export default function RootLayout() {
     IBMPlexSans_600SemiBold,
     IBMPlexSans_700Bold,
   });
-
-  useEffect(() => {
-    // Load MapLibre GL CSS for Web platform via CDN
-    if (Platform.OS === "web") {
-      const linkId = "maplibre-gl-css";
-      if (typeof document !== "undefined" && !document.getElementById(linkId)) {
-        const link = document.createElement("link");
-        link.id = linkId;
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/maplibre-gl@3.7.0/dist/maplibre-gl.css";
-        document.head.appendChild(link);
-      }
-    }
-
-    const appOwnership: string = Constants.appOwnership ?? "unknown";
-    const isExpoGo = appOwnership === "expo";
-
-    // Configure native map module only on native builds (not Expo Go).
-    if (Platform.OS !== "web" && !isExpoGo) {
-      void (async () => {
-        try {
-          // Try to load MapLibre native module if present; no token configuration required.
-          const mod = await import("@maplibre/maplibre-react-native");
-          // If module exposes helpers in the future, adapt here.
-          // No-op for now.
-        } catch (err: unknown) {
-          console.warn(
-            "[Map] Native map module not available. Build a dev client to use native maps.",
-            err,
-          );
-        }
-      })();
-    } else if (Platform.OS !== "web") {
-      console.warn(
-        "[Map] Running in Expo Go or native module missing. Maps disabled (requires dev build).",
-      );
-    }
-  }, []);
 
   if (!fontsLoaded) {
     return null;
