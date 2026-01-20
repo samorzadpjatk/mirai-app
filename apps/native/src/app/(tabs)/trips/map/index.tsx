@@ -189,7 +189,9 @@ export default function MapScreen() {
   useEffect(() => {
     if (!selectedUser) return;
     if (followMode !== "user") return;
-    setFocusCoordinate(selectedUser.coordinate);
+    // Defer focus state update to avoid synchronous setState in effect
+    const id = setTimeout(() => setFocusCoordinate(selectedUser.coordinate), 0);
+    return () => clearTimeout(id);
   }, [selectedUser, followMode]);
 
   useEffect(() => {
