@@ -203,7 +203,7 @@ export default function ProfileScreen() {
               styles.actionButton,
               isSubscribed && styles.activeButton
             ]}
-            onPress={handleToggleNotifications}
+            onPress={() => void handleToggleNotifications()}
           >
             <View style={[
               styles.actionIcon,
@@ -225,7 +225,7 @@ export default function ProfileScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.actionButton, styles.dangerButton]} onPress={handleSignOut}>
+          <TouchableOpacity style={[styles.actionButton, styles.dangerButton]} onPress={() => void handleSignOut()}>
             <View style={[styles.actionIcon, styles.dangerIcon]}>
               <Ionicons name="log-out" size={20} color="#ef4444" />
             </View>

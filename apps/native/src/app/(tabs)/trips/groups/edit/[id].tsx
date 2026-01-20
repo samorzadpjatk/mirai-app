@@ -288,7 +288,7 @@ export default function EditGroupScreen() {
         {/* Save Button */}
         <TouchableOpacity
           style={[styles.saveButton, shadows.primaryGlow]}
-          onPress={handleSave}
+          onPress={() => void handleSave()}
           disabled={updateGroupMutation.isPending}
           activeOpacity={0.9}
         >

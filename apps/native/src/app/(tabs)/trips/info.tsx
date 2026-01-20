@@ -194,7 +194,7 @@ export default function TripInfoScreen() {
               {/* PDF Map */}
               <TouchableOpacity
                 style={styles.mapTile}
-                onPress={handlePdfMapPress}
+                onPress={() => void handlePdfMapPress()}
                 activeOpacity={0.8}
                 disabled={isDownloading}
               >
