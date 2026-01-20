@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Animated } from 'react-native';
 
 interface ProgressBarProps {
@@ -7,7 +7,7 @@ interface ProgressBarProps {
 }
 
 export function ProgressBar({ progress, className = '' }: ProgressBarProps) {
-  const animatedWidth = useRef(new Animated.Value(0)).current;
+  const animatedWidth = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
     Animated.timing(animatedWidth, {
@@ -15,7 +15,7 @@ export function ProgressBar({ progress, className = '' }: ProgressBarProps) {
       duration: 1000,
       useNativeDriver: false,
     }).start();
-  }, [progress]);
+  }, [progress, animatedWidth]);
 
   return (
     <View className={`w-full h-3 bg-gray-200 dark:bg-surface-dark rounded-full overflow-hidden p-[2px] ${className}`}>
