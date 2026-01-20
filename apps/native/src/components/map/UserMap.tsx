@@ -1,45 +1,56 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import { Platform, StyleSheet, View, Text } from "react-native";
 import Constants from "expo-constants";
 import { UserAvatar } from "./UserAvatar";
 
-// Import MapLibre types without importing the module itself
-type MapViewType = any;
-type CameraType = any;
-type MapLibreUserLocationType = any;
-type PointAnnotationType = any;
-type VectorSourceType = any;
-type ShapeSourceType = any;
-type LineLayerType = any;
-type SymbolLayerType = any;
-
-let MapView: MapViewType;
-let Camera: CameraType;
-let MapLibreUserLocation: MapLibreUserLocationType;
-let PointAnnotation: PointAnnotationType;
-let VectorSource: VectorSourceType;
-let ShapeSource: ShapeSourceType;
-let LineLayer: LineLayerType;
-let SymbolLayer: SymbolLayerType;
-
-// Only import on non-Expo Go builds
+// Check if we should load MapLibre (not web, not Expo Go)
 const appOwnership: string = Constants.appOwnership ?? "unknown";
 const isExpoGo = appOwnership === "expo";
+const shouldLoadMapLibre = Platform.OS !== "web" && !isExpoGo;
 
-if (Platform.OS !== "web" && !isExpoGo) {
-  try {
-    const MapLibre = require("@maplibre/maplibre-react-native");
-    MapView = MapLibre.MapView;
-    Camera = MapLibre.Camera;
-    MapLibreUserLocation = MapLibre.UserLocation;
-    PointAnnotation = MapLibre.PointAnnotation;
-    VectorSource = MapLibre.VectorSource;
-    ShapeSource = MapLibre.ShapeSource;
-    LineLayer = MapLibre.LineLayer;
-    SymbolLayer = MapLibre.SymbolLayer;
-  } catch (err) {
-    console.warn("[UserMap] MapLibre native module not available", err);
+// Conditionally import MapLibre - this import happens once at module load time
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const MapLibreRN = shouldLoadMapLibre ? require("@maplibre/maplibre-react-native") : null;
+
+// Extract components from MapLibre (if loaded)
+const MapView = MapLibreRN?.MapView ?? MapLibreRN?.default?.MapView;
+const Camera = MapLibreRN?.Camera ?? MapLibreRN?.default?.Camera;
+const MapLibreUserLocation = MapLibreRN?.UserLocation ?? MapLibreRN?.default?.UserLocation;
+const PointAnnotation = MapLibreRN?.PointAnnotation ?? MapLibreRN?.default?.PointAnnotation;
+const VectorSource = MapLibreRN?.VectorSource ?? MapLibreRN?.default?.VectorSource;
+
+const isMapLibreAvailable = !!MapView;
+
+// Declare global type for MapLibre module cache
+declare global {
+  // eslint-disable-next-line no-var
+  var __MAPLIBRE_MODULE__: Record<string, unknown> | null | undefined;
+  // eslint-disable-next-line no-var
+  var __MAPLIBRE_LOADED__: boolean | undefined;
+}
+
+function getMapLibreComponents(): Record<string, unknown> | null {
+  // Use global to persist across hot reloads
+  if (global.__MAPLIBRE_LOADED__) {
+    return global.__MAPLIBRE_MODULE__ ?? null;
   }
+
+  if (isMapLibreAvailable) {
+    global.__MAPLIBRE_MODULE__ = {
+      MapView,
+      Camera,
+      UserLocation: MapLibreUserLocation,
+      PointAnnotation,
+      VectorSource,
+    };
+    console.log("[UserMap] MapLibre loaded successfully");
+  } else {
+    console.warn("[UserMap] MapLibre module loaded but MapView not found", Object.keys(MapLibreRN || {}));
+    global.__MAPLIBRE_MODULE__ = null;
+  }
+
+  global.__MAPLIBRE_LOADED__ = true;
+  return global.__MAPLIBRE_MODULE__ ?? null;
 }
 
 export interface UserLocation {
@@ -93,11 +104,7 @@ export interface UserMapProps {
    */
   vectorSourceLayer?: string;
   /**
-   * GeoJSON data for ski resort (pistes, lifts, etc).
-   */
-  skiResortGeoJSON?: any;
-  /**
-   * Current map theme: 'dark' or 'light'.
+   * Current map theme: 'dark' | 'light'.
    */
   mapTheme?: 'dark' | 'light';
   /**
@@ -135,9 +142,79 @@ interface CameraRef {
   }) => void;
 }
 
-// Basic MapLibre style & layer IDs
-const MAP_STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
-const MAP_STYLE_LIGHT = "https://tiles.openfreemap.org/styles/positron";
+// Basic MapLibre style - OpenSnowMap for ski resorts with pistes overlay
+const MAP_STYLE_DARK = {
+  version: 8,
+  name: "OpenSnowMap Dark",
+  sources: {
+    "osm-tiles": {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+    },
+    "opensnowmap-pistes": {
+      type: "raster",
+      tiles: ["https://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenSnowMap.org",
+    },
+  },
+  layers: [
+    {
+      id: "osm-base",
+      type: "raster",
+      source: "osm-tiles",
+      paint: {
+        "raster-saturation": -0.8,
+        "raster-brightness-min": 0.1,
+        "raster-brightness-max": 0.4,
+      },
+    },
+    {
+      id: "opensnowmap-overlay",
+      type: "raster",
+      source: "opensnowmap-pistes",
+      paint: {
+        "raster-opacity": 0.9,
+      },
+    },
+  ],
+};
+
+const MAP_STYLE_LIGHT = {
+  version: 8,
+  name: "OpenSnowMap Light",
+  sources: {
+    "osm-tiles": {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+    },
+    "opensnowmap-pistes": {
+      type: "raster",
+      tiles: ["https://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenSnowMap.org",
+    },
+  },
+  layers: [
+    {
+      id: "osm-base",
+      type: "raster",
+      source: "osm-tiles",
+    },
+    {
+      id: "opensnowmap-overlay",
+      type: "raster",
+      source: "opensnowmap-pistes",
+      paint: {
+        "raster-opacity": 0.9,
+      },
+    },
+  ],
+};
 /**
  * Compute opacity (0–1) based on last activity timestamp.
  * 0 minutes ago  -> 1.0
@@ -174,30 +251,9 @@ export const UserMap: React.FC<UserMapProps> = ({
   mapStyleURL,
   onLocationUpdate,
   focusedCoordinate,
-  skiResortGeoJSON,
   mapTheme = 'dark',
 }) => {
-  // Web support for the native MapLibre wrapper is limited and often requires extra setup.
-  // Since głównym celem są smartfony, na webie pokazujemy prosty placeholder,
-  // żeby nie wywalać całej aplikacji błędem Reacta.
-  if (Platform.OS === "web") {
-    return (
-      <View style={styles.webPlaceholder}>
-        <Text>Mapa jest dostępna tylko w aplikacji mobilnej.</Text>
-      </View>
-    );
-  }
-
-  const appOwnership: string = Constants.appOwnership ?? "unknown";
-  const isExpoGo = appOwnership === "expo";
-  if (isExpoGo) {
-    return (
-      <View style={styles.webPlaceholder}>
-        <Text>MapLibre wymaga dev build (Expo Go nie zawiera natywnego kodu).</Text>
-      </View>
-    );
-  }
-
+  // All hooks must be called before any early returns
   const cameraRef = useRef<CameraRef | null>(null);
   const hasCenteredRef = useRef(false);
 
@@ -206,16 +262,18 @@ export const UserMap: React.FC<UserMapProps> = ({
     return users.filter((user) => getActivityOpacity(user.lastActiveAt, now) > 0);
   }, [users]);
 
+  // Get lazy-loaded MapLibre components
+  const mapLibre = useMemo(() => getMapLibreComponents(), []);
+
   useEffect(() => {
-    if (!focusedCoordinate) return;
+    if (!focusedCoordinate || !mapLibre) return;
     cameraRef.current?.setCamera?.({
       centerCoordinate: focusedCoordinate,
       zoomLevel: initialZoomLevel,
       animationDuration: 1200,
-      animationMode: "easeTo",
       padding: { paddingBottom: 220, paddingTop: 40, paddingLeft: 40, paddingRight: 40 },
     });
-  }, [focusedCoordinate, initialZoomLevel]);
+  }, [focusedCoordinate, initialZoomLevel, mapLibre]);
 
   const handleUserLocationUpdate = (loc: {
     coords?: { longitude?: number | null; latitude?: number | null };
@@ -237,7 +295,32 @@ export const UserMap: React.FC<UserMapProps> = ({
     onLocationUpdate?.({ longitude, latitude });
   };
 
-  const currentMapStyle = mapStyleURL ?? (mapTheme === 'light' ? MAP_STYLE_LIGHT : MAP_STYLE_DARK);
+  const currentMapStyle = mapStyleURL ?? (mapTheme === 'light' ? MAP_STYLE_LIGHT : MAP_STYLE_DARK) as string | object;
+
+  // Web support for the native MapLibre wrapper is limited and often requires extra setup.
+  if (Platform.OS === "web") {
+    return (
+      <View style={styles.webPlaceholder}>
+        <Text>Mapa jest dostępna tylko w aplikacji mobilnej.</Text>
+      </View>
+    );
+  }
+
+  if (isExpoGo) {
+    return (
+      <View style={styles.webPlaceholder}>
+        <Text>MapLibre wymaga dev build (Expo Go nie zawiera natywnego kodu).</Text>
+      </View>
+    );
+  }
+
+  if (!mapLibre) {
+    return (
+      <View style={styles.webPlaceholder}>
+        <Text>MapLibre nie jest dostępne.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -269,81 +352,7 @@ export const UserMap: React.FC<UserMapProps> = ({
           />
         )}
 
-        {vectorSourceUrl ? <VectorSource url={vectorSourceUrl} id="map" /> : null}
-
-        {skiResortGeoJSON && ShapeSource && LineLayer && SymbolLayer && (
-          <ShapeSource id="ski-resort-source" shape={skiResortGeoJSON}>
-            <LineLayer
-              id="pistes-easy"
-              filter={['==', ['get', 'piste:difficulty'], 'easy']}
-              style={{
-                lineColor: '#4ade80',
-                lineWidth: 3,
-                lineOpacity: 0.8,
-              }}
-            />
-            <LineLayer
-              id="pistes-intermediate"
-              filter={['==', ['get', 'piste:difficulty'], 'intermediate']}
-              style={{
-                lineColor: '#3b82f6',
-                lineWidth: 3,
-                lineOpacity: 0.8,
-              }}
-            />
-            <LineLayer
-              id="pistes-advanced"
-              filter={['==', ['get', 'piste:difficulty'], 'advanced']}
-              style={{
-                lineColor: '#ef4444',
-                lineWidth: 3,
-                lineOpacity: 0.8,
-              }}
-            />
-            <LineLayer
-              id="pistes-expert"
-              filter={['==', ['get', 'piste:difficulty'], 'expert']}
-              style={{
-                lineColor: '#1f2937',
-                lineWidth: 3,
-                lineOpacity: 0.8,
-              }}
-            />
-            <LineLayer
-              id="pistes-other"
-              filter={['!', ['has', 'piste:difficulty']]}
-              style={{
-                lineColor: '#9ca3af',
-                lineWidth: 2,
-                lineOpacity: 0.6,
-              }}
-            />
-            <SymbolLayer
-              id="piste-labels"
-              minZoomLevel={13}
-              filter={['has', 'piste:name']}
-              style={{
-                textField: ['get', 'piste:name'],
-                textSize: 12,
-                textColor: [
-                  'match',
-                  ['get', 'piste:difficulty'],
-                  'easy', '#22c55e',
-                  'intermediate', '#3b82f6',
-                  'advanced', '#ef4444',
-                  'expert', '#1f2937',
-                  '#9ca3af'
-                ],
-                textHaloColor: '#ffffff',
-                textHaloWidth: 2,
-                symbolPlacement: 'line',
-                textMaxAngle: 38,
-                textRotationAlignment: 'map',
-                textPitchAlignment: 'viewport',
-              }}
-            />
-          </ShapeSource>
-        )}
+        {vectorSourceUrl && VectorSource ? <VectorSource url={vectorSourceUrl} id="map" /> : null}
 
         {filteredUsers.map((user) => (
           <PointAnnotation

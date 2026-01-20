@@ -3,9 +3,8 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } 
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Bell, AlertCircle } from '@tamagui/lucide-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '../styles';
-import BottomMenu from '../components/BottomMenu';
 
 interface Notification {
   id: string;
@@ -52,7 +51,7 @@ export default function AlertsScreen() {
   const renderNotification = (notification: Notification) => (
     <View key={notification.id} style={styles.notificationCard}>
       <View style={styles.notificationIcon}>
-        <Bell size={20} color={colors.primary} />
+        <Ionicons name="notifications" size={20} color={colors.primary} />
       </View>
       <View style={styles.notificationContent}>
         <Text style={styles.notificationTitle}>{notification.title}</Text>
@@ -105,7 +104,7 @@ export default function AlertsScreen() {
         ) : (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
-              <AlertCircle size={48} color={colors.textMuted} />
+              <Ionicons name="alert-circle" size={48} color={colors.textMuted} />
             </View>
             <Text style={styles.emptyStateTitle}>No Notifications</Text>
             <Text style={styles.emptyStateText}>
@@ -141,8 +140,6 @@ export default function AlertsScreen() {
           </View>
         )}
       </ScrollView>
-
-      <BottomMenu activeTab="alerts" />
     </View>
   );
 }

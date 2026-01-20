@@ -1,4 +1,4 @@
-import { YStack, Spinner, Text } from "tamagui";
+import { View, Text, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 
@@ -12,17 +12,12 @@ export default function LoadingScreen({
   return (
     <>
       <StatusBar style="auto" />
-      <YStack
-        flex={1}
-        bg="$background"
-        items="center"
-        justify="center"
-      >
-        <Spinner size="large" />
-        <Text mt="$4">
+      <View className="flex-1 bg-background-dark items-center justify-center">
+        <ActivityIndicator size="large" color="#00ced1" />
+        <Text className="mt-4 text-white font-sans">
           {message}
         </Text>
-      </YStack>
+      </View>
     </>
   );
 }
