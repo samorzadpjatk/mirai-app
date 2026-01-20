@@ -3,7 +3,7 @@ import { useLoginForm } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
-import { AtSign, Lock, Eye, ArrowRight, AlertCircle } from "@tamagui/lucide-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
   const { formState, setEmail, setPassword, handleSubmit } = useLoginForm();
@@ -45,7 +45,7 @@ export default function LoginScreen() {
           {/* Error Message */}
           {error && (
             <View style={styles.errorContainer}>
-              <AlertCircle size={20} color="#ef4444" />
+              <Ionicons name="alert-circle" size={20} color="#ef4444" />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
@@ -59,7 +59,7 @@ export default function LoginScreen() {
               </Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.iconOpacity}>
-                  <AtSign size={20} color="#00ced1" />
+                  <Ionicons name="at" size={20} color="#00ced1" />
                 </View>
                 <TextInput
                   style={styles.textInput}
@@ -81,7 +81,7 @@ export default function LoginScreen() {
               </Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.iconOpacity}>
-                  <Lock size={20} color="#00ced1" />
+                  <Ionicons name="lock-closed" size={20} color="#00ced1" />
                 </View>
                 <TextInput
                   style={styles.textInput}
@@ -92,7 +92,7 @@ export default function LoginScreen() {
                   secureTextEntry
                   editable={!isLoading}
                 />
-                <Eye size={20} color="#9ca3af" />
+                <Ionicons name="eye" size={20} color="#9ca3af" />
               </View>
             </View>
           </View>
@@ -125,7 +125,7 @@ export default function LoginScreen() {
                 <Text style={styles.loginButtonText}>
                   Log In
                 </Text>
-                <ArrowRight size={20} color="#17181c" />
+                <Ionicons name="arrow-forward" size={20} color="#17181c" />
               </>
             )}
           </TouchableOpacity>

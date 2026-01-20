@@ -10,8 +10,6 @@ import {
   within,
   act,
 } from "@testing-library/react-native";
-import { TamaguiProvider, type TamaguiInternalConfig } from "tamagui";
-import tamaguiConfig from "tamagui.config";
 import SignupScreen from "~/app/auth/signup";
 import { useRouter } from "expo-router";
 import type { UseSignupFormResult } from "@integral-2025-app/auth/client";
@@ -28,7 +26,7 @@ jest.mock("expo-status-bar", () => ({
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <TamaguiProvider config={tamaguiConfig as TamaguiInternalConfig}>{children}</TamaguiProvider>
+  <>{children}</>
 );
 
 describe("SignupScreen", () => {
