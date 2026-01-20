@@ -71,13 +71,13 @@ interface SharingSettings {
 function toExpoLocation(dbLocation: DbLocation): ExpoLocationObject {
   return {
     coords: {
-      latitude: dbLocation.latitude?.toNumber() ?? 0,
-      longitude: dbLocation.longitude?.toNumber() ?? 0,
-      altitude: dbLocation.altitude?.toNumber() ?? null,
-      accuracy: dbLocation.accuracy?.toNumber() ?? null,
-      altitudeAccuracy: dbLocation.altitudeAccuracy?.toNumber() ?? null,
-      heading: dbLocation.heading?.toNumber() ?? null,
-      speed: dbLocation.speed?.toNumber() ?? null,
+      latitude: dbLocation.latitude ?? 0,
+      longitude: dbLocation.longitude ?? 0,
+      altitude: dbLocation.altitude ?? null,
+      accuracy: dbLocation.accuracy ?? null,
+      altitudeAccuracy: dbLocation.altitudeAccuracy ?? null,
+      heading: dbLocation.heading ?? null,
+      speed: dbLocation.speed ?? null,
     },
     timestamp: dbLocation.timestamp.getTime(),
   };
@@ -352,14 +352,14 @@ export const locationRouter = createTRPCRouter({
 
                         const location: LocationWithUser = {
                           coords: {
-                            latitude: dbLocation.latitude?.toNumber() ?? 0,
-                            longitude: dbLocation.longitude?.toNumber() ?? 0,
-                            altitude: dbLocation.altitude?.toNumber() ?? null,
-                            accuracy: dbLocation.accuracy?.toNumber() ?? null,
+                            latitude: dbLocation.latitude ?? 0,
+                            longitude: dbLocation.longitude ?? 0,
+                            altitude: dbLocation.altitude ?? null,
+                            accuracy: dbLocation.accuracy ?? null,
                             altitudeAccuracy:
-                              dbLocation.altitudeAccuracy?.toNumber() ?? null,
-                            heading: dbLocation.heading?.toNumber() ?? null,
-                            speed: dbLocation.speed?.toNumber() ?? null,
+                              dbLocation.altitudeAccuracy ?? null,
+                            heading: dbLocation.heading ?? null,
+                            speed: dbLocation.speed ?? null,
                           },
                           timestamp: dbLocation.timestamp.getTime(),
                           isSharingLocation: dbLocation.isSharingLocation,
