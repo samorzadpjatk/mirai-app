@@ -100,7 +100,7 @@ const MAP_STYLES: Record<'dark' | 'light', MapStyleConfig> = {
     rasterOverlays: [
       {
         id: "opensnowmap-pistes",
-        tileUrlTemplates: ["https://tiles.opensnowmap.org/tiles-pistes-high-dpi//{z}/{x}/{y}.png"],
+        tileUrlTemplates: ["https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png"],
         tileSize: 256,
         attribution: "© OpenSnowMap.org",
         layerId: "opensnowmap-overlay",
