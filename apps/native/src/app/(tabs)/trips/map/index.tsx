@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View, ScrollView, Modal, TextInput } from "react-native";
+import { Pressable, StyleSheet, Text, View, ScrollView, Modal, TextInput } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from 'react-native-reanimated';
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { UserMap, type UserLocation } from "~/components/map/UserMap";
@@ -17,8 +18,8 @@ export default function MapScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const panelAnim = useRef(new Animated.Value(0)).current;
-  const expandAnim = useRef(new Animated.Value(0)).current;
+  const panelAnim = useSharedValue(0);
+  const expandAnim = useSharedValue(0);
   const [currentCoordinate, setCurrentCoordinate] = useState<[number, number] | null>(null);
   const [focusCoordinate, setFocusCoordinate] = useState<[number, number] | null>(null);
   const [followMode, setFollowMode] = useState<"user" | null>(null);
@@ -192,29 +193,24 @@ export default function MapScreen() {
   }, [selectedUser, followMode]);
 
   useEffect(() => {
-    Animated.timing(panelAnim, {
-      toValue: selectedUser || showUsersList ? 1 : 0,
-      duration: 240,
-      useNativeDriver: true,
-    }).start();
+    panelAnim.value = withTiming(selectedUser || showUsersList ? 1 : 0, { duration: 240 });
   }, [panelAnim, selectedUser, showUsersList]);
 
   useEffect(() => {
-    Animated.timing(expandAnim, {
-      toValue: isListExpanded ? 1 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
+    expandAnim.value = withTiming(isListExpanded ? 1 : 0, { duration: 300 });
   }, [expandAnim, isListExpanded]);
 
-  const panelTranslateY = panelAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [220, 0],
+  const panelStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(panelAnim.value, [0, 1], [220, 0]);
+    return {
+      opacity: panelAnim.value,
+      transform: [{ translateY }],
+    };
   });
 
-  const listMaxHeight = expandAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 300],
+  const usersListStyle = useAnimatedStyle(() => {
+    const maxHeight = interpolate(expandAnim.value, [0, 1], [0, 300]);
+    return { maxHeight };
   });
 
   if (!session?.access_token) {
@@ -250,13 +246,7 @@ export default function MapScreen() {
           <>
             <Animated.View
               pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
-              style={[
-                styles.detailCard,
-                {
-                  opacity: panelAnim,
-                  transform: [{ translateY: panelTranslateY }],
-                },
-              ]}
+              style={[styles.detailCard, panelStyle]}
             >
               {selectedUser ? (
                 <>
@@ -347,7 +337,7 @@ export default function MapScreen() {
                       </Pressable>
                     </View>
                   </Pressable>
-                  <Animated.View style={[styles.usersList, { maxHeight: listMaxHeight }]}>
+                  <Animated.View style={[styles.usersList, usersListStyle]}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                       {users.map((user) => {
                         const isMe = user.id === session?.user?.id;
