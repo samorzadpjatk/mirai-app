@@ -182,7 +182,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container,{paddingTop: insets.top , paddingBottom: insets.bottom }]}>
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -191,7 +191,7 @@ export default function NotificationsScreen() {
             tintColor="#00ced1"
           />
         }
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
         <View style={styles.header}>
