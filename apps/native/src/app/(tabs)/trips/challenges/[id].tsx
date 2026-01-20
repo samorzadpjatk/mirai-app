@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 // Default icon mapping for challenges
 const getIconForChallenge = (name: string): string => {
@@ -47,6 +48,8 @@ export default function ChallengeDetailScreen() {
     enabled: !!challengeId && !!tripId,
   });
 
+  const insets = useAppSafeAreaInsets();
+
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
   const handleBackPress = () => {
@@ -58,7 +61,7 @@ export default function ChallengeDetailScreen() {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
-      if (status !== 'granted') {
+      if (status !== ImagePicker.PermissionStatus.GRANTED) {
         Alert.alert(
           "Permission Required",
           "Camera permission is needed to complete this challenge.",
@@ -179,7 +182,7 @@ export default function ChallengeDetailScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Challenge Icon & Status */}
@@ -485,6 +488,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: spacing.xxxl,
   },
 });

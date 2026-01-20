@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 interface Challenge {
   id: string;
@@ -22,6 +23,7 @@ export default function ChallengesScreen() {
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0];
   const trpc = useTRPC();
+  const insets = useAppSafeAreaInsets();
 
   const { data: trip, isLoading: tripLoading } = useQuery({
     ...trpc.trip.getById.queryOptions({ id: tripId ?? '' }),
@@ -72,9 +74,7 @@ export default function ChallengesScreen() {
     if (!challengesData) return [];
 
     return challengesData.map((dbChallenge, index) => {
-      const isAssignedToUserGroup = userGroup
-        ? dbChallenge.groups.some(g => g.group.id === userGroup.id)
-        : false;
+      const isAssignedToUserGroup = dbChallenge.groups.some(g => g.groupId === userGroup?.id);
 
       return {
         id: dbChallenge.id,
@@ -200,7 +200,7 @@ export default function ChallengesScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 70, paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Group Info Card */}
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: 70, // Space for BackNavbar
-    paddingBottom: 100,
+    paddingTop: spacing.lg, // Space for BackNavbar
+    paddingBottom: spacing.xxxl,
   },
 });

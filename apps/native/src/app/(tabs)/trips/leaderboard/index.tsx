@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 const MEDAL_COLORS = {
   gold: '#FFCC00',
@@ -26,6 +27,7 @@ export default function LeaderboardScreen() {
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0];
   const trpc = useTRPC();
+  const insets = useAppSafeAreaInsets();
 
   const { data: trip, isLoading: tripLoading } = useQuery({
     ...trpc.trip.getById.queryOptions({ id: tripId ?? '' }),
@@ -278,7 +280,7 @@ export default function LeaderboardScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
       >
 
@@ -422,6 +424,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.xl,
-    paddingBottom: 100,
+    paddingBottom: spacing.xxxl,
   },
 });

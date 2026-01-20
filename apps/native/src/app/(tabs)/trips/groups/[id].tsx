@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography, shadows } from "../../../../styles";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useAuth } from "@integral-2025-app/auth/client";
 
@@ -28,6 +29,8 @@ export default function GroupDetailsScreen() {
     ...trpc.group.getById.queryOptions({ id: groupId ?? '' }),
     enabled: !!groupId,
   });
+
+  const insets = useAppSafeAreaInsets();
 
   if (!groupId || groupLoading) {
     return (
@@ -76,7 +79,7 @@ export default function GroupDetailsScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Card */}
@@ -207,8 +210,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    padding: spacing.xl,
-    paddingBottom: 100,
+    paddingBottom: spacing.xxxl,
   },
   heroCard: {
     borderRadius: borderRadius.xl,

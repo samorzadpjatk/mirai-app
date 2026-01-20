@@ -1,36 +1,28 @@
 import { View, Text, StyleSheet } from "react-native";
-import { SafeAreaTop } from "./SafeAreaWrapper";
 import Logo from "./Logo";
 
 export default function AppNavbar() {
   return (
-    <SafeAreaTop style={styles.navbar}>
-      <View style={styles.navLeft}>
-        <View style={styles.logoContainer}>
-          <Logo size={40} />
-        </View>
-        <View>
-          <Text style={styles.appName}>PJapp</Text>
-        </View>
+    <View style={styles.navLeft}>
+      <View style={styles.logoContainer}>
+        <Logo size={40} />
       </View>
-    </SafeAreaTop>
+      <View>
+        <Text style={styles.appName}>PJapp</Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  navbar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "rgba(23, 24, 28, 0.8)",
-    backdropFilter: "blur(12px)",
-  },
   navLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: "rgba(23, 24, 28, 0.8)",
+    backdropFilter: "blur(12px)",
   },
   logoContainer: {
     width: 40,

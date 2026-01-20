@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import Animated, { FadeInUp, ZoomIn } from "react-native-reanimated";
 import Logo from "../../components/Logo";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function SignupScreen() {
   const {
@@ -16,6 +17,7 @@ export default function SignupScreen() {
     handleSubmit,
   } = useSignupForm();
   const router = useRouter();
+  const insets = useAppSafeAreaInsets();
 
   const onSubmit = async () => {
     await handleSubmit(() => {
@@ -58,9 +60,9 @@ export default function SignupScreen() {
       <StatusBar style="light" />
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
       >
-        <View style={styles.formWrapper}>
+        <View style={[styles.formWrapper, { paddingTop: insets.top + 48 }]}>
           {/* Logo */}
           <View style={styles.headerSection}>
             <Logo size={100} />

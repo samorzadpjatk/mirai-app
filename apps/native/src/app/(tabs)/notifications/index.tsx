@@ -17,6 +17,7 @@ import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { formatRelativeTime, formatDate } from "~/utils/format";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function NotificationsScreen() {
   const trpc = useTRPC();
@@ -49,6 +50,8 @@ export default function NotificationsScreen() {
     refetch,
     isFetching,
   } = useQuery(trpc.notificationSchedule.getAll.queryOptions());
+
+  const insets = useAppSafeAreaInsets();
 
   const schedules = schedulesData?.schedules ?? [];
 
@@ -188,7 +191,7 @@ export default function NotificationsScreen() {
             tintColor="#00ced1"
           />
         }
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
       >
         {/* Header */}
         <View style={styles.header}>

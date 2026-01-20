@@ -74,7 +74,7 @@ export default function AlertsScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxxl }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: 120,
+    paddingBottom: spacing.xxxl,
   },
   header: {
     marginBottom: spacing.xl,
