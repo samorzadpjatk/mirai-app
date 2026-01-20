@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ImageBackground, Linking, Modal, Pressable, Alert, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { WebView } from 'react-native-webview';
 import Pdf from 'react-native-pdf';
@@ -21,8 +21,8 @@ export default function TripInfoScreen() {
   const [isInfopackDownloaded, setIsInfopackDownloaded] = useState(false);
 
   // Check if files are downloaded on component mount
-  React.useEffect(() => {
-    const checkDownloadedFiles = async () => {
+  useEffect(() => {
+    const checkDownloadedFiles = () => {
       try {
         const pdfDir = new Directory(Paths.document, 'pdfs');
 
@@ -73,7 +73,7 @@ export default function TripInfoScreen() {
 
       // Check if directory exists, if not create it
       if (!pdfDir.exists) {
-        await pdfDir.create();
+        void pdfDir.create();
       }
 
       // The downloaded file will have the name from URL
