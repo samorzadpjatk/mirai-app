@@ -41,8 +41,8 @@ export default function ChallengeDetailScreen() {
 
   const { data: challenge, isLoading: challengeLoading } = useQuery({
     ...trpc.challenge.getById.queryOptions({
-      id: challengeId || '',
-      tripId: tripId || ''
+      id: challengeId ?? '',
+      tripId: tripId ?? ''
     }),
     enabled: !!challengeId && !!tripId,
   });
@@ -278,7 +278,7 @@ export default function ChallengeDetailScreen() {
             color: colors.textSecondary,
             marginBottom: spacing.lg
           }}>
-            {challenge.description || 'Complete this challenge to earn points for your group!'}
+            {challenge.description ?? 'Complete this challenge to earn points for your group!'}
           </Text>
 
           {challenge.image && (

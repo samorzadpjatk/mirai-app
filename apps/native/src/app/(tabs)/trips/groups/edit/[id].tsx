@@ -27,12 +27,12 @@ export default function EditGroupScreen() {
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
   const { data: group, isLoading: groupLoading } = useQuery({
-    ...trpc.group.getById.queryOptions({ id: groupId || '' }),
+    ...trpc.group.getById.queryOptions({ id: groupId ?? '' }),
     enabled: !!groupId,
   });
 
   const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: group?.trip?.id || '' }),
+    ...trpc.trip.getById.queryOptions({ id: group?.trip?.id ?? '' }),
     enabled: !!group?.trip?.id,
   });
 
@@ -56,7 +56,7 @@ export default function EditGroupScreen() {
       },
       onError: (error: any) => {
         console.error('Update group error:', error);
-        Alert.alert('Error', error.message || 'Failed to update group');
+        Alert.alert('Error', error?.message ?? 'Failed to update group');
       },
     })
   );
@@ -82,13 +82,13 @@ export default function EditGroupScreen() {
     try {
       // Update group name and code
       await updateGroupMutation.mutateAsync({
-        id: groupId || '',
-        tripId: group?.trip?.id || '',
+        id: groupId ?? '',
+        tripId: group?.trip?.id ?? '',
         name: groupName,
       });
 
       // Handle member changes
-      const originalMembers = new Set(group?.participants.map(p => p.user.id) || []);
+      const originalMembers = new Set(group?.participants?.map(p => p.user.id) ?? []);
       const membersToAdd = Array.from(currentMembers).filter(id => !originalMembers.has(id));
       const membersToRemove = Array.from(originalMembers).filter(id => !currentMembers.has(id));
 
@@ -96,8 +96,8 @@ export default function EditGroupScreen() {
       for (const userId of membersToAdd) {
         await assignMemberMutation.mutateAsync({
           userId,
-          tripId: group?.trip?.id || '',
-          groupId: groupId || '',
+          tripId: group?.trip?.id ?? '',
+          groupId: groupId ?? '',
         });
       }
 
@@ -105,7 +105,7 @@ export default function EditGroupScreen() {
       for (const userId of membersToRemove) {
         await removeMemberMutation.mutateAsync({
           userId,
-          tripId: group?.trip?.id || '',
+          tripId: group?.trip?.id ?? '',
         });
       }
 

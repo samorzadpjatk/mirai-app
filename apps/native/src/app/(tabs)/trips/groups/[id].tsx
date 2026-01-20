@@ -25,7 +25,7 @@ export default function GroupDetailsScreen() {
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
   const { data: group, isLoading: groupLoading } = useQuery({
-    ...trpc.group.getById.queryOptions({ id: groupId || '' }),
+    ...trpc.group.getById.queryOptions({ id: groupId ?? '' }),
     enabled: !!groupId,
   });
 

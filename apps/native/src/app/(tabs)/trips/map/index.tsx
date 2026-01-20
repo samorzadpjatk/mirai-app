@@ -225,6 +225,12 @@ export default function MapScreen() {
     [users, selectedUserId],
   );
 
+  const selectedUserDisplayName = selectedUser ? (selectedUser.name && selectedUser.name.trim() !== "" ? selectedUser.name : "Unknown user") : "Unknown user";
+  const selectedUserDisplaySurname = (() => {
+    const s = selectedUserDisplayName.split(" ").slice(1).join(" ");
+    return s !== "" ? s : "-";
+  })();
+
   useEffect(() => {
     if (!selectedUser) return;
     if (followMode !== "user") return;
@@ -314,17 +320,16 @@ export default function MapScreen() {
                       <View style={styles.avatarWrapper}>
                         <UserAvatar
                           imageUrl={selectedUser.avatarUrl}
-                          name={selectedUser.name}
+                          name={selectedUserDisplayName}
                           size={60}
                         />
                       </View>
                       <View style={styles.userDetails}>
                         <Text style={styles.userName}>
-                          {(selectedUser.name || "Unknown user").split(" ")[0]}
+                          {selectedUserDisplayName.split(" ")[0]}
                         </Text>
                         <Text style={styles.userSurname}>
-                          {(selectedUser.name || "Unknown user").split(" ").slice(1).join(" ") ||
-                            "-"}
+                          {selectedUserDisplaySurname}
                         </Text>
                       </View>
                     </View>
@@ -425,7 +430,7 @@ export default function MapScreen() {
                                 </Text>
                               </View>
                               <Text style={styles.userListAddress}>
-                                {user.address || "-"}
+                                {user.address ?? "-"}
                               </Text>
                             </View>
                           </Pressable>
@@ -528,6 +533,7 @@ export default function MapScreen() {
                       .map((user) => {
                         const isAlreadySharing = sharingUserIds.includes(user.id);
                         const isSelected = selectedUsers.has(user.id);
+                        const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
                         return (
                           <Pressable
                             key={user.id}
@@ -550,13 +556,13 @@ export default function MapScreen() {
                               <View style={styles.avatarWrapperSmall}>
                                 <UserAvatar
                                   imageUrl={user.image}
-                                  name={`${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()}
+                                  name={fullName}
                                   size={48}
                                 />
                               </View>
                               <View>
                                 <Text style={styles.modalUserName}>
-                                  {`${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Unknown"}
+                                  {fullName !== "" ? fullName : "Unknown"}
                                 </Text>
                                 {isAlreadySharing && (
                                   <Text style={styles.alreadySharingText}>

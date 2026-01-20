@@ -25,14 +25,14 @@ export default function AlertsScreen() {
   const pageSize = 20;
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    ...trpc.notification.getAllMy.queryOptions({
+    ...trpc.notifications.getAllMy.queryOptions({
       page,
       pageSize,
     }),
   });
 
-  const notifications = data?.notifications || [];
-  const totalPages = data?.pagination?.totalPages || 1;
+  const notifications = data?.notifications ?? [];
+  const totalPages = data?.pagination?.totalPages ?? 1;
 
   const formatDate = (date: Date) => {
     const now = new Date();

@@ -35,7 +35,7 @@ export default function TripsScreen() {
 
   // Combine API trips with static trip
   const allTrips = useMemo(() => {
-    const apiTrips = trips || [];
+    const apiTrips = trips ?? [];
     return [...apiTrips, wiatronaliaTrip];
   }, [trips, wiatronaliaTrip]);
 
