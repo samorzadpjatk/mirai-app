@@ -251,7 +251,7 @@ export default function MapScreen() {
           <>
             <Animated.View
               pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
-              style={[styles.detailCard, { bottom: insets.bottom + spacing.xxxl }, panelStyle]}
+              style={[styles.detailCard, panelStyle]}
             >
               {selectedUser ? (
                 <>
