@@ -71,7 +71,7 @@ export default function TripDetailsScreen() {
         {/* Main Content */}
         <ScrollView
           style={styles.mainContent}
-          contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + spacing.xxxl }]}
+          contentContainerStyle={styles.contentContainer}
         >
           {/* Hero Image */}
           <View style={styles.heroCard}>
