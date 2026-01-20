@@ -30,10 +30,11 @@ export default function NotificationsScreen() {
   // Redirect if user doesn't have access
   useEffect(() => {
     if (!isLoadingUser && currentUser) {
-      const hasAccess =
-        currentUser.isAdmin ||
-        currentUser.isModerator ||
-        currentUser.isServiceAccount;
+      const hasAccess = [
+        currentUser?.isAdmin,
+        currentUser?.isModerator,
+        currentUser?.isServiceAccount,
+      ].some(Boolean);
       if (!hasAccess) {
         router.replace("/");
       }
@@ -168,7 +169,7 @@ export default function NotificationsScreen() {
       <View style={styles.loadingContainer}>
         <Text style={styles.errorTitle}>Error loading notifications</Text>
         <Text style={styles.errorMessage}>
-          {error?.message || "Something went wrong"}
+          {error?.message ?? "Something went wrong"}
         </Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => void refetch()}>
           <Text style={styles.retryButtonText}>Try Again</Text>

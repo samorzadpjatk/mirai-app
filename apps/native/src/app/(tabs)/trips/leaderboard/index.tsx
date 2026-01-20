@@ -28,7 +28,7 @@ export default function LeaderboardScreen() {
   const trpc = useTRPC();
 
   const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId || '' }),
+    ...trpc.trip.getById.queryOptions({ id: tripId ?? '' }),
     enabled: !!tripId,
   });
 
@@ -46,7 +46,7 @@ export default function LeaderboardScreen() {
         id: group.id,
         name: group.name,
         coins: group.coins,
-        memberCount: group._count?.participants || 0,
+        memberCount: group._count?.participants ?? 0,
         rank: index + 1,
         isCurrentUserGroup: group.id === userGroupId,
       }));

@@ -14,7 +14,7 @@ interface SafeAreaTopProps {
 export function SafeAreaTop({ children, style }: SafeAreaTopProps) {
   const insets = useAppSafeAreaInsets();
   const flattenedStyle = StyleSheet.flatten(style);
-  const existingPaddingTop = flattenedStyle?.paddingTop || 0;
+  const existingPaddingTop = flattenedStyle?.paddingTop ?? 0;
 
   return (
     <View

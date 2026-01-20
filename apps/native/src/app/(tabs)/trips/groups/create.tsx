@@ -35,7 +35,7 @@ export default function CreateGroupScreen() {
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
 
   const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId || '' }),
+    ...trpc.trip.getById.queryOptions({ id: tripId ?? '' }),
     enabled: !!tripId,
   });
 
@@ -56,7 +56,7 @@ export default function CreateGroupScreen() {
               console.log(`Assigning user ${userId} to group ${newGroup.id}`);
               await assignMemberMutation.mutateAsync({
                 userId,
-                tripId: tripId || '',
+                tripId: tripId ?? '',
                 groupId: newGroup.id,
               });
               console.log(`Successfully assigned user ${userId}`);
@@ -78,7 +78,7 @@ export default function CreateGroupScreen() {
       },
       onError: (error: any) => {
         console.error('Create group error:', error);
-        Alert.alert('Error', error.message || 'Failed to create group');
+        Alert.alert('Error', error?.message ?? 'Failed to create group');
       },
     })
   );
@@ -107,7 +107,7 @@ export default function CreateGroupScreen() {
 
     console.log('Starting mutation...');
     createGroupMutation.mutate({
-      tripId: tripId || '',
+      tripId: tripId ?? '',
       name: groupName,
       code: groupCode,
     });

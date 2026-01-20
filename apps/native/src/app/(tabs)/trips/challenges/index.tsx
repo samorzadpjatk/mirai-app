@@ -24,12 +24,12 @@ export default function ChallengesScreen() {
   const trpc = useTRPC();
 
   const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId || '' }),
+    ...trpc.trip.getById.queryOptions({ id: tripId ?? '' }),
     enabled: !!tripId,
   });
 
   const { data: challengesData, isLoading: challengesLoading } = useQuery({
-    ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId || '' }),
+    ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId ?? '' }),
     enabled: !!tripId,
   });
 
@@ -39,7 +39,7 @@ export default function ChallengesScreen() {
   const userGroup = useMemo(() => {
     if (!currentUser || !trip?.participants) return null;
     const participant = trip.participants.find(p => p.user.id === currentUser.id);
-    return participant?.group || null;
+    return participant?.group ?? null;
   }, [currentUser, trip]);
 
   // Calculate leaderboard position and points difference
@@ -47,7 +47,7 @@ export default function ChallengesScreen() {
     if (!userGroup || !trip?.groups) return null;
 
     // Sort groups by coins (descending)
-    const sortedGroups = [...trip.groups].sort((a, b) => (b.coins || 0) - (a.coins || 0));
+    const sortedGroups = [...trip.groups].sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0));
 
     // Find user's group position (1-indexed)
     const position = sortedGroups.findIndex(g => g.id === userGroup.id) + 1;
@@ -57,11 +57,11 @@ export default function ChallengesScreen() {
     if (position === 1 && sortedGroups.length > 1) {
       // If first place, show lead over 2nd place
       const secondPlace = sortedGroups[1];
-      pointsDifference = (userGroup.coins || 0) - (secondPlace?.coins || 0);
+      pointsDifference = (userGroup.coins ?? 0) - (secondPlace?.coins ?? 0);
     } else if (position > 1) {
       // If not first, show how many points behind the group ahead
       const groupAhead = sortedGroups[position - 2]; // position - 1 - 1 (zero-indexed)
-      pointsDifference = (groupAhead?.coins || 0) - (userGroup.coins || 0);
+      pointsDifference = (groupAhead?.coins ?? 0) - (userGroup.coins ?? 0);
     }
 
     return { position, pointsDifference, totalGroups: sortedGroups.length };
@@ -83,8 +83,8 @@ export default function ChallengesScreen() {
         icon: 'stars',
         iconColor: colors.primary,
         status: isAssignedToUserGroup ? 'selected' : (index >= 6 ? 'locked' : 'incomplete'),
-        description: dbChallenge.description || undefined,
-        image: dbChallenge.image || undefined,
+        description: dbChallenge.description ?? undefined,
+        image: dbChallenge.image ?? undefined,
       };
     });
   }, [challengesData, userGroup]);
@@ -258,10 +258,10 @@ export default function ChallengesScreen() {
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
                   <Text style={{ fontSize: 24, fontWeight: typography.bold, color: colors.primary }}>
-                    {leaderboardInfo?.position || '-'}
+                    {leaderboardInfo?.position ?? '-'}
                   </Text>
                   <Text style={{ fontSize: 10, fontWeight: typography.bold, color: 'rgba(0, 206, 209, 0.7)', textTransform: 'uppercase' }}>
-                    / {leaderboardInfo?.totalGroups || 0}
+                    / {leaderboardInfo?.totalGroups ?? 0}
                   </Text>
                 </View>
               </View>
@@ -286,7 +286,7 @@ export default function ChallengesScreen() {
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
                   <Text style={{ fontSize: 24, fontWeight: typography.bold, color: leaderboardInfo?.position === 1 ? '#10b981' : '#ef4444' }}>
-                    {leaderboardInfo?.pointsDifference || 0}
+                    {leaderboardInfo?.pointsDifference ?? 0}
                   </Text>
                   <Text style={{ fontSize: 10, fontWeight: typography.bold, color: colors.textMuted, textTransform: 'uppercase' }}>
                     pts

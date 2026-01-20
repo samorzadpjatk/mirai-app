@@ -24,7 +24,7 @@ export default function GroupsListScreen() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: groups, isLoading: groupsLoading } = useQuery({
-    ...trpc.group.getAll.queryOptions({ tripId: tripId || '' }),
+    ...trpc.group.getAll.queryOptions({ tripId: tripId ?? '' }),
     enabled: !!tripId,
   });
 
@@ -79,7 +79,7 @@ export default function GroupsListScreen() {
         <View style={styles.listHeader}>
           <Text style={styles.listHeaderTitle}>Active Trip Clusters</Text>
           <Text style={styles.listHeaderCount}>
-            {filteredGroups?.length || 0} Results
+            {filteredGroups?.length ?? 0} Results
           </Text>
         </View>
 

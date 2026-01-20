@@ -22,7 +22,7 @@ export default function TripDetailsScreen() {
   );
 
   const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId || '' }),
+    ...trpc.trip.getById.queryOptions({ id: tripId ?? '' }),
     enabled: !!tripId,
   });
 
