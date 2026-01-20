@@ -1,112 +1,94 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform, Alert } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { useAuth } from '@integral-2025-app/auth/client';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { colors, spacing, borderRadius, typography } from '../../styles';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
+  // eslint-disable-next-line @typescript-eslint/require-await
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 export default function ProfileScreen() {
+  const insets = useAppSafeAreaInsets();
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { signOut } = useAuth();
-  const insets = useSafeAreaInsets();
-  const [notificationStatus, setNotificationStatus] = useState<'loading' | 'granted' | 'denied' | 'undetermined'>('loading');
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
-  const { data: subscriptionStatus } = useQuery(trpc.notification.getSubscriptionStatus.queryOptions());
+  const userMyQueryOptions = trpc.user.getMy.queryOptions();
+  const subscriptionQueryOptions = trpc.notifications.getSubscriptionStatus.queryOptions();
 
-  const subscribeMutation = useMutation({
-    ...trpc.notification.subscribe.mutationOptions(),
-    onSuccess: () => {
-      Alert.alert('Success', 'Push notifications enabled!');
-    },
-    onError: (error: Error) => {
-      Alert.alert('Error', `Failed to subscribe: ${error.message}`);
-    },
-  });
+  const { data: currentUser } = useQuery(userMyQueryOptions);
+  const { data: subscriptionStatus } = useQuery(subscriptionQueryOptions);
 
-  const unsubscribeMutation = useMutation({
-    ...trpc.notification.unsubscribe.mutationOptions(),
-    onSuccess: () => {
-      Alert.alert('Success', 'Push notifications disabled');
-    },
-    onError: (error: Error) => {
-      Alert.alert('Error', `Failed to unsubscribe: ${error.message}`);
-    },
-  });
+  const [permissionStatus, setPermissionStatus] = useState<Notifications.PermissionStatus>(Notifications.PermissionStatus.UNDETERMINED);
 
-  useEffect(() => {
-    registerForPushNotifications();
-  }, []);
+  const isSubscribed = useMemo(() => {
+    return permissionStatus === Notifications.PermissionStatus.GRANTED && subscriptionStatus?.isSubscribed;
+  }, [permissionStatus, subscriptionStatus?.isSubscribed]);
 
-  const registerForPushNotifications = async () => {
-    try {
-      // Check current permission status
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      const finalStatus = existingStatus;
+  const subscribeMutation = useMutation(
+    trpc.notifications.subscribe.mutationOptions({
+      onSuccess: async () => {
+        Alert.alert('Success', 'Push notifications enabled!');
+        await queryClient.invalidateQueries({ queryKey: subscriptionQueryOptions.queryKey });
+      },
+      onError: (error) => {
+        Alert.alert('Error', `Failed to subscribe: ${error.message}`);
+      },
+    }),
+  );
 
-      setNotificationStatus(existingStatus);
-
-      // If not granted, request permission (but don't auto-subscribe)
-      if (existingStatus !== 'granted') {
-        return;
-      }
-
-      // Get Expo push token
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId,
-      });
-
-      // Auto-subscribe if permission already granted
-      if (tokenData.data && !subscriptionStatus?.isSubscribed) {
-        await subscribeMutation.mutateAsync({ token: tokenData.data });
-      }
-    } catch (error) {
-      console.error('Error registering for push notifications:', error);
-    }
-  };
+  const unsubscribeMutation = useMutation(
+    trpc.notifications.unsubscribe.mutationOptions({
+      onSuccess: async () => {
+        Alert.alert('Success', 'Push notifications disabled');
+        await queryClient.invalidateQueries({ queryKey: subscriptionQueryOptions.queryKey });
+      },
+      onError: (error) => {
+        Alert.alert('Error', `Failed to unsubscribe: ${error.message}`);
+      },
+    }),
+  );
 
   const handleToggleNotifications = async () => {
     try {
       if (subscriptionStatus?.isSubscribed) {
-        // Unsubscribe
-        await unsubscribeMutation.mutateAsync();
+        for (const sub of subscriptionStatus.subscriptions) {
+          await unsubscribeMutation.mutateAsync({ token: sub.token });
+        }
       } else {
         // Request permission if needed
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
 
-        if (existingStatus !== 'granted') {
+        if (existingStatus !== Notifications.PermissionStatus.GRANTED) {
           const { status } = await Notifications.requestPermissionsAsync();
           finalStatus = status;
-          setNotificationStatus(status);
         }
 
-        if (finalStatus !== 'granted') {
+        if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
           Alert.alert('Permission Required', 'Please enable notifications in your device settings');
           return;
         }
 
-        // Get token and subscribe
-        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-        const tokenData = await Notifications.getExpoPushTokenAsync({
-          projectId,
-        });
+        const extraExpoConfig: { eas?: { projectId?: string } } | undefined = Constants.expoConfig?.extra;
+        const projectId = extraExpoConfig?.eas?.projectId;
+        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
 
         if (tokenData.data) {
           await subscribeMutation.mutateAsync({ token: tokenData.data });
@@ -145,6 +127,7 @@ export default function ProfileScreen() {
     }
   };
 
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -165,9 +148,9 @@ export default function ProfileScreen() {
           </Text>
 
           <View style={styles.roleBadge}>
-            <Ionicons name="shield" size={14} color={getRoleColor(currentUser?.role || 'user')} />
-            <Text style={[styles.roleText, { color: getRoleColor(currentUser?.role || 'user') }]}>
-              {getRoleLabel(currentUser?.role || 'user')}
+            <Ionicons name="shield" size={14} color={getRoleColor(currentUser?.role ?? 'user')} />
+            <Text style={[styles.roleText, { color: getRoleColor(currentUser?.role ?? 'user') }]}>
+              {getRoleLabel(currentUser?.role ?? 'user')}
             </Text>
           </View>
         </View>
@@ -218,24 +201,24 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[
               styles.actionButton,
-              subscriptionStatus?.isSubscribed && styles.activeButton
+              isSubscribed && styles.activeButton
             ]}
             onPress={handleToggleNotifications}
           >
             <View style={[
               styles.actionIcon,
-              subscriptionStatus?.isSubscribed && styles.activeIcon
+              isSubscribed && styles.activeIcon
             ]}>
-              {subscriptionStatus?.isSubscribed ? (
+              {isSubscribed ? (
                 <Ionicons name="notifications" size={20} color={colors.primary} />
               ) : (
                 <Ionicons name="notifications-off" size={20} color={colors.white} />
               )}
             </View>
             <Text style={styles.actionText}>
-              {subscriptionStatus?.isSubscribed ? 'Notifications Enabled' : 'Enable Notifications'}
+              {isSubscribed ? 'Notifications Enabled' : 'Enable Notifications'}
             </Text>
-            {subscriptionStatus?.isSubscribed && (
+            {isSubscribed && (
               <View style={styles.activeBadge}>
                 <Text style={styles.activeBadgeText}>ON</Text>
               </View>
