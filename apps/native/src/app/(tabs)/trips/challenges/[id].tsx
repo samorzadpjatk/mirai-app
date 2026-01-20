@@ -286,7 +286,7 @@ export default function ChallengeDetailScreen() {
               source={{ uri: challenge.image }}
               style={{
                 width: '100%',
-                aspectRatio: 16/9,
+                aspectRatio: 16 / 9,
                 borderRadius: borderRadius.lg,
                 marginTop: spacing.md
               }}
@@ -375,7 +375,7 @@ export default function ChallengeDetailScreen() {
               source={{ uri: capturedImage }}
               style={{
                 width: '100%',
-                aspectRatio: 4/3,
+                aspectRatio: 4 / 3,
                 borderRadius: borderRadius.lg,
                 marginBottom: spacing.lg
               }}

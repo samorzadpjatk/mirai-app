@@ -1,57 +1,7 @@
 import React, { useMemo, useRef, useEffect } from "react";
-import { Platform, StyleSheet, View, Text } from "react-native";
-import Constants from "expo-constants";
+import { StyleSheet, View } from "react-native";
 import { UserAvatar } from "./UserAvatar";
-
-// Check if we should load MapLibre (not web, not Expo Go)
-const appOwnership: string = Constants.appOwnership ?? "unknown";
-const isExpoGo = appOwnership === "expo";
-const shouldLoadMapLibre = Platform.OS !== "web" && !isExpoGo;
-
-// Conditionally import MapLibre - this import happens once at module load time
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const MapLibreRN = shouldLoadMapLibre ? require("@maplibre/maplibre-react-native") : null;
-
-// Extract components from MapLibre (if loaded)
-const MapView = MapLibreRN?.MapView ?? MapLibreRN?.default?.MapView;
-const Camera = MapLibreRN?.Camera ?? MapLibreRN?.default?.Camera;
-const MapLibreUserLocation = MapLibreRN?.UserLocation ?? MapLibreRN?.default?.UserLocation;
-const PointAnnotation = MapLibreRN?.PointAnnotation ?? MapLibreRN?.default?.PointAnnotation;
-const VectorSource = MapLibreRN?.VectorSource ?? MapLibreRN?.default?.VectorSource;
-
-const isMapLibreAvailable = !!MapView;
-
-// Declare global type for MapLibre module cache
-declare global {
-  // eslint-disable-next-line no-var
-  var __MAPLIBRE_MODULE__: Record<string, unknown> | null | undefined;
-  // eslint-disable-next-line no-var
-  var __MAPLIBRE_LOADED__: boolean | undefined;
-}
-
-function getMapLibreComponents(): Record<string, unknown> | null {
-  // Use global to persist across hot reloads
-  if (global.__MAPLIBRE_LOADED__) {
-    return global.__MAPLIBRE_MODULE__ ?? null;
-  }
-
-  if (isMapLibreAvailable) {
-    global.__MAPLIBRE_MODULE__ = {
-      MapView,
-      Camera,
-      UserLocation: MapLibreUserLocation,
-      PointAnnotation,
-      VectorSource,
-    };
-    console.log("[UserMap] MapLibre loaded successfully");
-  } else {
-    console.warn("[UserMap] MapLibre module loaded but MapView not found", Object.keys(MapLibreRN || {}));
-    global.__MAPLIBRE_MODULE__ = null;
-  }
-
-  global.__MAPLIBRE_LOADED__ = true;
-  return global.__MAPLIBRE_MODULE__ ?? null;
-}
+import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource } from "@maplibre/maplibre-react-native";
 
 export interface UserLocation {
   id: string;
@@ -262,18 +212,16 @@ export const UserMap: React.FC<UserMapProps> = ({
     return users.filter((user) => getActivityOpacity(user.lastActiveAt, now) > 0);
   }, [users]);
 
-  // Get lazy-loaded MapLibre components
-  const mapLibre = useMemo(() => getMapLibreComponents(), []);
-
+  // No runtime imports — directly set camera when focusedCoordinate changes
   useEffect(() => {
-    if (!focusedCoordinate || !mapLibre) return;
+    if (!focusedCoordinate) return;
     cameraRef.current?.setCamera?.({
       centerCoordinate: focusedCoordinate,
       zoomLevel: initialZoomLevel,
       animationDuration: 1200,
       padding: { paddingBottom: 220, paddingTop: 40, paddingLeft: 40, paddingRight: 40 },
     });
-  }, [focusedCoordinate, initialZoomLevel, mapLibre]);
+  }, [focusedCoordinate, initialZoomLevel]);
 
   const handleUserLocationUpdate = (loc: {
     coords?: { longitude?: number | null; latitude?: number | null };
@@ -297,30 +245,7 @@ export const UserMap: React.FC<UserMapProps> = ({
 
   const currentMapStyle = mapStyleURL ?? (mapTheme === 'light' ? MAP_STYLE_LIGHT : MAP_STYLE_DARK) as string | object;
 
-  // Web support for the native MapLibre wrapper is limited and often requires extra setup.
-  if (Platform.OS === "web") {
-    return (
-      <View style={styles.webPlaceholder}>
-        <Text>Mapa jest dostępna tylko w aplikacji mobilnej.</Text>
-      </View>
-    );
-  }
 
-  if (isExpoGo) {
-    return (
-      <View style={styles.webPlaceholder}>
-        <Text>MapLibre wymaga dev build (Expo Go nie zawiera natywnego kodu).</Text>
-      </View>
-    );
-  }
-
-  if (!mapLibre) {
-    return (
-      <View style={styles.webPlaceholder}>
-        <Text>MapLibre nie jest dostępne.</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -386,11 +311,7 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  webPlaceholder: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
   avatarShadow: {
     width: 46,
     height: 46,
