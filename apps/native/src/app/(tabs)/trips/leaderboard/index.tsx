@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Image, Platform, StyleSheet } from 'react-native';
+import { useMemo } from 'react';
+import { View, Text, ScrollView, ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -52,7 +52,7 @@ export default function LeaderboardScreen() {
       }));
 
     return sorted;
-  }, [trip?.groups, trip?.participants, currentUser?.id]);
+  }, [trip, currentUser?.id]);
 
   const topThree = rankedGroups.slice(0, 3);
   const restOfGroups = rankedGroups.slice(3);

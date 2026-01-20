@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -65,7 +65,7 @@ export default function ChallengesScreen() {
     }
 
     return { position, pointsDifference, totalGroups: sortedGroups.length };
-  }, [userGroup, trip?.groups]);
+  }, [userGroup, trip]);
 
   // Map database challenges to UI format
   const challenges: Challenge[] = useMemo(() => {

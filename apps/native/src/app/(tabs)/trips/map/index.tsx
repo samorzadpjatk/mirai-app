@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View, ScrollView, Modal, TextInput } from "react-native";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
@@ -7,57 +7,6 @@ import { UserAvatar } from "~/components/map/UserAvatar";
 import { useTRPC, useSubscription } from "@integral-2025-app/trpc/client";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { formatRelativeTime } from "~/utils/format";
-
-type FriendLocationEvent =
-  | { id: string; type: "upsert"; location: LocationWithUser }
-  | { id: string; type: "delete"; userId: string };
-
-interface LocationWithUser {
-  coords: {
-    latitude: number;
-    longitude: number;
-    altitude: number | null;
-    accuracy: number | null;
-    altitudeAccuracy: number | null;
-    heading: number | null;
-    speed: number | null;
-  };
-  timestamp: number;
-  isSharingLocation: boolean;
-  user?: {
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-    image: string | null;
-  };
-}
-
-const toNumber = (value: unknown): number | null => {
-  if (typeof value === "number") return value;
-  if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  if (
-    value &&
-    typeof value === "object" &&
-    "toNumber" in value &&
-    typeof (value as { toNumber?: unknown }).toNumber === "function"
-  ) {
-    const parsed = (value as { toNumber: () => number }).toNumber();
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  if (
-    value &&
-    typeof value === "object" &&
-    "toString" in value &&
-    typeof (value as { toString?: unknown }).toString === "function"
-  ) {
-    const parsed = Number((value as { toString: () => string }).toString());
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-};
 
 export default function MapScreen() {
   const trpc = useTRPC();
@@ -102,6 +51,14 @@ export default function MapScreen() {
     houseNumber?: string;
   }>>({});
 
+  // Current timestamp used for activity calculations — updated in an effect to avoid calling Date.now() during render
+  // Initialize `now` lazily and update on interval; avoids calling Date.now() synchronously inside effect
+  const [now, setNow] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(id);
+  }, []);
+
   const connectionId = useMemo(() => Crypto.randomUUID(), []);
 
   useSubscription(
@@ -114,7 +71,8 @@ export default function MapScreen() {
       },
       {
         enabled: !!session?.access_token,
-        onData: (event: FriendLocationEvent) => {
+        onData: (data) => {
+          const { data: event } = data;
           console.log("[Map] Received WebSocket event:", event.type, event);
           if (event.type === "upsert") {
             const { location } = event;
@@ -132,8 +90,8 @@ export default function MapScreen() {
               setUsersData((prev) => ({
                 ...prev,
                 [userId]: {
-                  name: `${location.user.firstName ?? ""} ${location.user.lastName ?? ""}`.trim(),
-                  image: location.user.image ?? undefined,
+                  name: `${location.user?.firstName ?? ""} ${location.user?.lastName ?? ""}`.trim(),
+                  image: location.user?.image ?? undefined,
                 },
               }));
             }
@@ -157,33 +115,29 @@ export default function MapScreen() {
     ),
   );
 
-  const sendLocation = useMutation({
-    mutationFn: (input: { latitude: number; longitude: number }) => {
-      if (!session?.access_token) {
-        return Promise.resolve(null);
-      }
-      return trpc.location.updateLocation.mutate({
-        latitude: input.latitude,
-        longitude: input.longitude,
-        accuracy: null,
-        altitude: null,
-        altitudeAccuracy: null,
-        heading: null,
-        speed: null,
-      });
-    },
+  const updateLocationMutation = useMutation(trpc.location.updateLocation.mutationOptions());
+  const sendLocation = (input: { latitude: number; longitude: number }) => updateLocationMutation.mutateAsync({
+    latitude: input.latitude,
+    longitude: input.longitude,
+    accuracy: null,
+    altitude: null,
+    altitudeAccuracy: null,
+    heading: null,
+    speed: null,
   });
 
-  const updateSharingMutation = useMutation({
-    ...trpc.location.updateSharingSettings.mutationOptions(),
-    onSuccess: () => {
-      console.log("[Map] Sharing settings updated");
-      refetchSharing();
-    },
-    onError: (error: Error) => {
-      console.error("[Map] Failed to update sharing:", error);
-    },
-  });
+  const updateSharingMutation = useMutation(
+    trpc.location.updateSharingSettings.mutationOptions({
+      onSuccess: () => {
+        console.log("[Map] Sharing settings updated");
+        void refetchSharing();
+      },
+      onError: (error) => {
+        console.error("[Map] Failed to update sharing:", error);
+      },
+    }),
+
+  );
 
   const users: UserLocation[] = useMemo(() => {
     const next: UserLocation[] = [];
@@ -197,7 +151,7 @@ export default function MapScreen() {
         address: "Your location",
         coordinate: currentCoordinate,
         avatarUrl: session?.user?.image ?? null,
-        lastActiveAt: Date.now(),
+        lastActiveAt: now,
       });
     }
 
@@ -218,7 +172,7 @@ export default function MapScreen() {
       });
     });
     return next;
-  }, [locationsByUserId, usersData, session?.user?.id, session?.user?.email, currentCoordinate]);
+  }, [locationsByUserId, usersData, session?.user?.id, session?.user?.email, session?.user?.image, currentCoordinate, now]);
 
   const selectedUser = useMemo(
     () => users.find((user) => user.id === selectedUserId) ?? null,
@@ -283,7 +237,7 @@ export default function MapScreen() {
           const now = Date.now();
           if (now - lastSentRef.current < 5000) return;
           lastSentRef.current = now;
-          sendLocation.mutate({ latitude, longitude });
+          void sendLocation({ latitude, longitude });
         }}
         onMapPress={() => {
           if (isListExpanded) {

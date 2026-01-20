@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { UserAvatar } from "./UserAvatar";
 import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource } from "@maplibre/maplibre-react-native";
@@ -199,10 +199,17 @@ export const UserMap: React.FC<UserMapProps> = ({
   const cameraRef = useRef<CameraRef>(null);
   const hasCenteredRef = useRef(false);
 
+  // Keep a periodic `now` in state to avoid calling Date.now() during render
+  // Initialize `now` lazily and update on interval; avoids calling Date.now() synchronously inside effect
+  const [now, setNow] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(id);
+  }, []);
+
   const filteredUsers = useMemo(() => {
-    const now = Date.now();
     return users.filter((user) => getActivityOpacity(user.lastActiveAt, now) > 0);
-  }, [users]);
+  }, [users, now]);
 
   // No runtime imports — directly set camera when focusedCoordinate changes
   useEffect(() => {

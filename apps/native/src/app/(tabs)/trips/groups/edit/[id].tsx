@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -54,7 +54,7 @@ export default function EditGroupScreen() {
       onSuccess: () => {
         Alert.alert('Success', 'Group updated successfully!');
       },
-      onError: (error: any) => {
+      onError: (error) => {
         console.error('Update group error:', error);
         Alert.alert('Error', error?.message ?? 'Failed to update group');
       },
