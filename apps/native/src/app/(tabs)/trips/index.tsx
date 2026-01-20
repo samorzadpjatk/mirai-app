@@ -5,7 +5,7 @@ import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
 
@@ -13,7 +13,7 @@ export default function TripsScreen() {
   const { session, isLoading } = useAuth();
   const router = useRouter();
   const trpc = useTRPC();
-  const insets = useSafeAreaInsets();
+  const insets = useAppSafeAreaInsets();
 
   const { data: currentUser } = useQuery(
     trpc.user.getMy.queryOptions()
