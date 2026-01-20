@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { UserAvatar } from "./UserAvatar";
-import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource } from "@maplibre/maplibre-react-native";
+import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
 
 export interface UserLocation {
@@ -79,83 +79,53 @@ interface UserFeature {
   };
 }
 
-interface UserFeatureCollection {
-  type: "FeatureCollection";
-  features: UserFeature[];
+// Map style configuration (base style + optional raster overlays)
+interface MapRasterOverlay {
+  id: string;
+  tileUrlTemplates: string[];
+  tileSize?: number;
+  attribution?: string;
+  layerId?: string;
+  layerStyle?: object;
 }
 
-// Basic MapLibre style - OpenSnowMap for ski resorts with pistes overlay
-const MAP_STYLE_DARK = {
-  version: 8,
-  name: "OpenSnowMap Dark",
-  sources: {
-    "osm-tiles": {
-      type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
-    },
-    "opensnowmap-pistes": {
-      type: "raster",
-      tiles: ["https://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenSnowMap.org",
-    },
-  },
-  layers: [
-    {
-      id: "osm-base",
-      type: "raster",
-      source: "osm-tiles",
-      paint: {
-        "raster-saturation": -0.8,
-        "raster-brightness-min": 0.1,
-        "raster-brightness-max": 0.4,
-      },
-    },
-    {
-      id: "opensnowmap-overlay",
-      type: "raster",
-      source: "opensnowmap-pistes",
-      paint: {
-        "raster-opacity": 0.9,
-      },
-    },
-  ],
-};
+interface MapStyleConfig {
+  style: string | object;
+  rasterOverlays?: MapRasterOverlay[];
+}
 
-const MAP_STYLE_LIGHT = {
-  version: 8,
-  name: "OpenSnowMap Light",
-  sources: {
-    "osm-tiles": {
-      type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
-    },
-    "opensnowmap-pistes": {
-      type: "raster",
-      tiles: ["https://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenSnowMap.org",
-    },
-  },
-  layers: [
-    {
-      id: "osm-base",
-      type: "raster",
-      source: "osm-tiles",
-    },
-    {
-      id: "opensnowmap-overlay",
-      type: "raster",
-      source: "opensnowmap-pistes",
-      paint: {
-        "raster-opacity": 0.9,
+const MAP_STYLES: Record<'dark' | 'light', MapStyleConfig> = {
+  dark: {
+    style: "https://tiles.openfreemap.org/styles/fiord",
+    rasterOverlays: [
+      {
+        id: "opensnowmap-pistes",
+        tileUrlTemplates: ["https://tiles.opensnowmap.org/tiles-pistes-high-dpi//{z}/{x}/{y}.png"],
+        tileSize: 256,
+        attribution: "© OpenSnowMap.org",
+        layerId: "opensnowmap-overlay",
+        layerStyle: {
+          rasterOpacity: 0.9,
+          rasterSaturation: 0.5,
+          rasterBrightnessMin: 0,
+          rasterBrightnessMax: 1,
+        },
       },
-    },
-  ],
+    ],
+  },
+  light: {
+    style: "https://tiles.openfreemap.org/styles/liberty",
+    rasterOverlays: [
+      {
+        id: "opensnowmap-pistes",
+        tileUrlTemplates: ["https://tiles.opensnowmap.org/tiles-pistes-high-dpi/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        attribution: "© OpenSnowMap.org",
+        layerId: "opensnowmap-overlay",
+        layerStyle: { rasterOpacity: 0.9 },
+      },
+    ],
+  },
 };
 /**
  * Compute opacity (0–1) based on last activity timestamp.
@@ -211,7 +181,6 @@ export const UserMap: React.FC<UserMapProps> = ({
     return users.filter((user) => getActivityOpacity(user.lastActiveAt, now) > 0);
   }, [users, now]);
 
-  // No runtime imports — directly set camera when focusedCoordinate changes
   useEffect(() => {
     if (!focusedCoordinate) return;
     cameraRef.current?.setCamera?.({
@@ -242,7 +211,8 @@ export const UserMap: React.FC<UserMapProps> = ({
     onLocationUpdate?.({ longitude, latitude });
   };
 
-  const currentMapStyle = mapStyleURL ?? (mapTheme === 'light' ? MAP_STYLE_LIGHT : MAP_STYLE_DARK) as string | object;
+  const selectedMapConfig = mapStyleURL ? { style: mapStyleURL } : MAP_STYLES[mapTheme];
+  const currentMapStyle = selectedMapConfig.style as string | object;
 
 
 
@@ -275,6 +245,22 @@ export const UserMap: React.FC<UserMapProps> = ({
             onUpdate={handleUserLocationUpdate}
           />
         )}
+
+        {(selectedMapConfig.rasterOverlays ?? []).map((overlay) => (
+          <RasterSource
+            key={overlay.id}
+            id={overlay.id}
+            tileUrlTemplates={overlay.tileUrlTemplates}
+            tileSize={overlay.tileSize}
+            attribution={overlay.attribution}
+          >
+            <RasterLayer
+              id={overlay.layerId ?? `${overlay.id}-layer`}
+              sourceID={overlay.id}
+              style={overlay.layerStyle}
+            />
+          </RasterSource>
+        ))}
 
         {vectorSourceUrl && VectorSource ? <VectorSource url={vectorSourceUrl} id="map" /> : null}
 
