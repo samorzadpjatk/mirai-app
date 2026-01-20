@@ -212,9 +212,7 @@ export const UserMap: React.FC<UserMapProps> = ({
   };
 
   const selectedMapConfig = mapStyleURL ? { style: mapStyleURL } : MAP_STYLES[mapTheme];
-  const currentMapStyle = selectedMapConfig.style as string | object;
-
-
+  const currentMapStyle = selectedMapConfig.style;
 
   return (
     <View style={styles.container}>
