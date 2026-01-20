@@ -14,7 +14,7 @@ function log(...args) {
 
 async function tryResolve(pkg) {
   try {
-    // resolve the package.json to locate package root
+    // Standard resolution (works when package is resolvable from this package)
     const pkgPath = require.resolve(pkg + '/package.json');
     return path.dirname(pkgPath);
   } catch (err) {
@@ -22,10 +22,94 @@ async function tryResolve(pkg) {
   }
 }
 
+// Find repository root by looking for pnpm-workspace.yaml, pnpm-lock.yaml, or .git
+async function findRepoRoot(start = process.cwd()) {
+  let dir = start;
+  const { root } = path.parse(dir);
+  while (dir !== root) {
+    try {
+      const files = await fs.readdir(dir);
+      if (files.includes('pnpm-workspace.yaml') || files.includes('pnpm-lock.yaml') || files.includes('.git')) {
+        return dir;
+      }
+    } catch (e) {
+      // ignore
+    }
+    dir = path.dirname(dir);
+  }
+  return process.cwd();
+}
+
+async function findPkgDirsPnpm(pkgName) {
+  const found = new Set();
+
+  // 1) try normal resolution
+  const viaResolve = await tryResolve(pkgName);
+  if (viaResolve) found.add(viaResolve);
+
+  // 2) search common pnpm locations from repo root
+  const repoRoot = await findRepoRoot();
+  const nm = path.join(repoRoot, 'node_modules');
+
+  // helper to push if exists
+  async function tryAdd(p) {
+    try {
+      await fs.access(p);
+      found.add(p);
+    } catch (e) {
+      // not found
+    }
+  }
+
+  // node_modules/<pkg>/package.json
+  await tryAdd(path.join(nm, pkgName));
+
+  // node_modules/.pnpm/*/node_modules/<pkg>
+  const pnpmDir = path.join(nm, '.pnpm');
+  try {
+    const entries = await fs.readdir(pnpmDir);
+    for (const entry of entries) {
+      const candidate = path.join(pnpmDir, entry, 'node_modules', pkgName);
+      await tryAdd(candidate);
+    }
+  } catch (e) {
+    // ignore if .pnpm doesn't exist
+  }
+
+  // workspace packages (packages/*, apps/*)
+  for (const workspaceFolder of ['packages', 'apps', 'libs', 'modules']) {
+    const wf = path.join(repoRoot, workspaceFolder);
+    try {
+      const subs = await fs.readdir(wf);
+      for (const sub of subs) {
+        const candidate = path.join(wf, sub, 'node_modules', pkgName);
+        await tryAdd(candidate);
+        // also check if the package itself matches the name (local workspace package)
+        const localCandidate = path.join(wf, sub);
+        try {
+          const pkgJson = await fs.readFile(path.join(localCandidate, 'package.json'), 'utf8');
+          if (pkgJson.includes(`"name": "${pkgName}"`)) {
+            await tryAdd(localCandidate);
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      // ignore missing workspace folder
+    }
+  }
+
+  return Array.from(found);
+}
+
 async function patchFile(filePath, replacementFn, marker) {
   try {
     const original = await fs.readFile(filePath, 'utf8');
-    if (original.includes(marker)) {
+
+    // Accept either a direct marker string or wrapped C-style comment marker
+    const combinedMarkers = [marker, `/* ${marker} */`, `// ${marker}`];
+    if (combinedMarkers.some((m) => original.includes(m))) {
       log('Already patched:', filePath);
       return { patched: false, reason: 'already-patched' };
     }
@@ -44,6 +128,13 @@ async function patchFile(filePath, replacementFn, marker) {
     } catch (e) {
       await fs.writeFile(bakPath, original, 'utf8');
       log('Backup created:', bakPath);
+    }
+
+    // ensure writeable (pnpm store might make files read-only). If not writeable, try making it writeable.
+    try {
+      await fs.chmod(filePath, 0o644);
+    } catch (e) {
+      // ignore chmod errors
     }
 
     await fs.writeFile(filePath, patched, 'utf8');
@@ -113,27 +204,37 @@ function replaceParseAspectRatioTS(src) {
 }
 
 (async function main() {
-  const pkgDir = await tryResolve('react-native-css-interop');
-  if (!pkgDir) {
-    log('Package react-native-css-interop not found in node_modules, skipping.');
+  const pkgs = process.argv.slice(2);
+  const pkgName = pkgs[0] || 'react-native-css-interop';
+
+  const pkgDirs = await findPkgDirsPnpm(pkgName);
+
+  if (!pkgDirs || pkgDirs.length === 0) {
+    log(`Package ${pkgName} not found in this workspace / node_modules, skipping.`);
     process.exit(0);
   }
 
-  log('Found package at', pkgDir);
+  log(`Found ${pkgDirs.length} package location(s) for ${pkgName}:`);
+  pkgDirs.forEach((d) => log(' -', d));
 
-  const filesToPatch = [
-    { file: path.join(pkgDir, 'dist', 'css-to-rn', 'parseDeclaration.js'), fn: replaceParseAspectRatioJS },
-    { file: path.join(pkgDir, 'src', 'css-to-rn', 'parseDeclaration.ts'), fn: replaceParseAspectRatioTS },
+  const filesToTry = [
+    ['dist/css-to-rn/parseDeclaration.js', replaceParseAspectRatioJS],
+    ['src/css-to-rn/parseDeclaration.ts', replaceParseAspectRatioTS],
   ];
 
-  for (const { file, fn } of filesToPatch) {
-    try {
-      await fs.access(file);
-      await patchFile(file, fn, 'integral-app: parseAspectRatio guard');
-    } catch (e) {
-      log('File not present, skipping:', file);
+  const marker = 'integral-app: parseAspectRatio guard';
+
+  for (const pkgDir of pkgDirs) {
+    for (const [relativePath, fn] of filesToTry) {
+      const file = path.join(pkgDir, relativePath);
+      try {
+        await fs.access(file);
+        await patchFile(file, fn, marker);
+      } catch (e) {
+        log('File not present (skipping):', file);
+      }
     }
   }
 
-  log('Done. If you still see the original error, try reinstalling node_modules or run this script manually.');
+  log('Done. If you still see the original error, try reinstalling node_modules, run this script from the repo root, or run it with the package name as an argument.');
 })();
