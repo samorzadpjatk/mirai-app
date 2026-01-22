@@ -2,10 +2,22 @@
   "name": "@integral-2025-app/supabase",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.ts",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    }
+  },
   "scripts": {
+    "build": "tsc -b",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
