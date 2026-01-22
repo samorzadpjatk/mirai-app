@@ -8,7 +8,6 @@ import { UserAvatar } from "~/components/map/UserAvatar";
 import { useTRPC, useSubscription } from "@integral-2025-app/trpc/client";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { formatRelativeTime } from "~/utils/format";
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function MapScreen() {
   const trpc = useTRPC();
@@ -35,8 +34,6 @@ export default function MapScreen() {
     ...trpc.location.getMySharingSettings.queryOptions(),
     enabled: !!session?.access_token,
   });
-
-  const insets = useAppSafeAreaInsets();
 
   const sharingUserIds = useMemo(() => {
     return sharingSettings?.usersToShareWith.map(u => u.id) ?? [];
@@ -78,19 +75,19 @@ export default function MapScreen() {
         onData: (data) => {
           const { data: event } = data;
           console.log("[Map] Received WebSocket event:", event.type, event);
-          if (event.type === "upsert") {
+          if (event.type === "upsert" && event.location) {
             const { location } = event;
-            const userId = location.user?.id ?? "";
-            console.log(`[Map] Updating location for user ${userId}:`, location.coords);
+            const userId = location?.user?.id ?? "";
+            console.log(`[Map] Updating location for user ${userId}:`, location?.coords);
             setLocationsByUserId((prev) => ({
               ...prev,
               [userId]: {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                updatedAt: location.timestamp,
+                latitude: location?.coords.latitude,
+                longitude: location?.coords.longitude,
+                updatedAt: location?.timestamp,
               },
             }));
-            if (location.user) {
+            if (location?.user) {
               setUsersData((prev) => ({
                 ...prev,
                 [userId]: {
@@ -99,7 +96,8 @@ export default function MapScreen() {
                 },
               }));
             }
-          } else if (event.type === "delete") {
+          } 
+          if (event.type === "delete" && event.userId) {
             setLocationsByUserId((prev) => {
               const next = { ...prev };
               delete next[event.userId];

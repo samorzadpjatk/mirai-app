@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { type ComponentProps, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Modal, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -25,7 +25,7 @@ const mockChallenges: Challenge[] = [
     status: 'active'
   },
   {
-    id: '2', 
+    id: '2',
     title: 'Code Master',
     description: 'Complete programming challenges',
     points: 750,
@@ -94,7 +94,7 @@ export default function AdminChallengesScreen() {
       icon: 'star'
     });
     setShowAddModal(false);
-    
+
     Alert.alert('Success!', 'Challenge created successfully');
   };
 
@@ -115,18 +115,18 @@ export default function AdminChallengesScreen() {
     );
   };
 
-  const getChallengeIcon = (challenge: Challenge) => {
-    const iconMap: { [key: string]: string } = {
+  const getChallengeIcon = (challenge: Challenge): ComponentProps<typeof MaterialIcons>['name'] => {
+    const iconMap: Record<string, ComponentProps<typeof MaterialIcons>['name']> = {
       'eco': 'eco',
       'terminal': 'terminal',
       'flight_takeoff': 'flight-takeoff',
       'fitness_center': 'fitness-center',
       'star': 'star'
     };
-    return iconMap[challenge.icon] || 'star';
+    return iconMap[challenge.icon] ?? 'star';
   };
 
-  const getCategoryColor = (category: Challenge['category']) => {
+  const getCategoryColor = (category: Challenge['category']): string => {
     switch (category) {
       case 'wintegral': return '#00ced1';
       case 'special': return '#a855f7';
@@ -148,7 +148,7 @@ export default function AdminChallengesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#0f2323' }}>
       <StatusBar barStyle="light-content" backgroundColor="#0f2323" />
-      
+
       {/* Header */}
       <SafeAreaView>
         <View style={{
@@ -160,7 +160,7 @@ export default function AdminChallengesScreen() {
           justifyContent: 'space-between'
         }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleBackPress}
               style={{
                 width: 40,
@@ -184,7 +184,7 @@ export default function AdminChallengesScreen() {
               Manage Challenges
             </Text>
           </View>
-          
+
           <View style={{
             width: 40,
             height: 40,
@@ -196,7 +196,7 @@ export default function AdminChallengesScreen() {
         </View>
       </SafeAreaView>
 
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1, paddingHorizontal: 16, paddingBottom: 96 }}
         showsVerticalScrollIndicator={false}
       >
@@ -356,10 +356,10 @@ export default function AdminChallengesScreen() {
                 borderWidth: challenge.category === 'wintegral' ? 0 : 1,
                 borderColor: challenge.category === 'wintegral' ? 'transparent' : 'rgba(0, 206, 209, 0.2)'
               }}>
-                <MaterialIcons 
-                  name={getChallengeIcon(challenge) as any} 
-                  size={24} 
-                  color={challenge.category === 'wintegral' ? '#0f2323' : '#00ced1'} 
+                <MaterialIcons
+                  name={getChallengeIcon(challenge)}
+                  size={24}
+                  color={challenge.category === 'wintegral' ? '#0f2323' : '#00ced1'}
                 />
               </View>
 
@@ -545,9 +545,9 @@ export default function AdminChallengesScreen() {
                     paddingVertical: 12
                   }}>
                     <Text style={{ color: '#fff', fontSize: 16 }}>
-                      {newChallenge.category === 'standard' ? 'Standard' : 
-                       newChallenge.category === 'wintegral' ? 'Wintegral Trip' : 
-                       'Special Event'}
+                      {newChallenge.category === 'standard' ? 'Standard' :
+                        newChallenge.category === 'wintegral' ? 'Wintegral Trip' :
+                          'Special Event'}
                     </Text>
                   </View>
                 </View>

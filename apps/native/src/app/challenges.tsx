@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ComponentProps } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -9,20 +9,20 @@ interface Challenge {
   id: string;
   title: string;
   points: number;
-  icon: string;
+  icon: ComponentProps<typeof MaterialIcons>['name'];
   iconColor: string;
   status: 'selected' | 'incomplete' | 'locked';
 }
 
 const challenges: Challenge[] = [
-  { id: 'snow-angel', title: 'Snow Angel', points: 50, icon: 'ac_unit', iconColor: '#60a5fa', status: 'selected' },
+  { id: 'snow-angel', title: 'Snow Angel', points: 50, icon: 'ac-unit', iconColor: '#60a5fa', status: 'selected' },
   { id: 'peak-photo', title: 'Peak Photo', points: 100, icon: 'landscape', iconColor: '#00ced1', status: 'incomplete' },
-  { id: 'team-toast', title: 'Team Toast', points: 30, icon: 'local_bar', iconColor: '#fb923c', status: 'incomplete' },
+  { id: 'team-toast', title: 'Team Toast', points: 30, icon: 'local-bar', iconColor: '#fb923c', status: 'incomplete' },
   { id: 'local-legend', title: 'Local Legend', points: 150, icon: 'star', iconColor: '#eab308', status: 'incomplete' },
   { id: 'trail-blazer', title: 'Trail Blazer', points: 80, icon: 'explore', iconColor: '#10b981', status: 'incomplete' },
-  { id: 'fire-starter', title: 'Fire Starter', points: 75, icon: 'local_fire_department', iconColor: '#ef4444', status: 'incomplete' },
+  { id: 'fire-starter', title: 'Fire Starter', points: 75, icon: 'local-fire-department', iconColor: '#ef4444', status: 'incomplete' },
   { id: 'night-watch', title: 'Night Watch', points: 90, icon: 'bedtime', iconColor: '#a855f7', status: 'locked' },
-  { id: 'city-sprint', title: 'City Sprint', points: 60, icon: 'directions_run', iconColor: '#06b6d4', status: 'locked' },
+  { id: 'city-sprint', title: 'City Sprint', points: 60, icon: 'directions-run', iconColor: '#06b6d4', status: 'locked' },
 ];
 
 export default function ChallengesScreen() {
@@ -73,7 +73,7 @@ export default function ChallengesScreen() {
             justifyContent: 'center'
           }}>
             <MaterialIcons 
-              name={challenge.icon as any} 
+              name={challenge.icon} 
               size={24} 
               color={isLocked ? '#6b7280' : challenge.iconColor} 
             />
@@ -284,7 +284,7 @@ export default function ChallengesScreen() {
             gap: 12,
             marginBottom: 40
           }}>
-            {challenges.map((challenge, index) => (
+            {challenges.map((challenge) => (
               <View key={challenge.id} style={{ width: '48%' }}>
                 {renderChallenge(challenge)}
               </View>

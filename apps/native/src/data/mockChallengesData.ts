@@ -1,4 +1,4 @@
-import { TripChallengesData, ChallengeStatus } from '../types/challenges';
+import { type TripChallengesData, ChallengeStatus } from '../types/challenges';
 
 export const mockChallengesData: TripChallengesData = {
   progress: {
