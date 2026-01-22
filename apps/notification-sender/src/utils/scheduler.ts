@@ -1,5 +1,3 @@
-import type { Prisma } from "@integral-2025-app/db";
-
 export type SchedulerTask = () => Promise<void>;
 
 /**
@@ -81,13 +79,12 @@ export class Scheduler {
  * Create a scheduler for checking inactive users.
  */
 export function createInactivityScheduler(
-  db: Prisma.TransactionClient,
-  checkFunction: (db: Prisma.TransactionClient) => Promise<unknown>,
+  checkFunction: () => Promise<unknown>,
   intervalMinutes = 5,
 ): Scheduler {
   return new Scheduler(async () => {
     console.log("Running inactivity check...");
-    const result = await checkFunction(db);
+    const result = await checkFunction();
     console.log("Inactivity check completed:", result);
   }, intervalMinutes);
 }
