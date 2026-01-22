@@ -78,7 +78,7 @@ export default function CreateGroupScreen() {
         Alert.alert('Success', 'Group created successfully!');
         router.push(`/trips/groups/${newGroup.id}`);
       },
-      onError: (error: any) => {
+      onError: (error) => {
         console.error('Create group error:', error);
         Alert.alert('Error', error?.message ?? 'Failed to create group');
       },
@@ -127,8 +127,8 @@ export default function CreateGroupScreen() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Text style={styles.errorText}>No trip selected</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+        <TouchableOpacity onPress={() => router.back()} >
+          <Text >Go Back</Text>
         </TouchableOpacity>
       </View>
     );

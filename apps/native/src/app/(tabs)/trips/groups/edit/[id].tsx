@@ -164,8 +164,8 @@ export default function EditGroupScreen() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Text style={styles.errorText}>Group not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+        <TouchableOpacity onPress={() => router.back()} >
+          <Text >Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -175,8 +175,8 @@ export default function EditGroupScreen() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Text style={styles.errorText}>Only group organizer can edit</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+        <TouchableOpacity onPress={() => router.back()} >
+          <Text >Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -247,7 +247,7 @@ export default function EditGroupScreen() {
                   availableParticipants.map((participant) => {
                     const isSelected = currentMembers.has(participant.user.id);
                     const isOrganizerUser = participant.user.id === group.organizer?.id;
-                    const initials = `${participant.user.firstName.charAt(0)}${participant.user.lastName.charAt(0)}`.toUpperCase();
+                    const initials = `${participant.user.firstName?.charAt(0)}${participant.user.lastName?.charAt(0)}`.toUpperCase();
 
                     return (
                       <TouchableOpacity

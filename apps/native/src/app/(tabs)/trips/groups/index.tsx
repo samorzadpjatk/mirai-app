@@ -38,8 +38,8 @@ export default function GroupsListScreen() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Text style={styles.errorText}>No trip selected</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+        <TouchableOpacity onPress={() => router.back()} >
+          <Text >Go Back</Text>
         </TouchableOpacity>
       </View>
     );
