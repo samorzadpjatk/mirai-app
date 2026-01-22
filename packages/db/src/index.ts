@@ -1,3 +1,3 @@
 export { db } from "./client";
-export * from "../prisma/lib";
+export type * from "./prisma/lib/client";
 export * from "./client";

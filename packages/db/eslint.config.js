@@ -7,9 +7,11 @@ export default [
       "dist/**",
       "node_modules/**",
       "coverage/**",
-      "prisma/**",
-      "src/prisma/lib/**",
+      "src/prisma/**",
       "seed.ts",
+      "vitest.config.ts",
+      "vitest.setup.ts",
+      "prisma.config.ts",
     ],
   },
   {
