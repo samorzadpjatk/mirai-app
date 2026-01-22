@@ -1,16 +1,8 @@
 import "dotenv/config";
-import { createClient } from "@supabase/supabase-js";
-import type { RealtimePostgresInsertPayload } from "@supabase/supabase-js";
-import { db } from "@integral-2025-app/db";
-import { startWsServer } from "./server";
-import { sendMobileNotifications } from "./services/mobileSender";
-import { checkInactiveUsers } from "./services/inactivityChecker";
+import { createSupabaseClient as createClient } from "@integral-2025-app/supabase";
+import type { RealtimePostgresInsertPayload } from "@integral-2025-app/supabase";
+import { getTRPCClient } from "@integral-2025-app/trpc/client";
 import { createInactivityScheduler } from "./utils/scheduler";
-import {
-  trackDeliveryStart,
-  trackDeliveryComplete,
-  trackDeliveryFailure,
-} from "./services/deliveryTracker";
 
 interface NotificationRow {
   id: string;
@@ -22,14 +14,22 @@ function requireEnv(name: string): string {
   return v;
 }
 
-async function main() {
-  await startWsServer();
-
+function main() {
+  const TRPC_HOST = requireEnv("TRPC_HOST");
   const SUPABASE_URL = requireEnv("SUPABASE_URL");
-  const SUPABASE_ANON_KEY = requireEnv("SUPABASE_ANON_KEY");
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    realtime: { params: { eventsPerSecond: 2 } },
-  });
+  const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const supabase = createClient(
+    SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY,
+    undefined,
+    { realtime: { params: { eventsPerSecond: 2 } } },
+  );
+
+  const { client, cleanup } = getTRPCClient(
+    `http://${TRPC_HOST}/api/trpc`,
+    `ws://${TRPC_HOST}/api/trpc`,
+    "",
+  );
 
   const channel = supabase
     .channel("public:Notification:insert")
@@ -40,33 +40,29 @@ async function main() {
         void (async () => {
           const id = payload.new.id;
           try {
-            await db.$transaction(async (tx) => {
-              await trackDeliveryStart(tx, id);
+            await client.notificationSender.trackDeliveryStart.mutate({
+              notificationId: id,
+            });
 
-              const mobile = await sendMobileNotifications(tx, id);
-              console.log("Delivery summary:", { mobile });
+            const mobile = await client.notificationSender.sendMobileNotifications.mutate({
+              notificationId: id,
+            });
+            console.log("Delivery summary:", { mobile });
 
-              await trackDeliveryComplete(tx, {
-                notificationId: id,
-                totalRecipients: mobile.total,
-                successCount: mobile.sent,
-                failureCount: mobile.failed,
-                errors: mobile.success ? undefined : "Some deliveries failed",
-              });
+            await client.notificationSender.trackDeliveryComplete.mutate({
+              notificationId: id,
+              totalRecipients: mobile.total,
+              successCount: mobile.sent,
+              failureCount: mobile.failed,
+              errors: mobile.success ? null : "Some deliveries failed",
             });
           } catch (err) {
             console.error("Failed handling Notification INSERT:", err);
-            await db
-              .$transaction(async (tx) => {
-                await trackDeliveryFailure(
-                  tx,
-                  id,
-                  err instanceof Error ? err : String(err),
-                );
-              })
-              .catch((trackErr) => {
-                console.error("Failed to track delivery failure:", trackErr);
-              });
+
+            await client.notificationSender.trackDeliveryFailure.mutate({
+              notificationId: id,
+              error: err instanceof Error ? err : String(err),
+            });
           }
         })();
       },
@@ -77,9 +73,10 @@ async function main() {
 
   // Start the inactivity checker scheduler (runs every 5 minutes)
   const inactivityScheduler = createInactivityScheduler(
-    db as never,
-    checkInactiveUsers,
-    5,
+    async () => {
+      await client.notificationSender.checkInactiveUsers.mutate();
+    },
+    1,
   );
   inactivityScheduler.start();
 
@@ -88,12 +85,15 @@ async function main() {
       console.log("Shutting down...");
       inactivityScheduler.stop();
       await supabase.removeChannel(channel);
+      await cleanup();
       process.exit(0);
     })();
   });
 }
 
-main().catch((err) => {
+try {
+  main();
+} catch (err) {
   console.error(err);
   process.exit(1);
-});
+}
