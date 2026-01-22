@@ -23,7 +23,7 @@
     }
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsc -b tsconfig.build.json",
     "check": "eslint . && tsc --noEmit",
     "clean": "rm -rf dist *.tsbuildinfo",
     "dev": "tsc --watch",
