@@ -3,17 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "src/index.ts",
   "prisma": {
     "schema": "./prisma/schema.prisma",
     "seed": "tsx ./src/utils/seed.ts"
   },
-  "files": [
-    "src",
-    "prisma"
-  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./prisma": {
+      "types": "./prisma/lib/index.d.ts",
+      "import": "./prisma/lib/index.js",
+      "default": "./prisma/lib/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
