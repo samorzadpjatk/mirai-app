@@ -9,6 +9,7 @@ export default [
       "coverage/**",
       "prisma/**",
       "src/prisma/lib/**",
+      "seed.ts",
     ],
   },
   {

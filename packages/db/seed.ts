@@ -1,5 +1,5 @@
-import { env } from "./env.ts";
-import { db } from "../index.ts";
+import { env } from "./src/utils/env";
+import { db } from "./src/index";
 
 interface SupabaseUser {
   id: string;

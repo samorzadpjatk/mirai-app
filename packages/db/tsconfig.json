@@ -5,9 +5,10 @@
     "outDir": "dist",
     "rootDir": ".",
     "declaration": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true
+    "composite": true,
+    "noEmit": false,
+    "moduleResolution": "bundler"
   },
-  "include": ["src/**/*", "prisma", "vitest.config.ts", "vitest.setup.ts"],
-  "exclude": ["node_modules", "dist", "prisma/lib/**/*"]
+  "include": ["src/**/*", "prisma"],
+  "exclude": ["node_modules", "dist", "prisma/lib/**/*", "seed.ts", "vitest.config.ts", "vitest.setup.ts"]
 }
