@@ -2,7 +2,6 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
-  moderatorProcedure,
 } from "../../api/trpc";
 import {
   locationDataSchema,
@@ -44,7 +43,8 @@ export interface LocationWithUser extends ExpoLocationObject {
   isSharingLocation: boolean;
   user?: {
     id: string;
-    name: string | null;
+    firstName: string | null;
+    lastName: string | null;
     image: string | null;
   };
 }
@@ -53,19 +53,31 @@ type FriendLocationEvent =
   | { id: string; type: "upsert"; location: LocationWithUser }
   | { id: string; type: "delete"; userId: string };
 
+export interface SharingUser {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  image: string | null;
+}
+
+export interface SharingSettings {
+  isSharingLocation: boolean;
+  usersToShareWith: SharingUser[];
+}
+
 /**
  * Convert database location to Expo-compliant format
  */
 function toExpoLocation(dbLocation: DbLocation): ExpoLocationObject {
   return {
     coords: {
-      latitude: dbLocation.latitude?.toNumber() ?? 0,
-      longitude: dbLocation.longitude?.toNumber() ?? 0,
-      altitude: dbLocation.altitude?.toNumber() ?? null,
-      accuracy: dbLocation.accuracy?.toNumber() ?? null,
-      altitudeAccuracy: dbLocation.altitudeAccuracy?.toNumber() ?? null,
-      heading: dbLocation.heading?.toNumber() ?? null,
-      speed: dbLocation.speed?.toNumber() ?? null,
+      latitude: dbLocation.latitude ?? 0,
+      longitude: dbLocation.longitude ?? 0,
+      altitude: dbLocation.altitude ?? null,
+      accuracy: dbLocation.accuracy ?? null,
+      altitudeAccuracy: dbLocation.altitudeAccuracy ?? null,
+      heading: dbLocation.heading ?? null,
+      speed: dbLocation.speed ?? null,
     },
     timestamp: dbLocation.timestamp.getTime(),
   };
@@ -83,7 +95,8 @@ async function toLocationWithUser(
     where: { id: dbLocation.userId },
     select: {
       id: true,
-      name: true,
+      firstName: true,
+      lastName: true,
       image: true,
     },
   });
@@ -154,7 +167,7 @@ export const locationRouter = createTRPCRouter({
                 set: userIdsToShareWith.map((id) => ({ id })),
               }
             : undefined,
-              timestamp: new Date(),
+          timestamp: new Date(),
         },
         create: {
           userId: ctx.dbUser.id,
@@ -171,7 +184,8 @@ export const locationRouter = createTRPCRouter({
           usersToShareWith: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
             },
           },
         },
@@ -201,8 +215,15 @@ export const locationRouter = createTRPCRouter({
       const connectionId = input.connectionId ?? crypto.randomUUID();
 
       const { radiusKm, latitude, longitude } = input;
-      if (radiusKm !== undefined && (latitude === undefined || longitude === undefined)) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: "When providing radiusKm, both latitude and longitude are required" });
+      if (
+        radiusKm !== undefined &&
+        (latitude === undefined || longitude === undefined)
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "When providing radiusKm, both latitude and longitude are required",
+        });
       }
 
       // Emituj początkowe lokalizacje znajomych (filtrowane jeśli radius podany)
@@ -217,7 +238,8 @@ export const locationRouter = createTRPCRouter({
           user: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               image: true,
             },
           },
@@ -239,18 +261,29 @@ export const locationRouter = createTRPCRouter({
           );
           if (dist <= radiusKm) {
             inRadius.add(location.userId);
-            yield { type: "upsert", location: { ...lw } };
+            yield tracked(connectionId, {
+              type: "upsert",
+              location: { ...lw },
+            });
           }
         } else {
-          yield { type: "upsert", location: lw };
+          yield tracked(connectionId, { type: "upsert", location: lw });
         }
       }
 
       const friendIds = locations.map((l) => l.userId);
 
+      console.log(
+        `[Location Stream] Setting up subscription for user ${ctx.dbUser.id}, watching ${friendIds.length} friends`,
+      );
+      console.log(`[Location Stream] Friend IDs: [${friendIds.join(", ")}]`);
+
       if (friendIds.length > 0) {
         // Subskrybuj zmiany tylko dla lokalizacji znajomych (jeden kanał, filtr in)
         const filter = `userId=in.(${friendIds.join(",")})`;
+        console.log(`[Location Stream] Filter: ${filter}`);
+        console.log(`[Location Stream] Testing WITHOUT filter first...`);
+
         channel = supabase
           .channel(`friends_locations_${ctx.dbUser.id}`)
           .on<DbLocation>(
@@ -259,12 +292,16 @@ export const locationRouter = createTRPCRouter({
               event: "*",
               schema: "public",
               table: "Location",
-              filter,
+              // TEMPORARILY REMOVED FILTER FOR TESTING
+              // filter,
             },
             (payload) => {
               switch (payload.eventType) {
                 case "DELETE": {
                   const userId = payload.old.userId!;
+                  console.log(
+                    `[Location Stream] DELETE event for userId: ${userId}`,
+                  );
                   if (radiusKm !== undefined) {
                     if (inRadius.has(userId)) {
                       inRadius.delete(userId);
@@ -277,48 +314,182 @@ export const locationRouter = createTRPCRouter({
                 }
                 default: {
                   const newLocation = payload.new;
+                  console.log(
+                    `[Location Stream] ${payload.eventType} event for userId: ${newLocation.userId}, coords: [${newLocation.latitude?.toString()}, ${newLocation.longitude?.toString()}]`,
+                  );
 
-                  void toLocationWithUser(ctx.db, newLocation).then((location) => {
-                    const userId = newLocation.userId;
+                  const userIdFromEvent = newLocation.userId;
+                  if (!userIdFromEvent) {
+                    console.error(`[Location Stream] No userId in payload`);
+                    return;
+                  }
 
-                    if (radiusKm !== undefined) {
-                      if (!newLocation?.latitude || !newLocation?.longitude) {
-                        if (inRadius.delete(userId)) {
-                          queue.push({ id: connectionId, type: "delete", userId });
+                  if (!newLocation.userId || !newLocation.timestamp) {
+                    console.log(
+                      `[Location Stream] payload.new is incomplete, fetching from DB for userId: ${userIdFromEvent}`,
+                    );
+                    void ctx.db.location
+                      .findUnique({
+                        where: { userId: userIdFromEvent },
+                        include: {
+                          user: {
+                            select: {
+                              id: true,
+                              firstName: true,
+                              lastName: true,
+                              image: true,
+                            },
+                          },
+                        },
+                      })
+                      .then((dbLocation) => {
+                        if (!dbLocation) {
+                          console.error(
+                            `[Location Stream] Location not found in DB for userId: ${userIdFromEvent}`,
+                          );
+                          return;
                         }
-                        return;
-                      }
 
-                      const dist = calculateDistance(
-                        latitude!,
-                        longitude!,
-                        Number(newLocation.latitude),
-                        Number(newLocation.longitude),
-                      );
+                        const location: LocationWithUser = {
+                          coords: {
+                            latitude: dbLocation.latitude ?? 0,
+                            longitude: dbLocation.longitude ?? 0,
+                            altitude: dbLocation.altitude ?? null,
+                            accuracy: dbLocation.accuracy ?? null,
+                            altitudeAccuracy:
+                              dbLocation.altitudeAccuracy ?? null,
+                            heading: dbLocation.heading ?? null,
+                            speed: dbLocation.speed ?? null,
+                          },
+                          timestamp: dbLocation.timestamp.getTime(),
+                          isSharingLocation: dbLocation.isSharingLocation,
+                          user: dbLocation.user ?? undefined,
+                        };
 
-                      if (dist <= radiusKm) {
-                        inRadius.add(userId);
-                        queue.push({ id: connectionId, type: "upsert", location });
+                        const userId = dbLocation.userId;
+
+                        if (radiusKm !== undefined) {
+                          if (!dbLocation.latitude || !dbLocation.longitude) {
+                            if (inRadius.delete(userId)) {
+                              queue.push({
+                                id: connectionId,
+                                type: "delete",
+                                userId,
+                              });
+                            }
+                            return;
+                          }
+
+                          const dist = calculateDistance(
+                            latitude!,
+                            longitude!,
+                            Number(dbLocation.latitude),
+                            Number(dbLocation.longitude),
+                          );
+
+                          if (dist <= radiusKm) {
+                            inRadius.add(userId);
+                            queue.push({
+                              id: connectionId,
+                              type: "upsert",
+                              location,
+                            });
+                          } else {
+                            if (inRadius.delete(userId)) {
+                              queue.push({
+                                id: connectionId,
+                                type: "delete",
+                                userId,
+                              });
+                            }
+                          }
+                        } else {
+                          queue.push({
+                            id: connectionId,
+                            type: "upsert",
+                            location,
+                          });
+                        }
+                      });
+                    return;
+                  }
+
+                  void toLocationWithUser(ctx.db, newLocation).then(
+                    (location) => {
+                      const userId = newLocation.userId;
+
+                      if (radiusKm !== undefined) {
+                        if (!newLocation?.latitude || !newLocation?.longitude) {
+                          if (inRadius.delete(userId)) {
+                            queue.push({
+                              id: connectionId,
+                              type: "delete",
+                              userId,
+                            });
+                          }
+                          return;
+                        }
+
+                        const dist = calculateDistance(
+                          latitude!,
+                          longitude!,
+                          Number(newLocation.latitude),
+                          Number(newLocation.longitude),
+                        );
+
+                        if (dist <= radiusKm) {
+                          inRadius.add(userId);
+                          queue.push({
+                            id: connectionId,
+                            type: "upsert",
+                            location,
+                          });
+                        } else {
+                          if (inRadius.delete(userId)) {
+                            queue.push({
+                              id: connectionId,
+                              type: "delete",
+                              userId,
+                            });
+                          }
+                        }
                       } else {
-                        if (inRadius.delete(userId)) {
-                          queue.push({ id: connectionId, type: "delete", userId });
-                        }
+                        queue.push({
+                          id: connectionId,
+                          type: "upsert",
+                          location,
+                        });
                       }
-                    } else {
-                      queue.push({ id: connectionId, type: "upsert", location });
-                    }
-                  });
+                    },
+                  );
                   break;
                 }
               }
             },
           )
-          .subscribe();
+          .subscribe((status, err) => {
+            console.log(`[Location Stream] Subscription status: ${status}`);
+            if (err) {
+              console.error(`[Location Stream] Subscription error:`, err);
+            }
+          });
+
+        console.log(`[Location Stream] Waiting for channel to join...`);
+        console.log(
+          `[Location Stream] Channel state after subscribe: ${channel?.state}`,
+        );
+
+        // Wait a bit for subscription to establish
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        console.log(
+          `[Location Stream] Channel state after 1s: ${channel?.state}`,
+        );
       }
 
       try {
         while (
-          (channel?.state && channel?.state === REALTIME_CHANNEL_STATES.joined) ||
+          (channel?.state &&
+            channel?.state === REALTIME_CHANNEL_STATES.joined) ||
           queue.length > 0
         ) {
           if (queue.length === 0) {
@@ -394,7 +565,7 @@ export const locationRouter = createTRPCRouter({
       },
       include: {
         user: {
-          select: { id: true, name: true, image: true },
+          select: { id: true, firstName: true, lastName: true, image: true },
         },
       },
     });
@@ -405,49 +576,157 @@ export const locationRouter = createTRPCRouter({
   /**
    * Get sharing settings for current user
    */
-  getMySharingSettings: protectedProcedure.query(async ({ ctx }) => {
-    const location = await ctx.db.location.findUnique({
-      where: { userId: ctx.dbUser.id },
-      include: {
-        usersToShareWith: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
+  getMySharingSettings: protectedProcedure.query(
+    async ({ ctx }): Promise<SharingSettings> => {
+      const location = await ctx.db.location.findUnique({
+        where: { userId: ctx.dbUser.id },
+        include: {
+          usersToShareWith: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!location) {
+      if (!location) {
+        return {
+          isSharingLocation: false,
+          usersToShareWith: [],
+        };
+      }
+
+      const usersToShareWith = Array.isArray(location.usersToShareWith)
+        ? location.usersToShareWith
+        : [];
+
       return {
-        isSharingLocation: false,
-        usersToShareWith: [],
+        isSharingLocation: Boolean(location.isSharingLocation),
+        usersToShareWith: usersToShareWith.map(
+          (user): SharingUser => ({
+            id: String(user.id),
+            firstName: user.firstName ?? null,
+            lastName: user.lastName ?? null,
+            image: user.image ?? null,
+          }),
+        ),
       };
-    }
-
-    return {
-      isSharingLocation: location.isSharingLocation,
-      usersToShareWith: location.usersToShareWith,
-    };
-  }),
+    },
+  ),
 
   /**
    * Get all users (for sharing selection) - moderator only
    */
-  getAllUsersForSharing: moderatorProcedure.query(async ({ ctx }) => {
+  getAllUsersForSharing: protectedProcedure.query(async ({ ctx }) => {
     const users = await ctx.db.user.findMany({
       where: {
         id: { not: ctx.dbUser.id }, // Exclude current user
       },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         image: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     });
 
-    return users;
+    const safeUsers = Array.isArray(users) ? users : [];
+
+    return safeUsers.map(
+      (user): SharingUser => ({
+        id: String(user.id),
+        firstName: user.firstName ?? null,
+        lastName: user.lastName ?? null,
+        image: user.image ?? null,
+      }),
+    );
   }),
+
+  /**
+   * Add a user to sharing list
+   */
+  addUserToSharing: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const location = await ctx.db.location.upsert({
+        where: { userId: ctx.dbUser.id },
+        update: {
+          usersToShareWith: {
+            connect: { id: input.userId },
+          },
+        },
+        create: {
+          userId: ctx.dbUser.id,
+          timestamp: new Date(),
+          isSharingLocation: true,
+          usersToShareWith: {
+            connect: { id: input.userId },
+          },
+        },
+        include: {
+          usersToShareWith: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      return {
+        success: true,
+        usersToShareWith: location.usersToShareWith.map(
+          (user): SharingUser => ({
+            id: String(user.id),
+            firstName: user.firstName ?? null,
+            lastName: user.lastName ?? null,
+            image: user.image ?? null,
+          }),
+        ),
+      };
+    }),
+
+  /**
+   * Remove a user from sharing list
+   */
+  removeUserFromSharing: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const location = await ctx.db.location.update({
+        where: { userId: ctx.dbUser.id },
+        data: {
+          usersToShareWith: {
+            disconnect: { id: input.userId },
+          },
+        },
+        include: {
+          usersToShareWith: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      return {
+        success: true,
+        usersToShareWith: location.usersToShareWith.map(
+          (user): SharingUser => ({
+            id: String(user.id),
+            firstName: user.firstName ?? null,
+            lastName: user.lastName ?? null,
+            image: user.image ?? null,
+          }),
+        ),
+      };
+    }),
 });

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StatusBar } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 interface Challenge {
   id: string;
@@ -26,6 +27,7 @@ const challenges: Challenge[] = [
 
 export default function ChallengesScreen() {
   const router = useRouter();
+  const insets = useAppSafeAreaInsets();
 
   const handleBackPress = () => {
     router.back();
@@ -176,7 +178,7 @@ export default function ChallengesScreen() {
         </View>
       </SafeAreaView>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: 24 }}>
         <View style={{ maxWidth: 448, marginHorizontal: 'auto' }}>
           {/* Group Info Card */}
           <View style={{

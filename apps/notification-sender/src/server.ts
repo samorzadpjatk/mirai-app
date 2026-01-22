@@ -4,8 +4,8 @@ import type { AppRouter } from "./router";
 import { appRouter } from "./router";
 import { createContext } from "./trpc";
 
-export async function startWsServer(port = Number(process.env.PORT ?? 3011)) {
-  const wss = new WebSocketServer({ port });
+export async function startWsServer(port = Number(process.env.PORT ?? 3011), host = process.env.HOST ?? "127.0.0.1") {
+  const wss = new WebSocketServer({ port, host });
 
   const handler = applyWSSHandler<AppRouter>({
     wss,
@@ -22,7 +22,7 @@ export async function startWsServer(port = Number(process.env.PORT ?? 3011)) {
   const actualPort =
     typeof address === "object" && address !== null ? address.port : port;
 
-  console.log(`tRPC WS server listening on ws://localhost:${actualPort}`);
+  console.log(`tRPC WS server listening on ws://${host}:${actualPort}`);
 
   process.on("SIGTERM", () => {
     console.log("SIGTERM: closing tRPC WS server");

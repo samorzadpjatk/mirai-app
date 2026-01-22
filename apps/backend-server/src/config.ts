@@ -6,4 +6,5 @@ export const serverConfig: ServerOptions = {
   // Serve both HTTP and WebSocket tRPC under the same path
   // so that clients can use one base URL.
   prefix: "/api/trpc",
+  host: process.env.TRPC_SERVER_HOST ?? "127.0.0.1",
 };

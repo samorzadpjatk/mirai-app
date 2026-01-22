@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Challenge, ChallengeStatus } from '../../types/challenges';
+import { type Challenge, ChallengeStatus } from '../../types/challenges';
 
 interface ChallengeCardProps {
   challenge: Challenge;

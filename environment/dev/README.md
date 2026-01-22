@@ -2,7 +2,7 @@
 
 ## Jak uruchomić?
 
-Wykonaj następujące komendy w tym folderze:
+Wykonaj następujące komendy w folderze environment:
 
 1. Ta komenda przygotowuje zmienne środowiskowe:
 

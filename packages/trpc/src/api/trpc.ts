@@ -20,7 +20,8 @@ import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { db } from "@integral-2025-app/db";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
-  const authorization = headers.get("authorization") ?? headers.get("Authorization");
+  const authorization =
+    headers.get("authorization") ?? headers.get("Authorization");
   if (!authorization) {
     return null;
   }
@@ -37,23 +38,50 @@ const getAccessToken = (
   headers: Headers,
   connectionParams?: unknown,
 ): string | null => {
+  // First try to get token from Authorization header
   const headerToken = getAccessTokenFromHeaders(headers);
   if (headerToken) {
+    console.log("[Auth] Token found in headers");
     return headerToken;
   }
 
+  console.log("[Auth] Checking connectionParams:", JSON.stringify(connectionParams));
+
+  // Try connectionParams (sent as first WebSocket message)
   if (
     connectionParams &&
     typeof connectionParams === "object" &&
     "authToken" in connectionParams
   ) {
     const token = (connectionParams as { authToken?: unknown }).authToken;
+    console.log("[Auth] authToken in connectionParams:", token ? "EXISTS" : "MISSING");
 
     if (typeof token === "string" && token.trim().length > 0) {
+      console.log("[Auth] Token found in connectionParams");
       return token.trim();
     }
   }
 
+  // Fallback: check for authorization query parameter (WebSocket upgrade workaround)
+  // This is used because WebSocket connections via browser/React Native don't support custom headers
+  const urlString = headers.get("x-original-url");
+  if (urlString) {
+    try {
+      const url = new URL(urlString, "http://dummy");
+      const authParam = url.searchParams.get("authorization");
+      if (authParam) {
+        const [scheme, token] = authParam.split(" ");
+        if (scheme?.toLowerCase() === "bearer" && token?.trim()) {
+          console.log("[Auth] Token found in URL query params");
+          return token.trim();
+        }
+      }
+    } catch (err) {
+      console.error("[Auth] Failed to parse URL:", err);
+    }
+  }
+
+  console.log("[Auth] No token found");
   return null;
 };
 
@@ -77,7 +105,11 @@ export const createTRPCContext = (opts: {
 }) => {
   const supabase = createSupabaseClient(opts.supabaseUrl, opts.supabaseKey);
   const accessToken = getAccessToken(opts.headers, opts.connectionParams);
-  console.log("Creating tRPC context with access token:", accessToken ? "YES" : "NO");
+  console.log(
+    "Creating tRPC context with access token:",
+    accessToken ? "YES" : "NO",
+  );
+
   return {
     db,
     supabase,
@@ -145,50 +177,44 @@ export const publicProcedure = t.procedure;
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    const { user, dbUser } = await requireAuth(
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-    return next({
-      ctx: {
-        user,
-        dbUser,
-      },
-    });
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const { user, dbUser } = await requireAuth(
+    ctx.supabase,
+    ctx.accessToken ?? undefined,
+  );
+  return next({
+    ctx: {
+      user,
+      dbUser,
+    },
   });
+});
 
 /**
  * Admin (authenticated) procedure
  *
  * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user.isAdmin` is not null and is true.
+ * the session is valid and guarantees the caller has the required role.
  *
  * @see https://trpc.io/docs/procedures
  */
-export const moderatorProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    const dbUser = await requireModerator(
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-    return next({
-      ctx: {
-        dbUser,
-      },
-    });
+export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const dbUser = await requireModerator(
+    ctx.supabase,
+    ctx.accessToken ?? undefined,
+  );
+  return next({
+    ctx: {
+      dbUser,
+    },
   });
+});
 
-export const adminProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    const dbUser = await requireAdmin(
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-    return next({
-      ctx: {
-        dbUser,
-      },
-    });
+export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const dbUser = await requireAdmin(ctx.supabase, ctx.accessToken ?? undefined);
+  return next({
+    ctx: {
+      dbUser,
+    },
   });
+});

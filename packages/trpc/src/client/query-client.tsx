@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getTRPCClient, TRPCProvider } from "./react";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useSession, useAuthLoading } from "@integral-2025-app/auth/client";
 
 function makeQueryClient() {
@@ -36,10 +36,11 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
     const isAuthLoading = useAuthLoading();
     const authToken = session?.access_token;
     const queryClient = getQueryClient();
+    const cleanupRef = useRef<(() => Promise<void>) | null>(null);
 
     // Recreate tRPC client when authToken changes to update WebSocket connectionParams
     // Use useMemo unconditionally (always call hooks in same order)
-    const trpcClient = useMemo(
+    const trpcClientWrapper = useMemo(
         () => {
             // Don't initialize tRPC client until auth is loaded
             if (isAuthLoading) {
@@ -50,14 +51,54 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
         [authToken, httpUrl, wsUrl, isAuthLoading]
     );
 
+    // Clean up previous client's WebSocket connection when token changes
+    useEffect(() => {
+        // Clean up previous WebSocket connection if it exists
+        if (cleanupRef.current) {
+            console.log("[APIProvider] Cleaning up previous WebSocket connection");
+            cleanupRef.current().then(() => {
+              cleanupRef.current = null;
+            }).catch((error) => {
+              console.error("[APIProvider] Error cleaning up previous WebSocket connection:", error);
+            });
+
+        }
+
+        // Store new cleanup function
+        if (trpcClientWrapper) {
+            console.log("[APIProvider] Storing new cleanup function");
+            cleanupRef.current = trpcClientWrapper.cleanup;
+        }
+
+        return () => {
+            // Cleanup on unmount
+            if (cleanupRef.current) {
+              console.log(
+                "[APIProvider] Cleaning up previous WebSocket connection",
+              );
+              cleanupRef
+                .current()
+                .then(() => {
+                  cleanupRef.current = null;
+                })
+                .catch((error) => {
+                  console.error(
+                    "[APIProvider] Error cleaning up previous WebSocket connection:",
+                    error,
+                  );
+                });
+            }
+        };
+    }, [trpcClientWrapper]);
+
     // Only render TRPCProvider when we have a valid client
-    if (isAuthLoading || !trpcClient) {
+    if (isAuthLoading || !trpcClientWrapper) {
         return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
     }
 
     return (
         <QueryClientProvider client={queryClient}>
-            <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+            <TRPCProvider trpcClient={trpcClientWrapper.client} queryClient={queryClient}>
                 {children}
             </TRPCProvider>
         </QueryClientProvider>
