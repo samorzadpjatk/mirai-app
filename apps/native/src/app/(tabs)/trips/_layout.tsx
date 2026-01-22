@@ -14,7 +14,6 @@ export default function TripsLayout() {
           fontFamily: "IBMPlexSans_600SemiBold",
           color: "#ffffff",
         },
-        headerBackTitleVisible: false,
         contentStyle: { backgroundColor },
         animation: "slide_from_right",
       }}

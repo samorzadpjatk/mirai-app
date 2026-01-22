@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View, ScrollView, Modal, TextInput } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolate } from 'react-native-reanimated';
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -26,7 +26,6 @@ export default function MapScreen() {
   const [locationsByUserId, setLocationsByUserId] = useState<
     Record<string, { latitude: number; longitude: number; updatedAt: string | number | Date }>
   >({});
-  const lastSentRef = useRef(0);
   const [mapTheme, setMapTheme] = useState<'dark' | 'light'>('dark');
 
   // Fetch sharing settings using React Query
@@ -97,15 +96,16 @@ export default function MapScreen() {
               }));
             }
           } 
-          if (event.type === "delete" && event.userId) {
+          if (event.type === "delete" && "userId" in event && event.userId) {
+            const userId = event.userId;
             setLocationsByUserId((prev) => {
               const next = { ...prev };
-              delete next[event.userId];
+              delete next[userId];
               return next;
             });
             setUsersData((prev) => {
               const next = { ...prev };
-              delete next[event.userId];
+              delete next[userId];
               return next;
             });
           }
@@ -152,7 +152,6 @@ export default function MapScreen() {
         email: session?.user?.email ?? undefined,
         address: "Your location",
         coordinate: currentCoordinate,
-        avatarUrl: session?.user?.image ?? null,
         lastActiveAt: now,
       });
     }
@@ -174,7 +173,7 @@ export default function MapScreen() {
       });
     });
     return next;
-  }, [locationsByUserId, usersData, session?.user?.id, session?.user?.email, session?.user?.image, currentCoordinate, now]);
+  }, [locationsByUserId, usersData, session?.user?.id, session?.user?.email, currentCoordinate, now]);
 
   const selectedUser = useMemo(
     () => users.find((user) => user.id === selectedUserId) ?? null,
@@ -233,9 +232,6 @@ export default function MapScreen() {
         }}
         onLocationUpdate={({ latitude, longitude }) => {
           setCurrentCoordinate([longitude, latitude]);
-          const now = Date.now();
-          if (now - lastSentRef.current < 5000) return;
-          lastSentRef.current = now;
           void sendLocation({ latitude, longitude });
         }}
         onMapPress={() => {

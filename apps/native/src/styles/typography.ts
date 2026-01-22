@@ -18,6 +18,6 @@ export const typography = {
 
   // Line heights
   tight: 1.2,
-  normal: 1.5,
+  normalLine: 1.5,
   relaxed: 1.75,
 };

@@ -191,7 +191,7 @@ export default function AdminChallengesScreen() {
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <MaterialIcons name="shield-person" size={30} color="#00ced1" />
+            <MaterialIcons name="shield" size={30} color="#00ced1" />
           </View>
         </View>
       </SafeAreaView>

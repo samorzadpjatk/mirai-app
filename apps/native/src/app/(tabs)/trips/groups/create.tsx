@@ -197,7 +197,7 @@ export default function CreateGroupScreen() {
                 {filteredParticipants && filteredParticipants.length > 0 ? (
                   filteredParticipants.map((participant) => {
                     const isSelected = selectedMembers.has(participant.user.id);
-                    const initials = `${participant.user.firstName.charAt(0)}${participant.user.lastName.charAt(0)}`.toUpperCase();
+                    const initials = `${(participant.user.firstName ?? "")[0] ?? ""}${(participant.user.lastName ?? "")[0] ?? ""}`.toUpperCase() || "?";
 
                     return (
                       <TouchableOpacity
@@ -211,7 +211,7 @@ export default function CreateGroupScreen() {
                         </View>
                         <View style={styles.memberInfo}>
                           <Text style={styles.memberName}>
-                            {participant.user.firstName} {participant.user.lastName}
+                            {(participant.user.firstName ?? "") + " " + (participant.user.lastName ?? "")}
                           </Text>
                           <Text style={styles.memberEmail}>{participant.user.email}</Text>
                         </View>

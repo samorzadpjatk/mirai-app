@@ -10,6 +10,8 @@ export interface UserLocation {
   coordinate: [number, number]; // [longitude, latitude]
   email?: string;
   address?: string;
+  /** Optional avatar image URL */
+  avatarUrl?: string | null;
   /** ISO string or millis since epoch */
   lastActiveAt: string | number;
 }
