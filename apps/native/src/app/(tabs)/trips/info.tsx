@@ -102,7 +102,7 @@ export default function TripInfoScreen() {
       try {
         const downloadedFile = await File.downloadFileAsync(url, pdfDir);
         console.log('PDF downloaded, file path:', downloadedFile.uri);
-        console.log('Downloaded file name:', downloadedFile.name);
+        console.log('Downloaded file uri:', downloadedFile.uri);
 
         // Open the downloaded PDF immediately
         setPdfUri(downloadedFile.uri);
@@ -112,7 +112,7 @@ export default function TripInfoScreen() {
         console.error('Download error:', downloadError);
 
         // If error is about file already existing, just open it
-        if (downloadError.code === 'ERR_DESTINATION_ALREADY_EXISTS') {
+        if ((downloadError as any)?.code === 'ERR_DESTINATION_ALREADY_EXISTS') {
           console.log('File already exists, opening existing file');
           // Try to find the actual downloaded file
           const existingFile = new File(pdfDir, downloadedFileName);

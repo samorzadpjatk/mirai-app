@@ -51,15 +51,18 @@ export default function GroupDetailsScreen() {
     );
   }
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const getInitials = (firstName?: string | null, lastName?: string | null) => {
+    const f = (firstName ?? "")[0] ?? "";
+    const l = (lastName ?? "")[0] ?? "";
+    const initials = `${f}${l}`.toUpperCase();
+    return initials || "?";
   };
 
   const organizerId = group.organizer?.id;
   const isOrganizer = currentUser?.id === organizerId;
   const memberList = group.participants.map((p) => ({
     id: p.user.id,
-    name: `${p.user.firstName} ${p.user.lastName}`,
+    name: `${p.user.firstName ?? ""} ${p.user.lastName ?? ""}`.trim(),
     initials: getInitials(p.user.firstName, p.user.lastName),
     role: p.user.id === organizerId ? "Group Leader" : "Member",
     isLeader: p.user.id === organizerId,
@@ -235,7 +238,6 @@ const styles = StyleSheet.create({
     right: 0,
     height: "50%",
     backgroundColor: "rgba(23, 24, 28, 0)",
-    background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(23,24,28,1) 100%)",
   },
   heroContent: {
     padding: spacing.xl,

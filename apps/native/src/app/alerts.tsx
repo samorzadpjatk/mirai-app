@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
@@ -8,14 +8,18 @@ import { colors, spacing, borderRadius, typography } from '../styles';
 
 interface Notification {
   id: string;
-  title: string;
-  body: string;
-  createdAt: Date;
-  createdBy?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
+    createdAt: Date;
+    updatedAt: Date;
+    tripId: string | null;
+    title: string;
+    body: string;
+    url: string;
+    createdById: string;
+    createdBy: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+    };
 }
 
 export default function AlertsScreen() {

@@ -34,7 +34,7 @@ function getInitials(name: string): string {
     return parts[0]![0]!.toUpperCase();
   }
 
-  const first = parts[0]![0];
+  const first = parts[0]![0] ?? "";
   const last = parts[parts.length - 1]![0];
   return (first + last).toUpperCase();
 }

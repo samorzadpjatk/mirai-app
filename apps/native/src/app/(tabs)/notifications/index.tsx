@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,18 +10,20 @@ import {
   ActivityIndicator,
   RefreshControl,
   StyleSheet,
-  Pressable,
 } from "react-native";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { formatRelativeTime, formatDate } from "~/utils/format";
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 export default function NotificationsScreen() {
   const trpc = useTRPC();
   const router = useRouter();
+
+  // Load trips for ranking notifications
+  const { data: tripsData } = useQuery(trpc.trip.getAll.queryOptions());
+  const trips = tripsData ?? [];
 
   // Check user permissions
   const { data: currentUser, isLoading: isLoadingUser } = useQuery(
@@ -31,11 +33,7 @@ export default function NotificationsScreen() {
   // Redirect if user doesn't have access
   useEffect(() => {
     if (!isLoadingUser && currentUser) {
-      const hasAccess = [
-        currentUser?.isAdmin,
-        currentUser?.isModerator,
-        currentUser?.isServiceAccount,
-      ].some(Boolean);
+      const hasAccess = currentUser?.role !== "USER";
       if (!hasAccess) {
         router.replace("/");
       }
@@ -51,14 +49,13 @@ export default function NotificationsScreen() {
     isFetching,
   } = useQuery(trpc.notificationSchedule.getAll.queryOptions());
 
-  const insets = useAppSafeAreaInsets();
-
-  const schedules = schedulesData?.schedules ?? [];
+  const schedules = schedulesData?.schedules;
 
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createType, setCreateType] = useState<"custom" | "ranking">("custom");
+  const [createTripId, setCreateTripId] = useState<string | null>(null);
   const [createTitle, setCreateTitle] = useState("");
   const [createBody, setCreateBody] = useState("");
   const [createStartDate, setCreateStartDate] = useState("");
@@ -78,6 +75,7 @@ export default function NotificationsScreen() {
         // Reset form
         setCreateName("");
         setCreateType("custom");
+        setCreateTripId(null);
         setCreateTitle("");
         setCreateBody("");
         setCreateStartDate("");
@@ -115,16 +113,17 @@ export default function NotificationsScreen() {
   );
 
   const handleCreate = () => {
-    if (createName.trim() && createStartDate && createEndDate) {
+    if (createName.trim() && createStartDate && createEndDate && (createType !== "ranking" || createTripId)) {
       createScheduleMutation.mutate({
         name: createName.trim(),
+        ...(createTripId ? { tripId: createTripId } : {}),
         notificationType: createType,
         notificationTitle: createType === "custom" ? createTitle : undefined,
         notificationBody: createType === "custom" ? createBody : undefined,
         startDate: new Date(createStartDate),
         endDate: new Date(createEndDate),
-        hour: parseInt(createHour),
-        minute: parseInt(createMinute),
+        hour: parseInt(createHour, 10),
+        minute: parseInt(createMinute, 10),
         isActive: true,
       });
     }
@@ -160,9 +159,9 @@ export default function NotificationsScreen() {
 
   // Don't render if user doesn't have access
   if (
-    !currentUser?.isAdmin &&
-    !currentUser?.isModerator &&
-    !currentUser?.isServiceAccount
+    currentUser?.role !== "ADMIN" &&
+    currentUser?.role !== "MODERATOR" &&
+    currentUser?.role !== "SERVICE"
   ) {
     return null;
   }
@@ -198,7 +197,11 @@ export default function NotificationsScreen() {
           <Text style={styles.headerTitle}>Notification Schedules</Text>
           <TouchableOpacity
             style={styles.createButton}
-            onPress={() => setIsCreateDialogOpen(true)}
+            onPress={() => {
+              setCreateType("custom");
+              setCreateTripId(null);
+              setIsCreateDialogOpen(true);
+            }}
           >
             <Ionicons name="add" size={16} color="#17181c" />
             <Text style={styles.createButtonText}>Create</Text>
@@ -206,7 +209,7 @@ export default function NotificationsScreen() {
         </View>
 
         {/* Empty State */}
-        {schedules.length === 0 && (
+        {schedules?.length === 0 && (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyText}>
               No notification schedules found. Create your first schedule!
@@ -221,7 +224,7 @@ export default function NotificationsScreen() {
               <View style={styles.scheduleInfo}>
                 <Text style={styles.scheduleName}>{schedule.name}</Text>
                 <Text style={styles.scheduleCreator}>
-                  Created by {schedule.createdBy?.name} •{" "}
+                  Created by {schedule.createdBy ? `${schedule.createdBy.firstName ?? ""} ${schedule.createdBy.lastName ?? ""}`.trim() : "Unknown"} •{" "}
                   {formatRelativeTime(schedule.createdAt)}
                 </Text>
               </View>
@@ -254,6 +257,11 @@ export default function NotificationsScreen() {
               <View style={styles.tag}>
                 <Text style={styles.tagText}>{schedule.notificationType}</Text>
               </View>
+              {schedule?.trip?.name && (
+                <View style={styles.tag}>
+                  <Text style={styles.tagText}>{schedule?.trip?.name}</Text>
+                </View>
+              )}
               <View style={styles.tag}>
                 <Text style={styles.tagText}>
                   {String(schedule.hour).padStart(2, "0")}:
@@ -281,12 +289,18 @@ export default function NotificationsScreen() {
         visible={isCreateDialogOpen}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setIsCreateDialogOpen(false)}
+        onRequestClose={() => {
+          setIsCreateDialogOpen(false);
+          setCreateTripId(null);
+        }}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Create Notification Schedule</Text>
-            <TouchableOpacity onPress={() => setIsCreateDialogOpen(false)}>
+            <TouchableOpacity onPress={() => {
+              setIsCreateDialogOpen(false);
+              setCreateTripId(null);
+            }}>
               <Ionicons name="close" size={24} color="#ffffff" />
             </TouchableOpacity>
           </View>
@@ -314,7 +328,10 @@ export default function NotificationsScreen() {
               <View style={styles.typeSelector}>
                 <TouchableOpacity
                   style={[styles.typeOption, createType === "custom" && styles.typeOptionActive]}
-                  onPress={() => setCreateType("custom")}
+                  onPress={() => {
+                    setCreateType("custom");
+                    setCreateTripId(null);
+                  }}
                 >
                   <Text style={[styles.typeOptionText, createType === "custom" && styles.typeOptionTextActive]}>
                     Custom Message
@@ -322,7 +339,10 @@ export default function NotificationsScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.typeOption, createType === "ranking" && styles.typeOptionActive]}
-                  onPress={() => setCreateType("ranking")}
+                  onPress={() => {
+                    setCreateType("ranking");
+                    setCreateTripId(trips[0]?.id ?? null);
+                  }}
                 >
                   <Text style={[styles.typeOptionText, createType === "ranking" && styles.typeOptionTextActive]}>
                     Ranking Update
@@ -356,6 +376,29 @@ export default function NotificationsScreen() {
                   />
                 </View>
               </>
+            )}
+
+            {createType === "ranking" && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Trip</Text>
+                {trips.length === 0 ? (
+                  <Text style={{ color: "#9ca3af" }}>(No trips available)</Text>
+                ) : (
+                  <View style={styles.typeSelector}>
+                    {trips.map((t) => (
+                      <TouchableOpacity
+                        key={t.id}
+                        style={[styles.typeOption, createTripId === t.id && styles.typeOptionActive]}
+                        onPress={() => setCreateTripId(t.id)}
+                      >
+                        <Text style={[styles.typeOptionText, createTripId === t.id && styles.typeOptionTextActive]}>
+                          {t.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
             )}
 
             {/* Date Range */}
@@ -413,20 +456,24 @@ export default function NotificationsScreen() {
           <View style={styles.modalFooter}>
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={() => setIsCreateDialogOpen(false)}
+              onPress={() => {
+                setIsCreateDialogOpen(false);
+                setCreateTripId(null);
+              }}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                (!createName.trim() || !createStartDate || !createEndDate) && styles.submitButtonDisabled,
+                (!createName.trim() || !createStartDate || !createEndDate || (createType === "ranking" && !createTripId)) && styles.submitButtonDisabled,
               ]}
               onPress={handleCreate}
               disabled={
                 !createName.trim() ||
                 !createStartDate ||
                 !createEndDate ||
+                (createType === "ranking" && !createTripId) ||
                 createScheduleMutation.isPending
               }
             >

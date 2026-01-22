@@ -23,14 +23,9 @@ export default function TabsLayout() {
       backgroundColor={backgroundColor}
       tintColor={activeColor}
       iconColor={inactiveColor}
-      translucent={false}
-      hapticFeedbackEnabled={true}
       labelStyle={{
         default: { color: inactiveColor },
         selected: { color: activeColor },
-      }}
-      screenOptions={{
-        contentStyle: { backgroundColor },
       }}
     >
       <NativeTabs.Trigger name="index">

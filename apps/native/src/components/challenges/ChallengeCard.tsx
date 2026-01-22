@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, type ViewStyle, type TextStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { type Challenge, ChallengeStatus } from '../../types/challenges';
 
@@ -11,17 +10,16 @@ interface ChallengeCardProps {
 export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
   const isLocked = challenge.status === ChallengeStatus.LOCKED;
   const isActive = challenge.status === ChallengeStatus.SELECTED;
-  const isCompleted = challenge.status === ChallengeStatus.COMPLETED;
   
-  const getCardStyle = () => {
-    const baseStyle = {
+  const getCardStyle = (): ViewStyle => {
+    const baseStyle: ViewStyle = {
       backgroundColor: '#23262b',
       borderRadius: 12,
       padding: 20,
       borderWidth: 1,
       borderColor: 'transparent',
     };
-    
+
     if (isActive) {
       baseStyle.borderColor = '#00ced1';
       baseStyle.shadowColor = '#00ced1';
@@ -31,11 +29,11 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
     } else if (isLocked) {
       baseStyle.opacity = 0.6;
     }
-    
+
     if (challenge.size === 'tall') {
       baseStyle.minHeight = 280;
     }
-    
+
     return baseStyle;
   };
 
@@ -53,13 +51,9 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
     }
   };
 
-  const getStatusTextClass = () => {
-    if (isActive) return "text-primary";
-    return "text-gray-500";
-  };
 
-  const getPointsBadgeStyle = () => {
-    const baseStyle = {
+  const getPointsBadgeStyle = (): TextStyle => {
+    const baseStyle: TextStyle = {
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 6,

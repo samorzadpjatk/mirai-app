@@ -51,6 +51,9 @@ export const colors = {
   primaryOpacity80: "rgba(0, 206, 209, 0.8)",
 
   magentaOpacity10: "rgba(229, 51, 255, 0.1)",
+  magentaOpacity20: "rgba(229, 51, 255, 0.2)",
+  magentaOpacity30: "rgba(229, 51, 255, 0.3)",
+  magentaOpacity80: "rgba(229, 51, 255, 0.8)",
 
   blackOpacity40: "rgba(0, 0, 0, 0.4)",
 
