@@ -2,7 +2,6 @@ import { groupRouter } from "./routers/group";
 import {
   createCallerFactory,
   createTRPCRouter,
-  publicProcedure,
 } from "../api/trpc";
 import { userRouter } from "./routers/user";
 import { coinRouter } from "./routers/coin";
@@ -13,6 +12,7 @@ import { notificationDeliveryRouter } from "./routers/notificationDelivery";
 import { locationRouter } from "./routers/location";
 import { tripRouter } from "./routers/trip";
 import { challengeRouter } from "./routers/challenge";
+import { notificationSenderRouter } from "./routers/notificationSender";
 
 /**
  * This is the primary router for your server.
@@ -27,6 +27,7 @@ export const appRouter = createTRPCRouter({
   notifications: notificationRouter,
   notificationSchedule: notificationScheduleRouter,
   notificationDelivery: notificationDeliveryRouter,
+  notificationSender: notificationSenderRouter,
   location: locationRouter,
   trip: tripRouter,
   challenge: challengeRouter,

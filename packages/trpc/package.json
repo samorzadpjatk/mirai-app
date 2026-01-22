@@ -3,31 +3,33 @@
   "version": "1.0.0",
   "description": "Shared tRPC routers and utilities for Integral 2025 App",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./dist/src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./client": {
-      "types": "./dist/src/client/index.d.ts",
-      "import": "./src/client/index.ts",
-      "default": "./src/client/index.ts"
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js",
+      "default": "./dist/client/index.js"
     },
     "./client/expo": {
-      "types": "./dist/src/client/expo.d.ts",
-      "import": "./src/client/expo.ts",
-      "default": "./src/client/expo.ts"
+      "types": "./dist/client/expo.d.ts",
+      "import": "./dist/client/expo.js",
+      "default": "./dist/client/expo.js"
     }
   },
   "scripts": {
+    "build": "tsc -b",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "clean": "rm -rf dist *.tsbuildinfo"
   },
   "keywords": [],
   "author": "",
@@ -41,6 +43,7 @@
     "@trpc/client": "^11.8.1",
     "@trpc/server": "^11.8.1",
     "@trpc/tanstack-react-query": "^11.8.1",
+    "expo-server-sdk": "^3.15.0",
     "superjson": "^2.2.6",
     "zod": "^4.3.4"
   },
@@ -56,6 +59,7 @@
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
     "postcss": "^8.5.6",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
   }

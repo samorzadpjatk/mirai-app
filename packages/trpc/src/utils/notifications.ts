@@ -8,7 +8,7 @@ export interface SendNotificationInput {
   body: string;
   url: string;
   userIds: string[];
-  tripId: string;
+  tripId: string | null;
 }
 
 export interface SendNotificationResult {

@@ -1,4 +1,11 @@
 import { TRPCProvider, useTRPC, useTRPCClient, useSubscription } from "./react";
 import { APIProvider } from "./query-client";
-
-export { TRPCProvider, useTRPC, useTRPCClient, APIProvider, useSubscription };
+import { getTRPCClient } from "./vanilia";
+export {
+  TRPCProvider,
+  useTRPC,
+  useTRPCClient,
+  APIProvider,
+  useSubscription,
+  getTRPCClient
+};

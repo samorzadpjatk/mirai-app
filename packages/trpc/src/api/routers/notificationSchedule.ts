@@ -88,6 +88,12 @@ export const notificationScheduleRouter = createTRPCRouter({
                 email: true,
               },
             },
+            trip: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
             _count: {
               select: {
                 notificationExecutions: true,
@@ -125,7 +131,8 @@ export const notificationScheduleRouter = createTRPCRouter({
         createdBy: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
           },
         },
       },
@@ -156,7 +163,8 @@ export const notificationScheduleRouter = createTRPCRouter({
           createdBy: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
             },
           },
         },
@@ -173,8 +181,15 @@ export const notificationScheduleRouter = createTRPCRouter({
           createdBy: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
+            },
+          },
+          trip: {
+            select: {
+              id: true,
+              name: true,
             },
           },
           _count: {
@@ -243,6 +258,7 @@ export const notificationScheduleRouter = createTRPCRouter({
       const schedule = await ctx.db.notificationSchedule.create({
         data: {
           name: input.name,
+          tripId: input.tripId ?? null,
           notificationType: input.notificationType,
           notificationTitle: input.notificationTitle,
           notificationBody: input.notificationBody,
@@ -258,8 +274,15 @@ export const notificationScheduleRouter = createTRPCRouter({
           createdBy: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
+            },
+          },
+          trip: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
@@ -341,7 +364,8 @@ export const notificationScheduleRouter = createTRPCRouter({
           createdBy: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -446,6 +470,7 @@ export const notificationScheduleRouter = createTRPCRouter({
       const newSchedule = await ctx.db.notificationSchedule.create({
         data: {
           name: input.name ?? `${originalSchedule.name} (Copy)`,
+          tripId: originalSchedule.tripId,
           notificationType: originalSchedule.notificationType,
           notificationTitle: toOptionalString(
             originalSchedule.notificationTitle,
@@ -463,7 +488,8 @@ export const notificationScheduleRouter = createTRPCRouter({
           createdBy: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -494,7 +520,8 @@ export const notificationScheduleRouter = createTRPCRouter({
           createdBy: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },

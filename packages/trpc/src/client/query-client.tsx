@@ -1,7 +1,8 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getTRPCClient, TRPCProvider } from "./react";
+import { TRPCProvider } from "./react";
+import { getTRPCClient } from "./vanilia";
 import React, { useEffect, useMemo, useRef } from "react";
 import { useSession, useAuthLoading } from "@integral-2025-app/auth/client";
 

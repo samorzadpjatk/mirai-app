@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "../../api/trpc";
+import { createTRPCRouter, protectedProcedure } from "../../api/trpc";
 import {
   locationDataSchema,
   calculateDistance,
@@ -49,9 +46,12 @@ export interface LocationWithUser extends ExpoLocationObject {
   };
 }
 
-type FriendLocationEvent =
-  | { id: string; type: "upsert"; location: LocationWithUser }
-  | { id: string; type: "delete"; userId: string };
+export interface FriendLocationEvent {
+  id: string;
+  type: "upsert" | "delete";
+  location?: LocationWithUser;
+  userId?: string;
+}
 
 export interface SharingUser {
   id: string;

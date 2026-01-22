@@ -12,6 +12,7 @@ const baseDbUser: MockDbUser = {
   email: "mock.user@example.com",
   name: "Mock User",
   emailVerified: new Date("2023-01-01T00:00:00.000Z"),
+  role: "ADMIN",
   isAdmin: true,
   isModerator: true,
   isServiceAccount: false,
