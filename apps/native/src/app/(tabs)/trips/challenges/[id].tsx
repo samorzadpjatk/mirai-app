@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -9,17 +9,17 @@ import { colors, spacing, borderRadius, typography } from '../../../../styles';
 import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
 // Default icon mapping for challenges
-const getIconForChallenge = (name: string): string => {
+const getIconForChallenge = (name: string): ComponentProps<typeof MaterialIcons>['name'] => {
   const lowerName = name.toLowerCase();
-  if (lowerName.includes('snow') || lowerName.includes('angel')) return 'ac_unit';
+  if (lowerName.includes('snow') || lowerName.includes('angel')) return 'ac-unit';
   if (lowerName.includes('photo') || lowerName.includes('peak')) return 'landscape';
-  if (lowerName.includes('toast') || lowerName.includes('team')) return 'local_bar';
+  if (lowerName.includes('toast') || lowerName.includes('team')) return 'local-bar';
   if (lowerName.includes('legend') || lowerName.includes('local')) return 'star';
   if (lowerName.includes('trail') || lowerName.includes('blazer')) return 'explore';
-  if (lowerName.includes('fire') || lowerName.includes('starter')) return 'local_fire_department';
+  if (lowerName.includes('fire') || lowerName.includes('starter')) return 'local-fire-department';
   if (lowerName.includes('night') || lowerName.includes('watch')) return 'bedtime';
-  if (lowerName.includes('city') || lowerName.includes('sprint')) return 'directions_run';
-  return 'emoji_events';
+  if (lowerName.includes('city') || lowerName.includes('sprint')) return 'directions-run';
+  return 'emoji-events';
 };
 
 const getColorForPoints = (points: number): string => {
@@ -98,7 +98,7 @@ export default function ChallengeDetailScreen() {
   const takePhoto = async () => {
     try {
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: "images",
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -175,7 +175,7 @@ export default function ChallengeDetailScreen() {
   const iconColor = getColorForPoints(challenge.points);
   const isAssignedToUser = currentUser ? challenge.groups.some(g =>
     g.group.organizer?.id === currentUser.id ||
-    g.group.participants?.some((p: any) => p.userId === currentUser.id)
+    g.group.participants?.some((p) => p.id === currentUser.id)
   ) : false;
 
   return (
@@ -208,7 +208,7 @@ export default function ChallengeDetailScreen() {
             justifyContent: 'center',
             marginBottom: spacing.lg
           }}>
-            <MaterialIcons name={icon as any} size={48} color={iconColor} />
+            <MaterialIcons name={icon} size={48} color={iconColor} />
           </View>
 
           <Text style={{

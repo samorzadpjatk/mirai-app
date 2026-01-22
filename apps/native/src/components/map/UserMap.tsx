@@ -8,7 +8,6 @@ export interface UserLocation {
   id: string;
   name: string;
   coordinate: [number, number]; // [longitude, latitude]
-  avatarUrl?: string | null;
   email?: string;
   address?: string;
   /** ISO string or millis since epoch */
@@ -272,7 +271,6 @@ export const UserMap: React.FC<UserMapProps> = ({
             <View style={styles.avatarShadow}>
               <View style={styles.avatarBorder}>
                 <UserAvatar
-                  imageUrl={user.avatarUrl}
                   name={user.name}
                   size={34}
                 />

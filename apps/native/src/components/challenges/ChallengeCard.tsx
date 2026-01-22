@@ -112,7 +112,7 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
               justifyContent: 'center'
             }}
           >
-            <MaterialIcons name={challenge.icon as any} size={30} color={challenge.iconColor} />
+            <MaterialIcons name={challenge.icon} size={30} color={challenge.iconColor} />
           </View>
 
           {/* Content */}
@@ -153,7 +153,7 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
                 justifyContent: 'center'
               }}
             >
-              <MaterialIcons name={challenge.icon as any} size={24} color={challenge.iconColor} />
+              <MaterialIcons name={challenge.icon} size={24} color={challenge.iconColor} />
             </View>
             {isLocked ? (
               <MaterialIcons name="lock" size={16} color="#6b7280" />
@@ -198,7 +198,7 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
                 justifyContent: 'center'
               }}
             >
-              <MaterialIcons name={challenge.icon as any} size={24} color={challenge.iconColor} />
+              <MaterialIcons name={challenge.icon} size={24} color={challenge.iconColor} />
             </View>
             {isLocked ? (
               <MaterialIcons name="lock" size={16} color="#6b7280" />

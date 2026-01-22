@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { type ComponentProps, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StatusBar, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -10,7 +10,7 @@ interface Challenge {
   title: string;
   description: string;
   points: number;
-  icon: string;
+  icon: ComponentProps<typeof MaterialIcons>['name'];
   iconColor: string;
   status: 'selected' | 'incomplete' | 'locked';
   fullDescription: string;
@@ -23,7 +23,7 @@ const challengesData: Record<string, Challenge> = {
     description: 'Make a perfect snow angel and capture the moment',
     fullDescription: 'Create the perfect snow angel by lying down in fresh snow and moving your arms and legs to form wings and a dress. Make sure the snow is deep enough and take a photo from above to capture the full angel shape. Bonus points for creative poses!',
     points: 50,
-    icon: 'ac_unit',
+    icon: 'ac-unit',
     iconColor: '#60a5fa',
     status: 'selected'
   },
@@ -43,7 +43,7 @@ const challengesData: Record<string, Challenge> = {
     description: 'Celebrate with a group toast',
     fullDescription: 'Organize a celebratory toast with your team using local beverages or traditional drinks. Capture the moment when everyone raises their glasses together. This can be done at camp, a local restaurant, or any meaningful location during your adventure.',
     points: 30,
-    icon: 'local_bar',
+    icon: 'local-bar',
     iconColor: '#fb923c',
     status: 'incomplete'
   },
@@ -73,7 +73,7 @@ const challengesData: Record<string, Challenge> = {
     description: 'Build and light a campfire safely',
     fullDescription: 'Demonstrate proper campfire building skills by safely constructing and lighting a fire using natural materials. Document the process from gathering materials to the final burning fire. Make sure to follow all safety guidelines and completely extinguish the fire afterwards.',
     points: 75,
-    icon: 'local_fire_department',
+    icon: 'local-fire-department',
     iconColor: '#ef4444',
     status: 'incomplete'
   },
@@ -93,7 +93,7 @@ const challengesData: Record<string, Challenge> = {
     description: 'Complete an urban adventure run',
     fullDescription: 'Navigate through the local city or town completing a series of checkpoints in the shortest time possible. Take photos at each checkpoint and document your route. This challenge combines fitness with urban exploration and local discovery.',
     points: 60,
-    icon: 'directions_run',
+    icon: 'directions-run',
     iconColor: '#06b6d4',
     status: 'locked'
   },
@@ -105,7 +105,7 @@ export default function ChallengeDetailScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
-  const challenge = challengesData[id as string];
+  const challenge = challengesData[id];
 
   if (!challenge) {
     return (
@@ -129,7 +129,7 @@ export default function ChallengeDetailScreen() {
       // Request camera permissions
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       
-      if (status !== 'granted') {
+      if (status !== ImagePicker.PermissionStatus.GRANTED) {
         Alert.alert(
           "Permission Required",
           "Camera permission is needed to complete this challenge.",
@@ -149,11 +149,11 @@ export default function ChallengeDetailScreen() {
           },
           {
             text: "Choose from Gallery",
-            onPress: () => pickImageFromGallery()
+            onPress: () => void pickImageFromGallery()
           },
           {
             text: "Take Photo",
-            onPress: () => takePhoto()
+            onPress: () => void takePhoto()
           }
         ]
       );
@@ -218,8 +218,8 @@ export default function ChallengeDetailScreen() {
   };
 
   const isLocked = challenge.status === 'locked';
-  const isCompleted = challenge.status === 'completed';
-  const isActive = challenge.status === 'selected';
+  const isSelected = challenge.status === 'selected';
+  const isActive = isSelected;
 
   return (
     <View style={{ flex: 1, backgroundColor: '#17191c' }}>
@@ -300,7 +300,7 @@ export default function ChallengeDetailScreen() {
               marginBottom: 16
             }}>
               <MaterialIcons 
-                name={challenge.icon as any} 
+                name={challenge.icon} 
                 size={48} 
                 color={isLocked ? '#6b7280' : challenge.iconColor} 
               />
@@ -412,7 +412,7 @@ export default function ChallengeDetailScreen() {
                 source={{ uri: capturedImage }}
                 style={{
                   width: '100%',
-                  aspectRatio: 4/3,
+                  aspectRatio: 4 / 3,
                   borderRadius: 12,
                   marginBottom: 16
                 }}

@@ -11,7 +11,7 @@ interface Challenge {
   id: string;
   title: string;
   points: number;
-  icon: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
   iconColor: string;
   status: 'selected' | 'incomplete' | 'locked';
   description?: string;
@@ -145,7 +145,7 @@ export default function ChallengesScreen() {
             justifyContent: 'center'
           }}>
             <MaterialIcons
-              name={challenge.icon as any}
+              name={challenge.icon}
               size={24}
               color={isLocked ? colors.textMuted : challenge.iconColor}
             />
