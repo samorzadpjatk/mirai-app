@@ -60,9 +60,6 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 
-# idea files
-.idea
-
 # SW
 # Serwist
 **/public/sw*
@@ -70,9 +67,6 @@ pnpm-debug.log*
 **/public/workbox-*.js
 
 certificates/
-
-# VS CODE
-.vscode/
 
 # monorepo setup
 .turbo/
