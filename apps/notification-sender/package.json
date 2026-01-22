@@ -11,7 +11,8 @@
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
     "@integral-2025-app/common-utils": "workspace:*",
