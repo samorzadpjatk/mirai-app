@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useColorScheme, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -140,10 +140,82 @@ function RootLayoutContent() {
                 animation: "slide_from_right",
               }}
             />
+
+            {/* Additional app screens */}
+            <Stack.Screen
+              name="groups/index"
+              options={{
+                title: "Guilds",
+                headerShown: true,
+                headerTitle: "Guilds",
+                headerStyle: {
+                  backgroundColor: headerBackgroundColor,
+                },
+                headerTintColor: headerTintColor,
+              }}
+            />
+
+            <Stack.Screen
+              name="coins/index"
+              options={{
+                title: "Coin Operations",
+                headerShown: true,
+                headerTitle: "Treasury Management",
+                headerStyle: {
+                  backgroundColor: headerBackgroundColor,
+                },
+                headerTintColor: headerTintColor,
+              }}
+            />
+
+            <Stack.Screen
+              name="transactions/index"
+              options={{
+                title: "Transactions",
+                headerShown: true,
+                headerTitle: "Transaction History",
+                headerStyle: {
+                  backgroundColor: headerBackgroundColor,
+                },
+                headerTintColor: headerTintColor,
+              }}
+            />
+
+            <Stack.Screen
+              name="notifications/index"
+              options={{
+                title: "Notifications",
+                headerShown: true,
+                headerTitle: "Notification Schedules",
+                headerStyle: {
+                  backgroundColor: headerBackgroundColor,
+                },
+                headerTintColor: headerTintColor,
+              }}
+            />
+
             <Stack.Screen
               name="challenges"
               options={{
                 title: "Challenges",
+                headerShown: false,
+                animation: "slide_from_right",
+              }}
+            />
+
+            <Stack.Screen
+              name="challenge/[id]"
+              options={{
+                title: "Challenge Details",
+                headerShown: false,
+                animation: "slide_from_right",
+              }}
+            />
+
+            <Stack.Screen
+              name="admin/challenges"
+              options={{
+                title: "Manage Challenges",
                 headerShown: false,
                 animation: "slide_from_right",
               }}
