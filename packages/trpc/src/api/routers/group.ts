@@ -304,7 +304,7 @@ export const groupRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
         where: { id: input.id },
-        include: { participants: true },
+        include: { participants: { select: { id: true, userId: true, tripId: true, groupId: true } } },
       });
       if (!group)
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
@@ -318,7 +318,7 @@ export const groupRouter = createTRPCRouter({
 
       // Check if user is already in the group
       const existingMembership = group.participants.find(
-        (member) => member.userId === input.userId,
+        (member) => member.userId === ctx.dbUser.id,
       );
 
       if (existingMembership) {
@@ -365,7 +365,7 @@ export const groupRouter = createTRPCRouter({
 
       // Check if user is already in the group
       const existingMembership = group.participants.find(
-        (member) => member.userId === input.userId,
+        (member) => member.userId === ctx.dbUser.id,
       );
 
       if (existingMembership) {
