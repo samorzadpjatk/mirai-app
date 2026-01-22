@@ -5,8 +5,11 @@
     "paths": {
       "~/*": ["./src/*"]
     },
-    "lib": ["ES2022"],
-    "moduleResolution": "bundler"
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "noEmit": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
