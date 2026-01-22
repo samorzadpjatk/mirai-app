@@ -3,7 +3,7 @@ import baseConfig from "../../eslint.config.base.js";
 export default [
   ...baseConfig,
   {
-    ignores: ["dist/**", "node_modules/**", "coverage/**", "**/*.d.ts", "**/*.d.ts.map", "**/*.js"],
+    ignores: ["dist/**", "node_modules/**", "coverage/**", "**/*.d.ts", "**/*.d.ts.map", "**/*.js", "vitest.*.ts", "**/__tests__/**/*"],
   },
   {
     files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
