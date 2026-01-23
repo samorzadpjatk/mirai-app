@@ -3,11 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "dist",
-    "rootDir": ".",
-    "declaration": true,
-    "declarationMap": true,
-    "noEmit": false,
-    "moduleResolution": "bundler",
+    "rootDir": "."
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "seed.ts", "vitest.config.ts", "vitest.setup.ts", "prisma.config.ts"]

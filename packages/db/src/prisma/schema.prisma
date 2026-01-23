@@ -5,6 +5,7 @@ generator client {
   provider      = "prisma-client"
   output        = "./lib"
   binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+  runtime = "bun"
 }
 
 datasource db {
