@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { serverConfig } from "./config";
 import { createServer } from "./server";
 

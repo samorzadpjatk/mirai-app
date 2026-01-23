@@ -6,13 +6,13 @@ Dedykowany serwer backend dla aplikacji Integral, oparty na Fastify i tRPC.
 
 ```bash
 # Development
-pnpm dev
+bun run dev
 
 # Testy
-pnpm test
+bun run test
 
 # Testy z pokryciem
-pnpm test:coverage
+bun run test:coverage
 ```
 
 ## Konfiguracja
@@ -25,7 +25,7 @@ PORT=2022
 
 # Supabase
 SUPABASE_URL="http://localhost:8000"
-SUPABASE_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
 
 ## Autoryzacja
