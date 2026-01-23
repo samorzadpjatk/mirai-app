@@ -80,9 +80,6 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterEnv": [
-      "<rootDir>/jest.setup.ts"
-    ],
     "moduleNameMapper": {
       "^@integral-2025-app/auth$": "<rootDir>/../../packages/auth/src",
       "^@integral-2025-app/trpc$": "<rootDir>/../../packages/trpc/src"
