@@ -15,7 +15,7 @@ This package provides:
 
 ```bash
 # Already included if using the workspace
-pnpm add @integral-2025-app/trpc
+bun add @integral-2025-app/trpc
 ```
 
 ### For Client-Side Usage (React/React Native)
@@ -23,7 +23,7 @@ pnpm add @integral-2025-app/trpc
 Install peer dependencies:
 
 ```bash
-pnpm add @tanstack/react-query @trpc/client @trpc/tanstack-react-query
+bun add @tanstack/react-query @trpc/client @trpc/tanstack-react-query
 ```
 
 ## Usage
@@ -219,19 +219,19 @@ The package provides several procedure types with different authorization levels
 ### Run Tests
 
 ```bash
-pnpm test
+bun run test
 ```
 
 ### Watch Mode
 
 ```bash
-pnpm test:watch
+bun run test:watch
 ```
 
 ### Type Check
 
 ```bash
-pnpm typecheck
+bun run typecheck
 ```
 
 ## Documentation

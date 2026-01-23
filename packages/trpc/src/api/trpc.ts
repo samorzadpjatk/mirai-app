@@ -15,7 +15,10 @@ import {
   requireAdmin,
   requireAuth,
   requireModerator,
+  AuthenticationError,
+  AuthorizationError,
 } from "@integral-2025-app/auth";
+import { TRPCError } from "@trpc/server";
 import { createSupabaseClient, type SupabaseClient } from "@integral-2025-app/supabase";
 import { db, type PrismaClient } from "@integral-2025-app/db";
 
@@ -211,16 +214,23 @@ export const publicProcedure = t.procedure;
  * @see https://trpc.io/docs/procedures
  */
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const { user, dbUser } = await requireAuth(
-    ctx.supabase,
-    ctx.accessToken ?? undefined,
-  );
-  return next({
-    ctx: {
-      user,
-      dbUser,
-    },
-  });
+  try {
+    const { user, dbUser } = await requireAuth(
+      ctx.supabase,
+      ctx.accessToken ?? undefined,
+    );
+    return next({
+      ctx: {
+        user,
+        dbUser,
+      },
+    });
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    throw err;
+  }
 });
 
 /**
@@ -232,22 +242,42 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
  * @see https://trpc.io/docs/procedures
  */
 export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const dbUser = await requireModerator(
-    ctx.supabase,
-    ctx.accessToken ?? undefined,
-  );
-  return next({
-    ctx: {
-      dbUser,
-    },
-  });
+  try {
+    const dbUser = await requireModerator(
+      ctx.supabase,
+      ctx.accessToken ?? undefined,
+    );
+    return next({
+      ctx: {
+        dbUser,
+      },
+    });
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    if (err instanceof AuthorizationError) {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+    throw err;
+  }
 });
 
 export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const dbUser = await requireAdmin(ctx.supabase, ctx.accessToken ?? undefined);
-  return next({
-    ctx: {
-      dbUser,
-    },
-  });
+  try {
+    const dbUser = await requireAdmin(ctx.supabase, ctx.accessToken ?? undefined);
+    return next({
+      ctx: {
+        dbUser,
+      },
+    });
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    if (err instanceof AuthorizationError) {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+    throw err;
+  }
 });

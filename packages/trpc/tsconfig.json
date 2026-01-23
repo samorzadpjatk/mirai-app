@@ -3,14 +3,11 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
+      "~/*": ["./src/*"]
     },
     "outDir": "dist",
     "rootDir": "src",
-    "jsx": "react-jsx",
-    "declaration": true,
-    "declarationMap": true,
-    "noEmit": false
+    "lib": ["DOM", "ES2022"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"]
