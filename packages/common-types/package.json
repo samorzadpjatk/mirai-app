@@ -3,17 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./src/index.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
+      "import": "./src/index.ts",
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "default": "./src/index.ts"
     },
     "./models/user": {
-      "import": "./dist/models/user.js",
+      "import": "./src/models/user.ts",
       "types": "./dist/models/user.d.ts",
-      "default": "./dist/models/user.js"
+      "default": "./src/models/user.ts"
     }
   },
   "scripts": {
@@ -22,7 +22,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf node_modules"
   },
   "devDependencies": {
     "@types/node": "^24.10.4",
