@@ -13,8 +13,7 @@ Natywna aplikacja mobilna Samorządu Studenckiego PJATK zbudowana z użyciem Exp
 
 ## Wymagania
 
-- Node.js 18+
-- pnpm 8+
+- Bun (https://bun.sh) installed
 - iOS Simulator (macOS) lub Android Studio (dla emulatora Android)
 - Expo Go na urządzeniu fizycznym (opcjonalnie)
 
@@ -23,24 +22,24 @@ Natywna aplikacja mobilna Samorządu Studenckiego PJATK zbudowana z użyciem Exp
 Z katalogu głównego projektu:
 
 ```bash
-pnpm install
+bun install
 ```
 
 ## Dostępne komendy
 
 | Komenda | Opis |
 |---------|------|
-| `pnpm --filter @integral-2025-app/native dev` | Uruchamia serwer deweloperski Expo |
-| `pnpm --filter @integral-2025-app/native android` | Uruchamia aplikację na emulatorze/urządzeniu Android |
-| `pnpm --filter @integral-2025-app/native ios` | Uruchamia aplikację na symulatorze/urządzeniu iOS |
-| `pnpm --filter @integral-2025-app/native web` | Uruchamia aplikację w przeglądarce |
-| `pnpm --filter @integral-2025-app/native build` | Buduje aplikację do produkcji |
-| `pnpm --filter @integral-2025-app/native lint` | Sprawdza kod pod kątem błędów ESLint |
-| `pnpm --filter @integral-2025-app/native lint:fix` | Naprawia automatycznie błędy ESLint |
-| `pnpm --filter @integral-2025-app/native typecheck` | Sprawdza typy TypeScript |
-| `pnpm --filter @integral-2025-app/native test` | Uruchamia testy z pokryciem |
-| `pnpm --filter @integral-2025-app/native format:check` | Sprawdza formatowanie kodu |
-| `pnpm --filter @integral-2025-app/native format:write` | Formatuje kod |
+| `cd apps/native && bun run dev` | Uruchamia serwer deweloperski Expo |
+| `cd apps/native && bun run android` | Uruchamia aplikację na emulatorze/urządzeniu Android |
+| `cd apps/native && bun run ios` | Uruchamia aplikację na symulatorze/urządzeniu iOS |
+| `cd apps/native && bun run web` | Uruchamia aplikację w przeglądarce |
+| `cd apps/native && bun run build` | Buduje aplikację do produkcji |
+| `cd apps/native && bun run lint` | Sprawdza kod pod kątem błędów ESLint |
+| `cd apps/native && bun run lint:fix` | Naprawia automatycznie błędy ESLint |
+| `cd apps/native && bun run typecheck` | Sprawdza typy TypeScript |
+| `cd apps/native && bun run test` | Uruchamia testy z pokryciem |
+| `cd apps/native && bun run format:check` | Sprawdza formatowanie kodu |
+| `cd apps/native && bun run format:write` | Formatuje kod |
 
 ## Struktura projektu
 
@@ -60,17 +59,17 @@ apps/native/
 Z katalogu głównego projektu:
 
 ```bash
-# Uruchom serwer deweloperski
-pnpm --filter @integral-2025-app/native dev
+# Uruch serwer deweloperski
+cd apps/native && bun run dev
 
 # Uruchom na platformie
-pnpm --filter @integral-2025-app/native android
-pnpm --filter @integral-2025-app/native ios
+cd apps/native && bun run android
+cd apps/native && bun run ios
 ```
 
 ## Rozwój
 
-1. Uruchom serwer deweloperski: `pnpm dev`
+1. Uruchom serwer deweloperski: `bun run dev`
 2. Zeskanuj kod QR w aplikacji Expo Go lub wybierz platformę (a/i/w)
 3. Kod przeładowuje się automatycznie po zapisaniu zmian
 
@@ -136,10 +135,10 @@ Każdy ekran administracyjny sprawdza uprawnienia użytkownika i automatycznie p
 
 ```bash
 # Uruchom wszystkie testy
-pnpm --filter @integral-2025-app/native test
+cd apps/native && bun run test
 
 # Testy bez pokrycia (dla CI)
-pnpm --filter @integral-2025-app/native test:ci
+cd apps/native && bun run test:ci
 ```
 
 ## Więcej informacji

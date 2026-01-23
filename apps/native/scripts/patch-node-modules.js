@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 /*
   Patch script for react-native-css-interop parseAspectRatio
   - Idempotent: will not reapply if already patched
@@ -22,14 +22,14 @@ async function tryResolve(pkg) {
   }
 }
 
-// Find repository root by looking for pnpm-workspace.yaml, pnpm-lock.yaml, or .git
+// Find repository root by looking for bun.lock or .git
 async function findRepoRoot(start = process.cwd()) {
   let dir = start;
   const { root } = path.parse(dir);
   while (dir !== root) {
     try {
       const files = await fs.readdir(dir);
-      if (files.includes('pnpm-workspace.yaml') || files.includes('pnpm-lock.yaml') || files.includes('.git')) {
+      if (files.includes('bun.lock') || files.includes('.git')) {
         return dir;
       }
     } catch (e) {
@@ -47,7 +47,7 @@ async function findPkgDirsPnpm(pkgName) {
   const viaResolve = await tryResolve(pkgName);
   if (viaResolve) found.add(viaResolve);
 
-  // 2) search common pnpm locations from repo root
+  // 2) search common locations from repo root
   const repoRoot = await findRepoRoot();
   const nm = path.join(repoRoot, 'node_modules');
 
@@ -63,18 +63,6 @@ async function findPkgDirsPnpm(pkgName) {
 
   // node_modules/<pkg>/package.json
   await tryAdd(path.join(nm, pkgName));
-
-  // node_modules/.pnpm/*/node_modules/<pkg>
-  const pnpmDir = path.join(nm, '.pnpm');
-  try {
-    const entries = await fs.readdir(pnpmDir);
-    for (const entry of entries) {
-      const candidate = path.join(pnpmDir, entry, 'node_modules', pkgName);
-      await tryAdd(candidate);
-    }
-  } catch (e) {
-    // ignore if .pnpm doesn't exist
-  }
 
   // workspace packages (packages/*, apps/*)
   for (const workspaceFolder of ['packages', 'apps', 'libs', 'modules']) {
@@ -130,7 +118,7 @@ async function patchFile(filePath, replacementFn, marker) {
       log('Backup created:', bakPath);
     }
 
-    // ensure writeable (pnpm store might make files read-only). If not writeable, try making it writeable.
+    // ensure writeable (package manager store might make files read-only). If not writeable, try making it writeable.
     try {
       await fs.chmod(filePath, 0o644);
     } catch (e) {
