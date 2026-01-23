@@ -5,14 +5,14 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "node --enable-source-maps --import tsx src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "start": "bun --enable-source-maps src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf node_modules"
   },
   "dependencies": {
     "@integral-2025-app/common-utils": "workspace:*",
@@ -21,7 +21,6 @@
     "@integral-2025-app/supabase": "workspace:*",
     "@trpc/client": "^11.8.1",
     "@trpc/server": "^11.8.1",
-    "dotenv": "^16.6.1",
     "expo-server-sdk": "^3.15.0",
     "superjson": "^2.2.6",
     "ws": "^8.18.3",
@@ -31,7 +30,6 @@
     "@types/node": "^22.19.3",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.0.16",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
   }

@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { createSupabaseClient as createClient } from "@integral-2025-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@integral-2025-app/supabase";
 import { getTRPCClient } from "@integral-2025-app/trpc/client";
@@ -8,16 +7,10 @@ interface NotificationRow {
   id: string;
 }
 
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
-
 function main() {
-  const TRPC_HOST = requireEnv("TRPC_HOST");
-  const SUPABASE_URL = requireEnv("SUPABASE_URL");
-  const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const TRPC_HOST = process.env.TRPC_HOST;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabase = createClient(
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
@@ -28,7 +21,7 @@ function main() {
   const { client, cleanup } = getTRPCClient(
     `http://${TRPC_HOST}/api/trpc`,
     `ws://${TRPC_HOST}/api/trpc`,
-    "",
+    SUPABASE_SERVICE_ROLE_KEY,
   );
 
   const channel = supabase
