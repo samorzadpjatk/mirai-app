@@ -6,14 +6,14 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
+      "import": "./src/index.ts",
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "default": "./src/index.ts"
     },
     "./types": {
-      "import": "./dist/types.js",
+      "import": "./src/types.ts",
       "types": "./dist/types.d.ts",
-      "default": "./dist/types.js"
+      "default": "./src/types.ts"
     }
   },
   "scripts": {
@@ -23,7 +23,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf node_modules"
   },
   "keywords": [],
   "author": "",
