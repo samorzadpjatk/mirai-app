@@ -17,20 +17,24 @@ packages/db/
 
 ## Dostępne komendy
 
-Wszystkie komendy można uruchomić z katalogu głównego projektu używając:
+Wszystkie komendy można uruchomić z katalogu pakietu lub używając `cd`:
 
 ```bash
-pnpm --filter @integral-2025-app/db <komenda>
+# Z katalogu pakietu
+bun run <komenda>
+
+# Z katalogu głównego repozytorium
+cd packages/db && bun run <komenda>
 ```
 
 ### Podstawowe komendy
 
 #### `db:generate`
 
-Generuje klienta Prisma na podstawie schematu. Uruchamiane automatycznie po `pnpm install`.
+Generuje klienta Prisma na podstawie schematu. Uruchamiane automatycznie po `bun install`.
 
 ```bash
-pnpm --filter @integral-2025-app/db db:generate
+cd packages/db && bun run db:generate
 ```
 
 #### `db:push`
@@ -38,7 +42,7 @@ pnpm --filter @integral-2025-app/db db:generate
 Wypycha zmiany schematu bezpośrednio do bazy danych bez tworzenia migracji. **Przydatne w środowisku deweloperskim**.
 
 ```bash
-pnpm --filter @integral-2025-app/db db:push
+cd packages/db && bun run db:push
 ```
 
 #### `db:studio`
@@ -46,7 +50,7 @@ pnpm --filter @integral-2025-app/db db:push
 Otwiera Prisma Studio - graficzny interfejs do przeglądania i edycji danych w bazie.
 
 ```bash
-pnpm --filter @integral-2025-app/db db:studio
+cd packages/db && bun run db:push
 ```
 
 #### `db:seed`
@@ -54,7 +58,7 @@ pnpm --filter @integral-2025-app/db db:studio
 Wypełnia bazę danych przykładowymi danymi z pliku `prisma/seed.ts`.
 
 ```bash
-pnpm --filter @integral-2025-app/db db:seed
+cd packages/db && bun run db:seed
 ```
 
 ### Komendy migracji (środowisko produkcyjne)
@@ -64,7 +68,7 @@ pnpm --filter @integral-2025-app/db db:seed
 Tworzy nową migrację na podstawie zmian w schemacie i aplikuje ją do bazy deweloperskiej.
 
 ```bash
-pnpm --filter @integral-2025-app/db db:migrate:dev
+cd packages/db && bun run db:migrate:dev
 ```
 
 Po wywołaniu zostaniesz poproszony o nazwę migracji.
@@ -74,7 +78,7 @@ Po wywołaniu zostaniesz poproszony o nazwę migracji.
 Aplikuje zaległe migracje do bazy danych. **Używane w środowisku produkcyjnym**.
 
 ```bash
-pnpm --filter @integral-2025-app/db db:migrate
+cd packages/db && bun run db:migrate
 ```
 
 #### `db:reset`
@@ -84,7 +88,7 @@ Resetuje bazę danych: usuwa wszystkie dane, ponownie aplikuje wszystkie migracj
 **⚠️ UWAGA: Usuwa wszystkie dane z bazy! Używaj tylko w środowisku deweloperskim!**
 
 ```bash
-pnpm --filter @integral-2025-app/db db:reset
+cd packages/db && bun run db:reset
 ```
 
 ## Workflow deweloperski
@@ -95,10 +99,10 @@ Po sklonowaniu repozytorium:
 
 ```bash
 # Zainstaluj zależności (automatycznie uruchomi db:generate)
-pnpm install
+bun install
 
 # Wypełnij bazę danymi początkowymi
-pnpm --filter @integral-2025-app/db db:seed
+cd packages/db && bun run db:seed
 ```
 
 ### 2. Modyfikacja schematu
@@ -107,16 +111,16 @@ Po zmianie pliku `prisma/schema.prisma`:
 
 ```bash
 # W środowisku deweloperskim - szybkie prototypowanie
-pnpm --filter @integral-2025-app/db db:push
+cd packages/db && bun run db:push
 
 # LUB z migracjami - dla zmian, które mają trafić do produkcji
-pnpm --filter @integral-2025-app/db db:migrate:dev
+cd packages/db && bun run db:migrate:dev
 ```
 
 ### 3. Przeglądanie danych
 
 ```bash
-pnpm --filter @integral-2025-app/db db:studio
+cd packages/db && bun run db:studio
 ```
 
 Otwiera się w przeglądarce pod adresem `http://localhost:5555`

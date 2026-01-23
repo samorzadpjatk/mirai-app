@@ -8,6 +8,7 @@ export interface SendNotificationInput {
   body: string;
   url: string;
   userIds: string[];
+  tripId: string | null;
 }
 
 export interface SendNotificationResult {
@@ -33,6 +34,7 @@ export async function sendNotification({
             body: input.body,
             url: input.url,
             createdById: userId,
+            tripId: input.tripId,
           },
         });
 
@@ -60,29 +62,27 @@ export async function sendNotification({
 export async function sendRankingUpdate({
   db,
   userId,
+  tripId,
 }: {
   db: Prisma.TransactionClient;
   userId: string;
+  tripId: string;
 }): Promise<{
   success: boolean;
   notificationIds: string[];
 }> {
   const groups = await db.group.findMany({
+    where: { tripId },
     orderBy: { coins: "desc" },
   });
 
   const results = await Promise.all(
     groups.map(async (group, index) => {
-      const members = await db.user.findMany({
-        where: {
-          OR: [
-            { group: { id: group.id } },
-            { organizerGroup: { some: { id: group.id } } },
-          ],
-        },
-        select: { id: true },
+      const participants = await db.tripParticipant.findMany({
+        where: { tripId, groupId: group.id },
+        select: { userId: true },
       });
-      const userIds = members.map((m) => m.id);
+      const userIds = participants.map((p) => p.userId);
       const notificationData =
         NotificationService.createRankingUpdateNotification(
           group.name,
@@ -97,6 +97,7 @@ export async function sendRankingUpdate({
           title: notificationData.title,
           body: notificationData.body,
           url: notificationData.url,
+          tripId,
         },
       });
     }),

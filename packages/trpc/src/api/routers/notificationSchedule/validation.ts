@@ -136,6 +136,7 @@ export function validateReasonableDateRange(
 
 export const notificationScheduleCreateSchema = z.object({
   name: z.string().min(3).max(100),
+  tripId: z.string().optional(),
   notificationType: z.enum(["custom", "ranking"]),
   notificationTitle: z.string().optional(),
   notificationBody: z.string().optional(),

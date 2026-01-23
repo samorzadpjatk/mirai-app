@@ -21,6 +21,7 @@ export default tseslint.config(
         "error",
         { checksVoidReturn: { attributes: false } },
       ],
+      "space-infix-ops": ["error", { int32Hint: false }],
     },
   },
   {

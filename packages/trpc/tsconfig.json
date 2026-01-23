@@ -3,23 +3,12 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "@integral-2025-app/auth": ["../auth/src/index.ts"],
-      "@integral-2025-app/auth/*": ["../auth/src/*"],
-      "@integral-2025-app/auth/client": ["../auth/src/client.ts"],
-      "@integral-2025-app/db": ["../db/src/index.ts"],
-      "@integral-2025-app/db/*": ["../db/src/*"],
-      "@integral-2025-app/supabase": ["../supabase/src/index.ts"],
-      "@integral-2025-app/supabase/*": ["../supabase/src/*"],
-      "@integral-2025-app/common-types": ["../common-types/src/index.ts"],
-      "@integral-2025-app/common-types/*": ["../common-types/src/*"]
+      "~/*": ["./src/*"]
     },
     "outDir": "dist",
-    "declaration": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "jsx": "react-jsx"
+    "rootDir": "src",
+    "lib": ["DOM", "ES2022"]
   },
-  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "vitest.config.ts", "vitest.setup.ts"]
 }

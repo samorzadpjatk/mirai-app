@@ -1,0 +1,51 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "password": true,
+      "id": "SUPABASE_PROJECT_REF",
+      "description": "Supabase Project Reference",
+      "default": ""
+    },
+    {
+      "type": "promptString",
+      "password": true,
+      "id": "SUPABASE_ACCESS_TOKEN",
+      "description": "Supabase Access Token",
+      "default": ""
+    }
+  ],
+  "servers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    },
+    "mobile-mcp": {
+      "command": "npx",
+      "args": ["-y", "@mobilenext/mobile-mcp@latest"]
+    },
+    "ESLint": {
+      "command": "npx",
+      "args": ["@eslint/mcp@latest"]
+    },
+    "markitdown": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "mcp/markitdown:latest"]
+    },
+    "fetcher": {
+      "command": "npx",
+      "args": ["-y", "fetcher-mcp"]
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://localhost:8000/mcp?project_ref=${input:SUPABASE_PROJECT_REF}",
+      "headers": {
+        "Authorization": "Bearer ${input:SUPABASE_ACCESS_TOKEN}"
+      }
+    }
+  }
+}

@@ -1,0 +1,275 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client"
+  output        = "./lib"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+  runtime = "bun"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+  SERVICE
+}
+
+model User {
+  id                        String                 @id @default(cuid())
+  authUserId                String?                @unique
+  firstName                 String?
+  lastName                  String?
+  email                     String?                @unique
+  emailVerified             DateTime?
+  image                     String?
+  role                      Role                   @default(USER)
+  organizerGroup            Group[]                @relation("UserOrganizerGroups")
+  coinTransactionsAdmin     CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
+  notificationSchedules     NotificationSchedule[] @relation("NotificationScheduleAdmin")
+  receivedPushNotifications NotificationPush[]
+  sentPushNotifications     Notification[]         @relation("NotificationAdmin")
+  pushSubscriptions         PushSubscription[]
+  createdEvents             Event[]
+  userEvents                UserEvent[]
+  location                  Location?
+  locationsSharedWithMe     Location[]             @relation("LocationSharingUsers")
+  trips                     TripParticipant[]
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+}
+
+model Trip {
+  id           String             @id @default(cuid())
+  name         String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  groups       Group[]
+  participants TripParticipant[]
+  notifications Notification[]
+  notificationSchedules NotificationSchedule[]
+  notificationDeliveries NotificationDelivery[]
+  challenges   Challenge[]
+}
+
+model TripParticipant {
+  id          String   @id @default(cuid())
+  userId      String
+  tripId      String
+  groupId     String?
+  wristNumber String?
+  houseNumber String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  trip        Trip     @relation(fields: [tripId], references: [id])
+  group       Group?   @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, tripId])
+  @@unique([tripId, wristNumber])
+  @@index([tripId, groupId])
+}
+
+model Event {
+  id               String      @id @default(cuid())
+  creator          User        @relation(fields: [creatorId], references: [id])
+  creatorId        String
+  organizerGroup   Group?      @relation(fields: [organizerGroupId], references: [id])
+  organizerGroupId String?
+  title            String
+  startTime        DateTime
+  endTime          DateTime
+  location         String
+  description      String
+  files            String[]
+  userEvents       UserEvent[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model UserEvent {
+  user         User    @relation(fields: [userId], references: [id])
+  userId       String
+  event        Event   @relation(fields: [eventId], references: [id])
+  eventId      String
+  interestedIn Boolean @default(false)
+  enlistedIn   Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@id([userId, eventId])
+}
+
+model Group {
+  id               String            @id @default(uuid())
+  tripId           String
+  name             String
+  description      String?
+  image            String?
+  organizerId      String
+  organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
+  code             String            @unique
+  trip             Trip              @relation(fields: [tripId], references: [id])
+  participants     TripParticipant[]
+  coins            Int               @default(0)
+  coinTransactions CoinTransaction[]
+  organizedEvents  Event[]
+  challenges       ChallengeGroup[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Challenge {
+  id          String            @id @default(cuid())
+  tripId      String
+  trip        Trip              @relation(fields: [tripId], references: [id])
+  name        String
+  description String?
+  image       String?
+  points      Int               @default(0)
+  groups      ChallengeGroup[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model ChallengeGroup {
+  id          String     @id @default(cuid())
+  challengeId String
+  groupId     String
+  challenge   Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  group       Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+
+  @@unique([challengeId, groupId])
+  @@index([groupId])
+}
+
+model CoinTransaction {
+  id        String   @id @default(uuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id])
+  amount    Int
+  reason    String? // Optional reason for the transaction
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  adminId   String
+  admin     User     @relation("UserCoinTransactionsAdmin", fields: [adminId], references: [id])
+}
+
+model NotificationSchedule {
+  id                      String                            @id @default(cuid())
+  tripId                  String?
+  trip                    Trip?                              @relation(fields: [tripId], references: [id])
+  name                    String
+  notificationType        String // e.g., "custom", "ranking"
+  notificationTitle       String? // For custom notifications
+  notificationBody        String? // For custom notifications
+  notificationUrl         String? // For custom notifications
+  startDate               DateTime // When the schedule starts
+  endDate                 DateTime // When the schedule ends
+  hour                    Int // Hour of the day (0-23)
+  minute                  Int                               @default(0) // Minute of the hour (0-59)
+  isActive                Boolean                           @default(true)
+  lastRun                 DateTime? // When was this schedule last executed
+  createdAt               DateTime                          @default(now())
+  updatedAt               DateTime                          @updatedAt
+  createdById             String // Admin who created this schedule
+  createdBy               User                              @relation("NotificationScheduleAdmin", fields: [createdById], references: [id])
+  notificationExecutions  NotificationScheduleExecution[]
+}
+
+model Notification {
+  id                 String                          @id @default(cuid())
+  tripId             String?
+  trip               Trip?                            @relation(fields: [tripId], references: [id])
+  title              String // Notification title
+  body               String // Notification body/message
+  url                String // Optional URL to open when the notification is clicked
+  pushes             NotificationPush[]
+  createdAt          DateTime                        @default(now())
+  updatedAt          DateTime                        @updatedAt
+  createdById        String // Admin who created this notification
+  createdBy          User                            @relation("NotificationAdmin", fields: [createdById], references: [id])
+  scheduleExecutions NotificationScheduleExecution[]
+  delivery           NotificationDelivery?
+}
+
+model NotificationScheduleExecution {
+  notificationId String
+  notification   Notification         @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  scheduleId     String
+  schedule       NotificationSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  executedAt     DateTime             @default(now())
+
+  @@id([notificationId, scheduleId, executedAt])
+}
+
+model NotificationPush {
+  targetUserId   String
+  targetUser     User         @relation(fields: [targetUserId], references: [id], onDelete: Cascade)
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  status         String // sent or failed
+  sentAt         DateTime? // When the notification was actually sent
+  failureReason  String? // Reason for failure if status is 'failed'
+
+  @@id([targetUserId, notificationId])
+}
+
+model NotificationDelivery {
+  id                   String       @id @default(cuid())
+  tripId               String?
+  trip                 Trip?         @relation(fields: [tripId], references: [id])
+  notificationId       String       @unique
+  notification         Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  scheduleId           String? 
+  deliveryStartedAt    DateTime     @default(now())
+  deliveryCompletedAt  DateTime?
+  totalRecipients      Int          @default(0)
+  successCount         Int          @default(0)
+  failureCount         Int          @default(0)
+  errors               String?
+  status               String       @default("pending") 
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  
+  @@index([deliveryStartedAt])
+  @@index([status])
+  @@index([scheduleId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   // Expo push token
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, token])
+}
+
+// https://docs.expo.dev/versions/latest/sdk/location/#locationobject
+model Location {
+  id                         String    @id @default(cuid())
+  userId                     String    @unique
+  user                       User      @relation(fields: [userId], references: [id])
+  timestamp                  DateTime  @default(now())
+  isSharingLocation          Boolean   @default(false)
+  accuracy                   Float?
+  altitude                   Float?
+  altitudeAccuracy           Float?
+  heading                    Float?
+  latitude                   Float?
+  longitude                  Float?
+  speed                      Float?
+  usersToShareWith           User[]    @relation("LocationSharingUsers")
+  lastInactivityNotification DateTime?
+}

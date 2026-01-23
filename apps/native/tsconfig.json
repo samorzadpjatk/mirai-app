@@ -1,28 +1,16 @@
+// Imagine your lint finds a bug in expo-file-system lib (https://github.com/expo/expo/issues/41737)
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2022", "DOM"],
-    "moduleResolution": "bundler",
-    "jsx": "react-native",
+    "jsxImportSource": "nativewind",
     "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "@integral-2025-app/auth": ["../../packages/auth/src/index.ts"],
-      "@integral-2025-app/auth/*": ["../../packages/auth/src/*"],
-      "@integral-2025-app/common-types": ["../../packages/common-types/src/index.ts"],
-      "@integral-2025-app/common-types/*": ["../../packages/common-types/src/*"],
-      "@integral-2025-app/db": ["../../packages/db/src/index.ts"],
-      "@integral-2025-app/db/*": ["../../packages/db/src/*"],
-      "@integral-2025-app/supabase": ["../../packages/supabase/src/index.ts"],
-      "@integral-2025-app/supabase/*": ["../../packages/supabase/src/*"],
-      "@integral-2025-app/trpc": ["../../packages/trpc/src/index.ts"],
-      "@integral-2025-app/trpc/*": ["../../packages/trpc/src/*"],
-      "@integral-2025-app/trpc/client": ["../../packages/trpc/src/client/index.ts"],
-      "@integral-2025-app/trpc/client/*": ["../../packages/trpc/src/client/*"],
-      "@integral-2025-app/trpc/client/expo": ["../../packages/trpc/src/client/expo.ts"]
+      "~/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
+  "exclude": ["**/node_modules/**"]
 }
