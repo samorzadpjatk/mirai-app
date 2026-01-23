@@ -46,6 +46,12 @@
       "headers": {
         "Authorization": "Bearer ${input:SUPABASE_ACCESS_TOKEN}"
       }
+    },
+    "maestro": {
+      "command": "maestro",
+      "args": [
+        "mcp"
+      ]
     }
   }
 }
