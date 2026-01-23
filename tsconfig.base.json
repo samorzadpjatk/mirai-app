@@ -1,24 +1,3 @@
 {
-  "compilerOptions": {
-    /* Base Options */
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "target": "esnext",
-    "allowJs": true,
-    "resolveJsonModule": true,
-    "moduleDetection": "auto",
-    "isolatedModules": true,
-
-    /* Strictness */
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "checkJs": false,
-
-    /* Bundled projects */
-    "noEmit": false,
-    "module": "ESNext",
-    "incremental": true,
-    "moduleResolution": "bundler",
-  },
-  "exclude": ["node_modules"]
-}
+  "extends": "@tsconfig/bun/tsconfig.json"
+} 
