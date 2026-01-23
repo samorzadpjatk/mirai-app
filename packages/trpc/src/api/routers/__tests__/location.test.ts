@@ -8,7 +8,8 @@ describe("locationRouter", () => {
 
   interface SessionOverrides {
     id?: string;
-    name?: string;
+    firstName?: string;
+    lastName?: string;
   }
 
   const createMockContext = (sessionOverrides: SessionOverrides = {}) => {
@@ -16,10 +17,9 @@ describe("locationRouter", () => {
       id: sessionOverrides.id ?? MOCK_USER_ID,
       authUserId: "supabase-mock-user",
       email: `${sessionOverrides.id ?? MOCK_USER_ID}@test.com`,
-      name: sessionOverrides.name ?? "Test User",
-      isAdmin: false,
-      isModerator: true,
-      isServiceAccount: false,
+      firstName: sessionOverrides.firstName ?? "Test",
+      lastName: sessionOverrides.lastName ?? "User",
+      role: "MODERATOR",
     };
 
     return {
@@ -164,8 +164,16 @@ describe("locationRouter", () => {
         ...existingLocation,
         isSharingLocation: true,
         usersToShareWith: [
-          { id: "user-2", name: "Friend 1" },
-          { id: "user-3", name: "Friend 2" },
+          {
+            id: "user-2",
+            firstName: "Friend",
+            lastName: "One",
+          },
+          {
+            id: "user-3",
+            firstName: "Friend",
+            lastName: "Two",
+          },
         ],
       };
 
@@ -232,7 +240,8 @@ describe("locationRouter", () => {
           timestamp: new Date(),
           user: {
             id: "user-2",
-            name: "Friend 1",
+            firstName: "Friend",
+            lastName: "One",
             image: "avatar1.jpg",
           },
         },
@@ -245,7 +254,8 @@ describe("locationRouter", () => {
           timestamp: new Date(),
           user: {
             id: "user-3",
-            name: "Friend 2",
+            firstName: "Friend",
+            lastName: "Two",
             image: "avatar2.jpg",
           },
         },
@@ -257,7 +267,8 @@ describe("locationRouter", () => {
       const result = await caller.getFriendsLocations();
 
       expect(result).toHaveLength(2);
-      expect(result[0]?.user.name).toBe("Friend 1");
+      expect(result[0]?.user?.firstName).toBe("Friend");
+      expect(result[0]?.user?.lastName).toBe("One");
       expect(mockContext.db.location.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -288,8 +299,18 @@ describe("locationRouter", () => {
         isSharingLocation: true,
         timestamp: new Date(),
         usersToShareWith: [
-          { id: "user-2", name: "Friend 1", image: null },
-          { id: "user-3", name: "Friend 2", image: "avatar.jpg" },
+          {
+            id: "user-2",
+            firstName: "Friend",
+            lastName: "One",
+            image: null,
+          },
+          {
+            id: "user-3",
+            firstName: "Friend",
+            lastName: "Two",
+            image: "avatar.jpg",
+          },
         ],
       };
 
@@ -316,9 +337,14 @@ describe("locationRouter", () => {
   describe("getAllUsersForSharing", () => {
     it("should return all users except current user", async () => {
       const mockUsers = [
-        { id: "user-2", name: "User 2", image: null },
-        { id: "user-3", name: "User 3", image: "avatar.jpg" },
-        { id: "user-4", name: "User 4", image: null },
+        { id: "user-2", firstName: "User", lastName: "Two", image: null },
+        {
+          id: "user-3",
+          firstName: "User",
+          lastName: "Three",
+          image: "avatar.jpg",
+        },
+        { id: "user-4", firstName: "User", lastName: "Four", image: null },
       ];
 
       mockContext.db.user.findMany.mockResolvedValue(mockUsers);

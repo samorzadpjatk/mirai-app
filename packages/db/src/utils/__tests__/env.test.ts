@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import type * as EnvModule from "../env.ts";
+import type * as EnvModule from "../env.js";
 
 const REQUIRED_ENV_VALUES = {
   DATABASE_URL: "postgresql://user:pass@localhost:5432/db",

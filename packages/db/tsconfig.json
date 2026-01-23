@@ -3,11 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "dist",
-    "rootDir": ".",
-    "declaration": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true
+    "rootDir": "."
   },
-  "include": ["src/**/*", "prisma", "vitest.config.ts", "vitest.setup.ts"],
-  "exclude": ["node_modules", "dist", "prisma/lib/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "seed.ts", "vitest.config.ts", "vitest.setup.ts", "prisma.config.ts"]
 }

@@ -21,11 +21,11 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
 
       - name: Install dependencies
-        run: pnpm install
+        run: bun install
 
       - name: Setup reviewdog
         uses: reviewdog/action-setup@v1
@@ -33,14 +33,14 @@ jobs:
           reviewdog_version: latest
 
       - name: Test all
-        run: pnpm test:ci
+        run: bun run test:ci
 
       - name: Run ESLint for monorepo
-        run: pnpm lint
+        run: bun run lint
 
       - name: Run TypeScript type checking
         run: |
-          pnpm typecheck 2>&1 | tee typecheck.log || true
+          bun run typecheck 2>&1 | tee typecheck.log || true
           
       - name: Report TypeScript errors to PR
         if: always()

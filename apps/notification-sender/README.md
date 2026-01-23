@@ -7,7 +7,7 @@ Microservice that listens to Supabase Realtime for `INSERT` events on the `publi
 1. Install
 
 ```sh
-pnpm -w i
+bun install
 ```
 
 2. Configure env
@@ -17,5 +17,5 @@ Copy `.env.example` to `.env`. Update the Supabase URL and anon key as needed.
 3. Run locally
 
 ```sh
-pnpm --filter @integral-2025-app/notification-sender dev
+cd apps/notification-sender && bun run dev
 ```

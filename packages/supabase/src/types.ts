@@ -6,6 +6,7 @@ export type {
   User as SupabaseUser,
   RealtimePostgresChangesPayload,
   RealtimeChannel,
+  RealtimePostgresInsertPayload
 } from "@supabase/supabase-js";
 
 export { REALTIME_CHANNEL_STATES };
@@ -16,6 +17,13 @@ export interface SupabaseClientOptions {
     autoRefreshToken?: boolean;
     persistSession?: boolean;
     detectSessionInUrl?: boolean;
+  };
+  realtime?: {
+    params?: {
+      eventsPerSecond?: number;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
   };
 }
 

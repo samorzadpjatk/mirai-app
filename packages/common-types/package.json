@@ -6,17 +6,23 @@
   "main": "./src/index.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts"
+      "import": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
     },
     "./models/user": {
-      "import": "./src/models/user.ts"
+      "import": "./src/models/user.ts",
+      "types": "./dist/models/user.d.ts",
+      "default": "./src/models/user.ts"
     }
   },
   "scripts": {
+    "build": "tsc -b",
     "check": "eslint . && tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf node_modules"
   },
   "devDependencies": {
     "@types/node": "^24.10.4",

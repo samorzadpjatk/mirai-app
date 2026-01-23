@@ -2,15 +2,28 @@
   "name": "@integral-2025-app/supabase",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.ts",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./types": {
+      "import": "./src/types.ts",
+      "types": "./dist/types.d.ts",
+      "default": "./src/types.ts"
+    }
+  },
   "scripts": {
+    "build": "tsc -b",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "clean": "rm -rf node_modules"
   },
   "keywords": [],
   "author": "",

@@ -137,7 +137,7 @@ describe("createInactivityScheduler", () => {
       .mockResolvedValue({ checked: 0, notified: 0 });
     const mockDb = {} as Prisma.TransactionClient;
 
-    const scheduler = createInactivityScheduler(mockDb, checkFunction, 5);
+    const scheduler = createInactivityScheduler(checkFunction, 5);
 
     scheduler.start();
     await vi.advanceTimersByTimeAsync(1);
@@ -154,9 +154,8 @@ describe("createInactivityScheduler", () => {
     });
     const checkResult = { checked: 3, notified: 2, skipped: 1, errors: 0 };
     const checkFunction = vi.fn().mockResolvedValue(checkResult);
-    const mockDb = {} as Prisma.TransactionClient;
 
-    const scheduler = createInactivityScheduler(mockDb, checkFunction, 5);
+    const scheduler = createInactivityScheduler(checkFunction, 5);
 
     scheduler.start();
     await vi.advanceTimersByTimeAsync(1);

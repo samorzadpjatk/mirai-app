@@ -1,5 +1,5 @@
-import { Home } from "@tamagui/lucide-icons";
-import { XStack, Avatar, Button, Paragraph, Circle } from "tamagui";
+import { View, Text, TouchableOpacity, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface TopBarProps {
   user?: {
@@ -18,40 +18,43 @@ export default function TopBar({ user, isAuthenticated, onHomePress, onSignPress
   };
 
   return (
-    <XStack
-      position="sticky"
-      justify="space-between"
-      items="center"
-      gap="$2"
-      width="100%"
-      px="$3"
-      py="$2"
-    >
-      <Button size="$3" circular icon={Home} onPress={onHomePress} />
-      <XStack items="center" gap="$2">
+    <View className="flex-row justify-between items-center gap-2 w-full px-3 py-2">
+      <TouchableOpacity
+        onPress={onHomePress}
+        className="w-10 h-10 rounded-full bg-surface-dark items-center justify-center"
+      >
+        <Ionicons name="home" size={20} color="#00ced1" />
+      </TouchableOpacity>
+
+      <View className="flex-row items-center gap-2">
         {isAuthenticated && user && (
-          <XStack items="center" justify="center" gap="$2">
+          <View className="flex-row items-center justify-center gap-2">
             {user.image ? (
-              <Avatar circular size="$4">
-                <Avatar.Image src={user.image} />
-                <Avatar.Fallback bg="#3b82f6">
-                  <Paragraph color="$background">{getInitials(user.name)}</Paragraph>
-                </Avatar.Fallback>
-              </Avatar>
+              <Image
+                source={{ uri: user.image }}
+                className="w-8 h-8 rounded-full"
+              />
             ) : (
-              <Circle size="$4" bg="#3b82f6">
-                <Paragraph color="$background">{getInitials(user.name)}</Paragraph>
-              </Circle>
+              <View className="w-8 h-8 rounded-full bg-blue-500 items-center justify-center">
+                <Text className="text-white text-sm font-semibold">
+                  {getInitials(user.name)}
+                </Text>
+              </View>
             )}
-            <Paragraph size="$5" fontWeight="bold">
+            <Text className="text-white text-base font-bold">
               {user.name}
-            </Paragraph>
-          </XStack>
+            </Text>
+          </View>
         )}
-        <Button size="$3" onPress={onSignPress}>
-          {isAuthenticated ? "Sign Out" : "Sign In"}
-        </Button>
-      </XStack>
-    </XStack>
+        <TouchableOpacity
+          onPress={onSignPress}
+          className="px-4 py-2 bg-surface-dark rounded-lg"
+        >
+          <Text className="text-white font-medium">
+            {isAuthenticated ? "Sign Out" : "Sign In"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }

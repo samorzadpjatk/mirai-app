@@ -6,14 +6,18 @@
   "main": "./src/index.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts"
+      "import": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
     }
   },
   "scripts": {
+    "build": "tsc -b",
     "check": "eslint . && tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf node_modules"
   },
   "devDependencies": {
     "@types/node": "^24.10.4",

@@ -15,12 +15,16 @@ import {
   requireAdmin,
   requireAuth,
   requireModerator,
+  AuthenticationError,
+  AuthorizationError,
 } from "@integral-2025-app/auth";
-import { createSupabaseClient } from "@integral-2025-app/supabase";
-import { db } from "@integral-2025-app/db";
+import { TRPCError } from "@trpc/server";
+import { createSupabaseClient, type SupabaseClient } from "@integral-2025-app/supabase";
+import { db, type PrismaClient } from "@integral-2025-app/db";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
-  const authorization = headers.get("authorization") ?? headers.get("Authorization");
+  const authorization =
+    headers.get("authorization") ?? headers.get("Authorization");
   if (!authorization) {
     return null;
   }
@@ -37,25 +41,63 @@ const getAccessToken = (
   headers: Headers,
   connectionParams?: unknown,
 ): string | null => {
+  // First try to get token from Authorization header
   const headerToken = getAccessTokenFromHeaders(headers);
   if (headerToken) {
+    console.log("[Auth] Token found in headers");
     return headerToken;
   }
 
+  console.log("[Auth] Checking connectionParams:", JSON.stringify(connectionParams));
+
+  // Try connectionParams (sent as first WebSocket message)
   if (
     connectionParams &&
     typeof connectionParams === "object" &&
     "authToken" in connectionParams
   ) {
     const token = (connectionParams as { authToken?: unknown }).authToken;
+    console.log("[Auth] authToken in connectionParams:", token ? "EXISTS" : "MISSING");
 
     if (typeof token === "string" && token.trim().length > 0) {
+      console.log("[Auth] Token found in connectionParams");
       return token.trim();
     }
   }
 
+  // Fallback: check for authorization query parameter (WebSocket upgrade workaround)
+  // This is used because WebSocket connections via browser/React Native don't support custom headers
+  const urlString = headers.get("x-original-url");
+  if (urlString) {
+    try {
+      const url = new URL(urlString, "http://dummy");
+      const authParam = url.searchParams.get("authorization");
+      if (authParam) {
+        const [scheme, token] = authParam.split(" ");
+        if (scheme?.toLowerCase() === "bearer" && token?.trim()) {
+          console.log("[Auth] Token found in URL query params");
+          return token.trim();
+        }
+      }
+    } catch (err) {
+      console.error("[Auth] Failed to parse URL:", err);
+    }
+  }
+
+  console.log("[Auth] No token found");
   return null;
 };
+
+export interface TRPCContext {
+  db: PrismaClient;
+  supabase: SupabaseClient;
+  headers: Headers;
+  accessToken: string | null;
+}
+
+// On the backend we use a single SERVICE_ROLE Supabase client (singleton).
+// Follow the Prisma pattern: a module-level lazy-initialized singleton so we avoid adding globals.
+let serverSupabase: SupabaseClient | undefined; 
 
 /**
  * 1. CONTEXT
@@ -74,10 +116,36 @@ export const createTRPCContext = (opts: {
   supabaseUrl: string;
   supabaseKey: string;
   connectionParams?: unknown;
-}) => {
-  const supabase = createSupabaseClient(opts.supabaseUrl, opts.supabaseKey);
+}): TRPCContext => {
+  // The tRPC backend requires using the SERVICE_ROLE key for Supabase.
+  // Enforce it and create a single shared server client (module-level singleton).
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    throw new Error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY environment variable. The tRPC backend requires a service role key to create a single Supabase client.",
+    );
+  }
+
+  if (!serverSupabase) {
+    serverSupabase = createSupabaseClient(
+      opts.supabaseUrl,
+      serviceRoleKey,
+      undefined,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+    console.log("[Supabase] Created server singleton client using SERVICE_ROLE key");
+  } else {
+    console.log("[Supabase] Reusing server singleton Supabase client");
+  }
+
+  const supabase = serverSupabase;
+
   const accessToken = getAccessToken(opts.headers, opts.connectionParams);
-  console.log("Creating tRPC context with access token:", accessToken ? "YES" : "NO");
+  console.log(
+    "Creating tRPC context with access token:",
+    accessToken ? "YES" : "NO",
+  );
+
   return {
     db,
     supabase,
@@ -93,7 +161,7 @@ export const createTRPCContext = (opts: {
  * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
  * errors on the backend.
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
@@ -145,8 +213,8 @@ export const publicProcedure = t.procedure;
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  try {
     const { user, dbUser } = await requireAuth(
       ctx.supabase,
       ctx.accessToken ?? undefined,
@@ -157,18 +225,24 @@ export const protectedProcedure = t.procedure
         dbUser,
       },
     });
-  });
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    throw err;
+  }
+});
 
 /**
  * Admin (authenticated) procedure
  *
  * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user.isAdmin` is not null and is true.
+ * the session is valid and guarantees the caller has the required role.
  *
  * @see https://trpc.io/docs/procedures
  */
-export const moderatorProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
+export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
+  try {
     const dbUser = await requireModerator(
       ctx.supabase,
       ctx.accessToken ?? undefined,
@@ -178,17 +252,32 @@ export const moderatorProcedure = t.procedure
         dbUser,
       },
     });
-  });
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    if (err instanceof AuthorizationError) {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+    throw err;
+  }
+});
 
-export const adminProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    const dbUser = await requireAdmin(
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
+export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
+  try {
+    const dbUser = await requireAdmin(ctx.supabase, ctx.accessToken ?? undefined);
     return next({
       ctx: {
         dbUser,
       },
     });
-  });
+  } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    if (err instanceof AuthorizationError) {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+    throw err;
+  }
+});

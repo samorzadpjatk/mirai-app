@@ -8,6 +8,7 @@ import {
 } from "../../api/trpc";
 import { NotificationService } from "../../services/notificationService";
 import { sendNotification, sendRankingUpdate } from "../../utils/notifications";
+import type { SendNotificationResult } from "../../utils/notifications";
 
 export const notificationRouter = createTRPCRouter({
   subscribe: protectedProcedure
@@ -105,6 +106,7 @@ export const notificationRouter = createTRPCRouter({
     });
 
     return {
+      isSubscribed: subscriptions.length > 0,
       subscriptions: subscriptions.map((s) => ({
         id: s.id,
         token: s.token,
@@ -134,7 +136,11 @@ export const notificationRouter = createTRPCRouter({
       const notifications = await ctx.db.notification.findMany({
         where: { pushes: { some: { targetUserId: ctx.dbUser.id } } },
         orderBy: { createdAt: "desc" },
-        include: { createdBy: { select: { id: true, name: true } } },
+        include: {
+          createdBy: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
         take: input.pageSize,
         skip: (input.page - 1) * input.pageSize,
       });
@@ -168,13 +174,17 @@ export const notificationRouter = createTRPCRouter({
       const notifications = await ctx.db.notification.findMany({
         orderBy: { createdAt: "desc" },
         include: {
-          createdBy: { select: { id: true, name: true } },
+          createdBy: {
+            select: { id: true, firstName: true, lastName: true },
+          },
           pushes: {
             select: {
               sentAt: true,
               status: true,
               failureReason: true,
-              targetUser: { select: { id: true, name: true } },
+              targetUser: {
+                select: { id: true, firstName: true, lastName: true },
+              },
             },
           },
         },
@@ -195,6 +205,7 @@ export const notificationRouter = createTRPCRouter({
   sendToGroup: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         groupId: z.string(),
         title: z.string(),
         body: z.string(),
@@ -203,16 +214,20 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const members = await ctx.db.user.findMany({
-          where: {
-            OR: [
-              { group: { id: input.groupId } },
-              { organizerGroup: { some: { id: input.groupId } } },
-            ],
-          },
-          select: { id: true },
+        const group = await ctx.db.group.findUnique({
+          where: { id: input.groupId },
         });
-        const userIds = members.map((m) => m.id);
+        if (group?.tripId !== input.tripId) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
+        }
+        const participants = await ctx.db.tripParticipant.findMany({
+          where: { tripId: input.tripId, groupId: input.groupId },
+          select: { userId: true },
+        });
+        const userIds = participants.map((p) => p.userId);
         return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
@@ -221,6 +236,7 @@ export const notificationRouter = createTRPCRouter({
             title: input.title,
             body: input.body,
             url: input.url,
+            tripId: input.tripId,
           },
         });
       } catch (error) {
@@ -235,6 +251,7 @@ export const notificationRouter = createTRPCRouter({
   sendToAll: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         title: z.string(),
         body: z.string(),
         url: z.string(),
@@ -242,10 +259,11 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const members = await ctx.db.user.findMany({
-          select: { id: true },
+        const participants = await ctx.db.tripParticipant.findMany({
+          where: { tripId: input.tripId },
+          select: { userId: true },
         });
-        const userIds = members.map((m) => m.id);
+        const userIds = participants.map((p) => p.userId);
         return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
@@ -254,6 +272,7 @@ export const notificationRouter = createTRPCRouter({
             title: input.title,
             body: input.body,
             url: input.url,
+            tripId: input.tripId,
           },
         });
       } catch (error) {
@@ -265,24 +284,28 @@ export const notificationRouter = createTRPCRouter({
       }
     }),
 
-  sendRankingUpdateToGroups: moderatorProcedure.mutation(async ({ ctx }) => {
-    try {
-      return await sendRankingUpdate({
-        db: ctx.db,
-        userId: ctx.dbUser.id,
-      });
-    } catch (error) {
-      console.error("Error sending ranking update notifications:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to send ranking update notifications",
-      });
-    }
-  }),
+  sendRankingUpdateToGroups: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await sendRankingUpdate({
+          db: ctx.db,
+          userId: ctx.dbUser.id,
+          tripId: input.tripId,
+        });
+      } catch (error) {
+        console.error("Error sending ranking update notifications:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send ranking update notifications",
+        });
+      }
+    }),
 
   sendCoinAddedToGroup: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         groupId: z.string(),
         coins: z.number(),
         reason: z.string().optional(),
@@ -293,23 +316,18 @@ export const notificationRouter = createTRPCRouter({
         const group = await ctx.db.group.findFirst({
           where: { id: input.groupId },
         });
-        if (!group) {
+        if (group?.tripId !== input.tripId) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Group not found",
           });
         }
 
-        const members = await ctx.db.user.findMany({
-          where: {
-            OR: [
-              { group: { id: input.groupId } },
-              { organizerGroup: { some: { id: input.groupId } } },
-            ],
-          },
-          select: { id: true },
+        const participants = await ctx.db.tripParticipant.findMany({
+          where: { tripId: input.tripId, groupId: input.groupId },
+          select: { userId: true },
         });
-        const userIds = members.map((m) => m.id);
+        const userIds = participants.map((p) => p.userId);
         const notificationData =
           NotificationService.createCoinsAddedNotification(
             group.name,
@@ -324,6 +342,7 @@ export const notificationRouter = createTRPCRouter({
             title: notificationData.title,
             body: notificationData.body,
             url: notificationData.url,
+            tripId: input.tripId,
           },
         });
       } catch (error) {
@@ -341,6 +360,7 @@ export const notificationRouter = createTRPCRouter({
   sendCoinRemovedFromGroup: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         groupId: z.string(),
         coins: z.number(),
         reason: z.string().optional(),
@@ -351,23 +371,18 @@ export const notificationRouter = createTRPCRouter({
         const group = await ctx.db.group.findFirst({
           where: { id: input.groupId },
         });
-        if (!group) {
+        if (group?.tripId !== input.tripId) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Group not found",
           });
         }
 
-        const members = await ctx.db.user.findMany({
-          where: {
-            OR: [
-              { group: { id: input.groupId } },
-              { organizerGroup: { some: { id: input.groupId } } },
-            ],
-          },
-          select: { id: true },
+        const participants = await ctx.db.tripParticipant.findMany({
+          where: { tripId: input.tripId, groupId: input.groupId },
+          select: { userId: true },
         });
-        const userIds = members.map((m) => m.id);
+        const userIds = participants.map((p) => p.userId);
         const notificationData =
           NotificationService.createCoinsRemovedNotification(
             group.name,
@@ -382,6 +397,7 @@ export const notificationRouter = createTRPCRouter({
             title: notificationData.title,
             body: notificationData.body,
             url: notificationData.url,
+            tripId: input.tripId,
           },
         });
       } catch (error) {
@@ -399,6 +415,7 @@ export const notificationRouter = createTRPCRouter({
   sendNewMemberToGroup: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         groupId: z.string(),
         userId: z.string(),
       }),
@@ -408,7 +425,7 @@ export const notificationRouter = createTRPCRouter({
         const group = await ctx.db.group.findFirst({
           where: { id: input.groupId },
         });
-        if (!group) {
+        if (group?.tripId !== input.tripId) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Group not found",
@@ -416,6 +433,7 @@ export const notificationRouter = createTRPCRouter({
         }
         const user = await ctx.db.user.findFirst({
           where: { id: input.userId },
+          select: { id: true, firstName: true, lastName: true },
         });
         if (!user) {
           throw new TRPCError({
@@ -423,31 +441,51 @@ export const notificationRouter = createTRPCRouter({
             message: "User not found",
           });
         }
-        const members = await ctx.db.user.findMany({
-          where: { group: { id: group.id } },
-          select: { id: true },
+        const firstName =
+          typeof user.firstName === "string" ? user.firstName : null;
+        const lastName =
+          typeof user.lastName === "string" ? user.lastName : null;
+        const participants = await ctx.db.tripParticipant.findMany({
+          where: { tripId: input.tripId, groupId: group.id },
+          select: { userId: true },
         });
-        const userIds = members.map((m) => m.id);
+        const userIds = participants.map((p) => p.userId);
+        const formatFullName = (): string => {
+          const fullName = [firstName, lastName]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+          if (fullName) return fullName;
+          if (firstName) return firstName;
+          if (lastName) return lastName;
+          return "A new member";
+        };
+
         const notificationData =
           NotificationService.createNewMemberNotification(
             group.name,
-            user.name ?? "A new member",
+            formatFullName(),
           );
-        return await sendNotification({
-          db: ctx.db,
-          userId: ctx.dbUser.id,
-          input: {
-            userIds,
-            title: notificationData.title,
-            body: notificationData.body,
-            url: notificationData.url,
-          },
-        });
+        const notificationResult: SendNotificationResult =
+          await sendNotification({
+            db: ctx.db,
+            userId: ctx.dbUser.id,
+            input: {
+              userIds,
+              title: notificationData.title,
+              body: notificationData.body,
+              url: notificationData.url,
+              tripId: input.tripId,
+            },
+          });
+        return notificationResult;
       } catch (error) {
-        console.error("Error sending new member notification to group:", error);
+        const err = error instanceof Error ? error : new Error("Unknown error");
+        console.error("Error sending new member notification to group:", err);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to send new member notification to group",
+          cause: err,
         });
       }
     }),
@@ -455,6 +493,7 @@ export const notificationRouter = createTRPCRouter({
   sendCustomToGroup: moderatorProcedure
     .input(
       z.object({
+        tripId: z.string(),
         groupId: z.string(),
         title: z.string(),
         body: z.string(),
@@ -463,11 +502,20 @@ export const notificationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const members = await ctx.db.user.findMany({
-          where: { group: { id: input.groupId } },
-          select: { id: true },
+        const group = await ctx.db.group.findUnique({
+          where: { id: input.groupId },
         });
-        const userIds = members.map((m) => m.id);
+        if (group?.tripId !== input.tripId) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
+        }
+        const participants = await ctx.db.tripParticipant.findMany({
+          where: { tripId: input.tripId, groupId: input.groupId },
+          select: { userId: true },
+        });
+        const userIds = participants.map((p) => p.userId);
         return await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
@@ -476,6 +524,7 @@ export const notificationRouter = createTRPCRouter({
             title: input.title,
             body: input.body,
             url: input.url,
+            tripId: input.tripId,
           },
         });
       } catch (error) {
@@ -521,6 +570,7 @@ export const notificationRouter = createTRPCRouter({
             title: notification.title,
             body: notification.body,
             url: notification.url,
+            tripId: notification.tripId,
           },
         });
       } catch (error) {

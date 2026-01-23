@@ -10,6 +10,7 @@ import {
   AuthorizationError,
 } from "../authServer";
 import type { SupabaseClient } from "@integral-2025-app/supabase";
+import type { User } from "@integral-2025-app/db";
 
 const mockSupabaseClient = () => {
   return {
@@ -62,7 +63,7 @@ describe("auth server", () => {
         email: "test@example.com",
         created_at: "2024-01-01",
       };
-  (client.auth.getUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (client.auth.getUser as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
@@ -93,7 +94,7 @@ describe("auth server", () => {
         .spyOn(console, "error")
         .mockImplementation(() => undefined);
 
-  (client.auth.getUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (client.auth.getUser as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { user: null },
         error: new Error("Auth error"),
       });
@@ -118,7 +119,7 @@ describe("auth server", () => {
         refresh_token: "refresh",
         user: { id: "user-123" },
       };
-  (client.auth.getSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (client.auth.getSession as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { session: mockSession },
         error: null,
       });
@@ -152,7 +153,7 @@ describe("auth server", () => {
         .spyOn(console, "error")
         .mockImplementation(() => undefined);
 
-  (client.auth.getSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      (client.auth.getSession as ReturnType<typeof vi.fn>).mockResolvedValue({
         data: { session: null },
         error: new Error("Session error"),
       });
@@ -206,16 +207,14 @@ describe("auth server", () => {
         id: "1",
         authUserId: "sub-1",
         email: "user@test.com",
-        name: "User",
-        image: "https://example.com/avatar.jpg",
-        wristNumber: "123",
-        houseNumber: "456",
-        isAdmin: true,
-        isModerator: false,
-        isServiceAccount: false,
-        groupId: "group-1",
+        firstName: "User",
+        lastName: null,
         emailVerified: new Date("2024-01-01"),
-      };
+        image: null,
+        role: "ADMIN",
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-02"),
+      } as unknown as User;
 
       const authUser = mapDatabaseUserToAuthUser(dbUser);
 
@@ -223,8 +222,11 @@ describe("auth server", () => {
         id: "1",
         authUserId: "sub-1",
         email: "user@test.com",
+        firstName: "User",
+        lastName: null,
         name: "User",
         emailVerified: new Date("2024-01-01"),
+        role: "ADMIN",
       });
     });
 
@@ -237,16 +239,14 @@ describe("auth server", () => {
         id: "1",
         authUserId: null,
         email: "user@test.com",
-        name: "User",
+        firstName: "User",
+        lastName: null,
         image: null,
-        wristNumber: null,
-        houseNumber: null,
-        isAdmin: false,
-        isModerator: false,
-        isServiceAccount: false,
-        groupId: null,
+        role: "USER",
         emailVerified: null,
-      };
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-02"),
+      } as unknown as User;
 
       expect(mapDatabaseUserToAuthUser(dbUser)).toBeNull();
     });

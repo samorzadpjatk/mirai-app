@@ -47,6 +47,7 @@ describe("notificationScheduleRouter", () => {
         {
           id: "schedule-1",
           name: "Test Schedule 1",
+          tripId: "trip-1",
           notificationType: "ranking",
           startDate: new Date("2026-01-15T10:00:00.000Z"),
           endDate: new Date("2026-01-20T10:00:00.000Z"),
@@ -141,6 +142,7 @@ describe("notificationScheduleRouter", () => {
         {
           id: "schedule-1",
           name: "Active Schedule",
+          tripId: "trip-1",
           isActive: true,
           startDate: new Date("2026-01-05T10:00:00.000Z"),
           endDate: new Date("2026-01-15T10:00:00.000Z"),
@@ -207,6 +209,7 @@ describe("notificationScheduleRouter", () => {
       const mockSchedule = {
         id: "schedule-1",
         name: "Test Schedule",
+        tripId: "trip-1",
         notificationType: "custom",
         notificationTitle: "Test",
         notificationBody: "Test body",
@@ -315,6 +318,7 @@ describe("notificationScheduleRouter", () => {
       const mockSchedule = {
         id: "schedule-1",
         name: "Test Schedule",
+        tripId: "trip-1",
         notificationType: "custom",
         notificationTitle: "Test Title",
         notificationBody: "Test Body",
@@ -341,6 +345,7 @@ describe("notificationScheduleRouter", () => {
       const caller = notificationScheduleRouter.createCaller(mockContext);
       const result = await caller.create({
         name: "Test Schedule",
+        tripId: "trip-1",
         notificationType: "custom",
         notificationTitle: "Test Title",
         notificationBody: "Test Body",
@@ -360,6 +365,7 @@ describe("notificationScheduleRouter", () => {
       const mockSchedule = {
         id: "schedule-1",
         name: "Daily Ranking",
+        tripId: "trip-1",
         notificationType: "ranking",
         notificationTitle: null,
         notificationBody: null,
@@ -386,6 +392,7 @@ describe("notificationScheduleRouter", () => {
       const caller = notificationScheduleRouter.createCaller(mockContext);
       const result = await caller.create({
         name: "Daily Ranking",
+        tripId: "trip-1",
         notificationType: "ranking",
         startDate: new Date("2026-01-15T10:00:00.000Z"),
         endDate: new Date("2026-02-15T10:00:00.000Z"),
@@ -403,6 +410,7 @@ describe("notificationScheduleRouter", () => {
       await expect(
         caller.create({
           name: "Test",
+          tripId: "trip-1",
           notificationType: "custom",
           notificationBody: "Test Body",
           notificationUrl: "/test",
@@ -420,6 +428,7 @@ describe("notificationScheduleRouter", () => {
       await expect(
         caller.create({
           name: "Test",
+          tripId: "trip-1",
           notificationType: "ranking",
           startDate: new Date("2026-01-20T10:00:00.000Z"),
           endDate: new Date("2026-01-15T10:00:00.000Z"),
@@ -435,6 +444,7 @@ describe("notificationScheduleRouter", () => {
       await expect(
         caller.create({
           name: "Test",
+          tripId: "trip-1",
           notificationType: "ranking",
           startDate: new Date("2026-01-05T10:00:00.000Z"),
           endDate: new Date("2026-01-20T10:00:00.000Z"),
@@ -450,6 +460,7 @@ describe("notificationScheduleRouter", () => {
       await expect(
         caller.create({
           name: "Test",
+          tripId: "trip-1",
           notificationType: "ranking",
           startDate: new Date("2026-01-15T10:00:00.000Z"),
           endDate: new Date("2026-01-15T20:00:00.000Z"),
@@ -465,6 +476,7 @@ describe("notificationScheduleRouter", () => {
       const existingSchedule = {
         id: "schedule-1",
         name: "Old Name",
+        tripId: "trip-1",
         notificationType: "custom",
         notificationTitle: "Old Title",
         notificationBody: "Old Body",
@@ -528,6 +540,7 @@ describe("notificationScheduleRouter", () => {
       const existingSchedule = {
         id: "schedule-1",
         name: "Test",
+        tripId: "trip-1",
         notificationType: "ranking",
         notificationTitle: null,
         notificationBody: null,
@@ -624,6 +637,7 @@ describe("notificationScheduleRouter", () => {
       const existingSchedule = {
         id: "schedule-1",
         name: "Test",
+        tripId: "trip-1",
         notificationType: "custom",
         notificationTitle: "Valid Title",
         notificationBody: "Valid Body",
@@ -658,6 +672,7 @@ describe("notificationScheduleRouter", () => {
     it("should delete a schedule", async () => {
       const mockSchedule = {
         id: "schedule-1",
+        tripId: "trip-1",
         name: "Test Schedule",
         _count: {
           notificationExecutions: 3,
@@ -740,6 +755,7 @@ describe("notificationScheduleRouter", () => {
       const originalSchedule = {
         id: "schedule-1",
         name: "Original Schedule",
+        tripId: "trip-1",
         notificationType: "ranking",
         notificationTitle: null,
         notificationBody: null,
@@ -758,6 +774,7 @@ describe("notificationScheduleRouter", () => {
         ...originalSchedule,
         id: "schedule-2",
         name: "Original Schedule (Copy)",
+        tripId: "trip-1",
         isActive: false,
         startDate: new Date("2026-01-25T10:00:00.000Z"),
         endDate: new Date("2026-01-30T10:00:00.000Z"),
@@ -798,12 +815,14 @@ describe("notificationScheduleRouter", () => {
     it("should toggle schedule active status", async () => {
       const schedule = {
         id: "schedule-1",
+        tripId: "trip-1",
         isActive: true,
       };
 
       const updatedSchedule = {
         ...schedule,
         isActive: false,
+        tripId: "trip-1",
         createdBy: {
           id: "mock-user-id",
           name: "Mock User",
@@ -862,11 +881,13 @@ describe("notificationScheduleRouter", () => {
     it("should update last run timestamp", async () => {
       const schedule = {
         id: "schedule-1",
+        tripId: "trip-1",
         lastRun: null,
       };
 
       const updatedSchedule = {
         ...schedule,
+        tripId: "trip-1",
         lastRun: new Date("2026-01-10T10:00:00.000Z"),
       };
 

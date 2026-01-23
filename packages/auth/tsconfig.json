@@ -6,14 +6,10 @@
       "~/*": ["./src/*"]
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx",
-    "moduleResolution": "bundler",
-    "outDir": "./dist",
-    "declaration": true,
-    "declarationMap": true,
-    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src/**/*", "vitest.config.ts", "vitest.setup.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*",],
+  "exclude": ["node_modules", "dist", "**/prisma/lib", "**/prisma/lib/**", "**/__tests__/**", "**/*.test.*"]
 }
