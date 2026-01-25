@@ -6,9 +6,7 @@ export type {
 export type {
   AuthUser,
   AuthState,
-  SignInWithEmailOptions,
-  SignUpWithEmailOptions,
-  SignInWithOAuthOptions,
+  SignInWithOtpOptions
 } from "./types";
 
 export {

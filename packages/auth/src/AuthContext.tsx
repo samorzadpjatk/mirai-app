@@ -6,9 +6,7 @@ import type { SupabaseClient, SupabaseSession } from "@integral-2025-app/supabas
 import type {
   AuthContextValue,
   AuthUser,
-  SignInWithEmailOptions,
-  SignUpWithEmailOptions,
-  SignInWithOAuthOptions,
+  SignInWithOtpOptions,
 } from "./types";
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
@@ -83,47 +81,11 @@ export function AuthProvider({
     };
   }, [client, onUserFetch]);
 
-  const signInWithEmail = async ({
+  const signInWithOtp = async ({
     email,
-    password,
-  }: SignInWithEmailOptions) => {
-    const { error } = await client.auth.signInWithPassword({
+  }: SignInWithOtpOptions) => {
+    const { error } = await client.auth.signInWithOtp({
       email,
-      password,
-    });
-
-    if (error) {
-      throw error;
-    }
-  };
-
-  const signUpWithEmail = async ({
-    email,
-    password,
-    metadata,
-  }: SignUpWithEmailOptions) => {
-    const { error } = await client.auth.signUp({
-      email,
-      password,
-      options: {
-        data: metadata,
-      },
-    });
-
-    if (error) {
-      throw error;
-    }
-  };
-
-  const signInWithOAuth = async ({
-    provider,
-    redirectTo,
-  }: SignInWithOAuthOptions) => {
-    const { error } = await client.auth.signInWithOAuth({
-      provider: provider as never,
-      options: {
-        redirectTo,
-      },
     });
 
     if (error) {
@@ -157,9 +119,7 @@ export function AuthProvider({
     session,
     isLoading,
     isAuthenticated: !!session && !!user,
-    signInWithEmail,
-    signUpWithEmail,
-    signInWithOAuth,
+    signInWithOtp,
     signOut,
     refreshSession,
   };

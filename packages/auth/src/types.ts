@@ -21,26 +21,17 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
-export interface SignInWithEmailOptions {
+export interface SignInWithOtpOptions {
   email: string;
-  password: string;
 }
 
-export interface SignUpWithEmailOptions {
+export interface SignUpWithOtpOptions {
   email: string;
-  password: string;
   metadata?: Record<string, unknown>;
 }
 
-export interface SignInWithOAuthOptions {
-  provider: string;
-  redirectTo?: string;
-}
-
 export interface AuthContextValue extends AuthState {
-  signInWithEmail: (options: SignInWithEmailOptions) => Promise<void>;
-  signUpWithEmail: (options: SignUpWithEmailOptions) => Promise<void>;
-  signInWithOAuth: (options: SignInWithOAuthOptions) => Promise<void>;
+  signInWithOtp: (options: SignInWithOtpOptions) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
