@@ -2,9 +2,9 @@ name: Linting check
 
 on:
   push:
-    branches: ["main", "mirai"]
+    branches: ["main"]
   pull_request:
-    branches: ["main", "mirai"]
+    branches: ["main"]
 
 jobs:
   build_test:
