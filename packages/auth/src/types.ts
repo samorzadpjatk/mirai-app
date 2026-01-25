@@ -32,6 +32,10 @@ export interface SignUpWithOtpOptions {
 
 export interface AuthContextValue extends AuthState {
   signInWithOtp: (options: SignInWithOtpOptions) => Promise<void>;
+  // Send a code to create an account (signup via OTP)
+  signUpWithOtp: (options: SignUpWithOtpOptions) => Promise<void>;
+  // Verify a 6-digit OTP code sent to the user's email (for sign-in or signup)
+  verifyOtp: (options: { email: string; token: string }) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }

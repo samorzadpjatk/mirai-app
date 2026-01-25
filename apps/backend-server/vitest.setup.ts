@@ -12,9 +12,7 @@ const createMockSupabaseClient = () => ({
     signIn: vi.fn(),
     signOut: vi.fn(),
     onAuthStateChange: vi.fn(),
-    signInWithPassword: vi.fn(),
-    signUp: vi.fn(),
-    signInWithOAuth: vi.fn(),
+
     refreshSession: vi.fn(),
   },
   from: vi.fn(() => ({

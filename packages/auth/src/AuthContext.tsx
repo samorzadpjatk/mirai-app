@@ -93,6 +93,46 @@ export function AuthProvider({
     }
   };
 
+  const signUpWithOtp = async ({ email, metadata }: SignUpWithOtpOptions) => {
+    // Use standard signUp to create a pending user and trigger email verification/OTP
+    const { data, error } = await client.auth.signUp({
+      email,
+      options: {
+        data: metadata,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    // Do not set session here — verification via OTP must complete first
+  };
+
+
+
+  const verifyOtp = async ({ email, token }: { email: string; token: string }) => {
+    const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
+    if (error) {
+      throw error;
+    }
+    // Refresh session & fetch user after successful verification
+    const { data: sessionData } = await client.auth.getSession();
+    setSession(sessionData.session);
+
+    if (sessionData.session?.user && onUserFetch) {
+      setIsLoading(true);
+      try {
+        const fetchedUser = await onUserFetch(sessionData.session.user.id);
+        setUser(fetchedUser);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   const signOut = async () => {
     const { error } = await client.auth.signOut();
 
@@ -120,6 +160,7 @@ export function AuthProvider({
     isLoading,
     isAuthenticated: !!session && !!user,
     signInWithOtp,
+    verifyOtp,
     signOut,
     refreshSession,
   };
