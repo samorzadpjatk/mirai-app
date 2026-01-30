@@ -9,7 +9,6 @@ export type {
 
 export { useSignupForm } from "./hooks/useSignupForm";
 export type {
-  SignupFormData,
   SignupFormState,
   UseSignupFormResult,
 } from "./hooks/useSignupForm";

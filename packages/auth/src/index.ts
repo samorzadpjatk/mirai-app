@@ -2,9 +2,7 @@ export type {
   AuthUser,
   AuthState,
   AuthContextValue,
-  SignInWithEmailOptions,
-  SignUpWithEmailOptions,
-  SignInWithOAuthOptions,
+  SignInWithOtpOptions
 } from "./types";
 
 export {

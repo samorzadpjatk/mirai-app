@@ -5,35 +5,34 @@ import { useAuth } from "../authHooks";
 
 export interface LoginFormData {
   email: string;
-  password: string;
 }
 
 export interface LoginFormState {
   email: string;
-  password: string;
   isLoading: boolean;
+  isSent: boolean; // indicates a login email/OTP has been sent
   error: string | null;
 }
 
 export interface UseLoginFormResult {
   formState: LoginFormState;
   setEmail: (email: string) => void;
-  setPassword: (password: string) => void;
   handleSubmit: (onSuccess?: () => void) => Promise<void>;
   clearError: () => void;
+  clearSent: () => void;
 }
 
 export function useLoginForm(): UseLoginFormResult {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSent, setIsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { signInWithEmail } = useAuth();
+  const { signInWithOtp } = useAuth();
 
   const handleSubmit = async (onSuccess?: () => void) => {
-    if (!email || !password) {
-      setError("Please enter email and password");
+    if (!email) {
+      setError("Please enter your email");
       return;
     }
 
@@ -41,22 +40,24 @@ export function useLoginForm(): UseLoginFormResult {
     setError(null);
 
     try {
-      await signInWithEmail({ email, password });
-      onSuccess?.();
+      await signInWithOtp({ email });
+      // We don't navigate here — email/OTP flow will sign the user in when they complete the link/code.
+      setIsSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sign in");
+      setError(err instanceof Error ? err.message : "Failed to send login email");
     } finally {
       setIsLoading(false);
     }
   };
 
   const clearError = () => setError(null);
+  const clearSent = () => setIsSent(false);
 
   return {
-    formState: { email, password, isLoading, error },
+    formState: { email, isLoading, isSent, error },
     setEmail,
-    setPassword,
     handleSubmit,
     clearError,
+    clearSent,
   };
 }

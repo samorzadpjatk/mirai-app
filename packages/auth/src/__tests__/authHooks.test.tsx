@@ -14,9 +14,6 @@ const mockSupabaseClient = () => {
       onAuthStateChange: vi.fn().mockReturnValue({
         data: { subscription: { unsubscribe: vi.fn() } },
       }),
-      signInWithPassword: vi.fn(),
-      signUp: vi.fn(),
-      signInWithOAuth: vi.fn(),
       signOut: vi.fn(),
       refreshSession: vi.fn(),
     },
@@ -54,9 +51,8 @@ describe("Auth Hooks", () => {
       expect(result.current).toHaveProperty("session");
       expect(result.current).toHaveProperty("isLoading");
       expect(result.current).toHaveProperty("isAuthenticated");
-      expect(result.current).toHaveProperty("signInWithEmail");
-      expect(result.current).toHaveProperty("signUpWithEmail");
-      expect(result.current).toHaveProperty("signInWithOAuth");
+      expect(result.current).toHaveProperty("signInWithOtp");
+      expect(result.current).toHaveProperty("verifyOtp");
       expect(result.current).toHaveProperty("signOut");
       expect(result.current).toHaveProperty("refreshSession");
     });

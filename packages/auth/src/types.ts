@@ -21,26 +21,21 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
-export interface SignInWithEmailOptions {
+export interface SignInWithOtpOptions {
   email: string;
-  password: string;
 }
 
-export interface SignUpWithEmailOptions {
+export interface SignUpWithOtpOptions {
   email: string;
-  password: string;
   metadata?: Record<string, unknown>;
 }
 
-export interface SignInWithOAuthOptions {
-  provider: string;
-  redirectTo?: string;
-}
-
 export interface AuthContextValue extends AuthState {
-  signInWithEmail: (options: SignInWithEmailOptions) => Promise<void>;
-  signUpWithEmail: (options: SignUpWithEmailOptions) => Promise<void>;
-  signInWithOAuth: (options: SignInWithOAuthOptions) => Promise<void>;
+  signInWithOtp: (options: SignInWithOtpOptions) => Promise<void>;
+  // Send a code to create an account (signup via OTP)
+  signUpWithOtp: (options: SignUpWithOtpOptions) => Promise<void>;
+  // Verify a 6-digit OTP code sent to the user's email (for sign-in or signup)
+  verifyOtp: (options: { email: string; token: string }) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
