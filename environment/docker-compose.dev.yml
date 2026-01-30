@@ -85,16 +85,24 @@ services:
     ports:
       - "8025:8025" # Web UI
       - "1025:1025" # SMTP
+
+
+  email-templates:
+    container_name: supabase-email-templates
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./volumes/email-templates:/usr/share/nginx/html:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8025/"]
+      test: ["CMD", "curl", "-fsS", "http://localhost/"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
 
 
   # ===========================================================================
   # SUPABASE SERVICES
-  # ===========================================================================
+  # ==========================================================================="},{
 
   # Supabase Studio - Web-based database management interface
   studio:
@@ -186,10 +194,8 @@ services:
       test:
         [
           "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
+          "curl",
+          "-fsS",
           "http://localhost:9999/health",
         ]
       timeout: 5s
@@ -200,7 +206,7 @@ services:
         # Disable this if you are using an external Postgres database
         condition: service_healthy
       mailhog:
-        condition: service_healthy
+        condition: service_started
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
@@ -239,6 +245,11 @@ services:
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${MAILER_URLPATHS_CONFIRMATION}
       GOTRUE_MAILER_URLPATHS_RECOVERY: ${MAILER_URLPATHS_RECOVERY}
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${MAILER_URLPATHS_EMAIL_CHANGE}
+      # Use the internal static email templates service (OTP-only magic link)
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: http://email-templates/otp.html
+      MAILER_TEMPLATES_MAGIC_LINK: http://email-templates/otp.html
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Twój kod logowania — MIRAI"
+      MAILER_SUBJECTS_MAGIC_LINK: "Twój kod logowania — MIRAI"
 
       GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
       GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
@@ -318,10 +329,8 @@ services:
       test:
         [
           "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
+          "curl",
+          "-fsS",
           "http://storage:5000/status",
         ]
       timeout: 5s
@@ -387,7 +396,7 @@ services:
     volumes:
       - ./volumes/minio:/data:z
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
       timeout: 5s
       interval: 5s
       retries: 3

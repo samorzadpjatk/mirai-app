@@ -64,6 +64,18 @@ services:
       backend-server:
         condition: service_started
 
+  email-templates:
+    container_name: supabase-email-templates
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./volumes/email-templates:/usr/share/nginx/html:ro,z
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # ===========================================================================
   # SUPABASE SERVICES
   # ===========================================================================
@@ -211,6 +223,11 @@ services:
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${MAILER_URLPATHS_CONFIRMATION}
       GOTRUE_MAILER_URLPATHS_RECOVERY: ${MAILER_URLPATHS_RECOVERY}
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${MAILER_URLPATHS_EMAIL_CHANGE}
+      # Use the internal static email templates service (OTP-only magic link)
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: http://email-templates/otp.html
+      MAILER_TEMPLATES_MAGIC_LINK: http://email-templates/otp.html
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Twój kod logowania — MIRAI"
+      MAILER_SUBJECTS_MAGIC_LINK: "Twój kod logowania — MIRAI"
 
       GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
       GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
@@ -379,7 +396,7 @@ services:
     volumes:
       - ./volumes/minio:/data:z
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
       timeout: 5s
       interval: 5s
       retries: 3
