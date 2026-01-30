@@ -396,7 +396,7 @@ services:
     volumes:
       - ./volumes/minio:/data:z
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/ready"]
       timeout: 5s
       interval: 5s
       retries: 3
