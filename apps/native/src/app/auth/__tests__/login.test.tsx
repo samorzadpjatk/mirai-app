@@ -25,10 +25,12 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => (
 
 describe("LoginScreen", () => {
   const mockSetEmail = jest.fn();
-  const mockSetPassword = jest.fn();
   const mockHandleSubmit = jest.fn();
+  const mockClearSent = jest.fn();
+  const mockClearError = jest.fn();
   const mockRouterReplace = jest.fn();
   const mockRouterPush = jest.fn();
+  const mockVerifyOtp = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -41,14 +43,19 @@ describe("LoginScreen", () => {
     mockUseLoginForm.mockReturnValue({
       formState: {
         email: "",
-        password: "",
         isLoading: false,
+        isSent: false,
         error: null,
       },
       setEmail: mockSetEmail,
-      setPassword: mockSetPassword,
       handleSubmit: mockHandleSubmit,
-      clearError: jest.fn(),
+      clearError: mockClearError,
+      clearSent: mockClearSent,
+    });
+
+    // mock useAuth verifyOtp
+    (require("@integral-2025-app/auth") as any).useAuth = () => ({
+      verifyOtp: mockVerifyOtp,
     });
   });
 
@@ -59,11 +66,11 @@ describe("LoginScreen", () => {
       </TestWrapper>,
     );
 
-    expect(getByText("Welcome Back")).toBeTruthy();
-    expect(getByText("Sign in to continue to PJapp")).toBeTruthy();
+    expect(getByText("Welcome back")).toBeTruthy();
+    expect(getByText("Unlock your next adventure with PJapp")).toBeTruthy();
     expect(getByPlaceholderText("your.email@example.com")).toBeTruthy();
-    expect(getByPlaceholderText("Enter your password")).toBeTruthy();
-    expect(getByText("Sign In")).toBeTruthy();
+    expect(getByText("Send Login Code")).toBeTruthy();
+    expect(getByText("We'll send a one-time login code to your email. Use the code to sign in.")).toBeTruthy();
   });
 
   it("should update email when typing", () => {
@@ -79,23 +86,10 @@ describe("LoginScreen", () => {
     expect(mockSetEmail).toHaveBeenCalledWith("test@example.com");
   });
 
-  it("should update password when typing", () => {
-    const { getByPlaceholderText } = render(
-      <TestWrapper>
-        <LoginScreen />
-      </TestWrapper>,
-    );
 
-    const passwordInput = getByPlaceholderText("Enter your password");
-    fireEvent.changeText(passwordInput, "password123");
 
-    expect(mockSetPassword).toHaveBeenCalledWith("password123");
-  });
-
-  it("should call handleSubmit when sign in button is pressed", async () => {
-    mockHandleSubmit.mockImplementation((onSuccess) => {
-      onSuccess?.();
-    });
+  it("should call handleSubmit when send code button is pressed", async () => {
+    mockHandleSubmit.mockResolvedValue(undefined);
 
     const { getByText } = render(
       <TestWrapper>
@@ -103,45 +97,69 @@ describe("LoginScreen", () => {
       </TestWrapper>,
     );
 
-    const signInButton = getByText("Sign In");
-    fireEvent.press(signInButton);
+    const sendButton = getByText("Send Login Code");
+    fireEvent.press(sendButton);
 
     await waitFor(() => {
       expect(mockHandleSubmit).toHaveBeenCalled();
     });
   });
 
-  it("should navigate to home on successful login", async () => {
-    mockHandleSubmit.mockImplementation((onSuccess) => {
-      onSuccess?.();
+  it("should NOT navigate to home immediately after sending code and should show modal", async () => {
+    mockHandleSubmit.mockResolvedValue(undefined);
+    mockUseLoginForm.mockReturnValueOnce({
+      formState: {
+        email: "test@example.com",
+        isLoading: false,
+        isSent: true,
+        error: null,
+      },
+      setEmail: mockSetEmail,
+      handleSubmit: mockHandleSubmit,
+      clearError: mockClearError,
+      clearSent: mockClearSent,
     });
 
-    const { getByText } = render(
+    const { getByText, getByPlaceholderText } = render(
       <TestWrapper>
         <LoginScreen />
       </TestWrapper>,
     );
 
-    const signInButton = getByText("Sign In");
-    fireEvent.press(signInButton);
+    const sendButton = getByText("Send Login Code");
+    fireEvent.press(sendButton);
 
     await waitFor(() => {
-      expect(mockRouterReplace).toHaveBeenCalledWith("/");
+      expect(mockHandleSubmit).toHaveBeenCalled();
+      expect(getByText('Enter verification code')).toBeTruthy();
+    });
+
+    // Enter OTP and verify
+    const otpInput = getByPlaceholderText('123456');
+    fireEvent.changeText(otpInput, '654321');
+
+    mockVerifyOtp.mockResolvedValueOnce(undefined);
+
+    const verifyButton = getByText('Verify & Sign In');
+    fireEvent.press(verifyButton);
+
+    await waitFor(() => {
+      expect(mockVerifyOtp).toHaveBeenCalledWith({ email: 'test@example.com', token: '654321' });
+      expect(mockRouterReplace).toHaveBeenCalledWith('/');
     });
   });
 
-  it("should display error message when login fails", () => {
+  it("should display error message when sending code fails", () => {
     mockUseLoginForm.mockReturnValue({
       formState: {
         email: "test@example.com",
-        password: "password123",
         isLoading: false,
         error: "Invalid credentials",
       },
       setEmail: mockSetEmail,
-      setPassword: mockSetPassword,
       handleSubmit: mockHandleSubmit,
       clearError: jest.fn(),
+      clearSent: jest.fn(),
     });
 
     const { getByText } = render(
@@ -151,20 +169,52 @@ describe("LoginScreen", () => {
     );
 
     expect(getByText("Invalid credentials")).toBeTruthy();
+
+    // If OTP verification fails, show the modal error
+    mockUseLoginForm.mockReturnValueOnce({
+      formState: {
+        email: "test@example.com",
+        isLoading: false,
+        isSent: true,
+        error: null,
+      },
+      setEmail: mockSetEmail,
+      handleSubmit: mockHandleSubmit,
+      clearError: mockClearError,
+      clearSent: mockClearSent,
+    });
+
+    const { getByText: getByText2, getByPlaceholderText } = render(
+      <TestWrapper>
+        <LoginScreen />
+      </TestWrapper>,
+    );
+
+    const otpInput = getByPlaceholderText('123456');
+    fireEvent.changeText(otpInput, '111111');
+
+    mockVerifyOtp.mockRejectedValueOnce(new Error('Invalid code'));
+
+    const verifyButton = getByText2('Verify & Sign In');
+    fireEvent.press(verifyButton);
+
+    return waitFor(() => {
+      expect(mockVerifyOtp).toHaveBeenCalled();
+      expect(getByText2('Invalid code')).toBeTruthy();
+    });
   });
 
-  it("should show loading state when submitting", () => {
+  it("should show loading state when sending code", () => {
     mockUseLoginForm.mockReturnValue({
       formState: {
         email: "test@example.com",
-        password: "password123",
         isLoading: true,
         error: null,
       },
       setEmail: mockSetEmail,
-      setPassword: mockSetPassword,
       handleSubmit: mockHandleSubmit,
       clearError: jest.fn(),
+      clearSent: jest.fn(),
     });
 
     const { getByText, queryByText } = render(
@@ -173,22 +223,21 @@ describe("LoginScreen", () => {
       </TestWrapper>,
     );
 
-    expect(getByText("Signing In...")).toBeTruthy();
-    expect(queryByText("Sign In")).toBeNull();
+    expect(getByText("Sending Code...")).toBeTruthy();
+    expect(queryByText("Send Login Code")).toBeNull();
   });
 
   it("should disable inputs when loading", () => {
     mockUseLoginForm.mockReturnValue({
       formState: {
         email: "test@example.com",
-        password: "password123",
         isLoading: true,
         error: null,
       },
       setEmail: mockSetEmail,
-      setPassword: mockSetPassword,
       handleSubmit: mockHandleSubmit,
       clearError: jest.fn(),
+      clearSent: jest.fn(),
     });
 
     const { getByPlaceholderText } = render(
@@ -198,10 +247,8 @@ describe("LoginScreen", () => {
     );
 
     const emailInput = getByPlaceholderText("your.email@example.com");
-    const passwordInput = getByPlaceholderText("Enter your password");
 
     expect(emailInput.props.editable).toBe(false);
-    expect(passwordInput.props.editable).toBe(false);
   });
 
   it("should navigate to signup when sign up link is pressed", () => {
@@ -221,14 +268,13 @@ describe("LoginScreen", () => {
     mockUseLoginForm.mockReturnValue({
       formState: {
         email: "prefilled@example.com",
-        password: "",
         isLoading: false,
         error: null,
       },
       setEmail: mockSetEmail,
-      setPassword: mockSetPassword,
       handleSubmit: mockHandleSubmit,
       clearError: jest.fn(),
+      clearSent: jest.fn(),
     });
 
     const { getByPlaceholderText } = render(
@@ -241,16 +287,7 @@ describe("LoginScreen", () => {
     expect(emailInput.props.value).toBe("prefilled@example.com");
   });
 
-  it("should have secure text entry for password field", () => {
-    const { getByPlaceholderText } = render(
-      <TestWrapper>
-        <LoginScreen />
-      </TestWrapper>,
-    );
 
-    const passwordInput = getByPlaceholderText("Enter your password");
-    expect(passwordInput.props.secureTextEntry).toBe(true);
-  });
 
   it("should have correct keyboard type for email input", () => {
     const { getByPlaceholderText } = render(
@@ -263,5 +300,56 @@ describe("LoginScreen", () => {
     expect(emailInput.props.keyboardType).toBe("email-address");
     expect(emailInput.props.autoCapitalize).toBe("none");
     expect(emailInput.props.autoCorrect).toBe(false);
+  });
+
+  it("should show confirmation when code was sent", () => {
+    mockUseLoginForm.mockReturnValue({
+      formState: {
+        email: "test@example.com",
+        isLoading: false,
+        isSent: true,
+        error: null,
+      },
+      setEmail: mockSetEmail,
+      handleSubmit: mockHandleSubmit,
+      clearError: jest.fn(),
+      clearSent: jest.fn(),
+    });
+
+    const { getByText } = render(
+      <TestWrapper>
+        <LoginScreen />
+      </TestWrapper>,
+    );
+
+    expect(getByText("Check your email — we sent a login link. You'll be signed in automatically after using it.")).toBeTruthy();
+    expect(getByText("Resend Code")).toBeTruthy();
+  });
+
+  it("typing new email clears sent state", () => {
+    mockUseLoginForm.mockReturnValue({
+      formState: {
+        email: "",
+        isLoading: false,
+        isSent: true,
+        error: null,
+      },
+      setEmail: mockSetEmail,
+      handleSubmit: mockHandleSubmit,
+      clearError: mockClearError,
+      clearSent: mockClearSent,
+    });
+
+    const { getByPlaceholderText } = render(
+      <TestWrapper>
+        <LoginScreen />
+      </TestWrapper>,
+    );
+
+    const emailInput = getByPlaceholderText("your.email@example.com");
+    fireEvent.changeText(emailInput, "new@example.com");
+
+    expect(mockSetEmail).toHaveBeenCalledWith("new@example.com");
+    expect(mockClearSent).toHaveBeenCalled();
   });
 });

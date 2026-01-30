@@ -3,75 +3,57 @@
 import { useState } from "react";
 import { useAuth } from "../authHooks";
 
-export interface SignupFormData {
+export interface SignupFormState {
   name: string;
   email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export interface SignupFormState extends SignupFormData {
   isLoading: boolean;
+  isSent: boolean;
   error: string | null;
-  success: boolean;
 }
 
 export interface UseSignupFormResult {
   formState: SignupFormState;
   setName: (name: string) => void;
   setEmail: (email: string) => void;
-  setPassword: (password: string) => void;
-  setConfirmPassword: (password: string) => void;
   handleSubmit: (onSuccess?: () => void) => Promise<void>;
   clearError: () => void;
+  clearSent: () => void;
 }
 
 export function useSignupForm(): UseSignupFormResult {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSent, setIsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
-  const { signUpWithEmail } = useAuth();
-
-  const validateForm = () => {
-    if (!name.trim()) {
-      setError("Please enter your name");
-      return false;
-    }
-    if (!email?.includes("@")) {
-      setError("Please enter a valid email");
-      return false;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return false;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return false;
-    }
-    return true;
-  };
+  const { signUpWithOtp } = useAuth();
 
   const handleSubmit = async (onSuccess?: () => void) => {
-    setError(null);
+    if (!name?.trim()) {
+      setError("Please enter your name");
+      return;
+    }
 
-    if (!validateForm()) return;
+    if (!email) {
+      setError("Please enter your email");
+      return;
+    }
+
+    // basic email format validation
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email");
+      return;
+    }
 
     setIsLoading(true);
+    setError(null);
 
     try {
-      await signUpWithEmail({
-        email,
-        password,
-        metadata: { name },
-      });
-      setSuccess(true);
-      onSuccess?.();
+      await signUpWithOtp({ email, metadata: { name } });
+      setIsSent(true);
+      // Do NOT call onSuccess — user needs to verify OTP to complete signup
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign up");
     } finally {
@@ -80,22 +62,14 @@ export function useSignupForm(): UseSignupFormResult {
   };
 
   const clearError = () => setError(null);
+  const clearSent = () => setIsSent(false);
 
   return {
-    formState: {
-      name,
-      email,
-      password,
-      confirmPassword,
-      isLoading,
-      error,
-      success,
-    },
+    formState: { name, email, isLoading, isSent, error },
     setName,
     setEmail,
-    setPassword,
-    setConfirmPassword,
     handleSubmit,
     clearError,
+    clearSent,
   };
 }

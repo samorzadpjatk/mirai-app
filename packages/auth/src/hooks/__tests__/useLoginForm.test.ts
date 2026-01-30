@@ -12,12 +12,12 @@ const mockedUseAuth = vi.mocked(useAuth);
 type AuthContextValue = ReturnType<typeof useAuth>;
 
 describe("useLoginForm", () => {
-  const mockSignInWithEmail = vi.fn();
+  const mockSignInWithOtp = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockedUseAuth.mockReturnValue({
-      signInWithEmail: mockSignInWithEmail,
+      signInWithOtp: mockSignInWithOtp,
     } as unknown as AuthContextValue);
   });
 
@@ -26,8 +26,8 @@ describe("useLoginForm", () => {
 
     expect(result.current.formState).toEqual({
       email: "",
-      password: "",
       isLoading: false,
+      isSent: false,
       error: null,
     });
   });
@@ -42,58 +42,28 @@ describe("useLoginForm", () => {
     expect(result.current.formState.email).toBe("test@example.com");
   });
 
-  it("should update password field", () => {
-    const { result } = renderHook(() => useLoginForm());
 
-    act(() => {
-      result.current.setPassword("password123");
-    });
-
-    expect(result.current.formState.password).toBe("password123");
-  });
 
   it("should show error when submitting without email", async () => {
     const { result } = renderHook(() => useLoginForm());
 
-    act(() => {
-      result.current.setPassword("password123");
-    });
-
     await act(async () => {
       await result.current.handleSubmit();
     });
 
-    expect(result.current.formState.error).toBe(
-      "Please enter email and password",
-    );
-    expect(mockSignInWithEmail).not.toHaveBeenCalled();
+    expect(result.current.formState.error).toBe("Please enter your email");
+    expect(mockSignInWithOtp).not.toHaveBeenCalled();
   });
 
-  it("should show error when submitting without password", async () => {
-    const { result } = renderHook(() => useLoginForm());
 
-    act(() => {
-      result.current.setEmail("test@example.com");
-    });
 
-    await act(async () => {
-      await result.current.handleSubmit();
-    });
-
-    expect(result.current.formState.error).toBe(
-      "Please enter email and password",
-    );
-    expect(mockSignInWithEmail).not.toHaveBeenCalled();
-  });
-
-  it("should successfully submit login form", async () => {
-    mockSignInWithEmail.mockResolvedValue(undefined);
+  it("should successfully submit login form and mark as sent", async () => {
+    mockSignInWithOtp.mockResolvedValue(undefined);
     const onSuccess = vi.fn();
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {
       result.current.setEmail("test@example.com");
-      result.current.setPassword("password123");
     });
 
     await act(async () => {
@@ -101,13 +71,14 @@ describe("useLoginForm", () => {
     });
 
     await waitFor(() => {
-      expect(mockSignInWithEmail).toHaveBeenCalledWith({
+      expect(mockSignInWithOtp).toHaveBeenCalledWith({
         email: "test@example.com",
-        password: "password123",
       });
-      expect(onSuccess).toHaveBeenCalled();
+      // onSuccess is not called here - login happens after the user completes the email link/OTP
+      expect(onSuccess).not.toHaveBeenCalled();
       expect(result.current.formState.error).toBeNull();
       expect(result.current.formState.isLoading).toBe(false);
+      expect(result.current.formState.isSent).toBe(true);
     });
   });
 
@@ -116,13 +87,12 @@ describe("useLoginForm", () => {
     const signInPromise = new Promise<void>((resolve) => {
       resolveSignIn = resolve;
     });
-    mockSignInWithEmail.mockReturnValue(signInPromise);
+    mockSignInWithOtp.mockReturnValue(signInPromise);
 
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {
       result.current.setEmail("test@example.com");
-      result.current.setPassword("password123");
     });
 
     // Verify initial state
@@ -153,12 +123,11 @@ describe("useLoginForm", () => {
 
   it("should handle submission error", async () => {
     const errorMessage = "Invalid credentials";
-    mockSignInWithEmail.mockRejectedValue(new Error(errorMessage));
+    mockSignInWithOtp.mockRejectedValue(new Error(errorMessage));
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {
       result.current.setEmail("test@example.com");
-      result.current.setPassword("wrong-password");
     });
 
     await act(async () => {
@@ -172,12 +141,11 @@ describe("useLoginForm", () => {
   });
 
   it("should handle non-Error exceptions", async () => {
-    mockSignInWithEmail.mockRejectedValue("String error");
+    mockSignInWithOtp.mockRejectedValue("String error");
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {
       result.current.setEmail("test@example.com");
-      result.current.setPassword("password123");
     });
 
     await act(async () => {
@@ -185,7 +153,7 @@ describe("useLoginForm", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.formState.error).toBe("Failed to sign in");
+      expect(result.current.formState.error).toBe("Failed to send login email");
       expect(result.current.formState.isLoading).toBe(false);
     });
   });
@@ -211,13 +179,12 @@ describe("useLoginForm", () => {
   });
 
   it("should not call onSuccess if submission fails", async () => {
-    mockSignInWithEmail.mockRejectedValue(new Error("Network error"));
+    mockSignInWithOtp.mockRejectedValue(new Error("Network error"));
     const onSuccess = vi.fn();
     const { result } = renderHook(() => useLoginForm());
 
     act(() => {
       result.current.setEmail("test@example.com");
-      result.current.setPassword("password123");
     });
 
     await act(async () => {

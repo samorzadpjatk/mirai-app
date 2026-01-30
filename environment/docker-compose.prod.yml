@@ -64,6 +64,18 @@ services:
       backend-server:
         condition: service_started
 
+  email-templates:
+    container_name: supabase-email-templates
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./volumes/email-templates:/usr/share/nginx/html:ro,z
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # ===========================================================================
   # SUPABASE SERVICES
   # ===========================================================================
@@ -211,6 +223,11 @@ services:
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: ${MAILER_URLPATHS_CONFIRMATION}
       GOTRUE_MAILER_URLPATHS_RECOVERY: ${MAILER_URLPATHS_RECOVERY}
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${MAILER_URLPATHS_EMAIL_CHANGE}
+      # Use the internal static email templates service (OTP-only magic link)
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: http://email-templates/otp.html
+      MAILER_TEMPLATES_MAGIC_LINK: http://email-templates/otp.html
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Twój kod logowania — MIRAI"
+      MAILER_SUBJECTS_MAGIC_LINK: "Twój kod logowania — MIRAI"
 
       GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
       GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
@@ -371,13 +388,15 @@ services:
     container_name: minio
     image: minio/minio:latest
     restart: unless-stopped
+    # Host port mapping configurable via MINIO_HTTP_PORT and MINIO_CONSOLE_PORT
+    # This avoids collisions with other local services (e.g., Authentik or local Minio)
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_HTTP_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - ./volumes/minio:/data:z
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/ready"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/ready"]
       timeout: 5s
       interval: 5s
       retries: 3
@@ -410,8 +429,10 @@ services:
     container_name: supabase-pooler
     image: supabase/supavisor:2.7.3
     restart: unless-stopped
+    # Host Postgres port mapping configurable via SUPAVISOR_HOST_POSTGRES_PORT
+    # Default set to 5433 to avoid colliding with local Postgres on :5432
     ports:
-      - ${POSTGRES_PORT}:5432
+      - "${SUPAVISOR_HOST_POSTGRES_PORT:-5433}:5432"
       - ${POOLER_PROXY_PORT_TRANSACTION}:6543
     volumes:
       - ./volumes/pooler/pooler.exs:/etc/pooler/pooler.exs:ro,z

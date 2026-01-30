@@ -6,9 +6,7 @@ import type { SupabaseClient, SupabaseSession } from "@integral-2025-app/supabas
 import type {
   AuthContextValue,
   AuthUser,
-  SignInWithEmailOptions,
-  SignUpWithEmailOptions,
-  SignInWithOAuthOptions,
+  SignInWithOtpOptions,
 } from "./types";
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
@@ -83,13 +81,11 @@ export function AuthProvider({
     };
   }, [client, onUserFetch]);
 
-  const signInWithEmail = async ({
+  const signInWithOtp = async ({
     email,
-    password,
-  }: SignInWithEmailOptions) => {
-    const { error } = await client.auth.signInWithPassword({
+  }: SignInWithOtpOptions) => {
+    const { error } = await client.auth.signInWithOtp({
       email,
-      password,
     });
 
     if (error) {
@@ -97,14 +93,10 @@ export function AuthProvider({
     }
   };
 
-  const signUpWithEmail = async ({
-    email,
-    password,
-    metadata,
-  }: SignUpWithEmailOptions) => {
-    const { error } = await client.auth.signUp({
+  const signUpWithOtp = async ({ email, metadata }: SignUpWithOtpOptions) => {
+    // Use standard signUp to create a pending user and trigger email verification/OTP
+    const { data, error } = await client.auth.signUp({
       email,
-      password,
       options: {
         data: metadata,
       },
@@ -113,21 +105,31 @@ export function AuthProvider({
     if (error) {
       throw error;
     }
+
+    // Do not set session here — verification via OTP must complete first
   };
 
-  const signInWithOAuth = async ({
-    provider,
-    redirectTo,
-  }: SignInWithOAuthOptions) => {
-    const { error } = await client.auth.signInWithOAuth({
-      provider: provider as never,
-      options: {
-        redirectTo,
-      },
-    });
 
+
+  const verifyOtp = async ({ email, token }: { email: string; token: string }) => {
+    const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
     if (error) {
       throw error;
+    }
+    // Refresh session & fetch user after successful verification
+    const { data: sessionData } = await client.auth.getSession();
+    setSession(sessionData.session);
+
+    if (sessionData.session?.user && onUserFetch) {
+      setIsLoading(true);
+      try {
+        const fetchedUser = await onUserFetch(sessionData.session.user.id);
+        setUser(fetchedUser);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -157,9 +159,8 @@ export function AuthProvider({
     session,
     isLoading,
     isAuthenticated: !!session && !!user,
-    signInWithEmail,
-    signUpWithEmail,
-    signInWithOAuth,
+    signInWithOtp,
+    verifyOtp,
     signOut,
     refreshSession,
   };

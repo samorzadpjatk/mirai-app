@@ -1,23 +1,59 @@
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, Modal } from "react-native";
 import { useLoginForm } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppSafeAreaInsets } from '~/contexts/safeArea';
+import { useAuth } from "@integral-2025-app/auth/client";
+import { useState } from "react";
 
 export default function LoginScreen() {
-  const { formState, setEmail, setPassword, handleSubmit } = useLoginForm();
+  const { formState, setEmail, handleSubmit, clearSent, clearError } = useLoginForm();
+  const { verifyOtp } = useAuth();
   const router = useRouter();
   const insets = useAppSafeAreaInsets();
 
+  const [otp, setOtp] = useState("");
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+
   const onSubmit = async () => {
-    await handleSubmit(() => {
-      router.replace("/");
-    });
+    await handleSubmit();
   };
 
-  const { email, password, isLoading, error } = formState;
+  const { email, isLoading, isSent, error } = formState;
+
+  const onEmailChange = (value: string) => {
+    clearError();
+    clearSent();
+    setEmail(value);
+  };
+
+  const onVerify = async () => {
+    if (!otp || otp.length < 6) {
+      setVerifyError("Please enter the 6-digit code");
+      return;
+    }
+
+    setVerifyLoading(true);
+    setVerifyError(null);
+
+    try {
+      await verifyOtp({ email, token: otp });
+      router.replace("/");
+    } catch (err) {
+      setVerifyError(err instanceof Error ? err.message : "Verification failed");
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setOtp("");
+    setVerifyError(null);
+    clearSent();
+  };
 
   return (
     <>
@@ -68,45 +104,82 @@ export default function LoginScreen() {
                   placeholder="s12345@pjwstk.edu.pl"
                   placeholderTextColor="#4b5563"
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={onEmailChange}
                   autoCapitalize="none"
+                  autoCorrect={false}
                   keyboardType="email-address"
                   editable={!isLoading}
                 />
               </View>
             </View>
 
-            {/* Password Input */}
+            {/* OTP Info */}
             <View style={styles.inputSection}>
               <Text style={styles.inputLabel}>
-                Password
+                How it works
               </Text>
-              <View style={styles.inputWrapper}>
-                <View style={styles.iconOpacity}>
-                  <Ionicons name="lock-closed" size={20} color="#00ced1" />
-                </View>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="••••••••"
-                  placeholderTextColor="#4b5563"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  editable={!isLoading}
-                />
-                <Ionicons name="eye" size={20} color="#9ca3af" />
+              <View style={[styles.inputWrapper, { paddingVertical: 16 }]}> 
+                <Text style={{ color: "#9ca3af", flex: 1 }}>
+                  We'll send a one-time login code to your email. Use the code to sign in.
+                </Text>
               </View>
             </View>
           </View>
 
-          {/* Forgot Password */}
           <View style={styles.forgotPasswordContainer}>
-            <TouchableOpacity>
-              <Text style={styles.forgotPasswordText}>
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.forgotPasswordText}>
+              Didn't receive the email? Check your spam folder or try again.
+            </Text>
           </View>
+
+          {/* Sent Confirmation */}
+          {isSent && (
+            <View style={styles.successContainer}>
+              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+              <Text style={styles.successText}>
+                Check your email — we sent a 6-digit code. Enter it below to sign in.
+              </Text>
+            </View>
+          )}
+
+          {/* OTP Verification Modal */}
+          <Modal visible={!!isSent} animationType="slide" transparent onRequestClose={closeModal}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                <Text style={styles.modalTitle}>Enter verification code</Text>
+                <Text style={styles.modalSubtitle}>Enter the 6-digit code we sent to <Text style={{fontWeight: 'bold'}}>{email}</Text></Text>
+
+                <TextInput
+                  value={otp}
+                  onChangeText={(t) => setOtp(t.replace(/[^0-9]/g, "").slice(0, 6))}
+                  keyboardType="number-pad"
+                  placeholder="123456"
+                  placeholderTextColor="#9ca3af"
+                  style={styles.otpInput}
+                  editable={!verifyLoading}
+                />
+
+                {verifyError && <Text style={styles.modalErrorText}>{verifyError}</Text>}
+
+                <TouchableOpacity
+                  style={[styles.verifyButton, verifyLoading && { opacity: 0.6 }]}
+                  onPress={onVerify}
+                  disabled={verifyLoading}
+                  activeOpacity={0.9}
+                >
+                  {verifyLoading ? (
+                    <ActivityIndicator color="#17181c" />
+                  ) : (
+                    <Text style={styles.verifyButtonText}>Verify & Sign In</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity style={{ marginTop: 12 }} onPress={closeModal}>
+                  <Text style={{ color: '#9ca3af', textAlign: 'center' }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
 
           {/* Login Button */}
           <TouchableOpacity
@@ -119,35 +192,28 @@ export default function LoginScreen() {
               <>
                 <ActivityIndicator color="#17181c" />
                 <Text style={styles.loginButtonText}>
-                  Logging In...
+                  Sending Code...
                 </Text>
+              </>
+            ) : isSent ? (
+              <>
+                <Text style={styles.loginButtonText}>
+                  Resend Code
+                </Text>
+                <Ionicons name="arrow-forward" size={20} color="#17181c" />
               </>
             ) : (
               <>
                 <Text style={styles.loginButtonText}>
-                  Log In
+                  Send Login Code
                 </Text>
                 <Ionicons name="arrow-forward" size={20} color="#17181c" />
               </>
             )}
           </TouchableOpacity>
 
-
         </View>
 
-        {/* Footer */}
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}> 
-          {/* Sign Up Link */}
-          <Text style={styles.signupText}>
-            Don't have an account?{" "}
-            <Text
-              style={styles.signupLink}
-              onPress={() => router.push("/auth/signup")}
-            >
-              Sign up
-            </Text>
-          </Text>
-        </View>
       </ScrollView>
     </>
   );
@@ -249,12 +315,28 @@ const styles = StyleSheet.create({
   forgotPasswordContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginBottom: 32,
+    marginBottom: 24,
   },
   forgotPasswordText: {
     color: "rgba(0, 206, 209, 0.8)",
     fontSize: 14,
     fontWeight: "500",
+  },
+  successContainer: {
+    backgroundColor: "rgba(16, 185, 129, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.2)",
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 24,
+  },
+  successText: {
+    color: "#10b981",
+    fontSize: 14,
+    flex: 1,
   },
   loginButton: {
     width: "100%",
@@ -293,6 +375,55 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textTransform: "uppercase",
     letterSpacing: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    backgroundColor: "#0f1113",
+    borderRadius: 12,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    color: "white",
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    color: "#9ca3af",
+    marginBottom: 16,
+  },
+  otpInput: {
+    backgroundColor: "rgba(23,24,28,0.5)",
+    color: "white",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#374151",
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  modalErrorText: {
+    color: "#f87171",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  verifyButton: {
+    backgroundColor: "#00ced1",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  verifyButtonText: {
+    color: "#17181c",
+    fontWeight: "bold",
+    fontSize: 16,
   },
   footer: {
     marginTop: "auto",
