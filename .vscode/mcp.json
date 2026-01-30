@@ -62,7 +62,7 @@
     },
     "stitch": {
       "type": "http",
-      "url": "https://api.stitchdata.com/v1/mcp",
+      "url": "https://stitch.googleapis.com/mcp",
       "headers": {
         "Accept": "application/json",
         "X-Goog-Api-Key": "${input:STITCH_GOOGLE_API_KEY}"
