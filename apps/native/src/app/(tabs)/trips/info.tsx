@@ -1,19 +1,31 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ImageBackground, Linking, Modal, Pressable, Alert, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  ImageBackground,
+  Linking,
+  Modal,
+  Pressable,
+  Alert,
+  Dimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { WebView } from 'react-native-webview';
-import Pdf from 'react-native-pdf';
-import { Directory, File, Paths } from 'expo-file-system/next';
+import { WebView } from "react-native-webview";
+import Pdf from "react-native-pdf";
+import { Directory, File, Paths } from "expo-file-system/next";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
+import { useAppSafeAreaInsets } from "~/contexts/safeArea";
 
 export default function TripInfoScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const tripId = typeof params.id === 'string' ? params.id : params.id?.[0];
+  const tripId = typeof params.id === "string" ? params.id : params.id?.[0];
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPdfModalVisible, setIsPdfModalVisible] = useState(false);
   const [pdfUri, setPdfUri] = useState<string | null>(null);
@@ -25,20 +37,20 @@ export default function TripInfoScreen() {
   useEffect(() => {
     const checkDownloadedFiles = () => {
       try {
-        const pdfDir = new Directory(Paths.document, 'pdfs');
+        const pdfDir = new Directory(Paths.document, "pdfs");
 
         // Check PDF Map
-        const pdfFile = new File(pdfDir, 'Verbier-Piste-Ski-Map-2024-25.pdf');
+        const pdfFile = new File(pdfDir, "Verbier-Piste-Ski-Map-2024-25.pdf");
         setIsPdfDownloaded(pdfFile.exists);
 
         // Check Infopack
-        const infopackFile = new File(pdfDir, 'Infopack.pdf');
+        const infopackFile = new File(pdfDir, "Infopack.pdf");
         setIsInfopackDownloaded(infopackFile.exists);
 
-        console.log('PDF downloaded:', pdfFile.exists);
-        console.log('Infopack downloaded:', infopackFile.exists);
+        console.log("PDF downloaded:", pdfFile.exists);
+        console.log("Infopack downloaded:", infopackFile.exists);
       } catch (error) {
-        console.error('Error checking downloaded files:', error);
+        console.error("Error checking downloaded files:", error);
       }
     };
 
@@ -69,10 +81,11 @@ export default function TripInfoScreen() {
       setIsDownloading(true);
 
       // URL of the PDF map
-      const url = 'https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf';
+      const url =
+        "https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf";
 
       // Create a folder inside internal storage
-      const pdfDir = new Directory(Paths.document, 'pdfs');
+      const pdfDir = new Directory(Paths.document, "pdfs");
 
       // Check if directory exists, if not create it
       if (!pdfDir.exists) {
@@ -80,16 +93,16 @@ export default function TripInfoScreen() {
       }
 
       // The downloaded file will have the name from URL
-      const downloadedFileName = 'Verbier-Piste-Ski-Map-2024-25.pdf';
+      const downloadedFileName = "Verbier-Piste-Ski-Map-2024-25.pdf";
       const file = new File(pdfDir, downloadedFileName);
 
-      console.log('Checking if file exists:', file.uri);
-      console.log('File exists:', file.exists);
+      console.log("Checking if file exists:", file.uri);
+      console.log("File exists:", file.exists);
 
       // Check if file already exists
       if (file.exists) {
         // File already downloaded, just open it
-        console.log('PDF already exists, opening:', file.uri);
+        console.log("PDF already exists, opening:", file.uri);
         setPdfUri(file.uri);
         setIsPdfModalVisible(true);
         setIsDownloading(false);
@@ -97,23 +110,26 @@ export default function TripInfoScreen() {
       }
 
       // Download the file using static method
-      console.log('Downloading PDF from:', url);
+      console.log("Downloading PDF from:", url);
 
       try {
         const downloadedFile = await File.downloadFileAsync(url, pdfDir);
-        console.log('PDF downloaded, file path:', downloadedFile.uri);
-        console.log('Downloaded file uri:', downloadedFile.uri);
+        console.log("PDF downloaded, file path:", downloadedFile.uri);
+        console.log("Downloaded file uri:", downloadedFile.uri);
 
         // Open the downloaded PDF immediately
         setPdfUri(downloadedFile.uri);
         setIsPdfModalVisible(true);
         setIsPdfDownloaded(true); // Update download status
       } catch (downloadError) {
-        console.error('Download error:', downloadError);
+        console.error("Download error:", downloadError);
 
         // If error is about file already existing, just open it
-        if ((downloadError as any)?.code === 'ERR_DESTINATION_ALREADY_EXISTS') {
-          console.log('File already exists, opening existing file');
+        const maybeDownloadError = downloadError as
+          | { code?: string }
+          | undefined;
+        if (maybeDownloadError?.code === "ERR_DESTINATION_ALREADY_EXISTS") {
+          console.log("File already exists, opening existing file");
           // Try to find the actual downloaded file
           const existingFile = new File(pdfDir, downloadedFileName);
           setPdfUri(existingFile.uri);
@@ -125,11 +141,8 @@ export default function TripInfoScreen() {
         throw downloadError;
       }
     } catch (error) {
-      console.error('Error handling PDF:', error);
-      Alert.alert(
-        'Error',
-        'Could not open the map. Please try again later.'
-      );
+      console.error("Error handling PDF:", error);
+      Alert.alert("Error", "Could not open the map. Please try again later.");
     } finally {
       setIsDownloading(false);
     }
@@ -147,7 +160,9 @@ export default function TripInfoScreen() {
           {/* Hero Header */}
           <View style={styles.heroCard}>
             <ImageBackground
-              source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAHhLaOxCenvDHeXPGxGdnYhEumFOLH5A9Wh5fAb63uNUkITSveOg2w84W1Q72tKNnm3nhMAdZEyYc_wtTSqm7mjn2XpnVUwdc4O1eHaoLbQxVFProgk7Jnuc3k0sW4fg5BKzNzg56WwaR-MesVKcfLd3fOfPxZGRKaV_PLrsgOyhirvj2CqfkrxBZpmQNCwGq56LVrNMBKRUwNzDK0bd7ttYLsQDQlxhJ2mEsvE1Mx4HrVpg3u58_JdMp0ZOzRu_9PjH43rDEbQfY" }}
+              source={{
+                uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAHhLaOxCenvDHeXPGxGdnYhEumFOLH5A9Wh5fAb63uNUkITSveOg2w84W1Q72tKNnm3nhMAdZEyYc_wtTSqm7mjn2XpnVUwdc4O1eHaoLbQxVFProgk7Jnuc3k0sW4fg5BKzNzg56WwaR-MesVKcfLd3fOfPxZGRKaV_PLrsgOyhirvj2CqfkrxBZpmQNCwGq56LVrNMBKRUwNzDK0bd7ttYLsQDQlxhJ2mEsvE1Mx4HrVpg3u58_JdMp0ZOzRu_9PjH43rDEbQfY",
+              }}
               style={styles.heroImage}
               imageStyle={{ borderRadius: borderRadius.xl }}
             >
@@ -175,7 +190,9 @@ export default function TripInfoScreen() {
                 activeOpacity={0.8}
               >
                 <ImageBackground
-                  source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuCHzNKnjzWDXauSdVPNidYoUGd1qjJ403upT8jZBMcs9oyIqPM11hjsbBSIBs6u_5chLFgfVG4mejWXsgPfu_9y0N8bJxBpErgmUNG7fARqfhlQfGNLvemBM4ALBIIQtp1MG4TRaFWaGLDvqRFdhCmezlqGrCMgWMXBj7CGZDysg-TDAt24y1EddpxoxP890kL_wo4ggi8Pc5lqtBPHTTMhwkZH45PhexYqQ-Vy8-aF5Sl8kDbpffkx6-Kq0GdoDqOmvcskgXS7JxQ" }}
+                  source={{
+                    uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuCHzNKnjzWDXauSdVPNidYoUGd1qjJ403upT8jZBMcs9oyIqPM11hjsbBSIBs6u_5chLFgfVG4mejWXsgPfu_9y0N8bJxBpErgmUNG7fARqfhlQfGNLvemBM4ALBIIQtp1MG4TRaFWaGLDvqRFdhCmezlqGrCMgWMXBj7CGZDysg-TDAt24y1EddpxoxP890kL_wo4ggi8Pc5lqtBPHTTMhwkZH45PhexYqQ-Vy8-aF5Sl8kDbpffkx6-Kq0GdoDqOmvcskgXS7JxQ",
+                  }}
                   style={styles.mapBackground}
                   imageStyle={{ borderRadius: borderRadius.xl, opacity: 0.4 }}
                 >
@@ -185,10 +202,16 @@ export default function TripInfoScreen() {
                       <Ionicons name="map" size={24} color={colors.primary} />
                     </View>
                     <Text style={styles.mapTitle}>Interactive Skimap</Text>
-                    <Text style={styles.mapSubtitle}>Navigate trails & lifts</Text>
+                    <Text style={styles.mapSubtitle}>
+                      Navigate trails & lifts
+                    </Text>
                     <View style={styles.mapAction}>
                       <Text style={styles.mapActionText}>Explore Map</Text>
-                      <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color={colors.primary}
+                      />
                     </View>
                   </View>
                 </ImageBackground>
@@ -203,19 +226,35 @@ export default function TripInfoScreen() {
               >
                 <View style={styles.pdfMapContent}>
                   <View style={styles.pdfMapIconWrapper}>
-                    <Ionicons name="document-text" size={28} color={colors.white} />
+                    <Ionicons
+                      name="document-text"
+                      size={28}
+                      color={colors.white}
+                    />
                   </View>
                   <View style={styles.pdfMapTextContainer}>
                     <View style={styles.pdfMapTitleRow}>
                       <Text style={styles.mapTitle}>PDF Map</Text>
                       {isPdfDownloaded ? (
-                        <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={14}
+                          color="#10b981"
+                        />
                       ) : (
-                        <Ionicons name="download" size={14} color={colors.slate400} />
+                        <Ionicons
+                          name="download"
+                          size={14}
+                          color={colors.slate400}
+                        />
                       )}
                     </View>
                     <Text style={styles.pdfMapSubtitle}>
-                      {isDownloading ? 'Downloading...' : isPdfDownloaded ? 'Downloaded' : 'Tap to Download'}
+                      {isDownloading
+                        ? "Downloading..."
+                        : isPdfDownloaded
+                          ? "Downloaded"
+                          : "Tap to Download"}
                     </Text>
                   </View>
                 </View>
@@ -231,19 +270,31 @@ export default function TripInfoScreen() {
                 activeOpacity={0.8}
               >
                 <View style={styles.bentoIconWrapper}>
-                  <Ionicons name="document-text" size={28} color={colors.white} />
+                  <Ionicons
+                    name="document-text"
+                    size={28}
+                    color={colors.white}
+                  />
                 </View>
                 <View style={styles.bentoContent}>
                   <View style={styles.bentoTitleRow}>
                     <Text style={styles.bentoTitle}>Infopack</Text>
                     {isInfopackDownloaded ? (
-                      <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={14}
+                        color="#10b981"
+                      />
                     ) : (
-                      <Ionicons name="download" size={14} color={colors.slate400} />
+                      <Ionicons
+                        name="download"
+                        size={14}
+                        color={colors.slate400}
+                      />
                     )}
                   </View>
                   <Text style={styles.bentoSubtitle}>
-                    {isInfopackDownloaded ? 'Downloaded' : 'Tap to Download'}
+                    {isInfopackDownloaded ? "Downloaded" : "Tap to Download"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -255,11 +306,17 @@ export default function TripInfoScreen() {
                 activeOpacity={0.8}
               >
                 <View style={styles.whatsappIconWrapper}>
-                  <Ionicons name="chatbubble" size={28} color={colors.accentMagenta} />
+                  <Ionicons
+                    name="chatbubble"
+                    size={28}
+                    color={colors.accentMagenta}
+                  />
                 </View>
                 <View style={styles.bentoContent}>
                   <Text style={styles.bentoTitle}>WhatsApp</Text>
-                  <Text style={styles.whatsappSubtitle}>Join Trip Community</Text>
+                  <Text style={styles.whatsappSubtitle}>
+                    Join Trip Community
+                  </Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -273,7 +330,11 @@ export default function TripInfoScreen() {
             {/* Smaller Action Tiles */}
             <View style={styles.resourceGrid}>
               <TouchableOpacity style={styles.resourceTile}>
-                <Ionicons name="alert-circle" size={24} color={colors.primary} />
+                <Ionicons
+                  name="alert-circle"
+                  size={24}
+                  color={colors.primary}
+                />
                 <Text style={styles.resourceText}>SOS</Text>
               </TouchableOpacity>
 
@@ -296,7 +357,6 @@ export default function TripInfoScreen() {
           </View>
         </ScrollView>
 
-
         {/* Map Modal with WebView */}
         <Modal
           visible={isMapModalVisible}
@@ -305,7 +365,7 @@ export default function TripInfoScreen() {
           onRequestClose={() => setIsMapModalVisible(false)}
         >
           <View style={styles.modalContainer}>
-            <SafeAreaView style={styles.modalSafeArea} edges={['top']}>
+            <SafeAreaView style={styles.modalSafeArea} edges={["top"]}>
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Interactive Ski Map</Text>
@@ -320,7 +380,9 @@ export default function TripInfoScreen() {
 
             {/* WebView */}
             <WebView
-              source={{ uri: 'https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv=' }}
+              source={{
+                uri: "https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv=",
+              }}
               style={styles.webView}
               startInLoadingState={true}
               scalesPageToFit={true}
@@ -338,7 +400,7 @@ export default function TripInfoScreen() {
           onRequestClose={() => setIsPdfModalVisible(false)}
         >
           <View style={styles.modalContainer}>
-            <SafeAreaView style={styles.modalSafeArea} edges={['top']}>
+            <SafeAreaView style={styles.modalSafeArea} edges={["top"]}>
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Ski Map PDF</Text>
@@ -361,8 +423,8 @@ export default function TripInfoScreen() {
                   console.log(`PDF loaded with ${numberOfPages} pages`);
                 }}
                 onError={(error) => {
-                  console.error('PDF Error:', error);
-                  Alert.alert('Error', 'Could not load PDF');
+                  console.error("PDF Error:", error);
+                  Alert.alert("Error", "Could not load PDF");
                 }}
                 enablePaging={true}
               />
@@ -393,33 +455,33 @@ const styles = StyleSheet.create({
   heroCard: {
     height: 192,
     borderRadius: borderRadius.xl,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   heroImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(23, 24, 28, 0.4)',
+    backgroundColor: "rgba(23, 24, 28, 0.4)",
   },
   heroContent: {
     flex: 1,
     padding: spacing.lg,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   liveBadge: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   liveBadgeText: {
     fontSize: 10,
     fontWeight: typography.bold,
     color: colors.backgroundDark,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 2,
   },
   heroTextContainer: {
@@ -445,7 +507,7 @@ const styles = StyleSheet.create({
   mapTileLarge: {
     height: 176,
     borderRadius: borderRadius.xl,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: colors.primaryOpacity20,
     shadowColor: colors.primary,
@@ -455,25 +517,25 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   mapBackground: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   mapGradient: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(39, 41, 53, 0.85)',
+    backgroundColor: "rgba(39, 41, 53, 0.85)",
   },
   mapContent: {
     flex: 1,
     padding: spacing.xl,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   mapIconWrapper: {
     width: 40,
     height: 40,
     borderRadius: borderRadius.md,
     backgroundColor: colors.primaryOpacity20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   mapTitle: {
     fontSize: typography.lg,
@@ -485,21 +547,21 @@ const styles = StyleSheet.create({
     color: colors.slate400,
   },
   mapAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
   },
   mapActionText: {
     fontSize: 10,
     fontWeight: typography.bold,
     color: colors.primary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1,
   },
 
   // Grid Row
   gridRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
   },
 
@@ -508,7 +570,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 176,
     borderRadius: borderRadius.xl,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: colors.primaryOpacity20,
   },
@@ -516,22 +578,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.cardDark,
     padding: spacing.xl,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   pdfMapIconWrapper: {
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   pdfMapTextContainer: {
     gap: 4,
   },
   pdfMapTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
   },
   pdfMapSubtitle: {
@@ -547,9 +609,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: "rgba(255, 255, 255, 0.05)",
     padding: spacing.xl,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   whatsappTile: {
     flex: 1,
@@ -559,7 +621,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.magentaOpacity30,
     padding: spacing.xl,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     shadowColor: colors.accentMagenta,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
@@ -570,24 +632,24 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   whatsappIconWrapper: {
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
     backgroundColor: colors.magentaOpacity10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   bentoContent: {
     gap: 4,
   },
   bentoTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
   },
   bentoTitle: {
@@ -604,14 +666,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.accentMagenta,
     fontWeight: typography.medium,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1.5,
   },
 
   // Section Header
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.md,
     paddingTop: spacing.lg,
   },
@@ -619,42 +681,42 @@ const styles = StyleSheet.create({
     fontSize: typography.xs,
     fontWeight: typography.bold,
     color: colors.slate500,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 2,
   },
   sectionDivider: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
 
   // Resource Grid
   resourceGrid: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
   },
   resourceTile: {
     flex: 1,
-    backgroundColor: 'rgba(39, 41, 53, 0.5)',
+    backgroundColor: "rgba(39, 41, 53, 0.5)",
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: "rgba(255, 255, 255, 0.05)",
     padding: spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing.sm,
   },
   resourceText: {
     fontSize: 10,
     fontWeight: typography.bold,
     color: colors.white,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 
   // Branding
   brandingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
     paddingVertical: spacing.xl * 2,
     opacity: 0.2,
@@ -667,7 +729,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.bold,
     color: colors.white,
     letterSpacing: 3,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 
   // Modal
@@ -681,9 +743,9 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.primaryOpacity10,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
@@ -697,8 +759,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primaryOpacity10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   webView: {
     flex: 1,
@@ -706,7 +768,7 @@ const styles = StyleSheet.create({
   },
   pdf: {
     flex: 1,
-    width: Dimensions.get('window').width,
+    width: Dimensions.get("window").width,
     backgroundColor: colors.backgroundDark,
   },
 });
