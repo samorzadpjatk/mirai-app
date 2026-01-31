@@ -43,6 +43,13 @@ const challengeSelect: Prisma.ChallengeSelect = {
 } as const;
 
 export const challengeRouter = createTRPCRouter({
+  // Admin-only endpoint to fetch all challenges across trips
+  getAll: adminProcedure.query(async ({ ctx }) => {
+    return ctx.db.challenge.findMany({
+      select: challengeSelect,
+      orderBy: { createdAt: "desc" },
+    });
+  }),
   getAllByTrip: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -74,17 +81,17 @@ export const challengeRouter = createTRPCRouter({
                       id: true,
                       firstName: true,
                       lastName: true,
-                    }
+                    },
                   },
                   participants: {
                     select: {
                       id: true,
-                    }
-                  }
-                }
-              }
-            } 
-          }
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       });
 
