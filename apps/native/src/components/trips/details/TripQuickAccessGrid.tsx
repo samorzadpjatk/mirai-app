@@ -1,0 +1,157 @@
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+
+interface TripQuickAccessGridProps {
+  onOpenGroups: () => void;
+  onOpenMap: () => void;
+  onOpenChallenges: () => void;
+  onOpenLeaderboard: () => void;
+  onOpenInfo: () => void;
+}
+
+export function TripQuickAccessGrid({
+  onOpenGroups,
+  onOpenMap,
+  onOpenChallenges,
+  onOpenLeaderboard,
+  onOpenInfo,
+}: TripQuickAccessGridProps) {
+  return (
+    <View style={styles.gridContainer}>
+      <TouchableOpacity
+        style={[styles.gridCard, styles.gridCardGlow]}
+        onPress={onOpenGroups}
+      >
+        <View style={styles.gridIconWrapper}>
+          <Ionicons name="grid" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.gridCardContent}>
+          <Text style={styles.gridCardTitle}>Groups</Text>
+          <Text style={styles.gridCardSubtitle}>Team Roster</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.gridCard} onPress={onOpenMap}>
+        <View style={styles.gridIconWrapper}>
+          <Ionicons name="map" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.gridCardContent}>
+          <Text style={styles.gridCardTitle}>Map</Text>
+          <Text style={styles.gridCardSubtitle}>Trip Locations</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.gridCard} onPress={onOpenChallenges}>
+        <View style={styles.gridIconWrapper}>
+          <Ionicons name="locate" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.gridCardContent}>
+          <Text style={styles.gridCardTitle}>Challenges</Text>
+          <Text style={styles.gridCardSubtitle}>Daily Quests</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.gridCard} onPress={onOpenLeaderboard}>
+        <View style={styles.gridIconWrapper}>
+          <Ionicons name="trophy" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.gridCardContent}>
+          <Text style={styles.gridCardTitle}>Leaderboard</Text>
+          <Text style={styles.gridCardSubtitle}>Quest Rankings</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.gridCardWide} onPress={onOpenInfo}>
+        <View style={styles.gridIconWrapperLarge}>
+          <Ionicons
+            name="information-circle"
+            size={24}
+            color={colors.primary}
+          />
+        </View>
+        <View style={styles.gridCardContentWide}>
+          <Text style={styles.gridCardTitle}>Trip Info</Text>
+          <Text style={styles.gridCardSubtitle}>
+            Schedules, documents & rules
+          </Text>
+        </View>
+        <Ionicons
+          name="chevron-forward"
+          size={24}
+          color={colors.textTertiary}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  gridCard: {
+    width: "48%",
+    backgroundColor: colors.cardDark,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity10,
+    gap: spacing.lg,
+  },
+  gridCardGlow: {
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    elevation: 4,
+  },
+  gridCardWide: {
+    width: "100%",
+    backgroundColor: colors.cardDark,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
+  },
+  gridIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.primaryOpacity10,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  gridIconWrapperLarge: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.primaryOpacity10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gridCardContent: {
+    gap: 2,
+  },
+  gridCardContentWide: {
+    flex: 1,
+    gap: 2,
+  },
+  gridCardTitle: {
+    fontSize: typography.lg,
+    fontWeight: typography.bold,
+    color: colors.white,
+    lineHeight: typography.lg * typography.tight,
+  },
+  gridCardSubtitle: {
+    fontSize: typography.xs,
+    color: colors.textTertiary,
+  },
+});
