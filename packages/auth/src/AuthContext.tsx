@@ -2,11 +2,15 @@
 
 import { createContext, useEffect, useState, type ReactNode } from "react";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
-import type { SupabaseClient, SupabaseSession } from "@integral-2025-app/supabase";
+import type {
+  SupabaseClient,
+  SupabaseSession,
+} from "@integral-2025-app/supabase";
 import type {
   AuthContextValue,
   AuthUser,
   SignInWithOtpOptions,
+  SignUpWithOtpOptions,
 } from "./types";
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
@@ -81,9 +85,7 @@ export function AuthProvider({
     };
   }, [client, onUserFetch]);
 
-  const signInWithOtp = async ({
-    email,
-  }: SignInWithOtpOptions) => {
+  const signInWithOtp = async ({ email }: SignInWithOtpOptions) => {
     const { error } = await client.auth.signInWithOtp({
       email,
     });
@@ -95,7 +97,8 @@ export function AuthProvider({
 
   const signUpWithOtp = async ({ email, metadata }: SignUpWithOtpOptions) => {
     // Use standard signUp to create a pending user and trigger email verification/OTP
-    const { data, error } = await client.auth.signUp({
+
+    const { data, error } = await client.auth.signInWithOtp({
       email,
       options: {
         data: metadata,
@@ -105,14 +108,20 @@ export function AuthProvider({
     if (error) {
       throw error;
     }
-
-    // Do not set session here — verification via OTP must complete first
   };
 
-
-
-  const verifyOtp = async ({ email, token }: { email: string; token: string }) => {
-    const { error } = await client.auth.verifyOtp({ email, token, type: "email" });
+  const verifyOtp = async ({
+    email,
+    token,
+  }: {
+    email: string;
+    token: string;
+  }) => {
+    const { error } = await client.auth.verifyOtp({
+      email,
+      token,
+      type: "email",
+    });
     if (error) {
       throw error;
     }
@@ -160,6 +169,7 @@ export function AuthProvider({
     isLoading,
     isAuthenticated: !!session && !!user,
     signInWithOtp,
+    signUpWithOtp,
     verifyOtp,
     signOut,
     refreshSession,

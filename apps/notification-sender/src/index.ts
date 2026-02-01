@@ -11,6 +11,12 @@ function main() {
   const TRPC_HOST = process.env.TRPC_HOST;
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!TRPC_HOST) throw new Error("Missing env: TRPC_HOST");
+  if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
+  if (!SUPABASE_SERVICE_ROLE_KEY)
+    throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
+
   const supabase = createClient(
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
@@ -37,9 +43,10 @@ function main() {
               notificationId: id,
             });
 
-            const mobile = await client.notificationSender.sendMobileNotifications.mutate({
-              notificationId: id,
-            });
+            const mobile =
+              await client.notificationSender.sendMobileNotifications.mutate({
+                notificationId: id,
+              });
             console.log("Delivery summary:", { mobile });
 
             await client.notificationSender.trackDeliveryComplete.mutate({
@@ -65,12 +72,9 @@ function main() {
     });
 
   // Start the inactivity checker scheduler (runs every 5 minutes)
-  const inactivityScheduler = createInactivityScheduler(
-    async () => {
-      await client.notificationSender.checkInactiveUsers.mutate();
-    },
-    1,
-  );
+  const inactivityScheduler = createInactivityScheduler(async () => {
+    await client.notificationSender.checkInactiveUsers.mutate();
+  }, 1);
   inactivityScheduler.start();
 
   process.on("SIGINT", () => {

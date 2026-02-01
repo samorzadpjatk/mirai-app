@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import React from "react";
 
 import {
@@ -15,8 +15,10 @@ import { useRouter } from "expo-router";
 import type { UseSignupFormResult } from "@integral-2025-app/auth/client";
 
 const mockUseSignupForm = jest.fn<UseSignupFormResult, []>();
+const mockVerifyOtp = jest.fn();
 jest.mock("@integral-2025-app/auth", () => ({
   useSignupForm: () => mockUseSignupForm(),
+  useAuth: () => ({ verifyOtp: mockVerifyOtp }),
 }));
 jest.mock("expo-router");
 jest.mock("expo-status-bar", () => ({
@@ -46,7 +48,7 @@ describe("SignupScreen", () => {
     mockUseRouter.mockReturnValue({
       replace: mockRouterReplace,
       push: mockRouterPush,
-    } as unknown as ReturnType<typeof useRouter>);
+    });
 
     mockUseSignupForm.mockReturnValue({
       formState: {
@@ -62,11 +64,6 @@ describe("SignupScreen", () => {
       clearError: mockClearError,
       clearSent: mockClearSent,
     });
-
-    // mock useAuth verifyOtp
-    (require("@integral-2025-app/auth") as any).useAuth = () => ({
-      verifyOtp: mockVerifyOtp,
-    });
   });
 
   afterEach(() => {
@@ -74,7 +71,12 @@ describe("SignupScreen", () => {
   });
 
   it("should render signup form", () => {
-    const { getAllByText, getByText, getByPlaceholderText, queryByPlaceholderText } = render(
+    const {
+      getAllByText,
+      getByText,
+      getByPlaceholderText,
+      queryByPlaceholderText,
+    } = render(
       <TestWrapper>
         <SignupScreen />
       </TestWrapper>,
@@ -118,8 +120,6 @@ describe("SignupScreen", () => {
 
     expect(mockSetEmail).toHaveBeenCalledWith("test@example.com");
   });
-
-
 
   it("should call handleSubmit when create account button is pressed", async () => {
     mockHandleSubmit.mockResolvedValue(undefined);
@@ -170,21 +170,24 @@ describe("SignupScreen", () => {
 
     await waitFor(() => {
       expect(mockHandleSubmit).toHaveBeenCalled();
-      expect(getByText('Enter verification code')).toBeTruthy();
+      expect(getByText("Enter verification code")).toBeTruthy();
     });
 
     // Enter OTP and verify
-    const otpInput = getByPlaceholderText('123456');
-    fireEvent.changeText(otpInput, '654321');
+    const otpInput = getByPlaceholderText("123456");
+    fireEvent.changeText(otpInput, "654321");
 
     mockVerifyOtp.mockResolvedValueOnce(undefined);
 
-    const verifyButton = getByText('Verify & Sign In');
+    const verifyButton = getByText("Verify & Sign In");
     fireEvent.press(verifyButton);
 
     await waitFor(() => {
-      expect(mockVerifyOtp).toHaveBeenCalledWith({ email: 'test@example.com', token: '654321' });
-      expect(mockRouterReplace).toHaveBeenCalledWith('/');
+      expect(mockVerifyOtp).toHaveBeenCalledWith({
+        email: "test@example.com",
+        token: "654321",
+      });
+      expect(mockRouterReplace).toHaveBeenCalledWith("/");
     });
   });
 
@@ -245,18 +248,15 @@ describe("SignupScreen", () => {
       formState: {
         name: "John Doe",
         email: "test@example.com",
-        password: "password123",
-        confirmPassword: "password123",
         isLoading: true,
         error: null,
-        success: false,
+        isSent: false,
       },
       setName: mockSetName,
       setEmail: mockSetEmail,
-      setPassword: mockSetPassword,
-      setConfirmPassword: mockSetConfirmPassword,
       handleSubmit: mockHandleSubmit,
       clearError: jest.fn(),
+      clearSent: mockClearSent,
     });
 
     const { getByPlaceholderText } = render(
@@ -298,7 +298,7 @@ describe("SignupScreen", () => {
       </TestWrapper>,
     );
 
-    expect(getByText('Enter verification code')).toBeTruthy();
+    expect(getByText("Enter verification code")).toBeTruthy();
   });
 
   it("should navigate to login when sign in link is pressed", () => {
@@ -356,18 +356,15 @@ describe("SignupScreen", () => {
       formState: {
         name: "Jane Smith",
         email: "jane@example.com",
-        password: "pass123",
-        confirmPassword: "pass123",
         isLoading: false,
         error: null,
-        success: false,
+        isSent: false,
       },
       setName: mockSetName,
       setEmail: mockSetEmail,
-      setPassword: mockSetPassword,
-      setConfirmPassword: mockSetConfirmPassword,
       handleSubmit: mockHandleSubmit,
       clearError: jest.fn(),
+      clearSent: mockClearSent,
     });
 
     const { getByPlaceholderText } = render(

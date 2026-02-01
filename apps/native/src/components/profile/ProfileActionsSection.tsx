@@ -1,0 +1,140 @@
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useAuth } from "@integral-2025-app/auth/client";
+import { useRouter } from "expo-router";
+import { useNotifications } from "~/hooks/notifications";
+
+interface ProfileActionsSectionProps {
+  onEditProfile?: () => void;
+}
+
+export function ProfileActionsSection({
+  onEditProfile,
+}: ProfileActionsSectionProps) {
+  const { signOut } = useAuth();
+  const router = useRouter();
+  const { isSubscribed, isLoading, onTogglePress } = useNotifications();
+
+  const handleToggle = () => {
+    onTogglePress();
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace("/auth/login");
+  };
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Actions</Text>
+
+      <TouchableOpacity style={styles.actionButton} onPress={onEditProfile}>
+        <View style={styles.actionIcon}>
+          <Ionicons name="person" size={20} color={colors.white} />
+        </View>
+        <Text style={styles.actionText}>Edit Profile</Text>
+        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.actionButton, isSubscribed && styles.activeButton]}
+        onPress={() => void handleToggle()}
+        disabled={isLoading}
+      >
+        <View style={[styles.actionIcon, isSubscribed && styles.activeIcon]}>
+          {isSubscribed ? (
+            <Ionicons name="notifications" size={20} color={colors.primary} />
+          ) : (
+            <Ionicons name="notifications-off" size={20} color={colors.white} />
+          )}
+        </View>
+        <Text style={styles.actionText}>
+          {isSubscribed ? "Notifications Enabled" : "Enable Notifications"}
+        </Text>
+        {isSubscribed && (
+          <View style={styles.activeBadge}>
+            <Text style={styles.activeBadgeText}>ON</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.actionButton, styles.dangerButton]}
+        onPress={() => void handleSignOut()}
+      >
+        <View style={[styles.actionIcon, styles.dangerIcon]}>
+          <Ionicons name="log-out" size={20} color="#ef4444" />
+        </View>
+        <Text style={[styles.actionText, styles.dangerText]}>Sign Out</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  section: {
+    marginBottom: spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.cardDark,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.05)",
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    backgroundColor: "rgba(0, 206, 209, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+  },
+  actionText: {
+    flex: 1,
+    fontSize: typography.base,
+    fontWeight: typography.medium,
+    color: colors.white,
+  },
+  dangerButton: {
+    borderColor: "rgba(239, 68, 68, 0.2)",
+  },
+  dangerIcon: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+  },
+  dangerText: {
+    color: "#ef4444",
+  },
+  activeButton: {
+    borderColor: "rgba(0, 206, 209, 0.3)",
+  },
+  activeIcon: {
+    backgroundColor: "rgba(0, 206, 209, 0.2)",
+  },
+  activeBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
+  },
+  activeBadgeText: {
+    fontSize: 10,
+    fontWeight: typography.bold,
+    color: colors.backgroundDark,
+    letterSpacing: 1,
+  },
+});
