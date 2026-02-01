@@ -1,8 +1,25 @@
 import React, { useEffect } from "react";
 import { useColorScheme, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { SafeAreaInsetsProvider } from '~/contexts/safeArea';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { SafeAreaInsetsProvider } from "~/contexts/safeArea";
+import * as Notifications from "expo-notifications";
+
+// Global handler for notifications (module-level)
+Notifications.setNotificationHandler({
+  // eslint-disable-next-line @typescript-eslint/require-await
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 import "../global.css";
 import {
   useFonts,
@@ -13,8 +30,12 @@ import {
   IBMPlexSans_500Medium,
   IBMPlexSans_600SemiBold,
   IBMPlexSans_700Bold,
-} from '@expo-google-fonts/ibm-plex-sans';
-import { AuthProvider, useAuthLoading, useAuth } from "@integral-2025-app/auth/client";
+} from "@expo-google-fonts/ibm-plex-sans";
+import {
+  AuthProvider,
+  useAuthLoading,
+  useAuth,
+} from "@integral-2025-app/auth/client";
 import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { APIProvider } from "@integral-2025-app/trpc/client";
@@ -36,7 +57,7 @@ const SUPABASE_ANON_KEY: string =
 // Validate Supabase configuration
 if (!SUPABASE_ANON_KEY) {
   console.error(
-    "[Supabase] EXPO_PUBLIC_SUPABASE_ANON_KEY is missing. Please set it in your .env file."
+    "[Supabase] EXPO_PUBLIC_SUPABASE_ANON_KEY is missing. Please set it in your .env file.",
   );
 }
 // Both HTTP and WebSocket tRPC are served by the Fastify server
@@ -73,7 +94,9 @@ function RootLayoutContent() {
   const insets = useSafeAreaInsets();
 
   // Get theme colors for headers
-  const headerBackgroundColor = isDark ? colors.backgroundDark : colors.backgroundLight;
+  const headerBackgroundColor = isDark
+    ? colors.backgroundDark
+    : colors.backgroundLight;
   const headerTintColor = isDark ? colors.textDark : colors.textLight;
 
   useEffect(() => {
@@ -107,13 +130,13 @@ function RootLayoutContent() {
               headerShadowVisible: true,
               headerTitleStyle: {
                 fontWeight: "600",
-              }
+              },
             }}
           >
             <Stack.Screen
               name="(tabs)"
               options={{
-                headerShown: false
+                headerShown: false,
               }}
             />
             <Stack.Screen
@@ -121,7 +144,7 @@ function RootLayoutContent() {
               options={{
                 title: "Sign In",
                 headerShown: false,
-                animation: "fade"
+                animation: "fade",
               }}
             />
             <Stack.Screen
@@ -129,7 +152,7 @@ function RootLayoutContent() {
               options={{
                 title: "Sign Up",
                 headerShown: false,
-                animation: "fade"
+                animation: "fade",
               }}
             />
             <Stack.Screen
@@ -221,7 +244,8 @@ function RootLayoutContent() {
               }}
             />
           </Stack>
-        </SafeAreaInsetsProvider>)}
+        </SafeAreaInsetsProvider>
+      )}
     </View>
   );
 }
