@@ -44,6 +44,8 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
+      db-migrations:
+        condition: service_completed_successfully
 
   notification-sender:
     image: ghcr.io/samorzadpjatk/pjapp-notification-sender:latest
@@ -63,6 +65,19 @@ services:
         condition: service_healthy
       backend-server:
         condition: service_started
+
+  db-migrations:
+    build:
+      context: ..
+      dockerfile: packages/db/Dockerfile.migrations
+    environment:
+      DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
+      PRISMA_MIGRATE_SKIP_SEED: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["bun", "run", "db:migrate"]
+    restart: "no"
 
   email-templates:
     container_name: supabase-email-templates
