@@ -26,6 +26,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@integral-2025-app/supabase": "workspace:*",
     "@prisma/client": "^7.3.0",
     "@prisma/adapter-pg": "^7.3.0",
     "@t3-oss/env-core": "^0.13.10",
