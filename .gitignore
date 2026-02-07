@@ -78,3 +78,5 @@ yarn.lock
 # OS
 Thumbs.db
 /environment/dev/volumes/
+
+.idea
