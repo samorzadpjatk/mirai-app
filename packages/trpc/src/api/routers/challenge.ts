@@ -13,33 +13,29 @@ const challengeBaseSelect: Prisma.ChallengeSelect = {
   name: true,
   description: true,
   image: true,
-  points: true,
+  submissionType: true,
+  scoringCategory: true,
+  isRecurring: true,
+  dailyStartTime: true,
+  dailyEndTime: true,
+  basePoints: true,
+  firstPlacePoints: true,
+  secondPlacePoints: true,
+  thirdPlacePoints: true,
+  status: true,
+  startTime: true,
+  endTime: true,
+  votingStartTime: true,
+  votingEndTime: true,
+  targetLatitude: true,
+  targetLongitude: true,
+  autoApprove: true,
   createdAt: true,
   updatedAt: true,
 } as const;
 
 const challengeSelect: Prisma.ChallengeSelect = {
   ...challengeBaseSelect,
-  groups: {
-    include: {
-      group: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          image: true,
-          organizer: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
-      },
-    },
-  },
 } as const;
 
 export const challengeRouter = createTRPCRouter({
@@ -66,32 +62,7 @@ export const challengeRouter = createTRPCRouter({
       const challenge = await ctx.db.challenge.findFirst({
         where: { id: input.id, tripId: input.tripId },
         select: {
-          name: true,
-          description: true,
-          image: true,
-          points: true,
-          groups: {
-            include: {
-              group: {
-                select: {
-                  id: true,
-                  name: true,
-                  organizer: {
-                    select: {
-                      id: true,
-                      firstName: true,
-                      lastName: true,
-                    },
-                  },
-                  participants: {
-                    select: {
-                      id: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
+          ...challengeBaseSelect,
         },
       });
 
@@ -112,38 +83,69 @@ export const challengeRouter = createTRPCRouter({
         name: z.string().min(1),
         description: z.string().optional(),
         image: z.string().url().optional(),
-        points: z.number().int().min(0).default(0),
-        groupIds: z.array(z.string()).optional(),
+        submissionType: z.enum([
+          "IMAGE",
+          "MULTI_IMAGE",
+          "VIDEO",
+          "TEXT",
+          "IMAGE_LOCATION",
+          "LOCATION",
+          "QR_CODE",
+        ]),
+        scoringCategory: z.enum([
+          "SPEED",
+          "UNLIMITED",
+          "JUDGED_STAFF",
+          "PEER_VOTING",
+        ]),
+        isRecurring: z.boolean().optional(),
+        dailyStartTime: z.string().optional(),
+        dailyEndTime: z.string().optional(),
+        basePoints: z.number().int().min(0).optional(),
+        firstPlacePoints: z.number().int().min(0).optional(),
+        secondPlacePoints: z.number().int().min(0).optional(),
+        thirdPlacePoints: z.number().int().min(0).optional(),
+        status: z.enum([
+          "HIDDEN",
+          "VISIBLE",
+          "ACTIVE",
+          "VOTING_PHASE",
+          "COMPLETED",
+          "CANCELLED",
+        ]).optional(),
+        startTime: z.coerce.date().optional(),
+        endTime: z.coerce.date().optional(),
+        votingStartTime: z.coerce.date().optional(),
+        votingEndTime: z.coerce.date().optional(),
+        targetLatitude: z.number().optional(),
+        targetLongitude: z.number().optional(),
+        autoApprove: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.groupIds && input.groupIds.length > 0) {
-        const validGroupsCount = await ctx.db.group.count({
-          where: { id: { in: input.groupIds }, tripId: input.tripId },
-        });
-        if (validGroupsCount !== input.groupIds.length) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Some groups do not belong to the trip",
-          });
-        }
-      }
-
       const challenge = await ctx.db.challenge.create({
         data: {
           tripId: input.tripId,
           name: input.name,
           description: input.description,
           image: input.image,
-          points: input.points,
-          groups:
-            input.groupIds && input.groupIds.length > 0
-              ? {
-                  createMany: {
-                    data: input.groupIds.map((groupId) => ({ groupId })),
-                  },
-                }
-              : undefined,
+          submissionType: input.submissionType,
+          scoringCategory: input.scoringCategory,
+          isRecurring: input.isRecurring,
+          dailyStartTime: input.dailyStartTime,
+          dailyEndTime: input.dailyEndTime,
+          basePoints: input.basePoints,
+          firstPlacePoints: input.firstPlacePoints,
+          secondPlacePoints: input.secondPlacePoints,
+          thirdPlacePoints: input.thirdPlacePoints,
+          status: input.status,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          votingStartTime: input.votingStartTime,
+          votingEndTime: input.votingEndTime,
+          targetLatitude: input.targetLatitude,
+          targetLongitude: input.targetLongitude,
+          autoApprove: input.autoApprove,
         },
         select: challengeSelect,
       });
@@ -159,8 +161,44 @@ export const challengeRouter = createTRPCRouter({
         name: z.string().min(1).optional(),
         description: z.string().optional(),
         image: z.string().url().optional(),
-        points: z.number().int().min(0).optional(),
-        groupIds: z.array(z.string()).optional(),
+        submissionType: z
+          .enum([
+            "IMAGE",
+            "MULTI_IMAGE",
+            "VIDEO",
+            "TEXT",
+            "IMAGE_LOCATION",
+            "LOCATION",
+            "QR_CODE",
+          ])
+          .optional(),
+        scoringCategory: z
+          .enum(["SPEED", "UNLIMITED", "JUDGED_STAFF", "PEER_VOTING"])
+          .optional(),
+        isRecurring: z.boolean().optional(),
+        dailyStartTime: z.string().optional(),
+        dailyEndTime: z.string().optional(),
+        basePoints: z.number().int().min(0).optional(),
+        firstPlacePoints: z.number().int().min(0).optional(),
+        secondPlacePoints: z.number().int().min(0).optional(),
+        thirdPlacePoints: z.number().int().min(0).optional(),
+        status: z
+          .enum([
+            "HIDDEN",
+            "VISIBLE",
+            "ACTIVE",
+            "VOTING_PHASE",
+            "COMPLETED",
+            "CANCELLED",
+          ])
+          .optional(),
+        startTime: z.coerce.date().optional(),
+        endTime: z.coerce.date().optional(),
+        votingStartTime: z.coerce.date().optional(),
+        votingEndTime: z.coerce.date().optional(),
+        targetLatitude: z.number().optional(),
+        targetLongitude: z.number().optional(),
+        autoApprove: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -176,35 +214,29 @@ export const challengeRouter = createTRPCRouter({
         });
       }
 
-      if (input.groupIds) {
-        const validGroupsCount = await ctx.db.group.count({
-          where: { id: { in: input.groupIds }, tripId: input.tripId },
-        });
-        if (validGroupsCount !== input.groupIds.length) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Some groups do not belong to the trip",
-          });
-        }
-      }
-
       const challenge = await ctx.db.challenge.update({
         where: { id: input.id },
         data: {
           name: input.name,
           description: input.description,
           image: input.image,
-          points: input.points,
-          groups:
-            input.groupIds !== undefined
-              ? {
-                  deleteMany: {},
-                  createMany:
-                    input.groupIds.length > 0
-                      ? { data: input.groupIds.map((groupId) => ({ groupId })) }
-                      : undefined,
-                }
-              : undefined,
+          submissionType: input.submissionType,
+          scoringCategory: input.scoringCategory,
+          isRecurring: input.isRecurring,
+          dailyStartTime: input.dailyStartTime,
+          dailyEndTime: input.dailyEndTime,
+          basePoints: input.basePoints,
+          firstPlacePoints: input.firstPlacePoints,
+          secondPlacePoints: input.secondPlacePoints,
+          thirdPlacePoints: input.thirdPlacePoints,
+          status: input.status,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          votingStartTime: input.votingStartTime,
+          votingEndTime: input.votingEndTime,
+          targetLatitude: input.targetLatitude,
+          targetLongitude: input.targetLongitude,
+          autoApprove: input.autoApprove,
         },
         select: challengeSelect,
       });
@@ -227,9 +259,6 @@ export const challengeRouter = createTRPCRouter({
         });
       }
 
-      await ctx.db.challengeGroup.deleteMany({
-        where: { challengeId: input.id },
-      });
       await ctx.db.challenge.delete({ where: { id: input.id } });
 
       return { success: true };

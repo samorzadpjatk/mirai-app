@@ -58,7 +58,9 @@ export const ModelName = {
   UserEvent: 'UserEvent',
   Group: 'Group',
   Challenge: 'Challenge',
-  ChallengeGroup: 'ChallengeGroup',
+  ChallengeSubmission: 'ChallengeSubmission',
+  ChallengeVote: 'ChallengeVote',
+  SubmissionReport: 'SubmissionReport',
   CoinTransaction: 'CoinTransaction',
   NotificationSchedule: 'NotificationSchedule',
   Notification: 'Notification',
@@ -179,7 +181,23 @@ export const ChallengeScalarFieldEnum = {
   name: 'name',
   description: 'description',
   image: 'image',
-  points: 'points',
+  submissionType: 'submissionType',
+  scoringCategory: 'scoringCategory',
+  isRecurring: 'isRecurring',
+  dailyStartTime: 'dailyStartTime',
+  dailyEndTime: 'dailyEndTime',
+  basePoints: 'basePoints',
+  firstPlacePoints: 'firstPlacePoints',
+  secondPlacePoints: 'secondPlacePoints',
+  thirdPlacePoints: 'thirdPlacePoints',
+  status: 'status',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  votingStartTime: 'votingStartTime',
+  votingEndTime: 'votingEndTime',
+  targetLatitude: 'targetLatitude',
+  targetLongitude: 'targetLongitude',
+  autoApprove: 'autoApprove',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -187,14 +205,55 @@ export const ChallengeScalarFieldEnum = {
 export type ChallengeScalarFieldEnum = (typeof ChallengeScalarFieldEnum)[keyof typeof ChallengeScalarFieldEnum]
 
 
-export const ChallengeGroupScalarFieldEnum = {
+export const ChallengeSubmissionScalarFieldEnum = {
   id: 'id',
   challengeId: 'challengeId',
   groupId: 'groupId',
+  imageUrls: 'imageUrls',
+  videoUrl: 'videoUrl',
+  textContent: 'textContent',
+  latitude: 'latitude',
+  longitude: 'longitude',
+  status: 'status',
+  reviewedById: 'reviewedById',
+  reviewedAt: 'reviewedAt',
+  rejectionReason: 'rejectionReason',
+  awardedPoints: 'awardedPoints',
+  bonusPoints: 'bonusPoints',
+  ranking: 'ranking',
+  voteCount: 'voteCount',
+  voteScore: 'voteScore',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ChallengeSubmissionScalarFieldEnum = (typeof ChallengeSubmissionScalarFieldEnum)[keyof typeof ChallengeSubmissionScalarFieldEnum]
+
+
+export const ChallengeVoteScalarFieldEnum = {
+  id: 'id',
+  challengeId: 'challengeId',
+  submissionId: 'submissionId',
+  voterId: 'voterId',
+  votePosition: 'votePosition',
+  votePoints: 'votePoints',
+  normalizedWeight: 'normalizedWeight',
+  votedAt: 'votedAt'
+} as const
+
+export type ChallengeVoteScalarFieldEnum = (typeof ChallengeVoteScalarFieldEnum)[keyof typeof ChallengeVoteScalarFieldEnum]
+
+
+export const SubmissionReportScalarFieldEnum = {
+  id: 'id',
+  submissionId: 'submissionId',
+  reporterId: 'reporterId',
+  reason: 'reason',
+  details: 'details',
   createdAt: 'createdAt'
 } as const
 
-export type ChallengeGroupScalarFieldEnum = (typeof ChallengeGroupScalarFieldEnum)[keyof typeof ChallengeGroupScalarFieldEnum]
+export type SubmissionReportScalarFieldEnum = (typeof SubmissionReportScalarFieldEnum)[keyof typeof SubmissionReportScalarFieldEnum]
 
 
 export const CoinTransactionScalarFieldEnum = {

@@ -17,3 +17,47 @@ export const Role = {
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
+
+
+export const SubmissionType = {
+  IMAGE: 'IMAGE',
+  MULTI_IMAGE: 'MULTI_IMAGE',
+  VIDEO: 'VIDEO',
+  TEXT: 'TEXT',
+  IMAGE_LOCATION: 'IMAGE_LOCATION',
+  LOCATION: 'LOCATION',
+  QR_CODE: 'QR_CODE'
+} as const
+
+export type SubmissionType = (typeof SubmissionType)[keyof typeof SubmissionType]
+
+
+export const ScoringCategory = {
+  SPEED: 'SPEED',
+  UNLIMITED: 'UNLIMITED',
+  JUDGED_STAFF: 'JUDGED_STAFF',
+  PEER_VOTING: 'PEER_VOTING'
+} as const
+
+export type ScoringCategory = (typeof ScoringCategory)[keyof typeof ScoringCategory]
+
+
+export const ChallengeStatus = {
+  HIDDEN: 'HIDDEN',
+  VISIBLE: 'VISIBLE',
+  ACTIVE: 'ACTIVE',
+  VOTING_PHASE: 'VOTING_PHASE',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type ChallengeStatus = (typeof ChallengeStatus)[keyof typeof ChallengeStatus]
+
+
+export const SubmissionStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type SubmissionStatus = (typeof SubmissionStatus)[keyof typeof SubmissionStatus]

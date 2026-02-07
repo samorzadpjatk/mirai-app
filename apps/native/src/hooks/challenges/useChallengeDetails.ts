@@ -20,12 +20,7 @@ export function useChallengeDetails(
 
   const isAssignedToUser = useMemo(() => {
     if (!currentUser || !challenge) return false;
-
-    return challenge.groups.some(
-      (g) =>
-        g.group.organizer?.id === currentUser.id ||
-        g.group.participants?.some((p) => p.id === currentUser.id),
-    );
+    return false;
   }, [currentUser, challenge]);
 
   return {

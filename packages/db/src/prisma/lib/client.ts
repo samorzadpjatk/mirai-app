@@ -75,10 +75,20 @@ export type Group = Prisma.GroupModel
  */
 export type Challenge = Prisma.ChallengeModel
 /**
- * Model ChallengeGroup
+ * Model ChallengeSubmission
  * 
  */
-export type ChallengeGroup = Prisma.ChallengeGroupModel
+export type ChallengeSubmission = Prisma.ChallengeSubmissionModel
+/**
+ * Model ChallengeVote
+ * 
+ */
+export type ChallengeVote = Prisma.ChallengeVoteModel
+/**
+ * Model SubmissionReport
+ * 
+ */
+export type SubmissionReport = Prisma.SubmissionReportModel
 /**
  * Model CoinTransaction
  * 
