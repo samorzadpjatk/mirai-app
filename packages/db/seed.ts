@@ -1,34 +1,27 @@
-import {
-  createSupabaseClient,
-  type SupabaseClient,
-  type SupabaseUser as SupabaseAuthUser,
-} from "@integral-2025-app/supabase";
-
 import { env } from "./src/utils/env";
 import { db } from "./src/index";
-
-interface SeedAuthUser {
-  email: string;
-  password: string;
-  role: string;
-  name: string;
-}
-
-type UserMetadata = {
-  name?: string;
-  role?: string;
-};
-
-type AppMetadata = {
-  role?: string;
-};
+import { createSupabaseClient } from "@integral-2025-app/supabase";
 
 const prisma = db;
 
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
 const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 
-const seedAuthUsers: SeedAuthUser[] = [
+// Create Supabase admin client
+const getAdminClient = () => {
+  if (!SERVICE_ROLE_KEY) {
+    throw new Error("SERVICE_ROLE_KEY is required");
+  }
+  return createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY, undefined, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+};
+
+// User accounts to seed
+const SEED_USERS = [
   {
     email: "admin@pjatk.dev",
     password: "admin123",
@@ -36,8 +29,8 @@ const seedAuthUsers: SeedAuthUser[] = [
     name: "Admin User",
   },
   {
-    email: "tech@pjatk.dev",
-    password: "tech123",
+    email: "dev@pjatk.dev",
+    password: "dev123",
     role: "tech",
     name: "Developer User",
   },
@@ -46,12 +39,6 @@ const seedAuthUsers: SeedAuthUser[] = [
     password: "moderator123",
     role: "moderator",
     name: "Moderator User",
-  },
-  {
-    email: "service@pjatk.dev",
-    password: "service123",
-    role: "service",
-    name: "Service Bot",
   },
   {
     email: "user@pjatk.dev",
@@ -65,157 +52,68 @@ const seedAuthUsers: SeedAuthUser[] = [
     role: "user",
     name: "Student User",
   },
+  {
+    email: "staff@pjatk.dev",
+    password: "staff123",
+    role: "user",
+    name: "Staff User",
+  },
+  {
+    email: "alice@pjatk.dev",
+    password: "alice123",
+    role: "user",
+    name: "Alice Johnson",
+  },
+  {
+    email: "bob@pjatk.dev",
+    password: "bob123",
+    role: "user",
+    name: "Bob Smith",
+  },
 ];
 
-const sleep = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+async function createSupabaseUser(
+  email: string,
+  password: string,
+  role: string,
+  name: string,
+): Promise<boolean> {
+  try {
+    const supabase = getAdminClient();
 
-const getUserMetadata = (user: SupabaseAuthUser): UserMetadata => {
-  const metadata = user.user_metadata;
-  if (metadata && typeof metadata === "object") {
-    return metadata as UserMetadata;
-  }
-  return {};
-};
-
-const getAppMetadata = (user: SupabaseAuthUser): AppMetadata => {
-  const metadata = user.app_metadata;
-  if (metadata && typeof metadata === "object") {
-    return metadata as AppMetadata;
-  }
-  return {};
-};
-
-const waitForSupabase = async (supabase: SupabaseClient) => {
-  const maxAttempts = 20;
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const { error } = await supabase.auth.admin.listUsers({
-      page: 1,
-      perPage: 1,
-    });
-
-    if (!error) {
-      return;
-    }
-
-    if (attempt === maxAttempts) {
-      throw new Error(error.message);
-    }
-
-    await sleep(1000);
-  }
-
-  throw new Error("Supabase auth API not reachable");
-};
-
-const fetchSupabaseUsers = async (
-  supabase: SupabaseClient,
-): Promise<SupabaseAuthUser[]> => {
-  const users: SupabaseAuthUser[] = [];
-  const perPage = 1000;
-  let page = 1;
-
-  while (true) {
-    const { data, error } = await supabase.auth.admin.listUsers({
-      page,
-      perPage,
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        name,
+        role,
+      },
+      app_metadata: {
+        role,
+      },
     });
 
     if (error) {
-      throw new Error(`Failed to fetch users: ${error.message}`);
+      if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+        console.log(`ℹ️ Auth user already exists: ${email}`);
+        return true;
+      }
+      console.error(`✗ Failed to create ${email}:`, error.message);
+      return false;
     }
 
-    const pageUsers = data?.users ?? [];
-    users.push(...pageUsers);
-
-    if (pageUsers.length < perPage) {
-      break;
+    if (data.user) {
+      console.log(`✓ Created auth user: ${email} (${role})`);
+      return true;
     }
 
-    page += 1;
+    return false;
+  } catch (error) {
+    console.error(`✗ Error creating ${email}:`, error);
+    return false;
   }
-
-  return users;
-};
-
-const createSupabaseUser = async (
-  supabase: SupabaseClient,
-  user: SeedAuthUser,
-): Promise<SupabaseAuthUser | null> => {
-  const { data, error } = await supabase.auth.admin.createUser({
-    email: user.email,
-    password: user.password,
-    email_confirm: true,
-    user_metadata: {
-      name: user.name,
-      role: user.role,
-    },
-    app_metadata: {
-      role: user.role,
-    },
-  });
-
-  if (!error) {
-    return data?.user ?? null;
-  }
-
-  const errorText = error.message.toLowerCase();
-  const alreadyRegistered =
-    errorText.includes("already registered") ||
-    errorText.includes("already exists") ||
-    errorText.includes("duplicate key");
-
-  if (alreadyRegistered) {
-    console.log(`ℹ️ Auth user already exists: ${user.email}`);
-    return null;
-  }
-
-  console.error(`✗ Failed to create auth user ${user.email}: ${error.message}`);
-  return null;
-};
-
-const waitForDbUsers = async (emails: string[]) => {
-  if (emails.length === 0) return [];
-
-  const maxAttempts = 20;
-  const normalizedEmails = emails.map((email) => email.toLowerCase());
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const users = await prisma.user.findMany({
-      where: {
-        email: {
-          in: normalizedEmails,
-          mode: "insensitive",
-        },
-      },
-    });
-
-    if (users.length >= normalizedEmails.length) {
-      return users;
-    }
-
-    await sleep(500);
-  }
-
-  const users = await prisma.user.findMany({
-    where: {
-      email: {
-        in: normalizedEmails,
-        mode: "insensitive",
-      },
-    },
-  });
-
-  if (users.length < normalizedEmails.length) {
-    console.log(
-      `⚠️ Only ${users.length}/${normalizedEmails.length} seeded users found in DB. Proceeding with available users.`,
-    );
-  }
-
-  return users;
-};
+}
 
 async function main() {
   if (!SERVICE_ROLE_KEY) {
@@ -227,78 +125,130 @@ async function main() {
     return;
   }
 
-  const supabase = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY, undefined, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
-  });
-
-  try {
-    console.log("Waiting for Supabase Auth...");
-    await waitForSupabase(supabase);
-  } catch (error) {
-    console.error("Failed to connect to Supabase Auth:", error);
-    console.log("Skipping auth users sync...");
-    console.log("Database seeding completed. 🌱");
-    return;
-  }
-
-  console.log("Ensuring seed users exist in Supabase Auth...");
-
-  let existingUsers: SupabaseAuthUser[] = [];
-
-  try {
-    existingUsers = await fetchSupabaseUsers(supabase);
-  } catch (error) {
-    console.error("Failed to fetch users:", error);
-    console.log("Skipping auth users sync...");
-    console.log("Database seeding completed. 🌱");
-    return;
-  }
-
-  const existingUsersByEmail = new Map(
-    existingUsers
-      .filter((user) => user.email)
-      .map((user) => [user.email.toLowerCase(), user]),
-  );
-
-  for (const seedUser of seedAuthUsers) {
-    const emailKey = seedUser.email.toLowerCase();
-    if (existingUsersByEmail.has(emailKey)) {
-      console.log(`ℹ️ Auth user already exists: ${seedUser.email}`);
-      continue;
+  // Wait for Supabase to be ready
+  console.log("Checking Supabase connection...");
+  let retries = 10;
+  while (retries > 0) {
+    try {
+      const supabase = getAdminClient();
+      const { error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
+      if (!error) {
+        console.log("✅ Supabase is ready");
+        break;
+      }
+    } catch (error) {
+      // Supabase not ready yet
     }
-
-    const created = await createSupabaseUser(supabase, seedUser);
-    if (created?.email) {
-      existingUsersByEmail.set(created.email.toLowerCase(), created);
-      console.log(`✓ Created auth user: ${created.email} (${seedUser.role})`);
+    retries--;
+    if (retries > 0) {
+      console.log(`Waiting for Supabase... (${retries} retries left)`);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    } else {
+      console.error("❌ Supabase connection timeout");
+      return;
     }
   }
 
-  console.log("Fetching users from Supabase Auth...");
+  // Create users in Supabase Auth
+  console.log("\n📝 Creating users in Supabase Auth...");
+  for (const user of SEED_USERS) {
+    await createSupabaseUser(user.email, user.password, user.role, user.name);
+  }
 
-  let users: SupabaseAuthUser[] = [];
+  console.log("\n📝 Fetching users from Supabase Auth...");
 
-  try {
-    users = await fetchSupabaseUsers(supabase);
-  } catch (error) {
-    console.error("Failed to fetch users:", error);
+  // Fetch all users from Supabase Auth
+  const supabase = getAdminClient();
+  const { data, error } = await supabase.auth.admin.listUsers();
+
+  if (error || !data) {
+    console.error(`Failed to fetch users:`, error);
     console.log("Skipping auth users sync...");
     console.log("Database seeding completed. 🌱");
     return;
   }
 
-  console.log(`Found ${users.length} users in Supabase Auth`);
+  const users = data.users ?? [];
 
-  const seededEmails = seedAuthUsers.map((seedUser) => seedUser.email);
-  const seededDbUsers = await waitForDbUsers(seededEmails);
-  if (seededDbUsers.length > 0) {
-    console.log(`✓ Found ${seededDbUsers.length} seeded users in DB`);
+  console.log(`✅ Found ${users.length} users in Supabase Auth\n`);
+
+  type RoleValue = "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
+
+  const parseName = (
+    fullName?: string | null,
+  ): { firstName?: string; lastName?: string } => {
+    if (!fullName?.trim()) return {};
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) {
+      return { firstName: parts[0] };
+    }
+    return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+  };
+
+  const mapRole = (role?: string | null): RoleValue => {
+    switch (role?.toLowerCase()) {
+      case "admin":
+      case "tech":
+        return "ADMIN";
+      case "moderator":
+        return "MODERATOR";
+      case "service":
+        return "SERVICE";
+      default:
+        return "USER";
+    }
+  };
+
+  for (const user of users) {
+    const rawRole =
+      user.app_metadata?.role ?? user.user_metadata?.role ?? "user";
+    const role = mapRole(rawRole);
+    const { firstName, lastName } = parseName(
+      user.user_metadata?.name ?? user.email.split("@")[0],
+    );
+
+    try {
+      // First, try to find existing user by email or authUserId
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [{ email: user.email }, { authUserId: user.id }],
+        },
+      });
+
+      if (existingUser) {
+        // Update existing user
+        const result = await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            authUserId: user.id,
+            email: user.email,
+            firstName,
+            lastName,
+            emailVerified: new Date(),
+            role,
+          },
+        });
+        console.log(`  ✓ Updated DB user: ${result.email} (${role})`);
+      } else {
+        // Create new user
+        const result = await prisma.user.create({
+          data: {
+            authUserId: user.id,
+            email: user.email,
+            firstName,
+            lastName,
+            emailVerified: new Date(),
+            role,
+          },
+        });
+        console.log(`  ✓ Created DB user: ${result.email} (${role})`);
+      }
+    } catch (error) {
+      console.error(`  ✗ Failed to sync user ${user.email}:`, error);
+    }
   }
 
+  console.log("\n🎿 Setting up Wintegral trip...");
   // --- Wintegral trip & location sharing setup --- 🔧
   try {
     const tripName = "Wintegral";
@@ -491,7 +441,16 @@ async function main() {
     console.error("✗ Failed to setup Wintegral trip / locations:", err);
   }
 
-  console.log("Database has been seeded. 🌱");
+  console.log("\n🎉 Database seeding completed successfully! 🌱");
+  console.log("\n📋 Summary:");
+  console.log(`   - Created ${SEED_USERS.length} auth users with various roles`);
+  console.log("   - All users assigned to Wintegral trip");
+  console.log("   - Location sharing enabled between all users");
+  console.log("   - Groups and challenges set up");
+  console.log("\n🔐 Login credentials:");
+  SEED_USERS.forEach((u) => {
+    console.log(`   ${u.email} / ${u.password} (${u.role})`);
+  });
 }
 
 await main();
