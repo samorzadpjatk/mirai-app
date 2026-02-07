@@ -4,6 +4,7 @@ import {
   createTRPCRouter,
   moderatorProcedure,
   adminProcedure,
+  protectedProcedure,
 } from "../../api/trpc";
 const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
 
@@ -74,7 +75,7 @@ export const userRouter = createTRPCRouter({
         },
       });
     }),
-  getMy: moderatorProcedure
+  getMy: protectedProcedure
     .input(z.object({ tripId: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {
       const baseUser = await ctx.db.user.findUnique({
