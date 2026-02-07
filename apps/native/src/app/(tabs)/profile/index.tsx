@@ -1,6 +1,6 @@
 import { View, ScrollView, StyleSheet } from "react-native";
 import { useAppSafeAreaInsets } from "~/contexts/safeArea";
-import { colors, spacing } from "../../styles";
+import { colors, spacing } from "../../../styles";
 import { AccountInfoSection } from "~/components/profile/AccountInfoSection";
 import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
 import { ProfileActionsSection } from "~/components/profile/ProfileActionsSection";
