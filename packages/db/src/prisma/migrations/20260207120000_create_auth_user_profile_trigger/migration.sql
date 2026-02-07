@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS auth;
+
 -- prisma-ignore
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS trigger
@@ -66,8 +68,20 @@ END;
 $$;
 
 -- prisma-ignore
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-AFTER INSERT ON auth.users
-FOR EACH ROW
-EXECUTE FUNCTION public.handle_new_auth_user();
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'auth'
+      AND table_name = 'users'
+  ) THEN
+    DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+    CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_new_auth_user();
+  END IF;
+END $$;
+
