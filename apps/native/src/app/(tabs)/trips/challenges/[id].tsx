@@ -2,13 +2,13 @@ import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
 import { useAppSafeAreaInsets } from "~/contexts/safeArea";
-import { AssignedGroupsCard } from "~/components/trips/challenges/AssignedGroupsCard";
 import { CapturedImageCard } from "~/components/trips/challenges/CapturedImageCard";
 import { ChallengeActionButton } from "~/components/trips/challenges/ChallengeActionButton";
 import { ChallengeDescriptionCard } from "~/components/trips/challenges/ChallengeDescriptionCard";
 import { ChallengeHeroCard } from "~/components/trips/challenges/ChallengeHeroCard";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
+import { ChallengeDetailsCard } from "~/components/trips/challenges/ChallengeDetailsCard";
 import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
 
@@ -63,7 +63,7 @@ export default function ChallengeDetailScreen() {
         {/* Challenge Icon & Status */}
         <ChallengeHeroCard
           name={challenge.name}
-          points={challenge.points}
+          points={challenge.basePoints ?? 0}
           isSelected={isAssignedToUser}
         />
 
@@ -73,8 +73,7 @@ export default function ChallengeDetailScreen() {
           imageUrl={challenge.image}
         />
 
-        {/* Assigned Groups */}
-        <AssignedGroupsCard groups={challenge.groups} />
+        <ChallengeDetailsCard challenge={challenge} />
 
         {/* Captured Image */}
         {capturedImage && (
@@ -90,7 +89,7 @@ export default function ChallengeDetailScreen() {
           <ChallengeActionButton
             isLoading={cameraLoading}
             onPress={() =>
-              void handleOpenCamera(challenge?.name, challenge?.points, tripId)
+              void handleOpenCamera(challenge?.name, challenge?.basePoints ?? 0, tripId)
             }
           />
         )}
