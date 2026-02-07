@@ -86,7 +86,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["bun", "run", "db:migrate:dev"]
+    command: ["bun", "run", "db:migrate"]
     restart: "no"
 
   # ===========================================================================

@@ -1,3 +1,4 @@
+-- prisma-ignore
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -64,6 +65,7 @@ BEGIN
 END;
 $$;
 
+-- prisma-ignore
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
