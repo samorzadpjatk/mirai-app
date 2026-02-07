@@ -18,6 +18,7 @@ interface UsersListPanelProps {
   usersListStyle: StyleProp<ViewStyle>;
   onToggleExpand: () => void;
   onAddPress: () => void;
+  onManagePress: () => void;
   onSelectUser: (user: UserLocation) => void;
 }
 
@@ -27,6 +28,7 @@ export function UsersListPanel({
   usersListStyle,
   onToggleExpand,
   onAddPress,
+  onManagePress,
   onSelectUser,
 }: UsersListPanelProps) {
   return (
@@ -35,6 +37,15 @@ export function UsersListPanel({
       <Pressable style={styles.listHeader} onPress={onToggleExpand}>
         <Text style={styles.listTitle}>People</Text>
         <View style={styles.headerButtons}>
+          <Pressable
+            style={styles.manageButton}
+            onPress={(event) => {
+              event.stopPropagation();
+              onManagePress();
+            }}
+          >
+            <Text style={styles.manageButtonText}>⚙</Text>
+          </Pressable>
           <Pressable
             style={styles.addButton}
             onPress={(event) => {
@@ -119,6 +130,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: "#F8FAFC",
+  },
+  manageButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 206, 209, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(0, 206, 209, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  manageButtonText: {
+    color: "#00ced1",
+    fontSize: 16,
   },
   addButton: {
     width: 32,

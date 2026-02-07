@@ -42,7 +42,8 @@ export function ShareLocationModal({
   onConfirmAdd,
 }: ShareLocationModalProps) {
   const filteredUsers = users?.filter((user) => {
-    if (!searchQuery) return true;
+    // Require minimum 3 characters before filtering
+    if (!searchQuery || searchQuery.length < 3) return true;
     const query = searchQuery.toLowerCase();
     const fullName =
       `${user.firstName ?? ""} ${user.lastName ?? ""}`.toLowerCase();
@@ -71,7 +72,7 @@ export function ShareLocationModal({
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search people..."
+              placeholder="Type at least 3 characters to search..."
               placeholderTextColor="rgba(226,232,240,0.4)"
               value={searchQuery}
               onChangeText={onChangeSearchQuery}

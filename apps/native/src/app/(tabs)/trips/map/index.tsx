@@ -3,13 +3,21 @@ import { StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   interpolate,
+  useSharedValue,
+  withSpring,
+  runOnJS,
 } from "react-native-reanimated";
+import {
+  GestureDetector,
+  Gesture,
+} from "react-native-gesture-handler";
 import { usePanelAnimation } from "~/hooks/ui";
 import { UserMap, type UserLocation } from "~/components/map/UserMap";
 import { useMapUsers } from "~/hooks/map";
 import { MapActionButtons } from "~/components/map/MapActionButtons";
 import { SelectedUserCard } from "~/components/map/SelectedUserCard";
 import { ShareLocationModal } from "~/components/map/ShareLocationModal";
+import { ManageSharingModal } from "~/components/map/ManageSharingModal";
 import { UsersListPanel } from "~/components/map/UsersListPanel";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useMapLocationStream } from "~/hooks/map";
@@ -22,6 +30,7 @@ export default function MapScreen() {
   const { session } = useAuth();
   const [showUsersList, setShowUsersList] = useState(true);
   const [isListExpanded, setIsListExpanded] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
   const panelAnim = usePanelAnimation(false, 240);
   const expandAnim = usePanelAnimation(false, 300);
   const [currentCoordinate, setCurrentCoordinate] = useState<
@@ -37,8 +46,14 @@ export default function MapScreen() {
   const { locationsByUserId, usersData } = useMapLocationStream(
     !!session?.access_token,
   );
-  const { sharingUserIds, allAvailableUsers, updateSharing } =
-    useMapSharing(false);
+  const {
+    sharingUserIds,
+    sharingSettings,
+    allAvailableUsers,
+    updateSharing,
+    removeUser,
+    isRemovingUser,
+  } = useMapSharing(false);
   const { sendLocation } = useMapActions();
 
   // Selection & share modal state (extracted)
@@ -128,11 +143,40 @@ export default function MapScreen() {
     expandAnim.setOpen(isListExpanded);
   }, [expandAnim, isListExpanded]);
 
+  // Gesture handling for draggable panel
+  const translateY = useSharedValue(0);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      // Allow dragging only downwards when panel is open
+      const newTranslateY = event.translationY;
+      translateY.value = Math.max(0, Math.min(220, newTranslateY));
+    })
+    .onEnd((event) => {
+      // If dragged more than 50% down, close panel
+      if (translateY.value > 110 || event.velocityY > 500) {
+        translateY.value = withSpring(220);
+        runOnJS(setShowUsersList)(false);
+        runOnJS(deselect)();
+      } else {
+        // Otherwise snap back to open position
+        translateY.value = withSpring(0);
+      }
+    });
+
   const panelStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(panelAnim.value.value, [0, 1], [220, 0]);
+    const baseTranslateY = interpolate(
+      panelAnim.value.value,
+      [0, 1],
+      [220, 0],
+    );
     return {
-      opacity: panelAnim.value.value,
-      transform: [{ translateY }],
+      opacity: interpolate(
+        panelAnim.value.value,
+        [0, 1],
+        [0, 1],
+      ),
+      transform: [{ translateY: baseTranslateY + translateY.value }],
     };
   });
 
@@ -164,36 +208,39 @@ export default function MapScreen() {
         mapTheme={mapTheme}
         overlay={
           <>
-            <Animated.View
-              pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
-              style={[styles.detailCard, panelStyle]}
-            >
-              {selectedUser ? (
-                <SelectedUserCard
-                  selectedUser={selectedUser}
-                  displayName={selectedUserDisplayName}
-                  displaySurname={selectedUserDisplaySurname}
-                  isSharingWithSelected={sharingUserIds.includes(
-                    selectedUser.id,
-                  )}
-                  canStopSharing={canStopSharing}
-                  onBackToList={() => {
-                    deselect();
-                    setShowUsersList(true);
-                  }}
-                  onStopSharing={handleStopSharing}
-                />
-              ) : showUsersList ? (
-                <UsersListPanel
-                  users={users}
-                  currentUserId={session?.user?.id}
-                  usersListStyle={usersListStyle}
-                  onToggleExpand={() => setIsListExpanded(!isListExpanded)}
-                  onAddPress={() => shareModal.openModal()}
-                  onSelectUser={handleSelectUser}
-                />
-              ) : null}
-            </Animated.View>
+            <GestureDetector gesture={panGesture}>
+              <Animated.View
+                pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
+                style={[styles.detailCard, panelStyle]}
+              >
+                {selectedUser ? (
+                  <SelectedUserCard
+                    selectedUser={selectedUser}
+                    displayName={selectedUserDisplayName}
+                    displaySurname={selectedUserDisplaySurname}
+                    isSharingWithSelected={sharingUserIds.includes(
+                      selectedUser.id,
+                    )}
+                    canStopSharing={canStopSharing}
+                    onBackToList={() => {
+                      deselect();
+                      setShowUsersList(true);
+                    }}
+                    onStopSharing={handleStopSharing}
+                  />
+                ) : showUsersList ? (
+                  <UsersListPanel
+                    users={users}
+                    currentUserId={session?.user?.id}
+                    usersListStyle={usersListStyle}
+                    onToggleExpand={() => setIsListExpanded(!isListExpanded)}
+                    onAddPress={() => shareModal.openModal()}
+                    onManagePress={() => setShowManageModal(true)}
+                    onSelectUser={handleSelectUser}
+                  />
+                ) : null}
+              </Animated.View>
+            </GestureDetector>
             <MapActionButtons
               mapTheme={mapTheme}
               onToggleTheme={() =>
@@ -212,6 +259,15 @@ export default function MapScreen() {
               onClearSelected={shareModal.reset}
               onClose={shareModal.closeModal}
               onConfirmAdd={shareModal.confirm}
+            />
+            <ManageSharingModal
+              visible={showManageModal}
+              users={sharingSettings?.usersToShareWith ?? []}
+              onClose={() => setShowManageModal(false)}
+              onRemoveUser={(userId) => {
+                removeUser(userId);
+              }}
+              isRemoving={isRemovingUser}
             />
           </>
         }
