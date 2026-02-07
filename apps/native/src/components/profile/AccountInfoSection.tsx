@@ -10,8 +10,6 @@ export function AccountInfoSection() {
   const { data: currentUser } = useQuery(userMyQueryOptions);
 
   const email = currentUser?.email;
-  const userId = currentUser?.id;
-
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Account Information</Text>
@@ -27,19 +25,6 @@ export function AccountInfoSection() {
           </View>
         </View>
 
-        <View style={styles.divider} />
-
-        <View style={styles.infoRow}>
-          <View style={styles.infoIcon}>
-            <Ionicons name="person" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.infoContent}>
-            <Text style={styles.infoLabel}>User ID</Text>
-            <Text style={styles.infoValue} numberOfLines={1}>
-              {userId}
-            </Text>
-          </View>
-        </View>
       </View>
     </View>
   );
