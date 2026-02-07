@@ -86,7 +86,7 @@ services:
     volumes:
       - ./volumes/email-templates:/usr/share/nginx/html:ro,z
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost/"]
+      test: ["CMD", "curl", "-fsS", "http://localhost/otp.html"]
       interval: 10s
       timeout: 5s
       retries: 3
