@@ -209,28 +209,53 @@ async function main() {
         );
         console.log(`✅ Assigned ${participants.length} participants to groups`);
 
-        // Create example challenges and link to groups
+        // Create example challenges
         const challengesData = [
-          { name: "Ski King", description: "Most vertical meters", points: 100 },
-          { name: "Photo Hunt", description: "Find and photograph 5 landmarks", points: 50 },
-          { name: "Après Master", description: "Complete social check-ins", points: 30 },
+          {
+            name: "Ski King",
+            description: "Most vertical meters",
+            basePoints: 100,
+            submissionType: "IMAGE" as const,
+            scoringCategory: "SPEED" as const,
+            status: "ACTIVE" as const,
+          },
+          {
+            name: "Photo Hunt",
+            description: "Find and photograph 5 landmarks",
+            basePoints: 50,
+            submissionType: "MULTI_IMAGE" as const,
+            scoringCategory: "JUDGED_STAFF" as const,
+            status: "ACTIVE" as const,
+          },
+          {
+            name: "Après Master",
+            description: "Complete social check-ins",
+            basePoints: 30,
+            submissionType: "IMAGE_LOCATION" as const,
+            scoringCategory: "UNLIMITED" as const,
+            status: "ACTIVE" as const,
+          },
         ];
 
         for (const ch of challengesData) {
-          let challenge = await prisma.challenge.findFirst({ where: { tripId: trip.id, name: ch.name } });
-          if (!challenge) {
-            challenge = await prisma.challenge.create({ data: { tripId: trip.id, name: ch.name, description: ch.description, points: ch.points } });
-            console.log(`✅ Created challenge: ${challenge.name}`);
+          const existingChallenge = await prisma.challenge.findFirst({
+            where: { tripId: trip.id, name: ch.name },
+          });
+          if (!existingChallenge) {
+            await prisma.challenge.create({
+              data: {
+                tripId: trip.id,
+                name: ch.name,
+                description: ch.description,
+                basePoints: ch.basePoints,
+                submissionType: ch.submissionType,
+                scoringCategory: ch.scoringCategory,
+                status: ch.status,
+              },
+            });
+            console.log(`✅ Created challenge: ${ch.name}`);
           } else {
-            console.log(`ℹ️ Challenge already exists: ${challenge.name}`);
-          }
-
-          // Link challenge to all groups
-          for (const g of groups) {
-            const exists = await prisma.challengeGroup.findFirst({ where: { challengeId: challenge.id, groupId: g.id } });
-            if (!exists) {
-              await prisma.challengeGroup.create({ data: { challengeId: challenge.id, groupId: g.id } });
-            }
+            console.log(`ℹ️ Challenge already exists: ${ch.name}`);
           }
         }
       } else {
