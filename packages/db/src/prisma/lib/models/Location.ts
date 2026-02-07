@@ -633,14 +633,6 @@ export type LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput = {
   deleteMany?: Prisma.LocationScalarWhereInput | Prisma.LocationScalarWhereInput[]
 }
 
-export type NullableFloatFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type LocationCreateWithoutUserInput = {
   id?: string
   timestamp?: Date | string

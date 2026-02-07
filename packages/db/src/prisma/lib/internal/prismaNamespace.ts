@@ -391,7 +391,9 @@ export const ModelName = {
   UserEvent: 'UserEvent',
   Group: 'Group',
   Challenge: 'Challenge',
-  ChallengeGroup: 'ChallengeGroup',
+  ChallengeSubmission: 'ChallengeSubmission',
+  ChallengeVote: 'ChallengeVote',
+  SubmissionReport: 'SubmissionReport',
   CoinTransaction: 'CoinTransaction',
   NotificationSchedule: 'NotificationSchedule',
   Notification: 'Notification',
@@ -415,7 +417,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeGroup" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location"
+    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -937,77 +939,225 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    ChallengeGroup: {
-      payload: Prisma.$ChallengeGroupPayload<ExtArgs>
-      fields: Prisma.ChallengeGroupFieldRefs
+    ChallengeSubmission: {
+      payload: Prisma.$ChallengeSubmissionPayload<ExtArgs>
+      fields: Prisma.ChallengeSubmissionFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.ChallengeGroupFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload> | null
+          args: Prisma.ChallengeSubmissionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.ChallengeGroupFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>
+          args: Prisma.ChallengeSubmissionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>
         }
         findFirst: {
-          args: Prisma.ChallengeGroupFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload> | null
+          args: Prisma.ChallengeSubmissionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.ChallengeGroupFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>
+          args: Prisma.ChallengeSubmissionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>
         }
         findMany: {
-          args: Prisma.ChallengeGroupFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>[]
+          args: Prisma.ChallengeSubmissionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>[]
         }
         create: {
-          args: Prisma.ChallengeGroupCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>
+          args: Prisma.ChallengeSubmissionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>
         }
         createMany: {
-          args: Prisma.ChallengeGroupCreateManyArgs<ExtArgs>
+          args: Prisma.ChallengeSubmissionCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.ChallengeGroupCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>[]
+          args: Prisma.ChallengeSubmissionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>[]
         }
         delete: {
-          args: Prisma.ChallengeGroupDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>
+          args: Prisma.ChallengeSubmissionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>
         }
         update: {
-          args: Prisma.ChallengeGroupUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>
+          args: Prisma.ChallengeSubmissionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>
         }
         deleteMany: {
-          args: Prisma.ChallengeGroupDeleteManyArgs<ExtArgs>
+          args: Prisma.ChallengeSubmissionDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.ChallengeGroupUpdateManyArgs<ExtArgs>
+          args: Prisma.ChallengeSubmissionUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.ChallengeGroupUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>[]
+          args: Prisma.ChallengeSubmissionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>[]
         }
         upsert: {
-          args: Prisma.ChallengeGroupUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeGroupPayload>
+          args: Prisma.ChallengeSubmissionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeSubmissionPayload>
         }
         aggregate: {
-          args: Prisma.ChallengeGroupAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateChallengeGroup>
+          args: Prisma.ChallengeSubmissionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChallengeSubmission>
         }
         groupBy: {
-          args: Prisma.ChallengeGroupGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ChallengeGroupGroupByOutputType>[]
+          args: Prisma.ChallengeSubmissionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChallengeSubmissionGroupByOutputType>[]
         }
         count: {
-          args: Prisma.ChallengeGroupCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ChallengeGroupCountAggregateOutputType> | number
+          args: Prisma.ChallengeSubmissionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChallengeSubmissionCountAggregateOutputType> | number
+        }
+      }
+    }
+    ChallengeVote: {
+      payload: Prisma.$ChallengeVotePayload<ExtArgs>
+      fields: Prisma.ChallengeVoteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ChallengeVoteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ChallengeVoteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>
+        }
+        findFirst: {
+          args: Prisma.ChallengeVoteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ChallengeVoteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>
+        }
+        findMany: {
+          args: Prisma.ChallengeVoteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>[]
+        }
+        create: {
+          args: Prisma.ChallengeVoteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>
+        }
+        createMany: {
+          args: Prisma.ChallengeVoteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ChallengeVoteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>[]
+        }
+        delete: {
+          args: Prisma.ChallengeVoteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>
+        }
+        update: {
+          args: Prisma.ChallengeVoteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>
+        }
+        deleteMany: {
+          args: Prisma.ChallengeVoteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ChallengeVoteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ChallengeVoteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>[]
+        }
+        upsert: {
+          args: Prisma.ChallengeVoteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeVotePayload>
+        }
+        aggregate: {
+          args: Prisma.ChallengeVoteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChallengeVote>
+        }
+        groupBy: {
+          args: Prisma.ChallengeVoteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChallengeVoteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ChallengeVoteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChallengeVoteCountAggregateOutputType> | number
+        }
+      }
+    }
+    SubmissionReport: {
+      payload: Prisma.$SubmissionReportPayload<ExtArgs>
+      fields: Prisma.SubmissionReportFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SubmissionReportFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SubmissionReportFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>
+        }
+        findFirst: {
+          args: Prisma.SubmissionReportFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SubmissionReportFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>
+        }
+        findMany: {
+          args: Prisma.SubmissionReportFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>[]
+        }
+        create: {
+          args: Prisma.SubmissionReportCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>
+        }
+        createMany: {
+          args: Prisma.SubmissionReportCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SubmissionReportCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>[]
+        }
+        delete: {
+          args: Prisma.SubmissionReportDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>
+        }
+        update: {
+          args: Prisma.SubmissionReportUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>
+        }
+        deleteMany: {
+          args: Prisma.SubmissionReportDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SubmissionReportUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SubmissionReportUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>[]
+        }
+        upsert: {
+          args: Prisma.SubmissionReportUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionReportPayload>
+        }
+        aggregate: {
+          args: Prisma.SubmissionReportAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSubmissionReport>
+        }
+        groupBy: {
+          args: Prisma.SubmissionReportGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SubmissionReportGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SubmissionReportCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SubmissionReportCountAggregateOutputType> | number
         }
       }
     }
@@ -1736,7 +1886,23 @@ export const ChallengeScalarFieldEnum = {
   name: 'name',
   description: 'description',
   image: 'image',
-  points: 'points',
+  submissionType: 'submissionType',
+  scoringCategory: 'scoringCategory',
+  isRecurring: 'isRecurring',
+  dailyStartTime: 'dailyStartTime',
+  dailyEndTime: 'dailyEndTime',
+  basePoints: 'basePoints',
+  firstPlacePoints: 'firstPlacePoints',
+  secondPlacePoints: 'secondPlacePoints',
+  thirdPlacePoints: 'thirdPlacePoints',
+  status: 'status',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  votingStartTime: 'votingStartTime',
+  votingEndTime: 'votingEndTime',
+  targetLatitude: 'targetLatitude',
+  targetLongitude: 'targetLongitude',
+  autoApprove: 'autoApprove',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1744,14 +1910,55 @@ export const ChallengeScalarFieldEnum = {
 export type ChallengeScalarFieldEnum = (typeof ChallengeScalarFieldEnum)[keyof typeof ChallengeScalarFieldEnum]
 
 
-export const ChallengeGroupScalarFieldEnum = {
+export const ChallengeSubmissionScalarFieldEnum = {
   id: 'id',
   challengeId: 'challengeId',
   groupId: 'groupId',
+  imageUrls: 'imageUrls',
+  videoUrl: 'videoUrl',
+  textContent: 'textContent',
+  latitude: 'latitude',
+  longitude: 'longitude',
+  status: 'status',
+  reviewedById: 'reviewedById',
+  reviewedAt: 'reviewedAt',
+  rejectionReason: 'rejectionReason',
+  awardedPoints: 'awardedPoints',
+  bonusPoints: 'bonusPoints',
+  ranking: 'ranking',
+  voteCount: 'voteCount',
+  voteScore: 'voteScore',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ChallengeSubmissionScalarFieldEnum = (typeof ChallengeSubmissionScalarFieldEnum)[keyof typeof ChallengeSubmissionScalarFieldEnum]
+
+
+export const ChallengeVoteScalarFieldEnum = {
+  id: 'id',
+  challengeId: 'challengeId',
+  submissionId: 'submissionId',
+  voterId: 'voterId',
+  votePosition: 'votePosition',
+  votePoints: 'votePoints',
+  normalizedWeight: 'normalizedWeight',
+  votedAt: 'votedAt'
+} as const
+
+export type ChallengeVoteScalarFieldEnum = (typeof ChallengeVoteScalarFieldEnum)[keyof typeof ChallengeVoteScalarFieldEnum]
+
+
+export const SubmissionReportScalarFieldEnum = {
+  id: 'id',
+  submissionId: 'submissionId',
+  reporterId: 'reporterId',
+  reason: 'reason',
+  details: 'details',
   createdAt: 'createdAt'
 } as const
 
-export type ChallengeGroupScalarFieldEnum = (typeof ChallengeGroupScalarFieldEnum)[keyof typeof ChallengeGroupScalarFieldEnum]
+export type SubmissionReportScalarFieldEnum = (typeof SubmissionReportScalarFieldEnum)[keyof typeof SubmissionReportScalarFieldEnum]
 
 
 export const CoinTransactionScalarFieldEnum = {
@@ -1965,6 +2172,48 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'SubmissionType'
+ */
+export type EnumSubmissionTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SubmissionType'>
+    
+
+
+/**
+ * Reference to a field of type 'SubmissionType[]'
+ */
+export type ListEnumSubmissionTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SubmissionType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ScoringCategory'
+ */
+export type EnumScoringCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScoringCategory'>
+    
+
+
+/**
+ * Reference to a field of type 'ScoringCategory[]'
+ */
+export type ListEnumScoringCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScoringCategory[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ChallengeStatus'
+ */
+export type EnumChallengeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChallengeStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ChallengeStatus[]'
+ */
+export type ListEnumChallengeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChallengeStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -1975,6 +2224,20 @@ export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, '
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
+ * Reference to a field of type 'SubmissionStatus'
+ */
+export type EnumSubmissionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SubmissionStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'SubmissionStatus[]'
+ */
+export type ListEnumSubmissionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SubmissionStatus[]'>
     
 
 /**
@@ -2079,7 +2342,9 @@ export type GlobalOmitConfig = {
   userEvent?: Prisma.UserEventOmit
   group?: Prisma.GroupOmit
   challenge?: Prisma.ChallengeOmit
-  challengeGroup?: Prisma.ChallengeGroupOmit
+  challengeSubmission?: Prisma.ChallengeSubmissionOmit
+  challengeVote?: Prisma.ChallengeVoteOmit
+  submissionReport?: Prisma.SubmissionReportOmit
   coinTransaction?: Prisma.CoinTransactionOmit
   notificationSchedule?: Prisma.NotificationScheduleOmit
   notification?: Prisma.NotificationOmit

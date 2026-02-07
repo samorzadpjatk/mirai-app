@@ -5,7 +5,7 @@ generator client {
   provider      = "prisma-client"
   output        = "./lib"
   binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
-  runtime = "bun"
+  runtime       = "bun"
 }
 
 datasource db {
@@ -17,6 +17,38 @@ enum Role {
   ADMIN
   MODERATOR
   SERVICE
+}
+
+enum SubmissionType {
+  IMAGE
+  MULTI_IMAGE
+  VIDEO
+  TEXT
+  IMAGE_LOCATION
+  LOCATION
+  QR_CODE
+}
+
+enum ScoringCategory {
+  SPEED
+  UNLIMITED
+  JUDGED_STAFF
+  PEER_VOTING
+}
+
+enum ChallengeStatus {
+  HIDDEN
+  VISIBLE
+  ACTIVE
+  VOTING_PHASE
+  COMPLETED
+  CANCELLED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model User {
@@ -41,36 +73,40 @@ model User {
   trips                     TripParticipant[]
   createdAt                 DateTime               @default(now())
   updatedAt                 DateTime               @updatedAt
+
+  challengeSubmissions ChallengeSubmission[]
 }
 
 model Trip {
-  id           String             @id @default(cuid())
-  name         String
-  description  String?
-  startDate    DateTime
-  endDate      DateTime
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  groups       Group[]
-  participants TripParticipant[]
-  notifications Notification[]
-  notificationSchedules NotificationSchedule[]
+  id                     String                 @id @default(cuid())
+  name                   String
+  description            String?
+  startDate              DateTime
+  endDate                DateTime
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  groups                 Group[]
+  participants           TripParticipant[]
+  notifications          Notification[]
+  notificationSchedules  NotificationSchedule[]
   notificationDeliveries NotificationDelivery[]
-  challenges   Challenge[]
+  challenges             Challenge[]
 }
 
 model TripParticipant {
-  id          String   @id @default(cuid())
-  userId      String
-  tripId      String
-  groupId     String?
-  wristNumber String?
-  houseNumber String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id])
-  trip        Trip     @relation(fields: [tripId], references: [id])
-  group       Group?   @relation(fields: [groupId], references: [id])
+  id                String             @id @default(cuid())
+  userId            String
+  tripId            String
+  groupId           String?
+  wristNumber       String?
+  houseNumber       String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id])
+  trip              Trip               @relation(fields: [tripId], references: [id])
+  group             Group?             @relation(fields: [groupId], references: [id])
+  challengeVotes    ChallengeVote[]
+  submissionReports SubmissionReport[]
 
   @@unique([userId, tripId])
   @@unique([tripId, wristNumber])
@@ -95,12 +131,12 @@ model Event {
 }
 
 model UserEvent {
-  user         User    @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
   userId       String
-  event        Event   @relation(fields: [eventId], references: [id])
+  event        Event    @relation(fields: [eventId], references: [id])
   eventId      String
-  interestedIn Boolean @default(false)
-  enlistedIn   Boolean @default(false)
+  interestedIn Boolean  @default(false)
+  enlistedIn   Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -121,34 +157,125 @@ model Group {
   coins            Int               @default(0)
   coinTransactions CoinTransaction[]
   organizedEvents  Event[]
-  challenges       ChallengeGroup[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+
+  challengeSubmissions ChallengeSubmission[]
 }
 
 model Challenge {
-  id          String            @id @default(cuid())
-  tripId      String
-  trip        Trip              @relation(fields: [tripId], references: [id])
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id])
+
   name        String
   description String?
   image       String?
-  points      Int               @default(0)
-  groups      ChallengeGroup[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+
+  submissionType  SubmissionType
+  scoringCategory ScoringCategory
+
+  isRecurring    Boolean @default(false)
+  dailyStartTime String?
+  dailyEndTime   String?
+
+  basePoints        Int  @default(0)
+  firstPlacePoints  Int?
+  secondPlacePoints Int?
+  thirdPlacePoints  Int?
+
+  status          ChallengeStatus @default(HIDDEN)
+  startTime       DateTime?
+  endTime         DateTime?
+  votingStartTime DateTime?
+  votingEndTime   DateTime?
+
+  targetLatitude  Float?
+  targetLongitude Float?
+
+  autoApprove Boolean @default(false)
+
+  submissions ChallengeSubmission[]
+  votes       ChallengeVote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId, status])
+  @@index([isRecurring])
 }
 
-model ChallengeGroup {
-  id          String     @id @default(cuid())
+model ChallengeSubmission {
+  id          String    @id @default(cuid())
   challengeId String
   groupId     String
-  challenge   Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  group       Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  createdAt   DateTime   @default(now())
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  imageUrls   String[] @default([])
+  videoUrl    String?
+  textContent String?
+  latitude    Float?
+  longitude   Float?
+
+  status          SubmissionStatus @default(PENDING)
+  reviewedById    String?
+  reviewedBy      User?            @relation(fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  rejectionReason String?
+
+  awardedPoints Int  @default(0)
+  bonusPoints   Int  @default(0)
+  ranking       Int?
+
+  voteCount Int   @default(0)
+  voteScore Float @default(0)
+
+  votes   ChallengeVote[]
+  reports SubmissionReport[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([challengeId, groupId])
+  @@index([challengeId, status])
   @@index([groupId])
+}
+
+model ChallengeVote {
+  id           String @id @default(cuid())
+  challengeId  String
+  submissionId String
+  voterId      String
+
+  challenge  Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  submission ChallengeSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  voter      TripParticipant     @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  votePosition     Int
+  votePoints       Int
+  normalizedWeight Float @default(1.0)
+
+  votedAt DateTime @default(now())
+
+  @@unique([challengeId, submissionId, voterId])
+  @@index([challengeId])
+  @@index([submissionId])
+}
+
+model SubmissionReport {
+  id           String              @id @default(cuid())
+  submissionId String
+  reporterId   String
+  submission   ChallengeSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reporter     TripParticipant     @relation(fields: [reporterId], references: [id])
+
+  reason  String
+  details String?
+
+  createdAt DateTime @default(now())
+
+  @@index([submissionId])
 }
 
 model CoinTransaction {
@@ -164,31 +291,31 @@ model CoinTransaction {
 }
 
 model NotificationSchedule {
-  id                      String                            @id @default(cuid())
-  tripId                  String?
-  trip                    Trip?                              @relation(fields: [tripId], references: [id])
-  name                    String
-  notificationType        String // e.g., "custom", "ranking"
-  notificationTitle       String? // For custom notifications
-  notificationBody        String? // For custom notifications
-  notificationUrl         String? // For custom notifications
-  startDate               DateTime // When the schedule starts
-  endDate                 DateTime // When the schedule ends
-  hour                    Int // Hour of the day (0-23)
-  minute                  Int                               @default(0) // Minute of the hour (0-59)
-  isActive                Boolean                           @default(true)
-  lastRun                 DateTime? // When was this schedule last executed
-  createdAt               DateTime                          @default(now())
-  updatedAt               DateTime                          @updatedAt
-  createdById             String // Admin who created this schedule
-  createdBy               User                              @relation("NotificationScheduleAdmin", fields: [createdById], references: [id])
-  notificationExecutions  NotificationScheduleExecution[]
+  id                     String                          @id @default(cuid())
+  tripId                 String?
+  trip                   Trip?                           @relation(fields: [tripId], references: [id])
+  name                   String
+  notificationType       String // e.g., "custom", "ranking"
+  notificationTitle      String? // For custom notifications
+  notificationBody       String? // For custom notifications
+  notificationUrl        String? // For custom notifications
+  startDate              DateTime // When the schedule starts
+  endDate                DateTime // When the schedule ends
+  hour                   Int // Hour of the day (0-23)
+  minute                 Int                             @default(0) // Minute of the hour (0-59)
+  isActive               Boolean                         @default(true)
+  lastRun                DateTime? // When was this schedule last executed
+  createdAt              DateTime                        @default(now())
+  updatedAt              DateTime                        @updatedAt
+  createdById            String // Admin who created this schedule
+  createdBy              User                            @relation("NotificationScheduleAdmin", fields: [createdById], references: [id])
+  notificationExecutions NotificationScheduleExecution[]
 }
 
 model Notification {
   id                 String                          @id @default(cuid())
   tripId             String?
-  trip               Trip?                            @relation(fields: [tripId], references: [id])
+  trip               Trip?                           @relation(fields: [tripId], references: [id])
   title              String // Notification title
   body               String // Notification body/message
   url                String // Optional URL to open when the notification is clicked
@@ -224,22 +351,22 @@ model NotificationPush {
 }
 
 model NotificationDelivery {
-  id                   String       @id @default(cuid())
-  tripId               String?
-  trip                 Trip?         @relation(fields: [tripId], references: [id])
-  notificationId       String       @unique
-  notification         Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
-  scheduleId           String? 
-  deliveryStartedAt    DateTime     @default(now())
-  deliveryCompletedAt  DateTime?
-  totalRecipients      Int          @default(0)
-  successCount         Int          @default(0)
-  failureCount         Int          @default(0)
-  errors               String?
-  status               String       @default("pending") 
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-  
+  id                  String       @id @default(cuid())
+  tripId              String?
+  trip                Trip?        @relation(fields: [tripId], references: [id])
+  notificationId      String       @unique
+  notification        Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  scheduleId          String?
+  deliveryStartedAt   DateTime     @default(now())
+  deliveryCompletedAt DateTime?
+  totalRecipients     Int          @default(0)
+  successCount        Int          @default(0)
+  failureCount        Int          @default(0)
+  errors              String?
+  status              String       @default("pending")
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
   @@index([deliveryStartedAt])
   @@index([status])
   @@index([scheduleId])
@@ -249,7 +376,7 @@ model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String   // Expo push token
+  token     String // Expo push token
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

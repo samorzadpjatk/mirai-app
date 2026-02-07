@@ -233,6 +233,7 @@ export type UserWhereInput = {
   location?: Prisma.XOR<Prisma.LocationNullableScalarRelationFilter, Prisma.LocationWhereInput> | null
   locationsSharedWithMe?: Prisma.LocationListRelationFilter
   trips?: Prisma.TripParticipantListRelationFilter
+  challengeSubmissions?: Prisma.ChallengeSubmissionListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -257,6 +258,7 @@ export type UserOrderByWithRelationInput = {
   location?: Prisma.LocationOrderByWithRelationInput
   locationsSharedWithMe?: Prisma.LocationOrderByRelationAggregateInput
   trips?: Prisma.TripParticipantOrderByRelationAggregateInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -284,6 +286,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   location?: Prisma.XOR<Prisma.LocationNullableScalarRelationFilter, Prisma.LocationWhereInput> | null
   locationsSharedWithMe?: Prisma.LocationListRelationFilter
   trips?: Prisma.TripParticipantListRelationFilter
+  challengeSubmissions?: Prisma.ChallengeSubmissionListRelationFilter
 }, "id" | "authUserId" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -340,6 +343,7 @@ export type UserCreateInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -364,6 +368,7 @@ export type UserUncheckedCreateInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUpdateInput = {
@@ -388,6 +393,7 @@ export type UserUpdateInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -412,6 +418,7 @@ export type UserUncheckedUpdateInput = {
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -495,6 +502,11 @@ export type UserMinOrderByAggregateInput = {
 export type UserScalarRelationFilter = {
   is?: Prisma.UserWhereInput
   isNot?: Prisma.UserWhereInput
+}
+
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null
+  isNot?: Prisma.UserWhereInput | null
 }
 
 export type UserListRelationFilter = {
@@ -581,6 +593,22 @@ export type UserUpdateOneRequiredWithoutOrganizerGroupNestedInput = {
   upsert?: Prisma.UserUpsertWithoutOrganizerGroupInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutOrganizerGroupInput, Prisma.UserUpdateWithoutOrganizerGroupInput>, Prisma.UserUncheckedUpdateWithoutOrganizerGroupInput>
+}
+
+export type UserCreateNestedOneWithoutChallengeSubmissionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutChallengeSubmissionsInput, Prisma.UserUncheckedCreateWithoutChallengeSubmissionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChallengeSubmissionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutChallengeSubmissionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutChallengeSubmissionsInput, Prisma.UserUncheckedCreateWithoutChallengeSubmissionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChallengeSubmissionsInput
+  upsert?: Prisma.UserUpsertWithoutChallengeSubmissionsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutChallengeSubmissionsInput, Prisma.UserUpdateWithoutChallengeSubmissionsInput>, Prisma.UserUncheckedUpdateWithoutChallengeSubmissionsInput>
 }
 
 export type UserCreateNestedOneWithoutCoinTransactionsAdminInput = {
@@ -726,6 +754,7 @@ export type UserCreateWithoutTripsInput = {
   userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutTripsInput = {
@@ -749,6 +778,7 @@ export type UserUncheckedCreateWithoutTripsInput = {
   userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutTripsInput = {
@@ -788,6 +818,7 @@ export type UserUpdateWithoutTripsInput = {
   userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTripsInput = {
@@ -811,6 +842,7 @@ export type UserUncheckedUpdateWithoutTripsInput = {
   userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateWithoutCreatedEventsInput = {
@@ -834,6 +866,7 @@ export type UserCreateWithoutCreatedEventsInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedEventsInput = {
@@ -857,6 +890,7 @@ export type UserUncheckedCreateWithoutCreatedEventsInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedEventsInput = {
@@ -896,6 +930,7 @@ export type UserUpdateWithoutCreatedEventsInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedEventsInput = {
@@ -919,6 +954,7 @@ export type UserUncheckedUpdateWithoutCreatedEventsInput = {
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateWithoutUserEventsInput = {
@@ -942,6 +978,7 @@ export type UserCreateWithoutUserEventsInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutUserEventsInput = {
@@ -965,6 +1002,7 @@ export type UserUncheckedCreateWithoutUserEventsInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutUserEventsInput = {
@@ -1004,6 +1042,7 @@ export type UserUpdateWithoutUserEventsInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUserEventsInput = {
@@ -1027,6 +1066,7 @@ export type UserUncheckedUpdateWithoutUserEventsInput = {
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateWithoutOrganizerGroupInput = {
@@ -1050,6 +1090,7 @@ export type UserCreateWithoutOrganizerGroupInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutOrganizerGroupInput = {
@@ -1073,6 +1114,7 @@ export type UserUncheckedCreateWithoutOrganizerGroupInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutOrganizerGroupInput = {
@@ -1112,6 +1154,7 @@ export type UserUpdateWithoutOrganizerGroupInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOrganizerGroupInput = {
@@ -1125,6 +1168,119 @@ export type UserUncheckedUpdateWithoutOrganizerGroupInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUncheckedUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUncheckedUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
+  trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+}
+
+export type UserCreateWithoutChallengeSubmissionsInput = {
+  id?: string
+  authUserId?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
+  trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutChallengeSubmissionsInput = {
+  id?: string
+  authUserId?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventUncheckedCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
+  trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutChallengeSubmissionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutChallengeSubmissionsInput, Prisma.UserUncheckedCreateWithoutChallengeSubmissionsInput>
+}
+
+export type UserUpsertWithoutChallengeSubmissionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutChallengeSubmissionsInput, Prisma.UserUncheckedUpdateWithoutChallengeSubmissionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutChallengeSubmissionsInput, Prisma.UserUncheckedCreateWithoutChallengeSubmissionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutChallengeSubmissionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutChallengeSubmissionsInput, Prisma.UserUncheckedUpdateWithoutChallengeSubmissionsInput>
+}
+
+export type UserUpdateWithoutChallengeSubmissionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
+  trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutChallengeSubmissionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
   coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
   notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutCreatedByNestedInput
   receivedPushNotifications?: Prisma.NotificationPushUncheckedUpdateManyWithoutTargetUserNestedInput
@@ -1158,6 +1314,7 @@ export type UserCreateWithoutCoinTransactionsAdminInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutCoinTransactionsAdminInput = {
@@ -1181,6 +1338,7 @@ export type UserUncheckedCreateWithoutCoinTransactionsAdminInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutCoinTransactionsAdminInput = {
@@ -1220,6 +1378,7 @@ export type UserUpdateWithoutCoinTransactionsAdminInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCoinTransactionsAdminInput = {
@@ -1243,6 +1402,7 @@ export type UserUncheckedUpdateWithoutCoinTransactionsAdminInput = {
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateWithoutNotificationSchedulesInput = {
@@ -1266,6 +1426,7 @@ export type UserCreateWithoutNotificationSchedulesInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutNotificationSchedulesInput = {
@@ -1289,6 +1450,7 @@ export type UserUncheckedCreateWithoutNotificationSchedulesInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutNotificationSchedulesInput = {
@@ -1328,6 +1490,7 @@ export type UserUpdateWithoutNotificationSchedulesInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationSchedulesInput = {
@@ -1351,6 +1514,7 @@ export type UserUncheckedUpdateWithoutNotificationSchedulesInput = {
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateWithoutSentPushNotificationsInput = {
@@ -1374,6 +1538,7 @@ export type UserCreateWithoutSentPushNotificationsInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutSentPushNotificationsInput = {
@@ -1397,6 +1562,7 @@ export type UserUncheckedCreateWithoutSentPushNotificationsInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutSentPushNotificationsInput = {
@@ -1436,6 +1602,7 @@ export type UserUpdateWithoutSentPushNotificationsInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSentPushNotificationsInput = {
@@ -1459,6 +1626,7 @@ export type UserUncheckedUpdateWithoutSentPushNotificationsInput = {
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateWithoutReceivedPushNotificationsInput = {
@@ -1482,6 +1650,7 @@ export type UserCreateWithoutReceivedPushNotificationsInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutReceivedPushNotificationsInput = {
@@ -1505,6 +1674,7 @@ export type UserUncheckedCreateWithoutReceivedPushNotificationsInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutReceivedPushNotificationsInput = {
@@ -1544,6 +1714,7 @@ export type UserUpdateWithoutReceivedPushNotificationsInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReceivedPushNotificationsInput = {
@@ -1567,6 +1738,7 @@ export type UserUncheckedUpdateWithoutReceivedPushNotificationsInput = {
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateWithoutPushSubscriptionsInput = {
@@ -1590,6 +1762,7 @@ export type UserCreateWithoutPushSubscriptionsInput = {
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
@@ -1613,6 +1786,7 @@ export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutPushSubscriptionsInput = {
@@ -1652,6 +1826,7 @@ export type UserUpdateWithoutPushSubscriptionsInput = {
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
@@ -1675,6 +1850,7 @@ export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserCreateWithoutLocationInput = {
@@ -1698,6 +1874,7 @@ export type UserCreateWithoutLocationInput = {
   userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutLocationInput = {
@@ -1721,6 +1898,7 @@ export type UserUncheckedCreateWithoutLocationInput = {
   userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutLocationInput = {
@@ -1749,6 +1927,7 @@ export type UserCreateWithoutLocationsSharedWithMeInput = {
   userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
   location?: Prisma.LocationCreateNestedOneWithoutUserInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserUncheckedCreateWithoutLocationsSharedWithMeInput = {
@@ -1772,6 +1951,7 @@ export type UserUncheckedCreateWithoutLocationsSharedWithMeInput = {
   userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
   location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
 }
 
 export type UserCreateOrConnectWithoutLocationsSharedWithMeInput = {
@@ -1811,6 +1991,7 @@ export type UserUpdateWithoutLocationInput = {
   userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLocationInput = {
@@ -1834,6 +2015,7 @@ export type UserUncheckedUpdateWithoutLocationInput = {
   userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUpsertWithWhereUniqueWithoutLocationsSharedWithMeInput = {
@@ -1889,6 +2071,7 @@ export type UserUpdateWithoutLocationsSharedWithMeInput = {
   userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
   location?: Prisma.LocationUpdateOneWithoutUserNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLocationsSharedWithMeInput = {
@@ -1912,6 +2095,7 @@ export type UserUncheckedUpdateWithoutLocationsSharedWithMeInput = {
   userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
   location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutLocationsSharedWithMeInput = {
@@ -1943,6 +2127,7 @@ export type UserCountOutputType = {
   userEvents: number
   locationsSharedWithMe: number
   trips: number
+  challengeSubmissions: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1956,6 +2141,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   userEvents?: boolean | UserCountOutputTypeCountUserEventsArgs
   locationsSharedWithMe?: boolean | UserCountOutputTypeCountLocationsSharedWithMeArgs
   trips?: boolean | UserCountOutputTypeCountTripsArgs
+  challengeSubmissions?: boolean | UserCountOutputTypeCountChallengeSubmissionsArgs
 }
 
 /**
@@ -2038,6 +2224,13 @@ export type UserCountOutputTypeCountTripsArgs<ExtArgs extends runtime.Types.Exte
   where?: Prisma.TripParticipantWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountChallengeSubmissionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChallengeSubmissionWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2061,6 +2254,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   location?: boolean | Prisma.User$locationArgs<ExtArgs>
   locationsSharedWithMe?: boolean | Prisma.User$locationsSharedWithMeArgs<ExtArgs>
   trips?: boolean | Prisma.User$tripsArgs<ExtArgs>
+  challengeSubmissions?: boolean | Prisma.User$challengeSubmissionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2116,6 +2310,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   location?: boolean | Prisma.User$locationArgs<ExtArgs>
   locationsSharedWithMe?: boolean | Prisma.User$locationsSharedWithMeArgs<ExtArgs>
   trips?: boolean | Prisma.User$tripsArgs<ExtArgs>
+  challengeSubmissions?: boolean | Prisma.User$challengeSubmissionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -2135,6 +2330,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     location: Prisma.$LocationPayload<ExtArgs> | null
     locationsSharedWithMe: Prisma.$LocationPayload<ExtArgs>[]
     trips: Prisma.$TripParticipantPayload<ExtArgs>[]
+    challengeSubmissions: Prisma.$ChallengeSubmissionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2552,6 +2748,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   location<T extends Prisma.User$locationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$locationArgs<ExtArgs>>): Prisma.Prisma__LocationClient<runtime.Types.Result.GetResult<Prisma.$LocationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   locationsSharedWithMe<T extends Prisma.User$locationsSharedWithMeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$locationsSharedWithMeArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LocationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   trips<T extends Prisma.User$tripsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tripsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TripParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  challengeSubmissions<T extends Prisma.User$challengeSubmissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$challengeSubmissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengeSubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3235,6 +3432,30 @@ export type User$tripsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
   take?: number
   skip?: number
   distinct?: Prisma.TripParticipantScalarFieldEnum | Prisma.TripParticipantScalarFieldEnum[]
+}
+
+/**
+ * User.challengeSubmissions
+ */
+export type User$challengeSubmissionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChallengeSubmission
+   */
+  select?: Prisma.ChallengeSubmissionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChallengeSubmission
+   */
+  omit?: Prisma.ChallengeSubmissionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChallengeSubmissionInclude<ExtArgs> | null
+  where?: Prisma.ChallengeSubmissionWhereInput
+  orderBy?: Prisma.ChallengeSubmissionOrderByWithRelationInput | Prisma.ChallengeSubmissionOrderByWithRelationInput[]
+  cursor?: Prisma.ChallengeSubmissionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ChallengeSubmissionScalarFieldEnum | Prisma.ChallengeSubmissionScalarFieldEnum[]
 }
 
 /**
