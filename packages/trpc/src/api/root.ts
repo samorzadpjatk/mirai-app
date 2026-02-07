@@ -12,6 +12,9 @@ import { notificationDeliveryRouter } from "./routers/notificationDelivery";
 import { locationRouter } from "./routers/location";
 import { tripRouter } from "./routers/trip";
 import { challengeRouter } from "./routers/challenge";
+import { challengeSubmissionRouter } from "./routers/challengeSubmission";
+import { challengeVoteRouter } from "./routers/challengeVote";
+import { submissionReportRouter } from "./routers/submissionReport";
 import { notificationSenderRouter } from "./routers/notificationSender";
 
 /**
@@ -31,6 +34,9 @@ export const appRouter = createTRPCRouter({
   location: locationRouter,
   trip: tripRouter,
   challenge: challengeRouter,
+  challengeSubmission: challengeSubmissionRouter,
+  challengeVote: challengeVoteRouter,
+  submissionReport: submissionReportRouter,
 });
 
 // export type definition of API

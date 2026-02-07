@@ -50,10 +50,10 @@ export function useChallenges(tripId?: string | null) {
   interface DBChallenge {
     id: string;
     name: string;
-    points?: number | null;
+    basePoints?: number | null;
     description?: string | null;
     image?: string | null;
-    groups?: ({ groupId: string } | null)[] | null;
+    status?: string | null;
   }
 
   const challenges: ChallengeListItem[] = useMemo(() => {
@@ -62,24 +62,21 @@ export function useChallenges(tripId?: string | null) {
     const apiChallenges = (challengesData ?? []) as DBChallenge[];
 
     return apiChallenges.map((dbChallenge, index) => {
-      const groups = Array.isArray(dbChallenge.groups)
-        ? dbChallenge.groups
-        : [];
-      const isAssignedToUserGroup = groups.some(
-        (g) => g && g.groupId === userGroup?.id,
-      );
+      const rawStatus = dbChallenge.status ?? "HIDDEN";
+      const cardStatus =
+        rawStatus === "HIDDEN" || rawStatus === "CANCELLED"
+          ? "locked"
+          : rawStatus === "COMPLETED"
+            ? "selected"
+            : "incomplete";
 
       return {
         id: dbChallenge.id,
         title: dbChallenge.name,
-        points: dbChallenge.points ?? 0,
+        points: dbChallenge.basePoints ?? 0,
         icon: "stars",
         iconColor: colors.primary,
-        status: isAssignedToUserGroup
-          ? "selected"
-          : index >= 6
-            ? "locked"
-            : "incomplete",
+        status: cardStatus,
         description: dbChallenge.description ?? undefined,
         image: dbChallenge.image ?? undefined,
       } as ChallengeListItem;
