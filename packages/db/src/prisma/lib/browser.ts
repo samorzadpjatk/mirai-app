@@ -107,3 +107,8 @@ export type PushSubscription = Prisma.PushSubscriptionModel
  * 
  */
 export type Location = Prisma.LocationModel
+/**
+ * Model LocationSharingRequest
+ * 
+ */
+export type LocationSharingRequest = Prisma.LocationSharingRequestModel

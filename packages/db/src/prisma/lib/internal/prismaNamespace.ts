@@ -401,7 +401,8 @@ export const ModelName = {
   NotificationPush: 'NotificationPush',
   NotificationDelivery: 'NotificationDelivery',
   PushSubscription: 'PushSubscription',
-  Location: 'Location'
+  Location: 'Location',
+  LocationSharingRequest: 'LocationSharingRequest'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -417,7 +418,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location"
+    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1753,6 +1754,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    LocationSharingRequest: {
+      payload: Prisma.$LocationSharingRequestPayload<ExtArgs>
+      fields: Prisma.LocationSharingRequestFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LocationSharingRequestFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LocationSharingRequestFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>
+        }
+        findFirst: {
+          args: Prisma.LocationSharingRequestFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LocationSharingRequestFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>
+        }
+        findMany: {
+          args: Prisma.LocationSharingRequestFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>[]
+        }
+        create: {
+          args: Prisma.LocationSharingRequestCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>
+        }
+        createMany: {
+          args: Prisma.LocationSharingRequestCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LocationSharingRequestCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>[]
+        }
+        delete: {
+          args: Prisma.LocationSharingRequestDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>
+        }
+        update: {
+          args: Prisma.LocationSharingRequestUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>
+        }
+        deleteMany: {
+          args: Prisma.LocationSharingRequestDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LocationSharingRequestUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LocationSharingRequestUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>[]
+        }
+        upsert: {
+          args: Prisma.LocationSharingRequestUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LocationSharingRequestPayload>
+        }
+        aggregate: {
+          args: Prisma.LocationSharingRequestAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLocationSharingRequest>
+        }
+        groupBy: {
+          args: Prisma.LocationSharingRequestGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LocationSharingRequestGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LocationSharingRequestCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LocationSharingRequestCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2078,6 +2153,18 @@ export const LocationScalarFieldEnum = {
 export type LocationScalarFieldEnum = (typeof LocationScalarFieldEnum)[keyof typeof LocationScalarFieldEnum]
 
 
+export const LocationSharingRequestScalarFieldEnum = {
+  id: 'id',
+  senderId: 'senderId',
+  receiverId: 'receiverId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LocationSharingRequestScalarFieldEnum = (typeof LocationSharingRequestScalarFieldEnum)[keyof typeof LocationSharingRequestScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2240,6 +2327,20 @@ export type EnumSubmissionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
 export type ListEnumSubmissionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SubmissionStatus[]'>
     
 
+
+/**
+ * Reference to a field of type 'LocationSharingRequestStatus'
+ */
+export type EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LocationSharingRequestStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'LocationSharingRequestStatus[]'
+ */
+export type ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LocationSharingRequestStatus[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -2353,6 +2454,7 @@ export type GlobalOmitConfig = {
   notificationDelivery?: Prisma.NotificationDeliveryOmit
   pushSubscription?: Prisma.PushSubscriptionOmit
   location?: Prisma.LocationOmit
+  locationSharingRequest?: Prisma.LocationSharingRequestOmit
 }
 
 /* Types for Logging */
