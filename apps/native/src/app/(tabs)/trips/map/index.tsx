@@ -5,8 +5,8 @@ import Animated, {
   interpolate,
   useSharedValue,
   withSpring,
-  runOnJS,
 } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 import {
   GestureDetector,
   Gesture,
@@ -41,6 +41,7 @@ export default function MapScreen() {
   >(null);
   const [followMode, setFollowMode] = useState<"user" | null>(null);
   const [mapTheme, setMapTheme] = useState<"dark" | "light">("dark");
+  const listMaxHeight = 300;
 
   // Map hooks
   const { locationsByUserId, usersData } = useMapLocationStream(
@@ -143,45 +144,47 @@ export default function MapScreen() {
     expandAnim.setOpen(isListExpanded);
   }, [expandAnim, isListExpanded]);
 
-  // Gesture handling for draggable panel
-  const translateY = useSharedValue(0);
+  // Gesture handling for expandable UsersListPanel
+  const listDragStart = useSharedValue(0);
 
   const panGesture = Gesture.Pan()
+    .onBegin(() => {
+      listDragStart.value = expandAnim.value.value;
+    })
     .onUpdate((event) => {
-      // Allow dragging only downwards when panel is open
-      const newTranslateY = event.translationY;
-      translateY.value = Math.max(0, Math.min(220, newTranslateY));
+      if (selectedUser || !showUsersList) return;
+      const dragProgress = listDragStart.value + -event.translationY / listMaxHeight;
+      expandAnim.value.value = Math.max(0, Math.min(1, dragProgress));
     })
     .onEnd((event) => {
-      // If dragged more than 50% down, close panel
-      if (translateY.value > 110 || event.velocityY > 500) {
-        translateY.value = withSpring(220);
-        runOnJS(setShowUsersList)(false);
-        runOnJS(deselect)();
-      } else {
-        // Otherwise snap back to open position
-        translateY.value = withSpring(0);
-      }
+      if (selectedUser || !showUsersList) return;
+      const shouldExpand =
+        expandAnim.value.value > 0.5 || event.velocityY < -500;
+      expandAnim.value.value = withSpring(shouldExpand ? 1 : 0);
+      scheduleOnRN(setIsListExpanded, shouldExpand);
     });
 
   const panelStyle = useAnimatedStyle(() => {
-    const baseTranslateY = interpolate(
-      panelAnim.value.value,
-      [0, 1],
-      [220, 0],
-    );
     return {
       opacity: interpolate(
         panelAnim.value.value,
         [0, 1],
         [0, 1],
       ),
-      transform: [{ translateY: baseTranslateY + translateY.value }],
+      transform: [
+        {
+          translateY: interpolate(
+            panelAnim.value.value,
+            [0, 1],
+            [220, 0],
+          ),
+        },
+      ],
     };
   });
 
   const usersListStyle = useAnimatedStyle(() => {
-    const maxHeight = interpolate(expandAnim.value.value, [0, 1], [0, 300]);
+    const maxHeight = interpolate(expandAnim.value.value, [0, 1], [0, listMaxHeight]);
     return { maxHeight };
   });
 

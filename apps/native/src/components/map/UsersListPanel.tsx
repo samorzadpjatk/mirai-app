@@ -7,6 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
 import { UserAvatar } from "~/components/map/UserAvatar";
 import { formatRelativeTime } from "~/utils/format";
@@ -44,7 +45,11 @@ export function UsersListPanel({
               onManagePress();
             }}
           >
-            <Text style={styles.manageButtonText}>⚙</Text>
+            <Ionicons
+              name="settings-outline"
+              size={16}
+              color="#00ced1"
+            />
           </Pressable>
           <Pressable
             style={styles.addButton}
@@ -53,7 +58,7 @@ export function UsersListPanel({
               onAddPress();
             }}
           >
-            <Text style={styles.addButtonText}>+</Text>
+            <Ionicons name="add" size={20} color="#00ced1" />
           </Pressable>
         </View>
       </Pressable>
