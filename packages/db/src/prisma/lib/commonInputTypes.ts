@@ -341,6 +341,23 @@ export type FloatWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedFloatFilter<$PrismaModel>
 }
 
+export type EnumLocationSharingRequestStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.LocationSharingRequestStatus | Prisma.EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel> | $Enums.LocationSharingRequestStatus
+}
+
+export type EnumLocationSharingRequestStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LocationSharingRequestStatus | Prisma.EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLocationSharingRequestStatusWithAggregatesFilter<$PrismaModel> | $Enums.LocationSharingRequestStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -657,6 +674,23 @@ export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedFloatFilter<$PrismaModel>
   _min?: Prisma.NestedFloatFilter<$PrismaModel>
   _max?: Prisma.NestedFloatFilter<$PrismaModel>
+}
+
+export type NestedEnumLocationSharingRequestStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.LocationSharingRequestStatus | Prisma.EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel> | $Enums.LocationSharingRequestStatus
+}
+
+export type NestedEnumLocationSharingRequestStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LocationSharingRequestStatus | Prisma.EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumLocationSharingRequestStatusWithAggregatesFilter<$PrismaModel> | $Enums.LocationSharingRequestStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel>
 }
 
 

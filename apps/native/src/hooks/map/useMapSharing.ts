@@ -29,6 +29,17 @@ export function useMapSharing(enabledForAllUsersQuery: boolean) {
     }),
   );
 
+  const removeUserMutation = useMutation(
+    trpc.location.removeUserFromSharing.mutationOptions({
+      onSuccess: () => {
+        void refetchSharing();
+      },
+      onError: (err) => {
+        console.error("[Map] Failed to remove user from sharing:", err);
+      },
+    }),
+  );
+
   const sharingUserIds = useMemo(
     () => sharingSettings?.usersToShareWith.map((u) => u.id) ?? [],
     [sharingSettings],
@@ -40,12 +51,17 @@ export function useMapSharing(enabledForAllUsersQuery: boolean) {
       userIdsToShareWith,
     });
 
+  const removeUser = (userId: string) =>
+    removeUserMutation.mutate({ userId });
+
   return {
     sharingSettings,
     sharingUserIds,
     allAvailableUsers,
     refetchSharing,
     updateSharing,
+    removeUser,
     isUpdatingSharing: updateSharingMutation.isPending,
+    isRemovingUser: removeUserMutation.isPending,
   };
 }

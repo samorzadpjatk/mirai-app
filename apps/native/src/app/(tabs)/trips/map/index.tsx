@@ -3,13 +3,21 @@ import { StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   interpolate,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
+import {
+  GestureDetector,
+  Gesture,
+} from "react-native-gesture-handler";
 import { usePanelAnimation } from "~/hooks/ui";
 import { UserMap, type UserLocation } from "~/components/map/UserMap";
 import { useMapUsers } from "~/hooks/map";
 import { MapActionButtons } from "~/components/map/MapActionButtons";
 import { SelectedUserCard } from "~/components/map/SelectedUserCard";
 import { ShareLocationModal } from "~/components/map/ShareLocationModal";
+import { ManageSharingModal } from "~/components/map/ManageSharingModal";
 import { UsersListPanel } from "~/components/map/UsersListPanel";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useMapLocationStream } from "~/hooks/map";
@@ -22,6 +30,7 @@ export default function MapScreen() {
   const { session } = useAuth();
   const [showUsersList, setShowUsersList] = useState(true);
   const [isListExpanded, setIsListExpanded] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
   const panelAnim = usePanelAnimation(false, 240);
   const expandAnim = usePanelAnimation(false, 300);
   const [currentCoordinate, setCurrentCoordinate] = useState<
@@ -32,13 +41,20 @@ export default function MapScreen() {
   >(null);
   const [followMode, setFollowMode] = useState<"user" | null>(null);
   const [mapTheme, setMapTheme] = useState<"dark" | "light">("dark");
+  const listMaxHeight = 300;
 
   // Map hooks
   const { locationsByUserId, usersData } = useMapLocationStream(
     !!session?.access_token,
   );
-  const { sharingUserIds, allAvailableUsers, updateSharing } =
-    useMapSharing(false);
+  const {
+    sharingUserIds,
+    sharingSettings,
+    allAvailableUsers,
+    updateSharing,
+    removeUser,
+    isRemovingUser,
+  } = useMapSharing(false);
   const { sendLocation } = useMapActions();
 
   // Selection & share modal state (extracted)
@@ -128,16 +144,47 @@ export default function MapScreen() {
     expandAnim.setOpen(isListExpanded);
   }, [expandAnim, isListExpanded]);
 
+  // Gesture handling for expandable UsersListPanel
+  const listDragStart = useSharedValue(0);
+
+  const panGesture = Gesture.Pan()
+    .onBegin(() => {
+      listDragStart.value = expandAnim.value.value;
+    })
+    .onUpdate((event) => {
+      if (selectedUser || !showUsersList) return;
+      const dragProgress = listDragStart.value + -event.translationY / listMaxHeight;
+      expandAnim.value.value = Math.max(0, Math.min(1, dragProgress));
+    })
+    .onEnd((event) => {
+      if (selectedUser || !showUsersList) return;
+      const shouldExpand =
+        expandAnim.value.value > 0.5 || event.velocityY < -500;
+      expandAnim.value.value = withSpring(shouldExpand ? 1 : 0);
+      scheduleOnRN(setIsListExpanded, shouldExpand);
+    });
+
   const panelStyle = useAnimatedStyle(() => {
-    const translateY = interpolate(panelAnim.value.value, [0, 1], [220, 0]);
     return {
-      opacity: panelAnim.value.value,
-      transform: [{ translateY }],
+      opacity: interpolate(
+        panelAnim.value.value,
+        [0, 1],
+        [0, 1],
+      ),
+      transform: [
+        {
+          translateY: interpolate(
+            panelAnim.value.value,
+            [0, 1],
+            [220, 0],
+          ),
+        },
+      ],
     };
   });
 
   const usersListStyle = useAnimatedStyle(() => {
-    const maxHeight = interpolate(expandAnim.value.value, [0, 1], [0, 300]);
+    const maxHeight = interpolate(expandAnim.value.value, [0, 1], [0, listMaxHeight]);
     return { maxHeight };
   });
 
@@ -164,36 +211,39 @@ export default function MapScreen() {
         mapTheme={mapTheme}
         overlay={
           <>
-            <Animated.View
-              pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
-              style={[styles.detailCard, panelStyle]}
-            >
-              {selectedUser ? (
-                <SelectedUserCard
-                  selectedUser={selectedUser}
-                  displayName={selectedUserDisplayName}
-                  displaySurname={selectedUserDisplaySurname}
-                  isSharingWithSelected={sharingUserIds.includes(
-                    selectedUser.id,
-                  )}
-                  canStopSharing={canStopSharing}
-                  onBackToList={() => {
-                    deselect();
-                    setShowUsersList(true);
-                  }}
-                  onStopSharing={handleStopSharing}
-                />
-              ) : showUsersList ? (
-                <UsersListPanel
-                  users={users}
-                  currentUserId={session?.user?.id}
-                  usersListStyle={usersListStyle}
-                  onToggleExpand={() => setIsListExpanded(!isListExpanded)}
-                  onAddPress={() => shareModal.openModal()}
-                  onSelectUser={handleSelectUser}
-                />
-              ) : null}
-            </Animated.View>
+            <GestureDetector gesture={panGesture}>
+              <Animated.View
+                pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
+                style={[styles.detailCard, panelStyle]}
+              >
+                {selectedUser ? (
+                  <SelectedUserCard
+                    selectedUser={selectedUser}
+                    displayName={selectedUserDisplayName}
+                    displaySurname={selectedUserDisplaySurname}
+                    isSharingWithSelected={sharingUserIds.includes(
+                      selectedUser.id,
+                    )}
+                    canStopSharing={canStopSharing}
+                    onBackToList={() => {
+                      deselect();
+                      setShowUsersList(true);
+                    }}
+                    onStopSharing={handleStopSharing}
+                  />
+                ) : showUsersList ? (
+                  <UsersListPanel
+                    users={users}
+                    currentUserId={session?.user?.id}
+                    usersListStyle={usersListStyle}
+                    onToggleExpand={() => setIsListExpanded(!isListExpanded)}
+                    onAddPress={() => shareModal.openModal()}
+                    onManagePress={() => setShowManageModal(true)}
+                    onSelectUser={handleSelectUser}
+                  />
+                ) : null}
+              </Animated.View>
+            </GestureDetector>
             <MapActionButtons
               mapTheme={mapTheme}
               onToggleTheme={() =>
@@ -212,6 +262,15 @@ export default function MapScreen() {
               onClearSelected={shareModal.reset}
               onClose={shareModal.closeModal}
               onConfirmAdd={shareModal.confirm}
+            />
+            <ManageSharingModal
+              visible={showManageModal}
+              users={sharingSettings?.usersToShareWith ?? []}
+              onClose={() => setShowManageModal(false)}
+              onRemoveUser={(userId) => {
+                removeUser(userId);
+              }}
+              isRemoving={isRemovingUser}
             />
           </>
         }
