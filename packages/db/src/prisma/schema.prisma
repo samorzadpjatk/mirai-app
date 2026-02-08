@@ -52,13 +52,11 @@ enum SubmissionStatus {
 }
 
 model User {
-  id                        String                 @id @default(cuid())
-  authUserId                String?                @unique
-  firstName                 String?
-  lastName                  String?
-  email                     String?                @unique
-  emailVerified             DateTime?
-  image                     String?
+  id                        String                 @id @default(uuid())
+  authUserId                String                @unique
+  firstName                 String
+  lastName                  String
+  hasAvatar                 Boolean                @default(false)
   role                      Role                   @default(USER)
   organizerGroup            Group[]                @relation("UserOrganizerGroups")
   coinTransactionsAdmin     CoinTransaction[]      @relation("UserCoinTransactionsAdmin")

@@ -5,18 +5,19 @@ import type {
 } from "./src/test-utils/mockAuthTypes";
 
 const MOCK_AUTH_USER_ID = "supabase-mock-user";
+const MOCK_AUTH_EMAIL = "mock.user@example.com";
+const MOCK_AUTH_EMAIL_VERIFIED = new Date("2023-01-01T00:00:00.000Z");
 
 const baseDbUser: MockDbUser = {
   id: "mock-user-id",
   authUserId: MOCK_AUTH_USER_ID,
-  email: "mock.user@example.com",
-  name: "Mock User",
-  emailVerified: new Date("2023-01-01T00:00:00.000Z"),
+  firstName: "Mock",
+  lastName: "User",
   role: "ADMIN",
   isAdmin: true,
   isModerator: true,
   isServiceAccount: false,
-  image: null,
+  hasAvatar: false,
   wristNumber: null,
   houseNumber: null,
   groupId: null,
@@ -34,10 +35,6 @@ const toDbUser = (overrides?: Partial<MockDbUser>): MockDbUser => {
       overrides && "authUserId" in overrides
         ? overrides.authUserId ?? null
         : baseDbUser.authUserId,
-    emailVerified:
-      overrides && "emailVerified" in overrides
-        ? overrides.emailVerified ?? null
-        : baseDbUser.emailVerified,
   };
 };
 
@@ -68,9 +65,9 @@ vi.mock("@integral-2025-app/auth", () => {
       user: {
         id: dbUser.id,
         authUserId: dbUser.authUserId,
-        email: dbUser.email,
-        name: dbUser.name,
-        emailVerified: dbUser.emailVerified ?? null,
+        email: MOCK_AUTH_EMAIL,
+        name: `${dbUser.firstName ?? ""} ${dbUser.lastName ?? ""}`.trim() || null,
+        emailVerified: MOCK_AUTH_EMAIL_VERIFIED,
       },
       dbUser,
     };

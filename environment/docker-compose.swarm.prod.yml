@@ -32,7 +32,6 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
       ADMIN_ROLE: "PJAPP Admin"
       MODERATOR_ROLE: "PJAPP Moderator"
-      TECH_ROLE: "PJAPP Tech"
       SERVICE_ACCOUNT_ROLE: "PJAPP SA"
       DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@supabase-pooler:${POOLER_PROXY_PORT_TRANSACTION}/${POSTGRES_DB}"
     depends_on:
@@ -454,6 +453,7 @@ services:
     image: supabase/postgres:15.8.1.085
     volumes:
       - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:ro
+      - ./volumes/db/init/data.sql:/docker-entrypoint-initdb.d/init-scripts/97-data.sql:ro
       - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:ro
       - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
       - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:ro

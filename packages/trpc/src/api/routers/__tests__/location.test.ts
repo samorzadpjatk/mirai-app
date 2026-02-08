@@ -242,7 +242,7 @@ describe("locationRouter", () => {
             id: "user-2",
             firstName: "Friend",
             lastName: "One",
-            image: "avatar1.jpg",
+            hasAvatar: true,
           },
         },
         {
@@ -256,7 +256,7 @@ describe("locationRouter", () => {
             id: "user-3",
             firstName: "Friend",
             lastName: "Two",
-            image: "avatar2.jpg",
+            hasAvatar: true,
           },
         },
       ];
@@ -303,13 +303,13 @@ describe("locationRouter", () => {
             id: "user-2",
             firstName: "Friend",
             lastName: "One",
-            image: null,
+            hasAvatar: false,
           },
           {
             id: "user-3",
             firstName: "Friend",
             lastName: "Two",
-            image: "avatar.jpg",
+            hasAvatar: true,
           },
         ],
       };
@@ -337,14 +337,14 @@ describe("locationRouter", () => {
   describe("getAllUsersForSharing", () => {
     it("should return all users except current user", async () => {
       const mockUsers = [
-        { id: "user-2", firstName: "User", lastName: "Two", image: null },
+        { id: "user-2", firstName: "User", lastName: "Two", hasAvatar: false },
         {
           id: "user-3",
           firstName: "User",
           lastName: "Three",
-          image: "avatar.jpg",
+          hasAvatar: true,
         },
-        { id: "user-4", firstName: "User", lastName: "Four", image: null },
+        { id: "user-4", firstName: "User", lastName: "Four", hasAvatar: false },
       ];
 
       mockContext.db.user.findMany.mockResolvedValue(mockUsers);

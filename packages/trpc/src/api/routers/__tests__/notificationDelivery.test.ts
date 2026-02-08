@@ -18,6 +18,13 @@ describe("notificationDeliveryRouter", () => {
           groupBy: vi.fn(),
         },
       },
+      supabase: {
+        auth: {
+          admin: {
+            getUserById: vi.fn(),
+          },
+        },
+      },
       dbUser: {
         id: "admin-user-id",
         role: "ADMIN",
@@ -205,10 +212,15 @@ describe("notificationDeliveryRouter", () => {
             id: "user-1",
             firstName: "Admin",
             lastName: "User",
-            email: "admin@example.com",
+            authUserId: "auth-user-1",
           },
         },
       };
+
+      mockContext.supabase.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email: "admin@example.com" } },
+        error: null,
+      });
 
       mockContext.db.notificationDelivery.findUnique.mockResolvedValue(
         mockDelivery,
@@ -220,7 +232,18 @@ describe("notificationDeliveryRouter", () => {
         tripId: "trip-1",
       });
 
-      expect(result).toEqual(mockDelivery);
+      expect(result).toEqual({
+        ...mockDelivery,
+        notification: {
+          ...mockDelivery.notification,
+          createdBy: {
+            id: "user-1",
+            firstName: "Admin",
+            lastName: "User",
+            email: "admin@example.com",
+          },
+        },
+      });
 
       expect(
         mockContext.db.notificationDelivery.findUnique,
@@ -242,13 +265,17 @@ describe("notificationDeliveryRouter", () => {
                   id: true,
                   firstName: true,
                   lastName: true,
-                  email: true,
+                  authUserId: true,
                 },
               },
             },
           },
         },
       });
+
+      expect(mockContext.supabase.auth.admin.getUserById).toHaveBeenCalledWith(
+        "auth-user-1",
+      );
     });
 
     it("should throw NOT_FOUND when delivery does not exist", async () => {

@@ -36,7 +36,6 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
       ADMIN_ROLE: "PJAPP Admin"
       MODERATOR_ROLE: "PJAPP Moderator"
-      TECH_ROLE: "PJAPP Tech"
       SERVICE_ACCOUNT_ROLE: "PJAPP SA"
       DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@supabase-pooler:${POOLER_PROXY_PORT_TRANSACTION}/${POSTGRES_DB}"
     depends_on:
@@ -501,6 +500,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+      - ./volumes/db/init/data.sql:/docker-entrypoint-initdb.d/init-scripts/97-data.sql:Z
       # Must be superuser to create event trigger
       - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
       # Must be superuser to alter reserved role

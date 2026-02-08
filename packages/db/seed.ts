@@ -26,57 +26,97 @@ const SEED_USERS = [
     email: "admin@pjatk.dev",
     password: "admin123",
     role: "admin",
-    name: "Admin User",
+    firstName: "Admin",
+    lastName: "User",
   },
   {
     email: "dev@pjatk.dev",
     password: "dev123",
-    role: "tech",
-    name: "Developer User",
+    role: "admin",
+    firstName: "Developer",
+    lastName: "User",
   },
   {
     email: "moderator@pjatk.dev",
     password: "moderator123",
     role: "moderator",
-    name: "Moderator User",
+    firstName: "Moderator",
+    lastName: "User",
   },
   {
     email: "user@pjatk.dev",
     password: "user123",
     role: "user",
-    name: "Regular User",
+    firstName: "Regular",
+    lastName: "User",
   },
   {
     email: "student@pjatk.dev",
     password: "student123",
     role: "user",
-    name: "Student User",
+    firstName: "Student",
+    lastName: "User",
   },
   {
     email: "staff@pjatk.dev",
     password: "staff123",
     role: "user",
-    name: "Staff User",
+    firstName: "Staff",
+    lastName: "User",
   },
   {
     email: "alice@pjatk.dev",
     password: "alice123",
     role: "user",
-    name: "Alice Johnson",
+    firstName: "Alice",
+    lastName: "Johnson",
   },
   {
     email: "bob@pjatk.dev",
     password: "bob123",
     role: "user",
-    name: "Bob Smith",
+    firstName: "Bob",
+    lastName: "Smith",
   },
 ];
+
+const findSupabaseUserIdByEmail = async (
+  email: string,
+): Promise<string | null> => {
+  const supabase = getAdminClient();
+  const perPage = 1000;
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+
+    if (error || !data) {
+      console.error(`✗ Failed to list users while searching for ${email}:`, error?.message ?? error);
+      return null;
+    }
+
+    const match = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (match?.id) {
+      return match.id;
+    }
+
+    if (data.users.length < perPage) {
+      return null;
+    }
+
+    page += 1;
+  }
+};
 
 async function createSupabaseUser(
   email: string,
   password: string,
   role: string,
-  name: string,
+  firstName: string,
+  lastName: string,
 ): Promise<boolean> {
   try {
     const supabase = getAdminClient();
@@ -86,8 +126,8 @@ async function createSupabaseUser(
       password,
       email_confirm: true,
       user_metadata: {
-        name,
-        role,
+        firstName,
+        lastName,
       },
       app_metadata: {
         role,
@@ -95,9 +135,45 @@ async function createSupabaseUser(
     });
 
     if (error) {
-      if (error.message.includes("already registered") || error.message.includes("User already registered")) {
-        console.log(`ℹ️ Auth user already exists: ${email}`);
-        return true;
+      if (error.message.includes("has already been registered")) {
+        const existingUserId = await findSupabaseUserIdByEmail(email);
+        if (!existingUserId) {
+          console.error(`✗ Could not locate existing auth user for ${email}`);
+          return false;
+        }
+
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(existingUserId);
+        if (deleteError) {
+          console.error(`✗ Failed to delete existing auth user ${email}:`, deleteError.message);
+          return false;
+        }
+
+        console.log(`ℹ️ Deleted existing auth user: ${email}`);
+
+        const { data: recreated, error: recreateError } = await supabase.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            firstName,
+            lastName,
+          },
+          app_metadata: {
+            role,
+          },
+        });
+
+        if (recreateError) {
+          console.error(`✗ Failed to recreate ${email}:`, recreateError.message);
+          return false;
+        }
+
+        if (recreated.user) {
+          console.log(`✓ Recreated auth user: ${email} (${role})`);
+          return true;
+        }
+
+        return false;
       }
       console.error(`✗ Failed to create ${email}:`, error.message);
       return false;
@@ -152,7 +228,13 @@ async function main() {
   // Create users in Supabase Auth
   console.log("\n📝 Creating users in Supabase Auth...");
   for (const user of SEED_USERS) {
-    await createSupabaseUser(user.email, user.password, user.role, user.name);
+    await createSupabaseUser(
+      user.email,
+      user.password,
+      user.role,
+      user.firstName,
+      user.lastName,
+    );
   }
 
   console.log("\n📝 Fetching users from Supabase Auth...");
@@ -174,21 +256,9 @@ async function main() {
 
   type RoleValue = "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
 
-  const parseName = (
-    fullName?: string | null,
-  ): { firstName?: string; lastName?: string } => {
-    if (!fullName?.trim()) return {};
-    const parts = fullName.trim().split(/\s+/);
-    if (parts.length === 1) {
-      return { firstName: parts[0] };
-    }
-    return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
-  };
-
   const mapRole = (role?: string | null): RoleValue => {
     switch (role?.toLowerCase()) {
       case "admin":
-      case "tech":
         return "ADMIN";
       case "moderator":
         return "MODERATOR";
@@ -203,48 +273,36 @@ async function main() {
     const rawRole =
       user.app_metadata?.role ?? user.user_metadata?.role ?? "user";
     const role = mapRole(rawRole);
-    const { firstName, lastName } = parseName(
-      user.user_metadata?.name ?? user.email.split("@")[0],
-    );
+    const firstName = user.user_metadata?.firstName ?? null;
+    const lastName = user.user_metadata?.lastName ?? null;
+
+    if (!firstName || !lastName) {
+      console.warn(
+        `  ⚠️ Skipping user ${user.email ?? user.id} - missing firstName/lastName metadata`,
+      );
+      continue;
+    }
 
     try {
-      // First, try to find existing user by email or authUserId
-      const existingUser = await prisma.user.findFirst({
-        where: {
-          OR: [{ email: user.email }, { authUserId: user.id }],
+      const result = await prisma.user.updateMany({
+        where: { authUserId: user.id },
+        data: {
+          firstName,
+          lastName,
+          role,
         },
       });
 
-      if (existingUser) {
-        // Update existing user
-        const result = await prisma.user.update({
-          where: { id: existingUser.id },
-          data: {
-            authUserId: user.id,
-            email: user.email,
-            firstName,
-            lastName,
-            emailVerified: new Date(),
-            role,
-          },
-        });
-        console.log(`  ✓ Updated DB user: ${result.email} (${role})`);
-      } else {
-        // Create new user
-        const result = await prisma.user.create({
-          data: {
-            authUserId: user.id,
-            email: user.email,
-            firstName,
-            lastName,
-            emailVerified: new Date(),
-            role,
-          },
-        });
-        console.log(`  ✓ Created DB user: ${result.email} (${role})`);
+      if (result.count === 0) {
+        console.warn(
+          `  ⚠️ Missing DB user for ${user.email ?? user.id} - ensure auth trigger ran`,
+        );
+        continue;
       }
+
+      console.log(`  ✓ Updated DB user: ${user.email ?? user.id} (${role})`);
     } catch (error) {
-      console.error(`  ✗ Failed to sync user ${user.email}:`, error);
+      console.error(`  ✗ Failed to sync user ${user.email ?? user.id}:`, error);
     }
   }
 
@@ -287,7 +345,7 @@ async function main() {
             });
           }
         } catch (err) {
-          console.error(`✗ Failed to add ${u.email} to trip ${tripName}:`, err);
+          console.error(`✗ Failed to add ${u.id} to trip ${tripName}:`, err);
         }
       }),
     );

@@ -65,6 +65,33 @@ export interface SharingSettings {
   usersToShareWith: SharingUser[];
 }
 
+const USER_IMAGE_BUCKET = "user_image";
+
+const getUserAvatarUrl = (
+  userId: string | null | undefined,
+  hasAvatar: boolean | null | undefined,
+): string | null => {
+  if (!userId || !hasAvatar) return null;
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!baseUrl) return null;
+  return `${baseUrl}/storage/v1/object/public/${USER_IMAGE_BUCKET}/${userId}`;
+};
+
+const mapUserWithAvatar = (user: {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  hasAvatar: boolean | null;
+} | null): LocationWithUser["user"] | null => {
+  if (!user) return null;
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    image: getUserAvatarUrl(user.id, user.hasAvatar),
+  };
+};
+
 /**
  * Convert database location to Expo-compliant format
  */
@@ -97,14 +124,14 @@ async function toLocationWithUser(
       id: true,
       firstName: true,
       lastName: true,
-      image: true,
+      hasAvatar: true,
     },
   });
 
   return {
     ...expoLocation,
     isSharingLocation: dbLocation.isSharingLocation,
-    user: user ?? undefined,
+    user: mapUserWithAvatar(user) ?? undefined,
   };
 }
 
@@ -186,6 +213,7 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
+              hasAvatar: true,
             },
           },
         },
@@ -240,7 +268,6 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
             },
           },
         },
@@ -337,7 +364,7 @@ export const locationRouter = createTRPCRouter({
                               id: true,
                               firstName: true,
                               lastName: true,
-                              image: true,
+                              hasAvatar: true,
                             },
                           },
                         },
@@ -363,7 +390,7 @@ export const locationRouter = createTRPCRouter({
                           },
                           timestamp: dbLocation.timestamp.getTime(),
                           isSharingLocation: dbLocation.isSharingLocation,
-                          user: dbLocation.user ?? undefined,
+                          user: mapUserWithAvatar(dbLocation.user) ?? undefined,
                         };
 
                         const userId = dbLocation.userId;
@@ -565,12 +592,15 @@ export const locationRouter = createTRPCRouter({
       },
       include: {
         user: {
-          select: { id: true, firstName: true, lastName: true, image: true },
+          select: { id: true, firstName: true, lastName: true, hasAvatar: true },
         },
       },
     });
 
-    return locations;
+    return locations.map((location) => ({
+      ...location,
+      user: mapUserWithAvatar(location.user) ?? undefined,
+    }));
   }),
 
   /**
@@ -586,7 +616,7 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
@@ -610,7 +640,7 @@ export const locationRouter = createTRPCRouter({
             id: String(user.id),
             firstName: user.firstName ?? null,
             lastName: user.lastName ?? null,
-            image: user.image ?? null,
+            image: getUserAvatarUrl(user.id, user.hasAvatar),
           }),
         ),
       };
@@ -629,7 +659,7 @@ export const locationRouter = createTRPCRouter({
         id: true,
         firstName: true,
         lastName: true,
-        image: true,
+        hasAvatar: true,
       },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     });
@@ -641,7 +671,7 @@ export const locationRouter = createTRPCRouter({
         id: String(user.id),
         firstName: user.firstName ?? null,
         lastName: user.lastName ?? null,
-        image: user.image ?? null,
+        image: getUserAvatarUrl(user.id, user.hasAvatar),
       }),
     );
   }),
@@ -673,7 +703,7 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
@@ -686,7 +716,7 @@ export const locationRouter = createTRPCRouter({
             id: String(user.id),
             firstName: user.firstName ?? null,
             lastName: user.lastName ?? null,
-            image: user.image ?? null,
+            image: getUserAvatarUrl(user.id, user.hasAvatar),
           }),
         ),
       };
@@ -711,7 +741,7 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
@@ -724,7 +754,7 @@ export const locationRouter = createTRPCRouter({
             id: String(user.id),
             firstName: user.firstName ?? null,
             lastName: user.lastName ?? null,
-            image: user.image ?? null,
+            image: getUserAvatarUrl(user.id, user.hasAvatar),
           }),
         ),
       };
@@ -898,14 +928,17 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
         orderBy: { createdAt: "desc" },
       });
 
-      return requests;
+      return requests.map((request) => ({
+        ...request,
+        sender: mapUserWithAvatar(request.sender),
+      }));
     },
   ),
 
@@ -922,7 +955,7 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
@@ -936,7 +969,7 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
@@ -944,6 +977,15 @@ export const locationRouter = createTRPCRouter({
       }),
     ]);
 
-    return { sent, received };
+    return {
+      sent: sent.map((request) => ({
+        ...request,
+        receiver: mapUserWithAvatar(request.receiver),
+      })),
+      received: received.map((request) => ({
+        ...request,
+        sender: mapUserWithAvatar(request.sender),
+      })),
+    };
   }),
 });
