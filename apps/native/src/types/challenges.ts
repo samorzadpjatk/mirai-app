@@ -1,4 +1,4 @@
-import { type MaterialIcons } from "@expo/vector-icons";
+import { type Ionicons } from "@expo/vector-icons";
 import { type ComponentProps } from "react";
 
 export enum ChallengeStatus {
@@ -13,7 +13,7 @@ export interface Challenge {
   title: string;
   description?: string;
   points: number;
-  icon: ComponentProps<typeof MaterialIcons>['name'];
+  icon: ComponentProps<typeof Ionicons>['name'];
   iconColor: string;
   status: ChallengeStatus;
   size: 'normal' | 'wide' | 'tall';

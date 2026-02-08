@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, colors, spacing, typography } from '~/styles';
 
 interface CapturedImageCardProps {
@@ -17,12 +17,12 @@ export function CapturedImageCard({ imageUri, onRetake, onDone }: CapturedImageC
 
       <View style={styles.actionsRow}>
         <TouchableOpacity onPress={onRetake} style={styles.retakeButton}>
-          <MaterialIcons name="refresh" size={20} color="#ef4444" />
+          <Ionicons name="refresh" size={20} color="#ef4444" />
           <Text style={styles.retakeText}>Retake</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onDone} style={styles.doneButton}>
-          <MaterialIcons name="check-circle" size={20} color={colors.backgroundDark} />
+          <Ionicons name="checkmark-circle" size={20} color={colors.backgroundDark} />
           <Text style={styles.doneText}>Done</Text>
         </TouchableOpacity>
       </View>

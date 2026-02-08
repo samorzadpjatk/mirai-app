@@ -44,7 +44,7 @@ export function TripQuickAccessGrid({
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenChallenges}>
         <View style={styles.gridIconWrapper}>
-          <Ionicons name="locate" size={24} color={colors.primary} />
+          <Ionicons name="trophy" size={24} color={colors.primary} />
         </View>
         <View style={styles.gridCardContent}>
           <Text style={styles.gridCardTitle}>Challenges</Text>
@@ -54,7 +54,7 @@ export function TripQuickAccessGrid({
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenLeaderboard}>
         <View style={styles.gridIconWrapper}>
-          <Ionicons name="trophy" size={24} color={colors.primary} />
+          <Ionicons name="ribbon" size={24} color={colors.primary} />
         </View>
         <View style={styles.gridCardContent}>
           <Text style={styles.gridCardTitle}>Leaderboard</Text>
