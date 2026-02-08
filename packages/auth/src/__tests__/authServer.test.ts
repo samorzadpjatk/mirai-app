@@ -206,17 +206,19 @@ describe("auth server", () => {
       const dbUser = {
         id: "1",
         authUserId: "sub-1",
-        email: "user@test.com",
         firstName: "User",
         lastName: null,
-        emailVerified: new Date("2024-01-01"),
-        image: null,
+        hasAvatar: false,
         role: "ADMIN",
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-02"),
       } as unknown as User;
 
-      const authUser = mapDatabaseUserToAuthUser(dbUser);
+      const authUser = mapDatabaseUserToAuthUser(dbUser, {
+        id: "sub-1",
+        email: "user@test.com",
+        email_confirmed_at: "2024-01-01T00:00:00.000Z",
+      } as any);
 
       expect(authUser).toEqual({
         id: "1",
@@ -225,7 +227,7 @@ describe("auth server", () => {
         firstName: "User",
         lastName: null,
         name: "User",
-        emailVerified: new Date("2024-01-01"),
+        emailVerified: new Date("2024-01-01T00:00:00.000Z"),
         role: "ADMIN",
       });
     });
@@ -238,17 +240,18 @@ describe("auth server", () => {
       const dbUser = {
         id: "1",
         authUserId: null,
-        email: "user@test.com",
         firstName: "User",
         lastName: null,
-        image: null,
+        hasAvatar: false,
         role: "USER",
-        emailVerified: null,
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-02"),
       } as unknown as User;
 
-      expect(mapDatabaseUserToAuthUser(dbUser)).toBeNull();
+      expect(mapDatabaseUserToAuthUser(dbUser, {
+        id: "sub-1",
+        email: "user@test.com",
+      } as any)).toBeNull();
     });
   });
 });

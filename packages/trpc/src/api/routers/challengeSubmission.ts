@@ -7,6 +7,7 @@ import {
   adminProcedure,
 } from "../../api/trpc";
 import { type Prisma } from "@integral-2025-app/db";
+import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { parseSupabaseStorageObject } from "../../utils/storage";
 
 const submissionBaseSelect: Prisma.ChallengeSubmissionSelect = {
@@ -46,10 +47,22 @@ const submissionSelect: Prisma.ChallengeSubmissionSelect = {
       id: true,
       firstName: true,
       lastName: true,
-      email: true,
+      authUserId: true,
     },
   },
 } as const;
+
+const attachReviewerEmail = <T extends { authUserId?: string | null }>(
+  reviewer: T | null,
+  emailByAuthUserId: Map<string, string | null>,
+) => {
+  if (!reviewer) return reviewer;
+  const { authUserId, ...rest } = reviewer;
+  return {
+    ...rest,
+    email: resolveAuthEmail(emailByAuthUserId, authUserId),
+  };
+};
 
 const CHALLENGE_SUBMISSION_BUCKET =
   process.env.SUPABASE_STORAGE_CHALLENGE_SUBMISSIONS_BUCKET ??
@@ -61,7 +74,10 @@ const sanitizeFileName = (value: string): string => {
   return sanitized.length > 0 ? sanitized : "upload";
 };
 
-const isAssetTypeAllowed = (submissionType: string, assetType: "IMAGE" | "VIDEO") => {
+const isAssetTypeAllowed = (
+  submissionType: string,
+  assetType: "IMAGE" | "VIDEO",
+) => {
   if (assetType === "VIDEO") {
     return submissionType === "VIDEO";
   }
@@ -182,11 +198,21 @@ export const challengeSubmissionRouter = createTRPCRouter({
       await ensureTripParticipant(ctx, input.tripId);
       await ensureChallengeInTrip(ctx, input.challengeId, input.tripId);
 
-      return ctx.db.challengeSubmission.findMany({
+      const submissions = await ctx.db.challengeSubmission.findMany({
         where: { challengeId: input.challengeId },
         select: submissionSelect,
         orderBy: [{ voteScore: "desc" }, { createdAt: "asc" }],
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        submissions.map((submission) => submission.reviewedBy?.authUserId),
+      );
+
+      return submissions.map((submission) => ({
+        ...submission,
+        reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
+      }));
     }),
 
   getById: protectedProcedure
@@ -203,7 +229,14 @@ export const challengeSubmissionRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
       }
 
-      return submission;
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        submission.reviewedBy?.authUserId,
+      ]);
+
+      return {
+        ...submission,
+        reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
+      };
     }),
 
   getMyForChallenge: protectedProcedure
@@ -220,6 +253,17 @@ export const challengeSubmissionRouter = createTRPCRouter({
           },
         },
         select: submissionSelect,
+      }).then(async (submission) => {
+        if (!submission) return submission;
+
+        const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+          submission.reviewedBy?.authUserId,
+        ]);
+
+        return {
+          ...submission,
+          reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
+        };
       });
     }),
 
@@ -402,7 +446,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
       const autoApproved = challenge.autoApprove;
       const now = new Date();
 
-      return ctx.db.challengeSubmission.create({
+      const submission = await ctx.db.challengeSubmission.create({
         data: {
           challengeId: input.challengeId,
           groupId: participant.groupId,
@@ -416,6 +460,15 @@ export const challengeSubmissionRouter = createTRPCRouter({
         },
         select: submissionSelect,
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        submission.reviewedBy?.authUserId,
+      ]);
+
+      return {
+        ...submission,
+        reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
+      };
     }),
 
   updateMine: protectedProcedure
@@ -486,7 +539,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
       const autoApproved = submission.challenge.autoApprove;
       const now = new Date();
 
-      return ctx.db.challengeSubmission.update({
+      const updatedSubmission = await ctx.db.challengeSubmission.update({
         where: { id: input.id },
         data: {
           imageUrls: input.imageUrls,
@@ -501,6 +554,18 @@ export const challengeSubmissionRouter = createTRPCRouter({
         },
         select: submissionSelect,
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        updatedSubmission.reviewedBy?.authUserId,
+      ]);
+
+      return {
+        ...updatedSubmission,
+        reviewedBy: attachReviewerEmail(
+          updatedSubmission.reviewedBy,
+          emailByAuthUserId,
+        ),
+      };
     }),
 
   deleteMine: protectedProcedure
@@ -566,7 +631,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
       }
 
-      return ctx.db.challengeSubmission.update({
+      const updatedSubmission = await ctx.db.challengeSubmission.update({
         where: { id: input.id },
         data: {
           status: input.status,
@@ -579,6 +644,18 @@ export const challengeSubmissionRouter = createTRPCRouter({
         },
         select: submissionSelect,
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        updatedSubmission.reviewedBy?.authUserId,
+      ]);
+
+      return {
+        ...updatedSubmission,
+        reviewedBy: attachReviewerEmail(
+          updatedSubmission.reviewedBy,
+          emailByAuthUserId,
+        ),
+      };
     }),
 
   adminDelete: adminProcedure

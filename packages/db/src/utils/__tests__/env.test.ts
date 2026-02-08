@@ -7,7 +7,6 @@ const REQUIRED_ENV_VALUES = {
   AUTHENTIK_ISSUER: "http://localhost:9000",
   ADMIN_ROLE: "admin",
   MODERATOR_ROLE: "moderator",
-  TECH_ROLE: "tech",
   SERVICE_ACCOUNT_ROLE: "service",
   NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
   SUPABASE_SERVICE_ROLE_KEY: "service-role-key",

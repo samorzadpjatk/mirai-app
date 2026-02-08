@@ -165,25 +165,31 @@ const toDisplayName = (
 
 export function mapDatabaseUserToAuthUser(
   dbUser: User | null,
+  supabaseUser?: SupabaseUser | null,
 ): AuthUser | null {
   if (!dbUser?.authUserId) {
     return null;
   }
 
+  const email = supabaseUser?.email ?? null;
+  const emailVerified = supabaseUser?.email_confirmed_at
+    ? new Date(supabaseUser.email_confirmed_at)
+    : null;
+
   const displayName = toDisplayName(
     dbUser.firstName,
     dbUser.lastName,
-    dbUser.email?.split("@")[0] ?? null,
+    email?.split("@")[0] ?? null,
   );
 
   return {
     id: dbUser.id,
     authUserId: dbUser.authUserId,
-    email: dbUser.email,
+    email,
     firstName: dbUser.firstName ?? null,
     lastName: dbUser.lastName ?? null,
     name: displayName,
-    emailVerified: dbUser.emailVerified,
+    emailVerified,
     role: dbUser.role,
   };
 }
@@ -236,7 +242,7 @@ export async function getSession(
     };
   }
 
-  const authUser = mapDatabaseUserToAuthUser(dbUser);
+  const authUser = mapDatabaseUserToAuthUser(dbUser, supabaseUser);
 
   return {
     user: authUser,
@@ -303,10 +309,8 @@ export async function syncUserToDatabase(
   supabaseUser: SupabaseUser,
   upsertUser: (data: {
     authUserId: string;
-    email: string;
     firstName: string | null;
     lastName: string | null;
-    emailVerified: Date | null;
     role: Role;
   }) => Promise<User>,
 ): Promise<User> {
@@ -318,7 +322,6 @@ export async function syncUserToDatabase(
   const mapRole = (value: string | undefined): Role => {
     switch (value?.toLowerCase()) {
       case "admin":
-      case "tech":
         return "ADMIN";
       case "moderator":
         return "MODERATOR";
@@ -356,12 +359,8 @@ export async function syncUserToDatabase(
 
   return await upsertUser({
     authUserId: supabaseUser.id,
-    email: supabaseUser.email!,
     firstName: safeFirstName,
     lastName: safeLastName,
-    emailVerified: supabaseUser.email_confirmed_at
-      ? new Date(supabaseUser.email_confirmed_at)
-      : null,
     role,
   });
 }

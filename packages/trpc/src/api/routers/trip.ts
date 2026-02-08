@@ -5,6 +5,7 @@ import {
   adminProcedure,
   protectedProcedure,
 } from "../../api/trpc";
+import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 
 export const tripRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -63,7 +64,7 @@ export const tripRouter = createTRPCRouter({
                   id: true,
                   firstName: true,
                   lastName: true,
-                  email: true,
+                  authUserId: true,
                   role: true,
                 },
               },
@@ -84,7 +85,25 @@ export const tripRouter = createTRPCRouter({
       if (!trip) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Trip not found" });
       }
-      return trip;
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        trip.participants.map((participant) => participant.user.authUserId),
+      );
+
+      return {
+        ...trip,
+        participants: trip.participants.map((participant) => {
+          const { authUserId, ...user } = participant.user;
+          return {
+            ...participant,
+            user: {
+              ...user,
+              email: resolveAuthEmail(emailByAuthUserId, authUserId),
+            },
+          };
+        }),
+      };
     }),
   create: adminProcedure
     .input(
