@@ -70,6 +70,8 @@ model User {
   userEvents                UserEvent[]
   location                  Location?
   locationsSharedWithMe     Location[]             @relation("LocationSharingUsers")
+  sentLocationRequests      LocationSharingRequest[] @relation("SentLocationSharingRequests")
+  receivedLocationRequests  LocationSharingRequest[] @relation("ReceivedLocationSharingRequests")
   trips                     TripParticipant[]
   createdAt                 DateTime               @default(now())
   updatedAt                 DateTime               @updatedAt
@@ -399,4 +401,25 @@ model Location {
   speed                      Float?
   usersToShareWith           User[]    @relation("LocationSharingUsers")
   lastInactivityNotification DateTime?
+}
+
+enum LocationSharingRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model LocationSharingRequest {
+  id         String                        @id @default(cuid())
+  senderId   String
+  receiverId String
+  sender     User                          @relation("SentLocationSharingRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User                          @relation("ReceivedLocationSharingRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     LocationSharingRequestStatus  @default(PENDING)
+  createdAt  DateTime                      @default(now())
+  updatedAt  DateTime                      @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([senderId, status])
 }

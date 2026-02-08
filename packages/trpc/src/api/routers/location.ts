@@ -729,4 +729,221 @@ export const locationRouter = createTRPCRouter({
         ),
       };
     }),
+
+  /**
+   * Send a location sharing request to another user
+   */
+  sendLocationSharingRequest: protectedProcedure
+    .input(z.object({ receiverId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Check if request already exists
+      const existingRequest = await ctx.db.locationSharingRequest.findUnique({
+        where: {
+          senderId_receiverId: {
+            senderId: ctx.dbUser.id,
+            receiverId: input.receiverId,
+          },
+        },
+      });
+
+      if (existingRequest) {
+        if (existingRequest.status === "PENDING") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Request already sent",
+          });
+        }
+        // Update existing rejected request to pending
+        const updated = await ctx.db.locationSharingRequest.update({
+          where: { id: existingRequest.id },
+          data: { status: "PENDING", updatedAt: new Date() },
+        });
+        return { success: true, request: updated };
+      }
+
+      // Create new request
+      const request = await ctx.db.locationSharingRequest.create({
+        data: {
+          senderId: ctx.dbUser.id,
+          receiverId: input.receiverId,
+          status: "PENDING",
+        },
+      });
+
+      return { success: true, request };
+    }),
+
+  /**
+   * Accept a location sharing request
+   */
+  acceptLocationSharingRequest: protectedProcedure
+    .input(z.object({ requestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const request = await ctx.db.locationSharingRequest.findUnique({
+        where: { id: input.requestId },
+      });
+
+      if (!request) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Request not found",
+        });
+      }
+
+      if (request.receiverId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only accept requests sent to you",
+        });
+      }
+
+      if (request.status !== "PENDING") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Request is not pending",
+        });
+      }
+
+      // Update request status
+      const updatedRequest = await ctx.db.locationSharingRequest.update({
+        where: { id: input.requestId },
+        data: { status: "ACCEPTED" },
+      });
+
+      // Add both users to each other's sharing lists
+      // Sender shares with receiver
+      await ctx.db.location.upsert({
+        where: { userId: request.senderId },
+        update: {
+          usersToShareWith: {
+            connect: { id: request.receiverId },
+          },
+        },
+        create: {
+          userId: request.senderId,
+          timestamp: new Date(),
+          isSharingLocation: true,
+          usersToShareWith: {
+            connect: { id: request.receiverId },
+          },
+        },
+      });
+
+      // Receiver shares with sender
+      await ctx.db.location.upsert({
+        where: { userId: request.receiverId },
+        update: {
+          usersToShareWith: {
+            connect: { id: request.senderId },
+          },
+        },
+        create: {
+          userId: request.receiverId,
+          timestamp: new Date(),
+          isSharingLocation: true,
+          usersToShareWith: {
+            connect: { id: request.senderId },
+          },
+        },
+      });
+
+      return { success: true, request: updatedRequest };
+    }),
+
+  /**
+   * Reject a location sharing request
+   */
+  rejectLocationSharingRequest: protectedProcedure
+    .input(z.object({ requestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const request = await ctx.db.locationSharingRequest.findUnique({
+        where: { id: input.requestId },
+      });
+
+      if (!request) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Request not found",
+        });
+      }
+
+      if (request.receiverId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only reject requests sent to you",
+        });
+      }
+
+      const updatedRequest = await ctx.db.locationSharingRequest.update({
+        where: { id: input.requestId },
+        data: { status: "REJECTED" },
+      });
+
+      return { success: true, request: updatedRequest };
+    }),
+
+  /**
+   * Get pending location sharing requests
+   */
+  getPendingLocationSharingRequests: protectedProcedure.query(
+    async ({ ctx }) => {
+      const requests = await ctx.db.locationSharingRequest.findMany({
+        where: {
+          receiverId: ctx.dbUser.id,
+          status: "PENDING",
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return requests;
+    },
+  ),
+
+  /**
+   * Get all location sharing requests (sent and received)
+   */
+  getMyLocationSharingRequests: protectedProcedure.query(async ({ ctx }) => {
+    const [sent, received] = await Promise.all([
+      ctx.db.locationSharingRequest.findMany({
+        where: { senderId: ctx.dbUser.id },
+        include: {
+          receiver: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      ctx.db.locationSharingRequest.findMany({
+        where: { receiverId: ctx.dbUser.id },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    return { sent, received };
+  }),
 });

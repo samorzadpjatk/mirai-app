@@ -68,7 +68,8 @@ export const ModelName = {
   NotificationPush: 'NotificationPush',
   NotificationDelivery: 'NotificationDelivery',
   PushSubscription: 'PushSubscription',
-  Location: 'Location'
+  Location: 'Location',
+  LocationSharingRequest: 'LocationSharingRequest'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -371,6 +372,18 @@ export const LocationScalarFieldEnum = {
 } as const
 
 export type LocationScalarFieldEnum = (typeof LocationScalarFieldEnum)[keyof typeof LocationScalarFieldEnum]
+
+
+export const LocationSharingRequestScalarFieldEnum = {
+  id: 'id',
+  senderId: 'senderId',
+  receiverId: 'receiverId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LocationSharingRequestScalarFieldEnum = (typeof LocationSharingRequestScalarFieldEnum)[keyof typeof LocationSharingRequestScalarFieldEnum]
 
 
 export const SortOrder = {

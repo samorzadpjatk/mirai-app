@@ -7,6 +7,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
 import { UserAvatar } from "~/components/map/UserAvatar";
 import { formatRelativeTime } from "~/utils/format";
@@ -18,6 +19,7 @@ interface UsersListPanelProps {
   usersListStyle: StyleProp<ViewStyle>;
   onToggleExpand: () => void;
   onAddPress: () => void;
+  onManagePress: () => void;
   onSelectUser: (user: UserLocation) => void;
 }
 
@@ -27,6 +29,7 @@ export function UsersListPanel({
   usersListStyle,
   onToggleExpand,
   onAddPress,
+  onManagePress,
   onSelectUser,
 }: UsersListPanelProps) {
   return (
@@ -36,13 +39,26 @@ export function UsersListPanel({
         <Text style={styles.listTitle}>People</Text>
         <View style={styles.headerButtons}>
           <Pressable
+            style={styles.manageButton}
+            onPress={(event) => {
+              event.stopPropagation();
+              onManagePress();
+            }}
+          >
+            <Ionicons
+              name="settings-outline"
+              size={16}
+              color="#00ced1"
+            />
+          </Pressable>
+          <Pressable
             style={styles.addButton}
             onPress={(event) => {
               event.stopPropagation();
               onAddPress();
             }}
           >
-            <Text style={styles.addButtonText}>+</Text>
+            <Ionicons name="add" size={20} color="#00ced1" />
           </Pressable>
         </View>
       </Pressable>
@@ -119,6 +135,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: "#F8FAFC",
+  },
+  manageButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0, 206, 209, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(0, 206, 209, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  manageButtonText: {
+    color: "#00ced1",
+    fontSize: 16,
   },
   addButton: {
     width: 32,
