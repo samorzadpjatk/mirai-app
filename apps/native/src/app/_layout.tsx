@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useColorScheme, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack, useRouter, useSegments } from "expo-router";
 import {
   SafeAreaProvider,
@@ -205,16 +206,18 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider
-        supabaseUrl={SUPABASE_URL}
-        supabaseKey={SUPABASE_ANON_KEY}
-        supabaseClient={supabaseClient}
-      >
-        <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-          <RootLayoutContent />
-        </APIProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AuthProvider
+          supabaseUrl={SUPABASE_URL}
+          supabaseKey={SUPABASE_ANON_KEY}
+          supabaseClient={supabaseClient}
+        >
+          <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+            <RootLayoutContent />
+          </APIProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
