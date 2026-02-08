@@ -401,6 +401,10 @@ export type TripNullableScalarRelationFilter = {
   isNot?: Prisma.TripWhereInput | null
 }
 
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type TripCreateNestedOneWithoutParticipantsInput = {
   create?: Prisma.XOR<Prisma.TripCreateWithoutParticipantsInput, Prisma.TripUncheckedCreateWithoutParticipantsInput>
   connectOrCreate?: Prisma.TripCreateOrConnectWithoutParticipantsInput

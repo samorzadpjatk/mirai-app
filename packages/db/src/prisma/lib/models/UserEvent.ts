@@ -431,10 +431,6 @@ export type UserEventUncheckedUpdateManyWithoutEventNestedInput = {
   deleteMany?: Prisma.UserEventScalarWhereInput | Prisma.UserEventScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type UserEventCreateWithoutUserInput = {
   interestedIn?: boolean
   enlistedIn?: boolean
