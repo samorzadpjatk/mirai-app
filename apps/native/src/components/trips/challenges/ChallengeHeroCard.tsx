@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { getIconForChallenge, getColorForPoints } from "./challengeStyles";
 
@@ -20,7 +20,7 @@ export function ChallengeHeroCard({
   return (
     <View style={[styles.container, isSelected && styles.containerSelected]}>
       <View style={[styles.iconWrapper, { backgroundColor: `${iconColor}1a` }]}>
-        <MaterialIcons name={icon} size={48} color={iconColor} />
+        <Ionicons name={icon} size={48} color={iconColor} />
       </View>
 
       <Text style={styles.title}>{name}</Text>

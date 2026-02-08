@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 
@@ -68,14 +68,17 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   name,
   size = 38,
 }) => {
+  const [hasImageError, setHasImageError] = useState(false);
   const hasImage = imageUrl && imageUrl.trim().length > 0;
 
-  if (hasImage) {
+
+  if (hasImage && !hasImageError) {
     return (
       <Image
         source={{ uri: imageUrl }}
         style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
         contentFit="cover"
+        onError={() => setHasImageError(true)}
       />
     );
   }

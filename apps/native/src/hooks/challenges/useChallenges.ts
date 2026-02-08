@@ -61,7 +61,7 @@ export function useChallenges(tripId?: string | null) {
 
     const apiChallenges = (challengesData ?? []) as DBChallenge[];
 
-    return apiChallenges.map((dbChallenge, index) => {
+    return apiChallenges.map((dbChallenge) => {
       const rawStatus = dbChallenge.status ?? "HIDDEN";
       const cardStatus =
         rawStatus === "HIDDEN" || rawStatus === "CANCELLED"
@@ -74,14 +74,14 @@ export function useChallenges(tripId?: string | null) {
         id: dbChallenge.id,
         title: dbChallenge.name,
         points: dbChallenge.basePoints ?? 0,
-        icon: "stars",
+        icon: "trophy",
         iconColor: colors.primary,
         status: cardStatus,
         description: dbChallenge.description ?? undefined,
         image: dbChallenge.image ?? undefined,
       } as ChallengeListItem;
     });
-  }, [challengesData, userGroup]);
+  }, [challengesData]);
 
   return {
     trip,

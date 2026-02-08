@@ -9,7 +9,7 @@ import {
   Alert,
   SafeAreaView,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useTrips } from "~/hooks/trips";
 import { useAdminChallenges } from "~/hooks/admin";
 import type { AdminChallengeUI } from "~/hooks/admin";
@@ -84,7 +84,7 @@ export default function EditChallengeModal({
           >
             <Text style={[commonStyles.h3]}>Edit Challenge</Text>
             <TouchableOpacity onPress={onClose}>
-              <MaterialIcons name="close" size={24} color="#9ca3af" />
+              <Ionicons name="close" size={24} color="#9ca3af" />
             </TouchableOpacity>
           </View>
 

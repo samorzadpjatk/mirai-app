@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { RankedGroup } from "./types";
 
@@ -59,11 +59,7 @@ function PodiumPlace({ group, position }: PodiumPlaceProps) {
 
         {position === 1 && (
           <View style={styles.crownIcon}>
-            <MaterialIcons
-              name="military-tech"
-              size={30}
-              color={MEDAL_COLORS.gold}
-            />
+            <Ionicons name="ribbon" size={30} color={MEDAL_COLORS.gold} />
           </View>
         )}
 
@@ -83,8 +79,8 @@ function PodiumPlace({ group, position }: PodiumPlaceProps) {
           },
         ]}
       >
-        <MaterialIcons
-          name="emoji-events"
+        <Ionicons
+          name="trophy"
           size={position === 1 ? 32 : 24}
           color={medalColor}
           style={styles.medalIcon}
