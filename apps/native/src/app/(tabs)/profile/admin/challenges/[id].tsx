@@ -974,12 +974,12 @@ export default function EditChallengeScreen() {
       {(showStartPicker || showEndPicker || showVotingStartPicker || showVotingEndPicker || showDailyStartPicker || showDailyEndPicker) && (
         <DateTimePicker
           value={
-            (showStartPicker && form.startTime) ||
-            (showEndPicker && form.endTime) ||
-            (showVotingStartPicker && form.votingStartTime) ||
-            (showVotingEndPicker && form.votingEndTime) ||
-            (showDailyStartPicker && form.dailyStartTime) ||
-            (showDailyEndPicker && form.dailyEndTime) ||
+            ((showStartPicker && form.startTime) ??
+            (showEndPicker && form.endTime) ??
+            (showVotingStartPicker && form.votingStartTime) ??
+            (showVotingEndPicker && form.votingEndTime) ??
+            (showDailyStartPicker && form.dailyStartTime) ??
+            (showDailyEndPicker && form.dailyEndTime)) ??
             new Date()
           }
           mode={showDailyStartPicker || showDailyEndPicker ? 'time' : 'datetime'}

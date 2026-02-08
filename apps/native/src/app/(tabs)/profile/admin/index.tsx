@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -59,16 +59,12 @@ export default function AdminPanelScreen() {
     trpc.trip.getAll.queryOptions()
   );
 
-  useEffect(() => {
-    if (!selectedTripId && trips && trips.length > 0) {
-      setSelectedTripId(trips[0].id);
-    }
-  }, [selectedTripId, trips]);
+  const effectiveTripId = selectedTripId ?? trips?.[0]?.id ?? null;
 
   const selectedTrip = useMemo(() => {
-    if (!trips || !selectedTripId) return null;
-    return trips.find((trip) => trip.id === selectedTripId) ?? null;
-  }, [trips, selectedTripId]);
+    if (!trips || !effectiveTripId) return null;
+    return trips.find((trip) => trip.id === effectiveTripId) ?? null;
+  }, [trips, effectiveTripId]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -124,12 +120,12 @@ export default function AdminPanelScreen() {
                   return;
                 }
 
-                if (!selectedTripId) {
+                if (!effectiveTripId) {
                   Alert.alert('Select trip', 'Choose a trip to manage before continuing.');
                   return;
                 }
 
-                const query = `?tripId=${encodeURIComponent(selectedTripId)}`;
+                const query = `?tripId=${encodeURIComponent(effectiveTripId)}`;
                 router.push(`${tile.route}${query}`);
               }}
             >
@@ -169,7 +165,7 @@ export default function AdminPanelScreen() {
                   }}
                 >
                   <Text style={styles.modalItemText}>{trip.name}</Text>
-                  {selectedTripId === trip.id && (
+                  {effectiveTripId === trip.id && (
                     <Ionicons name="checkmark" size={18} color={colors.primary} />
                   )}
                 </TouchableOpacity>
