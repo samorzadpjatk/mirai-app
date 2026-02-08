@@ -172,18 +172,17 @@ services:
           allow:
             - admin
             - anon
-  # (commented) Storage routes (service disabled in our deployment)
-  #  ## Storage routes: the storage server manages its own auth
-  #  - name: storage-v1
-  #    _comment: 'Storage: /storage/v1/* -> http://storage:5000/*'
-  #    url: http://storage:5000/
-  #    routes:
-  #      - name: storage-v1-all
-  #        strip_path: true
-  #        paths:
-  #          - /storage/v1/
-  #    plugins:
-  #      - name: cors
+  ## Storage routes: the storage server manages its own auth
+  - name: storage-v1
+    _comment: 'Storage: /storage/v1/* -> http://storage:5000/*'
+    url: http://storage:5000/
+    routes:
+      - name: storage-v1-all
+        strip_path: true
+        paths:
+          - /storage/v1/
+    plugins:
+      - name: cors
 
   # (commented) Edge Functions routes (service disabled in our deployment)
   #  ## Edge Functions routes

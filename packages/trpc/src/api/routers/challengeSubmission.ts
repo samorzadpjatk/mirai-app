@@ -8,6 +8,7 @@ import {
 } from "../../api/trpc";
 import { type Prisma } from "@integral-2025-app/db";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
+import { parseSupabaseStorageObject } from "../../utils/storage";
 
 const submissionBaseSelect: Prisma.ChallengeSubmissionSelect = {
   id: true,
@@ -61,6 +62,29 @@ const attachReviewerEmail = <T extends { authUserId?: string | null }>(
     ...rest,
     email: resolveAuthEmail(emailByAuthUserId, authUserId),
   };
+};
+
+const CHALLENGE_SUBMISSION_BUCKET =
+  process.env.SUPABASE_STORAGE_CHALLENGE_SUBMISSIONS_BUCKET ??
+  "challenge-submissions";
+
+const sanitizeFileName = (value: string): string => {
+  const baseName = value.split(/[\\/]/).pop() ?? "upload";
+  const sanitized = baseName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  return sanitized.length > 0 ? sanitized : "upload";
+};
+
+const isAssetTypeAllowed = (
+  submissionType: string,
+  assetType: "IMAGE" | "VIDEO",
+) => {
+  if (assetType === "VIDEO") {
+    return submissionType === "VIDEO";
+  }
+
+  return ["IMAGE", "MULTI_IMAGE", "IMAGE_LOCATION", "QR_CODE"].includes(
+    submissionType,
+  );
 };
 
 const ensureTripParticipant = async (
@@ -241,6 +265,129 @@ export const challengeSubmissionRouter = createTRPCRouter({
           reviewedBy: attachReviewerEmail(submission.reviewedBy, emailByAuthUserId),
         };
       });
+    }),
+
+  getAssetDownloadUrl: protectedProcedure
+    .input(
+      z.object({
+        tripId: z.string(),
+        submissionId: z.string(),
+        assetType: z.enum(["IMAGE", "VIDEO"]),
+        imageIndex: z.number().int().nonnegative().optional(),
+        expiresInSeconds: z.number().int().min(60).max(60 * 60).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await ensureTripParticipant(ctx, input.tripId);
+
+      const submission = await ctx.db.challengeSubmission.findFirst({
+        where: { id: input.submissionId, challenge: { tripId: input.tripId } },
+        select: { imageUrls: true, videoUrl: true },
+      });
+
+      if (!submission) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
+      }
+
+      let sourceUrl: string | null = null;
+
+      if (input.assetType === "IMAGE") {
+        const index = input.imageIndex ?? -1;
+        if (index < 0 || index >= submission.imageUrls.length) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid image index",
+          });
+        }
+        sourceUrl = submission.imageUrls[index] ?? null;
+      } else {
+        sourceUrl = submission.videoUrl ?? null;
+      }
+
+      if (!sourceUrl) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
+      }
+
+      const objectInfo = parseSupabaseStorageObject(sourceUrl);
+      if (!objectInfo) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Unsupported storage URL",
+        });
+      }
+
+      const expiresIn = input.expiresInSeconds ?? 10 * 60;
+      const { data, error } = await ctx.supabase.storage
+        .from(objectInfo.bucket)
+        .createSignedUrl(objectInfo.path, expiresIn);
+
+      if (error || !data?.signedUrl) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Unable to create signed URL",
+        });
+      }
+
+      return {
+        signedUrl: data.signedUrl,
+        expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
+      };
+    }),
+
+  createAssetUploadUrl: protectedProcedure
+    .input(
+      z.object({
+        tripId: z.string(),
+        challengeId: z.string(),
+        assetType: z.enum(["IMAGE", "VIDEO"]),
+        fileName: z.string().min(1),
+        contentType: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const participant = await ensureTripParticipant(ctx, input.tripId);
+      if (!participant.groupId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Uzytkownik nie jest przypisany do grupy",
+        });
+      }
+
+      const challenge = await ensureChallengeInTrip(
+        ctx,
+        input.challengeId,
+        input.tripId,
+      );
+
+      if (!isAssetTypeAllowed(challenge.submissionType, input.assetType)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Ten typ pliku nie jest dozwolony dla tego zadania",
+        });
+      }
+
+      const safeFileName = sanitizeFileName(input.fileName);
+      const objectPath = `challenges/${input.challengeId}/${participant.groupId}/${Date.now()}-${safeFileName}`;
+      const bucket = CHALLENGE_SUBMISSION_BUCKET;
+
+      const { data, error } = await ctx.supabase.storage
+        .from(bucket)
+        .createSignedUploadUrl(objectPath);
+
+      if (error || !data?.signedUrl) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Unable to create signed upload URL",
+        });
+      }
+
+      return {
+        uploadUrl: data.signedUrl,
+        bucket,
+        objectPath,
+        storagePath: `${bucket}/${objectPath}`,
+        contentType: input.contentType,
+      };
     }),
 
   create: protectedProcedure

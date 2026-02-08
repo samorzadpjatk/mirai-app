@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image, type ViewStyle, type TextStyle } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { type Challenge, ChallengeStatus } from '../../types/challenges';
 
 interface ChallengeCardProps {
@@ -106,7 +106,7 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
               justifyContent: 'center'
             }}
           >
-            <MaterialIcons name={challenge.icon} size={30} color={challenge.iconColor} />
+            <Ionicons name={challenge.icon} size={30} color={challenge.iconColor} />
           </View>
 
           {/* Content */}
@@ -116,7 +116,7 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
                 {challenge.title}
               </Text>
               {isLocked ? (
-                <MaterialIcons name="lock" size={16} color="#6b7280" />
+                <Ionicons name="lock-closed" size={16} color="#6b7280" />
               ) : (
                 <Text style={getPointsBadgeStyle()}>
                   +{challenge.points}
@@ -147,10 +147,10 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
                 justifyContent: 'center'
               }}
             >
-              <MaterialIcons name={challenge.icon} size={24} color={challenge.iconColor} />
+              <Ionicons name={challenge.icon} size={24} color={challenge.iconColor} />
             </View>
             {isLocked ? (
-              <MaterialIcons name="lock" size={16} color="#6b7280" />
+              <Ionicons name="lock-closed" size={16} color="#6b7280" />
             ) : (
               <Text style={getPointsBadgeStyle()}>
                 +{challenge.points}
@@ -192,10 +192,10 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
                 justifyContent: 'center'
               }}
             >
-              <MaterialIcons name={challenge.icon} size={24} color={challenge.iconColor} />
+              <Ionicons name={challenge.icon} size={24} color={challenge.iconColor} />
             </View>
             {isLocked ? (
-              <MaterialIcons name="lock" size={16} color="#6b7280" />
+              <Ionicons name="lock-closed" size={16} color="#6b7280" />
             ) : (
               <Text style={getPointsBadgeStyle()}>
                 +{challenge.points}

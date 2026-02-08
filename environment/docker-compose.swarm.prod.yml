@@ -133,7 +133,7 @@ services:
       LOGFLARE_PRIVATE_ACCESS_TOKEN: ${LOGFLARE_PRIVATE_ACCESS_TOKEN}
       LOGFLARE_URL: http://analytics:4000
       NEXT_PUBLIC_ENABLE_LOGS: ${NEXT_PUBLIC_ENABLE_LOGS:-false}
-      STUDIO_DISABLED_MODULES: ${STUDIO_DISABLED_MODULES:-storage,functions,analytics,imgproxy}
+      STUDIO_DISABLED_MODULES: ${STUDIO_DISABLED_MODULES:-functions,analytics}
       NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
     depends_on:
       - meta

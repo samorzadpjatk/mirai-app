@@ -164,7 +164,7 @@ services:
       # Toggle analytics UI in Studio (set to true to show logs)
       NEXT_PUBLIC_ENABLE_LOGS: ${NEXT_PUBLIC_ENABLE_LOGS:-false}
       # Comma-separated list of modules to hide in Studio (engineering note: Studio reads this env in our self-hosted setup if supported)
-      STUDIO_DISABLED_MODULES: ${STUDIO_DISABLED_MODULES:-storage,functions,analytics,imgproxy}
+      STUDIO_DISABLED_MODULES: ${STUDIO_DISABLED_MODULES:-functions,analytics}
       # Comment to use Big Query backend for analytics
       NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
       # Uncomment to use Big Query backend for analytics

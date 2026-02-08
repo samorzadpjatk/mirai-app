@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION sp_clean_job_details(
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = pg_catalog
 AS $$
 DECLARE
   deleted_count INTEGER;
