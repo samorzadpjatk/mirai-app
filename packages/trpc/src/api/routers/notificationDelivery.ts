@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { adminProcedure, createTRPCRouter } from "../trpc";
+import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 
 export const notificationDeliveryRouter = createTRPCRouter({
   getDeliveries: adminProcedure
@@ -117,7 +118,7 @@ export const notificationDeliveryRouter = createTRPCRouter({
                     id: true,
                     firstName: true,
                     lastName: true,
-                    email: true,
+                    authUserId: true,
                   },
                 },
               },
@@ -132,7 +133,26 @@ export const notificationDeliveryRouter = createTRPCRouter({
           });
         }
 
-        return delivery;
+        if (!delivery?.notification?.createdBy) {
+          return delivery;
+        }
+
+        const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+          delivery.notification.createdBy.authUserId,
+        ]);
+
+        const { authUserId, ...createdBy } = delivery.notification.createdBy;
+
+        return {
+          ...delivery,
+          notification: {
+            ...delivery.notification,
+            createdBy: {
+              ...createdBy,
+              email: resolveAuthEmail(emailByAuthUserId, authUserId),
+            },
+          },
+        };
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;

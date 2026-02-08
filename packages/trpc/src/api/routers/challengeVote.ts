@@ -5,7 +5,7 @@ import {
   protectedProcedure,
   moderatorProcedure,
 } from "../../api/trpc";
-import { type Prisma } from "@integral-2025-app/db";
+import { type Prisma, type PrismaClient } from "@integral-2025-app/db";
 
 const voteSelect: Prisma.ChallengeVoteSelect = {
   id: true,
@@ -19,7 +19,7 @@ const voteSelect: Prisma.ChallengeVoteSelect = {
 } as const;
 
 const ensureTripParticipant = async (
-  ctx: { db: Prisma.TransactionClient; dbUser: { id: string } },
+  ctx: { db: PrismaClient; dbUser: { id: string } },
   tripId: string,
 ) => {
   const participant = await ctx.db.tripParticipant.findUnique({
@@ -32,7 +32,7 @@ const ensureTripParticipant = async (
 };
 
 const ensureChallengeVoting = async (
-  ctx: { db: Prisma.TransactionClient },
+  ctx: { db: PrismaClient },
   challengeId: string,
   tripId: string,
 ) => {
@@ -53,7 +53,7 @@ const ensureChallengeVoting = async (
 };
 
 const recomputeSubmissionVotes = async (
-  ctx: { db: Prisma.TransactionClient },
+  ctx: { db: PrismaClient },
   challengeId: string,
 ) => {
   const submissions = await ctx.db.challengeSubmission.findMany({

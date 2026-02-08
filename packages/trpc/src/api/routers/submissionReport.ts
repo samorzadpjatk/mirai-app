@@ -6,8 +6,9 @@ import {
   moderatorProcedure,
 } from "../../api/trpc";
 import { type Prisma } from "@integral-2025-app/db";
+import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 
-const reportSelect: Prisma.SubmissionReportSelect = {
+const reportSelect = {
   id: true,
   submissionId: true,
   reporterId: true,
@@ -22,12 +23,12 @@ const reportSelect: Prisma.SubmissionReportSelect = {
           id: true,
           firstName: true,
           lastName: true,
-          email: true,
+          authUserId: true,
         },
       },
     },
   },
-} as const;
+} as const satisfies Prisma.SubmissionReportSelect;
 
 const ensureTripParticipant = async (
   ctx: { db: Prisma.TransactionClient; dbUser: { id: string } },
@@ -64,7 +65,7 @@ export const submissionReportRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
       }
 
-      return ctx.db.submissionReport.create({
+      const report = await ctx.db.submissionReport.create({
         data: {
           submissionId: input.submissionId,
           reporterId: participant.id,
@@ -73,15 +74,51 @@ export const submissionReportRouter = createTRPCRouter({
         },
         select: reportSelect,
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        report.reporter.user.authUserId,
+      ]);
+
+      const { authUserId, ...reporterUser } = report.reporter.user;
+
+      return {
+        ...report,
+        reporter: {
+          ...report.reporter,
+          user: {
+            ...reporterUser,
+            email: resolveAuthEmail(emailByAuthUserId, authUserId),
+          },
+        },
+      };
     }),
 
   getBySubmission: moderatorProcedure
     .input(z.object({ submissionId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.submissionReport.findMany({
+      const reports = await ctx.db.submissionReport.findMany({
         where: { submissionId: input.submissionId },
         select: reportSelect,
         orderBy: { createdAt: "desc" },
+      });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        reports.map((report) => report.reporter.user.authUserId),
+      );
+
+      return reports.map((report) => {
+        const { authUserId, ...reporterUser } = report.reporter.user;
+        return {
+          ...report,
+          reporter: {
+            ...report.reporter,
+            user: {
+              ...reporterUser,
+              email: resolveAuthEmail(emailByAuthUserId, authUserId),
+            },
+          },
+        };
       });
     }),
 });

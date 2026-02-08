@@ -3,11 +3,10 @@ import { type Role } from "@integral-2025-app/db";
 export interface MockDbUser {
   id: string;
   authUserId: string | null;
-  email: string | null;
-  name: string | null;
-  image: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  hasAvatar: boolean;
   role: Role;
-  emailVerified: Date | null;
   // Convenience flags used in tests
   isAdmin?: boolean;
   isModerator?: boolean;
