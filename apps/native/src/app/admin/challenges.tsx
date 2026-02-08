@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useAdminChallenges, type AdminChallengeUI } from "~/hooks/admin";
 import ChallengeCard from "~/components/admin/ChallengeCard";
 import AddChallengeModal from "~/components/admin/AddChallengeModal";
@@ -87,7 +87,7 @@ export default function AdminChallengesScreen() {
                 borderColor: "#273a3a",
               }}
             >
-              <MaterialIcons name="arrow-back-ios-new" size={20} color="#fff" />
+              <Ionicons name="arrow-back" size={20} color="#fff" />
             </TouchableOpacity>
             <Text style={[commonStyles.h3]}>Manage Challenges</Text>
           </View>
@@ -100,7 +100,7 @@ export default function AdminChallengesScreen() {
               justifyContent: "center",
             }}
           >
-            <MaterialIcons name="shield" size={30} color="#00ced1" />
+            <Ionicons name="shield" size={30} color="#00ced1" />
           </View>
         </View>
       </SafeAreaView>
@@ -115,7 +115,7 @@ export default function AdminChallengesScreen() {
             onPress={() => setShowAddModal(true)}
             style={commonStyles.button}
           >
-            <MaterialIcons name="add-circle" size={24} color="#0f2323" />
+            <Ionicons name="add-circle" size={24} color="#0f2323" />
             <Text style={commonStyles.buttonText}>Add New Challenge</Text>
           </TouchableOpacity>
         </View>

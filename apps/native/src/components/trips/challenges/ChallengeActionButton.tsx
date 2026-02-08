@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ChallengeActionButtonProps {
@@ -17,11 +17,7 @@ export function ChallengeActionButton({
       disabled={isLoading}
       style={[styles.button, isLoading && styles.buttonLoading]}
     >
-      <MaterialIcons
-        name="camera-alt"
-        size={24}
-        color={colors.backgroundDark}
-      />
+      <Ionicons name="camera" size={24} color={colors.backgroundDark} />
       <Text style={styles.buttonText}>
         {isLoading ? "Loading..." : "Take Challenge Photo"}
       </Text>

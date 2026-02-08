@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { ChallengeListItem } from "./types";
 
@@ -36,15 +36,15 @@ export function ChallengesGridItem({
             },
           ]}
         >
-          <MaterialIcons
-            name={challenge.icon as keyof typeof MaterialIcons.glyphMap}
+          <Ionicons
+            name={challenge.icon as keyof typeof Ionicons.glyphMap}
             size={24}
             color={isLocked ? colors.textMuted : challenge.iconColor}
           />
         </View>
 
         {isLocked ? (
-          <MaterialIcons name="lock" size={16} color={colors.textMuted} />
+          <Ionicons name="lock-closed" size={16} color={colors.textMuted} />
         ) : (
           <Text
             style={[styles.pointsBadge, isActive && styles.pointsBadgeActive]}
