@@ -17,14 +17,6 @@ interface PublicUser {
   role: z.infer<typeof roleSchema>;
 }
 
-interface TripParticipantWithUser {
-  user: PublicUser & { authUserId?: string | null };
-  wristNumber: number | null;
-  houseNumber: number | null;
-  group: { id: string; name: string } | null;
-  tripId: string;
-}
-
 const userWithAuthSelect = {
   id: true,
   authUserId: true,
@@ -104,9 +96,28 @@ export const userRouter = createTRPCRouter({
         },
       });
     }),
-  getMy: protectedProcedure
-    .input(z.object({ tripId: z.string().optional() }).optional())
+  getMyWithGroup: protectedProcedure
+    .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      return await ctx.db.user.findUnique({
+        where: { id: ctx.dbUser.id },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          trips: {
+            where: { tripId: input.tripId },
+            include: {
+              group: { select: { id: true, name: true } },
+              trip: { select: { id: true, name: true } },
+            },
+          },
+          organizerGroup: { select: { id: true, name: true } },
+        },
+      });
+    }),
+  getMy: protectedProcedure
+    .query(async ({ ctx }) => {
       const baseUser = await ctx.db.user.findUnique({
         where: { id: ctx.dbUser.id },
       });
@@ -121,19 +132,18 @@ export const userRouter = createTRPCRouter({
         email: resolveAuthEmail(emailByAuthUserId, baseUser.authUserId),
       };
 
-      if (!input?.tripId) return hydratedUser;
-
-      const participant = await ctx.db.tripParticipant.findUnique({
-        where: {
-          userId_tripId: { userId: ctx.dbUser.id, tripId: input.tripId },
-        },
-        include: {
-          group: { select: { id: true, name: true } },
-          trip: { select: { id: true, name: true } },
-        },
+      return hydratedUser;
+    }),
+  updateAvatar: protectedProcedure
+    .input(z.object({ hasAvatar: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const updatedUser = await ctx.db.user.update({
+        where: { id: ctx.dbUser.id },
+        data: { hasAvatar: input.hasAvatar },
+        select: { hasAvatar: true },
       });
 
-      return { ...hydratedUser, tripContext: participant };
+      return updatedUser;
     }),
   getAll: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
@@ -150,7 +160,7 @@ export const userRouter = createTRPCRouter({
           { user: { firstName: "asc" } },
           { user: { lastName: "asc" } },
         ],
-      })) as TripParticipantWithUser[];
+      }));
 
       const emailByAuthUserId = await buildAuthEmailLookup(
         ctx.supabase,
@@ -416,7 +426,7 @@ export const userRouter = createTRPCRouter({
             { user: { firstName: "asc" } },
             { user: { lastName: "asc" } },
           ],
-        })) as TripParticipantWithUser[];
+        }));
 
         const emailByAuthUserId = await buildAuthEmailLookup(
           ctx.supabase,
@@ -527,7 +537,7 @@ export const userRouter = createTRPCRouter({
         ],
         skip,
         take: limit,
-      })) as TripParticipantWithUser[];
+      }));
 
       const emailByAuthUserId = await buildAuthEmailLookup(
         ctx.supabase,

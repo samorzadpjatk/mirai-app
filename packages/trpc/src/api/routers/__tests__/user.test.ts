@@ -127,6 +127,52 @@ describe("userRouter", () => {
     });
   });
 
+  describe("getMyWithGroup", () => {
+    it("should return current user with group information", async () => {
+      const mockUser = {
+        id: "user-1",
+        firstName: "Test",
+        lastName: "User",
+        trips: [
+          {
+            tripId: "trip-1",
+            group: { id: "group-1", name: "Test Group" },
+            trip: { id: "trip-1", name: "Trip 1" },
+          },
+        ],
+        organizerGroup: [{ id: "org-1", name: "Organizer Group" }],
+      };
+
+      mockContext.db.user.findUnique.mockResolvedValue(mockUser);
+
+      const caller = userRouter.createCaller(mockContext);
+
+      const result = await caller.getMyWithGroup({
+        tripId: "trip-1",
+      });
+
+      expect(result).toEqual(mockUser);
+      expect(mockContext.db.user.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: mockContext.dbUser.id },
+          select: expect.objectContaining({
+            id: true,
+            firstName: true,
+            lastName: true,
+            trips: expect.objectContaining({
+              where: { tripId: "trip-1" },
+              include: expect.objectContaining({
+                group: expect.any(Object),
+                trip: expect.any(Object),
+              }),
+            }),
+            organizerGroup: expect.any(Object),
+          }),
+        }),
+      );
+    });
+  });
+
   describe("getMy", () => {
     it("should return current user", async () => {
       const mockUser = {
