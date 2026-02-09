@@ -125,8 +125,10 @@ export default function AdminPanelScreen() {
                   return;
                 }
 
-                const query = `?tripId=${encodeURIComponent(effectiveTripId)}`;
-                router.push(`${tile.route}${query}`);
+                router.push({
+                  pathname: tile.route,
+                  params: { tripId: effectiveTripId },
+                });
               }}
             >
               <View style={[styles.tileIcon, { backgroundColor: tile.accentBg, borderColor: tile.accent }]}
