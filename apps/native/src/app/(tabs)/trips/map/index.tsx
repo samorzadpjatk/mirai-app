@@ -20,14 +20,20 @@ import { ShareLocationModal } from "~/components/map/ShareLocationModal";
 import { ManageSharingModal } from "~/components/map/ManageSharingModal";
 import { UsersListPanel } from "~/components/map/UsersListPanel";
 import { useAuth } from "@integral-2025-app/auth/client";
+import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";
 import { useMapActions } from "~/hooks/map";
 import { useMapSelectedUser } from "~/hooks/map";
 import { useShareModal } from "~/hooks/ui";
+import { useFileDownload } from "~/hooks/files";
 
 export default function MapScreen() {
   const { session } = useAuth();
+  const trpc = useTRPC();
+  const userMyQueryOptions = trpc.user.getMy.queryOptions();
+  const { data: currentUser } = useQuery(userMyQueryOptions);
   const [showUsersList, setShowUsersList] = useState(true);
   const [isListExpanded, setIsListExpanded] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
@@ -56,6 +62,16 @@ export default function MapScreen() {
     isRemovingUser,
   } = useMapSharing(false);
   const { sendLocation } = useMapActions();
+  const {
+    download: downloadAvatar,
+    file: avatarFile,
+    reset: resetAvatar,
+    abort: abortAvatar,
+  } = useFileDownload();
+  const avatarStoragePath = currentUser?.id
+    ? `avatar/${currentUser.id}.jpg`
+    : null;
+  const currentUserName = `${currentUser?.firstName ?? ""} ${currentUser?.lastName ?? ""}`.trim();
 
   // Selection & share modal state (extracted)
   const shareModal = useShareModal({ sharingUserIds, updateSharing });
@@ -68,10 +84,33 @@ export default function MapScreen() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    if (!currentUser?.hasAvatar || !avatarStoragePath) {
+      resetAvatar();
+      return;
+    }
+
+    resetAvatar();
+    void downloadAvatar({ storagePath: avatarStoragePath, skipCache: true });
+
+    return () => {
+      abortAvatar();
+    };
+  }, [
+    abortAvatar,
+    avatarStoragePath,
+    currentUser?.hasAvatar,
+    currentUser?.updatedAt,
+    downloadAvatar,
+    resetAvatar,
+  ]);
+
   const users = useMapUsers({
     locationsByUserId,
     usersData,
     session,
+    currentUserName: currentUserName.length > 0 ? currentUserName : null,
+    currentUserAvatarUrl: avatarFile?.uri ?? null,
     currentCoordinate,
     now,
   });

@@ -65,21 +65,6 @@ export interface UserMapProps {
   onToggleMapTheme?: () => void;
 }
 
-interface UserFeature {
-  type: "Feature";
-  id: string;
-  properties: {
-    id: string;
-    name: string;
-    avatarUrl: string;
-    opacity: number;
-  };
-  geometry: {
-    type: "Point";
-    coordinates: [number, number];
-  };
-}
-
 // Map style configuration (base style + optional raster overlays)
 interface MapRasterOverlay {
   id: string;
@@ -275,6 +260,7 @@ export const UserMap: React.FC<UserMapProps> = ({
                 <UserAvatar
                   name={user.name}
                   size={34}
+                  imageUrl={user.avatarUrl}
                 />
               </View>
             </View>
@@ -318,5 +304,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#0F172A",
   },
 });
-
 
