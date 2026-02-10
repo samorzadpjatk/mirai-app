@@ -66,9 +66,7 @@ services:
         condition: service_started
 
   db-migrations:
-    build:
-      context: ..
-      dockerfile: packages/db/Dockerfile.migrations
+    image: ghcr.io/samorzadpjatk/pjapp-db-migrations:latest
     environment:
       DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
       PRISMA_MIGRATE_SKIP_SEED: "1"
