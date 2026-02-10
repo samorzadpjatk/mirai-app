@@ -16,7 +16,6 @@ export function ChallengeUploadProgressCard({
     resolvedProgress === null
       ? "Preparing upload..."
       : `${Math.round(resolvedProgress * 100)}%`;
-  const barWidth = `${Math.round((resolvedProgress ?? 0) * 100)}%`;
 
   return (
     <View style={styles.container}>
@@ -26,7 +25,12 @@ export function ChallengeUploadProgressCard({
       </View>
       <Text style={styles.progressText}>{percentLabel}</Text>
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: barWidth }]} />
+        <View
+          style={[
+            styles.progressFill,
+            { flex: resolvedProgress ?? 0, minWidth: 0 },
+          ]}
+        />
       </View>
     </View>
   );

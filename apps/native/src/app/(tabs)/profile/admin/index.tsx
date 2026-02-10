@@ -9,7 +9,17 @@ import { useTRPC } from '@integral-2025-app/trpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
 import { useAppSafeAreaInsets } from '~/contexts/safeArea';
 
-const tiles = [
+interface TileType {
+  key: string;
+  title: string;
+  subtitle: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  accent: string;
+  accentBg: string;
+  route: string | null;
+}
+
+const tiles: TileType[] = [
   {
     key: 'users',
     title: 'Users',
