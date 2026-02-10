@@ -6,6 +6,9 @@ const prisma = db;
 
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
 const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+const IMAGE_BUCKET = process.env.SUPABASE_STORAGE_IMAGE_BUCKET ?? "image";
+const VIDEO_BUCKET = process.env.SUPABASE_STORAGE_VIDEO_BUCKET ?? "video";
+const PUBLIC_BUCKET = process.env.SUPABASE_STORAGE_PUBLIC_BUCKET ?? "public";
 
 // Create Supabase admin client
 const getAdminClient = () => {
@@ -18,6 +21,67 @@ const getAdminClient = () => {
       persistSession: false,
     },
   });
+};
+
+type BucketSpec = {
+  name: string;
+  public: boolean;
+  fileSizeLimit?: number;
+  allowedMimeTypes?: string[];
+};
+
+const ensureStorageBuckets = async () => {
+  const supabase = getAdminClient();
+  const { data: buckets, error } = await supabase.storage.listBuckets();
+  if (error) {
+    throw new Error(`Failed to list buckets: ${error.message}`);
+  }
+
+  const bucketSpecs: BucketSpec[] = [
+    {
+      name: IMAGE_BUCKET,
+      public: false,
+      fileSizeLimit: 10 * 1024 * 1024,
+      allowedMimeTypes: [
+        "image/*",
+      ],
+    },
+    {
+      name: VIDEO_BUCKET,
+      public: false,
+      allowedMimeTypes: [
+        "video/*",
+      ],
+    },
+    { name: PUBLIC_BUCKET, public: true },
+  ];
+
+  for (const spec of bucketSpecs) {
+    const exists = buckets?.some((bucket) => bucket.name === spec.name);
+    if (exists) {
+      console.log(`ℹ️ Storage bucket exists: ${spec.name}`);
+      continue;
+    }
+
+    const { error: createError } = await supabase.storage.createBucket(
+      spec.name,
+      {
+        public: spec.public,
+        fileSizeLimit: spec.fileSizeLimit,
+        allowedMimeTypes: spec.allowedMimeTypes,
+      },
+    );
+
+    if (createError) {
+      throw new Error(
+        `Failed to create bucket ${spec.name}: ${createError.message}`,
+      );
+    }
+
+    console.log(
+      `✅ Created storage bucket: ${spec.name} (public=${String(spec.public)})`,
+    );
+  }
 };
 
 // User accounts to seed
@@ -223,6 +287,14 @@ async function main() {
       console.error("❌ Supabase connection timeout");
       return;
     }
+  }
+
+  console.log("\n🧺 Ensuring Supabase Storage buckets...");
+  try {
+    await ensureStorageBuckets();
+  } catch (error) {
+    console.error("✗ Failed to ensure storage buckets:", error);
+    console.log("Skipping storage bucket init...");
   }
 
   // Create users in Supabase Auth

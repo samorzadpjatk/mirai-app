@@ -4,14 +4,10 @@ import { useTRPCClient } from "@integral-2025-app/trpc/client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 
-type DownloadAssetType = "IMAGE" | "VIDEO";
-
 interface DownloadInput {
-  tripId: string;
-  submissionId: string;
-  assetType: DownloadAssetType;
-  imageIndex?: number;
+  storagePath: string;
   expiresInSeconds?: number;
+  skipCache?: boolean;
 }
 
 interface DownloadProgress {
@@ -26,6 +22,12 @@ interface DownloadResult {
   fileName: string | null;
   totalBytes: number;
 }
+
+const getFileNameFromUrl = (url: string): string => {
+  const sanitizedUrl = url.split("?")[0] ?? url;
+  const parts = sanitizedUrl.split("/").filter(Boolean);
+  return parts[parts.length - 1] ?? "download";
+};
 
 export const useFileDownload = () => {
   const trpcClient = useTRPCClient();
@@ -69,12 +71,48 @@ export const useFileDownload = () => {
       setFile(null);
 
       try {
-        const { signedUrl } = await trpcClient.challengeSubmission.getAssetDownloadUrl.query(
-          input,
-        );
+        const { signedUrl } = await trpcClient.storage.createDownloadUrl.query({
+          storagePath: input.storagePath,
+          expiresInSeconds: input.expiresInSeconds,
+        });
         const destination = new Directory(Paths.cache, "downloads");
-        destination.create();
-        
+        if (!destination.exists) {
+          destination.create();
+        }
+
+        const cachedFileName = getFileNameFromUrl(signedUrl);
+        const cachedFile = new File(destination, cachedFileName);
+
+        if (cachedFile.exists && input.skipCache) {
+          try {
+            cachedFile.delete();
+          } catch (deleteError) {
+            console.warn("[Download] Failed to clear cached file", {
+              storagePath: input.storagePath,
+              message:
+                deleteError instanceof Error
+                  ? deleteError.message
+                  : "Unknown error",
+            });
+          }
+        }
+
+        if (cachedFile.exists && !input.skipCache) {
+          const cachedResult: DownloadResult = {
+            uri: cachedFile.uri,
+            contentType: cachedFile.type,
+            fileName: cachedFileName,
+            totalBytes: cachedFile.size,
+          };
+
+          if (mountedRef.current) {
+            setFile(cachedResult);
+            setStatus("success");
+          }
+
+          return cachedResult;
+        }
+
         const downloadResult = await File.downloadFileAsync(signedUrl, destination);
 
         const totalBytes = downloadResult.size;
@@ -123,4 +161,4 @@ export const useFileDownload = () => {
   } as const;
 };
 
-export type { DownloadInput, DownloadResult, DownloadProgress, DownloadAssetType };
+export type { DownloadInput, DownloadResult, DownloadProgress };

@@ -5,12 +5,16 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 interface ChallengeActionButtonProps {
   isLoading: boolean;
   onPress: () => void;
+  label?: string;
 }
 
 export function ChallengeActionButton({
   isLoading,
   onPress,
+  label,
 }: ChallengeActionButtonProps) {
+  const buttonLabel =
+    label ?? (isLoading ? "Loading..." : "Take Challenge Photo");
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -18,9 +22,7 @@ export function ChallengeActionButton({
       style={[styles.button, isLoading && styles.buttonLoading]}
     >
       <Ionicons name="camera" size={24} color={colors.backgroundDark} />
-      <Text style={styles.buttonText}>
-        {isLoading ? "Loading..." : "Take Challenge Photo"}
-      </Text>
+      <Text style={styles.buttonText}>{buttonLabel}</Text>
     </TouchableOpacity>
   );
 }

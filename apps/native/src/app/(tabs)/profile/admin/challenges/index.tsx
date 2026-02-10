@@ -65,7 +65,10 @@ export default function AdminChallengesScreen() {
       Alert.alert('Error', 'No trip found to attach this challenge');
       return;
     }
-    router.push(`/profile/admin/challenges/new?tripId=${encodeURIComponent(tripId)}`);
+    router.push({
+      pathname: '/profile/admin/challenges/new',
+      params: { tripId },
+    });
   };
 
   const handleDeleteChallenge = (id: string) => {
@@ -258,7 +261,21 @@ export default function AdminChallengesScreen() {
                 <TouchableOpacity
                   style={{ padding: 8 }}
                   onPress={() => {
-                    router.push(`/profile/admin/challenges/${challenge.id}?tripId=${encodeURIComponent(tripId)}`);
+                    router.push({
+                      pathname: '/profile/admin/challenges/judgement',
+                      params: { tripId, challengeId: challenge.id },
+                    });
+                  }}
+                >
+                  <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ padding: 8 }}
+                  onPress={() => {
+                    router.push({
+                      pathname: '/profile/admin/challenges/[id]',
+                      params: { id: challenge.id, tripId },
+                    });
                   }}
                 >
                   <Ionicons name="create" size={20} color="#9ca3af" />

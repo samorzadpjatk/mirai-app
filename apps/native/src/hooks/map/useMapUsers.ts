@@ -11,6 +11,8 @@ interface UseMapUsersArgs {
     { name?: string; email?: string; image?: string; houseNumber?: string }
   >;
   session?: { user?: { id?: string; email?: string } } | null;
+  currentUserName?: string | null;
+  currentUserAvatarUrl?: string | null;
   currentCoordinate?: [number, number] | null;
   now: number;
 }
@@ -19,6 +21,8 @@ export function useMapUsers({
   locationsByUserId,
   usersData,
   session,
+  currentUserName,
+  currentUserAvatarUrl,
   currentCoordinate,
   now,
 }: UseMapUsersArgs) {
@@ -28,12 +32,16 @@ export function useMapUsers({
     const currentUserId = session?.user?.id;
 
     if (currentCoordinate) {
+      const trimmedName = currentUserName?.trim();
       next.push({
         id: currentUserId ?? "me",
-        name: session?.user?.email ?? "You",
+        name: trimmedName && trimmedName.length > 0
+          ? trimmedName
+          : session?.user?.email ?? "You",
         email: session?.user?.email ?? undefined,
         address: "Your location",
         coordinate: currentCoordinate,
+        avatarUrl: currentUserAvatarUrl ?? null,
         lastActiveAt: effectiveNow,
       });
     }
@@ -63,6 +71,8 @@ export function useMapUsers({
     usersData,
     session?.user?.id,
     session?.user?.email,
+    currentUserName,
+    currentUserAvatarUrl,
     currentCoordinate,
     now,
   ]);
