@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { UserAvatar } from "./UserAvatar";
+import { UserAvatar } from "./ui/UserAvatar";
 import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
 
@@ -63,6 +63,19 @@ export interface UserMapProps {
    * Called when user toggles the map theme.
    */
   onToggleMapTheme?: () => void;
+  /**
+   * ID of the currently logged-in user. When provided, their location is
+   * managed directly from MapLibreUserLocation instead of from users array.
+   */
+  currentUserId?: string;
+  /**
+   * Current logged-in user's name (used when displaying their avatar).
+   */
+  currentUserName?: string;
+  /**
+   * Current logged-in user's avatar URL.
+   */
+  currentUserAvatarUrl?: string | null;
 }
 
 // Map style configuration (base style + optional raster overlays)
@@ -150,6 +163,9 @@ export const UserMap: React.FC<UserMapProps> = ({
   onLocationUpdate,
   focusedCoordinate,
   mapTheme = 'dark',
+  currentUserId,
+  currentUserName,
+  currentUserAvatarUrl,
 }) => {
   // All hooks must be called before any early returns
   const cameraRef = useRef<CameraRef>(null);
@@ -163,9 +179,27 @@ export const UserMap: React.FC<UserMapProps> = ({
     return () => clearInterval(id);
   }, []);
 
+  // Track current user's location directly from MapLibreUserLocation
+  const [currentUserLocation, setCurrentUserLocation] = useState<[number, number] | null>(null);
+
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => getActivityOpacity(user.lastActiveAt, now) > 0);
-  }, [users, now]);
+    // Start with other users (exclude current user)
+    let displayUsers = users.filter((user) => user.id !== currentUserId && getActivityOpacity(user.lastActiveAt, now) > 0);
+    
+    // Add current user if location is available and enabled
+    if (currentUserId && currentUserLocation && currentUserName) {
+      const currentUser: UserLocation = {
+        id: currentUserId,
+        name: currentUserName,
+        coordinate: currentUserLocation,
+        avatarUrl: currentUserAvatarUrl ?? null,
+        lastActiveAt: now,
+      };
+      displayUsers = [currentUser, ...displayUsers];
+    }
+    
+    return displayUsers;
+  }, [users, now, currentUserId, currentUserLocation, currentUserName, currentUserAvatarUrl]);
 
   useEffect(() => {
     if (!focusedCoordinate) return;
@@ -184,6 +218,11 @@ export const UserMap: React.FC<UserMapProps> = ({
 
     const { longitude, latitude } = loc.coords;
     if (longitude == null || latitude == null) return;
+
+    // Update current user's location directly from device
+    if (currentUserId) {
+      setCurrentUserLocation([longitude, latitude]);
+    }
 
     if (!hasCenteredRef.current) {
       cameraRef.current?.setCamera?.({
@@ -216,8 +255,8 @@ export const UserMap: React.FC<UserMapProps> = ({
         <Camera
           ref={cameraRef}
           defaultSettings={
-            users[0]
-              ? { centerCoordinate: users[0].coordinate, zoomLevel: initialZoomLevel }
+            filteredUsers[0]
+              ? { centerCoordinate: filteredUsers[0].coordinate, zoomLevel: initialZoomLevel }
               : undefined
           }
         />

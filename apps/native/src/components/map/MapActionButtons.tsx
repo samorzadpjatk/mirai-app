@@ -1,17 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
 
-interface MapActionButtonsProps {
-  mapTheme: "dark" | "light";
-  onToggleTheme: () => void;
-  onRecenter: () => void;
-}
+export function MapActionButtons() {
+  const { mapTheme, onToggleTheme, onRecenter } = useMapOverlayContext();
 
-export function MapActionButtons({
-  mapTheme,
-  onToggleTheme,
-  onRecenter,
-}: MapActionButtonsProps) {
   return (
     <View style={styles.rightButtonsGroup}>
       <Pressable style={styles.themeToggleButton} onPress={onToggleTheme}>

@@ -7,45 +7,37 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
-import { UserAvatar } from "~/components/map/UserAvatar";
+import { UserAvatar } from "~/components/map/ui/UserAvatar";
+import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
 
-interface SharingUser {
-  id: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  image?: string | null;
-}
+export function ManageSharingModal() {
+  const {
+    showManageModal,
+    setShowManageModal,
+    sharingSettings,
+    removeUser,
+    isRemovingUser,
+  } = useMapOverlayContext();
+  const users = sharingSettings?.usersToShareWith ?? [];
 
-interface ManageSharingModalProps {
-  visible: boolean;
-  users: SharingUser[];
-  onClose: () => void;
-  onRemoveUser: (userId: string) => void;
-  isRemoving?: boolean;
-}
-
-export function ManageSharingModal({
-  visible,
-  users,
-  onClose,
-  onRemoveUser,
-  isRemoving = false,
-}: ManageSharingModalProps) {
   return (
     <Modal
-      visible={visible}
+      visible={showManageModal}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={() => setShowManageModal(false)}
     >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
+      <Pressable
+        style={styles.modalOverlay}
+        onPress={() => setShowManageModal(false)}
+      >
         <Pressable
           style={styles.modalContent}
           onPress={(event) => event.stopPropagation()}
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Manage Location Sharing</Text>
-            <Pressable onPress={onClose}>
+            <Pressable onPress={() => setShowManageModal(false)}>
               <Text style={styles.modalClose}>✕</Text>
             </Pressable>
           </View>
@@ -81,10 +73,10 @@ export function ManageSharingModal({
                     </View>
                     <Pressable
                       style={styles.removeButton}
-                      onPress={() => onRemoveUser(user.id)}
-                      disabled={isRemoving}
+                      onPress={() => removeUser(user.id)}
+                      disabled={isRemovingUser}
                     >
-                      {isRemoving ? (
+                      {isRemovingUser ? (
                         <ActivityIndicator size="small" color="#ef4444" />
                       ) : (
                         <Text style={styles.removeButtonText}>Remove</Text>
