@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { UserLocation } from "~/components/map/UserMap";
 
 interface UseMapUsersArgs {
@@ -14,7 +14,6 @@ interface UseMapUsersArgs {
   currentUserName?: string | null;
   currentUserAvatarUrl?: string | null;
   currentCoordinate?: [number, number] | null;
-  now: number;
 }
 
 export function useMapUsers({
@@ -24,10 +23,17 @@ export function useMapUsers({
   currentUserName,
   currentUserAvatarUrl,
   currentCoordinate,
-  now,
 }: UseMapUsersArgs) {
+  const [effectiveNow, setEffectiveNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setEffectiveNow(new Date());
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  
   return useMemo<UserLocation[]>(() => {
-    const effectiveNow = now;
     const next: UserLocation[] = [];
     const currentUserId = session?.user?.id;
 
@@ -35,14 +41,15 @@ export function useMapUsers({
       const trimmedName = currentUserName?.trim();
       next.push({
         id: currentUserId ?? "me",
-        name: trimmedName && trimmedName.length > 0
-          ? trimmedName
-          : session?.user?.email ?? "You",
+        name:
+          trimmedName && trimmedName.length > 0
+            ? trimmedName
+            : (session?.user?.email ?? "You"),
         email: session?.user?.email ?? undefined,
         address: "Your location",
         coordinate: currentCoordinate,
         avatarUrl: currentUserAvatarUrl ?? null,
-        lastActiveAt: effectiveNow,
+        lastActiveAt: effectiveNow.getTime(),
       });
     }
 
@@ -67,13 +74,13 @@ export function useMapUsers({
 
     return next;
   }, [
-    locationsByUserId,
-    usersData,
     session?.user?.id,
     session?.user?.email,
+    currentCoordinate,
+    locationsByUserId,
     currentUserName,
     currentUserAvatarUrl,
-    currentCoordinate,
-    now,
+    effectiveNow,
+    usersData,
   ]);
 }

@@ -7,40 +7,24 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { UserAvatar } from "~/components/map/UserAvatar";
+import { UserAvatar } from "~/components/map/ui/UserAvatar";
+import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
 
-interface ShareableUser {
-  id: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  image?: string | null;
-}
+export function ShareLocationModal() {
+  const { shareModal, allAvailableUsers, sharingUserIds } =
+    useMapOverlayContext();
+  const {
+    open,
+    searchQuery,
+    selectedUsers,
+    setSearchQuery,
+    toggleSelectedUser,
+    reset,
+    closeModal,
+    confirm,
+  } = shareModal;
 
-interface ShareLocationModalProps {
-  visible: boolean;
-  users?: ShareableUser[];
-  sharingUserIds: string[];
-  searchQuery: string;
-  selectedUsers: Set<string>;
-  onChangeSearchQuery: (value: string) => void;
-  onToggleUser: (userId: string) => void;
-  onClearSelected: () => void;
-  onClose: () => void;
-  onConfirmAdd: () => void;
-}
-
-export function ShareLocationModal({
-  visible,
-  users,
-  sharingUserIds,
-  searchQuery,
-  selectedUsers,
-  onChangeSearchQuery,
-  onToggleUser,
-  onClearSelected,
-  onClose,
-  onConfirmAdd,
-}: ShareLocationModalProps) {
+  const users = allAvailableUsers;
   const filteredUsers = users?.filter((user) => {
     // Require minimum 3 characters before filtering
     if (!searchQuery || searchQuery.length < 3) return true;
@@ -52,19 +36,19 @@ export function ShareLocationModal({
 
   return (
     <Modal
-      visible={visible}
+      visible={open}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={closeModal}
     >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={closeModal}>
         <Pressable
           style={styles.modalContent}
           onPress={(event) => event.stopPropagation()}
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Share Location With</Text>
-            <Pressable onPress={onClose}>
+            <Pressable onPress={closeModal}>
               <Text style={styles.modalClose}>✕</Text>
             </Pressable>
           </View>
@@ -75,7 +59,7 @@ export function ShareLocationModal({
               placeholder="Type at least 3 characters to search..."
               placeholderTextColor="rgba(226,232,240,0.4)"
               value={searchQuery}
-              onChangeText={onChangeSearchQuery}
+              onChangeText={setSearchQuery}
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -86,7 +70,7 @@ export function ShareLocationModal({
               <Text style={styles.selectedLabel}>
                 {selectedUsers.size} selected
               </Text>
-              <Pressable style={styles.clearButton} onPress={onClearSelected}>
+              <Pressable style={styles.clearButton} onPress={reset}>
                 <Text style={styles.clearButtonText}>Clear</Text>
               </Pressable>
             </View>
@@ -109,7 +93,7 @@ export function ShareLocationModal({
                   ]}
                   onPress={() => {
                     if (isAlreadySharing) return;
-                    onToggleUser(user.id);
+                    toggleSelectedUser(user.id);
                   }}
                 >
                   <View style={styles.modalUserInfo}>
@@ -141,7 +125,7 @@ export function ShareLocationModal({
 
           {selectedUsers.size > 0 && (
             <View style={styles.modalFooter}>
-              <Pressable style={styles.confirmButton} onPress={onConfirmAdd}>
+              <Pressable style={styles.confirmButton} onPress={confirm}>
                 <Text style={styles.confirmButtonText}>
                   Add {selectedUsers.size}{" "}
                   {selectedUsers.size === 1 ? "person" : "people"}

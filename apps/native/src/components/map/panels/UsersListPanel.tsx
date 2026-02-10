@@ -1,37 +1,21 @@
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
-import { UserAvatar } from "~/components/map/UserAvatar";
+import { UserAvatar } from "~/components/map/ui/UserAvatar";
 import { formatRelativeTime } from "~/utils/format";
-import type { UserLocation } from "~/components/map/UserMap";
+import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
 
-interface UsersListPanelProps {
-  users: UserLocation[];
-  currentUserId?: string;
-  usersListStyle: StyleProp<ViewStyle>;
-  onToggleExpand: () => void;
-  onAddPress: () => void;
-  onManagePress: () => void;
-  onSelectUser: (user: UserLocation) => void;
-}
+export function UsersListPanel() {
+  const {
+    users,
+    currentUserId,
+    usersListStyle,
+    onToggleExpand,
+    onAddPress,
+    onManagePress,
+    onSelectUser,
+  } = useMapOverlayContext();
 
-export function UsersListPanel({
-  users,
-  currentUserId,
-  usersListStyle,
-  onToggleExpand,
-  onAddPress,
-  onManagePress,
-  onSelectUser,
-}: UsersListPanelProps) {
   return (
     <>
       <View style={styles.handleBar} />

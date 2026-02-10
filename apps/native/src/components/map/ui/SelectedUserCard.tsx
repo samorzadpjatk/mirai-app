@@ -1,28 +1,27 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { UserAvatar } from "~/components/map/UserAvatar";
+import { UserAvatar } from "~/components/map/ui/UserAvatar";
+import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
 import { formatRelativeTime } from "~/utils/format";
-import type { UserLocation } from "~/components/map/UserMap";
 
-interface SelectedUserCardProps {
-  selectedUser: UserLocation;
-  displayName: string;
-  displaySurname: string;
-  isSharingWithSelected: boolean;
-  canStopSharing: boolean;
-  onBackToList: () => void;
-  onStopSharing: () => void;
-}
+export function SelectedUserCard() {
+  const {
+    selectedUser,
+    sharingUserIds,
+    canStopSharing,
+    onBackToList,
+    onStopSharing,
+  } = useMapOverlayContext();
 
-export function SelectedUserCard({
-  selectedUser,
-  displayName,
-  displaySurname,
-  isSharingWithSelected,
-  canStopSharing,
-  onBackToList,
-  onStopSharing,
-}: SelectedUserCardProps) {
+  if (!selectedUser) return null;
+
+  const displayName =
+    selectedUser.name && selectedUser.name.trim() !== ""
+      ? selectedUser.name
+      : "Unknown user";
+  const displaySurname =
+    displayName.split(" ").slice(1).join(" ") || "-";
   const firstName = displayName.split(" ")[0] ?? displayName;
+  const isSharingWithSelected = sharingUserIds.includes(selectedUser.id);
 
   return (
     <>
