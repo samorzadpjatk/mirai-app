@@ -9,6 +9,7 @@ import { ChallengeHeroCard } from "~/components/trips/challenges/ChallengeHeroCa
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
 import { ChallengeDetailsCard } from "~/components/trips/challenges/ChallengeDetailsCard";
+import { ChallengeUploadProgressCard } from "~/components/trips/challenges/ChallengeUploadProgressCard";
 import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
 
@@ -30,13 +31,21 @@ export default function ChallengeDetailScreen() {
   const {
     isLoading: cameraLoading,
     capturedImage,
-    setCapturedImage,
+    handleRetake,
     handleOpenCamera,
-  } = useChallengeCapture();
-
-  const handleBackPress = () => {
-    router.back();
-  };
+    uploadStatus,
+    uploadProgress,
+  } = useChallengeCapture({ tripId, challengeId });
+  const isUploading = uploadStatus === "uploading";
+  const uploadPercent =
+    uploadProgress.percent != null
+      ? Math.round(uploadProgress.percent * 100)
+      : null;
+  const uploadLabel = isUploading
+    ? uploadPercent != null
+      ? `Uploading ${uploadPercent}%`
+      : "Uploading..."
+    : undefined;
 
   if (!challengeId || !tripId || challengeLoading) {
     return <ChallengeLoadingState />;
@@ -75,11 +84,15 @@ export default function ChallengeDetailScreen() {
 
         <ChallengeDetailsCard challenge={challenge} />
 
+        {isUploading && (
+          <ChallengeUploadProgressCard progress={uploadProgress.percent} />
+        )}
+
         {/* Captured Image */}
         {capturedImage && (
           <CapturedImageCard
             imageUri={capturedImage}
-            onRetake={() => setCapturedImage(null)}
+            onRetake={() => void handleRetake()}
             onDone={() => router.push(`/trips/challenges?tripId=${tripId}`)}
           />
         )}
@@ -88,8 +101,12 @@ export default function ChallengeDetailScreen() {
         {!capturedImage && (
           <ChallengeActionButton
             isLoading={cameraLoading}
+            label={uploadLabel}
             onPress={() =>
-              void handleOpenCamera(challenge?.name, challenge?.basePoints ?? 0, tripId)
+              void handleOpenCamera(
+                challenge?.name,
+                challenge?.basePoints ?? 0,
+              )
             }
           />
         )}

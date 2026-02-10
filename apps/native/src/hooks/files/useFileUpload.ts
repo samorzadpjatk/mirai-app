@@ -3,6 +3,7 @@ import * as tus from "tus-js-client";
 import { File } from "expo-file-system";
 import { useTRPCClient } from "@integral-2025-app/trpc/client";
 import { tusUrlStorage } from "~/lib/tusUrlStorage";
+import { useSupabaseClient } from "@integral-2025-app/supabase/react";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -13,28 +14,31 @@ interface UploadProgress {
 }
 
 interface UploadInput {
-  tripId: string;
-  challengeId: string;
-  assetType: "IMAGE" | "VIDEO";
+  storagePath: string;
   fileUri: string;
   fileName?: string;
-  contentType?: string;
+  contentType: string;
+  upsert?: boolean;
 }
 
 interface UploadResult {
-  uploadUrl: string;
   bucket: string;
   objectPath: string;
   storagePath: string;
 }
 
-const getFileNameFromUri = (uri: string): string => {
-  const parts = uri.split("/").filter(Boolean);
-  return parts[parts.length - 1] ?? "upload";
-};
+interface UploadTicket {
+  resumableUrl: string;
+  bucket: string;
+  objectPath: string;
+  token: string;
+  storagePath: string;
+}
 
 export const useFileUpload = () => {
   const trpcClient = useTRPCClient();
+  const supabase = useSupabaseClient();
+  
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [progress, setProgress] = useState<UploadProgress>({
     bytesUploaded: 0,
@@ -90,111 +94,177 @@ export const useFileUpload = () => {
           throw new Error("File not found");
         }
 
-        const fileName = input.fileName ?? getFileNameFromUri(input.fileUri);
-        const contentType = input.contentType ?? "application/octet-stream";
-
-        const uploadTicket =
-          await trpcClient.challengeSubmission.createAssetUploadUrl.mutate({
-            tripId: input.tripId,
-            challengeId: input.challengeId,
-            assetType: input.assetType,
-            fileName,
-            contentType,
-          });
+        const contentType = input.contentType;
+    
+        const uploadTicket = await trpcClient.storage.createUploadUrl.mutate({
+          storagePath: input.storagePath,
+          upsert: input.upsert,
+        });
 
         const fileResponse = await fetch(input.fileUri);
         const fileBlob = await fileResponse.blob();
         const bytesTotal = fileInfo.size ?? fileBlob.size ?? null;
 
+        const {data: {session}} = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
+        if (!accessToken) {
+          throw new Error("User not authenticated");
+        }
+
         return await new Promise<UploadResult>((resolve, reject) => {
-          const tusUpload = new tus.Upload(fileBlob, {
-            uploadUrl: uploadTicket.uploadUrl,
-            uploadSize: bytesTotal ?? undefined,
-            urlStorage,
-            metadata: {
-              filename: fileName,
-              filetype: contentType,
-              bucketName: uploadTicket.bucket,
-              objectName: uploadTicket.objectPath,
-            },
-            retryDelays: [0, 1000, 3000, 5000],
-            onError: (uploadError) => {
-              const errorObject =
-                uploadError instanceof Error
-                  ? uploadError
-                  : new Error("Upload failed");
+          const maxAttempts = 2;
+          let attempt = 0;
+          let retrying = false;
 
-              if (mountedRef.current) {
-                setStatus("error");
-                setError(errorObject);
-              }
+          const shouldRetry = (message: string) =>
+            message.includes(" 400") ||
+            message.includes(" 403") ||
+            message.includes("unable to resume upload") ||
+            message.includes("without an endpoint");
 
-              reject(errorObject);
-            },
-            onProgress: (bytesUploaded, bytesTotal) => {
-              if (!mountedRef.current) return;
-              setProgress({
-                bytesUploaded,
-                bytesTotal: bytesTotal ?? null,
-                percent: bytesTotal ? bytesUploaded / bytesTotal : null,
-              });
-            },
-            onSuccess: () => {
-              if (mountedRef.current) {
-                setStatus("success");
-                setResult(uploadTicket);
+          const startUpload = (ticket: UploadTicket) => {
+            const tusUpload = new tus.Upload(fileBlob, {
+              endpoint: ticket.resumableUrl,
+              uploadSize: bytesTotal ?? undefined,
+              urlStorage,
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "x-signature": ticket.token,
+              },
+              uploadDataDuringCreation: true,
+              removeFingerprintOnSuccess: true,
+              chunkSize: 6 * 1024 * 1024,
+              metadata: {
+                bucketName: ticket.bucket,
+                objectName: ticket.objectPath,
+                contentType,
+              },
+              retryDelays: [0, 1000, 3000, 5000],
+              onError: (uploadError) => {
+                const errorObject =
+                  uploadError instanceof Error
+                    ? uploadError
+                    : new Error("Upload failed");
+
+                console.error("[Upload] Tus upload error", {
+                  storagePath: input.storagePath,
+                  message: errorObject.message,
+                });
+
+                if (!retrying && attempt < maxAttempts - 1 && shouldRetry(errorObject.message)) {
+                  retrying = true;
+                  attempt += 1;
+                  void tusUpload.abort().then(async () => {
+                    try {
+                      const refreshedTicket = await trpcClient.storage.createUploadUrl.mutate({
+                        storagePath: input.storagePath,
+                      });
+                      console.warn("[Upload] Retrying with fresh signed URL", {
+                        storagePath: input.storagePath,
+                        attempt,
+                      });
+                      retrying = false;
+                      startUpload(refreshedTicket);
+                    } catch (refreshError) {
+                      const refreshObject =
+                        refreshError instanceof Error
+                          ? refreshError
+                          : new Error("Failed to refresh upload URL");
+                      if (mountedRef.current) {
+                        setStatus("error");
+                        setError(refreshObject);
+                      }
+                      reject(refreshObject);
+                    }
+                  });
+                  return;
+                }
+
+                if (mountedRef.current) {
+                  setStatus("error");
+                  setError(errorObject);
+                }
+
+                reject(errorObject);
+              },
+              onProgress: (bytesUploaded, bytesTotal) => {
+                if (!mountedRef.current) return;
                 setProgress({
-                  bytesUploaded: bytesTotal ?? 0,
-                  bytesTotal,
-                  percent: 1,
+                  bytesUploaded,
+                  bytesTotal: bytesTotal ?? null,
+                  percent: bytesTotal ? bytesUploaded / bytesTotal : null,
                 });
-              }
-              resolve(uploadTicket);
-            },
-          });
-
-          uploadRef.current = tusUpload;
-
-          tusUpload
-            .findPreviousUploads()
-            .then((previousUploads) => {
-              const previousUpload = previousUploads[0];
-              if (previousUpload) {
-                tusUpload.resumeFromPreviousUpload(previousUpload);
-              }
-              tusUpload.start();
-            })
-            .catch((resumeError) => {
-              tusUpload
-                .abort()
-                .then(() => {
-                  const errorObject =
-                    resumeError instanceof Error
-                      ? resumeError
-                      : new Error("Failed to resume upload");
-
-                  if (mountedRef.current) {
-                    setStatus("error");
-                    setError(errorObject);
-                  }
-                  reject(errorObject);
-                })
-                .catch((abortError) => {
-                  const errorObject =
-                    abortError instanceof Error
-                      ? abortError
-                      : new Error("Failed to abort upload");
-
-                  if (mountedRef.current) {
-                    setStatus("error");
-                    setError(errorObject);
-                  }
-                  reject(errorObject);
-                });
+              },
+              onSuccess: () => {
+                if (mountedRef.current) {
+                  setStatus("success");
+                  setResult(ticket);
+                  setProgress({
+                    bytesUploaded: bytesTotal ?? 0,
+                    bytesTotal,
+                    percent: 1,
+                  });
+                }
+                resolve(ticket);
+              },
             });
+
+            uploadRef.current = tusUpload;
+
+            tusUpload
+              .findPreviousUploads()
+              .then(async (previousUploads) => {
+                if (previousUploads.length > 0) {
+                  await Promise.all(
+                    previousUploads.map((previousUpload) =>
+                      urlStorage.removeUpload(previousUpload.urlStorageKey),
+                    ),
+                  );
+                  console.warn(
+                    "[Upload] Cleared previous resumable uploads for signed URL",
+                    { storagePath: input.storagePath },
+                  );
+                }
+                tusUpload.start();
+              })
+              .catch((resumeError) => {
+                tusUpload
+                  .abort()
+                  .then(() => {
+                    const errorObject =
+                      resumeError instanceof Error
+                        ? resumeError
+                        : new Error("Failed to prepare upload");
+
+                    if (mountedRef.current) {
+                      setStatus("error");
+                      setError(errorObject);
+                    }
+                    reject(errorObject);
+                  })
+                  .catch((abortError) => {
+                    const errorObject =
+                      abortError instanceof Error
+                        ? abortError
+                        : new Error("Failed to abort upload");
+
+                    if (mountedRef.current) {
+                      setStatus("error");
+                      setError(errorObject);
+                    }
+                    reject(errorObject);
+                  });
+              });
+          };
+
+          void startUpload(uploadTicket);
         });
       } catch (uploadError) {
         const errorObject = uploadError as Error;
+        console.error("[Upload] Failed to start upload", {
+          storagePath: input.storagePath,
+          message: errorObject.message,
+        });
         if (mountedRef.current) {
           setStatus("error");
           setError(errorObject);
@@ -204,7 +274,7 @@ export const useFileUpload = () => {
         uploadRef.current = null;
       }
     },
-    [abort, trpcClient, urlStorage],
+    [abort, supabase.auth, trpcClient.storage.createUploadUrl, urlStorage],
   );
 
   return {

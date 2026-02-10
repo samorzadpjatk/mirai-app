@@ -9,7 +9,9 @@ import {
 import {
   type RealtimeChannel,
   REALTIME_CHANNEL_STATES,
+  type SupabaseClient,
 } from "@integral-2025-app/supabase";
+import { IMAGE_BUCKET } from "../../utils/storage";
 import type {
   Location as DbLocation,
   PrismaClient,
@@ -65,30 +67,43 @@ export interface SharingSettings {
   usersToShareWith: SharingUser[];
 }
 
-const USER_IMAGE_BUCKET = "user_image";
+const AVATAR_FILE_EXTENSION = "jpg";
+const AVATAR_SIGNED_URL_SECONDS = 60 * 60 * 24;
 
-const getUserAvatarUrl = (
+const getUserAvatarPath = (userId: string): string =>
+  `avatar/${userId}.${AVATAR_FILE_EXTENSION}`;
+
+const getUserAvatarUrl = async (
+  supabase: SupabaseClient,
   userId: string | null | undefined,
   hasAvatar: boolean | null | undefined,
-): string | null => {
+): Promise<string | null> => {
   if (!userId || !hasAvatar) return null;
-  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!baseUrl) return null;
-  return `${baseUrl}/storage/v1/object/public/${USER_IMAGE_BUCKET}/${userId}`;
+
+  const { data, error } = await supabase.storage
+    .from(IMAGE_BUCKET)
+    .createSignedUrl(getUserAvatarPath(userId), AVATAR_SIGNED_URL_SECONDS);
+
+  if (error || !data?.signedUrl) return null;
+
+  return data.signedUrl;
 };
 
-const mapUserWithAvatar = (user: {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  hasAvatar: boolean | null;
-} | null): LocationWithUser["user"] | null => {
+const mapUserWithAvatar = async (
+  supabase: SupabaseClient,
+  user: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    hasAvatar: boolean | null;
+  } | null,
+): Promise<LocationWithUser["user"] | null> => {
   if (!user) return null;
   return {
     id: user.id,
     firstName: user.firstName,
     lastName: user.lastName,
-    image: getUserAvatarUrl(user.id, user.hasAvatar),
+    image: await getUserAvatarUrl(supabase, user.id, user.hasAvatar),
   };
 };
 
@@ -115,6 +130,7 @@ function toExpoLocation(dbLocation: DbLocation): ExpoLocationObject {
  */
 async function toLocationWithUser(
   db: PrismaClient,
+  supabase: SupabaseClient,
   dbLocation: DbLocation,
 ): Promise<LocationWithUser> {
   const expoLocation = toExpoLocation(dbLocation);
@@ -131,7 +147,7 @@ async function toLocationWithUser(
   return {
     ...expoLocation,
     isSharingLocation: dbLocation.isSharingLocation,
-    user: mapUserWithAvatar(user) ?? undefined,
+    user: (await mapUserWithAvatar(supabase, user)) ?? undefined,
   };
 }
 
@@ -277,7 +293,7 @@ export const locationRouter = createTRPCRouter({
       const inRadius = new Set<string>();
 
       for (const location of locations) {
-        const lw = await toLocationWithUser(ctx.db, location);
+        const lw = await toLocationWithUser(ctx.db, ctx.supabase, location);
         if (radiusKm !== undefined) {
           if (!location.latitude || !location.longitude) continue;
           const dist = calculateDistance(
@@ -369,13 +385,18 @@ export const locationRouter = createTRPCRouter({
                           },
                         },
                       })
-                      .then((dbLocation) => {
+                      .then(async (dbLocation) => {
                         if (!dbLocation) {
                           console.error(
                             `[Location Stream] Location not found in DB for userId: ${userIdFromEvent}`,
                           );
                           return;
                         }
+
+                        const userWithAvatar = await mapUserWithAvatar(
+                          ctx.supabase,
+                          dbLocation.user,
+                        );
 
                         const location: LocationWithUser = {
                           coords: {
@@ -390,7 +411,7 @@ export const locationRouter = createTRPCRouter({
                           },
                           timestamp: dbLocation.timestamp.getTime(),
                           isSharingLocation: dbLocation.isSharingLocation,
-                          user: mapUserWithAvatar(dbLocation.user) ?? undefined,
+                          user: userWithAvatar ?? undefined,
                         };
 
                         const userId = dbLocation.userId;
@@ -441,7 +462,7 @@ export const locationRouter = createTRPCRouter({
                     return;
                   }
 
-                  void toLocationWithUser(ctx.db, newLocation).then(
+                  void toLocationWithUser(ctx.db, ctx.supabase, newLocation).then(
                     (location) => {
                       const userId = newLocation.userId;
 
@@ -597,10 +618,14 @@ export const locationRouter = createTRPCRouter({
       },
     });
 
-    return locations.map((location) => ({
-      ...location,
-      user: mapUserWithAvatar(location.user) ?? undefined,
-    }));
+    const mapped = await Promise.all(
+      locations.map(async (location) => ({
+        ...location,
+        user: (await mapUserWithAvatar(ctx.supabase, location.user)) ?? undefined,
+      })),
+    );
+
+    return mapped;
   }),
 
   /**
@@ -633,16 +658,13 @@ export const locationRouter = createTRPCRouter({
         ? location.usersToShareWith
         : [];
 
+      const usersWithAvatars = await Promise.all(
+        usersToShareWith.map((user) => mapUserWithAvatar(ctx.supabase, user)),
+      );
+
       return {
         isSharingLocation: Boolean(location.isSharingLocation),
-        usersToShareWith: usersToShareWith.map(
-          (user): SharingUser => ({
-            id: String(user.id),
-            firstName: user.firstName ?? null,
-            lastName: user.lastName ?? null,
-            image: getUserAvatarUrl(user.id, user.hasAvatar),
-          }),
-        ),
+        usersToShareWith: usersWithAvatars.filter(Boolean) as SharingUser[],
       };
     },
   ),
@@ -666,14 +688,11 @@ export const locationRouter = createTRPCRouter({
 
     const safeUsers = Array.isArray(users) ? users : [];
 
-    return safeUsers.map(
-      (user): SharingUser => ({
-        id: String(user.id),
-        firstName: user.firstName ?? null,
-        lastName: user.lastName ?? null,
-        image: getUserAvatarUrl(user.id, user.hasAvatar),
-      }),
+    const usersWithAvatars = await Promise.all(
+      safeUsers.map((user) => mapUserWithAvatar(ctx.supabase, user)),
     );
+
+    return usersWithAvatars.filter(Boolean) as SharingUser[];
   }),
 
   /**
@@ -709,16 +728,13 @@ export const locationRouter = createTRPCRouter({
         },
       });
 
+      const usersWithAvatars = await Promise.all(
+        location.usersToShareWith.map((user) => mapUserWithAvatar(ctx.supabase, user)),
+      );
+
       return {
         success: true,
-        usersToShareWith: location.usersToShareWith.map(
-          (user): SharingUser => ({
-            id: String(user.id),
-            firstName: user.firstName ?? null,
-            lastName: user.lastName ?? null,
-            image: getUserAvatarUrl(user.id, user.hasAvatar),
-          }),
-        ),
+        usersToShareWith: usersWithAvatars.filter(Boolean) as SharingUser[],
       };
     }),
 
@@ -747,33 +763,35 @@ export const locationRouter = createTRPCRouter({
         },
       });
 
+      const usersWithAvatars = await Promise.all(
+        location.usersToShareWith.map((user) => mapUserWithAvatar(ctx.supabase, user)),
+      );
+
       return {
         success: true,
-        usersToShareWith: location.usersToShareWith.map(
-          (user): SharingUser => ({
-            id: String(user.id),
-            firstName: user.firstName ?? null,
-            lastName: user.lastName ?? null,
-            image: getUserAvatarUrl(user.id, user.hasAvatar),
-          }),
-        ),
+        usersToShareWith: usersWithAvatars.filter(Boolean) as SharingUser[],
       };
     }),
 
   /**
-   * Send a location sharing request to another user
+   * Send a location sharing request
    */
-  sendLocationSharingRequest: protectedProcedure
+  requestLocationSharing: protectedProcedure
     .input(z.object({ receiverId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Check if request already exists
-      const existingRequest = await ctx.db.locationSharingRequest.findUnique({
+      if (input.receiverId === ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot send a request to yourself",
+        });
+      }
+
+      const existingRequest = await ctx.db.locationSharingRequest.findFirst({
         where: {
-          senderId_receiverId: {
-            senderId: ctx.dbUser.id,
-            receiverId: input.receiverId,
-          },
+          senderId: ctx.dbUser.id,
+          receiverId: input.receiverId,
         },
+        orderBy: { createdAt: "desc" },
       });
 
       if (existingRequest) {
@@ -783,7 +801,13 @@ export const locationRouter = createTRPCRouter({
             message: "Request already sent",
           });
         }
-        // Update existing rejected request to pending
+        if (existingRequest.status === "ACCEPTED") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Location sharing already enabled",
+          });
+        }
+
         const updated = await ctx.db.locationSharingRequest.update({
           where: { id: existingRequest.id },
           data: { status: "PENDING", updatedAt: new Date() },
@@ -791,7 +815,6 @@ export const locationRouter = createTRPCRouter({
         return { success: true, request: updated };
       }
 
-      // Create new request
       const request = await ctx.db.locationSharingRequest.create({
         data: {
           senderId: ctx.dbUser.id,
@@ -935,10 +958,12 @@ export const locationRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return requests.map((request) => ({
-        ...request,
-        sender: mapUserWithAvatar(request.sender),
-      }));
+      return await Promise.all(
+        requests.map(async (request) => ({
+          ...request,
+          sender: await mapUserWithAvatar(ctx.supabase, request.sender),
+        })),
+      );
     },
   ),
 
@@ -978,14 +1003,18 @@ export const locationRouter = createTRPCRouter({
     ]);
 
     return {
-      sent: sent.map((request) => ({
-        ...request,
-        receiver: mapUserWithAvatar(request.receiver),
-      })),
-      received: received.map((request) => ({
-        ...request,
-        sender: mapUserWithAvatar(request.sender),
-      })),
+      sent: await Promise.all(
+        sent.map(async (request) => ({
+          ...request,
+          receiver: await mapUserWithAvatar(ctx.supabase, request.receiver),
+        })),
+      ),
+      received: await Promise.all(
+        received.map(async (request) => ({
+          ...request,
+          sender: await mapUserWithAvatar(ctx.supabase, request.sender),
+        })),
+      ),
     };
   }),
 });

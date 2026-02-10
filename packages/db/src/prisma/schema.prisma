@@ -212,8 +212,8 @@ model ChallengeSubmission {
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  imageUrls   String[] @default([])
-  videoUrl    String?
+  imageIds    String[] @default([])
+  videoId     String?
   textContent String?
   latitude    Float?
   longitude   Float?
