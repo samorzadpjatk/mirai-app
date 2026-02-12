@@ -52,6 +52,7 @@ describe("Auth Hooks", () => {
       expect(result.current).toHaveProperty("isLoading");
       expect(result.current).toHaveProperty("isAuthenticated");
       expect(result.current).toHaveProperty("signInWithOtp");
+      expect(result.current).toHaveProperty("signInWithPassword");
       expect(result.current).toHaveProperty("verifyOtp");
       expect(result.current).toHaveProperty("signOut");
       expect(result.current).toHaveProperty("refreshSession");
