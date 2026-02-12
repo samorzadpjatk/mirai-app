@@ -10,23 +10,53 @@ import { useState } from "react";
 
 export default function LoginScreen() {
   const { formState, setEmail, handleSubmit, clearSent, clearError } = useLoginForm();
-  const { verifyOtp } = useAuth();
+  const { verifyOtp, signInWithPassword } = useAuth();
   const router = useRouter();
   const insets = useAppSafeAreaInsets();
 
   const [otp, setOtp] = useState("");
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
-
-  const onSubmit = async () => {
-    await handleSubmit();
-  };
+  const [password, setPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const { email, isLoading, isSent, error } = formState;
+  const ghostEmail =
+    process.env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL?.toLowerCase() ?? "";
+  const isGhostLogin =
+    ghostEmail.length > 0 && email.trim().toLowerCase() === ghostEmail;
+  const isBusy = isLoading || passwordLoading;
+
+  const onSubmit = async () => {
+    if (isGhostLogin) {
+      if (!password) {
+        setPasswordError("Please enter the verification password");
+        return;
+      }
+
+      setPasswordLoading(true);
+      setPasswordError(null);
+
+      try {
+        await signInWithPassword({ email, password });
+        router.replace("/");
+      } catch (err) {
+        setPasswordError(err instanceof Error ? err.message : "Sign in failed");
+      } finally {
+        setPasswordLoading(false);
+      }
+      return;
+    }
+
+    await handleSubmit();
+  };
 
   const onEmailChange = (value: string) => {
     clearError();
     clearSent();
+    setPasswordError(null);
+    setPassword("");
     setEmail(value);
   };
 
@@ -108,32 +138,58 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
-                  editable={!isLoading}
+                  editable={!isBusy}
                 />
               </View>
             </View>
 
-            {/* OTP Info */}
-            <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>
-                How it works
-              </Text>
-              <View style={[styles.inputWrapper, { paddingVertical: 16 }]}> 
-                <Text style={{ color: "#9ca3af", flex: 1 }}>
-                  We'll send a one-time login code to your email. Use the code to sign in.
-                </Text>
+            {isGhostLogin ? (
+              <View style={styles.inputSection}>
+                <Text style={styles.inputLabel}>Verification Password</Text>
+                <View style={styles.inputWrapper}>
+                  <View style={styles.iconOpacity}>
+                    <Ionicons name="key" size={20} color="#00ced1" />
+                  </View>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Enter password"
+                    placeholderTextColor="#4b5563"
+                    value={password}
+                    onChangeText={setPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    secureTextEntry
+                    editable={!isBusy}
+                  />
+                </View>
+                {passwordError && (
+                  <Text style={styles.modalErrorText}>{passwordError}</Text>
+                )}
               </View>
-            </View>
+            ) : (
+              <View style={styles.inputSection}>
+                <Text style={styles.inputLabel}>
+                  How it works
+                </Text>
+                <View style={[styles.inputWrapper, { paddingVertical: 16 }]}>
+                  <Text style={{ color: "#9ca3af", flex: 1 }}>
+                    We'll send a one-time login code to your email. Use the code to sign in.
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
 
-          <View style={styles.forgotPasswordContainer}>
-            <Text style={styles.forgotPasswordText}>
-              Didn't receive the email? Check your spam folder or try again.
-            </Text>
-          </View>
+          {!isGhostLogin && (
+            <View style={styles.forgotPasswordContainer}>
+              <Text style={styles.forgotPasswordText}>
+                Didn't receive the email? Check your spam folder or try again.
+              </Text>
+            </View>
+          )}
 
           {/* Sent Confirmation */}
-          {isSent && (
+          {!isGhostLogin && isSent && (
             <View style={styles.successContainer}>
               <Ionicons name="checkmark-circle" size={20} color="#10b981" />
               <Text style={styles.successText}>
@@ -143,7 +199,12 @@ export default function LoginScreen() {
           )}
 
           {/* OTP Verification Modal */}
-          <Modal visible={!!isSent} animationType="slide" transparent onRequestClose={closeModal}>
+          <Modal
+            visible={!!isSent && !isGhostLogin}
+            animationType="slide"
+            transparent
+            onRequestClose={closeModal}
+          >
             <View style={styles.modalOverlay}>
               <View style={styles.modalCard}>
                 <Text style={styles.modalTitle}>Enter verification code</Text>
@@ -185,15 +246,22 @@ export default function LoginScreen() {
           <TouchableOpacity
             style={styles.loginButton}
             onPress={onSubmit}
-            disabled={isLoading}
+            disabled={isBusy}
             activeOpacity={0.9}
           >
-            {isLoading ? (
+            {isBusy ? (
               <>
                 <ActivityIndicator color="#17181c" />
                 <Text style={styles.loginButtonText}>
-                  Sending Code...
+                  {isGhostLogin ? "Signing In..." : "Sending Code..."}
                 </Text>
+              </>
+            ) : isGhostLogin ? (
+              <>
+                <Text style={styles.loginButtonText}>
+                  Sign In
+                </Text>
+                <Ionicons name="arrow-forward" size={20} color="#17181c" />
               </>
             ) : isSent ? (
               <>
