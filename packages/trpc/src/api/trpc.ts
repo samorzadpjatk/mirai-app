@@ -97,7 +97,7 @@ export interface TRPCContext {
 
 // On the backend we use a single SERVICE_ROLE Supabase client (singleton).
 // Follow the Prisma pattern: a module-level lazy-initialized singleton so we avoid adding globals.
-let serverSupabase: SupabaseClient | undefined; 
+let supabase: SupabaseClient | undefined; 
 
 /**
  * 1. CONTEXT
@@ -113,23 +113,15 @@ let serverSupabase: SupabaseClient | undefined;
  */
 export const createTRPCContext = (opts: {
   headers: Headers;
+  databaseUrl: string;
   supabaseUrl: string;
   supabaseKey: string;
   connectionParams?: unknown;
 }): TRPCContext => {
-  // The tRPC backend requires using the SERVICE_ROLE key for Supabase.
-  // Enforce it and create a single shared server client (module-level singleton).
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error(
-      "Missing SUPABASE_SERVICE_ROLE_KEY environment variable. The tRPC backend requires a service role key to create a single Supabase client.",
-    );
-  }
-
-  if (!serverSupabase) {
-    serverSupabase = createSupabaseClient(
+  if (!supabase) {
+    supabase = createSupabaseClient(
       opts.supabaseUrl,
-      serviceRoleKey,
+      opts.supabaseKey,
       undefined,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
@@ -138,16 +130,16 @@ export const createTRPCContext = (opts: {
     console.log("[Supabase] Reusing server singleton Supabase client");
   }
 
-  const supabase = serverSupabase;
-
   const accessToken = getAccessToken(opts.headers, opts.connectionParams);
   console.log(
     "Creating tRPC context with access token:",
     accessToken ? "YES" : "NO",
   );
 
+  const dbInstance = db(opts.databaseUrl);
+
   return {
-    db,
+    db: dbInstance,
     supabase,
     headers: opts.headers,
     accessToken,
@@ -216,6 +208,7 @@ export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   try {
     const { user, dbUser } = await requireAuth(
+      ctx.db,
       ctx.supabase,
       ctx.accessToken ?? undefined,
     );
@@ -244,6 +237,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
   try {
     const dbUser = await requireModerator(
+      ctx.db,
       ctx.supabase,
       ctx.accessToken ?? undefined,
     );
@@ -265,7 +259,11 @@ export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
 
 export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
   try {
-    const dbUser = await requireAdmin(ctx.supabase, ctx.accessToken ?? undefined);
+    const dbUser = await requireAdmin(
+      ctx.db,
+      ctx.supabase,
+      ctx.accessToken ?? undefined,
+    );
     return next({
       ctx: {
         dbUser,

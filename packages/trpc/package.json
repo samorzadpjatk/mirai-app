@@ -36,7 +36,6 @@
   "license": "ISC",
   "dependencies": {
     "@integral-2025-app/auth": "workspace:*",
-    "@integral-2025-app/common-utils": "workspace:*",
     "@integral-2025-app/db": "workspace:*",
     "@integral-2025-app/supabase": "workspace:*",
     "@tanstack/react-query": "^5.90.16",
@@ -51,16 +50,11 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
-  "devDependencies": {
-    "@t3-oss/env-core": "^0.13.10",
-    "@types/node": "^24.10.4",
+  "devDependencies": {    
     "@types/react": "~19.1.17",
     "@types/react-dom": "~19.1.11",
-    "@vitest/coverage-v8": "^4.0.16",
-    "@vitest/ui": "^4.0.16",
     "postcss": "^8.5.6",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
   }
 }

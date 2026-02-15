@@ -1,8 +1,8 @@
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
 
-const IMAGE_BUCKET = process.env.SUPABASE_STORAGE_IMAGE_BUCKET ?? "image";
-const VIDEO_BUCKET = process.env.SUPABASE_STORAGE_VIDEO_BUCKET ?? "video";
-const PUBLIC_BUCKET = process.env.SUPABASE_STORAGE_PUBLIC_BUCKET ?? "public";
+const IMAGE_BUCKET = "image";
+const VIDEO_BUCKET = "video";
+const PUBLIC_BUCKET = "files-public";
 
 const VIDEO_EXTENSIONS = new Set([
   "mp4",
@@ -29,8 +29,8 @@ const inferBucketFromPath = (rawPath: string): { bucket: string; path: string } 
   const normalized = rawPath.replace(/^\/+/, "");
   if (!normalized) return null;
 
-  if (normalized.startsWith("public/")) {
-    return { bucket: PUBLIC_BUCKET, path: normalized.slice("public/".length) };
+  if (normalized.startsWith("files-public/")) {
+    return { bucket: PUBLIC_BUCKET, path: normalized.slice("files-public/".length) };
   }
 
   if (normalized.startsWith("avatar/")) {
@@ -120,7 +120,7 @@ export const parseSupabaseStoragePath = (
     }
 
     if (!SUPABASE_OBJECT_PREFIXES.has(firstSegment) &&
-        !["challenge", "avatar", "public"].includes(firstSegment)) {
+      !["challenge", "avatar", "files-public"].includes(firstSegment)) {
       const bucket = segments.shift();
       if (!bucket) return null;
 
