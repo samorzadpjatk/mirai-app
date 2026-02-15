@@ -52,13 +52,11 @@ enum SubmissionStatus {
 }
 
 model User {
-  id                        String                 @id @default(cuid())
-  authUserId                String?                @unique
-  firstName                 String?
-  lastName                  String?
-  email                     String?                @unique
-  emailVerified             DateTime?
-  image                     String?
+  id                        String                 @id @default(uuid())
+  authUserId                String                @unique
+  firstName                 String
+  lastName                  String
+  hasAvatar                 Boolean                @default(false)
   role                      Role                   @default(USER)
   organizerGroup            Group[]                @relation("UserOrganizerGroups")
   coinTransactionsAdmin     CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
@@ -70,6 +68,8 @@ model User {
   userEvents                UserEvent[]
   location                  Location?
   locationsSharedWithMe     Location[]             @relation("LocationSharingUsers")
+  sentLocationRequests      LocationSharingRequest[] @relation("SentLocationSharingRequests")
+  receivedLocationRequests  LocationSharingRequest[] @relation("ReceivedLocationSharingRequests")
   trips                     TripParticipant[]
   createdAt                 DateTime               @default(now())
   updatedAt                 DateTime               @updatedAt
@@ -212,8 +212,8 @@ model ChallengeSubmission {
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  imageUrls   String[] @default([])
-  videoUrl    String?
+  imageIds    String[] @default([])
+  videoId     String?
   textContent String?
   latitude    Float?
   longitude   Float?
@@ -399,4 +399,25 @@ model Location {
   speed                      Float?
   usersToShareWith           User[]    @relation("LocationSharingUsers")
   lastInactivityNotification DateTime?
+}
+
+enum LocationSharingRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model LocationSharingRequest {
+  id         String                        @id @default(cuid())
+  senderId   String
+  receiverId String
+  sender     User                          @relation("SentLocationSharingRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User                          @relation("ReceivedLocationSharingRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     LocationSharingRequestStatus  @default(PENDING)
+  createdAt  DateTime                      @default(now())
+  updatedAt  DateTime                      @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([senderId, status])
 }

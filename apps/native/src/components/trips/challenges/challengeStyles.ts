@@ -1,27 +1,27 @@
 import { type ComponentProps } from "react";
-import { type MaterialIcons } from "@expo/vector-icons";
+import { type Ionicons } from "@expo/vector-icons";
 
 export const getIconForChallenge = (
   name: string,
-): ComponentProps<typeof MaterialIcons>["name"] => {
+): ComponentProps<typeof Ionicons>["name"] => {
   const lowerName = name.toLowerCase();
   if (lowerName.includes("snow") || lowerName.includes("angel"))
-    return "ac-unit";
+    return "snow";
   if (lowerName.includes("photo") || lowerName.includes("peak"))
-    return "landscape";
+    return "image";
   if (lowerName.includes("toast") || lowerName.includes("team"))
-    return "local-bar";
+    return "wine";
   if (lowerName.includes("legend") || lowerName.includes("local"))
     return "star";
   if (lowerName.includes("trail") || lowerName.includes("blazer"))
-    return "explore";
+    return "compass";
   if (lowerName.includes("fire") || lowerName.includes("starter"))
-    return "local-fire-department";
+    return "flame";
   if (lowerName.includes("night") || lowerName.includes("watch"))
-    return "bedtime";
+    return "moon";
   if (lowerName.includes("city") || lowerName.includes("sprint"))
-    return "directions-run";
-  return "emoji-events";
+    return "walk";
+  return "trophy";
 };
 
 export const getColorForPoints = (points: number): string => {

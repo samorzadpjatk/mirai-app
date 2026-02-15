@@ -9,7 +9,7 @@ import { useTRPC } from "@integral-2025-app/trpc/client";
 import LoadingScreen from "../../components/LoadingScreen";
 import AppNavbar from "../../components/AppNavbar";
 import { colors, spacing, borderRadius, typography } from "../../styles";
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
+import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 
 export default function Home() {
   const { session, isLoading, signOut } = useAuth();

@@ -1,6 +1,6 @@
 import React, { type ComponentProps } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import type { AdminChallengeUI } from "~/hooks/admin";
 import { commonStyles } from "~/styles/commonStyles";
 
@@ -14,14 +14,11 @@ export default function ChallengeCard({
   onDelete?: (id: string, tripId?: string) => void;
 }) {
   const getChallengeIcon = (icon: string) => {
-    const iconMap: Record<
-      string,
-      ComponentProps<typeof MaterialIcons>["name"]
-    > = {
-      eco: "eco",
+    const iconMap: Record<string, ComponentProps<typeof Ionicons>["name"]> = {
+      eco: "leaf",
       terminal: "terminal",
-      flight_takeoff: "flight-takeoff",
-      fitness_center: "fitness-center",
+      flight_takeoff: "airplane",
+      fitness_center: "barbell",
       star: "star",
     };
     return iconMap[icon] ?? "star";
@@ -47,7 +44,7 @@ export default function ChallengeCard({
               : "rgba(0, 206, 209, 0.1)",
         }}
       >
-        <MaterialIcons
+        <Ionicons
           name={getChallengeIcon(challenge.icon)}
           size={24}
           color={challenge.category === "wintegral" ? "#0f2323" : "#00ced1"}
@@ -85,13 +82,13 @@ export default function ChallengeCard({
           style={{ padding: 8 }}
           onPress={() => onEdit?.(challenge)}
         >
-          <MaterialIcons name="edit-square" size={20} color="#9ca3af" />
+          <Ionicons name="create" size={20} color="#9ca3af" />
         </TouchableOpacity>
         <TouchableOpacity
           style={{ padding: 8 }}
           onPress={() => onDelete?.(challenge.id, challenge.tripId)}
         >
-          <MaterialIcons name="delete-forever" size={20} color="#9ca3af" />
+          <Ionicons name="trash" size={20} color="#9ca3af" />
         </TouchableOpacity>
       </View>
     </View>

@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "default": "./src/index.ts"
     },
+    "./react": {
+      "import": "./src/react.tsx",
+      "types": "./dist/react.d.ts",
+      "default": "./src/react.tsx"
+    },
     "./types": {
       "import": "./src/types.ts",
       "types": "./dist/types.d.ts",
@@ -29,13 +34,15 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^24.10.4",
-    "@vitest/coverage-v8": "^4.0.16",
+    "@types/react": "~19.1.17",
     "postcss": "^8.5.6",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "react": "19.1.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0"
   }
 }

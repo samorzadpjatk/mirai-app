@@ -6,7 +6,7 @@ import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useGroupEditor } from "~/hooks/groups";
 import { useGroupImagePicker } from "~/hooks/groups/useGroupImagePicker";
 import { colors, spacing, typography } from "../../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { EditMembersSearchBar } from "~/components/trips/groups/edit/EditMembersSearchBar";

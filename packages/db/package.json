@@ -19,27 +19,16 @@
     "db:migrate:dev": "bunx --bun prisma migrate dev",
     "db:push": "bunx --bun prisma db push",
     "db:reset": "bunx --bun prisma migrate reset",
-    "db:seed": "bunx --bun prisma db seed",
     "db:studio": "bunx --bun prisma studio",
-    "db:format": "bunx --bun prisma format",
-    "test": "vitest run --coverage",
-    "test:watch": "vitest"
+    "db:format": "bunx --bun prisma format"
   },
   "dependencies": {
     "@integral-2025-app/supabase": "workspace:*",
     "@prisma/client": "^7.3.0",
-    "@prisma/adapter-pg": "^7.3.0",
-    "@t3-oss/env-core": "^0.13.10",
-    "zod": "^4.3.4"
+    "@prisma/adapter-pg": "^7.3.0"
   },
   "devDependencies": {
-    "@integral-2025-app/vitest-config": "workspace:*",
-    "@types/node": "^24.10.4",
-    "@vitest/coverage-v8": "^4.0.16",
-    "@vitest/ui": "^4.0.16",
-    "postcss": "^8.5.6",
     "prisma": "^7.3.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "typescript": "^5.9.3"
   }
 }

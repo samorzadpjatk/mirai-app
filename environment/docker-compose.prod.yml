@@ -36,7 +36,6 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
       ADMIN_ROLE: "PJAPP Admin"
       MODERATOR_ROLE: "PJAPP Moderator"
-      TECH_ROLE: "PJAPP Tech"
       SERVICE_ACCOUNT_ROLE: "PJAPP SA"
       DATABASE_URL: "postgresql://postgres.${POOLER_TENANT_ID}:${POSTGRES_PASSWORD}@supabase-pooler:${POOLER_PROXY_PORT_TRANSACTION}/${POSTGRES_DB}"
     depends_on:
@@ -67,9 +66,7 @@ services:
         condition: service_started
 
   db-migrations:
-    build:
-      context: ..
-      dockerfile: packages/db/Dockerfile.migrations
+    image: ghcr.io/samorzadpjatk/pjapp-db-migrations:latest
     environment:
       DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
       PRISMA_MIGRATE_SKIP_SEED: "1"
@@ -143,7 +140,7 @@ services:
       # Toggle analytics UI in Studio (set to true to show logs)
       NEXT_PUBLIC_ENABLE_LOGS: ${NEXT_PUBLIC_ENABLE_LOGS:-false}
       # Comma-separated list of modules to hide in Studio (engineering note: Studio reads this env in our self-hosted setup if supported)
-      STUDIO_DISABLED_MODULES: ${STUDIO_DISABLED_MODULES:-storage,functions,analytics,imgproxy}
+      STUDIO_DISABLED_MODULES: ${STUDIO_DISABLED_MODULES:-functions,analytics}
       # Comment to use Big Query backend for analytics
       NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
       # Uncomment to use Big Query backend for analytics
@@ -327,8 +324,8 @@ services:
       DNS_NODES: "''"
       RLIMIT_NOFILE: "10000"
       APP_NAME: realtime
-      SEED_SELF_HOST: true
-      RUN_JANITOR: true
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
 
   # Supabase Storage - Object storage with image transformations
   # To use S3 backed storage: docker compose -f docker-compose.yml -f docker-compose.s3.yml up
@@ -369,15 +366,12 @@ services:
       DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       FILE_SIZE_LIMIT: 52428800
       STORAGE_BACKEND: s3
-      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
-      S3_BUCKET: ${MINIO_BUCKET}
-      S3_REGION: ${MINIO_REGION}
-      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      S3_FORCE_PATH_STYLE: "true"
+      GLOBAL_S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       TENANT_ID: stub
-      REGION: ${MINIO_REGION}
-      GLOBAL_S3_BUCKET: ${MINIO_BUCKET}
+      REGION: ${MINIO_REGION:-pl-waw-1}
+      GLOBAL_S3_BUCKET: ${MINIO_BUCKET:-pjapp}
       ENABLE_IMAGE_TRANSFORMATION: "true"
       IMGPROXY_URL: http://imgproxy:5001
 
@@ -416,9 +410,27 @@ services:
       interval: 5s
       retries: 3
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     command: server /data --console-address ":9001"
+
+  minio-init:
+    container_name: minio-init
+    image: minio/mc:latest
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-pjapp}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD";
+        mc mb --ignore-existing "local/$MINIO_BUCKET";
 
   # Supabase Postgres Meta - PostgreSQL metadata API
   meta:
@@ -474,7 +486,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_URL: ecto://supabase_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/_supabase
-      CLUSTER_POSTGRES: true
+      CLUSTER_POSTGRES: "true"
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       VAULT_ENC_KEY: ${VAULT_ENC_KEY}
       API_JWT_SECRET: ${JWT_SECRET}
@@ -501,6 +513,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+      - ./volumes/db/init/data.sql:/docker-entrypoint-initdb.d/init-scripts/97-data.sql:Z
       # Must be superuser to create event trigger
       - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
       # Must be superuser to alter reserved role

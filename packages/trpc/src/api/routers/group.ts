@@ -7,6 +7,18 @@ import {
   adminProcedure,
   moderatorProcedure,
 } from "../../api/trpc";
+import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
+
+const toUserWithEmail = <T extends { authUserId?: string | null }>(
+  user: T,
+  emailByAuthUserId: Map<string, string | null>,
+) => {
+  const { authUserId, ...rest } = user;
+  return {
+    ...rest,
+    email: resolveAuthEmail(emailByAuthUserId, authUserId),
+  };
+};
 
 export const groupRouter = createTRPCRouter({
   getAllNames: moderatorProcedure
@@ -30,7 +42,7 @@ export const groupRouter = createTRPCRouter({
         select: { groupId: true },
       });
       if (!participant?.groupId) return null;
-      return await ctx.db.group.findUnique({
+      const group = await ctx.db.group.findUnique({
         where: { id: participant.groupId },
         include: {
           participants: {
@@ -40,7 +52,7 @@ export const groupRouter = createTRPCRouter({
                   id: true,
                   firstName: true,
                   lastName: true,
-                  email: true,
+                  authUserId: true,
                 },
               },
             },
@@ -50,7 +62,7 @@ export const groupRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
           coinTransactions: {
@@ -67,11 +79,32 @@ export const groupRouter = createTRPCRouter({
           },
         },
       });
+
+      if (!group) return null;
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        [
+          group.organizer?.authUserId,
+          ...group.participants.map((participant) => participant.user.authUserId),
+        ],
+      );
+
+      return {
+        ...group,
+        organizer: group.organizer
+          ? toUserWithEmail(group.organizer, emailByAuthUserId)
+          : group.organizer,
+        participants: group.participants.map((participant) => ({
+          ...participant,
+          user: toUserWithEmail(participant.user, emailByAuthUserId),
+        })),
+      };
     }),
   getAll: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.group.findMany({
+      const groups = await ctx.db.group.findMany({
         where: { tripId: input.tripId },
         include: {
           participants: {
@@ -81,7 +114,7 @@ export const groupRouter = createTRPCRouter({
                   id: true,
                   firstName: true,
                   lastName: true,
-                  email: true,
+                  authUserId: true,
                 },
               },
             },
@@ -91,7 +124,7 @@ export const groupRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
           coinTransactions: {
@@ -110,6 +143,25 @@ export const groupRouter = createTRPCRouter({
         },
         orderBy: { name: "asc" },
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        groups.flatMap((group) => [
+          group.organizer?.authUserId,
+          ...group.participants.map((participant) => participant.user.authUserId),
+        ]),
+      );
+
+      return groups.map((group) => ({
+        ...group,
+        organizer: group.organizer
+          ? toUserWithEmail(group.organizer, emailByAuthUserId)
+          : group.organizer,
+        participants: group.participants.map((participant) => ({
+          ...participant,
+          user: toUserWithEmail(participant.user, emailByAuthUserId),
+        })),
+      }));
     }),
   getGroupList: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
@@ -145,7 +197,7 @@ export const groupRouter = createTRPCRouter({
                   id: true,
                   firstName: true,
                   lastName: true,
-                  email: true,
+                  authUserId: true,
                   role: true,
                 },
               },
@@ -156,7 +208,7 @@ export const groupRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
           trip: {
@@ -175,7 +227,24 @@ export const groupRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       }
 
-      return group;
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        [
+          group.organizer?.authUserId,
+          ...group.participants.map((participant) => participant.user.authUserId),
+        ],
+      );
+
+      return {
+        ...group,
+        organizer: group.organizer
+          ? toUserWithEmail(group.organizer, emailByAuthUserId)
+          : group.organizer,
+        participants: group.participants.map((participant) => ({
+          ...participant,
+          user: toUserWithEmail(participant.user, emailByAuthUserId),
+        })),
+      };
     }),
   getByIdWithOrganizer: moderatorProcedure
     .input(z.object({ groupId: z.string() }))
@@ -220,7 +289,7 @@ export const groupRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
         },
@@ -244,7 +313,16 @@ export const groupRouter = createTRPCRouter({
         },
       });
 
-      return group;
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        group.organizer?.authUserId,
+      ]);
+
+      return {
+        ...group,
+        organizer: group.organizer
+          ? toUserWithEmail(group.organizer, emailByAuthUserId)
+          : group.organizer,
+      };
     }),
 
   // Update group information
@@ -271,7 +349,7 @@ export const groupRouter = createTRPCRouter({
           message: "Only the organizer can update this group",
         });
       }
-      return await ctx.db.group.update({
+      const updatedGroup = await ctx.db.group.update({
         where: { id },
         data: updateData,
         include: {
@@ -280,11 +358,22 @@ export const groupRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
         },
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        updatedGroup.organizer?.authUserId,
+      ]);
+
+      return {
+        ...updatedGroup,
+        organizer: updatedGroup.organizer
+          ? toUserWithEmail(updatedGroup.organizer, emailByAuthUserId)
+          : updatedGroup.organizer,
+      };
     }),
 
   // Delete a group
@@ -455,15 +544,23 @@ export const groupRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
         },
       });
 
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        participants.map((participant) => participant.user.authUserId),
+      );
+
       return {
         count: participants.length,
-        participants,
+        participants: participants.map((participant) => ({
+          ...participant,
+          user: toUserWithEmail(participant.user, emailByAuthUserId),
+        })),
       };
     }),
 
@@ -550,7 +647,7 @@ export const groupRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
           participants: {
@@ -560,7 +657,7 @@ export const groupRouter = createTRPCRouter({
                   id: true,
                   firstName: true,
                   lastName: true,
-                  email: true,
+                  authUserId: true,
                 },
               },
             },
@@ -579,8 +676,26 @@ export const groupRouter = createTRPCRouter({
           },
         },
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        data.flatMap((group) => [
+          group.organizer?.authUserId,
+          ...group.participants.map((participant) => participant.user.authUserId),
+        ]),
+      );
+
       return {
-        data,
+        data: data.map((group) => ({
+          ...group,
+          organizer: group.organizer
+            ? toUserWithEmail(group.organizer, emailByAuthUserId)
+            : group.organizer,
+          participants: group.participants.map((participant) => ({
+            ...participant,
+            user: toUserWithEmail(participant.user, emailByAuthUserId),
+          })),
+        })),
         currentDate,
       };
     }),

@@ -50,7 +50,7 @@ export type ChallengeSubmissionMinAggregateOutputType = {
   id: string | null
   challengeId: string | null
   groupId: string | null
-  videoUrl: string | null
+  videoId: string | null
   textContent: string | null
   latitude: number | null
   longitude: number | null
@@ -71,7 +71,7 @@ export type ChallengeSubmissionMaxAggregateOutputType = {
   id: string | null
   challengeId: string | null
   groupId: string | null
-  videoUrl: string | null
+  videoId: string | null
   textContent: string | null
   latitude: number | null
   longitude: number | null
@@ -92,8 +92,8 @@ export type ChallengeSubmissionCountAggregateOutputType = {
   id: number
   challengeId: number
   groupId: number
-  imageUrls: number
-  videoUrl: number
+  imageIds: number
+  videoId: number
   textContent: number
   latitude: number
   longitude: number
@@ -136,7 +136,7 @@ export type ChallengeSubmissionMinAggregateInputType = {
   id?: true
   challengeId?: true
   groupId?: true
-  videoUrl?: true
+  videoId?: true
   textContent?: true
   latitude?: true
   longitude?: true
@@ -157,7 +157,7 @@ export type ChallengeSubmissionMaxAggregateInputType = {
   id?: true
   challengeId?: true
   groupId?: true
-  videoUrl?: true
+  videoId?: true
   textContent?: true
   latitude?: true
   longitude?: true
@@ -178,8 +178,8 @@ export type ChallengeSubmissionCountAggregateInputType = {
   id?: true
   challengeId?: true
   groupId?: true
-  imageUrls?: true
-  videoUrl?: true
+  imageIds?: true
+  videoId?: true
   textContent?: true
   latitude?: true
   longitude?: true
@@ -287,8 +287,8 @@ export type ChallengeSubmissionGroupByOutputType = {
   id: string
   challengeId: string
   groupId: string
-  imageUrls: string[]
-  videoUrl: string | null
+  imageIds: string[]
+  videoId: string | null
   textContent: string | null
   latitude: number | null
   longitude: number | null
@@ -332,8 +332,8 @@ export type ChallengeSubmissionWhereInput = {
   id?: Prisma.StringFilter<"ChallengeSubmission"> | string
   challengeId?: Prisma.StringFilter<"ChallengeSubmission"> | string
   groupId?: Prisma.StringFilter<"ChallengeSubmission"> | string
-  imageUrls?: Prisma.StringNullableListFilter<"ChallengeSubmission">
-  videoUrl?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
+  imageIds?: Prisma.StringNullableListFilter<"ChallengeSubmission">
+  videoId?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
   textContent?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
   latitude?: Prisma.FloatNullableFilter<"ChallengeSubmission"> | number | null
   longitude?: Prisma.FloatNullableFilter<"ChallengeSubmission"> | number | null
@@ -359,8 +359,8 @@ export type ChallengeSubmissionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   challengeId?: Prisma.SortOrder
   groupId?: Prisma.SortOrder
-  imageUrls?: Prisma.SortOrder
-  videoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageIds?: Prisma.SortOrder
+  videoId?: Prisma.SortOrderInput | Prisma.SortOrder
   textContent?: Prisma.SortOrderInput | Prisma.SortOrder
   latitude?: Prisma.SortOrderInput | Prisma.SortOrder
   longitude?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -390,8 +390,8 @@ export type ChallengeSubmissionWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ChallengeSubmissionWhereInput | Prisma.ChallengeSubmissionWhereInput[]
   challengeId?: Prisma.StringFilter<"ChallengeSubmission"> | string
   groupId?: Prisma.StringFilter<"ChallengeSubmission"> | string
-  imageUrls?: Prisma.StringNullableListFilter<"ChallengeSubmission">
-  videoUrl?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
+  imageIds?: Prisma.StringNullableListFilter<"ChallengeSubmission">
+  videoId?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
   textContent?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
   latitude?: Prisma.FloatNullableFilter<"ChallengeSubmission"> | number | null
   longitude?: Prisma.FloatNullableFilter<"ChallengeSubmission"> | number | null
@@ -417,8 +417,8 @@ export type ChallengeSubmissionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   challengeId?: Prisma.SortOrder
   groupId?: Prisma.SortOrder
-  imageUrls?: Prisma.SortOrder
-  videoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageIds?: Prisma.SortOrder
+  videoId?: Prisma.SortOrderInput | Prisma.SortOrder
   textContent?: Prisma.SortOrderInput | Prisma.SortOrder
   latitude?: Prisma.SortOrderInput | Prisma.SortOrder
   longitude?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -447,8 +447,8 @@ export type ChallengeSubmissionScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"ChallengeSubmission"> | string
   challengeId?: Prisma.StringWithAggregatesFilter<"ChallengeSubmission"> | string
   groupId?: Prisma.StringWithAggregatesFilter<"ChallengeSubmission"> | string
-  imageUrls?: Prisma.StringNullableListFilter<"ChallengeSubmission">
-  videoUrl?: Prisma.StringNullableWithAggregatesFilter<"ChallengeSubmission"> | string | null
+  imageIds?: Prisma.StringNullableListFilter<"ChallengeSubmission">
+  videoId?: Prisma.StringNullableWithAggregatesFilter<"ChallengeSubmission"> | string | null
   textContent?: Prisma.StringNullableWithAggregatesFilter<"ChallengeSubmission"> | string | null
   latitude?: Prisma.FloatNullableWithAggregatesFilter<"ChallengeSubmission"> | number | null
   longitude?: Prisma.FloatNullableWithAggregatesFilter<"ChallengeSubmission"> | number | null
@@ -467,8 +467,8 @@ export type ChallengeSubmissionScalarWhereWithAggregatesInput = {
 
 export type ChallengeSubmissionCreateInput = {
   id?: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -493,8 +493,8 @@ export type ChallengeSubmissionUncheckedCreateInput = {
   id?: string
   challengeId: string
   groupId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -515,8 +515,8 @@ export type ChallengeSubmissionUncheckedCreateInput = {
 
 export type ChallengeSubmissionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -541,8 +541,8 @@ export type ChallengeSubmissionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   challengeId?: Prisma.StringFieldUpdateOperationsInput | string
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -565,8 +565,8 @@ export type ChallengeSubmissionCreateManyInput = {
   id?: string
   challengeId: string
   groupId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -585,8 +585,8 @@ export type ChallengeSubmissionCreateManyInput = {
 
 export type ChallengeSubmissionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -606,8 +606,8 @@ export type ChallengeSubmissionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   challengeId?: Prisma.StringFieldUpdateOperationsInput | string
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -643,8 +643,8 @@ export type ChallengeSubmissionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   challengeId?: Prisma.SortOrder
   groupId?: Prisma.SortOrder
-  imageUrls?: Prisma.SortOrder
-  videoUrl?: Prisma.SortOrder
+  imageIds?: Prisma.SortOrder
+  videoId?: Prisma.SortOrder
   textContent?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
   longitude?: Prisma.SortOrder
@@ -675,7 +675,7 @@ export type ChallengeSubmissionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   challengeId?: Prisma.SortOrder
   groupId?: Prisma.SortOrder
-  videoUrl?: Prisma.SortOrder
+  videoId?: Prisma.SortOrder
   textContent?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
   longitude?: Prisma.SortOrder
@@ -696,7 +696,7 @@ export type ChallengeSubmissionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   challengeId?: Prisma.SortOrder
   groupId?: Prisma.SortOrder
-  videoUrl?: Prisma.SortOrder
+  videoId?: Prisma.SortOrder
   textContent?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
   longitude?: Prisma.SortOrder
@@ -854,11 +854,11 @@ export type ChallengeSubmissionUncheckedUpdateManyWithoutChallengeNestedInput = 
   deleteMany?: Prisma.ChallengeSubmissionScalarWhereInput | Prisma.ChallengeSubmissionScalarWhereInput[]
 }
 
-export type ChallengeSubmissionCreateimageUrlsInput = {
+export type ChallengeSubmissionCreateimageIdsInput = {
   set: string[]
 }
 
-export type ChallengeSubmissionUpdateimageUrlsInput = {
+export type ChallengeSubmissionUpdateimageIdsInput = {
   set?: string[]
   push?: string | string[]
 }
@@ -905,8 +905,8 @@ export type ChallengeSubmissionUpdateOneRequiredWithoutReportsNestedInput = {
 
 export type ChallengeSubmissionCreateWithoutReviewedByInput = {
   id?: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -930,8 +930,8 @@ export type ChallengeSubmissionUncheckedCreateWithoutReviewedByInput = {
   id?: string
   challengeId: string
   groupId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -982,8 +982,8 @@ export type ChallengeSubmissionScalarWhereInput = {
   id?: Prisma.StringFilter<"ChallengeSubmission"> | string
   challengeId?: Prisma.StringFilter<"ChallengeSubmission"> | string
   groupId?: Prisma.StringFilter<"ChallengeSubmission"> | string
-  imageUrls?: Prisma.StringNullableListFilter<"ChallengeSubmission">
-  videoUrl?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
+  imageIds?: Prisma.StringNullableListFilter<"ChallengeSubmission">
+  videoId?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
   textContent?: Prisma.StringNullableFilter<"ChallengeSubmission"> | string | null
   latitude?: Prisma.FloatNullableFilter<"ChallengeSubmission"> | number | null
   longitude?: Prisma.FloatNullableFilter<"ChallengeSubmission"> | number | null
@@ -1002,8 +1002,8 @@ export type ChallengeSubmissionScalarWhereInput = {
 
 export type ChallengeSubmissionCreateWithoutGroupInput = {
   id?: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1026,8 +1026,8 @@ export type ChallengeSubmissionCreateWithoutGroupInput = {
 export type ChallengeSubmissionUncheckedCreateWithoutGroupInput = {
   id?: string
   challengeId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1074,8 +1074,8 @@ export type ChallengeSubmissionUpdateManyWithWhereWithoutGroupInput = {
 
 export type ChallengeSubmissionCreateWithoutChallengeInput = {
   id?: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1098,8 +1098,8 @@ export type ChallengeSubmissionCreateWithoutChallengeInput = {
 export type ChallengeSubmissionUncheckedCreateWithoutChallengeInput = {
   id?: string
   groupId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1146,8 +1146,8 @@ export type ChallengeSubmissionUpdateManyWithWhereWithoutChallengeInput = {
 
 export type ChallengeSubmissionCreateWithoutVotesInput = {
   id?: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1171,8 +1171,8 @@ export type ChallengeSubmissionUncheckedCreateWithoutVotesInput = {
   id?: string
   challengeId: string
   groupId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1208,8 +1208,8 @@ export type ChallengeSubmissionUpdateToOneWithWhereWithoutVotesInput = {
 
 export type ChallengeSubmissionUpdateWithoutVotesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1233,8 +1233,8 @@ export type ChallengeSubmissionUncheckedUpdateWithoutVotesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   challengeId?: Prisma.StringFieldUpdateOperationsInput | string
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1254,8 +1254,8 @@ export type ChallengeSubmissionUncheckedUpdateWithoutVotesInput = {
 
 export type ChallengeSubmissionCreateWithoutReportsInput = {
   id?: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1279,8 +1279,8 @@ export type ChallengeSubmissionUncheckedCreateWithoutReportsInput = {
   id?: string
   challengeId: string
   groupId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1316,8 +1316,8 @@ export type ChallengeSubmissionUpdateToOneWithWhereWithoutReportsInput = {
 
 export type ChallengeSubmissionUpdateWithoutReportsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1341,8 +1341,8 @@ export type ChallengeSubmissionUncheckedUpdateWithoutReportsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   challengeId?: Prisma.StringFieldUpdateOperationsInput | string
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1364,8 +1364,8 @@ export type ChallengeSubmissionCreateManyReviewedByInput = {
   id?: string
   challengeId: string
   groupId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1383,8 +1383,8 @@ export type ChallengeSubmissionCreateManyReviewedByInput = {
 
 export type ChallengeSubmissionUpdateWithoutReviewedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1408,8 +1408,8 @@ export type ChallengeSubmissionUncheckedUpdateWithoutReviewedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   challengeId?: Prisma.StringFieldUpdateOperationsInput | string
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1431,8 +1431,8 @@ export type ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   challengeId?: Prisma.StringFieldUpdateOperationsInput | string
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1451,8 +1451,8 @@ export type ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByInput = {
 export type ChallengeSubmissionCreateManyGroupInput = {
   id?: string
   challengeId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1471,8 +1471,8 @@ export type ChallengeSubmissionCreateManyGroupInput = {
 
 export type ChallengeSubmissionUpdateWithoutGroupInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1495,8 +1495,8 @@ export type ChallengeSubmissionUpdateWithoutGroupInput = {
 export type ChallengeSubmissionUncheckedUpdateWithoutGroupInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   challengeId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1518,8 +1518,8 @@ export type ChallengeSubmissionUncheckedUpdateWithoutGroupInput = {
 export type ChallengeSubmissionUncheckedUpdateManyWithoutGroupInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   challengeId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1539,8 +1539,8 @@ export type ChallengeSubmissionUncheckedUpdateManyWithoutGroupInput = {
 export type ChallengeSubmissionCreateManyChallengeInput = {
   id?: string
   groupId: string
-  imageUrls?: Prisma.ChallengeSubmissionCreateimageUrlsInput | string[]
-  videoUrl?: string | null
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
   textContent?: string | null
   latitude?: number | null
   longitude?: number | null
@@ -1559,8 +1559,8 @@ export type ChallengeSubmissionCreateManyChallengeInput = {
 
 export type ChallengeSubmissionUpdateWithoutChallengeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1583,8 +1583,8 @@ export type ChallengeSubmissionUpdateWithoutChallengeInput = {
 export type ChallengeSubmissionUncheckedUpdateWithoutChallengeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1606,8 +1606,8 @@ export type ChallengeSubmissionUncheckedUpdateWithoutChallengeInput = {
 export type ChallengeSubmissionUncheckedUpdateManyWithoutChallengeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
-  imageUrls?: Prisma.ChallengeSubmissionUpdateimageUrlsInput | string[]
-  videoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1668,8 +1668,8 @@ export type ChallengeSubmissionSelect<ExtArgs extends runtime.Types.Extensions.I
   id?: boolean
   challengeId?: boolean
   groupId?: boolean
-  imageUrls?: boolean
-  videoUrl?: boolean
+  imageIds?: boolean
+  videoId?: boolean
   textContent?: boolean
   latitude?: boolean
   longitude?: boolean
@@ -1696,8 +1696,8 @@ export type ChallengeSubmissionSelectCreateManyAndReturn<ExtArgs extends runtime
   id?: boolean
   challengeId?: boolean
   groupId?: boolean
-  imageUrls?: boolean
-  videoUrl?: boolean
+  imageIds?: boolean
+  videoId?: boolean
   textContent?: boolean
   latitude?: boolean
   longitude?: boolean
@@ -1721,8 +1721,8 @@ export type ChallengeSubmissionSelectUpdateManyAndReturn<ExtArgs extends runtime
   id?: boolean
   challengeId?: boolean
   groupId?: boolean
-  imageUrls?: boolean
-  videoUrl?: boolean
+  imageIds?: boolean
+  videoId?: boolean
   textContent?: boolean
   latitude?: boolean
   longitude?: boolean
@@ -1746,8 +1746,8 @@ export type ChallengeSubmissionSelectScalar = {
   id?: boolean
   challengeId?: boolean
   groupId?: boolean
-  imageUrls?: boolean
-  videoUrl?: boolean
+  imageIds?: boolean
+  videoId?: boolean
   textContent?: boolean
   latitude?: boolean
   longitude?: boolean
@@ -1764,7 +1764,7 @@ export type ChallengeSubmissionSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ChallengeSubmissionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "challengeId" | "groupId" | "imageUrls" | "videoUrl" | "textContent" | "latitude" | "longitude" | "status" | "reviewedById" | "reviewedAt" | "rejectionReason" | "awardedPoints" | "bonusPoints" | "ranking" | "voteCount" | "voteScore" | "createdAt" | "updatedAt", ExtArgs["result"]["challengeSubmission"]>
+export type ChallengeSubmissionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "challengeId" | "groupId" | "imageIds" | "videoId" | "textContent" | "latitude" | "longitude" | "status" | "reviewedById" | "reviewedAt" | "rejectionReason" | "awardedPoints" | "bonusPoints" | "ranking" | "voteCount" | "voteScore" | "createdAt" | "updatedAt", ExtArgs["result"]["challengeSubmission"]>
 export type ChallengeSubmissionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   challenge?: boolean | Prisma.ChallengeDefaultArgs<ExtArgs>
   group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>
@@ -1797,8 +1797,8 @@ export type $ChallengeSubmissionPayload<ExtArgs extends runtime.Types.Extensions
     id: string
     challengeId: string
     groupId: string
-    imageUrls: string[]
-    videoUrl: string | null
+    imageIds: string[]
+    videoId: string | null
     textContent: string | null
     latitude: number | null
     longitude: number | null
@@ -2244,8 +2244,8 @@ export interface ChallengeSubmissionFieldRefs {
   readonly id: Prisma.FieldRef<"ChallengeSubmission", 'String'>
   readonly challengeId: Prisma.FieldRef<"ChallengeSubmission", 'String'>
   readonly groupId: Prisma.FieldRef<"ChallengeSubmission", 'String'>
-  readonly imageUrls: Prisma.FieldRef<"ChallengeSubmission", 'String[]'>
-  readonly videoUrl: Prisma.FieldRef<"ChallengeSubmission", 'String'>
+  readonly imageIds: Prisma.FieldRef<"ChallengeSubmission", 'String[]'>
+  readonly videoId: Prisma.FieldRef<"ChallengeSubmission", 'String'>
   readonly textContent: Prisma.FieldRef<"ChallengeSubmission", 'String'>
   readonly latitude: Prisma.FieldRef<"ChallengeSubmission", 'Float'>
   readonly longitude: Prisma.FieldRef<"ChallengeSubmission", 'Float'>

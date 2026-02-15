@@ -61,3 +61,12 @@ export const SubmissionStatus = {
 } as const
 
 export type SubmissionStatus = (typeof SubmissionStatus)[keyof typeof SubmissionStatus]
+
+
+export const LocationSharingRequestStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type LocationSharingRequestStatus = (typeof LocationSharingRequestStatus)[keyof typeof LocationSharingRequestStatus]

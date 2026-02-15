@@ -920,12 +920,12 @@ export default function NewChallengeScreen() {
       {(showStartPicker || showEndPicker || showVotingStartPicker || showVotingEndPicker || showDailyStartPicker || showDailyEndPicker) && (
         <DateTimePicker
           value={
-            (showStartPicker && form.startTime) ||
-            (showEndPicker && form.endTime) ||
-            (showVotingStartPicker && form.votingStartTime) ||
-            (showVotingEndPicker && form.votingEndTime) ||
-            (showDailyStartPicker && form.dailyStartTime) ||
-            (showDailyEndPicker && form.dailyEndTime) ||
+            showStartPicker && form.startTime ? form.startTime :
+            showEndPicker && form.endTime ? form.endTime :
+            showVotingStartPicker && form.votingStartTime ? form.votingStartTime :
+            showVotingEndPicker && form.votingEndTime ? form.votingEndTime :
+            showDailyStartPicker && form.dailyStartTime ? form.dailyStartTime :
+            showDailyEndPicker && form.dailyEndTime ? form.dailyEndTime :
             new Date()
           }
           mode={showDailyStartPicker || showDailyEndPicker ? 'time' : 'datetime'}

@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { colors } from '../../../../../styles';
@@ -65,7 +65,10 @@ export default function AdminChallengesScreen() {
       Alert.alert('Error', 'No trip found to attach this challenge');
       return;
     }
-    router.push(`/profile/admin/challenges/new?tripId=${encodeURIComponent(tripId)}`);
+    router.push({
+      pathname: '/profile/admin/challenges/new',
+      params: { tripId },
+    });
   };
 
   const handleDeleteChallenge = (id: string) => {
@@ -121,7 +124,7 @@ export default function AdminChallengesScreen() {
               shadowRadius: 20,
             }}
           >
-            <MaterialIcons name="add-circle" size={24} color={colors.backgroundDark} />
+            <Ionicons name="add-circle" size={24} color={colors.backgroundDark} />
             <Text style={{
               fontSize: 18,
               fontWeight: 'bold',
@@ -212,7 +215,7 @@ export default function AdminChallengesScreen() {
                 borderWidth: 1,
                 borderColor: 'rgba(0, 206, 209, 0.2)',
               }}>
-                <MaterialIcons name="emoji-events" size={24} color={colors.primary} />
+                <Ionicons name="trophy" size={24} color={colors.primary} />
               </View>
 
               <View style={{ flex: 1 }}>
@@ -258,16 +261,30 @@ export default function AdminChallengesScreen() {
                 <TouchableOpacity
                   style={{ padding: 8 }}
                   onPress={() => {
-                    router.push(`/profile/admin/challenges/${challenge.id}?tripId=${encodeURIComponent(tripId)}`);
+                    router.push({
+                      pathname: '/profile/admin/challenges/judgement',
+                      params: { tripId, challengeId: challenge.id },
+                    });
                   }}
                 >
-                  <MaterialIcons name="edit-square" size={20} color="#9ca3af" />
+                  <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ padding: 8 }}
+                  onPress={() => {
+                    router.push({
+                      pathname: '/profile/admin/challenges/[id]',
+                      params: { id: challenge.id, tripId },
+                    });
+                  }}
+                >
+                  <Ionicons name="create" size={20} color="#9ca3af" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={{ padding: 8 }}
                   onPress={() => handleDeleteChallenge(challenge.id)}
                 >
-                  <MaterialIcons name="delete-forever" size={20} color="#9ca3af" />
+                  <Ionicons name="trash" size={20} color="#9ca3af" />
                 </TouchableOpacity>
               </View>
             </View>

@@ -5,6 +5,7 @@ import {
   adminProcedure,
   moderatorProcedure,
 } from "../../api/trpc";
+import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import {
   validateDateRange,
   validateFutureDates,
@@ -16,10 +17,26 @@ import {
   notificationScheduleUpdateSchema,
   paginationSchema,
   filterSchema,
-} from "./notificationSchedule/validation";
+} from "../../utils/notificactionSchedule-validation";
 
 const toOptionalString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
+
+const attachCreatedByEmail = <T extends { createdBy?: { authUserId?: string | null } | null }>(
+  schedule: T,
+  emailByAuthUserId: Map<string, string | null>,
+) => {
+  const createdBy = schedule.createdBy;
+  if (!createdBy) return schedule;
+  const { authUserId, ...rest } = createdBy;
+  return {
+    ...schedule,
+    createdBy: {
+      ...rest,
+      email: resolveAuthEmail(emailByAuthUserId, authUserId),
+    },
+  };
+};
 
 export const notificationScheduleRouter = createTRPCRouter({
   getAll: moderatorProcedure
@@ -85,7 +102,7 @@ export const notificationScheduleRouter = createTRPCRouter({
                 id: true,
                 firstName: true,
                 lastName: true,
-                email: true,
+                authUserId: true,
               },
             },
             trip: {
@@ -107,8 +124,15 @@ export const notificationScheduleRouter = createTRPCRouter({
         ctx.db.notificationSchedule.count({ where }),
       ]);
 
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        schedules.map((schedule) => schedule.createdBy?.authUserId),
+      );
+
       return {
-        schedules,
+        schedules: schedules.map((schedule) =>
+          attachCreatedByEmail(schedule, emailByAuthUserId),
+        ),
         pagination: {
           total,
           limit,
@@ -183,7 +207,7 @@ export const notificationScheduleRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
           trip: {
@@ -207,7 +231,11 @@ export const notificationScheduleRouter = createTRPCRouter({
         });
       }
 
-      return schedule;
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        schedule.createdBy?.authUserId,
+      ]);
+
+      return attachCreatedByEmail(schedule, emailByAuthUserId);
     }),
 
   getExecutionHistory: moderatorProcedure
@@ -276,7 +304,7 @@ export const notificationScheduleRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
           trip: {
@@ -288,7 +316,11 @@ export const notificationScheduleRouter = createTRPCRouter({
         },
       });
 
-      return schedule;
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        schedule.createdBy?.authUserId,
+      ]);
+
+      return attachCreatedByEmail(schedule, emailByAuthUserId);
     }),
 
   update: adminProcedure
@@ -366,13 +398,17 @@ export const notificationScheduleRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
         },
       });
 
-      return schedule;
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        schedule.createdBy?.authUserId,
+      ]);
+
+      return attachCreatedByEmail(schedule, emailByAuthUserId);
     }),
 
   delete: adminProcedure
@@ -490,13 +526,17 @@ export const notificationScheduleRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
         },
       });
 
-      return newSchedule;
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        newSchedule.createdBy?.authUserId,
+      ]);
+
+      return attachCreatedByEmail(newSchedule, emailByAuthUserId);
     }),
 
   toggleActive: adminProcedure
@@ -522,13 +562,17 @@ export const notificationScheduleRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              email: true,
+              authUserId: true,
             },
           },
         },
       });
 
-      return updatedSchedule;
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        updatedSchedule.createdBy?.authUserId,
+      ]);
+
+      return attachCreatedByEmail(updatedSchedule, emailByAuthUserId);
     }),
 
   bulkToggleActive: adminProcedure

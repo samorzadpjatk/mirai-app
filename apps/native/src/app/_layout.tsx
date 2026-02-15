@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
 import { useColorScheme, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack, useRouter, useSegments } from "expo-router";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaInsetsProvider } from "~/contexts/safeArea";
+import { SafeAreaInsetsProvider } from "~/contexts/SafeAreaInsetsContext";
 import * as Notifications from "expo-notifications";
 
 // Global handler for notifications (module-level)
@@ -39,6 +39,7 @@ import {
 } from "@integral-2025-app/auth/client";
 import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
+import { SupabaseProvider } from "@integral-2025-app/supabase/react";
 import { APIProvider } from "@integral-2025-app/trpc/client";
 import "../../global.css";
 
@@ -208,15 +209,17 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider
-          supabaseUrl={SUPABASE_URL}
-          supabaseKey={SUPABASE_ANON_KEY}
-          supabaseClient={supabaseClient}
-        >
-          <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-            <RootLayoutContent />
-          </APIProvider>
-        </AuthProvider>
+        <SupabaseProvider client={supabaseClient}>
+          <AuthProvider
+            supabaseUrl={SUPABASE_URL}
+            supabaseKey={SUPABASE_ANON_KEY}
+            supabaseClient={supabaseClient}
+          >
+            <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+              <RootLayoutContent />
+            </APIProvider>
+          </AuthProvider>
+        </SupabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

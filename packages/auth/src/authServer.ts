@@ -1,7 +1,6 @@
 import type { SupabaseClient, SupabaseUser } from "@integral-2025-app/supabase";
-import type { User, Role } from "@integral-2025-app/db";
+import type { User, Role, PrismaClient } from "@integral-2025-app/db";
 import type { AuthUser } from "./types";
-import { db } from "@integral-2025-app/db";
 
 interface MinimalBuffer {
   from(
@@ -165,25 +164,31 @@ const toDisplayName = (
 
 export function mapDatabaseUserToAuthUser(
   dbUser: User | null,
+  supabaseUser?: SupabaseUser | null,
 ): AuthUser | null {
   if (!dbUser?.authUserId) {
     return null;
   }
 
+  const email = supabaseUser?.email ?? null;
+  const emailVerified = supabaseUser?.email_confirmed_at
+    ? new Date(supabaseUser.email_confirmed_at)
+    : null;
+
   const displayName = toDisplayName(
     dbUser.firstName,
     dbUser.lastName,
-    dbUser.email?.split("@")[0] ?? null,
+    email?.split("@")[0] ?? null,
   );
 
   return {
     id: dbUser.id,
     authUserId: dbUser.authUserId,
-    email: dbUser.email,
+    email,
     firstName: dbUser.firstName ?? null,
     lastName: dbUser.lastName ?? null,
     name: displayName,
-    emailVerified: dbUser.emailVerified,
+    emailVerified,
     role: dbUser.role,
   };
 }
@@ -213,6 +218,7 @@ export function hasRequiredRole(
  * @returns Session object with user and authUserId, or null if not authenticated
  */
 export async function getSession(
+  db: PrismaClient,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<{
@@ -236,7 +242,7 @@ export async function getSession(
     };
   }
 
-  const authUser = mapDatabaseUserToAuthUser(dbUser);
+  const authUser = mapDatabaseUserToAuthUser(dbUser, supabaseUser);
 
   return {
     user: authUser,
@@ -245,13 +251,14 @@ export async function getSession(
 }
 
 export async function requireAuth(
+  db: PrismaClient,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<{
   user: AuthUser;
   dbUser: User;
 }> {
-  const session = await getSession(supabase, accessToken);
+  const session = await getSession(db, supabase, accessToken);
 
   if (!session?.user) {
     throw new AuthenticationError("Unauthorized");
@@ -274,10 +281,11 @@ export async function requireAuth(
 }
 
 export async function requireAdmin(
+  db: PrismaClient,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<User> {
-  const { dbUser } = await requireAuth(supabase, accessToken);
+  const { dbUser } = await requireAuth(db, supabase, accessToken);
 
   if (dbUser.role !== "ADMIN") {
     throw new AuthorizationError("Admin access required");
@@ -287,10 +295,11 @@ export async function requireAdmin(
 }
 
 export async function requireModerator(
+  db: PrismaClient,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<User> {
-  const { dbUser } = await requireAuth(supabase, accessToken);
+  const { dbUser } = await requireAuth(db, supabase, accessToken);
 
   if (dbUser.role !== "MODERATOR" && dbUser.role !== "ADMIN") {
     throw new AuthorizationError("Moderator access required");
@@ -303,10 +312,8 @@ export async function syncUserToDatabase(
   supabaseUser: SupabaseUser,
   upsertUser: (data: {
     authUserId: string;
-    email: string;
     firstName: string | null;
     lastName: string | null;
-    emailVerified: Date | null;
     role: Role;
   }) => Promise<User>,
 ): Promise<User> {
@@ -318,7 +325,6 @@ export async function syncUserToDatabase(
   const mapRole = (value: string | undefined): Role => {
     switch (value?.toLowerCase()) {
       case "admin":
-      case "tech":
         return "ADMIN";
       case "moderator":
         return "MODERATOR";
@@ -356,12 +362,8 @@ export async function syncUserToDatabase(
 
   return await upsertUser({
     authUserId: supabaseUser.id,
-    email: supabaseUser.email!,
     firstName: safeFirstName,
     lastName: safeLastName,
-    emailVerified: supabaseUser.email_confirmed_at
-      ? new Date(supabaseUser.email_confirmed_at)
-      : null,
     role,
   });
 }

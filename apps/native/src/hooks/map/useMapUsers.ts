@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { UserLocation } from "~/components/map/UserMap";
 
 interface UseMapUsersArgs {
@@ -11,36 +11,53 @@ interface UseMapUsersArgs {
     { name?: string; email?: string; image?: string; houseNumber?: string }
   >;
   session?: { user?: { id?: string; email?: string } } | null;
+  currentUserName?: string | null;
+  currentUserAvatarUrl?: string | null;
   currentCoordinate?: [number, number] | null;
-  now: number;
 }
 
 export function useMapUsers({
   locationsByUserId,
   usersData,
   session,
+  currentUserName,
+  currentUserAvatarUrl,
   currentCoordinate,
-  now,
 }: UseMapUsersArgs) {
-  const withCacheBust = (imageUrl: string | null | undefined, version: string) => {
+  const [effectiveNow, setEffectiveNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setEffectiveNow(new Date());
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const withCacheBust = (
+    imageUrl: string | null | undefined,
+    version: string,
+  ) => {
     if (!imageUrl) return null;
     const separator = imageUrl.includes("?") ? "&" : "?";
     return `${imageUrl}${separator}v=${encodeURIComponent(version)}`;
   };
-
   return useMemo<UserLocation[]>(() => {
-    const effectiveNow = now;
     const next: UserLocation[] = [];
     const currentUserId = session?.user?.id;
 
     if (currentCoordinate) {
+      const trimmedName = currentUserName?.trim();
       next.push({
         id: currentUserId ?? "me",
-        name: session?.user?.email ?? "You",
+        name:
+          trimmedName && trimmedName.length > 0
+            ? trimmedName
+            : (session?.user?.email ?? "You"),
         email: session?.user?.email ?? undefined,
         address: "Your location",
         coordinate: currentCoordinate,
-        lastActiveAt: effectiveNow,
+        avatarUrl: currentUserAvatarUrl ?? null,
+        lastActiveAt: effectiveNow.getTime(),
       });
     }
 
@@ -68,11 +85,13 @@ export function useMapUsers({
 
     return next;
   }, [
-    locationsByUserId,
-    usersData,
     session?.user?.id,
     session?.user?.email,
     currentCoordinate,
-    now,
+    locationsByUserId,
+    currentUserName,
+    currentUserAvatarUrl,
+    effectiveNow,
+    usersData,
   ]);
 }

@@ -6,29 +6,22 @@ import {
   adminProcedure,
   protectedProcedure,
 } from "../../api/trpc";
+import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
 
 interface PublicUser {
   id: string;
   firstName: string | null;
   lastName: string | null;
-  email: string;
+  email: string | null;
   role: z.infer<typeof roleSchema>;
 }
 
-interface TripParticipantWithUser {
-  user: PublicUser;
-  wristNumber: number | null;
-  houseNumber: number | null;
-  group: { id: string; name: string } | null;
-  tripId: string;
-}
-
-const userPublicSelect = {
+const userWithAuthSelect = {
   id: true,
+  authUserId: true,
   firstName: true,
   lastName: true,
-  email: true,
   role: true,
 } as const;
 
@@ -47,13 +40,41 @@ const formatUserFullName = (user?: {
   return user?.email ?? "Unknown user";
 };
 
+const toPublicUser = (
+  user: {
+    id: string;
+    authUserId?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    role: z.infer<typeof roleSchema>;
+  },
+  emailByAuthUserId: Map<string, string | null>,
+): PublicUser => ({
+  id: user.id,
+  firstName: user.firstName ?? null,
+  lastName: user.lastName ?? null,
+  role: user.role,
+  email: resolveAuthEmail(emailByAuthUserId, user.authUserId),
+});
+
 export const userRouter = createTRPCRouter({
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.user.findUnique({
+      const dbUser = await ctx.db.user.findUnique({
         where: { id: input.id },
       });
+
+      if (!dbUser) return null;
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        dbUser.authUserId,
+      ]);
+
+      return {
+        ...dbUser,
+        email: resolveAuthEmail(emailByAuthUserId, dbUser.authUserId),
+      };
     }),
   getByIdWithGroup: moderatorProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
@@ -75,26 +96,54 @@ export const userRouter = createTRPCRouter({
         },
       });
     }),
-  getMy: protectedProcedure
-    .input(z.object({ tripId: z.string().optional() }).optional())
+  getMyWithGroup: protectedProcedure
+    .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      return await ctx.db.user.findUnique({
+        where: { id: ctx.dbUser.id },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          trips: {
+            where: { tripId: input.tripId },
+            include: {
+              group: { select: { id: true, name: true } },
+              trip: { select: { id: true, name: true } },
+            },
+          },
+          organizerGroup: { select: { id: true, name: true } },
+        },
+      });
+    }),
+  getMy: protectedProcedure
+    .query(async ({ ctx }) => {
       const baseUser = await ctx.db.user.findUnique({
         where: { id: ctx.dbUser.id },
       });
       if (!baseUser) return null;
-      if (!input?.tripId) return baseUser;
 
-      const participant = await ctx.db.tripParticipant.findUnique({
-        where: {
-          userId_tripId: { userId: ctx.dbUser.id, tripId: input.tripId },
-        },
-        include: {
-          group: { select: { id: true, name: true } },
-          trip: { select: { id: true, name: true } },
-        },
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        baseUser.authUserId,
+      ]);
+
+      const hydratedUser = {
+        ...baseUser,
+        email: resolveAuthEmail(emailByAuthUserId, baseUser.authUserId),
+      };
+
+      return hydratedUser;
+    }),
+  updateAvatar: protectedProcedure
+    .input(z.object({ hasAvatar: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const updatedUser = await ctx.db.user.update({
+        where: { id: ctx.dbUser.id },
+        data: { hasAvatar: input.hasAvatar },
+        select: { hasAvatar: true },
       });
 
-      return { ...baseUser, tripContext: participant };
+      return updatedUser;
     }),
   getAll: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
@@ -103,7 +152,7 @@ export const userRouter = createTRPCRouter({
         where: { tripId: input.tripId },
         include: {
           user: {
-            select: userPublicSelect,
+            select: userWithAuthSelect,
           },
           group: { select: { id: true, name: true } },
         },
@@ -111,10 +160,15 @@ export const userRouter = createTRPCRouter({
           { user: { firstName: "asc" } },
           { user: { lastName: "asc" } },
         ],
-      })) as TripParticipantWithUser[];
+      }));
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        participants.map((participant) => participant.user.authUserId),
+      );
 
       return participants.map((participant) => ({
-        ...participant.user,
+        ...toPublicUser(participant.user, emailByAuthUserId),
         wristNumber: participant.wristNumber,
         houseNumber: participant.houseNumber,
         group: participant.group,
@@ -152,11 +206,17 @@ export const userRouter = createTRPCRouter({
         });
       }
 
-      return await ctx.db.user.update({
+      const updatedUser = await ctx.db.user.update({
         where: { id: input.userId },
         data: { role: input.role },
-        select: userPublicSelect,
+        select: userWithAuthSelect,
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        updatedUser.authUserId,
+      ]);
+
+      return toPublicUser(updatedUser, emailByAuthUserId);
     }),
 
   // Update user wrist number
@@ -179,17 +239,22 @@ export const userRouter = createTRPCRouter({
           wristNumber: input.wristNumber,
           NOT: { userId: input.userId },
         },
-        select: { userId: true, user: { select: userPublicSelect } },
+        select: { userId: true, user: { select: userWithAuthSelect } },
       });
 
       if (existingParticipant) {
+        const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+          existingParticipant.user.authUserId,
+        ]);
         throw new TRPCError({
           code: "CONFLICT",
-          message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${formatUserFullName(existingParticipant.user)}`,
+          message: `Numer opaski ${input.wristNumber} jest już przypisany do użytkownika: ${formatUserFullName(
+            toPublicUser(existingParticipant.user, emailByAuthUserId),
+          )}`,
         });
       }
 
-      return await ctx.db.tripParticipant.upsert({
+      const participant = await ctx.db.tripParticipant.upsert({
         where: {
           userId_tripId: { userId: input.userId, tripId: input.tripId },
         },
@@ -201,12 +266,21 @@ export const userRouter = createTRPCRouter({
         },
         select: {
           user: {
-            select: userPublicSelect,
+            select: userWithAuthSelect,
           },
           wristNumber: true,
           tripId: true,
         },
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        participant.user.authUserId,
+      ]);
+
+      return {
+        ...participant,
+        user: toPublicUser(participant.user, emailByAuthUserId),
+      };
     }),
 
   // Remove wrist number from user
@@ -218,19 +292,28 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.tripParticipant.update({
+      const participant = await ctx.db.tripParticipant.update({
         where: {
           userId_tripId: { userId: input.userId, tripId: input.tripId },
         },
         data: { wristNumber: null },
         select: {
           user: {
-            select: userPublicSelect,
+            select: userWithAuthSelect,
           },
           wristNumber: true,
           tripId: true,
         },
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        participant.user.authUserId,
+      ]);
+
+      return {
+        ...participant,
+        user: toPublicUser(participant.user, emailByAuthUserId),
+      };
     }),
 
   // Update user house number
@@ -246,7 +329,7 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.tripParticipant.upsert({
+      const participant = await ctx.db.tripParticipant.upsert({
         where: {
           userId_tripId: { userId: input.userId, tripId: input.tripId },
         },
@@ -258,12 +341,21 @@ export const userRouter = createTRPCRouter({
         },
         select: {
           user: {
-            select: userPublicSelect,
+            select: userWithAuthSelect,
           },
           houseNumber: true,
           tripId: true,
         },
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        participant.user.authUserId,
+      ]);
+
+      return {
+        ...participant,
+        user: toPublicUser(participant.user, emailByAuthUserId),
+      };
     }),
 
   // Remove house number from user
@@ -275,19 +367,28 @@ export const userRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.tripParticipant.update({
+      const participant = await ctx.db.tripParticipant.update({
         where: {
           userId_tripId: { userId: input.userId, tripId: input.tripId },
         },
         data: { houseNumber: null },
         select: {
           user: {
-            select: userPublicSelect,
+            select: userWithAuthSelect,
           },
           houseNumber: true,
           tripId: true,
         },
       });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        participant.user.authUserId,
+      ]);
+
+      return {
+        ...participant,
+        user: toPublicUser(participant.user, emailByAuthUserId),
+      };
     }),
 
   // Search users with pagination
@@ -311,6 +412,76 @@ export const userRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { searchTerm, page, limit, field, tripId } = input;
       const skip = (page - 1) * limit;
+
+      if (field === "email") {
+        const participants = (await ctx.db.tripParticipant.findMany({
+          where: { tripId },
+          include: {
+            user: {
+              select: userWithAuthSelect,
+            },
+            group: { select: { id: true, name: true } },
+          },
+          orderBy: [
+            { user: { firstName: "asc" } },
+            { user: { lastName: "asc" } },
+          ],
+        }));
+
+        const emailByAuthUserId = await buildAuthEmailLookup(
+          ctx.supabase,
+          participants.map((participant) => participant.user.authUserId),
+        );
+
+        const normalizedSearch = searchTerm?.toLowerCase();
+        const filtered = participants.filter((participant) => {
+          if (!normalizedSearch) return true;
+          const email = resolveAuthEmail(
+            emailByAuthUserId,
+            participant.user.authUserId,
+          );
+          return email?.toLowerCase().includes(normalizedSearch) ?? false;
+        });
+
+        const sorted = filtered.sort((a, b) => {
+          const aUser = toPublicUser(a.user, emailByAuthUserId);
+          const bUser = toPublicUser(b.user, emailByAuthUserId);
+          const firstNameCompare = (aUser.firstName ?? "").localeCompare(
+            bUser.firstName ?? "",
+          );
+          if (firstNameCompare !== 0) return firstNameCompare;
+
+          const lastNameCompare = (aUser.lastName ?? "").localeCompare(
+            bUser.lastName ?? "",
+          );
+          if (lastNameCompare !== 0) return lastNameCompare;
+
+          return (aUser.email ?? "").localeCompare(bUser.email ?? "");
+        });
+
+        const paged = sorted.slice(skip, skip + limit);
+        const totalCount = filtered.length;
+        const totalPages = Math.ceil(totalCount / limit);
+
+        return {
+          users: paged.map((participant) => ({
+            ...toPublicUser(participant.user, emailByAuthUserId),
+            wristNumber: participant.wristNumber,
+            houseNumber: participant.houseNumber,
+            group: participant.group,
+            tripId: participant.tripId,
+          })),
+          pagination: {
+            currentPage: page,
+            totalPages,
+            totalCount,
+            hasNextPage: page < totalPages,
+            hasPreviousPage: page > 1,
+            limit,
+          },
+        };
+      }
+
       const searchConditions = (() => {
         if (!searchTerm) {
           return undefined;
@@ -325,11 +496,7 @@ export const userRouter = createTRPCRouter({
             },
           };
         }
-        if (
-          field === "firstName" ||
-          field === "lastName" ||
-          field === "email"
-        ) {
+        if (field === "firstName" || field === "lastName") {
           return {
             user: {
               [field]: {
@@ -360,24 +527,28 @@ export const userRouter = createTRPCRouter({
         where,
         include: {
           user: {
-            select: userPublicSelect,
+            select: userWithAuthSelect,
           },
           group: { select: { id: true, name: true } },
         },
         orderBy: [
           { user: { firstName: "asc" } },
           { user: { lastName: "asc" } },
-          { user: { email: "asc" } },
         ],
         skip,
         take: limit,
-      })) as TripParticipantWithUser[];
+      }));
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        participants.map((participant) => participant.user.authUserId),
+      );
 
       const totalPages = Math.ceil(totalCount / limit);
 
       return {
         users: participants.map((participant) => ({
-          ...participant.user,
+          ...toPublicUser(participant.user, emailByAuthUserId),
           wristNumber: participant.wristNumber,
           houseNumber: participant.houseNumber,
           group: participant.group,

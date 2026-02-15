@@ -68,7 +68,8 @@ export const ModelName = {
   NotificationPush: 'NotificationPush',
   NotificationDelivery: 'NotificationDelivery',
   PushSubscription: 'PushSubscription',
-  Location: 'Location'
+  Location: 'Location',
+  LocationSharingRequest: 'LocationSharingRequest'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -92,9 +93,7 @@ export const UserScalarFieldEnum = {
   authUserId: 'authUserId',
   firstName: 'firstName',
   lastName: 'lastName',
-  email: 'email',
-  emailVerified: 'emailVerified',
-  image: 'image',
+  hasAvatar: 'hasAvatar',
   role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -209,8 +208,8 @@ export const ChallengeSubmissionScalarFieldEnum = {
   id: 'id',
   challengeId: 'challengeId',
   groupId: 'groupId',
-  imageUrls: 'imageUrls',
-  videoUrl: 'videoUrl',
+  imageIds: 'imageIds',
+  videoId: 'videoId',
   textContent: 'textContent',
   latitude: 'latitude',
   longitude: 'longitude',
@@ -371,6 +370,18 @@ export const LocationScalarFieldEnum = {
 } as const
 
 export type LocationScalarFieldEnum = (typeof LocationScalarFieldEnum)[keyof typeof LocationScalarFieldEnum]
+
+
+export const LocationSharingRequestScalarFieldEnum = {
+  id: 'id',
+  senderId: 'senderId',
+  receiverId: 'receiverId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LocationSharingRequestScalarFieldEnum = (typeof LocationSharingRequestScalarFieldEnum)[keyof typeof LocationSharingRequestScalarFieldEnum]
 
 
 export const SortOrder = {

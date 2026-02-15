@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -7,9 +7,19 @@ import Logo from '~/components/Logo';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
+import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 
-const tiles = [
+interface TileType {
+  key: string;
+  title: string;
+  subtitle: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  accent: string;
+  accentBg: string;
+  route: string | null;
+}
+
+const tiles: TileType[] = [
   {
     key: 'users',
     title: 'Users',
@@ -59,16 +69,12 @@ export default function AdminPanelScreen() {
     trpc.trip.getAll.queryOptions()
   );
 
-  useEffect(() => {
-    if (!selectedTripId && trips && trips.length > 0) {
-      setSelectedTripId(trips[0].id);
-    }
-  }, [selectedTripId, trips]);
+  const effectiveTripId = selectedTripId ?? trips?.[0]?.id ?? null;
 
   const selectedTrip = useMemo(() => {
-    if (!trips || !selectedTripId) return null;
-    return trips.find((trip) => trip.id === selectedTripId) ?? null;
-  }, [trips, selectedTripId]);
+    if (!trips || !effectiveTripId) return null;
+    return trips.find((trip) => trip.id === effectiveTripId) ?? null;
+  }, [trips, effectiveTripId]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
@@ -124,13 +130,15 @@ export default function AdminPanelScreen() {
                   return;
                 }
 
-                if (!selectedTripId) {
+                if (!effectiveTripId) {
                   Alert.alert('Select trip', 'Choose a trip to manage before continuing.');
                   return;
                 }
 
-                const query = `?tripId=${encodeURIComponent(selectedTripId)}`;
-                router.push(`${tile.route}${query}`);
+                router.push({
+                  pathname: tile.route,
+                  params: { tripId: effectiveTripId },
+                });
               }}
             >
               <View style={[styles.tileIcon, { backgroundColor: tile.accentBg, borderColor: tile.accent }]}
@@ -169,7 +177,7 @@ export default function AdminPanelScreen() {
                   }}
                 >
                   <Text style={styles.modalItemText}>{trip.name}</Text>
-                  {selectedTripId === trip.id && (
+                  {effectiveTripId === trip.id && (
                     <Ionicons name="checkmark" size={18} color={colors.primary} />
                   )}
                 </TouchableOpacity>

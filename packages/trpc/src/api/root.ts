@@ -16,6 +16,7 @@ import { challengeSubmissionRouter } from "./routers/challengeSubmission";
 import { challengeVoteRouter } from "./routers/challengeVote";
 import { submissionReportRouter } from "./routers/submissionReport";
 import { notificationSenderRouter } from "./routers/notificationSender";
+import { storageRouter } from "./routers/storage";
 
 /**
  * This is the primary router for your server.
@@ -37,6 +38,7 @@ export const appRouter = createTRPCRouter({
   challengeSubmission: challengeSubmissionRouter,
   challengeVote: challengeVoteRouter,
   submissionReport: submissionReportRouter,
+  storage: storageRouter,
 });
 
 // export type definition of API

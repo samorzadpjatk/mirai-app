@@ -9,7 +9,9 @@ import {
 import {
   type RealtimeChannel,
   REALTIME_CHANNEL_STATES,
+  type SupabaseClient,
 } from "@integral-2025-app/supabase";
+import { IMAGE_BUCKET } from "../../utils/storage";
 import type {
   Location as DbLocation,
   PrismaClient,
@@ -65,6 +67,46 @@ export interface SharingSettings {
   usersToShareWith: SharingUser[];
 }
 
+const AVATAR_FILE_EXTENSION = "jpg";
+const AVATAR_SIGNED_URL_SECONDS = 60 * 60 * 24;
+
+const getUserAvatarPath = (userId: string): string =>
+  `avatar/${userId}.${AVATAR_FILE_EXTENSION}`;
+
+const getUserAvatarUrl = async (
+  supabase: SupabaseClient,
+  userId: string | null | undefined,
+  hasAvatar: boolean | null | undefined,
+): Promise<string | null> => {
+  if (!userId || !hasAvatar) return null;
+
+  const { data, error } = await supabase.storage
+    .from(IMAGE_BUCKET)
+    .createSignedUrl(getUserAvatarPath(userId), AVATAR_SIGNED_URL_SECONDS);
+
+  if (error || !data?.signedUrl) return null;
+
+  return data.signedUrl;
+};
+
+const mapUserWithAvatar = async (
+  supabase: SupabaseClient,
+  user: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    hasAvatar: boolean | null;
+  } | null,
+): Promise<LocationWithUser["user"] | null> => {
+  if (!user) return null;
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    image: await getUserAvatarUrl(supabase, user.id, user.hasAvatar),
+  };
+};
+
 /**
  * Convert database location to Expo-compliant format
  */
@@ -88,6 +130,7 @@ function toExpoLocation(dbLocation: DbLocation): ExpoLocationObject {
  */
 async function toLocationWithUser(
   db: PrismaClient,
+  supabase: SupabaseClient,
   dbLocation: DbLocation,
 ): Promise<LocationWithUser> {
   const expoLocation = toExpoLocation(dbLocation);
@@ -97,14 +140,14 @@ async function toLocationWithUser(
       id: true,
       firstName: true,
       lastName: true,
-      image: true,
+      hasAvatar: true,
     },
   });
 
   return {
     ...expoLocation,
     isSharingLocation: dbLocation.isSharingLocation,
-    user: user ?? undefined,
+    user: (await mapUserWithAvatar(supabase, user)) ?? undefined,
   };
 }
 
@@ -186,6 +229,7 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
+              hasAvatar: true,
             },
           },
         },
@@ -240,7 +284,6 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
             },
           },
         },
@@ -250,7 +293,7 @@ export const locationRouter = createTRPCRouter({
       const inRadius = new Set<string>();
 
       for (const location of locations) {
-        const lw = await toLocationWithUser(ctx.db, location);
+        const lw = await toLocationWithUser(ctx.db, ctx.supabase, location);
         if (radiusKm !== undefined) {
           if (!location.latitude || !location.longitude) continue;
           const dist = calculateDistance(
@@ -337,18 +380,23 @@ export const locationRouter = createTRPCRouter({
                               id: true,
                               firstName: true,
                               lastName: true,
-                              image: true,
+                              hasAvatar: true,
                             },
                           },
                         },
                       })
-                      .then((dbLocation) => {
+                      .then(async (dbLocation) => {
                         if (!dbLocation) {
                           console.error(
                             `[Location Stream] Location not found in DB for userId: ${userIdFromEvent}`,
                           );
                           return;
                         }
+
+                        const userWithAvatar = await mapUserWithAvatar(
+                          ctx.supabase,
+                          dbLocation.user,
+                        );
 
                         const location: LocationWithUser = {
                           coords: {
@@ -363,7 +411,7 @@ export const locationRouter = createTRPCRouter({
                           },
                           timestamp: dbLocation.timestamp.getTime(),
                           isSharingLocation: dbLocation.isSharingLocation,
-                          user: dbLocation.user ?? undefined,
+                          user: userWithAvatar ?? undefined,
                         };
 
                         const userId = dbLocation.userId;
@@ -414,7 +462,7 @@ export const locationRouter = createTRPCRouter({
                     return;
                   }
 
-                  void toLocationWithUser(ctx.db, newLocation).then(
+                  void toLocationWithUser(ctx.db, ctx.supabase, newLocation).then(
                     (location) => {
                       const userId = newLocation.userId;
 
@@ -565,12 +613,19 @@ export const locationRouter = createTRPCRouter({
       },
       include: {
         user: {
-          select: { id: true, firstName: true, lastName: true, image: true },
+          select: { id: true, firstName: true, lastName: true, hasAvatar: true },
         },
       },
     });
 
-    return locations;
+    const mapped = await Promise.all(
+      locations.map(async (location) => ({
+        ...location,
+        user: (await mapUserWithAvatar(ctx.supabase, location.user)) ?? undefined,
+      })),
+    );
+
+    return mapped;
   }),
 
   /**
@@ -586,7 +641,7 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
@@ -603,16 +658,13 @@ export const locationRouter = createTRPCRouter({
         ? location.usersToShareWith
         : [];
 
+      const usersWithAvatars = await Promise.all(
+        usersToShareWith.map((user) => mapUserWithAvatar(ctx.supabase, user)),
+      );
+
       return {
         isSharingLocation: Boolean(location.isSharingLocation),
-        usersToShareWith: usersToShareWith.map(
-          (user): SharingUser => ({
-            id: String(user.id),
-            firstName: user.firstName ?? null,
-            lastName: user.lastName ?? null,
-            image: user.image ?? null,
-          }),
-        ),
+        usersToShareWith: usersWithAvatars.filter(Boolean) as SharingUser[],
       };
     },
   ),
@@ -629,21 +681,18 @@ export const locationRouter = createTRPCRouter({
         id: true,
         firstName: true,
         lastName: true,
-        image: true,
+        hasAvatar: true,
       },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     });
 
     const safeUsers = Array.isArray(users) ? users : [];
 
-    return safeUsers.map(
-      (user): SharingUser => ({
-        id: String(user.id),
-        firstName: user.firstName ?? null,
-        lastName: user.lastName ?? null,
-        image: user.image ?? null,
-      }),
+    const usersWithAvatars = await Promise.all(
+      safeUsers.map((user) => mapUserWithAvatar(ctx.supabase, user)),
     );
+
+    return usersWithAvatars.filter(Boolean) as SharingUser[];
   }),
 
   /**
@@ -673,22 +722,19 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
       });
 
+      const usersWithAvatars = await Promise.all(
+        location.usersToShareWith.map((user) => mapUserWithAvatar(ctx.supabase, user)),
+      );
+
       return {
         success: true,
-        usersToShareWith: location.usersToShareWith.map(
-          (user): SharingUser => ({
-            id: String(user.id),
-            firstName: user.firstName ?? null,
-            lastName: user.lastName ?? null,
-            image: user.image ?? null,
-          }),
-        ),
+        usersToShareWith: usersWithAvatars.filter(Boolean) as SharingUser[],
       };
     }),
 
@@ -711,22 +757,264 @@ export const locationRouter = createTRPCRouter({
               id: true,
               firstName: true,
               lastName: true,
-              image: true,
+              hasAvatar: true,
             },
           },
         },
       });
 
+      const usersWithAvatars = await Promise.all(
+        location.usersToShareWith.map((user) => mapUserWithAvatar(ctx.supabase, user)),
+      );
+
       return {
         success: true,
-        usersToShareWith: location.usersToShareWith.map(
-          (user): SharingUser => ({
-            id: String(user.id),
-            firstName: user.firstName ?? null,
-            lastName: user.lastName ?? null,
-            image: user.image ?? null,
-          }),
-        ),
+        usersToShareWith: usersWithAvatars.filter(Boolean) as SharingUser[],
       };
     }),
+
+  /**
+   * Send a location sharing request
+   */
+  requestLocationSharing: protectedProcedure
+    .input(z.object({ receiverId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.receiverId === ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot send a request to yourself",
+        });
+      }
+
+      const existingRequest = await ctx.db.locationSharingRequest.findFirst({
+        where: {
+          senderId: ctx.dbUser.id,
+          receiverId: input.receiverId,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (existingRequest) {
+        if (existingRequest.status === "PENDING") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Request already sent",
+          });
+        }
+        if (existingRequest.status === "ACCEPTED") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Location sharing already enabled",
+          });
+        }
+
+        const updated = await ctx.db.locationSharingRequest.update({
+          where: { id: existingRequest.id },
+          data: { status: "PENDING", updatedAt: new Date() },
+        });
+        return { success: true, request: updated };
+      }
+
+      const request = await ctx.db.locationSharingRequest.create({
+        data: {
+          senderId: ctx.dbUser.id,
+          receiverId: input.receiverId,
+          status: "PENDING",
+        },
+      });
+
+      return { success: true, request };
+    }),
+
+  /**
+   * Accept a location sharing request
+   */
+  acceptLocationSharingRequest: protectedProcedure
+    .input(z.object({ requestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const request = await ctx.db.locationSharingRequest.findUnique({
+        where: { id: input.requestId },
+      });
+
+      if (!request) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Request not found",
+        });
+      }
+
+      if (request.receiverId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only accept requests sent to you",
+        });
+      }
+
+      if (request.status !== "PENDING") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Request is not pending",
+        });
+      }
+
+      // Update request status
+      const updatedRequest = await ctx.db.locationSharingRequest.update({
+        where: { id: input.requestId },
+        data: { status: "ACCEPTED" },
+      });
+
+      // Add both users to each other's sharing lists
+      // Sender shares with receiver
+      await ctx.db.location.upsert({
+        where: { userId: request.senderId },
+        update: {
+          usersToShareWith: {
+            connect: { id: request.receiverId },
+          },
+        },
+        create: {
+          userId: request.senderId,
+          timestamp: new Date(),
+          isSharingLocation: true,
+          usersToShareWith: {
+            connect: { id: request.receiverId },
+          },
+        },
+      });
+
+      // Receiver shares with sender
+      await ctx.db.location.upsert({
+        where: { userId: request.receiverId },
+        update: {
+          usersToShareWith: {
+            connect: { id: request.senderId },
+          },
+        },
+        create: {
+          userId: request.receiverId,
+          timestamp: new Date(),
+          isSharingLocation: true,
+          usersToShareWith: {
+            connect: { id: request.senderId },
+          },
+        },
+      });
+
+      return { success: true, request: updatedRequest };
+    }),
+
+  /**
+   * Reject a location sharing request
+   */
+  rejectLocationSharingRequest: protectedProcedure
+    .input(z.object({ requestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const request = await ctx.db.locationSharingRequest.findUnique({
+        where: { id: input.requestId },
+      });
+
+      if (!request) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Request not found",
+        });
+      }
+
+      if (request.receiverId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only reject requests sent to you",
+        });
+      }
+
+      const updatedRequest = await ctx.db.locationSharingRequest.update({
+        where: { id: input.requestId },
+        data: { status: "REJECTED" },
+      });
+
+      return { success: true, request: updatedRequest };
+    }),
+
+  /**
+   * Get pending location sharing requests
+   */
+  getPendingLocationSharingRequests: protectedProcedure.query(
+    async ({ ctx }) => {
+      const requests = await ctx.db.locationSharingRequest.findMany({
+        where: {
+          receiverId: ctx.dbUser.id,
+          status: "PENDING",
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              hasAvatar: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return await Promise.all(
+        requests.map(async (request) => ({
+          ...request,
+          sender: await mapUserWithAvatar(ctx.supabase, request.sender),
+        })),
+      );
+    },
+  ),
+
+  /**
+   * Get all location sharing requests (sent and received)
+   */
+  getMyLocationSharingRequests: protectedProcedure.query(async ({ ctx }) => {
+    const [sent, received] = await Promise.all([
+      ctx.db.locationSharingRequest.findMany({
+        where: { senderId: ctx.dbUser.id },
+        include: {
+          receiver: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              hasAvatar: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      ctx.db.locationSharingRequest.findMany({
+        where: { receiverId: ctx.dbUser.id },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              hasAvatar: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    return {
+      sent: await Promise.all(
+        sent.map(async (request) => ({
+          ...request,
+          receiver: await mapUserWithAvatar(ctx.supabase, request.receiver),
+        })),
+      ),
+      received: await Promise.all(
+        received.map(async (request) => ({
+          ...request,
+          sender: await mapUserWithAvatar(ctx.supabase, request.sender),
+        })),
+      ),
+    };
+  }),
 });

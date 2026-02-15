@@ -1,9 +1,6 @@
 export type {
-  User as DatabaseUser,
+  DatabaseUser,
   Role,
-} from "@integral-2025-app/common-types";
-
-export type {
   AuthUser,
   AuthState,
   SignInWithOtpOptions

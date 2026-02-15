@@ -73,6 +73,16 @@ cd apps/native && bun run ios
 2. Zeskanuj kod QR w aplikacji Expo Go lub wybierz platformę (a/i/w)
 3. Kod przeładowuje się automatycznie po zapisaniu zmian
 
+## Supabase Storage (MinIO)
+
+Storage działa przez Kong pod adresem `http://localhost:8000/storage/v1` i używa MinIO jako backendu S3.
+
+1. Uruchom środowisko Supabase (docker compose w katalogu `environment`).
+2. Wejdź do Supabase Studio (`http://localhost:3000`) i utwórz bucket.
+3. Skonfiguruj polityki RLS dla `storage.objects` zgodnie z potrzebami aplikacji.
+
+Aplikacja używa tego samego `EXPO_PUBLIC_SUPABASE_URL` jak dla Auth i Realtime.
+
 ## Routing
 
 Aplikacja używa [Expo Router](https://docs.expo.dev/router/introduction/) - routing oparty na systemie plików. Pliki w `src/app/` automatycznie stają się ekranami.

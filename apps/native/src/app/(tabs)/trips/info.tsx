@@ -11,7 +11,7 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaTop } from "~/components/SafeAreaWrapper";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -20,7 +20,7 @@ import Pdf from "react-native-pdf";
 import { Directory, File, Paths } from "expo-file-system/next";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 
 export default function TripInfoScreen() {
   const router = useRouter();
@@ -29,6 +29,7 @@ export default function TripInfoScreen() {
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPdfModalVisible, setIsPdfModalVisible] = useState(false);
   const [pdfModalTitle, setPdfModalTitle] = useState("Ski Map PDF");
+  const [isInsuranceModalVisible, setIsInsuranceModalVisible] = useState(false);
   const [pdfUri, setPdfUri] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadingType, setDownloadingType] = useState<
@@ -36,6 +37,7 @@ export default function TripInfoScreen() {
   >(null);
   const [isPdfDownloaded, setIsPdfDownloaded] = useState(false);
   const [isInfopackDownloaded, setIsInfopackDownloaded] = useState(false);
+  const insets = useAppSafeAreaInsets();
 
   const mapPdfUrl =
     "https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf";
@@ -66,11 +68,9 @@ export default function TripInfoScreen() {
     checkDownloadedFiles();
   }, []);
 
-  const insets = useAppSafeAreaInsets();
-
   const handleWhatsAppPress = () => {
     // Open WhatsApp group link
-    const whatsappUrl = "https://chat.whatsapp.com/YOUR_GROUP_INVITE_LINK";
+    const whatsappUrl = "https://sspj.online/wintegral-whatsapp";
     Linking.openURL(whatsappUrl).catch(() => {
       console.error("Failed to open WhatsApp");
     });
@@ -142,6 +142,10 @@ export default function TripInfoScreen() {
     });
   };
 
+  const handleSosPress = () => {
+    Alert.alert("Numer alarmowy", "W razie nagłego wypadku zadzwoń na 112.");
+  };
+
   const handleMapPress = () => {
     setIsMapModalVisible(true);
   };
@@ -156,13 +160,30 @@ export default function TripInfoScreen() {
     });
   };
 
+  const handleInsurancePress = () => {
+    setIsInsuranceModalVisible(true);
+  };
+
+  const handleInsuranceCallPress = () => {
+    Linking.openURL("tel:+48225640625").catch(() => {
+      Alert.alert("Błąd", "Nie udało się rozpocząć połączenia.");
+    });
+  };
+
+  const handleInsuranceCopyPress = () => {
+    Alert.alert("Numer alarmowy", "+48 22 564 06 25");
+  };
+
   return (
     <>
       <StatusBar style="light" />
       <View style={styles.container}>
         <ScrollView
           style={styles.mainContent}
-          contentContainerStyle={[styles.contentContainer]}
+          contentContainerStyle={[
+            styles.contentContainer,
+            { paddingBottom: spacing.xxxl * 2 + insets.bottom },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* Hero Header */}
@@ -342,7 +363,11 @@ export default function TripInfoScreen() {
 
             {/* Smaller Action Tiles */}
             <View style={styles.resourceGrid}>
-              <TouchableOpacity style={styles.resourceTile}>
+              <TouchableOpacity
+                style={styles.resourceTile}
+                onPress={handleSosPress}
+                activeOpacity={0.8}
+              >
                 <Ionicons
                   name="alert-circle"
                   size={24}
@@ -351,22 +376,15 @@ export default function TripInfoScreen() {
                 <Text style={styles.resourceText}>SOS</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.resourceTile}>
-                <Ionicons name="bed" size={24} color={colors.primary} />
-                <Text style={styles.resourceText}>Stay</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.resourceTile}>
-                <Ionicons name="cash" size={24} color={colors.primary} />
-                <Text style={styles.resourceText}>Expenses</Text>
+              <TouchableOpacity
+                style={styles.resourceTile}
+                onPress={handleInsurancePress}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="medkit" size={24} color={colors.primary} />
+                <Text style={styles.resourceText}>Insurance</Text>
               </TouchableOpacity>
             </View>
-          </View>
-
-          {/* Branding Watermark */}
-          <View style={styles.brandingContainer}>
-            <Text style={styles.brandingText}>❄</Text>
-            <Text style={styles.brandingLabel}>WINTEGRAL</Text>
           </View>
         </ScrollView>
 
@@ -378,7 +396,7 @@ export default function TripInfoScreen() {
           onRequestClose={() => setIsMapModalVisible(false)}
         >
           <View style={styles.modalContainer}>
-            <SafeAreaView style={styles.modalSafeArea} edges={["top"]}>
+            <SafeAreaTop style={styles.modalSafeArea}>
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Interactive Ski Map</Text>
@@ -389,7 +407,7 @@ export default function TripInfoScreen() {
                   <Ionicons name="close" size={24} color={colors.white} />
                 </Pressable>
               </View>
-            </SafeAreaView>
+            </SafeAreaTop>
 
             {/* WebView */}
             <WebView
@@ -413,7 +431,7 @@ export default function TripInfoScreen() {
           onRequestClose={() => setIsPdfModalVisible(false)}
         >
           <View style={styles.modalContainer}>
-            <SafeAreaView style={styles.modalSafeArea} edges={["top"]}>
+            <SafeAreaTop style={styles.modalSafeArea}>
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{pdfModalTitle}</Text>
@@ -424,7 +442,7 @@ export default function TripInfoScreen() {
                   <Ionicons name="close" size={24} color={colors.white} />
                 </Pressable>
               </View>
-            </SafeAreaView>
+            </SafeAreaTop>
 
             {/* PDF Viewer */}
             {pdfUri && (
@@ -432,6 +450,8 @@ export default function TripInfoScreen() {
                 source={{ uri: pdfUri }}
                 style={styles.pdf}
                 trustAllCerts={false}
+                minScale={1}
+                maxScale={8}
                 onLoadComplete={(numberOfPages) => {
                   console.log(`PDF loaded with ${numberOfPages} pages`);
                 }}
@@ -439,9 +459,119 @@ export default function TripInfoScreen() {
                   console.error("PDF Error:", error);
                   Alert.alert("Error", "Could not load PDF");
                 }}
-                enablePaging={true}
+                enablePaging={false}
               />
             )}
+          </View>
+        </Modal>
+
+        {/* Insurance Modal */}
+        <Modal
+          visible={isInsuranceModalVisible}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          onRequestClose={() => setIsInsuranceModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <SafeAreaTop style={styles.modalSafeArea}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Ubezpieczenie / Kontakt</Text>
+                <Pressable
+                  onPress={() => setIsInsuranceModalVisible(false)}
+                  style={styles.closeButton}
+                >
+                  <Ionicons name="close" size={24} color={colors.white} />
+                </Pressable>
+              </View>
+            </SafeAreaTop>
+
+            <ScrollView
+              style={styles.insuranceScroll}
+              contentContainerStyle={styles.insuranceContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.insuranceActions}>
+                <TouchableOpacity
+                  style={styles.insuranceActionButton}
+                  onPress={handleInsuranceCallPress}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons
+                    name="call"
+                    size={18}
+                    color={colors.backgroundDark}
+                  />
+                  <Text style={styles.insuranceActionText}>Zadzwoń</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.insuranceActionSecondary}
+                  onPress={handleInsuranceCopyPress}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons
+                    name="copy-outline"
+                    size={18}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.insuranceActionSecondaryText}>
+                    Kopiuj numer
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.insuranceCard}>
+                <Text style={styles.insuranceCardTitle}>Krok 1</Text>
+                <Text style={styles.insuranceText}>
+                  Poproście o pomoc osobę z obsługi stoku lub innego narciarza i
+                  poinformujcie ich o zdarzeniu.
+                </Text>
+              </View>
+
+              <View style={styles.insuranceCard}>
+                <Text style={styles.insuranceCardTitle}>Krok 2</Text>
+                <Text style={styles.insuranceText}>
+                  Skontaktujcie się z ubezpieczycielem WIENER dzwoniąc pod numer
+                  alarmowy: +48 22 564 06 25
+                </Text>
+                <Text style={styles.insuranceLabel}>
+                  Podczas rozmowy konieczne będzie podanie:
+                </Text>
+                <Text style={styles.insuranceListItem}>
+                  - imienia i nazwiska,
+                </Text>
+                <Text style={styles.insuranceListItem}>- daty urodzenia,</Text>
+                <Text style={styles.insuranceListItem}>
+                  - numeru polisy: COR700416,
+                </Text>
+                <Text style={styles.insuranceListItem}>
+                  - numeru umowy generalnej: 500008713.
+                </Text>
+                <Text style={styles.insuranceLabel}>
+                  Następnie krótko opiszcie sytuację, np.:
+                </Text>
+                <Text style={styles.insuranceQuote}>
+                  "Jestem na wyjeździe w Verbier, doznałem kontuzji, ratownicy
+                  zwożą mnie na dół."
+                </Text>
+                <Text style={styles.insuranceText}>
+                  Operator udzieli instrukcji, wskaże odpowiednią placówkę
+                  medyczną lub przyjmie zgłoszenie zdarzenia.
+                </Text>
+              </View>
+
+              <View style={styles.insuranceCard}>
+                <Text style={styles.insuranceCardTitle}>Krok 3</Text>
+                <Text style={styles.insuranceText}>
+                  Poinformujcie pilota lub członka naszej kadry (bezpośrednio
+                  lub przez znajomych), co się stało. Jesteśmy na miejscu, aby
+                  Was wspierać — zawsze możecie na nas liczyć!
+                </Text>
+                <Text style={styles.insuranceText}>
+                  Najbliższy szpital to Vigimed, znajduje się w Rue du Léman 18
+                  B, 1920 Martigny (ok. 30km od La Tzoumaz).
+                </Text>
+              </View>
+            </ScrollView>
           </View>
         </Modal>
       </View>
@@ -724,26 +854,14 @@ const styles = StyleSheet.create({
     color: colors.white,
     textTransform: "uppercase",
   },
+  resourceSubtext: {
+    fontSize: 10,
+    color: colors.slate400,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
 
   // Branding
-  brandingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.xl * 2,
-    opacity: 0.2,
-  },
-  brandingText: {
-    fontSize: typography.xl,
-  },
-  brandingLabel: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: 3,
-    textTransform: "uppercase",
-  },
 
   // Modal
   modalContainer: {
@@ -783,5 +901,92 @@ const styles = StyleSheet.create({
     flex: 1,
     width: Dimensions.get("window").width,
     backgroundColor: colors.backgroundDark,
+  },
+  insuranceScroll: {
+    flex: 1,
+  },
+  insuranceContent: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxxl,
+    gap: spacing.md,
+  },
+  insuranceActions: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  insuranceActionButton: {
+    flex: 1,
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+  },
+  insuranceActionText: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    color: colors.backgroundDark,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  insuranceActionSecondary: {
+    flex: 1,
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity30,
+    backgroundColor: "rgba(39, 41, 53, 0.4)",
+  },
+  insuranceActionSecondaryText: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  insuranceCard: {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: "rgba(39, 41, 53, 0.5)",
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  insuranceCardTitle: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+  },
+  insuranceText: {
+    fontSize: typography.sm,
+    color: colors.white,
+    lineHeight: 22,
+  },
+  insuranceLabel: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    color: colors.slate400,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  insuranceListItem: {
+    fontSize: typography.sm,
+    color: colors.white,
+    lineHeight: 22,
+    paddingLeft: spacing.sm,
+  },
+  insuranceQuote: {
+    fontSize: typography.sm,
+    color: colors.primaryOpacity80,
+    lineHeight: 22,
+    fontStyle: "italic",
   },
 });
