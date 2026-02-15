@@ -3,7 +3,6 @@
 ## Osoby uprawnione do review PR-ów
 
 - [Rafał Opiłowski](https://github.com/rafalopilowski1)
-- [Artur Niklewicz](https://github.com/ArturNiklewicz)
 - [Jakub Graliński](https://github.com/JakubGralinski)
 - [Mateusz Laskowski](https://github.com/mlaskowski7)
 - [Mateusz Górka](https://github.com/mateuszgorka)
