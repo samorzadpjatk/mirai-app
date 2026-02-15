@@ -1,8 +1,11 @@
+import { STANDARD_BUCKETS, normalizeStoragePath, normalizeBucketName, type StandardBucket } from '@integral-2025-app/shared';
+
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
 
-const IMAGE_BUCKET = "image";
-const VIDEO_BUCKET = "video";
-const PUBLIC_BUCKET = "files-public";
+// Legacy constants - use STANDARD_BUCKETS instead
+const IMAGE_BUCKET = STANDARD_BUCKETS.IMAGES;
+const VIDEO_BUCKET = STANDARD_BUCKETS.VIDEOS;
+const PUBLIC_BUCKET = STANDARD_BUCKETS.PUBLIC;
 
 const VIDEO_EXTENSIONS = new Set([
   "mp4",
@@ -13,7 +16,7 @@ const VIDEO_EXTENSIONS = new Set([
   "mkv",
 ]);
 
-const KNOWN_BUCKETS = new Set([IMAGE_BUCKET, VIDEO_BUCKET, PUBLIC_BUCKET]);
+const KNOWN_BUCKETS = new Set<string>(Object.values(STANDARD_BUCKETS));
 
 const getFileExtension = (path: string): string | null => {
   const fileName = path.split("/").pop();
@@ -43,6 +46,10 @@ const inferBucketFromPath = (rawPath: string): { bucket: string; path: string } 
       ? VIDEO_BUCKET
       : IMAGE_BUCKET;
     return { bucket, path: normalized };
+  }
+
+  if (normalized.startsWith("trips/")) {
+    return { bucket: IMAGE_BUCKET, path: normalized };
   }
 
   if (!normalized.includes("/")) {
@@ -88,11 +95,11 @@ export const parseSupabaseStorageObject = (
 
   if (segments.length < 2) return null;
 
-  const bucket = segments.shift();
-  const path = segments.join("/");
+  const bucket = normalizeBucketName(segments.shift());
+  const path = normalizeStoragePath(segments.join("/"));
   if (!bucket || !path) return null;
 
-  return { bucket, path: decodeURIComponent(path) };
+  return { bucket, path };
 };
 
 export const parseSupabaseStoragePath = (
@@ -110,24 +117,24 @@ export const parseSupabaseStoragePath = (
   if (segments.length >= 2) {
     const firstSegment = segments[0] ?? "";
     if (KNOWN_BUCKETS.has(firstSegment)) {
-      const bucket = segments.shift();
+      const bucket = normalizeBucketName(segments.shift());
       if (!bucket) return null;
 
-      const path = segments.join("/");
+      const path = normalizeStoragePath(segments.join("/"));
       if (!path) return null;
 
-      return { bucket, path: decodeURIComponent(path) };
+      return { bucket, path };
     }
 
     if (!SUPABASE_OBJECT_PREFIXES.has(firstSegment) &&
-      !["challenge", "avatar", "files-public"].includes(firstSegment)) {
-      const bucket = segments.shift();
+      !["challenge", "avatar", "files-public", "trips"].includes(firstSegment)) {
+      const bucket = normalizeBucketName(segments.shift());
       if (!bucket) return null;
 
-      const path = segments.join("/");
+      const path = normalizeStoragePath(segments.join("/"));
       if (!path) return null;
 
-      return { bucket, path: decodeURIComponent(path) };
+      return { bucket, path };
     }
   }
 
@@ -136,8 +143,23 @@ export const parseSupabaseStoragePath = (
 
   return {
     bucket: inferred.bucket,
-    path: decodeURIComponent(inferred.path),
+    path: normalizeStoragePath(inferred.path),
   };
+};
+
+export const normalizeSupabaseStoragePath = (
+  value: string,
+): { bucket: string; path: string; storagePath: string } | null => {
+  const parsed = parseSupabaseStoragePath(value);
+  if (!parsed) return null;
+
+  const bucket = normalizeBucketName(parsed.bucket);
+  if (!bucket) return null;
+
+  const path = normalizeStoragePath(parsed.path);
+  const storagePath = `${bucket}/${path}`;
+
+  return { bucket, path, storagePath };
 };
 
 export { SUPABASE_OBJECT_PREFIXES, IMAGE_BUCKET, VIDEO_BUCKET, PUBLIC_BUCKET };
