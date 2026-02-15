@@ -1887,6 +1887,7 @@ export const TripScalarFieldEnum = {
   description: 'description',
   startDate: 'startDate',
   endDate: 'endDate',
+  backgroundImagePath: 'backgroundImagePath',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
