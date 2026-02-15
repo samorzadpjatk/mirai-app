@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, type ViewStyle, StyleSheet } from 'react-native';
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
+import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 
 interface SafeAreaTopProps {
   children: React.ReactNode;

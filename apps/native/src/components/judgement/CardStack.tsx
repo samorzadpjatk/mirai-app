@@ -10,7 +10,7 @@ import {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { type ReviewStatus, useJudgement } from '~/contexts/judgement';
+import { type ReviewStatus, useJudgement } from '~/contexts/JudgementContext';
 import { viewStyles } from '~/styles/judgement';
 import { QueuedSubmissionCard } from '~/components/judgement/QueuedSubmissionCard';
 import { CurrentSubmissionCard } from '~/components/judgement/CurrentSubmissionCard';

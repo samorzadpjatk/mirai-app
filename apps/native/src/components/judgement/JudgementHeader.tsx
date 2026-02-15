@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import { useJudgement } from '~/contexts/judgement';
+import { useJudgement } from '~/contexts/JudgementContext';
 import { viewStyles, textStyles } from '~/styles/judgement';
 
 const JudgementHeader = () => {

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { colors } from '~/styles';
-import { type Submission } from '~/contexts/judgement';
+import { type Submission } from '~/contexts/JudgementContext';
 import { useFileDownload } from '~/hooks/files';
 import { viewStyles, textStyles } from '~/styles/judgement';
 
