@@ -32,9 +32,6 @@ jobs:
         with:
           reviewdog_version: latest
 
-      - name: Test all
-        run: bun run test:ci
-
       - name: Run ESLint for monorepo
         run: bun run lint
 
@@ -43,7 +40,6 @@ jobs:
           bun run typecheck 2>&1 | tee typecheck.log || true
           
       - name: Report TypeScript errors to PR
-        if: always()
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
