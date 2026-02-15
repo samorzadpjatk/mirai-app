@@ -1,6 +1,6 @@
 import { View, ActivityIndicator } from 'react-native';
 import { colors } from '~/styles';
-import { useJudgement } from '~/contexts/judgement';
+import { useJudgement } from '~/contexts/JudgementContext';
 import { viewStyles } from '~/styles/judgement';
 import { JudgementHeader } from '~/components/judgement/JudgementHeader';
 import { CardStack } from '~/components/judgement/CardStack';

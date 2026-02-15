@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StatusBar } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { spacing } from '~/styles';
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
-import { JudgementProvider } from '~/contexts/judgement';
+import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
+import { JudgementProvider } from '~/contexts/JudgementContext';
 import { JudgementContent } from '~/components/judgement/JudgementContent';
 import { viewStyles, textStyles } from '~/styles/judgement';
 

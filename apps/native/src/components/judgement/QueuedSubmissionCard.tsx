@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '~/styles';
-import { type Submission } from '~/contexts/judgement';
+import { type Submission } from '~/contexts/JudgementContext';
 import { getInitials } from '~/utils/judgement';
 import { viewStyles, textStyles } from '~/styles/judgement';
 
