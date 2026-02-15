@@ -22,6 +22,8 @@ export function useGroups(tripId?: string | null) {
         id: group.id,
         name: group.name,
         code: group.code,
+        image: group.image,
+        updatedAt: group.updatedAt,
         participantCount: group.participants.length,
       }));
   }, [groups, searchQuery]);

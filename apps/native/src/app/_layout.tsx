@@ -5,6 +5,7 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaInsetsProvider } from "~/contexts/safeArea";
 import * as Notifications from "expo-notifications";
 
@@ -205,16 +206,18 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider
-        supabaseUrl={SUPABASE_URL}
-        supabaseKey={SUPABASE_ANON_KEY}
-        supabaseClient={supabaseClient}
-      >
-        <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-          <RootLayoutContent />
-        </APIProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AuthProvider
+          supabaseUrl={SUPABASE_URL}
+          supabaseKey={SUPABASE_ANON_KEY}
+          supabaseClient={supabaseClient}
+        >
+          <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+            <RootLayoutContent />
+          </APIProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

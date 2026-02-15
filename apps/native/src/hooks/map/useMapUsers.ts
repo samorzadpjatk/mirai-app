@@ -22,6 +22,12 @@ export function useMapUsers({
   currentCoordinate,
   now,
 }: UseMapUsersArgs) {
+  const withCacheBust = (imageUrl: string | null | undefined, version: string) => {
+    if (!imageUrl) return null;
+    const separator = imageUrl.includes("?") ? "&" : "?";
+    return `${imageUrl}${separator}v=${encodeURIComponent(version)}`;
+  };
+
   return useMemo<UserLocation[]>(() => {
     const effectiveNow = now;
     const next: UserLocation[] = [];
@@ -49,7 +55,10 @@ export function useMapUsers({
           ? `House ${userData.houseNumber}`
           : undefined,
         coordinate: [location.longitude, location.latitude],
-        avatarUrl: userData?.image ?? null,
+        avatarUrl: withCacheBust(
+          userData?.image,
+          String(location.updatedAt),
+        ),
         lastActiveAt:
           location.updatedAt instanceof Date
             ? location.updatedAt.getTime()

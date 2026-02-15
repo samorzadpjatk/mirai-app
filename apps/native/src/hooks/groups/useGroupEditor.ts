@@ -13,13 +13,13 @@ export function useGroupEditor(groupId?: string | null) {
 
   const updateMutation = useMutation(
     trpc.group.update.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
           queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
             .queryKey,
         });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({ tripId: "" }).queryKey,
+        void queryClient.invalidateQueries({
+          queryKey: [["group", "getAll"]],
         });
       },
     }),
@@ -27,10 +27,13 @@ export function useGroupEditor(groupId?: string | null) {
 
   const assignMutation = useMutation(
     trpc.group.assignUserToGroup.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
           queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
             .queryKey,
+        });
+        void queryClient.invalidateQueries({
+          queryKey: [["group", "getAll"]],
         });
       },
     }),
@@ -38,10 +41,13 @@ export function useGroupEditor(groupId?: string | null) {
 
   const removeMutation = useMutation(
     trpc.group.removeUserFromGroup.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
           queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
             .queryKey,
+        });
+        void queryClient.invalidateQueries({
+          queryKey: [["group", "getAll"]],
         });
       },
     }),
@@ -51,6 +57,7 @@ export function useGroupEditor(groupId?: string | null) {
     id: string;
     name?: string;
     code?: string;
+    image?: string;
     tripId?: string;
   }) => {
     const tripId = data.tripId ?? groupQuery.data?.trip?.id;
@@ -69,7 +76,11 @@ export function useGroupEditor(groupId?: string | null) {
   const removeUser = async (userId: string) => {
     const tripId = groupQuery.data?.trip?.id;
     if (!tripId) throw new Error("Missing tripId for removeUser");
-    return removeMutation.mutateAsync({ userId, tripId });
+    return removeMutation.mutateAsync({
+      userId,
+      tripId,
+      groupId: groupId ?? "",
+    });
   };
 
   return {

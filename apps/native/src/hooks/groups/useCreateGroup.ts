@@ -7,9 +7,8 @@ export function useCreateGroup(tripId?: string | null) {
 
   const createMutation = useMutation(
     trpc.group.create.mutationOptions({
-      onSuccess: async (_newGroup) => {
-        // invalidate groups list
-        await queryClient.invalidateQueries({
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
           queryKey: [["group", "getAll"]],
         });
       },
@@ -23,13 +22,15 @@ export function useCreateGroup(tripId?: string | null) {
   const createGroup = async (args: {
     name: string;
     code: string;
+    image?: string;
     selectedMembers?: string[];
   }) => {
-    const { name, code, selectedMembers = [] } = args;
+    const { name, code, image, selectedMembers = [] } = args;
     const result = await createMutation.mutateAsync({
       tripId: tripId ?? "",
       name,
       code,
+      image,
     });
 
     // assign members if any

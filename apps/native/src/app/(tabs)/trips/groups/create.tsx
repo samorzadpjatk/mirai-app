@@ -4,11 +4,13 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useCreateGroup } from "~/hooks/groups";
+import { useGroupImagePicker } from "~/hooks/groups/useGroupImagePicker";
 import { colors, spacing, typography } from "../../../../styles";
 import { useAppSafeAreaInsets } from "~/contexts/safeArea";
 import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupButton";
 import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCreateNoTripState";
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";
+import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { MembersPicker } from "~/components/trips/groups/create/MembersPicker";
 import { MembersSearchBar } from "~/components/trips/groups/create/MembersSearchBar";
 
@@ -35,6 +37,7 @@ export default function CreateGroupScreen() {
   });
 
   const { createGroup, isCreating } = useCreateGroup(tripId);
+  const { image: groupImage, pickImage } = useGroupImagePicker();
 
   const toggleMember = (userId: string) => {
     const newSelected = new Set(selectedMembers);
@@ -60,17 +63,16 @@ export default function CreateGroupScreen() {
       const newGroup = await createGroup({
         name: groupName,
         code: groupCode,
+        image: groupImage ?? undefined,
         selectedMembers: Array.from(selectedMembers),
       });
-      Alert.alert("Success", "Group created successfully!");
       router.push(`/trips/groups/${newGroup.id}`);
     } catch (err: unknown) {
       console.error("Create group error:", err);
-      if (err instanceof Error) {
-        Alert.alert("Error", err.message);
-      } else {
-        Alert.alert("Error", "Failed to create group");
-      }
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "Failed to create group",
+      );
     }
   };
 
@@ -101,6 +103,8 @@ export default function CreateGroupScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        <GroupImagePicker image={groupImage} onPress={pickImage} />
+
         <GroupFormFields
           groupName={groupName}
           groupCode={groupCode}

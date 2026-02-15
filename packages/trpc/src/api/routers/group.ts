@@ -199,7 +199,7 @@ export const groupRouter = createTRPCRouter({
         tripId: z.string(),
         name: z.string().min(1),
         description: z.string().optional(),
-        image: z.string().url().optional(),
+        image: z.string().optional(),
         code: z.string().min(1),
         organizerId: z.string().optional(),
       }),
@@ -248,14 +248,14 @@ export const groupRouter = createTRPCRouter({
     }),
 
   // Update group information
-  update: adminProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
         tripId: z.string(),
         name: z.string().min(1).optional(),
         description: z.string().optional(),
-        image: z.string().url().optional(),
+        image: z.string().optional(),
         organizerId: z.string().optional(),
       }),
     )
@@ -264,6 +264,12 @@ export const groupRouter = createTRPCRouter({
       const group = await ctx.db.group.findUnique({ where: { id } });
       if (group?.tripId !== tripId) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+      if (group.organizerId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the organizer can update this group",
+        });
       }
       return await ctx.db.group.update({
         where: { id },
@@ -363,9 +369,16 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      // Check if user is already in the group
+      if (group.organizerId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the organizer can assign users to this group",
+        });
+      }
+
+      // Check if target user is already in the group
       const existingMembership = group.participants.find(
-        (member) => member.userId === ctx.dbUser.id,
+        (member) => member.userId === input.userId,
       );
 
       if (existingMembership) {
@@ -455,14 +468,31 @@ export const groupRouter = createTRPCRouter({
     }),
 
   // Remove user from a group
-  removeUserFromGroup: adminProcedure
+  removeUserFromGroup: protectedProcedure
     .input(
       z.object({
         userId: z.string(),
         tripId: z.string(),
+        groupId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: { id: true, organizerId: true, tripId: true },
+      });
+
+      if (!group || group.tripId !== input.tripId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      if (group.organizerId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the organizer can remove users from this group",
+        });
+      }
+
       return await ctx.db.tripParticipant.update({
         where: {
           userId_tripId: { userId: input.userId, tripId: input.tripId },

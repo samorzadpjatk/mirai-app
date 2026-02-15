@@ -1,12 +1,14 @@
 import { useMemo, useState, useEffect } from "react";
 import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useNavigation } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useGroupEditor } from "~/hooks/groups";
+import { useGroupImagePicker } from "~/hooks/groups/useGroupImagePicker";
 import { colors, spacing, typography } from "../../../../../styles";
 import { useAppSafeAreaInsets } from "~/contexts/safeArea";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
+import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 import { EditMembersSearchBar } from "~/components/trips/groups/edit/EditMembersSearchBar";
 import { EditMembersPicker } from "~/components/trips/groups/edit/EditMembersPicker";
 import { GroupEditLoadingState } from "~/components/trips/groups/edit/GroupEditLoadingState";
@@ -17,6 +19,7 @@ import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton"
 
 export default function EditGroupScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
   const trpc = useTRPC();
@@ -35,6 +38,8 @@ export default function EditGroupScreen() {
   const [groupCode, setGroupCode] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMembers, setCurrentMembers] = useState<Set<string>>(new Set());
+  const [allowExitWithoutPrompt, setAllowExitWithoutPrompt] = useState(false);
+  const { image: groupImage, setImage: setGroupImage, pickImage } = useGroupImagePicker();
 
   useEffect(() => {
     if (!group) return;
@@ -43,6 +48,7 @@ export default function EditGroupScreen() {
     const id = setTimeout(() => {
       setGroupName(group.name);
       setGroupCode(group.code);
+      setGroupImage(group.image ?? null);
       setCurrentMembers(new Set(group.participants.map((p) => p.user.id)));
     }, 0);
     return () => clearTimeout(id);
@@ -50,6 +56,61 @@ export default function EditGroupScreen() {
 
   const { updateGroup, assignUser, removeUser, isUpdating } =
     useGroupEditor(groupId);
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!group) return false;
+
+    const originalName = group.name.trim();
+    const originalCode = group.code.trim();
+    const currentName = groupName.trim();
+    const currentCode = groupCode.trim();
+    const originalImage = group.image ?? null;
+    const currentImage = groupImage ?? null;
+
+    if (originalName !== currentName) return true;
+    if (originalCode !== currentCode) return true;
+    if (originalImage !== currentImage) return true;
+
+    const originalMembers = new Set(group.participants.map((p) => p.user.id));
+    if (originalMembers.size !== currentMembers.size) return true;
+
+    for (const userId of currentMembers) {
+      if (!originalMembers.has(userId)) return true;
+    }
+
+    return false;
+  }, [group, groupName, groupCode, groupImage, currentMembers]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (event) => {
+      if (allowExitWithoutPrompt || !hasUnsavedChanges || isUpdating) return;
+
+      event.preventDefault();
+
+      Alert.alert(
+        "Unsaved changes",
+        "Changes won't be saved until you tap Save Changes. Leave anyway?",
+        [
+          { text: "Stay", style: "cancel" },
+          {
+            text: "Leave",
+            style: "destructive",
+            onPress: () => {
+              setAllowExitWithoutPrompt(true);
+              navigation.dispatch(event.data.action);
+            },
+          },
+        ],
+      );
+    });
+
+    return unsubscribe;
+  }, [
+    navigation,
+    allowExitWithoutPrompt,
+    hasUnsavedChanges,
+    isUpdating,
+  ]);
 
   const handleSave = async () => {
     if (!groupName.trim()) {
@@ -62,11 +123,12 @@ export default function EditGroupScreen() {
     }
 
     try {
-      // Update group name and code
+      // Update group name, code, and image
       await updateGroup({
         id: groupId ?? "",
         name: groupName,
         code: groupCode,
+        image: groupImage ?? undefined,
       });
 
       // Handle member changes
@@ -90,6 +152,7 @@ export default function EditGroupScreen() {
         await removeUser(userId);
       }
 
+      setAllowExitWithoutPrompt(true);
       router.back();
     } catch (error) {
       console.error("Save error:", error);
@@ -157,6 +220,8 @@ export default function EditGroupScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        <GroupImagePicker image={groupImage} onPress={pickImage} />
+
         <EditGroupFormFields
           groupName={groupName}
           groupCode={groupCode}

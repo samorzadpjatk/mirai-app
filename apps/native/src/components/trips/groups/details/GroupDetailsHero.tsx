@@ -6,18 +6,28 @@ interface GroupDetailsHeroProps {
   code: string;
   name: string;
   imageUrl: string;
+  imageVersion?: string | number | Date;
+}
+
+function withCacheBust(url: string, version?: string | number | Date) {
+  if (!version) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${encodeURIComponent(String(version))}`;
 }
 
 export function GroupDetailsHero({
   code,
   name,
   imageUrl,
+  imageVersion,
 }: GroupDetailsHeroProps) {
+  const resolvedImageUrl = withCacheBust(imageUrl, imageVersion);
+
   return (
     <View style={[styles.heroCard, shadows.primaryGlow]}>
       <View style={styles.heroImageContainer}>
         <Image
-          source={{ uri: imageUrl }}
+          source={{ uri: resolvedImageUrl }}
           style={styles.heroImage}
           resizeMode="cover"
         />

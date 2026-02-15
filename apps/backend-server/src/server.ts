@@ -21,7 +21,7 @@ export function createServer(opts: ServerOptions) {
   const port = opts.port ?? 3000;
   const prefix = opts.prefix ?? "/trpc";
   const host = opts.host ?? "127.0.0.1";
-  const server = fastify({ logger: dev });
+  const server = fastify({ logger: dev, bodyLimit: 10 * 1024 * 1024 });
 
   if (dev) {
     void server.register(cors, {

@@ -28,10 +28,19 @@ export default function TripInfoScreen() {
   const tripId = typeof params.id === "string" ? params.id : params.id?.[0];
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPdfModalVisible, setIsPdfModalVisible] = useState(false);
+  const [pdfModalTitle, setPdfModalTitle] = useState("Ski Map PDF");
   const [pdfUri, setPdfUri] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadingType, setDownloadingType] = useState<
+    "map" | "infopack" | null
+  >(null);
   const [isPdfDownloaded, setIsPdfDownloaded] = useState(false);
   const [isInfopackDownloaded, setIsInfopackDownloaded] = useState(false);
+
+  const mapPdfUrl =
+    "https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf";
+  const infopackPdfUrl =
+    process.env.EXPO_PUBLIC_INFOPACK_PDF_URL?.trim() || mapPdfUrl;
 
   // Check if files are downloaded on component mount
   useEffect(() => {
@@ -67,9 +76,70 @@ export default function TripInfoScreen() {
     });
   };
 
-  const handleInfopakPress = () => {
-    // Open PDF or document
-    console.log("Open Infopack");
+  const openOrDownloadPdf = async (args: {
+    title: string;
+    type: "map" | "infopack";
+    url: string;
+    fileName: string;
+    markAsDownloaded: () => void;
+  }) => {
+    const { title, type, url, fileName, markAsDownloaded } = args;
+
+    try {
+      setIsDownloading(true);
+      setDownloadingType(type);
+
+      const pdfDir = new Directory(Paths.document, "pdfs");
+      if (!pdfDir.exists) {
+        void pdfDir.create();
+      }
+
+      const file = new File(pdfDir, fileName);
+
+      if (file.exists) {
+        setPdfModalTitle(title);
+        setPdfUri(file.uri);
+        setIsPdfModalVisible(true);
+        markAsDownloaded();
+        return;
+      }
+
+      try {
+        const downloadedFile = await File.downloadFileAsync(url, file);
+        setPdfModalTitle(title);
+        setPdfUri(downloadedFile.uri);
+        setIsPdfModalVisible(true);
+        markAsDownloaded();
+      } catch (downloadError) {
+        const maybeDownloadError = downloadError as { code?: string } | undefined;
+
+        if (maybeDownloadError?.code === "ERR_DESTINATION_ALREADY_EXISTS") {
+          setPdfModalTitle(title);
+          setPdfUri(file.uri);
+          setIsPdfModalVisible(true);
+          markAsDownloaded();
+          return;
+        }
+
+        throw downloadError;
+      }
+    } catch (error) {
+      console.error(`Error handling ${type} PDF:`, error);
+      Alert.alert("Error", "Could not open the PDF. Please try again later.");
+    } finally {
+      setIsDownloading(false);
+      setDownloadingType(null);
+    }
+  };
+
+  const handleInfopakPress = async () => {
+    await openOrDownloadPdf({
+      title: "Infopack PDF",
+      type: "infopack",
+      url: infopackPdfUrl,
+      fileName: "Infopack.pdf",
+      markAsDownloaded: () => setIsInfopackDownloaded(true),
+    });
   };
 
   const handleMapPress = () => {
@@ -77,75 +147,13 @@ export default function TripInfoScreen() {
   };
 
   const handlePdfMapPress = async () => {
-    try {
-      setIsDownloading(true);
-
-      // URL of the PDF map
-      const url =
-        "https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf";
-
-      // Create a folder inside internal storage
-      const pdfDir = new Directory(Paths.document, "pdfs");
-
-      // Check if directory exists, if not create it
-      if (!pdfDir.exists) {
-        void pdfDir.create();
-      }
-
-      // The downloaded file will have the name from URL
-      const downloadedFileName = "Verbier-Piste-Ski-Map-2024-25.pdf";
-      const file = new File(pdfDir, downloadedFileName);
-
-      console.log("Checking if file exists:", file.uri);
-      console.log("File exists:", file.exists);
-
-      // Check if file already exists
-      if (file.exists) {
-        // File already downloaded, just open it
-        console.log("PDF already exists, opening:", file.uri);
-        setPdfUri(file.uri);
-        setIsPdfModalVisible(true);
-        setIsDownloading(false);
-        return;
-      }
-
-      // Download the file using static method
-      console.log("Downloading PDF from:", url);
-
-      try {
-        const downloadedFile = await File.downloadFileAsync(url, pdfDir);
-        console.log("PDF downloaded, file path:", downloadedFile.uri);
-        console.log("Downloaded file uri:", downloadedFile.uri);
-
-        // Open the downloaded PDF immediately
-        setPdfUri(downloadedFile.uri);
-        setIsPdfModalVisible(true);
-        setIsPdfDownloaded(true); // Update download status
-      } catch (downloadError) {
-        console.error("Download error:", downloadError);
-
-        // If error is about file already existing, just open it
-        const maybeDownloadError = downloadError as
-          | { code?: string }
-          | undefined;
-        if (maybeDownloadError?.code === "ERR_DESTINATION_ALREADY_EXISTS") {
-          console.log("File already exists, opening existing file");
-          // Try to find the actual downloaded file
-          const existingFile = new File(pdfDir, downloadedFileName);
-          setPdfUri(existingFile.uri);
-          setIsPdfModalVisible(true);
-          setIsPdfDownloaded(true); // Update download status
-          return;
-        }
-
-        throw downloadError;
-      }
-    } catch (error) {
-      console.error("Error handling PDF:", error);
-      Alert.alert("Error", "Could not open the map. Please try again later.");
-    } finally {
-      setIsDownloading(false);
-    }
+    await openOrDownloadPdf({
+      title: "Ski Map PDF",
+      type: "map",
+      url: mapPdfUrl,
+      fileName: "Verbier-Piste-Ski-Map-2024-25.pdf",
+      markAsDownloaded: () => setIsPdfDownloaded(true),
+    });
   };
 
   return (
@@ -222,7 +230,7 @@ export default function TripInfoScreen() {
                 style={styles.mapTile}
                 onPress={() => void handlePdfMapPress()}
                 activeOpacity={0.8}
-                disabled={isDownloading}
+                disabled={isDownloading && downloadingType === "map"}
               >
                 <View style={styles.pdfMapContent}>
                   <View style={styles.pdfMapIconWrapper}>
@@ -250,7 +258,7 @@ export default function TripInfoScreen() {
                       )}
                     </View>
                     <Text style={styles.pdfMapSubtitle}>
-                      {isDownloading
+                      {isDownloading && downloadingType === "map"
                         ? "Downloading..."
                         : isPdfDownloaded
                           ? "Downloaded"
@@ -266,8 +274,9 @@ export default function TripInfoScreen() {
               {/* Infopak Tile */}
               <TouchableOpacity
                 style={styles.bentoTile}
-                onPress={handleInfopakPress}
+                onPress={() => void handleInfopakPress()}
                 activeOpacity={0.8}
+                disabled={isDownloading && downloadingType === "infopack"}
               >
                 <View style={styles.bentoIconWrapper}>
                   <Ionicons
@@ -294,7 +303,11 @@ export default function TripInfoScreen() {
                     )}
                   </View>
                   <Text style={styles.bentoSubtitle}>
-                    {isInfopackDownloaded ? "Downloaded" : "Tap to Download"}
+                    {isDownloading && downloadingType === "infopack"
+                      ? "Downloading..."
+                      : isInfopackDownloaded
+                        ? "Downloaded"
+                        : "Tap to Download"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -403,7 +416,7 @@ export default function TripInfoScreen() {
             <SafeAreaView style={styles.modalSafeArea} edges={["top"]}>
               {/* Modal Header */}
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Ski Map PDF</Text>
+                <Text style={styles.modalTitle}>{pdfModalTitle}</Text>
                 <Pressable
                   onPress={() => setIsPdfModalVisible(false)}
                   style={styles.closeButton}

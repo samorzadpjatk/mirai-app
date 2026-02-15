@@ -273,6 +273,7 @@ export const UserMap: React.FC<UserMapProps> = ({
             <View style={styles.avatarShadow}>
               <View style={styles.avatarBorder}>
                 <UserAvatar
+                  imageUrl={user.avatarUrl}
                   name={user.name}
                   size={34}
                 />
