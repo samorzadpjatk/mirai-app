@@ -20,7 +20,7 @@ import Pdf from "react-native-pdf";
 import { Directory, File, Paths } from "expo-file-system/next";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 
 export default function TripInfoScreen() {
   const router = useRouter();

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useGroupEditor } from "~/hooks/groups";
 import { colors, spacing, typography } from "../../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
 import { EditMembersSearchBar } from "~/components/trips/groups/edit/EditMembersSearchBar";
 import { EditMembersPicker } from "~/components/trips/groups/edit/EditMembersPicker";

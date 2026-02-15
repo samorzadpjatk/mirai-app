@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
 import { TripCard } from "~/components/trips/list/TripCard";

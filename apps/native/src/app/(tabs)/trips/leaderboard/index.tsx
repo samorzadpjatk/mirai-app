@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { colors, spacing } from "../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import { LeaderboardRankingsSection } from "~/components/trips/leaderboard/LeaderboardRankingsSection";
