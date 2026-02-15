@@ -20,7 +20,7 @@ import {
 } from "@integral-2025-app/auth";
 import { TRPCError } from "@trpc/server";
 import { createSupabaseClient, type SupabaseClient } from "@integral-2025-app/supabase";
-import { db, type PrismaClient } from "@integral-2025-app/db";
+import { createDb, type PrismaClient } from "@integral-2025-app/db";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
   const authorization =
@@ -70,7 +70,7 @@ const getAccessToken = (
   const urlString = headers.get("x-original-url");
   if (urlString) {
     try {
-      const url = new URL(urlString, "http://dummy");
+      const url = new URL(urlString);
       const authParam = url.searchParams.get("authorization");
       if (authParam) {
         const [scheme, token] = authParam.split(" ");
@@ -97,7 +97,7 @@ export interface TRPCContext {
 
 // On the backend we use a single SERVICE_ROLE Supabase client (singleton).
 // Follow the Prisma pattern: a module-level lazy-initialized singleton so we avoid adding globals.
-let supabase: SupabaseClient | undefined; 
+let supabase: SupabaseClient | undefined;
 
 /**
  * 1. CONTEXT
@@ -136,10 +136,10 @@ export const createTRPCContext = (opts: {
     accessToken ? "YES" : "NO",
   );
 
-  const dbInstance = db(opts.databaseUrl);
+  const db = createDb(opts.databaseUrl);
 
   return {
-    db: dbInstance,
+    db,
     supabase,
     headers: opts.headers,
     accessToken,

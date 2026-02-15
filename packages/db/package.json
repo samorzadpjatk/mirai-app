@@ -13,14 +13,7 @@
     "clean": "rm -rf node_modules",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "typecheck": "tsc --noEmit",
-    "db:generate": "bunx --bun prisma generate",
-    "db:migrate": "bunx --bun prisma migrate deploy",
-    "db:migrate:dev": "bunx --bun prisma migrate dev",
-    "db:push": "bunx --bun prisma db push",
-    "db:reset": "bunx --bun prisma migrate reset",
-    "db:studio": "bunx --bun prisma studio",
-    "db:format": "bunx --bun prisma format"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@integral-2025-app/supabase": "workspace:*",
