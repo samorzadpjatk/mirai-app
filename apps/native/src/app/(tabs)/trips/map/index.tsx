@@ -74,7 +74,7 @@ export default function MapScreen() {
     updateSharing,
     removeUser,
     isRemovingUser,
-  } = useMapSharing(false);
+  } = useMapSharing(true);
   const { sendLocation } = useMapActions();
   const {
     download: downloadAvatar,

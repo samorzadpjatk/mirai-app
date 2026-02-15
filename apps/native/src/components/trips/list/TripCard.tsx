@@ -7,11 +7,11 @@ import {
 } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { TripListItem } from "./types";
+import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 
 interface TripCardProps {
   trip: TripListItem;
-  isStatic: boolean;
-  imageUrl: string;
+  imageUrl?: string;
   onPress: () => void;
 }
 
@@ -36,15 +36,47 @@ const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
   return "Past";
 };
 
-export function TripCard({ trip, isStatic, imageUrl, onPress }: TripCardProps) {
+export function TripCard({ trip, onPress }: TripCardProps) {
   const status = getTripStatus(trip.startDate, trip.endDate);
+  const { imageUrl } = useTripBackgroundImageDownload(trip.backgroundImagePath);
+
+  // Don't render the image background if no URL is available
+  if (!imageUrl) {
+    return (
+      <TouchableOpacity
+        style={[styles.tripCard, styles.tripCardNoImage]}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <View style={styles.tripContent}>
+          <View style={styles.badgeRow}>
+            <View style={styles.tripBadge}>
+              <Text style={styles.tripBadgeText}>{status}</Text>
+            </View>
+          </View>
+          <Text style={styles.tripTitle}>{trip.name}</Text>
+          {trip.description ? (
+            <Text style={styles.tripSubtitle}>{trip.description}</Text>
+          ) : null}
+          <Text style={styles.tripDate}>
+            {formatDateRange(trip.startDate, trip.endDate)}
+          </Text>
+          {trip.groups && trip.groups.length > 0 && (
+            <Text style={styles.tripGroups}>
+              {trip.groups.length}{" "}
+              {trip.groups.length === 1 ? "group" : "groups"}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity
       style={styles.tripCard}
       onPress={onPress}
-      disabled={isStatic}
-      activeOpacity={isStatic ? 1 : 0.7}
+      activeOpacity={0.7}
     >
       <ImageBackground
         source={{ uri: imageUrl }}
@@ -57,13 +89,6 @@ export function TripCard({ trip, isStatic, imageUrl, onPress }: TripCardProps) {
             <View style={styles.tripBadge}>
               <Text style={styles.tripBadgeText}>{status}</Text>
             </View>
-            {isStatic && (
-              <View style={styles.registerBadge}>
-                <Text style={styles.registerBadgeText}>
-                  Zapisz się już teraz
-                </Text>
-              </View>
-            )}
           </View>
           <Text style={styles.tripTitle}>{trip.name}</Text>
           {trip.description ? (
@@ -90,6 +115,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primaryOpacity10,
     overflow: "hidden",
+  },
+  tripCardNoImage: {
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity10,
+    backgroundColor: colors.cardDark,
   },
   tripImageBackground: {
     width: "100%",
@@ -126,22 +157,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     textTransform: "uppercase",
     letterSpacing: 2,
-  },
-  registerBadge: {
-    backgroundColor: "#10b981",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: "#059669",
-    alignSelf: "flex-start",
-  },
-  registerBadgeText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.white,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
   },
   tripTitle: {
     fontSize: typography.xxl,

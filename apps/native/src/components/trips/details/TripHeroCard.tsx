@@ -1,12 +1,14 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 
 interface TripHeroCardProps {
   name: string;
   description?: string | null;
   startDate: Date | string;
   endDate: Date | string;
-  imageUrl: string;
+  imageUrl?: string;
+  backgroundImagePath?: string | null;
 }
 
 const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
@@ -24,11 +26,34 @@ export function TripHeroCard({
   startDate,
   endDate,
   imageUrl,
+  backgroundImagePath,
 }: TripHeroCardProps) {
+  const { imageUrl: backgroundImageUrl, isLoading } = useTripBackgroundImageDownload(backgroundImagePath);
+  const finalImageUrl = imageUrl || backgroundImageUrl || undefined;
+
+  // Don't render the image if no URL is available
+  if (!finalImageUrl) {
+    return (
+      <View style={styles.heroCard}>
+        <View style={styles.heroContent}>
+          <View style={styles.heroBadge}>
+            <Text style={styles.heroBadgeText}>
+              {getTripStatus(startDate, endDate)}
+            </Text>
+          </View>
+          <Text style={styles.heroTitle}>{name}</Text>
+          {description ? (
+            <Text style={styles.heroSubtitle}>{description}</Text>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.heroCard}>
       <View style={styles.heroGradient} />
-      <Image source={{ uri: imageUrl }} style={styles.heroImage} />
+      <Image source={{ uri: finalImageUrl }} style={styles.heroImage} />
       <View style={styles.heroContent}>
         <View style={styles.heroBadge}>
           <Text style={styles.heroBadgeText}>
