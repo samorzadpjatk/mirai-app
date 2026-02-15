@@ -24,14 +24,11 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/websocket": "^11.2.0",
     "@integral-2025-app/trpc": "workspace:*",
-    "@integral-2025-app/vitest-config": "workspace:*",
     "@trpc/server": "^11.8.1",
     "fastify": "^5.6.2",
     "ws": "^8.18.3"
   },
   "devDependencies": {
-    "@types/node": "^24.10.4",
-    "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.0.16",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
