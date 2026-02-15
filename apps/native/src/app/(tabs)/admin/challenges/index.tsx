@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
-import { colors } from '../../../../../styles';
+import { colors } from '~/styles';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 interface ChallengeItem {
@@ -66,7 +66,7 @@ export default function AdminChallengesScreen() {
       return;
     }
     router.push({
-      pathname: '/profile/admin/challenges/new',
+      pathname: '/admin/challenges/new',
       params: { tripId },
     });
   };
@@ -262,7 +262,7 @@ export default function AdminChallengesScreen() {
                   style={{ padding: 8 }}
                   onPress={() => {
                     router.push({
-                      pathname: '/profile/admin/challenges/judgement',
+                      pathname: '/admin/challenges/judgement',
                       params: { tripId, challengeId: challenge.id },
                     });
                   }}
@@ -273,7 +273,7 @@ export default function AdminChallengesScreen() {
                   style={{ padding: 8 }}
                   onPress={() => {
                     router.push({
-                      pathname: '/profile/admin/challenges/[id]',
+                      pathname: '/admin/challenges/[id]',
                       params: { id: challenge.id, tripId },
                     });
                   }}

@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
-import { useColorScheme, View } from "react-native";
+import React from "react";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack } from "expo-router";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -52,31 +52,15 @@ const colors = {
 };
 
 const SUPABASE_URL: string =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ?? "http://localhost:8000";
+  process.env.EXPO_PUBLIC_SUPABASE_URL!!;
 const SUPABASE_ANON_KEY: string =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!!;
 
-// Validate Supabase configuration
-if (!SUPABASE_ANON_KEY) {
-  console.error(
-    "[Supabase] EXPO_PUBLIC_SUPABASE_ANON_KEY is missing. Please set it in your .env file.",
-  );
-}
 // Both HTTP and WebSocket tRPC are served by the Fastify server
 // under the same path. Only the protocol differs.
 const TRPC_HTTP_URL: string =
-  process.env.EXPO_PUBLIC_TRPC_API_URL ?? "http://localhost:2022/api/trpc";
+  process.env.EXPO_PUBLIC_TRPC_API_URL!!;
 const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
-
-if (typeof window !== "undefined" && window.localStorage) {
-  const lastUrlKey = "supabase.last_url";
-  const lastUrl = window.localStorage.getItem(lastUrlKey);
-  if (lastUrl && lastUrl !== SUPABASE_URL) {
-    window.localStorage.removeItem("supabase.auth.token");
-    window.localStorage.removeItem("supabase.auth.expires_at");
-  }
-  window.localStorage.setItem(lastUrlKey, SUPABASE_URL);
-}
 
 const supabaseClient = createSupabaseClient(
   SUPABASE_URL,
@@ -87,32 +71,15 @@ const supabaseClient = createSupabaseClient(
 function RootLayoutContent() {
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
-  const router = useRouter();
-  const segments = useSegments();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark" || colorScheme === null; // Default to dark
-
+  
   // Move safe area hook to root layout and provide it to children
   const insets = useSafeAreaInsets();
 
   // Get theme colors for headers
-  const headerBackgroundColor = isDark
-    ? colors.backgroundDark
-    : colors.backgroundLight;
-  const headerTintColor = isDark ? colors.textDark : colors.textLight;
+  const headerBackgroundColor = colors.backgroundDark;
+  const headerTintColor = colors.textDark;
 
-  useEffect(() => {
-    if (isAuthLoading) return;
-
-    const inAuthGroup = segments[0] === "auth";
-    const hasSession = !!session?.access_token;
-
-    if (!hasSession && !inAuthGroup) {
-      router.replace("/auth/login");
-    } else if (hasSession && inAuthGroup) {
-      router.replace("/(tabs)");
-    }
-  }, [session, segments, isAuthLoading, router]);
+  const hasSession = !!session?.access_token;
 
   return (
     <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
@@ -121,7 +88,6 @@ function RootLayoutContent() {
           <Stack
             screenOptions={{
               headerShown: false,
-              animation: "fade",
               gestureEnabled: true,
               gestureDirection: "horizontal",
               contentStyle: { backgroundColor: headerBackgroundColor },
@@ -135,54 +101,42 @@ function RootLayoutContent() {
               },
             }}
           >
-            <Stack.Screen
-              name="(tabs)"
-              options={{
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="auth/login"
-              options={{
-                title: "Sign In",
-                headerShown: false,
-                animation: "fade",
-              }}
-            />
-            <Stack.Screen
-              name="auth/signup"
-              options={{
-                title: "Sign Up",
-                headerShown: false,
-                animation: "fade",
-              }}
-            />
-            <Stack.Screen
-              name="alerts"
-              options={{
-                title: "Alerts",
-                headerShown: false,
-                animation: "slide_from_right",
-              }}
-            />
+            {/* Protected routes for authenticated users */}
+            <Stack.Protected guard={hasSession}>
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  headerShown: false,
+                }}
+              />
+              <Stack.Screen
+                name="alerts"
+                options={{
+                  title: "Alerts",
+                  headerShown: false,
+                  
+                }}
+              />
+              <Stack.Screen
+                name="admin/challenges"
+                options={{
+                  title: "Admin Challenges",
+                  headerShown: false,
+                  
+                }}
+              />
+            </Stack.Protected>
 
-            <Stack.Screen
-              name="challenges"
-              options={{
-                title: "Challenges",
-                headerShown: false,
-                animation: "slide_from_right",
-              }}
-            />
-
-            <Stack.Screen
-              name="challenge/[id]"
-              options={{
-                title: "Challenge Details",
-                headerShown: false,
-                animation: "slide_from_right",
-              }}
-            />
+            {/* Protected routes for unauthenticated users */}
+            <Stack.Protected guard={!hasSession}>
+              <Stack.Screen
+                name="auth/login"
+                options={{
+                  title: "Sign In",
+                  headerShown: false,
+                }}
+              />
+            </Stack.Protected>
 
           </Stack>
         </SafeAreaInsetsProvider>
