@@ -29,32 +29,21 @@
     "dev": "tsc --watch",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "lint:fix": "eslint --fix .",
-    "test": "vitest run --coverage",
-    "test:watch": "vitest --watch",
-    "test:ui": "vitest --ui"
+    "lint:fix": "eslint --fix ."
   },
   "dependencies": {
-    "@integral-2025-app/common-types": "workspace:*",
     "@integral-2025-app/db": "workspace:*",
     "@integral-2025-app/supabase": "workspace:*",
     "zod": "^4.3.4"
   },
   "devDependencies": {
-    "@integral-2025-app/vitest-config": "workspace:*",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.1",
-    "@types/node": "^24.10.4",
     "@types/react": "~19.1.17",
-    "@vitest/coverage-v8": "^4.0.16",
-    "@vitest/ui": "^4.0.16",
     "eslint": "^9.39.2",
     "jsdom": "^25.0.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.51.0",
-    "vitest": "^4.0.16"
+    "typescript-eslint": "^8.51.0"
   },
   "peerDependencies": {
     "react": "^19.1.0"

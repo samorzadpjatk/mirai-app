@@ -1,7 +1,6 @@
 import type { SupabaseClient, SupabaseUser } from "@integral-2025-app/supabase";
-import type { User, Role } from "@integral-2025-app/db";
+import type { User, Role, PrismaClient } from "@integral-2025-app/db";
 import type { AuthUser } from "./types";
-import { db } from "@integral-2025-app/db";
 
 interface MinimalBuffer {
   from(
@@ -219,6 +218,7 @@ export function hasRequiredRole(
  * @returns Session object with user and authUserId, or null if not authenticated
  */
 export async function getSession(
+  db: PrismaClient,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<{
@@ -251,13 +251,14 @@ export async function getSession(
 }
 
 export async function requireAuth(
+  db: PrismaClient,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<{
   user: AuthUser;
   dbUser: User;
 }> {
-  const session = await getSession(supabase, accessToken);
+  const session = await getSession(db, supabase, accessToken);
 
   if (!session?.user) {
     throw new AuthenticationError("Unauthorized");
@@ -280,10 +281,11 @@ export async function requireAuth(
 }
 
 export async function requireAdmin(
+  db: PrismaClient,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<User> {
-  const { dbUser } = await requireAuth(supabase, accessToken);
+  const { dbUser } = await requireAuth(db, supabase, accessToken);
 
   if (dbUser.role !== "ADMIN") {
     throw new AuthorizationError("Admin access required");
@@ -293,10 +295,11 @@ export async function requireAdmin(
 }
 
 export async function requireModerator(
+  db: PrismaClient,
   supabase: SupabaseClient,
   accessToken?: string,
 ): Promise<User> {
-  const { dbUser } = await requireAuth(supabase, accessToken);
+  const { dbUser } = await requireAuth(db, supabase, accessToken);
 
   if (dbUser.role !== "MODERATOR" && dbUser.role !== "ADMIN") {
     throw new AuthorizationError("Moderator access required");
