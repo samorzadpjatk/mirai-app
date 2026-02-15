@@ -1,7 +1,7 @@
 import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { CapturedImageCard } from "~/components/trips/challenges/CapturedImageCard";
 import { ChallengeActionButton } from "~/components/trips/challenges/ChallengeActionButton";
 import { ChallengeDescriptionCard } from "~/components/trips/challenges/ChallengeDescriptionCard";

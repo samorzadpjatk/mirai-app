@@ -6,7 +6,7 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { SafeAreaInsetsProvider } from "~/contexts/safeArea";
+import { SafeAreaInsetsProvider } from "~/contexts/SafeAreaInsetsContext";
 import * as Notifications from "expo-notifications";
 
 // Global handler for notifications (module-level)

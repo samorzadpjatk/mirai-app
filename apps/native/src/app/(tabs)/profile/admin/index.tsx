@@ -7,7 +7,7 @@ import Logo from '~/components/Logo';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
+import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 
 interface TileType {
   key: string;

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useCreateGroup } from "~/hooks/groups";
 import { colors, spacing, typography } from "../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupButton";
 import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCreateNoTripState";
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";

@@ -1,5 +1,5 @@
 import { View, ScrollView, StyleSheet } from "react-native";
-import { useAppSafeAreaInsets } from "~/contexts/safeArea";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { colors, spacing } from "../../../styles";
 import { AccountInfoSection } from "~/components/profile/AccountInfoSection";
 import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
