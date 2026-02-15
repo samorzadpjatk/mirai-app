@@ -35,6 +35,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@integral-2025-app/shared": "workspace:*",
     "@integral-2025-app/auth": "workspace:*",
     "@integral-2025-app/db": "workspace:*",
     "@integral-2025-app/supabase": "workspace:*",

@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "../../api/trpc";
-import { parseSupabaseStoragePath } from "../../utils/storage";
+import { normalizeSupabaseStoragePath } from "../../utils/storage";
 
 const resolveStoragePath = (value: string) => {
-  const info = parseSupabaseStoragePath(value);
+  const info = normalizeSupabaseStoragePath(value);
   if (!info) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -16,7 +16,7 @@ const resolveStoragePath = (value: string) => {
 
 const getResumableEndpoint = () => {
   const baseUrl =
-    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+    process.env.SUPABASE_URL;
   if (!baseUrl) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
@@ -66,7 +66,7 @@ export const storageRouter = createTRPCRouter({
         token: data.token,
         bucket: objectInfo.bucket,
         objectPath: objectInfo.path,
-        storagePath: objectInfo.path,
+        storagePath: objectInfo.storagePath,
       };
     }),
 
@@ -80,6 +80,34 @@ export const storageRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const objectInfo = resolveStoragePath(input.storagePath);
       const expiresIn = input.expiresInSeconds ?? 10 * 60;
+
+      // Pre-check existence to return a clean 404 instead of relying on createSignedUrl errors
+      const dir = objectInfo.path.includes("/")
+        ? objectInfo.path.slice(0, objectInfo.path.lastIndexOf("/"))
+        : "";
+      const fileName = objectInfo.path.split("/").pop();
+
+      const { data: listData, error: listError } = await ctx.supabase.storage
+        .from(objectInfo.bucket)
+        .list(dir || undefined, {
+          search: fileName,
+          limit: 1,
+        });
+
+      if (listError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to verify storage object existence",
+        });
+      }
+
+      const exists = Array.isArray(listData) && listData.some((item) => item.name === fileName);
+      if (!exists) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Storage object not found",
+        });
+      }
 
       const { data, error } = await ctx.supabase.storage
         .from(objectInfo.bucket)

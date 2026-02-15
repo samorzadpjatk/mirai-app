@@ -7,12 +7,6 @@ export type {
   UseLoginFormResult,
 } from "./hooks/useLoginForm";
 
-export { useSignupForm } from "./hooks/useSignupForm";
-export type {
-  SignupFormState,
-  UseSignupFormResult,
-} from "./hooks/useSignupForm";
-
 export { AuthProvider, AuthContext } from "./AuthContext";
 export type { AuthProviderProps } from "./AuthContext";
 

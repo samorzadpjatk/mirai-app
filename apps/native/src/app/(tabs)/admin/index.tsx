@@ -3,10 +3,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, Act
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Logo from '~/components/Logo';
 import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
-import { colors, spacing, borderRadius, typography } from '../../../../styles';
+import { colors, spacing, borderRadius, typography } from '../../../styles';
 import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 
 interface TileType {
@@ -45,7 +44,7 @@ const tiles: TileType[] = [
     icon: 'trophy',
     accent: colors.primary,
     accentBg: colors.primaryOpacity10,
-    route: '/profile/admin/challenges',
+    route: '/admin/challenges',
   },
   {
     key: 'groups',
@@ -77,18 +76,8 @@ export default function AdminPanelScreen() {
   }, [trips, effectiveTripId]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
-
-      <View style={styles.navbar}>
-        <View style={styles.navLeft}>
-          <View style={styles.logoContainer}>
-            <Logo size={40} />
-          </View>
-          <Text style={styles.appName}>PJapp</Text>
-        </View>
-        <Text style={styles.adminLabel}>Admin Panel</Text>
-      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -96,26 +85,23 @@ export default function AdminPanelScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Control Center</Text>
-            <TouchableOpacity
-              style={styles.tripPicker}
-              onPress={() => setIsTripPickerOpen(true)}
-              activeOpacity={0.85}
-            >
-              {tripsLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <>
-                  <Text style={styles.tripPickerText}>
-                    {selectedTrip?.name ?? 'Select trip'}
-                  </Text>
-                  <Ionicons name="chevron-down" size={16} color={colors.primary} />
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.subtitle}>Quick access to admin tools</Text>
+          <Text style={styles.title}>Quick access to admin tools</Text>
+          <TouchableOpacity
+            style={styles.tripPicker}
+            onPress={() => setIsTripPickerOpen(true)}
+            activeOpacity={0.85}
+          >
+            {tripsLoading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <>
+                <Text style={styles.tripPickerText} numberOfLines={1}>
+                  {selectedTrip?.name ?? 'Select trip'}
+                </Text>
+                <Ionicons name="chevron-down" size={16} color={colors.primary} />
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.tileGrid}>
@@ -198,64 +184,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundDark,
   },
-  navbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.backgroundDarkOpacity80,
-  },
-  navLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  logoContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appName: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    letterSpacing: -0.5,
-  },
-  adminLabel: {
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxxl,
   },
   header: {
     marginBottom: spacing.xl,
-  },
-  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
   },
   title: {
-    fontSize: typography.xxl,
+    fontSize: typography.lg,
     fontWeight: typography.bold,
     color: colors.white,
-  },
-  subtitle: {
-    marginTop: spacing.xs,
-    fontSize: typography.sm,
-    color: colors.textSecondary,
+    flex: 1,
   },
   tileGrid: {
     flexDirection: 'row',

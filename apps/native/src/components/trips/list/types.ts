@@ -5,4 +5,5 @@ export interface TripListItem {
   startDate: Date | string;
   endDate: Date | string;
   groups?: unknown[];
+  backgroundImagePath?: string | null;
 }

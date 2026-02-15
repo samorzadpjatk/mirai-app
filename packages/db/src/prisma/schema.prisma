@@ -83,6 +83,7 @@ model Trip {
   description            String?
   startDate              DateTime
   endDate                DateTime
+  backgroundImagePath    String?
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   groups                 Group[]

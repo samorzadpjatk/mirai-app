@@ -14,7 +14,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import { colors, spacing, borderRadius, typography } from '../../../../../styles';
+import { colors, spacing, borderRadius, typography } from '~/styles';
 
 const submissionTypes = [
   { label: 'Image', value: 'IMAGE' },

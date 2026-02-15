@@ -112,6 +112,7 @@ export const tripRouter = createTRPCRouter({
         description: z.string().optional(),
         startDate: z.coerce.date(),
         endDate: z.coerce.date(),
+        backgroundImagePath: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -121,6 +122,7 @@ export const tripRouter = createTRPCRouter({
           description: input.description,
           startDate: input.startDate,
           endDate: input.endDate,
+          backgroundImagePath: input.backgroundImagePath,
         },
       });
     }),
@@ -132,6 +134,7 @@ export const tripRouter = createTRPCRouter({
         description: z.string().optional(),
         startDate: z.coerce.date().optional(),
         endDate: z.coerce.date().optional(),
+        backgroundImagePath: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

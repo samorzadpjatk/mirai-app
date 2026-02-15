@@ -238,16 +238,6 @@ export function ProfileHeader() {
 
   return (
     <View style={styles.profileHeader}>
-      {roleValue === "ADMIN" && (
-        <TouchableOpacity
-          accessibilityLabel="Open admin dashboard"
-          style={styles.adminButton}
-          onPress={() => router.push("/profile/admin")}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="settings" size={20} color={colors.accentMagenta} />
-        </TouchableOpacity>
-      )}
       <TouchableOpacity
         style={styles.avatarLarge}
         onPress={handleEditAvatar}
@@ -293,19 +283,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: spacing.xl * 2,
     position: "relative",
-  },
-  adminButton: {
-    position: "absolute",
-    top: 0,
-    right: spacing.md,
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.magentaOpacity10,
-    borderWidth: 1,
-    borderColor: colors.magentaOpacity30,
   },
   avatarLarge: {
     width: 100,
