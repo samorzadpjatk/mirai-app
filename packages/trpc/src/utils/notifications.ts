@@ -1,7 +1,7 @@
 import type { Prisma } from "@integral-2025-app/db";
 import { TRPCError } from "@trpc/server";
 import { NotificationService } from "../services/notificationService";
-import { executeWithRetry } from "@integral-2025-app/common-utils";
+import { executeWithRetry } from "../utils/resilience";
 
 export interface SendNotificationInput {
   title: string;

@@ -17,7 +17,7 @@ import {
   notificationScheduleUpdateSchema,
   paginationSchema,
   filterSchema,
-} from "./notificationSchedule/validation";
+} from "../../utils/notificactionSchedule-validation";
 
 const toOptionalString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
