@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
 import { Ionicons } from "@expo/vector-icons";
-import { useAppSafeAreaInsets } from '~/contexts/safeArea';
+import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useState } from "react";
 
