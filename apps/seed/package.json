@@ -1,0 +1,29 @@
+{
+  "name": "@integral-2025-app/seed",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "db:seed": "bun run index.ts",
+    "db:generate": "bunx --bun prisma generate --config ../../packages/db/prisma.config.ts",
+    "db:migrate": "bunx --bun prisma migrate --config ../../packages/db/prisma.config.ts",
+    "db:migrate:dev": "bunx --bun prisma migrate dev --config ../../packages/db/prisma.config.ts",
+    "db:migrate:reset": "bunx --bun prisma migrate reset --config ../../packages/db/prisma.config.ts",
+    "db:reset": "bunx --bun prisma migrate reset --config ../../packages/db/prisma.config.ts",
+    "db:push": "bunx --bun prisma push --config ../../packages/db/prisma.config.ts",
+    "db:studio": "bunx --bun prisma studio --config ../../packages/db/prisma.config.ts",
+    "db:format": "bunx --bun prisma format --config ../../packages/db/prisma.config.ts"
+  },
+  "dependencies": {
+    "@integral-2025-app/db": "workspace:*",
+    "@integral-2025-app/supabase": "workspace:*",
+    "csv-parse": "^6.1.0",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

@@ -7,7 +7,7 @@ export default function ProfileLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: true,
+        headerShown: false,
         headerStyle: { backgroundColor },
         headerTintColor: headerTintColor,
         headerTitleStyle: {
@@ -15,14 +15,16 @@ export default function ProfileLayout() {
           color: "#ffffff",
         },
         contentStyle: { backgroundColor },
-        animation: "slide_from_right",
+        
       }}
     >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="admin/index" options={{ headerShown: false }} />
-      <Stack.Screen name="admin/challenges/index" options={{ title: "Manage Challenges", headerBackTitle: "Back" }} />
-      <Stack.Screen name="admin/challenges/new" options={{ title: "New Challenge", headerBackTitle: "Back" }} />
-      <Stack.Screen name="admin/challenges/[id]" options={{ title: "Edit Challenge", headerBackTitle: "Back" }} />
+      <Stack.Screen 
+        name="Profile" 
+        options={{ 
+          headerShown: false,
+          title: "Profile"
+        }} 
+      />
     </Stack>
   );
 }

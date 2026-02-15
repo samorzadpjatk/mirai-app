@@ -48,18 +48,13 @@ export default function TripsScreen() {
           />
 
           {trips && trips.length > 0 ? (
-            trips.map((trip) => {
-              const isStaticTrip = trip.id === "wiatronalia-static";
-              return (
-                <TripCard
-                  key={trip.id}
-                  trip={trip}
-                  isStatic={isStaticTrip}
-                  imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuByOUlLig-2IjrfVROMuWxtOKTaZJU93hKFSYG9rS9MpgZkPTGUYJ3ji7QskaEGx50eApLToqbB8SILw6jsYVnTOt8-DIr1oK0pDhGvd3n7kHjsvxVZdjn8uR-uqg3gGZ3xC1V0stUKkQ891sc4VqnGOUSw7VrMtyf4-hpwyAO6kcnRGCMk9TnoyO32RFtLjifjMyhRu_0Ez7YpR5KU2SJsYOcksKYeFIwnzmG2GRW9FOmhM2YCxvKA8nfCEDr7bgna-W6_OLyKsF0"
-                  onPress={() => router.push(`/trips/details?id=${trip.id}`)}
-                />
-              );
-            })
+            trips.map((trip) => (
+              <TripCard
+                key={trip.id}
+                trip={trip}
+                onPress={() => router.push(`/trips/details?id=${trip.id}`)}
+              />
+            ))
           ) : (
             <TripsEmptyState
               title="No trips yet"

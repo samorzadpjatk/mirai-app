@@ -15,11 +15,11 @@ export default function TripsLayout() {
           color: "#ffffff",
         },
         contentStyle: { backgroundColor },
-        animation: "slide_from_right",
+        
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="details" options={{ title: "Trip Details" }} />
+      <Stack.Screen name="details" options={{ title: "Trip Details", headerBackTitle: "Back" }} />
       <Stack.Screen name="info" options={{ title: "Trip Info" }} />
       <Stack.Screen name="map/index" options={{ title: "Map" }} />
       <Stack.Screen name="groups/index" options={{ title: "Groups" }} />

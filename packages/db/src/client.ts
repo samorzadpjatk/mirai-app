@@ -12,4 +12,4 @@ const getPrisma = (databaseUrl: string): _PrismaClient => {
   return _prisma;
 }
 
-export const db = (databaseUrl: string) => getPrisma(databaseUrl);
+export const createDb = (databaseUrl: string) => getPrisma(databaseUrl);

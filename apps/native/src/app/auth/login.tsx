@@ -280,6 +280,7 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
+          <View style={{ height: 32 }} />
         </View>
 
       </ScrollView>
@@ -492,19 +493,5 @@ const styles = StyleSheet.create({
     color: "#17181c",
     fontWeight: "bold",
     fontSize: 16,
-  },
-  footer: {
-    marginTop: "auto",
-    padding: 24,
-  },
-  signupText: {
-    textAlign: "center",
-    color: "#4b5563",
-    fontSize: 14,
-  },
-  signupLink: {
-    color: "white",
-    fontWeight: "bold",
-    textDecorationLine: "underline",
   },
 });

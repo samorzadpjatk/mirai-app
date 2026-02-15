@@ -11,7 +11,6 @@ import type {
   AuthUser,
   SignInWithOtpOptions,
   SignInWithPasswordOptions,
-  SignUpWithOtpOptions,
 } from "./types";
 
 export const AuthContext = createContext<AuthContextValue | undefined>(
@@ -89,6 +88,9 @@ export function AuthProvider({
   const signInWithOtp = async ({ email }: SignInWithOtpOptions) => {
     const { error } = await client.auth.signInWithOtp({
       email,
+      options: {
+        shouldCreateUser: false,
+      }
     });
 
     if (error) {
@@ -120,21 +122,6 @@ export function AuthProvider({
       } finally {
         setIsLoading(false);
       }
-    }
-  };
-
-  const signUpWithOtp = async ({ email, metadata }: SignUpWithOtpOptions) => {
-    // Use standard signUp to create a pending user and trigger email verification/OTP
-
-    const { data, error } = await client.auth.signInWithOtp({
-      email,
-      options: {
-        data: metadata,
-      },
-    });
-
-    if (error) {
-      throw error;
     }
   };
 
@@ -198,7 +185,6 @@ export function AuthProvider({
     isAuthenticated: !!session && !!user,
     signInWithOtp,
     signInWithPassword,
-    signUpWithOtp,
     verifyOtp,
     signOut,
     refreshSession,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Directory, File, Paths } from "expo-file-system";
+import * as Crypto from "expo-crypto";
 import { useTRPCClient } from "@integral-2025-app/trpc/client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
@@ -23,10 +24,18 @@ interface DownloadResult {
   totalBytes: number;
 }
 
-const getFileNameFromUrl = (url: string): string => {
+const buildCacheFileName = async (storagePath: string, url: string): Promise<string> => {
   const sanitizedUrl = url.split("?")[0] ?? url;
-  const parts = sanitizedUrl.split("/").filter(Boolean);
-  return parts[parts.length - 1] ?? "download";
+  const ext = sanitizedUrl.split(".").pop();
+
+  // Use a stable hash so cache key doesn't rely on unsafe characters
+  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, storagePath);
+
+  if (ext) {
+    return `${hash}.${ext}`;
+  }
+
+  return hash;
 };
 
 export const useFileDownload = () => {
@@ -75,17 +84,36 @@ export const useFileDownload = () => {
           storagePath: input.storagePath,
           expiresInSeconds: input.expiresInSeconds,
         });
-        const destination = new Directory(Paths.cache, "downloads");
-        if (!destination.exists) {
-          destination.create();
+
+        const cachedFileName = await buildCacheFileName(input.storagePath, signedUrl);
+        const destinationDir = new Directory(Paths.cache, "downloads");
+        if (!destinationDir.exists) {
+          destinationDir.create();
         }
 
-        const cachedFileName = getFileNameFromUrl(signedUrl);
-        const cachedFile = new File(destination, cachedFileName);
+        const targetFile = new File(destinationDir, cachedFileName);
+        
+        // Check if cache exists and skipCache is false
+        if (targetFile.exists && !input.skipCache) {
+          const cachedResult: DownloadResult = {
+            uri: targetFile.uri,
+            contentType: targetFile.type,
+            fileName: cachedFileName,
+            totalBytes: targetFile.size,
+          };
 
-        if (cachedFile.exists && input.skipCache) {
+          if (mountedRef.current) {
+            setFile(cachedResult);
+            setStatus("success");
+          }
+
+          return cachedResult;
+        }
+
+        // Clear cache if skipCache is true and file exists
+        if (targetFile.exists && input.skipCache) {
           try {
-            cachedFile.delete();
+            targetFile.delete();
           } catch (deleteError) {
             console.warn("[Download] Failed to clear cached file", {
               storagePath: input.storagePath,
@@ -97,27 +125,30 @@ export const useFileDownload = () => {
           }
         }
 
-        if (cachedFile.exists && !input.skipCache) {
-          const cachedResult: DownloadResult = {
-            uri: cachedFile.uri,
-            contentType: cachedFile.type,
-            fileName: cachedFileName,
-            totalBytes: cachedFile.size,
-          };
-
-          if (mountedRef.current) {
-            setFile(cachedResult);
-            setStatus("success");
+        // Download the file to the target file; if destination already exists, clear it once and retry
+        const performDownload = async () => {
+          try {
+            if (targetFile.exists) targetFile.delete();
+            return await File.downloadFileAsync(signedUrl, targetFile);
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            if (message.toLowerCase().includes("destination already exists")) {
+              try {
+                if (targetFile.exists) targetFile.delete();
+              } catch (deleteErr) {
+                console.warn("[Download] Failed to delete existing target file", deleteErr);
+              }
+              return await File.downloadFileAsync(signedUrl, targetFile);
+            }
+            throw err;
           }
+        };
 
-          return cachedResult;
-        }
-
-        const downloadResult = await File.downloadFileAsync(signedUrl, destination);
+        const downloadResult = await performDownload();
 
         const totalBytes = downloadResult.size;
         const contentType = downloadResult.type;
-        const fileName = downloadResult.uri.split("/").pop() ?? null;
+        const fileName = cachedFileName;
 
         const result: DownloadResult = {
           uri: downloadResult.uri,

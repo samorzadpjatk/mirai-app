@@ -14,22 +14,10 @@ export function useTrips() {
     refetch,
   } = useQuery(trpc.trip.getAll.queryOptions());
 
-  const wiatronaliaTrip = useMemo<TripListItem>(
-    () => ({
-      id: "wiatronalia-static",
-      name: "Wiatronalia",
-      description: "Majówka żeglarska PJATKxATAx...",
-      startDate: new Date("2026-04-29"),
-      endDate: new Date("2026-05-03"),
-      groups: [],
-    }),
-    [],
-  );
-
   const allTrips: TripListItem[] = useMemo(() => {
     const apiTrips = (tripsData ?? []) as TripListItem[];
-    return [...apiTrips, wiatronaliaTrip];
-  }, [tripsData, wiatronaliaTrip]);
+    return [...apiTrips];
+  }, [tripsData]);
 
   return {
     trips: allTrips,
