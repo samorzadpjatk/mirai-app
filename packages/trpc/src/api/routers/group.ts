@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { SupabaseClient } from "@integral-2025-app/supabase";
 
 import {
   createTRPCRouter,
@@ -18,6 +19,32 @@ const toUserWithEmail = <T extends { authUserId?: string | null }>(
     ...rest,
     email: resolveAuthEmail(emailByAuthUserId, authUserId),
   };
+};
+
+// Optimized helper function to batch email lookups
+const batchEmailLookup = async (
+  supabase: SupabaseClient,
+  groups: {
+    organizer?: { authUserId?: string | null } | null;
+    participants: { user: { authUserId?: string | null } }[];
+  }[]
+) => {
+  // Collect all unique authUserIds
+  const allAuthUserIds = new Set<string>();
+  
+  groups.forEach(group => {
+    if (group.organizer?.authUserId) {
+      allAuthUserIds.add(group.organizer.authUserId);
+    }
+    group.participants.forEach(participant => {
+      if (participant.user.authUserId) {
+        allAuthUserIds.add(participant.user.authUserId);
+      }
+    });
+  });
+
+  // Single batch lookup for all emails
+  return await buildAuthEmailLookup(supabase, Array.from(allAuthUserIds));
 };
 
 export const groupRouter = createTRPCRouter({
@@ -144,13 +171,8 @@ export const groupRouter = createTRPCRouter({
         orderBy: { name: "asc" },
       });
 
-      const emailByAuthUserId = await buildAuthEmailLookup(
-        ctx.supabase,
-        groups.flatMap((group) => [
-          group.organizer?.authUserId,
-          ...group.participants.map((participant) => participant.user.authUserId),
-        ]),
-      );
+      // Use optimized batch email lookup
+      const emailByAuthUserId = await batchEmailLookup(ctx.supabase, groups);
 
       return groups.map((group) => ({
         ...group,
@@ -454,7 +476,7 @@ export const groupRouter = createTRPCRouter({
 
       // Check if user is already in the group
       const existingMembership = group.participants.find(
-        (member) => member.userId === ctx.dbUser.id,
+        (member) => member.userId === input.userId,
       );
 
       if (existingMembership) {
@@ -647,13 +669,8 @@ export const groupRouter = createTRPCRouter({
         },
       });
 
-      const emailByAuthUserId = await buildAuthEmailLookup(
-        ctx.supabase,
-        data.flatMap((group) => [
-          group.organizer?.authUserId,
-          ...group.participants.map((participant) => participant.user.authUserId),
-        ]),
-      );
+      // Use optimized batch email lookup
+      const emailByAuthUserId = await batchEmailLookup(ctx.supabase, data);
 
       return {
         data: data.map((group) => ({

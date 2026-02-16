@@ -70,8 +70,7 @@ const getAccessToken = (
   const urlString = headers.get("x-original-url");
   if (urlString) {
     try {
-      // `req.url` from Fastify is a path-only string; provide a dummy base to satisfy the URL constructor
-      const url = new URL(urlString, "http://localhost");
+      const url = new URL(urlString);
       const authParam = url.searchParams.get("authorization");
       if (authParam) {
         const [scheme, token] = authParam.split(" ");
@@ -81,7 +80,7 @@ const getAccessToken = (
         }
       }
     } catch (err) {
-      console.error("[Auth] Failed to parse URL:", err, "value:", urlString);
+      console.error("[Auth] Failed to parse URL:", err);
     }
   }
 
