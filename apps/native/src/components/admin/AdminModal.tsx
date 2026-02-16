@@ -30,7 +30,7 @@ export function AdminModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalBackdrop}>
-        <View style={[styles.modalCard, { maxWidth, maxHeight }]}>
+        <View style={[styles.modalCard, { maxWidth }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{title}</Text>
             <TouchableOpacity onPress={onClose}>
@@ -38,15 +38,14 @@ export function AdminModal({
             </TouchableOpacity>
           </View>
           
-          <View style={styles.modalContent}>
-            <ScrollView 
-              contentContainerStyle={styles.modalContentContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              {children}
-            </ScrollView>
-          </View>
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            style={{ maxHeight: maxHeight ? maxHeight - 120 : 280 }}
+            contentContainerStyle={styles.modalContentContainer}
+          >
+            {children}
+          </ScrollView>
 
           {actions && <View style={styles.modalActions}>{actions}</View>}
         </View>
@@ -133,11 +132,9 @@ const styles = StyleSheet.create({
     fontWeight: typography.bold,
     color: colors.white,
   },
-  modalContent: {
-    flex: 1,
-  },
   modalContentContainer: {
     paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
   modalActions: {
     flexDirection: 'row',
