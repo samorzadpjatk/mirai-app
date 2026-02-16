@@ -93,7 +93,7 @@ export default function AdminSchedulesScreen() {
     }
   };
 
-  const handleToggleSchedule = async (schedule) => {
+  const handleToggleSchedule = async (schedule: NotificationSchedule) => {
     try {
       await toggleSchedule(schedule.id);
     } catch (error) {
@@ -129,7 +129,7 @@ export default function AdminSchedulesScreen() {
     setShowDeleteModal(true);
   };
 
-  const renderSchedule = ({ item }: { item }) => (
+  const renderSchedule = ({ item }: { item: NotificationSchedule }) => (
     <ScheduleCard
       schedule={item}
       onEdit={openEditModal}

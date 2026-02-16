@@ -24,7 +24,6 @@ export default function AdminChallengesScreen() {
   const {
     challenges,
     isLoading,
-    isDeleting,
     deleteChallenge,
     stats,
   } = useAdminChallengesByTrip(tripId);
@@ -49,11 +48,7 @@ export default function AdminChallengesScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            deleteChallenge(id).catch((error) => {
-              Alert.alert('Error', `Failed to delete challenge: ${error.message}`);
-            });
-          },
+          onPress: () => void deleteChallenge(id),
         },
       ],
     );
@@ -141,14 +136,14 @@ export default function AdminChallengesScreen() {
       <ScrollView
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ 
-          paddingHorizontal: spacing.md, 
+        contentContainerStyle={{
+          paddingHorizontal: spacing.md,
           paddingBottom: 96,
-          paddingTop: spacing.xl 
+          paddingTop: spacing.xl
         }}
       >
-        <AdminHeader 
-          title="Challenge Management" 
+        <AdminHeader
+          title="Challenge Management"
           subtitle="Manage challenges and points"
         />
 

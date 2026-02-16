@@ -20,10 +20,10 @@ import type { User } from '~/hooks/admin/useAdminUsers';
 
 export default function AdminUsersScreen() {
   const insets = useAppSafeAreaInsets();
-  
+
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedField, setSelectedField] = useState<'firstName' | 'lastName' | 'email' | 'wristNumber' | 'houseNumber' | 'groupName'>('firstName');
@@ -56,15 +56,11 @@ export default function AdminUsersScreen() {
   }, []);
 
   const handleUpdateWristNumber = useCallback((userId: string, wristNumber: string) => {
-    updateWristNumber(userId, wristNumber).catch((error) => {
-      Alert.alert('Error', `Failed to update wrist number: ${error.message}`);
-    });
+    void updateWristNumber(userId, wristNumber);
   }, [updateWristNumber]);
 
   const handleUpdateHouseNumber = useCallback((userId: string, houseNumber: string) => {
-    updateHouseNumber(userId, houseNumber).catch((error) => {
-      Alert.alert('Error', `Failed to update house number: ${error.message}`);
-    });
+    void updateHouseNumber(userId, houseNumber);
   }, [updateHouseNumber]);
 
   const renderUser = useCallback(({ item }: { item: User }) => {
