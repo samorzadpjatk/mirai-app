@@ -3,7 +3,7 @@ import { useState } from "react";
 interface UseShareModalArgs {
   initialOpen?: boolean;
   sharingUserIds?: string[];
-  updateSharing?: (ids: string[]) => void;
+  updateSharing?: (ids: string[]) => Promise<void>;
 }
 
 export function useShareModal({
@@ -38,7 +38,7 @@ export function useShareModal({
       ...new Set([...sharingUserIds, ...Array.from(selectedUsers)]),
     ];
     try {
-      await Promise.resolve(updateSharing?.(newIds));
+      await updateSharing?.(newIds);
     } catch (err) {
       console.error("Failed to update sharing:", err);
     }
