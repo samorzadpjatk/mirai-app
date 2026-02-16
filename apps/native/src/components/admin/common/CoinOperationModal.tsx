@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { colors, spacing, typography } from '~/styles';
-import { AdminModal, AdminModalButton } from './AdminModal';
+import { AdminModal, AdminModalButton } from '../AdminModal';
 import type { Group } from '~/hooks/admin/useAdminCoins';
 
 interface CoinOperationModalProps {

@@ -38,9 +38,15 @@ export function AdminModal({
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
-            {children}
-          </ScrollView>
+          <View style={styles.modalContent}>
+            <ScrollView 
+              contentContainerStyle={styles.modalContentContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+          </View>
 
           {actions && <View style={styles.modalActions}>{actions}</View>}
         </View>

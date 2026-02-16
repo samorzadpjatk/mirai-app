@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { AdminModal, AdminModalButton } from './AdminModal';
+import { AdminModal, AdminModalButton } from '../AdminModal';
 import { colors, spacing, borderRadius, typography } from '~/styles';
 import type { NotificationSchedule } from '~/hooks/admin/useAdminSchedules';
 

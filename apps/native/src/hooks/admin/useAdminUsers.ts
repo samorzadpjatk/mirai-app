@@ -107,9 +107,9 @@ export function useAdminUsers(tripId: string) {
     });
   };
 
-  const toggleAdmin = (userId: string, currentRole: string) => {
+  const toggleAdmin = async (userId: string, currentRole: string): Promise<void> => {
     const newRole = currentRole === 'ADMIN' ? 'USER' : 'ADMIN' as const;
-    return toggleAdminMutation.mutateAsync({ 
+    await toggleAdminMutation.mutateAsync({ 
       userId, 
       role: newRole 
     });

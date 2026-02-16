@@ -1,14 +1,13 @@
-import React from 'react';
 import { View, Text } from 'react-native';
 import { colors, spacing, typography } from '~/styles';
-import { AdminModal, AdminModalButton } from './AdminModal';
+import { AdminModal, AdminModalButton } from '../AdminModal';
 import type { User } from '~/hooks/admin/useAdminUsers';
 
 interface AdminToggleModalProps {
   visible: boolean;
   onClose: () => void;
   user: User | null;
-  onToggle: (userId: string, currentRole: string) => Promise<any>;
+  onToggle: (userId: string, currentRole: string) => Promise<void>;
   loading?: boolean;
 }
 

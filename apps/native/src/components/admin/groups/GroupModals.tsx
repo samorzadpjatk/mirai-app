@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '~/styles';
-import { AdminModal, AdminModalButton } from './AdminModal';
+import { AdminModal, AdminModalButton } from '../AdminModal';
 import type { Group, User } from '~/hooks/admin/useAdminGroups';
 
 interface CreateGroupModalProps {
