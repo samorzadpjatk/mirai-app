@@ -60,10 +60,13 @@ export default function CreateGroupScreen() {
     }
 
     try {
+      const imageToPersist =
+        groupImage && /^https?:\/\//.test(groupImage) ? groupImage : undefined;
+
       const newGroup = await createGroup({
         name: groupName,
         code: groupCode,
-        image: groupImage ?? undefined,
+        image: imageToPersist,
         selectedMembers: Array.from(selectedMembers),
       });
       router.push(`/trips/groups/${newGroup.id}`);

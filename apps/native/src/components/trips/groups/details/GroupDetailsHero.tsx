@@ -6,28 +6,18 @@ interface GroupDetailsHeroProps {
   code: string;
   name: string;
   imageUrl: string;
-  imageVersion?: string | number | Date;
-}
-
-function withCacheBust(url: string, version?: string | number | Date) {
-  if (!version) return url;
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}v=${encodeURIComponent(String(version))}`;
 }
 
 export function GroupDetailsHero({
   code,
   name,
   imageUrl,
-  imageVersion,
 }: GroupDetailsHeroProps) {
-  const resolvedImageUrl = withCacheBust(imageUrl, imageVersion);
-
   return (
     <View style={[styles.heroCard, shadows.primaryGlow]}>
       <View style={styles.heroImageContainer}>
         <Image
-          source={{ uri: resolvedImageUrl }}
+          source={{ uri: imageUrl }}
           style={styles.heroImage}
           resizeMode="cover"
         />
@@ -59,7 +49,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   heroImageContainer: {
-    height: 192,
+    aspectRatio: 1,
     position: "relative",
   },
   heroImage: {

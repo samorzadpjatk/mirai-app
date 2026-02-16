@@ -1,21 +1,17 @@
 import { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import * as FileSystem from "expo-file-system";
 import { Alert } from "react-native";
 
 const MAX_SIZE = 300;
 
-async function compressToBase64(uri: string): Promise<string> {
+async function prepareImage(uri: string): Promise<string> {
   const resized = await manipulateAsync(
     uri,
     [{ resize: { width: MAX_SIZE, height: MAX_SIZE } }],
-    { compress: 0.5, format: SaveFormat.JPEG },
+    { compress: 0.9, format: SaveFormat.JPEG },
   );
-  const base64 = await FileSystem.readAsStringAsync(resized.uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-  return `data:image/jpeg;base64,${base64}`;
+  return resized.uri;
 }
 
 export function useGroupImagePicker(initialImage?: string | null) {
@@ -40,8 +36,8 @@ export function useGroupImagePicker(initialImage?: string | null) {
       });
 
       if (!result.canceled && result.assets[0]) {
-        const dataUri = await compressToBase64(result.assets[0].uri);
-        setImage(dataUri);
+        const preparedImageUri = await prepareImage(result.assets[0].uri);
+        setImage(preparedImageUri);
       }
     } catch (e) {
       console.error("takePhoto error:", e);
@@ -59,8 +55,8 @@ export function useGroupImagePicker(initialImage?: string | null) {
       });
 
       if (!result.canceled && result.assets[0]) {
-        const dataUri = await compressToBase64(result.assets[0].uri);
-        setImage(dataUri);
+        const preparedImageUri = await prepareImage(result.assets[0].uri);
+        setImage(preparedImageUri);
       }
     } catch (e) {
       console.error("pickFromGallery error:", e);

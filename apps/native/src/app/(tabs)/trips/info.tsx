@@ -21,6 +21,12 @@ import { Directory, File, Paths } from "expo-file-system/next";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import {
+  TRIP_INFO_HERO_IMAGE_URL,
+  TRIP_INFO_INFOPACK_PDF_URL,
+  TRIP_INFO_MAP_IMAGE_URL,
+  TRIP_INFO_MAP_PDF_URL,
+} from "~/utils/storageAssets";
 
 export default function TripInfoScreen() {
   const router = useRouter();
@@ -39,10 +45,8 @@ export default function TripInfoScreen() {
   const [isInfopackDownloaded, setIsInfopackDownloaded] = useState(false);
   const insets = useAppSafeAreaInsets();
 
-  const mapPdfUrl =
-    "https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf";
-  const infopackPdfUrl =
-    process.env.EXPO_PUBLIC_INFOPACK_PDF_URL?.trim() || mapPdfUrl;
+  const mapPdfUrl = TRIP_INFO_MAP_PDF_URL;
+  const infopackPdfUrl = TRIP_INFO_INFOPACK_PDF_URL;
 
   // Check if files are downloaded on component mount
   useEffect(() => {
@@ -190,7 +194,7 @@ export default function TripInfoScreen() {
           <View style={styles.heroCard}>
             <ImageBackground
               source={{
-                uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAHhLaOxCenvDHeXPGxGdnYhEumFOLH5A9Wh5fAb63uNUkITSveOg2w84W1Q72tKNnm3nhMAdZEyYc_wtTSqm7mjn2XpnVUwdc4O1eHaoLbQxVFProgk7Jnuc3k0sW4fg5BKzNzg56WwaR-MesVKcfLd3fOfPxZGRKaV_PLrsgOyhirvj2CqfkrxBZpmQNCwGq56LVrNMBKRUwNzDK0bd7ttYLsQDQlxhJ2mEsvE1Mx4HrVpg3u58_JdMp0ZOzRu_9PjH43rDEbQfY",
+                uri: TRIP_INFO_HERO_IMAGE_URL,
               }}
               style={styles.heroImage}
               imageStyle={{ borderRadius: borderRadius.xl }}
@@ -220,7 +224,7 @@ export default function TripInfoScreen() {
               >
                 <ImageBackground
                   source={{
-                    uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuCHzNKnjzWDXauSdVPNidYoUGd1qjJ403upT8jZBMcs9oyIqPM11hjsbBSIBs6u_5chLFgfVG4mejWXsgPfu_9y0N8bJxBpErgmUNG7fARqfhlQfGNLvemBM4ALBIIQtp1MG4TRaFWaGLDvqRFdhCmezlqGrCMgWMXBj7CGZDysg-TDAt24y1EddpxoxP890kL_wo4ggi8Pc5lqtBPHTTMhwkZH45PhexYqQ-Vy8-aF5Sl8kDbpffkx6-Kq0GdoDqOmvcskgXS7JxQ",
+                    uri: TRIP_INFO_MAP_IMAGE_URL,
                   }}
                   style={styles.mapBackground}
                   imageStyle={{ borderRadius: borderRadius.xl, opacity: 0.4 }}

@@ -123,12 +123,17 @@ export default function EditGroupScreen() {
     }
 
     try {
+      const imageToPersist =
+        groupImage && /^https?:\/\//.test(groupImage)
+          ? groupImage
+          : (group?.image ?? undefined);
+
       // Update group name, code, and image
       await updateGroup({
         id: groupId ?? "",
         name: groupName,
         code: groupCode,
-        image: groupImage ?? undefined,
+        image: imageToPersist,
       });
 
       // Handle member changes

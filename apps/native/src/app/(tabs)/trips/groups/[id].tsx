@@ -11,6 +11,7 @@ import { GroupDetailsLoadingState } from "~/components/trips/groups/details/Grou
 import { GroupMemberList } from "~/components/trips/groups/details/GroupMemberList";
 import { GroupNotFoundState } from "~/components/trips/groups/details/GroupNotFoundState";
 import { GroupStatsGrid } from "~/components/trips/groups/details/GroupStatsGrid";
+import { GROUP_PLACEHOLDER_IMAGE_URL } from "~/utils/storageAssets";
 
 export default function GroupDetailsScreen() {
   const router = useRouter();
@@ -75,8 +76,7 @@ export default function GroupDetailsScreen() {
         <GroupDetailsHero
           code={group.code}
           name={group.name}
-          imageUrl={group.image ?? "https://lh3.googleusercontent.com/aida-public/AB6AXuA8MAn8n3IaJjswDB2lqdVHYTyTtFC8mwYu-awTF4un03oNlmalYjpkjc9-KM5Ubufvl0KjHQ0tI7V6132RUpatGBP-QJm0cvZfemroos1IpzBKk09xZeP1zgX9tQoehd2iEk9xA9kAjF6acqqU8MPs1B7FIDwwVsZlcGyMaGYHFXTrcMnKikjKb1LzTgqBAoEpHT1W-TJu1ZGnoO2c4NYpUtkvVnS8AdKtykcAJTzT3OClIuUhZrCXpUyXtMYInV77lFDe8UCdkik"}
-          imageVersion={group.updatedAt}
+          imageUrl={group.image ?? GROUP_PLACEHOLDER_IMAGE_URL}
         />
 
         {/* Stats Grid */}

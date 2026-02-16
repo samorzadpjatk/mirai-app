@@ -1,26 +1,15 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { GroupListItem } from "./types";
+import { GROUP_PLACEHOLDER_IMAGE_URL } from "~/utils/storageAssets";
 
 interface GroupCardProps {
   group: GroupListItem;
   onPress: (group: GroupListItem) => void;
 }
 
-const fallbackImageUrl =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAAS2zSMxTSKS4ahYOJMp2FPODvfnWpJWEx9wVJoEo-NKcKOJ3sToQUAvVyXxwV7M5kUP4YtUFW5ONJgD2pQvHLDnK_DmMoh89v7OnFKnNPTGk7XoT57atxbRKstTxXX-SxO3b9Vg0YDkpxvwIV6h3INZMiZkO7q-me9guXfO0PQKfepPR1UUWhTtyN_DkaPl0tGzOfpO66rVeit7Y6hAeigW4DJrqFN_RtUvpZRB2CC7eILz_EO85S_q_X7UvLXc3Zm8bgT_iWuww";
-
-function withCacheBust(url: string, version?: string | number | Date) {
-  if (!version) return url;
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}v=${encodeURIComponent(String(version))}`;
-}
-
 export function GroupCard({ group, onPress }: GroupCardProps) {
-  const imageUri = withCacheBust(
-    group.image ?? fallbackImageUrl,
-    group.updatedAt,
-  );
+  const imageUri = group.image ?? GROUP_PLACEHOLDER_IMAGE_URL;
 
   return (
     <TouchableOpacity
