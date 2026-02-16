@@ -38,10 +38,10 @@ interface MapOverlayProviderProps {
   users: UserLocation[];
   session?: { user?: { id?: string } } | null;
   sharingUserIds: string[];
-  updateSharing: (ids: string[]) => void;
+  updateSharing: (ids: string[]) => Promise<void>;
   allAvailableUsers?: ShareableUser[];
   sharingSettings?: SharingSettings | null;
-  removeUser: (userId: string) => void;
+  removeUser: (userId: string) => Promise<void>;
   isRemovingUser: boolean;
   currentCoordinate: [number, number] | null;
   mapTheme: MapTheme;
@@ -69,7 +69,7 @@ interface MapOverlayContextValue {
   showManageModal: boolean;
   setShowManageModal: (open: boolean) => void;
   sharingSettings?: SharingSettings | null;
-  removeUser: (userId: string) => void;
+  removeUser: (userId: string) => Promise<void>;
   isRemovingUser: boolean;
   mapTheme: MapTheme;
   onToggleTheme: () => void;

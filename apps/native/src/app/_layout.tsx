@@ -6,6 +6,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { SafeAreaInsetsProvider } from "~/contexts/SafeAreaInsetsContext";
+import { LocationProvider } from "~/contexts/location";
 import * as Notifications from "expo-notifications";
 
 // Global handler for notifications (module-level)
@@ -87,60 +88,62 @@ function RootLayoutContent() {
     <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
       {!isAuthLoading && (
         <SafeAreaInsetsProvider value={insets}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              gestureEnabled: true,
-              gestureDirection: "horizontal",
-              contentStyle: { backgroundColor: headerBackgroundColor },
-              headerStyle: {
-                backgroundColor: headerBackgroundColor,
-              },
-              headerTintColor: headerTintColor,
-              headerShadowVisible: true,
-              headerTitleStyle: {
-                fontWeight: "600",
-              },
-            }}
-          >
-            {/* Protected routes for authenticated users */}
-            <Stack.Protected guard={hasSession}>
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="alerts"
-                options={{
-                  title: "Alerts",
-                  headerShown: false,
-                  
-                }}
-              />
-              <Stack.Screen
-                name="admin/challenges"
-                options={{
-                  title: "Admin Challenges",
-                  headerShown: false,
-                  
-                }}
-              />
-            </Stack.Protected>
+          <LocationProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+                contentStyle: { backgroundColor: headerBackgroundColor },
+                headerStyle: {
+                  backgroundColor: headerBackgroundColor,
+                },
+                headerTintColor: headerTintColor,
+                headerShadowVisible: true,
+                headerTitleStyle: {
+                  fontWeight: "600",
+                },
+              }}
+            >
+              {/* Protected routes for authenticated users */}
+              <Stack.Protected guard={hasSession}>
+                <Stack.Screen
+                  name="(tabs)"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="alerts"
+                  options={{
+                    title: "Alerts",
+                    headerShown: false,
+                    
+                  }}
+                />
+                <Stack.Screen
+                  name="admin/challenges"
+                  options={{
+                    title: "Admin Challenges",
+                    headerShown: false,
+                    
+                  }}
+                />
+              </Stack.Protected>
 
-            {/* Protected routes for unauthenticated users */}
-            <Stack.Protected guard={!hasSession}>
-              <Stack.Screen
-                name="auth/login"
-                options={{
-                  title: "Sign In",
-                  headerShown: false,
-                }}
-              />
-            </Stack.Protected>
+              {/* Protected routes for unauthenticated users */}
+              <Stack.Protected guard={!hasSession}>
+                <Stack.Screen
+                  name="auth/login"
+                  options={{
+                    title: "Sign In",
+                    headerShown: false,
+                  }}
+                />
+              </Stack.Protected>
 
-          </Stack>
+            </Stack>
+          </LocationProvider>
         </SafeAreaInsetsProvider>
       )}
     </View>

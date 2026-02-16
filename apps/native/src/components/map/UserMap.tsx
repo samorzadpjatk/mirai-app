@@ -1,8 +1,11 @@
 import React, { useMemo, useRef, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
 import { UserAvatar } from "./ui/UserAvatar";
 import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
+import { useLocationContext } from "~/contexts/location";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, typography } from "~/styles";
 
 export interface UserLocation {
   id: string;
@@ -170,6 +173,10 @@ export const UserMap: React.FC<UserMapProps> = ({
   // All hooks must be called before any early returns
   const cameraRef = useRef<CameraRef>(null);
   const hasCenteredRef = useRef(false);
+  const { 
+    canShareOwnLocation, 
+    canViewOthersLocations,
+  } = useLocationContext();
 
   // Keep a periodic `now` in state to avoid calling Date.now() during render
   // Initialize `now` lazily and update on interval; avoids calling Date.now() synchronously inside effect
@@ -183,11 +190,16 @@ export const UserMap: React.FC<UserMapProps> = ({
   const [currentUserLocation, setCurrentUserLocation] = useState<[number, number] | null>(null);
 
   const filteredUsers = useMemo(() => {
+    // If location sharing is disabled, show no other users
+    if (!canViewOthersLocations) {
+      return [];
+    }
+    
     // Start with other users (exclude current user)
     let displayUsers = users.filter((user) => user.id !== currentUserId && getActivityOpacity(user.lastActiveAt, now) > 0);
     
     // Add current user if location is available and enabled
-    if (currentUserId && currentUserLocation && currentUserName) {
+    if (currentUserId && currentUserLocation && currentUserName && canShareOwnLocation) {
       const currentUser: UserLocation = {
         id: currentUserId,
         name: currentUserName,
@@ -199,7 +211,7 @@ export const UserMap: React.FC<UserMapProps> = ({
     }
     
     return displayUsers;
-  }, [users, now, currentUserId, currentUserLocation, currentUserName, currentUserAvatarUrl]);
+  }, [users, now, currentUserId, currentUserLocation, currentUserName, currentUserAvatarUrl, canViewOthersLocations, canShareOwnLocation]);
 
   useEffect(() => {
     if (!focusedCoordinate) return;
@@ -219,8 +231,8 @@ export const UserMap: React.FC<UserMapProps> = ({
     const { longitude, latitude } = loc.coords;
     if (longitude == null || latitude == null) return;
 
-    // Update current user's location directly from device
-    if (currentUserId) {
+    // Update current user's location directly from device only if sharing is enabled
+    if (currentUserId && canShareOwnLocation) {
       setCurrentUserLocation([longitude, latitude]);
     }
 
@@ -260,7 +272,7 @@ export const UserMap: React.FC<UserMapProps> = ({
               : undefined
           }
         />
-        {MapLibreUserLocation && (
+        {canShareOwnLocation && MapLibreUserLocation && (
           <MapLibreUserLocation
             visible={false}
             showsUserHeadingIndicator={false}
@@ -307,7 +319,10 @@ export const UserMap: React.FC<UserMapProps> = ({
         ))}
       </MapView>
 
-      {overlay}
+      {/* Overlay container for UI elements */}
+      <View style={styles.overlayContainer}>
+        {overlay}
+      </View>
     </View>
   );
 };
@@ -318,6 +333,14 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  overlayContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: "box-none",
   },
 
   avatarShadow: {
