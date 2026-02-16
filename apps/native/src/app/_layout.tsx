@@ -52,14 +52,14 @@ const colors = {
 };
 
 const SUPABASE_URL: string =
-  process.env.EXPO_PUBLIC_SUPABASE_URL!!;
+  process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY: string =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!!;
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // Both HTTP and WebSocket tRPC are served by the Fastify server
 // under the same path. Only the protocol differs.
 const TRPC_HTTP_URL: string =
-  process.env.EXPO_PUBLIC_TRPC_API_URL!!;
+  process.env.EXPO_PUBLIC_TRPC_API_URL;
 const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
 
 const supabaseClient = createSupabaseClient(
