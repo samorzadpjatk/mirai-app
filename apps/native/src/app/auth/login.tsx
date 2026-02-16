@@ -22,10 +22,8 @@ export default function LoginScreen() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const { email, isLoading, isSent, error } = formState;
-  const ghostEmail =
-    process.env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL?.toLowerCase() ?? "";
-  const isGhostLogin =
-    ghostEmail.length > 0 && email.trim().toLowerCase() === ghostEmail;
+  const ghostEmail = (process.env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL as string | undefined)?.toLowerCase() ?? "";
+  const isGhostLogin = ghostEmail.length > 0 && email.trim().toLowerCase() === ghostEmail;
   const isBusy = isLoading || passwordLoading;
 
   const onSubmit = async () => {

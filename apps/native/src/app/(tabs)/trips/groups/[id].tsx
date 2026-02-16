@@ -11,6 +11,7 @@ import { GroupDetailsLoadingState } from "~/components/trips/groups/details/Grou
 import { GroupMemberList } from "~/components/trips/groups/details/GroupMemberList";
 import { GroupNotFoundState } from "~/components/trips/groups/details/GroupNotFoundState";
 import { GroupStatsGrid } from "~/components/trips/groups/details/GroupStatsGrid";
+import { TransactionHistory } from "~/components/trips/groups/details/TransactionHistory";
 
 export default function GroupDetailsScreen() {
   const router = useRouter();
@@ -23,6 +24,15 @@ export default function GroupDetailsScreen() {
   const { data: group, isLoading: groupLoading } = useQuery({
     ...trpc.group.getById.queryOptions({ id: groupId ?? "" }),
     enabled: !!groupId,
+  });
+
+  const { data: transactions } = useQuery({
+    ...trpc.coinTransaction.getCoinTransactions.queryOptions({ 
+      tripId: group?.trip?.id ?? "",
+      groupId: groupId ?? "",
+      limit: 20
+    }),
+    enabled: !!groupId && !!group?.trip?.id,
   });
 
   const insets = useAppSafeAreaInsets();
@@ -87,6 +97,9 @@ export default function GroupDetailsScreen() {
 
         {/* Member Directory */}
         <GroupMemberList members={memberList} />
+
+        {/* Transaction History */}
+        <TransactionHistory transactions={transactions ?? []} />
       </ScrollView>
     </View>
   );

@@ -4,6 +4,7 @@ import {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  type AnimatedStyle,
 } from "react-native-reanimated";
 import { Gesture } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
@@ -52,8 +53,8 @@ interface MapOverlayContextValue {
   currentUserId?: string;
   selectedUser: UserLocation | null;
   showUsersList: boolean;
-  panelStyle: Record<string, any>;
-  usersListStyle: Record<string, any>;
+  panelStyle: AnimatedStyle<ViewStyle>;
+  usersListStyle: AnimatedStyle<ViewStyle>;
   panGesture: ReturnType<typeof Gesture.Pan>;
   onToggleExpand: () => void;
   onAddPress: () => void;
