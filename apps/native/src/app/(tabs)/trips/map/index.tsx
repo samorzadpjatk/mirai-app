@@ -14,6 +14,7 @@ import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";
 import { useMapActions } from "~/hooks/map";
 import { useFileDownload } from "~/hooks/files";
+import { useLocationContext } from "~/contexts/location";
 
 function MapScreenContent({
   onLocationUpdate,
@@ -62,10 +63,11 @@ export default function MapScreen() {
   const [currentCoordinate, setCurrentCoordinate] = useState<
     [number, number] | null
   >(null);
+  const { canShareOwnLocation, canViewOthersLocations, isLoading: isLocationLoading } = useLocationContext();
 
   // Map hooks
   const { locationsByUserId, usersData } = useMapLocationStream(
-    !!session?.access_token,
+    !!session?.access_token && canShareOwnLocation && canViewOthersLocations && !isLocationLoading,
   );
   const {
     sharingUserIds,
@@ -141,7 +143,10 @@ export default function MapScreen() {
       <MapScreenContent
         onLocationUpdate={({ latitude, longitude }) => {
           setCurrentCoordinate([longitude, latitude]);
-          void sendLocation({ latitude, longitude });
+          // Only send location if sharing is enabled
+          if (canShareOwnLocation) {
+            void sendLocation({ latitude, longitude });
+          }
         }}
         currentUserId={currentUser?.id}
         currentUserName={currentUserName.length > 0 ? currentUserName : undefined}

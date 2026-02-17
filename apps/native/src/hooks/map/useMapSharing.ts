@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { Alert } from "react-native";
 
 export function useMapSharing(enabledForAllUsersQuery: boolean) {
   const trpc = useTRPC();
@@ -25,6 +26,24 @@ export function useMapSharing(enabledForAllUsersQuery: boolean) {
       },
       onError: (err) => {
         console.error("[Map] Failed to update sharing:", err);
+        
+        // Provide specific error messages based on error type
+        if (err?.data?.code === "UNAUTHORIZED") {
+          Alert.alert(
+            "Authentication Required", 
+            "Please sign in again to update sharing settings."
+          );
+        } else if (err?.data?.code === "FORBIDDEN") {
+          Alert.alert(
+            "Access Denied", 
+            "You don't have permission to update sharing settings."
+          );
+        } else {
+          Alert.alert(
+            "Connection Error", 
+            "Failed to update sharing settings. Please check your internet connection and try again."
+          );
+        }
       },
     }),
   );
@@ -36,6 +55,24 @@ export function useMapSharing(enabledForAllUsersQuery: boolean) {
       },
       onError: (err) => {
         console.error("[Map] Failed to remove user from sharing:", err);
+        
+        // Provide specific error messages based on error type
+        if (err?.data?.code === "UNAUTHORIZED") {
+          Alert.alert(
+            "Authentication Required", 
+            "Please sign in again to update sharing settings."
+          );
+        } else if (err?.data?.code === "FORBIDDEN") {
+          Alert.alert(
+            "Access Denied", 
+            "You don't have permission to update sharing settings."
+          );
+        } else {
+          Alert.alert(
+            "Connection Error", 
+            "Failed to remove user from sharing. Please check your internet connection and try again."
+          );
+        }
       },
     }),
   );
@@ -46,13 +83,13 @@ export function useMapSharing(enabledForAllUsersQuery: boolean) {
   );
 
   const updateSharing = (userIdsToShareWith: string[]) =>
-    updateSharingMutation.mutate({
+    updateSharingMutation.mutateAsync({
       isSharingLocation: true,
       userIdsToShareWith,
     });
 
   const removeUser = (userId: string) =>
-    removeUserMutation.mutate({ userId });
+    removeUserMutation.mutateAsync({ userId });
 
   return {
     sharingSettings,

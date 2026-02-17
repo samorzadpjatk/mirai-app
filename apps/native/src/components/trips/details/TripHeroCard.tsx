@@ -29,7 +29,7 @@ export function TripHeroCard({
   backgroundImagePath,
 }: TripHeroCardProps) {
   const { imageUrl: backgroundImageUrl, isLoading } = useTripBackgroundImageDownload(backgroundImagePath);
-  const finalImageUrl = imageUrl || backgroundImageUrl || undefined;
+  const finalImageUrl = imageUrl ?? backgroundImageUrl ?? undefined;
 
   // Don't render the image if no URL is available
   if (!finalImageUrl) {

@@ -1,4 +1,3 @@
-import React from "react";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack } from "expo-router";
@@ -7,6 +6,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { SafeAreaInsetsProvider } from "~/contexts/SafeAreaInsetsContext";
+import { LocationProvider } from "~/contexts/location";
 import * as Notifications from "expo-notifications";
 
 // Global handler for notifications (module-level)
@@ -51,16 +51,19 @@ const colors = {
   textLight: "#000000",
 };
 
-const SUPABASE_URL: string =
-  process.env.EXPO_PUBLIC_SUPABASE_URL!!;
-const SUPABASE_ANON_KEY: string =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!!;
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const TRPC_HTTP_URL = process.env.EXPO_PUBLIC_TRPC_API_URL;
 
-// Both HTTP and WebSocket tRPC are served by the Fastify server
-// under the same path. Only the protocol differs.
-const TRPC_HTTP_URL: string =
-  process.env.EXPO_PUBLIC_TRPC_API_URL!!;
-const TRPC_WS_URL: string = TRPC_HTTP_URL.replace(/^http/, "ws");
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error("Missing Supabase configuration");
+}
+
+if (!TRPC_HTTP_URL) {
+  throw new Error("Missing tRPC API URL");
+}
+
+const TRPC_WS_URL = TRPC_HTTP_URL.replace(/^http/, "ws");
 
 const supabaseClient = createSupabaseClient(
   SUPABASE_URL,
@@ -85,60 +88,62 @@ function RootLayoutContent() {
     <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
       {!isAuthLoading && (
         <SafeAreaInsetsProvider value={insets}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              gestureEnabled: true,
-              gestureDirection: "horizontal",
-              contentStyle: { backgroundColor: headerBackgroundColor },
-              headerStyle: {
-                backgroundColor: headerBackgroundColor,
-              },
-              headerTintColor: headerTintColor,
-              headerShadowVisible: true,
-              headerTitleStyle: {
-                fontWeight: "600",
-              },
-            }}
-          >
-            {/* Protected routes for authenticated users */}
-            <Stack.Protected guard={hasSession}>
-              <Stack.Screen
-                name="(tabs)"
-                options={{
-                  headerShown: false,
-                }}
-              />
-              <Stack.Screen
-                name="alerts"
-                options={{
-                  title: "Alerts",
-                  headerShown: false,
-                  
-                }}
-              />
-              <Stack.Screen
-                name="admin/challenges"
-                options={{
-                  title: "Admin Challenges",
-                  headerShown: false,
-                  
-                }}
-              />
-            </Stack.Protected>
+          <LocationProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+                contentStyle: { backgroundColor: headerBackgroundColor },
+                headerStyle: {
+                  backgroundColor: headerBackgroundColor,
+                },
+                headerTintColor: headerTintColor,
+                headerShadowVisible: true,
+                headerTitleStyle: {
+                  fontWeight: "600",
+                },
+              }}
+            >
+              {/* Protected routes for authenticated users */}
+              <Stack.Protected guard={hasSession}>
+                <Stack.Screen
+                  name="(tabs)"
+                  options={{
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen
+                  name="alerts"
+                  options={{
+                    title: "Alerts",
+                    headerShown: false,
+                    
+                  }}
+                />
+                <Stack.Screen
+                  name="admin/challenges"
+                  options={{
+                    title: "Admin Challenges",
+                    headerShown: false,
+                    
+                  }}
+                />
+              </Stack.Protected>
 
-            {/* Protected routes for unauthenticated users */}
-            <Stack.Protected guard={!hasSession}>
-              <Stack.Screen
-                name="auth/login"
-                options={{
-                  title: "Sign In",
-                  headerShown: false,
-                }}
-              />
-            </Stack.Protected>
+              {/* Protected routes for unauthenticated users */}
+              <Stack.Protected guard={!hasSession}>
+                <Stack.Screen
+                  name="auth/login"
+                  options={{
+                    title: "Sign In",
+                    headerShown: false,
+                  }}
+                />
+              </Stack.Protected>
 
-          </Stack>
+            </Stack>
+          </LocationProvider>
         </SafeAreaInsetsProvider>
       )}
     </View>

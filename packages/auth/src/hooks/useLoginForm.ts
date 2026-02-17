@@ -30,7 +30,7 @@ export function useLoginForm(): UseLoginFormResult {
 
   const { signInWithOtp } = useAuth();
 
-  const handleSubmit = async (onSuccess?: () => void) => {
+  const handleSubmit = async (_onSuccess?: () => void) => {
     if (!email) {
       setError("Please enter your email");
       return;
