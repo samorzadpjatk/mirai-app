@@ -10,6 +10,8 @@ export interface AdminChallengeUI {
   category: "standard" | "wintegral" | "special";
   icon: string;
   status: string;
+  submissionType: "IMAGE" | "MULTI_IMAGE" | "VIDEO" | "TEXT" | "IMAGE_LOCATION" | "LOCATION" | "QR_CODE";
+  scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
   tripId?: string;
 }
 
@@ -76,19 +78,21 @@ export function useAdminChallenges() {
       category: (c.category ?? "standard") as AdminChallengeUI["category"],
       icon: c.icon ?? "star",
       status: c.status ?? "active",
+      submissionType: "IMAGE" as AdminChallengeUI["submissionType"],
+      scoringCategory: "JUDGED_STAFF" as AdminChallengeUI["scoringCategory"],
       tripId: c.tripId,
     }));
   }, [challengesData]);
 
   const createChallenge = async (
-    payload: { tripId: string } & Omit<AdminChallengeUI, "id" | "status">,
+    payload: { tripId: string } & Partial<AdminChallengeUI>,
   ) => {
     return createMutation.mutateAsync({
       tripId: payload.tripId,
-      name: payload.title,
-      description: payload.description,
-      points: payload.points,
-      groupIds: undefined,
+      name: payload.title ?? '',
+      description: payload.description ?? '',
+      submissionType: payload.submissionType ?? 'IMAGE',
+      scoringCategory: payload.scoringCategory ?? 'JUDGED_STAFF',
     } as const);
   };
 
@@ -99,11 +103,9 @@ export function useAdminChallenges() {
     return updateMutation.mutateAsync({
       id,
       tripId: payload.tripId,
-      name: payload.title,
-      description: payload.description,
-      points: payload.points,
-      groupIds: undefined,
-    } as const);
+      name: payload.title ?? '',
+      description: payload.description ?? '',
+    });
   };
 
   const deleteChallenge = async (id: string, tripId: string) => {

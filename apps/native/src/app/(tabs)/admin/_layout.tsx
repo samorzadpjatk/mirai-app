@@ -40,6 +40,34 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="users/index"
+          options={{
+            title: "Users",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="groups/index"
+          options={{
+            title: "Groups",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="coins/index"
+          options={{
+            title: "Coins",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="transactions/index"
+          options={{
+            title: "Transactions",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
           name="challenges/index"
           options={{
             title: "Challenges",
@@ -64,6 +92,20 @@ export default function AdminLayout() {
           name="challenges/judgement"
           options={{
             title: "Challenge Judgement",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="notifications/index"
+          options={{
+            title: "Notifications",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="schedules/index"
+          options={{
+            title: "Schedules",
             headerBackTitle: "Back"
           }}
         />

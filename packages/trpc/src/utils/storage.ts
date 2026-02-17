@@ -1,4 +1,4 @@
-import { STANDARD_BUCKETS, normalizeStoragePath, normalizeBucketName, type StandardBucket } from '@integral-2025-app/shared';
+import { STANDARD_BUCKETS, normalizeStoragePath, normalizeBucketName } from '@integral-2025-app/shared';
 
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
 
@@ -70,7 +70,7 @@ export const parseSupabaseStorageObject = (
     try {
       const url = new URL(trimmed);
       rawPath = url.pathname;
-    } catch (error) {
+    } catch {
       return null;
     }
   }

@@ -1,0 +1,271 @@
+import { useState, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  FlatList,
+  TextInput,
+} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, borderRadius, typography } from '~/styles';
+import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
+import { useAdminCoins } from '~/hooks/admin/useAdminCoins';
+import { AdminHeader } from '~/components/admin/AdminHeader';
+import { GroupCard } from '~/components/admin/groups/GroupCard';
+import { CoinOperationModal } from '~/components/admin/common/CoinOperationModal';
+import type { Group } from '~/hooks/admin/useAdminCoins';
+
+export default function AdminCoinsScreen() {
+  const insets = useAppSafeAreaInsets();
+  
+  // Get tripId from router params
+  const { tripId } = useLocalSearchParams<{ tripId?: string }>();
+  
+  const [showOperationModal, setShowOperationModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [operation, setOperation] = useState<'add' | 'remove'>('add');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const {
+    groups,
+    groupsLoading,
+    addCoins,
+    removeCoins,
+    isAddingCoins,
+    isRemovingCoins,
+  } = useAdminCoins(tripId ?? '');
+
+  const filteredGroups = useMemo(() => {
+    return groups?.filter(group => {
+      const organizerName = [group.organizer?.firstName, group.organizer?.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return (
+        group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        organizerName.includes(searchTerm.toLowerCase())
+      );
+    }) || [];
+  }, [groups, searchTerm]);
+
+  const stats = useMemo(() => {
+    const totalCoins = groups?.reduce((sum, group) => sum + group.coins, 0) || 0;
+    const totalGroups = groups?.length || 0;
+    const avgCoinsPerGroup = totalGroups > 0 ? Math.round(totalCoins / totalGroups) : 0;
+
+    return {
+      totalCoins,
+      totalGroups,
+      avgCoinsPerGroup,
+    };
+  }, [groups]);
+
+  const handleAddCoins = useCallback((group: Group) => {
+    setSelectedGroup(group);
+    setOperation('add');
+    setShowOperationModal(true);
+  }, []);
+
+  const handleRemoveCoins = useCallback((group: Group) => {
+    setSelectedGroup(group);
+    setOperation('remove');
+    setShowOperationModal(true);
+  }, []);
+
+  const handleCoinOperation = useCallback(async (groupId: string, amount: number, reason: string) => {
+    if (operation === 'add') {
+      await addCoins(groupId, amount, reason);
+    } else {
+      await removeCoins(groupId, amount, reason);
+    }
+  }, [operation, addCoins, removeCoins]);
+
+  const renderGroup = useCallback(({ item }: { item: Group }) => {
+    return (
+      <GroupCard
+        group={item}
+        onAddCoins={handleAddCoins}
+        onRemoveCoins={handleRemoveCoins}
+      />
+    );
+  }, [handleAddCoins, handleRemoveCoins]);
+
+  if (!tripId) {
+    return (
+      <View style={[{ flex: 1, backgroundColor: colors.backgroundDark, paddingTop: spacing.xl }]}>
+        <StatusBar style="light" />
+        <AdminHeader title="Error" subtitle="Trip ID is required" />
+      </View>
+    );
+  }
+
+  const renderStats = () => (
+    <View style={{
+      flexDirection: 'row',
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.lg,
+      gap: spacing.md,
+    }}>
+      <View style={{
+        flex: 1,
+        backgroundColor: colors.cardDark,
+        borderRadius: borderRadius.lg,
+        padding: spacing.md,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.borderWhite5,
+      }}>
+        <Ionicons name="cash" size={24} color={colors.accentMagenta} />
+        <Text style={{
+          fontSize: typography.xl,
+          fontWeight: typography.bold,
+          color: colors.white,
+          marginTop: spacing.xs,
+          marginBottom: spacing.xs,
+        }}>
+          {stats.totalCoins}
+        </Text>
+        <Text style={{
+          fontSize: typography.sm,
+          color: colors.textSecondary,
+          textAlign: 'center',
+        }}>
+          Total Coins
+        </Text>
+      </View>
+      <View style={{
+        flex: 1,
+        backgroundColor: colors.cardDark,
+        borderRadius: borderRadius.lg,
+        padding: spacing.md,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.borderWhite5,
+      }}>
+        <Ionicons name="people-circle" size={24} color={colors.primary} />
+        <Text style={{
+          fontSize: typography.xl,
+          fontWeight: typography.bold,
+          color: colors.white,
+          marginTop: spacing.xs,
+          marginBottom: spacing.xs,
+        }}>
+          {stats.totalGroups}
+        </Text>
+        <Text style={{
+          fontSize: typography.sm,
+          color: colors.textSecondary,
+          textAlign: 'center',
+        }}>
+          Total Groups
+        </Text>
+      </View>
+      <View style={{
+        flex: 1,
+        backgroundColor: colors.cardDark,
+        borderRadius: borderRadius.lg,
+        padding: spacing.md,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.borderWhite5,
+      }}>
+        <Ionicons name="calculator" size={24} color={colors.warning} />
+        <Text style={{
+          fontSize: typography.xl,
+          fontWeight: typography.bold,
+          color: colors.white,
+          marginTop: spacing.xs,
+          marginBottom: spacing.xs,
+        }}>
+          {stats.avgCoinsPerGroup}
+        </Text>
+        <Text style={{
+          fontSize: typography.sm,
+          color: colors.textSecondary,
+          textAlign: 'center',
+        }}>
+          Avg Coins/Group
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderSearchBar = () => (
+    <View style={{
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.lg,
+    }}>
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.cardDark,
+        borderRadius: borderRadius.lg,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderWidth: 1,
+        borderColor: colors.borderDark,
+      }}>
+        <Ionicons name="search" size={20} color={colors.textSecondary} />
+        <TextInput
+          style={{
+            flex: 1,
+            marginLeft: spacing.sm,
+            fontSize: typography.base,
+            color: colors.white,
+          }}
+          placeholder="Search groups..."
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+          placeholderTextColor={colors.textSecondary}
+        />
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={[{ flex: 1, backgroundColor: colors.backgroundDark, paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
+      <StatusBar style="light" />
+
+      <AdminHeader title="Coins Management" subtitle="Manage group coins and transactions" />
+
+      {renderStats()}
+      {renderSearchBar()}
+
+      {groupsLoading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ marginTop: spacing.md, fontSize: typography.base, color: colors.textSecondary }}>Loading groups...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredGroups}
+          renderItem={renderGroup}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', paddingVertical: spacing.xxl }}>
+              <Ionicons name="cash" size={48} color={colors.textSecondary} />
+              <Text style={{ marginTop: spacing.md, fontSize: typography.base, color: colors.textSecondary, textAlign: 'center' }}>
+                {searchTerm ? 'No groups found' : 'No groups available'}
+              </Text>
+            </View>
+          }
+        />
+      )}
+
+      <CoinOperationModal
+        visible={showOperationModal}
+        onClose={() => setShowOperationModal(false)}
+        group={selectedGroup}
+        operation={operation}
+        onOperation={handleCoinOperation}
+        loading={isAddingCoins || isRemovingCoins}
+      />
+    </View>
+  );
+}
+

@@ -44,6 +44,19 @@ export const colors = {
   red700: "#b91c1c",
   red900: "#7f1d1d",
 
+  // Green
+  success: "#22c55e",
+  green400: "#4ade80",
+  green700: "#16a34a",
+
+  // Orange/Yellow
+  warning: "#f59e0b",
+  orange400: "#fb923c",
+  yellow400: "#facc15",
+
+  // Danger/Error
+  danger: "#ef4444",
+
   // Transparent variants
   primaryOpacity10: "rgba(0, 206, 209, 0.1)",
   primaryOpacity20: "rgba(0, 206, 209, 0.2)",

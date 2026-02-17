@@ -1,18 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
   StatusBar,
   Alert,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTRPC } from '@integral-2025-app/trpc/client';
-import { colors } from '~/styles';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 interface ChallengeItem {
@@ -44,8 +39,6 @@ const statusColors: Record<string, string> = {
 
 export default function AdminChallengesScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0] ?? '';
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<StatusFilter>('ALL');
@@ -69,18 +62,7 @@ export default function AdminChallengesScreen() {
     }));
   }, [challengesData]);
 
-  const deleteChallengeMutation = useMutation(
-    trpc.challenge.delete.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: challengeQueryOptions.queryKey });
-      },
-      onError: (error) => {
-        Alert.alert('Error', `Failed to delete challenge: ${error.message}`);
-      },
-    }),
-  );
-
-  const handleAddChallenge = () => {
+  const handleAddChallenge = useCallback(() => {
     if (!tripId) {
       Alert.alert('Error', 'No trip found to attach this challenge');
       return;
@@ -89,9 +71,9 @@ export default function AdminChallengesScreen() {
       pathname: '/admin/challenges/new',
       params: { tripId },
     });
-  };
+  }, [router, tripId]);
 
-  const handleDeleteChallenge = (id: string) => {
+  const handleDeleteChallenge = useCallback((id: string) => {
     Alert.alert(
       'Delete Challenge',
       'Are you sure you want to delete this challenge?',
@@ -100,13 +82,43 @@ export default function AdminChallengesScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            deleteChallengeMutation.mutate({ id, tripId });
-          },
+          onPress: () => void deleteChallenge(id),
         },
       ],
     );
-  };
+  }, [deleteChallenge]);
+
+  const renderChallenge = useCallback(({ item }: { item: ChallengeItem }) => {
+    return (
+      <ChallengeListItem
+        challenge={item}
+        onDelete={deleteChallenge}
+        onDeletePress={handleDeleteChallenge}
+      />
+    );
+  }, [deleteChallenge, handleDeleteChallenge]);
+
+  if (!tripId) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.backgroundDark, paddingTop: spacing.xl }}>
+        <StatusBar barStyle="light-content" backgroundColor={colors.backgroundDark} />
+        <AdminHeader title="Error" subtitle="Trip ID is required" />
+      </View>
+    );
+  }
+
+  const renderEmptyState = () => (
+    <View style={{
+      padding: spacing.lg,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1,
+      borderColor: colors.borderDark,
+      backgroundColor: colors.cardDark,
+      alignItems: 'center',
+    }}>
+      <Text style={{ color: colors.textSecondary }}>No challenges found yet.</Text>
+    </View>
+  );
 
   const totalChallenges = challenges.length;
   const statusCounts = useMemo(
@@ -152,6 +164,11 @@ export default function AdminChallengesScreen() {
         style={{ flex: 1, paddingHorizontal: 16 }}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.md,
+          paddingBottom: 96,
+          paddingTop: spacing.xl
+        }}
       >
         {/* Stats */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
@@ -198,18 +215,15 @@ export default function AdminChallengesScreen() {
             })}
         </View>
 
-        {/* List Header */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-        }}>
+        {renderStats()}
+
+        <View style={{ marginBottom: spacing.md }}>
           <Text style={{
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: '#fff',
+            fontSize: typography.lg,
+            fontWeight: typography.bold,
+            color: colors.white,
             letterSpacing: -0.5,
+            marginBottom: spacing.md,
           }}>
             Existing Challenges
           </Text>

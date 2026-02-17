@@ -8,25 +8,29 @@ import { SelectedUserCard } from "~/components/map/ui/SelectedUserCard";
 import { ShareLocationModal } from "~/components/map/modals/ShareLocationModal";
 import { UsersListPanel } from "~/components/map/panels/UsersListPanel";
 import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
+import { useLocationContext } from "~/contexts/location";
 
 export function MapScreenOverlay() {
   const { selectedUser, showUsersList, panelStyle, panGesture } =
     useMapOverlayContext();
+  const { canViewOthersLocations } = useLocationContext();
 
   return (
     <>
-      <GestureDetector gesture={panGesture}>
-        <Animated.View
-          pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
-          style={[styles.detailCard, panelStyle]}
-        >
-          {selectedUser ? (
-            <SelectedUserCard />
-          ) : showUsersList ? (
-            <UsersListPanel />
-          ) : null}
-        </Animated.View>
-      </GestureDetector>
+      {canViewOthersLocations &&
+        <GestureDetector gesture={panGesture}>
+          <Animated.View
+            pointerEvents={selectedUser || showUsersList ? "auto" : "none"}
+            style={[styles.detailCard, panelStyle]}
+          >
+            {selectedUser ? (
+              <SelectedUserCard />
+            ) : showUsersList ? (
+              <UsersListPanel />
+            ) : null}
+          </Animated.View>
+        </GestureDetector>
+      }
       <MapActionButtons />
       <ShareLocationModal />
       <ManageSharingModal />

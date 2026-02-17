@@ -11,9 +11,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAdminChallenges, type AdminChallengeUI } from "~/hooks/admin";
-import ChallengeCard from "~/components/admin/ChallengeCard";
-import AddChallengeModal from "~/components/admin/AddChallengeModal";
-import EditChallengeModal from "~/components/admin/EditChallengeModal";
+import ChallengeCard from "~/components/admin/challenges/ChallengeCard";
+import AddChallengeModal from "~/components/admin/challenges/AddChallengeModal";
+import EditChallengeModal from "~/components/admin/challenges/EditChallengeModal";
 import AdminStats from "~/components/admin/AdminStats";
 import { commonStyles } from "~/styles/commonStyles";
 

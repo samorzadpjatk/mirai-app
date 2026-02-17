@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
 import { useTRPC, useSubscription } from "@integral-2025-app/trpc/client";
 import * as Crypto from "expo-crypto";
+import { useLocationContext } from "~/contexts/location";
 
 export function useMapLocationStream(enabled: boolean) {
   const trpc = useTRPC();
+  const { canViewOthersLocations } = useLocationContext();
 
   const [locationsByUserId, setLocationsByUserId] = useState<
     Record<
@@ -29,7 +31,7 @@ export function useMapLocationStream(enabled: boolean) {
         longitude: undefined,
       },
       {
-        enabled,
+        enabled: enabled && canViewOthersLocations,
         onData: (data) => {
           const { data: event } = data;
           if (event.type === "upsert" && event.location) {
@@ -69,7 +71,12 @@ export function useMapLocationStream(enabled: boolean) {
           }
         },
         onError: (error: unknown) => {
-          console.error("Location subscription error:", error);
+          // Only log UNAUTHORIZED errors as warnings, others as errors
+          if (error instanceof Error && error.message.includes('UNAUTHORIZED')) {
+            console.warn("Location subscription unauthorized - user may not be logged in");
+          } else {
+            console.error("Location subscription error:", error);
+          }
         },
       },
     ),
