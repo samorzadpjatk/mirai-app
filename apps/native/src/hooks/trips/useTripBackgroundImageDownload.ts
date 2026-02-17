@@ -66,7 +66,7 @@ export function useTripBackgroundImageDownload(backgroundImagePath: string | nul
       }
     };
 
-    loadImage();
+    void loadImage();
   }, [backgroundImagePath, download]);
 
   return { 

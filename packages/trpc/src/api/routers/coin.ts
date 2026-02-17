@@ -14,44 +14,50 @@ export const coinRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const group = await ctx.db.group.findUnique({
-        where: { id: input.groupId },
-      });
-      if (group?.tripId !== input.tripId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
-      }
+      return await ctx.db.$transaction(async (tx) => {
+        // Verify group exists and belongs to the trip
+        const group = await tx.group.findUnique({
+          where: { id: input.groupId },
+        });
+        
+        if (group?.tripId !== input.tripId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        }
 
-      await ctx.db.group.update({
-        where: { id: input.groupId },
-        data: { coins: { increment: input.amount } },
-      });
+        // Update group coins within the transaction
+        await tx.group.update({
+          where: { id: input.groupId },
+          data: { coins: { increment: input.amount } },
+        });
 
-      const transaction = await ctx.db.coinTransaction.create({
-        data: {
-          groupId: input.groupId,
-          amount: input.amount,
-          reason: input.reason,
-          adminId: ctx.dbUser.id,
-        },
-        include: {
-          group: {
-            select: {
-              id: true,
-              name: true,
-              coins: true,
+        // Create transaction record
+        const transaction = await tx.coinTransaction.create({
+          data: {
+            groupId: input.groupId,
+            amount: input.amount,
+            reason: input.reason,
+            adminId: ctx.dbUser.id,
+          },
+          include: {
+            group: {
+              select: {
+                id: true,
+                name: true,
+                coins: true,
+              },
+            },
+            admin: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
             },
           },
-          admin: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-      });
+        });
 
-      return transaction;
+        return transaction;
+      });
     }),
 
   // Remove coins from a group
@@ -65,51 +71,56 @@ export const coinRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const group = await ctx.db.group.findUnique({
-        where: { id: input.groupId },
-        select: { coins: true, tripId: true },
-      });
-
-      if (
-        group?.tripId !== input.tripId ||
-        (group?.coins ?? 0) < input.amount
-      ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Group does not have enough coins",
+      return await ctx.db.$transaction(async (tx) => {
+        // Lock the group row for update to prevent race conditions
+        const group = await tx.group.findUnique({
+          where: { id: input.groupId },
+          select: { coins: true, tripId: true },
         });
-      }
 
-      await ctx.db.group.update({
-        where: { id: input.groupId },
-        data: { coins: { decrement: input.amount } },
-      });
+        if (
+          group?.tripId !== input.tripId ||
+          (group?.coins ?? 0) < input.amount
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Group does not have enough coins",
+          });
+        }
 
-      const transaction = await ctx.db.coinTransaction.create({
-        data: {
-          groupId: input.groupId,
-          amount: -input.amount, // Negative amount for removal
-          reason: input.reason,
-          adminId: ctx.dbUser.id,
-        },
-        include: {
-          group: {
-            select: {
-              id: true,
-              name: true,
-              coins: true,
+        // Update group coins within the transaction
+        await tx.group.update({
+          where: { id: input.groupId },
+          data: { coins: { decrement: input.amount } },
+        });
+
+        // Create transaction record
+        const transaction = await tx.coinTransaction.create({
+          data: {
+            groupId: input.groupId,
+            amount: -input.amount, // Negative amount for removal
+            reason: input.reason,
+            adminId: ctx.dbUser.id,
+          },
+          include: {
+            group: {
+              select: {
+                id: true,
+                name: true,
+                coins: true,
+              },
+            },
+            admin: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
             },
           },
-          admin: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-      });
+        });
 
-      return transaction;
+        return transaction;
+      });
     }),
 });

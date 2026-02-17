@@ -4,6 +4,7 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { useNotifications } from "~/hooks/notifications";
+import { useLocationContext } from "~/contexts/location";
 
 interface ProfileActionsSectionProps {
   onEditProfile?: () => void;
@@ -15,9 +16,18 @@ export function ProfileActionsSection({
   const { signOut } = useAuth();
   const router = useRouter();
   const { isSubscribed, isLoading, onTogglePress } = useNotifications();
+  const { 
+    isLocationSharingEnabled, 
+    isLoading: isLocationLoading, 
+    toggleLocationSharing 
+  } = useLocationContext();
 
   const handleToggle = () => {
     onTogglePress();
+  };
+
+  const handleLocationToggle = () => {
+    void toggleLocationSharing();
   };
 
   const handleSignOut = async () => {
@@ -53,6 +63,28 @@ export function ProfileActionsSection({
           {isSubscribed ? "Notifications Enabled" : "Enable Notifications"}
         </Text>
         {isSubscribed && (
+          <View style={styles.activeBadge}>
+            <Text style={styles.activeBadgeText}>ON</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.actionButton, isLocationSharingEnabled && styles.activeButton]}
+        onPress={handleLocationToggle}
+        disabled={isLocationLoading}
+      >
+        <View style={[styles.actionIcon, isLocationSharingEnabled && styles.activeIcon]}>
+          {isLocationSharingEnabled ? (
+            <Ionicons name="location" size={20} color={colors.primary} />
+          ) : (
+            <Ionicons name="locate" size={20} color={colors.white} />
+          )}
+        </View>
+        <Text style={styles.actionText}>
+          {isLocationSharingEnabled ? "Location Sharing Enabled" : "Enable Location Sharing"}
+        </Text>
+        {isLocationSharingEnabled && (
           <View style={styles.activeBadge}>
             <Text style={styles.activeBadgeText}>ON</Text>
           </View>

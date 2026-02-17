@@ -5,7 +5,7 @@ interface UseMapSelectedUserArgs {
   session?: { user?: { id?: string } } | null;
   users: UserLocation[];
   sharingUserIds: string[];
-  updateSharing: (ids: string[]) => void;
+  updateSharing: (ids: string[]) => Promise<void>;
 }
 
 export function useMapSelectedUser({
@@ -33,9 +33,10 @@ export function useMapSelectedUser({
     if (!selectedUser) return;
     const newIds = sharingUserIds.filter((id) => id !== selectedUser.id);
     try {
-      await Promise.resolve(updateSharing(newIds));
+      await updateSharing(newIds);
     } catch (err) {
       console.error("Failed to stop sharing:", err);
+      // Error handling is now done in useMapSharing hook
     }
   };
 

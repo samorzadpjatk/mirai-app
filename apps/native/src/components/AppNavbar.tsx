@@ -22,7 +22,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     backgroundColor: "rgba(23, 24, 28, 0.8)",
-    backdropFilter: "blur(12px)",
   },
   logoContainer: {
     width: 40,

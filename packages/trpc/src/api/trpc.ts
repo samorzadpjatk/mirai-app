@@ -70,8 +70,17 @@ const getAccessToken = (
   const urlString = headers.get("x-original-url");
   if (urlString) {
     try {
-      // `req.url` from Fastify is a path-only string; provide a dummy base to satisfy the URL constructor
-      const url = new URL(urlString, "http://localhost");
+      // Handle both absolute URLs and relative URLs (WebSocket connections)
+      let url: URL;
+      if (urlString.startsWith('http://') || urlString.startsWith('https://') || urlString.startsWith('ws://') || urlString.startsWith('wss://')) {
+        // Absolute URL
+        url = new URL(urlString);
+      } else {
+        // Relative URL - construct absolute URL for parsing
+        // Use a dummy base URL since we only care about parsing query params
+        url = new URL(urlString, 'http://localhost');
+      }
+      
       const authParam = url.searchParams.get("authorization");
       if (authParam) {
         const [scheme, token] = authParam.split(" ");
@@ -81,7 +90,7 @@ const getAccessToken = (
         }
       }
     } catch (err) {
-      console.error("[Auth] Failed to parse URL:", err, "value:", urlString);
+      console.error("[Auth] Failed to parse URL:", err);
     }
   }
 
@@ -208,11 +217,16 @@ export const publicProcedure = t.procedure;
  */
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   try {
+    console.log("[Auth] Protected procedure called, checking auth...");
+    console.log("[Auth] Access token present:", ctx.accessToken ? "YES" : "NO");
+    
     const { user, dbUser } = await requireAuth(
       ctx.db,
       ctx.supabase,
       ctx.accessToken ?? undefined,
     );
+    
+    console.log("[Auth] Auth successful for user:", user?.id || "unknown");
     return next({
       ctx: {
         user,
@@ -220,8 +234,10 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
       },
     });
   } catch (err) {
+    console.error("[Auth] Auth failed:", err);
     if (err instanceof AuthenticationError) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
+      console.log("[Auth] Throwing UNAUTHORIZED error");
+      throw new TRPCError({ code: "UNAUTHORIZED", message: err.message });
     }
     throw err;
   }
