@@ -8,6 +8,9 @@ import {
 } from "../../api/trpc";
 import { type Prisma } from "@integral-2025-app/db";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
+import { calculateDistance } from "../../utils/location-validation";
+
+const QR_MARKER_REGEX = /\[\[QR_EXPECTED_B64:([A-Za-z0-9+/=]+)\]\]/;
 
 const submissionBaseSelect: Prisma.ChallengeSubmissionSelect = {
   id: true,
@@ -84,12 +87,52 @@ const ensureChallengeInTrip = async (
   challengeId: string,
   tripId: string,
 ) => {
+  await ctx.db.challenge.updateMany({
+    where: {
+      id: challengeId,
+      tripId,
+      status: "VISIBLE",
+      endTime: { lte: new Date() },
+    },
+    data: {
+      status: "COMPLETED",
+    },
+  });
+
+  await ctx.db.challenge.updateMany({
+    where: {
+      id: challengeId,
+      tripId,
+      status: "VISIBLE",
+      startTime: { lte: new Date() },
+    },
+    data: {
+      status: "ACTIVE",
+    },
+  });
+
+  await ctx.db.challenge.updateMany({
+    where: {
+      id: challengeId,
+      tripId,
+      status: "ACTIVE",
+      endTime: { lte: new Date() },
+    },
+    data: {
+      status: "COMPLETED",
+    },
+  });
+
   const challenge = await ctx.db.challenge.findFirst({
     where: { id: challengeId, tripId },
     select: {
       id: true,
       name: true,
+      status: true,
       submissionType: true,
+      description: true,
+      targetLatitude: true,
+      targetLongitude: true,
       autoApprove: true,
       basePoints: true,
       firstPlacePoints: true,
@@ -101,6 +144,89 @@ const ensureChallengeInTrip = async (
     throw new TRPCError({ code: "NOT_FOUND", message: "Challenge not found" });
   }
   return challenge;
+};
+
+const LOCATION_AUTO_APPROVE_RADIUS_METERS = 50;
+
+const extractExpectedQrValue = (
+  description: string | null | undefined,
+): string | undefined => {
+  if (!description) return undefined;
+  const encoded = description.match(QR_MARKER_REGEX)?.[1];
+  if (!encoded) return undefined;
+  try {
+    const value = Buffer.from(encoded, "base64").toString("utf8").trim();
+    return value.length > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const shouldAutoApproveSubmission = (params: {
+  challenge: {
+    submissionType: string;
+    autoApprove: boolean;
+    description?: string | null;
+    targetLatitude: number | null;
+    targetLongitude: number | null;
+  };
+  textContent?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}) => {
+  if (params.challenge.submissionType === "QR_CODE") {
+    const expected = extractExpectedQrValue(params.challenge.description);
+    const submitted = params.textContent?.trim();
+    if (!expected) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "QR challenge is not configured with expected code",
+      });
+    }
+    if (!submitted || submitted !== expected) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Invalid QR code",
+      });
+    }
+    return true;
+  }
+
+  if (params.challenge.submissionType === "LOCATION") {
+    if (
+      typeof params.latitude !== "number" ||
+      typeof params.longitude !== "number" ||
+      typeof params.challenge.targetLatitude !== "number" ||
+      typeof params.challenge.targetLongitude !== "number"
+    ) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Location challenge is missing required coordinates",
+      });
+    }
+
+    const distanceKm = calculateDistance(
+      params.latitude,
+      params.longitude,
+      params.challenge.targetLatitude,
+      params.challenge.targetLongitude,
+    );
+
+    if (distanceKm * 1000 > LOCATION_AUTO_APPROVE_RADIUS_METERS) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "You are too far from target location",
+      });
+    }
+
+    return true;
+  }
+
+  if (params.challenge.autoApprove) {
+    return true;
+  }
+
+  return false;
 };
 
 const validateSubmissionPayload = (input: {
@@ -205,6 +331,79 @@ const resolveAwardedPoints = (
   }
 
   return challenge.basePoints;
+};
+
+const rebalanceSpeedRankings = async (params: {
+  tx: Prisma.TransactionClient;
+  challenge: {
+    id: string;
+    name: string;
+    basePoints: number;
+    firstPlacePoints: number | null;
+    secondPlacePoints: number | null;
+    thirdPlacePoints: number | null;
+  };
+  adminId: string;
+}) => {
+  const approved = await params.tx.challengeSubmission.findMany({
+    where: {
+      challengeId: params.challenge.id,
+      status: "APPROVED",
+    },
+    select: {
+      id: true,
+      groupId: true,
+      createdAt: true,
+      ranking: true,
+      awardedPoints: true,
+      bonusPoints: true,
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+
+  for (let index = 0; index < approved.length; index += 1) {
+    const submission = approved[index];
+    if (!submission) continue;
+
+    const nextRanking = index + 1;
+    const nextAwardedPoints = resolveAwardedPoints(params.challenge, {
+      ranking: nextRanking,
+    });
+
+    const previousTotal =
+      (submission.awardedPoints ?? 0) + (submission.bonusPoints ?? 0);
+    const nextTotal = nextAwardedPoints + (submission.bonusPoints ?? 0);
+    const delta = nextTotal - previousTotal;
+
+    const rankingChanged = submission.ranking !== nextRanking;
+    const pointsChanged = submission.awardedPoints !== nextAwardedPoints;
+    if (!rankingChanged && !pointsChanged && delta === 0) {
+      continue;
+    }
+
+    await params.tx.challengeSubmission.update({
+      where: { id: submission.id },
+      data: {
+        ranking: nextRanking,
+        awardedPoints: nextAwardedPoints,
+      },
+    });
+
+    if (delta !== 0) {
+      await params.tx.group.update({
+        where: { id: submission.groupId },
+        data: { coins: { increment: delta } },
+      });
+      await params.tx.coinTransaction.create({
+        data: {
+          groupId: submission.groupId,
+          amount: delta,
+          reason: `Speed ranking update: ${params.challenge.name} (#${nextRanking})`,
+          adminId: params.adminId,
+        },
+      });
+    }
+  }
 };
 
 export const challengeSubmissionRouter = createTRPCRouter({
@@ -324,6 +523,13 @@ export const challengeSubmissionRouter = createTRPCRouter({
         input.tripId,
       );
 
+      if (challenge.status !== "ACTIVE") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Submission is allowed only for active challenges",
+        });
+      }
+
       const existing = await ctx.db.challengeSubmission.findUnique({
         where: {
           challengeId_groupId: {
@@ -350,7 +556,12 @@ export const challengeSubmissionRouter = createTRPCRouter({
         longitude: input.longitude,
       });
 
-      const autoApproved = challenge.autoApprove;
+      const autoApproved = shouldAutoApproveSubmission({
+        challenge,
+        textContent: input.textContent,
+        latitude: input.latitude,
+        longitude: input.longitude,
+      });
       const now = new Date();
 
       const awardPoints = autoApproved
@@ -439,7 +650,19 @@ export const challengeSubmissionRouter = createTRPCRouter({
           textContent: true,
           latitude: true,
           longitude: true,
-          challenge: { select: { submissionType: true, autoApprove: true } },
+          challenge: {
+            select: {
+              id: true,
+              status: true,
+              startTime: true,
+              endTime: true,
+              submissionType: true,
+              description: true,
+              targetLatitude: true,
+              targetLongitude: true,
+              autoApprove: true,
+            },
+          },
         },
       });
 
@@ -454,6 +677,36 @@ export const challengeSubmissionRouter = createTRPCRouter({
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Nie można edytować zatwierdzonego zgłoszenia",
+        });
+      }
+
+      if (
+        (submission.challenge.status === "VISIBLE" ||
+          submission.challenge.status === "ACTIVE") &&
+        submission.challenge.endTime &&
+        submission.challenge.endTime <= new Date()
+      ) {
+        await ctx.db.challenge.update({
+          where: { id: submission.challenge.id },
+          data: { status: "COMPLETED" },
+        });
+        submission.challenge.status = "COMPLETED";
+      } else if (
+        submission.challenge.status === "VISIBLE" &&
+        submission.challenge.startTime &&
+        submission.challenge.startTime <= new Date()
+      ) {
+        await ctx.db.challenge.update({
+          where: { id: submission.challenge.id },
+          data: { status: "ACTIVE" },
+        });
+        submission.challenge.status = "ACTIVE";
+      }
+
+      if (submission.challenge.status !== "ACTIVE") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Submission is allowed only for active challenges",
         });
       }
 
@@ -472,7 +725,12 @@ export const challengeSubmissionRouter = createTRPCRouter({
         longitude: nextLongitude ?? undefined,
       });
 
-      const autoApproved = submission.challenge.autoApprove;
+      const autoApproved = shouldAutoApproveSubmission({
+        challenge: submission.challenge,
+        textContent: nextTextContent,
+        latitude: nextLatitude,
+        longitude: nextLongitude,
+      });
       const now = new Date();
 
       const updatedSubmission = await ctx.db.challengeSubmission.update({
@@ -571,6 +829,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
             select: {
               id: true,
               name: true,
+              scoringCategory: true,
               basePoints: true,
               firstPlacePoints: true,
               secondPlacePoints: true,
@@ -598,8 +857,9 @@ export const challengeSubmissionRouter = createTRPCRouter({
       const bonusPoints = shouldAwardCoins ? (input.bonusPoints ?? 0) : 0;
       const totalAwardPoints = awardPoints + bonusPoints;
 
-      const [updatedSubmission] = await ctx.db.$transaction([
-        ctx.db.challengeSubmission.update({
+      const updatedSubmission = await ctx.db.$transaction(async (tx) => {
+        const isSpeed = submission.challenge.scoringCategory === "SPEED";
+        const updated = await tx.challengeSubmission.update({
           where: { id: input.id },
           data: {
             status: input.status,
@@ -607,29 +867,36 @@ export const challengeSubmissionRouter = createTRPCRouter({
               input.status === "REJECTED" ? input.rejectionReason : null,
             reviewedById: ctx.dbUser.id,
             reviewedAt: new Date(),
-            awardedPoints: input.awardedPoints,
+            awardedPoints: isSpeed ? undefined : input.awardedPoints,
             bonusPoints: input.bonusPoints,
-            ranking: input.ranking,
+            ranking: isSpeed ? undefined : input.ranking,
           },
           select: submissionSelect,
-        }),
-        ...(shouldAwardCoins && totalAwardPoints > 0
-          ? [
-              ctx.db.group.update({
-                where: { id: submission.groupId },
-                data: { coins: { increment: totalAwardPoints } },
-              }),
-              ctx.db.coinTransaction.create({
-                data: {
-                  groupId: submission.groupId,
-                  amount: totalAwardPoints,
-                  reason: `Challenge approved: ${submission.challenge.name}`,
-                  adminId: ctx.dbUser.id,
-                },
-              }),
-            ]
-          : []),
-      ]);
+        });
+
+        if (isSpeed && input.status === "APPROVED") {
+          await rebalanceSpeedRankings({
+            tx,
+            challenge: submission.challenge,
+            adminId: ctx.dbUser.id,
+          });
+        } else if (shouldAwardCoins && totalAwardPoints > 0) {
+          await tx.group.update({
+            where: { id: submission.groupId },
+            data: { coins: { increment: totalAwardPoints } },
+          });
+          await tx.coinTransaction.create({
+            data: {
+              groupId: submission.groupId,
+              amount: totalAwardPoints,
+              reason: `Challenge approved: ${submission.challenge.name}`,
+              adminId: ctx.dbUser.id,
+            },
+          });
+        }
+
+        return updated;
+      });
 
       const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
         updatedSubmission.reviewedBy?.authUserId,

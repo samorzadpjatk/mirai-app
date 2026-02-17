@@ -1,7 +1,7 @@
 import {
   createTRPCClient,
   createWSClient,
-  httpBatchLink,
+  httpLink,
   retryLink,
   splitLink,
   wsLink,
@@ -68,7 +68,7 @@ const getTRPCClient = (
           transformer: SuperJSON,
         }),
 
-        false: httpBatchLink({
+        false: httpLink({
           url: httpUrl,
           headers() {
             if (!authorizationToken) {

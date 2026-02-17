@@ -1,4 +1,9 @@
-export type ChallengeStatus = "selected" | "incomplete" | "locked";
+export type ChallengeStatus =
+  | "to_solve"
+  | "submitted"
+  | "solved"
+  | "rejected"
+  | "locked";
 
 export interface ChallengeListItem {
   id: string;
@@ -9,4 +14,12 @@ export interface ChallengeListItem {
   status: ChallengeStatus;
   description?: string;
   image?: string;
+  participantGroupsCount: number;
+  lifecycleStatus:
+    | "HIDDEN"
+    | "VISIBLE"
+    | "ACTIVE"
+    | "VOTING_PHASE"
+    | "COMPLETED"
+    | "CANCELLED";
 }

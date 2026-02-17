@@ -19,7 +19,6 @@ import { colors, spacing, borderRadius, typography } from '~/styles';
 
 const submissionTypes = [
   { label: 'Image', value: 'IMAGE' },
-  { label: 'Multi Image', value: 'MULTI_IMAGE' },
   { label: 'Video', value: 'VIDEO' },
   { label: 'Text', value: 'TEXT' },
   { label: 'Image + Location', value: 'IMAGE_LOCATION' },
@@ -112,14 +111,21 @@ export default function EditChallengeScreen() {
     () => statusOptions.find((item) => item.value === form.status)?.label ?? 'Select',
     [form.status],
   );
+  const isPeerVoting = form.scoringCategory === 'PEER_VOTING';
+  const canUsePeerVoting = form.submissionType === 'IMAGE' || form.submissionType === 'VIDEO';
 
   if (challenge && !initialized) {
     setForm({
       title: challenge.name ?? '',
       description: challenge.description ?? '',
       image: challenge.image ?? '',
-      submissionType: challenge.submissionType,
-      scoringCategory: challenge.scoringCategory,
+      submissionType: challenge.submissionType === 'MULTI_IMAGE' ? 'IMAGE' : challenge.submissionType,
+      scoringCategory:
+        (challenge.submissionType === 'IMAGE' || challenge.submissionType === 'VIDEO')
+          ? challenge.scoringCategory
+          : challenge.scoringCategory === 'PEER_VOTING'
+            ? 'SPEED'
+            : challenge.scoringCategory,
       isRecurring: challenge.isRecurring ?? false,
       dailyStartTime: challenge.dailyStartTime ? new Date(`1970-01-01T${challenge.dailyStartTime}:00`) : null,
       dailyEndTime: challenge.dailyEndTime ? new Date(`1970-01-01T${challenge.dailyEndTime}:00`) : null,
@@ -195,21 +201,60 @@ export default function EditChallengeScreen() {
         return false;
       }
 
-      if ((form.votingStartTime && !form.votingEndTime) || (!form.votingStartTime && form.votingEndTime)) {
-        Alert.alert('Error', 'Provide both voting start and end time');
-        return false;
-      }
-      if (form.status === 'VOTING_PHASE' && (!form.votingStartTime || !form.votingEndTime)) {
-        Alert.alert('Error', 'Voting phase requires voting window');
-        return false;
-      }
-      if (form.votingStartTime && form.votingEndTime && form.votingStartTime >= form.votingEndTime) {
-        Alert.alert('Error', 'Voting start must be before voting end');
-        return false;
+      if (isPeerVoting) {
+        if ((form.votingStartTime && !form.votingEndTime) || (!form.votingStartTime && form.votingEndTime)) {
+          Alert.alert('Error', 'Provide both voting start and end time');
+          return false;
+        }
+        if (form.status === 'VOTING_PHASE' && (!form.votingStartTime || !form.votingEndTime)) {
+          Alert.alert('Error', 'Voting phase requires voting window');
+          return false;
+        }
+        if (form.votingStartTime && form.votingEndTime && form.votingStartTime >= form.votingEndTime) {
+          Alert.alert('Error', 'Voting start must be before voting end');
+          return false;
+        }
+        if (!form.endTime) {
+          Alert.alert('Error', 'Peer voting challenge requires submission end time');
+          return false;
+        }
+        if (form.votingStartTime && form.votingStartTime <= form.endTime) {
+          Alert.alert('Error', 'Voting must start after submission end time');
+          return false;
+        }
       }
     }
 
     return true;
+  };
+
+  const handleSubmissionTypeChange = (value: string) => {
+    setForm((prev) => {
+      const shouldResetPeerVoting =
+        prev.scoringCategory === 'PEER_VOTING' &&
+        value !== 'IMAGE' &&
+        value !== 'VIDEO';
+
+      return {
+        ...prev,
+        submissionType: value,
+        ...(shouldResetPeerVoting
+          ? {
+              scoringCategory: 'SPEED',
+              votingStartTime: null,
+              votingEndTime: null,
+            }
+          : {}),
+      };
+    });
+  };
+
+  const handleScoringCategoryChange = (value: string) => {
+    if (value === 'PEER_VOTING' && !canUsePeerVoting) {
+      Alert.alert('Error', 'Peer voting is available only for Image or Video challenges.');
+      return;
+    }
+    setForm((prev) => ({ ...prev, scoringCategory: value }));
   };
 
   const handleSave = () => {
@@ -223,7 +268,6 @@ export default function EditChallengeScreen() {
       image: form.image ? form.image.trim() : undefined,
       submissionType: form.submissionType as
         | 'IMAGE'
-        | 'MULTI_IMAGE'
         | 'VIDEO'
         | 'TEXT'
         | 'IMAGE_LOCATION'
@@ -377,7 +421,7 @@ export default function EditChallengeScreen() {
           }}>
             <Picker
               selectedValue={form.submissionType}
-              onValueChange={(value) => setForm({ ...form, submissionType: value })}
+              onValueChange={handleSubmissionTypeChange}
               style={{ color: colors.white }}
               dropdownIconColor={colors.textSecondary}
             >
@@ -409,11 +453,14 @@ export default function EditChallengeScreen() {
           }}>
             <Picker
               selectedValue={form.scoringCategory}
-              onValueChange={(value) => setForm({ ...form, scoringCategory: value })}
+              onValueChange={handleScoringCategoryChange}
               style={{ color: colors.white }}
               dropdownIconColor={colors.textSecondary}
             >
-              {scoringCategories.map((option) => (
+              {(canUsePeerVoting
+                ? scoringCategories
+                : scoringCategories.filter((option) => option.value !== 'PEER_VOTING'))
+                .map((option) => (
                 <Picker.Item key={option.value} label={option.label} value={option.value} />
               ))}
             </Picker>

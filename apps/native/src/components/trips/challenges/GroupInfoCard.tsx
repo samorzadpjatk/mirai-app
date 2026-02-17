@@ -6,6 +6,8 @@ interface GroupInfoCardProps {
   position?: number;
   totalGroups?: number;
   pointsDifference?: number;
+  completedChallengesCount?: number;
+  totalChallengesCount?: number;
 }
 
 export function GroupInfoCard({
@@ -13,6 +15,8 @@ export function GroupInfoCard({
   position,
   totalGroups,
   pointsDifference,
+  completedChallengesCount,
+  totalChallengesCount,
 }: GroupInfoCardProps) {
   const isLeading = position === 1;
 
@@ -48,6 +52,14 @@ export function GroupInfoCard({
             <Text style={styles.statUnit}>pts</Text>
           </View>
         </View>
+      </View>
+
+      <View style={styles.progressCard}>
+        <Text style={styles.progressLabel}>Challenges done</Text>
+        <Text style={styles.progressValue}>
+          {completedChallengesCount ?? 0}
+          <Text style={styles.progressValueSuffix}> / {totalChallengesCount ?? 0}</Text>
+        </Text>
       </View>
     </View>
   );
@@ -126,5 +138,32 @@ const styles = StyleSheet.create({
   },
   behindValue: {
     color: "#ef4444",
+  },
+  progressCard: {
+    marginTop: spacing.md,
+    backgroundColor: "rgba(39, 41, 53, 0.5)",
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.05)",
+  },
+  progressLabel: {
+    fontSize: 10,
+    fontWeight: typography.bold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  progressValue: {
+    fontSize: 24,
+    fontWeight: typography.bold,
+    color: colors.primary,
+  },
+  progressValueSuffix: {
+    fontSize: 12,
+    fontWeight: typography.bold,
+    color: "rgba(0, 206, 209, 0.7)",
+    textTransform: "uppercase",
   },
 });

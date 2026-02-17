@@ -51,9 +51,13 @@ export function useChallenges(tripId?: string | null) {
     id: string;
     name: string;
     basePoints?: number | null;
+    firstPlacePoints?: number | null;
+    scoringCategory?: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING" | null;
     description?: string | null;
     image?: string | null;
-    status?: string | null;
+    status?: "HIDDEN" | "VISIBLE" | "ACTIVE" | "VOTING_PHASE" | "COMPLETED" | "CANCELLED" | null;
+    participantGroupsCount?: number | null;
+    myGroupSubmissionStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
   }
 
   const challenges: ChallengeListItem[] = useMemo(() => {
@@ -63,29 +67,55 @@ export function useChallenges(tripId?: string | null) {
 
     return apiChallenges.map((dbChallenge) => {
       const rawStatus = dbChallenge.status ?? "HIDDEN";
-      const cardStatus =
+      const mySubmissionStatus = dbChallenge.myGroupSubmissionStatus ?? null;
+
+      const cardStatus: ChallengeListItem["status"] =
         rawStatus === "HIDDEN" || rawStatus === "CANCELLED"
           ? "locked"
-          : rawStatus === "COMPLETED"
-            ? "selected"
-            : "incomplete";
+          : mySubmissionStatus === "APPROVED"
+            ? "solved"
+            : mySubmissionStatus === "PENDING"
+              ? "submitted"
+              : mySubmissionStatus === "REJECTED"
+                ? "rejected"
+                : rawStatus === "VOTING_PHASE" || rawStatus === "COMPLETED"
+                  ? "locked"
+                  : "to_solve";
+
+      const basePoints = dbChallenge.basePoints ?? 0;
+      const maxPoints =
+        dbChallenge.scoringCategory === "UNLIMITED"
+          ? basePoints
+          : (dbChallenge.firstPlacePoints ?? basePoints);
 
       return {
         id: dbChallenge.id,
         title: dbChallenge.name,
-        points: dbChallenge.basePoints ?? 0,
+        points: maxPoints,
         icon: "trophy",
         iconColor: colors.primary,
         status: cardStatus,
+        lifecycleStatus: rawStatus,
         description: dbChallenge.description ?? undefined,
         image: dbChallenge.image ?? undefined,
+        participantGroupsCount: dbChallenge.participantGroupsCount ?? 0,
       } as ChallengeListItem;
     });
   }, [challengesData]);
 
+  const completedChallengesCount = useMemo(
+    () =>
+      challenges.filter(
+        (challenge) =>
+          challenge.status === "solved" || challenge.status === "submitted",
+      ).length,
+    [challenges],
+  );
+
   return {
     trip,
     challenges,
+    completedChallengesCount,
     isLoading: tripLoading || challengesLoading,
     userGroup,
     leaderboardInfo,
