@@ -1,35 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 import { colors, spacing, borderRadius, typography } from "~/styles";
 
-const submissionTypeLabels: Record<string, string> = {
-  IMAGE: "Image",
-  MULTI_IMAGE: "Multi Image",
-  VIDEO: "Video",
-  TEXT: "Text",
-  IMAGE_LOCATION: "Image + Location",
-  LOCATION: "Location",
-  QR_CODE: "QR Code",
-};
-
-const submissionTypeRequirements: Record<string, string> = {
-  IMAGE: "At least 1 image",
-  MULTI_IMAGE: "At least 2 images",
-  VIDEO: "Video file",
-  TEXT: "Text description",
-  IMAGE_LOCATION: "Image + GPS location",
-  LOCATION: "GPS location",
-  QR_CODE: "QR code (image or text)",
-};
-
-const scoringCategoryLabels: Record<string, string> = {
-  SPEED: "Speed",
-  UNLIMITED: "Unlimited",
-  JUDGED_STAFF: "Judged (Staff)",
-  PEER_VOTING: "Peer Voting",
-};
-
 interface ChallengeDetailsCardProps {
   challenge: {
+    status?: string | null;
     submissionType: string;
     scoringCategory: string;
     isRecurring: boolean;
@@ -54,14 +28,6 @@ const toDate = (value?: Date | string | null) => {
 };
 
 export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
-  const submissionTypeLabel =
-    submissionTypeLabels[challenge.submissionType] ?? challenge.submissionType;
-  const submissionRequirement =
-    submissionTypeRequirements[challenge.submissionType] ??
-    "Check challenge description";
-  const scoringCategoryLabel =
-    scoringCategoryLabels[challenge.scoringCategory] ?? challenge.scoringCategory;
-
   const start = toDate(challenge.startTime);
   const end = toDate(challenge.endTime);
   const votingStart = toDate(challenge.votingStartTime);
@@ -82,38 +48,14 @@ export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Challenge Details</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Challenge Details</Text>
+      </View>
 
       <View style={styles.row}>
         <Text style={styles.label}>Submission window</Text>
         <Text style={styles.value}>{timeWindowText}</Text>
       </View>
-
-      <View style={styles.row}>
-        <Text style={styles.label}>Submission type</Text>
-        <Text style={styles.value}>{submissionTypeLabel}</Text>
-      </View>
-
-      <View style={styles.row}>
-        <Text style={styles.label}>What to submit</Text>
-        <Text style={styles.value}>{submissionRequirement}</Text>
-      </View>
-
-      <View style={styles.row}>
-        <Text style={styles.label}>Scoring</Text>
-        <Text style={styles.value}>{scoringCategoryLabel}</Text>
-      </View>
-
-      {(challenge.scoringCategory === "SPEED" ||
-        challenge.scoringCategory === "PEER_VOTING") && (
-        <View style={styles.row}>
-          <Text style={styles.label}>Podium points</Text>
-          <Text style={styles.value}>
-            1st: {challenge.firstPlacePoints ?? 0} · 2nd: {challenge.secondPlacePoints ?? 0} · 3rd:{" "}
-            {challenge.thirdPlacePoints ?? 0}
-          </Text>
-        </View>
-      )}
 
       {challenge.scoringCategory === "PEER_VOTING" && (
         <View style={styles.row}>
@@ -121,11 +63,6 @@ export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
           <Text style={styles.value}>{votingWindowText}</Text>
         </View>
       )}
-
-      <View style={styles.row}>
-        <Text style={styles.label}>Base points</Text>
-        <Text style={styles.value}>{challenge.basePoints ?? 0}</Text>
-      </View>
 
       {challenge.targetLatitude && challenge.targetLongitude && (
         <View style={styles.row}>
@@ -154,6 +91,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 2,
+    marginBottom: spacing.md,
+  },
+  header: {
     marginBottom: spacing.md,
   },
   row: {

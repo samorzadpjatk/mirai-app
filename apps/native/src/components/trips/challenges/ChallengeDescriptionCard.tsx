@@ -12,7 +12,6 @@ export function ChallengeDescriptionCard({
 }: ChallengeDescriptionCardProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Description</Text>
       <Text style={styles.description}>
         {description ??
           "Complete this challenge to earn points for your group!"}
@@ -36,14 +35,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.05)",
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    marginBottom: spacing.md,
   },
   description: {
     fontSize: typography.base,

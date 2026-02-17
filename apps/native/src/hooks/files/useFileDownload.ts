@@ -38,6 +38,30 @@ const buildCacheFileName = async (storagePath: string, url: string): Promise<str
   return hash;
 };
 
+const buildCacheFileNameFromStoragePath = async (storagePath: string): Promise<string> => {
+  const ext = storagePath.split(".").pop();
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    storagePath,
+  );
+
+  if (ext && ext.length > 0) {
+    return `${hash}.${ext}`;
+  }
+
+  return hash;
+};
+
+export const deleteCachedDownload = async (storagePath: string): Promise<void> => {
+  const cachedFileName = await buildCacheFileNameFromStoragePath(storagePath);
+  const destinationDir = new Directory(Paths.cache, "downloads");
+  const targetFile = new File(destinationDir, cachedFileName);
+
+  if (targetFile.exists) {
+    targetFile.delete();
+  }
+};
+
 export const useFileDownload = () => {
   const trpcClient = useTRPCClient();
   const [status, setStatus] = useState<DownloadStatus>("idle");

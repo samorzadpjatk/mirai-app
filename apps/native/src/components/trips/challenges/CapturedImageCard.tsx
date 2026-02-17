@@ -11,7 +11,7 @@ interface CapturedImageCardProps {
 export function CapturedImageCard({ imageUri, onRetake, onDone }: CapturedImageCardProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Challenge Completed! ✅</Text>
+      <Text style={styles.title}>Submission sent - pending review</Text>
 
       <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
 

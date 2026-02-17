@@ -55,6 +55,10 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
     resetImage();
     void downloadImage({
       storagePath: submission.imageIds[0] ?? "",
+      skipCache: true,
+    }).catch(() => {
+      // Submission metadata can arrive before the file is reachable in storage.
+      // The UI already handles missing image with a fallback state.
     });
 
     return () => {
@@ -71,6 +75,9 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
     resetVideo();
     void downloadVideo({
       storagePath: submission.videoId ?? "",
+      skipCache: true,
+    }).catch(() => {
+      // Video may be temporarily unavailable; render fallback instead.
     });
 
     return () => {

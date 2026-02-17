@@ -51,6 +51,36 @@ export function useChallengeCapture({
     return "jpg";
   }, []);
 
+  const resolveMimeType = useCallback((extension: string) => {
+    switch (extension) {
+      case "png":
+        return "image/png";
+      case "webp":
+        return "image/webp";
+      case "heic":
+      case "heif":
+        return "image/heic";
+      default:
+        return "image/jpeg";
+    }
+  }, []);
+
+  const resolveFileName = useCallback(
+    (asset: ImagePicker.ImagePickerAsset, extension: string) => {
+      if (asset.fileName && asset.fileName.trim().length > 0) {
+        return asset.fileName;
+      }
+
+      const uriLastSegment = asset.uri.split("/").pop();
+      if (uriLastSegment && uriLastSegment.includes(".")) {
+        return uriLastSegment;
+      }
+
+      return `challenge-${Date.now()}.${extension}`;
+    },
+    [],
+  );
+
   const submissionMutation = useMutation(
     trpc.challengeSubmission.create.mutationOptions({
       onSuccess: async () => {
@@ -60,8 +90,16 @@ export function useChallengeCapture({
             tripId,
             challengeId,
           });
+        const mySubmissionQuery =
+          trpc.challengeSubmission.getMyForChallenge.queryOptions({
+            tripId,
+            challengeId,
+          });
         await queryClient.invalidateQueries({
           queryKey: submissionQuery.queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: mySubmissionQuery.queryKey,
         });
       },
     }),
@@ -86,8 +124,8 @@ export function useChallengeCapture({
   const showSuccessAlert = useCallback((challengeName?: string, points?: number, destinationTripId?: string | null) => {
     const resolvedTripId = destinationTripId ?? tripId;
     Alert.alert(
-      "Challenge Completed! 🎉",
-      `Congratulations! You've earned ${points ?? 0} points for completing the ${challengeName ?? "challenge"}.`,
+      "Submission sent",
+      "Zdjęcie zostało wysłane i czeka na zaakceptowanie przez kadrę. Dostaniesz powiadomienie, gdy zostanie zaakceptowane.",
       [
         {
           text: "View Challenges",
@@ -126,31 +164,42 @@ export function useChallengeCapture({
       }
 
       setIsLoading(true);
+      let createdSubmissionId: string | null = null;
       try {
         const extension = resolveExtension(asset);
-        const storagePath = `challenge/${challengeId}/${groupId}.${extension}`;
+        const storagePath = `challenge/${challengeId}/${groupId}-${Date.now()}.${extension}`;
         const submission = await submissionMutation.mutateAsync({
           tripId,
           challengeId,
           imageIds: [storagePath],
         });
+        createdSubmissionId = submission.id;
         setSubmissionId(submission.id);
 
-        if (!asset.fileName || !asset.mimeType) {
-          throw new Error("Asset is missing file name or MIME type.");
-        }
+        const fileName = resolveFileName(asset, extension);
+        const contentType = asset.mimeType ?? resolveMimeType(extension);
 
         await upload({
           storagePath,
           fileUri: asset.uri,
-          fileName: asset.fileName,
-          contentType: asset.mimeType,
+          fileName,
+          contentType,
           upsert: true,
         });
 
         setCapturedImage(asset.uri);
         showSuccessAlert(challengeName, points, tripId);
       } catch (error) {
+        if (createdSubmissionId && tripId) {
+          try {
+            await deleteSubmissionMutation.mutateAsync({
+              id: createdSubmissionId,
+              tripId,
+            });
+          } catch {
+            // Ignore cleanup failures, original upload error is shown below.
+          }
+        }
         const message =
           error instanceof Error ? error.message : "Failed to submit challenge";
         Alert.alert("Upload Failed", message);
@@ -161,6 +210,8 @@ export function useChallengeCapture({
     [
       challengeId,
       resolveExtension,
+      resolveFileName,
+      resolveMimeType,
       showSuccessAlert,
       submissionMutation,
       tripId,

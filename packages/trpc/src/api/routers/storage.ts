@@ -81,42 +81,24 @@ export const storageRouter = createTRPCRouter({
       const objectInfo = resolveStoragePath(input.storagePath);
       const expiresIn = input.expiresInSeconds ?? 10 * 60;
 
-      // Pre-check existence to return a clean 404 instead of relying on createSignedUrl errors
-      const dir = objectInfo.path.includes("/")
-        ? objectInfo.path.slice(0, objectInfo.path.lastIndexOf("/"))
-        : "";
-      const fileName = objectInfo.path.split("/").pop();
-
-      const { data: listData, error: listError } = await ctx.supabase.storage
-        .from(objectInfo.bucket)
-        .list(dir || undefined, {
-          search: fileName,
-          limit: 1,
-        });
-
-      if (listError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to verify storage object existence",
-        });
-      }
-
-      const exists = Array.isArray(listData) && listData.some((item) => item.name === fileName);
-      if (!exists) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Storage object not found",
-        });
-      }
-
       const { data, error } = await ctx.supabase.storage
         .from(objectInfo.bucket)
         .createSignedUrl(objectInfo.path, expiresIn);
 
       if (error || !data?.signedUrl) {
+        const message =
+          typeof error?.message === "string"
+            ? error.message
+            : "Unable to create signed URL";
+        const looksLikeNotFound =
+          message.toLowerCase().includes("not found") ||
+          message.toLowerCase().includes("does not exist");
+
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Unable to create signed URL",
+          code: looksLikeNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR",
+          message: looksLikeNotFound
+            ? "Storage object not found"
+            : "Unable to create signed URL",
         });
       }
 
