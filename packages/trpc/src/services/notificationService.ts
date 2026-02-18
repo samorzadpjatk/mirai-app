@@ -84,7 +84,8 @@ export async function sendMobileNotifications(
     return { success: true, sent: 0, failed: 0, total: 0 };
   }
 
-  const expo = new Expo();
+  const expoAccessToken = process.env.EXPO_ACCESS_TOKEN;
+  const expo = new Expo(expoAccessToken ? { accessToken: expoAccessToken } : undefined);
   const messages: ExpoPushMessage[] = [];
   const userByToken = new Map<string, string>();
 
