@@ -1,14 +1,50 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, moderatorProcedure, protectedProcedure } from "../../api/trpc";
+import { normalizeSupabaseStoragePath } from "../../utils/storage";
+
+const REWARD_IMAGE_SIGNED_URL_SECONDS = 60 * 10;
+
+const resolveRewardImage = async (
+  supabase: {
+    storage: {
+      from: (bucket: string) => {
+        createSignedUrl: (
+          path: string,
+          expiresIn: number,
+        ) => Promise<{ data: { signedUrl?: string | null } | null; error: unknown }>;
+      };
+    };
+  },
+  image: string | null | undefined,
+) => {
+  if (!image) return null;
+
+  const parsed = normalizeSupabaseStoragePath(image);
+  if (!parsed) {
+    return image;
+  }
+
+  const { data, error } = await supabase.storage
+    .from(parsed.bucket)
+    .createSignedUrl(parsed.path, REWARD_IMAGE_SIGNED_URL_SECONDS);
+
+  if (error || !data?.signedUrl) {
+    return null;
+  }
+
+  return data.signedUrl;
+};
 
 export const rewardRouter = createTRPCRouter({
   // Get all rewards for a trip
   getByTrip: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const isAllTrips = input.tripId === "all";
+
       const rewards = await ctx.db.reward.findMany({
-        where: { tripId: input.tripId },
+        where: isAllTrips ? undefined : { tripId: input.tripId },
         include: {
           createdBy: {
             select: {
@@ -26,28 +62,81 @@ export const rewardRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
+      const rewardsWithSignedImages = await Promise.all(
+        rewards.map(async (reward) => {
+          const signedImageUrl = await resolveRewardImage(ctx.supabase, reward.image);
+          return { ...reward, signedImageUrl };
+        }),
+      );
+
       // Get user's group to check if they can afford rewards
-      const userGroup = await ctx.db.tripParticipant.findFirst({
-        where: {
-          userId: ctx.dbUser.id,
-          tripId: input.tripId,
-        },
+      const userGroup = isAllTrips
+        ? null
+        : await ctx.db.tripParticipant.findFirst({
+            where: {
+              userId: ctx.dbUser.id,
+              tripId: input.tripId,
+            },
+            include: {
+              group: {
+                select: {
+                  id: true,
+                  coins: true,
+                  organizerId: true,
+                },
+              },
+            },
+          });
+
+      const groupCoins = userGroup?.group?.coins ?? 0;
+      const isGroupLeader = userGroup?.group?.organizerId === ctx.dbUser.id;
+
+      return rewardsWithSignedImages.map((reward) => ({
+        ...reward,
+        canAfford: groupCoins >= reward.coinCost,
+        isEligibleToBuy: isGroupLeader,
+        isOutOfStock: reward.availableQuantity <= 0,
+        purchasedCount: reward._count.purchases,
+      }));
+    }),
+
+  // Get all rewards for a trip (admin version - no participation required)
+  getByTripAdmin: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const isAllTrips = input.tripId === "all";
+
+      const rewards = await ctx.db.reward.findMany({
+        where: isAllTrips ? undefined : { tripId: input.tripId },
         include: {
-          group: {
+          createdBy: {
             select: {
               id: true,
-              coins: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          _count: {
+            select: {
+              purchases: true,
             },
           },
         },
+        orderBy: { createdAt: "desc" },
       });
 
-      const groupCoins = userGroup?.group?.coins ?? 0;
-      const isGroupLeader = userGroup?.role === "LEADER";
+      const rewardsWithSignedImages = await Promise.all(
+        rewards.map(async (reward) => {
+          const signedImageUrl = await resolveRewardImage(ctx.supabase, reward.image);
+          return { ...reward, signedImageUrl };
+        }),
+      );
 
-      return rewards.map((reward) => ({
+      // For admin view, we don't need to check affordability
+      return rewardsWithSignedImages.map((reward) => ({
         ...reward,
-        canAfford: isGroupLeader && groupCoins >= reward.coinCost,
+        canAfford: false, // Not relevant for admin
+        isEligibleToBuy: false, // Not relevant for admin
         isOutOfStock: reward.availableQuantity <= 0,
         purchasedCount: reward._count.purchases,
       }));
@@ -92,7 +181,9 @@ export const rewardRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
       }
 
-      return reward;
+      const signedImageUrl = await resolveRewardImage(ctx.supabase, reward.image);
+
+      return { ...reward, signedImageUrl };
     }),
 
   // Create new reward (admin/moderator only)
@@ -138,17 +229,22 @@ export const rewardRouter = createTRPCRouter({
         name: z.string().min(1).optional(),
         description: z.string().min(1).optional(),
         availableQuantity: z.number().min(0).optional(),
-        image: z.string().optional(),
+        image: z.string().nullable().optional(),
         coinCost: z.number().min(1).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
+      const { image, ...restUpdate } = updateData;
+
       const reward = await ctx.db.reward.update({
         where: { id },
         data: {
-          ...updateData,
+          ...restUpdate,
+          ...(Object.prototype.hasOwnProperty.call(updateData, "image")
+            ? { image: image ?? null }
+            : {}),
           updatedAt: new Date(),
         },
         include: {
@@ -214,11 +310,11 @@ export const rewardRouter = createTRPCRouter({
           });
         }
 
-        // Get user's group and verify they are a leader
+        // Get user's group and verify they are the organizer
         const userParticipant = await tx.tripParticipant.findFirst({
           where: {
             userId: ctx.dbUser.id,
-            role: "LEADER",
+            tripId: reward.tripId,
           },
           include: {
             group: {
@@ -227,22 +323,23 @@ export const rewardRouter = createTRPCRouter({
                 name: true,
                 coins: true,
                 tripId: true,
+                organizerId: true,
               },
             },
           },
         });
 
-        if (!userParticipant || userParticipant.group?.tripId !== reward.tripId) {
+        if (!userParticipant?.group || userParticipant.group?.tripId !== reward.tripId) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "Only group leaders can purchase rewards",
+            message: "Only group organizers can purchase rewards",
           });
         }
 
-        if (!userParticipant.group) {
+        if (userParticipant.group.organizerId !== ctx.dbUser.id) {
           throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Group not found",
+            code: "FORBIDDEN",
+            message: "Only group organizers can purchase rewards",
           });
         }
 

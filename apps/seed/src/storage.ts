@@ -76,9 +76,11 @@ export const uploadAssets = async (seedEnv: SeedEnv) => {
     const bucketEntry = Object.entries(BUCKET_MAP).find(([prefix]) => rel.startsWith(`${prefix}/`));
     if (!bucketEntry) continue;
 
-    const [, bucketFn] = bucketEntry;
+    const [prefix, bucketFn] = bucketEntry;
     const bucketName = bucketFn();
-    const objectPath = rel.replace(/^[^/]+\//, "");
+    const objectPath = prefix === "rewards"
+      ? rel // keep rewards/ namespace inside images bucket
+      : rel.replace(new RegExp(`^${prefix}/`), "");
 
     const file = readFile(absPath);
     const { size } = await file.stat();
