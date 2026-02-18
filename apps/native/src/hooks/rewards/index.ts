@@ -3,29 +3,43 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useRewards = (tripId: string) => {
   const trpc = useTRPC();
-  
-  return useQuery(
-    trpc.reward.getByTrip.queryOptions({ tripId })
-  );
+
+  return useQuery({
+    ...trpc.reward.getByTrip.queryOptions({ tripId }),
+    enabled: Boolean(tripId),
+  });
 };
 
-export const useReward = (id: string) => {
+export const useAdminRewards = (tripId?: string | null) => {
   const trpc = useTRPC();
-  
-  return useQuery(
-    trpc.reward.getById.queryOptions({ id })
-  );
+
+  return useQuery({
+    ...trpc.reward.getByTripAdmin.queryOptions({ tripId: tripId ?? "" }),
+    enabled: Boolean(tripId),
+  });
+};
+
+export const useReward = (id: string | null) => {
+  const trpc = useTRPC();
+
+  return useQuery({
+    ...trpc.reward.getById.queryOptions({ id: id ?? "" }),
+    enabled: Boolean(id),
+  });
 };
 
 export const useCreateReward = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  
+
   return useMutation(
     trpc.reward.create.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: [["reward", "getByTrip"]]
+      onSuccess: async (_data, variables) => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.reward.getByTrip.queryKey({ tripId: variables.tripId }),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.reward.getByTripAdmin.queryKey({ tripId: variables.tripId }),
         });
       },
     })
@@ -35,16 +49,15 @@ export const useCreateReward = () => {
 export const useUpdateReward = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  
+
   return useMutation(
     trpc.reward.update.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: [["reward", "getByTrip"]]
+      onSuccess: async (_data, variables) => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.reward.getById.queryKey({ id: variables.id }),
         });
-        queryClient.invalidateQueries({
-          queryKey: [["reward", "getById"]]
-        });
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getByTrip"]] });
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getByTripAdmin"]] });
       },
     })
   );
@@ -53,13 +66,12 @@ export const useUpdateReward = () => {
 export const useDeleteReward = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  
+
   return useMutation(
     trpc.reward.delete.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: [["reward", "getByTrip"]]
-        });
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getByTrip"]] });
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getByTripAdmin"]] });
       },
     })
   );
@@ -71,14 +83,14 @@ export const usePurchaseReward = () => {
   
   return useMutation(
     trpc.reward.purchase.mutationOptions({
-      onSuccess: () => {
-        queryClient.invalidateQueries({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
           queryKey: [["reward", "getByTrip"]]
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
           queryKey: [["reward", "getPurchaseHistory"]]
         });
-        queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
           queryKey: [["group"]]
         });
       },

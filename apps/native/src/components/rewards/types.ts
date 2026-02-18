@@ -49,6 +49,7 @@ export interface RewardListItem {
   description: string;
   availableQuantity: number;
   image: string | null;
+  signedImageUrl?: string | null;
   coinCost: number;
   createdBy: {
     id: string;
@@ -59,6 +60,7 @@ export interface RewardListItem {
   updatedAt: Date;
   tripId: string;
   canAfford: boolean;
+  isEligibleToBuy: boolean;
   isOutOfStock: boolean;
   purchasedCount: number;
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,25 +11,66 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@integral-2025-app/auth/client";
 import { useRewards, usePurchaseReward } from "~/hooks/rewards";
 import { useGroups } from "~/hooks/groups";
-import { commonStyles } from "~/styles/commonStyles";
 import type { RewardListItem } from "./types";
+import type { GroupListItem } from "../trips/groups/types";
+import { commonStyles } from "~/styles/commonStyles";
 
 interface Props {
   tripId: string;
 }
 
 export default function RewardsView({ tripId }: Props) {
+  const { user } = useAuth();
   const { data: rewards, isLoading, error } = useRewards(tripId);
-  const { data: groups } = useGroups(tripId);
+  const { groups } = useGroups(tripId);
   const purchaseReward = usePurchaseReward();
   const [selectedReward, setSelectedReward] = useState<RewardListItem | null>(null);
   const [quantity, setQuantity] = useState("1");
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
-  const userGroup = groups?.find(g => g.participants.some(p => p.role === "LEADER"));
-  const groupCoins = userGroup?.coins || 0;
+  const safeRewards: RewardListItem[] = useMemo(() => {
+    const data = rewards as
+      | RewardListItem[]
+      | { data?: RewardListItem[] }
+      | undefined;
+
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.data)) return data.data;
+    return [];
+  }, [rewards]);
+
+  type RawGroup = Partial<GroupListItem> & {
+    participants?: unknown[];
+    coins?: number;
+    organizer?: GroupListItem["organizer"];
+    groups?: GroupListItem[];
+  };
+
+  const safeGroups: GroupListItem[] = useMemo(() => {
+    const rawGroups = Array.isArray(groups)
+      ? (groups as RawGroup[])
+      : ((groups as { groups?: RawGroup[] } | undefined)?.groups ?? []);
+
+    return rawGroups
+      .filter((g): g is Required<Pick<RawGroup, 'id' | 'name' | 'code'>> & RawGroup => 
+        g.id !== undefined && g.name !== undefined && g.code !== undefined
+      )
+      .map((g) => ({
+        ...g,
+        participantCount: g.participantCount ?? g.participants?.length ?? 0,
+        coins: g.coins ?? 0,
+        organizer: g.organizer ?? null,
+      }));
+  }, [groups]);
+
+  const organizerGroup = useMemo(
+    () => safeGroups.find((g) => g.organizer?.authUserId === user?.authUserId),
+    [safeGroups, user?.authUserId],
+  );
+  const groupCoins = organizerGroup?.coins ?? 0;
 
   const handlePurchase = async () => {
     if (!selectedReward || !quantity) return;
@@ -56,13 +97,13 @@ export default function RewardsView({ tripId }: Props) {
       setShowPurchaseModal(false);
       setQuantity("1");
       setSelectedReward(null);
-    } catch (error) {
+    } catch {
       Alert.alert("Błąd", "Nie udało się zakupić nagrody");
     }
   };
 
   const openPurchaseModal = (reward: RewardListItem) => {
-    if (!userGroup) {
+    if (!organizerGroup) {
       Alert.alert("Błąd", "Tylko lider grupy może zakupić nagrody");
       return;
     }
@@ -90,7 +131,7 @@ export default function RewardsView({ tripId }: Props) {
     );
   }
 
-  if (!rewards || rewards.length === 0) {
+  if (!safeRewards || safeRewards.length === 0) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
         <Ionicons name="gift" size={48} color="#6b7280" />
@@ -111,15 +152,15 @@ export default function RewardsView({ tripId }: Props) {
         borderBottomColor: "#273a3a",
       }}>
         <Text style={[commonStyles.h3, { marginBottom: 8 }]}>Nagrody</Text>
-        {userGroup && (
+        {organizerGroup && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Ionicons name="people" size={16} color="#00ced1" />
-            <Text style={[commonStyles.textPrimary, { color: "#00ced1" }]}>
-              {userGroup.name}
+            <Text style={[commonStyles.textPrimary, { color: "#00ced1" }]}> 
+              {organizerGroup.name}
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Ionicons name="cash" size={16} color="#fbbf24" />
-              <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
+              <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}> 
                 {groupCoins} monet
               </Text>
             </View>
@@ -129,7 +170,7 @@ export default function RewardsView({ tripId }: Props) {
 
       <ScrollView style={{ flex: 1, padding: 16 }}>
         <View style={{ gap: 16 }}>
-          {rewards.map((reward) => (
+          {safeRewards.map((reward) => (
             <View
               key={reward.id}
               style={{
@@ -141,12 +182,12 @@ export default function RewardsView({ tripId }: Props) {
               }}
             >
               {/* Reward Image */}
-              {reward.image && (
+              {(reward.signedImageUrl ?? reward.image) && (
                 <Image
-                  source={{ uri: reward.image }}
+                  source={{ uri: reward.signedImageUrl ?? reward.image ?? undefined }}
                   style={{
                     width: "100%",
-                    height: 120,
+                    aspectRatio: 1,
                     borderRadius: 8,
                     marginBottom: 12,
                   }}
@@ -175,7 +216,7 @@ export default function RewardsView({ tripId }: Props) {
                     color: reward.isOutOfStock ? "#ef4444" : "#10b981",
                     fontWeight: "600"
                   }]}>
-                    {reward.isOutOfStock ? "Wyprzedane" : `${reward.availableQuantity} szt.`}
+                    {reward.isOutOfStock ? "Wyprzedane" : `${reward.availableQuantity ?? 0} szt.`}
                   </Text>
                 </View>
               </View>
@@ -183,17 +224,18 @@ export default function RewardsView({ tripId }: Props) {
               {/* Purchase Button */}
               <TouchableOpacity
                 onPress={() => openPurchaseModal(reward)}
-                disabled={!reward.canAfford || reward.isOutOfStock}
+                disabled={!reward.canAfford || !reward.isEligibleToBuy || reward.isOutOfStock}
                 style={[
                   commonStyles.button,
                   {
-                    backgroundColor: reward.canAfford && !reward.isOutOfStock ? "#00ced1" : "#374151",
-                    opacity: reward.canAfford && !reward.isOutOfStock ? 1 : 0.5,
+                    backgroundColor: reward.canAfford && reward.isEligibleToBuy && !reward.isOutOfStock ? "#00ced1" : "#374151",
+                    opacity: reward.canAfford && reward.isEligibleToBuy && !reward.isOutOfStock ? 1 : 0.5,
                   }
                 ]}
               >
                 <Text style={commonStyles.buttonText}>
                   {reward.isOutOfStock ? "Wyprzedane" : 
+                   !reward.isEligibleToBuy ? "Tylko lider grupy" : 
                    !reward.canAfford ? "Brak monet" : 
                    "Kup nagrodę"}
                 </Text>
