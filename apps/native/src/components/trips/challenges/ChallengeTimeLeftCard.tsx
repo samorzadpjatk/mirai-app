@@ -1,0 +1,250 @@
+import { useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { borderRadius, colors, spacing, typography } from "~/styles";
+
+interface ChallengeTimeLeftCardProps {
+  phaseLabel: "Submission" | "Voting";
+  isRecurring?: boolean;
+  startTime?: Date | string | null;
+  endTime?: Date | string | null;
+  dailyStartTime?: string | null;
+  dailyEndTime?: string | null;
+}
+
+const toDate = (value?: Date | string | null) => {
+  if (!value) return null;
+  return value instanceof Date ? value : new Date(value);
+};
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+const parseClockToMinutes = (value?: string | null) => {
+  if (!value) return null;
+  const [hoursRaw, minutesRaw] = value.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+  return hours * 60 + minutes;
+};
+
+const getNextRecurringDeadline = (
+  dailyEndTime?: string | null,
+  nowDate?: Date,
+) => {
+  if (!dailyEndTime) return null;
+  const [hoursRaw, minutesRaw] = dailyEndTime.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+
+  const now = nowDate ?? new Date();
+  const target = new Date(now);
+  target.setHours(hours, minutes, 0, 0);
+  if (target.getTime() <= now.getTime()) {
+    target.setDate(target.getDate() + 1);
+  }
+  return target;
+};
+
+const formatCountdown = (ms: number) => {
+  if (ms <= 0) return "Ended";
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+};
+
+export function ChallengeTimeLeftCard({
+  phaseLabel,
+  isRecurring = false,
+  startTime,
+  endTime,
+  dailyStartTime,
+  dailyEndTime,
+}: ChallengeTimeLeftCardProps) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  const start = toDate(startTime);
+  const end = toDate(endTime);
+  const recurringDeadline = getNextRecurringDeadline(dailyEndTime, new Date(now));
+  const deadline = isRecurring ? recurringDeadline : end;
+
+  if (!deadline) {
+    return null;
+  }
+
+  const countdownText = formatCountdown(deadline.getTime() - now);
+  const countdownSubtext = isRecurring
+    ? `Daily reset at ${dailyEndTime ?? "--:--"}`
+    : `Ends ${deadline.toLocaleString()}`;
+
+  const progressRatio = useMemo(() => {
+    if (isRecurring) {
+      const startMinutes = parseClockToMinutes(dailyStartTime);
+      const endMinutes = parseClockToMinutes(dailyEndTime);
+      let cycleMs = 24 * 60 * 60 * 1000;
+
+      if (startMinutes != null && endMinutes != null) {
+        const dailyMinutes =
+          endMinutes > startMinutes
+            ? endMinutes - startMinutes
+            : 24 * 60 - startMinutes + endMinutes;
+        cycleMs = Math.max(dailyMinutes * 60 * 1000, 60 * 1000);
+      }
+
+      return clamp((deadline.getTime() - now) / cycleMs, 0, 1);
+    }
+
+    if (!start || !end) return 0;
+    const totalMs = end.getTime() - start.getTime();
+    if (totalMs <= 0) return 0;
+    return clamp((deadline.getTime() - now) / totalMs, 0, 1);
+  }, [dailyEndTime, dailyStartTime, deadline, end, isRecurring, now, start]);
+
+  const progressColor =
+    progressRatio > 0.66 ? "#22c55e" : progressRatio > 0.33 ? "#f59e0b" : "#ef4444";
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Time left</Text>
+        <Text style={styles.phase}>{phaseLabel}</Text>
+      </View>
+
+      <View style={styles.countdownCard}>
+        <View style={styles.countdownIconWrap}>
+          <Ionicons name="time-outline" size={20} color={colors.primary} />
+        </View>
+        <View style={styles.countdownTextWrap}>
+          <Text style={styles.countdownValue}>{countdownText}</Text>
+          <Text style={styles.countdownSubtext}>{countdownSubtext}</Text>
+        </View>
+      </View>
+
+      <View style={styles.progressTrack}>
+        <View
+          style={[
+            styles.progressFill,
+            {
+              width: `${clamp(progressRatio * 100, 0, 100)}%`,
+              backgroundColor: progressColor,
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.cardDark,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.05)",
+  },
+  header: {
+    marginBottom: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  title: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 2,
+  },
+  phase: {
+    color: colors.primary,
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+  },
+  countdownCard: {
+    backgroundColor: colors.primaryOpacity10,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity30,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  countdownIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.backgroundDarkOpacity50,
+  },
+  countdownTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  countdownValue: {
+    fontSize: typography.lg,
+    fontWeight: typography.bold,
+    color: colors.white,
+  },
+  countdownSubtext: {
+    fontSize: typography.xs,
+    color: colors.textSecondary,
+  },
+  progressTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: "transparent",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.borderWhite5,
+    position: "relative",
+  },
+  progressFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 999,
+  },
+});
