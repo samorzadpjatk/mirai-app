@@ -7,6 +7,12 @@ import {
 } from "../../api/trpc";
 import { type Prisma } from "@integral-2025-app/db";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
+import {
+  createChallengeStatusActivityById,
+  createChallengeStatusActivityFromTransition,
+  finalizeVotingChallengesToCompletedWithFeed,
+  promoteVisibleChallengesToActiveWithFeed,
+} from "../../utils/activityFeed";
 
 const challengeBaseSelect: Prisma.ChallengeSelect = {
   id: true,
@@ -250,15 +256,10 @@ const activateVisibleChallenges = async (
     },
   });
 
-  await db.challenge.updateMany({
-    where: {
-      status: "VISIBLE",
-      startTime: { lte: new Date() },
-      ...where,
-    },
-    data: {
-      status: "ACTIVE",
-    },
+  await promoteVisibleChallengesToActiveWithFeed({
+    tx: db,
+    where,
+    createdByAdmin: null,
   });
 
   await db.challenge.updateMany({
@@ -270,6 +271,12 @@ const activateVisibleChallenges = async (
     data: {
       status: "COMPLETED",
     },
+  });
+
+  await finalizeVotingChallengesToCompletedWithFeed({
+    tx: db,
+    where,
+    createdByAdmin: null,
   });
 };
 
@@ -471,6 +478,15 @@ export const challengeRouter = createTRPCRouter({
         select: challengeSelect,
       });
 
+      if (challenge.status === "ACTIVE") {
+        await createChallengeStatusActivityById({
+          tx: ctx.db,
+          challengeId: challenge.id,
+          eventType: "challenge_started",
+          createdByAdmin: ctx.dbUser.id,
+        });
+      }
+
       return {
         ...toClientChallenge(challenge),
         image: await resolveChallengeImage(ctx.supabase, challenge.image),
@@ -530,6 +546,7 @@ export const challengeRouter = createTRPCRouter({
         where: { id: input.id, tripId: input.tripId },
         select: {
           id: true,
+          status: true,
           description: true,
           submissionType: true,
           scoringCategory: true,
@@ -590,6 +607,14 @@ export const challengeRouter = createTRPCRouter({
               : input.autoApprove,
         },
         select: challengeSelect,
+      });
+
+      await createChallengeStatusActivityFromTransition({
+        tx: ctx.db,
+        challengeId: challenge.id,
+        previousStatus: existing.status,
+        nextStatus: challenge.status,
+        createdByAdmin: ctx.dbUser.id,
       });
 
       return {

@@ -341,6 +341,23 @@ export type FloatWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedFloatFilter<$PrismaModel>
 }
 
+export type EnumSubmissionTypeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.SubmissionType | Prisma.EnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel> | $Enums.SubmissionType | null
+}
+
+export type EnumSubmissionTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SubmissionType | Prisma.EnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumSubmissionTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.SubmissionType | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel>
+}
+
 export type EnumLocationSharingRequestStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.LocationSharingRequestStatus | Prisma.EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
   in?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
@@ -674,6 +691,23 @@ export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedFloatFilter<$PrismaModel>
   _min?: Prisma.NestedFloatFilter<$PrismaModel>
   _max?: Prisma.NestedFloatFilter<$PrismaModel>
+}
+
+export type NestedEnumSubmissionTypeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.SubmissionType | Prisma.EnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel> | $Enums.SubmissionType | null
+}
+
+export type NestedEnumSubmissionTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SubmissionType | Prisma.EnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumSubmissionTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.SubmissionType | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumLocationSharingRequestStatusFilter<$PrismaModel = never> = {

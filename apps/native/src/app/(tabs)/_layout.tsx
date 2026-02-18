@@ -44,6 +44,10 @@ export default function TabsLayout() {
         <Icon src={<VectorIcon family={Ionicons} name="snow" />} />
         <Label>Trips</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="community">
+        <Icon src={<VectorIcon family={Ionicons} name="people" />} />
+        <Label>Community</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="notifications">
         <Icon src={<VectorIcon family={Ionicons} name="notifications" />} />
         <Label>Notifications</Label>
