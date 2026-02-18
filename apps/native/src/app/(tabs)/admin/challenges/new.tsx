@@ -26,6 +26,8 @@ import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useFileUpload } from "~/hooks/files";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { LocationPicker, type LocationCoordinate } from "../../../../components/map/LocationPicker";
+import { Ionicons } from "@expo/vector-icons";
 
 const submissionTypes = [
   { label: "Image", value: "IMAGE" },
@@ -65,13 +67,6 @@ const formatTime = (date: Date | null) => {
 };
 
 const formatIso = (date: Date | null) => (date ? date.toISOString() : "");
-
-const parseCoordinate = (value: string) => {
-  const normalized = value.trim().replace(",", ".");
-  if (!normalized) return undefined;
-  const parsed = Number.parseFloat(normalized);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
 
 const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
   if (asset.fileName) {
@@ -131,8 +126,7 @@ export default function NewChallengeScreen() {
     endTime: null as Date | null,
     votingStartTime: null as Date | null,
     votingEndTime: null as Date | null,
-    targetLatitude: "",
-    targetLongitude: "",
+    targetLocation: null as LocationCoordinate | null,
     qrCodeValue: "",
     autoApprove: false,
   });
@@ -145,6 +139,7 @@ export default function NewChallengeScreen() {
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
   const [hasScannedQrThisSession, setHasScannedQrThisSession] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   const toOptionalInt = (value: string) => {
     if (!value) return undefined;
@@ -231,16 +226,16 @@ export default function NewChallengeScreen() {
       scoringCategory: value,
       ...(value === "UNLIMITED"
         ? {
-            firstPlacePoints: "",
-            secondPlacePoints: "",
-            thirdPlacePoints: "",
-          }
+          firstPlacePoints: "",
+          secondPlacePoints: "",
+          thirdPlacePoints: "",
+        }
         : {}),
       ...(value !== "PEER_VOTING"
         ? {
-            votingStartTime: null,
-            votingEndTime: null,
-          }
+          votingStartTime: null,
+          votingEndTime: null,
+        }
         : {}),
     }));
   };
@@ -257,15 +252,15 @@ export default function NewChallengeScreen() {
         submissionType: value,
         ...(value !== "QR_CODE"
           ? {
-              qrCodeValue: "",
-            }
+            qrCodeValue: "",
+          }
           : {}),
         ...(shouldResetPeerVoting
           ? {
-              scoringCategory: "SPEED",
-              votingStartTime: null,
-              votingEndTime: null,
-            }
+            scoringCategory: "SPEED",
+            votingStartTime: null,
+            votingEndTime: null,
+          }
           : {}),
       };
     });
@@ -323,23 +318,23 @@ export default function NewChallengeScreen() {
 
   const handleDateChange =
     (field: Exclude<DateField, null>) =>
-    (event: DateTimePickerEvent, selected?: Date) => {
-      if (Platform.OS === "android") {
-        if (event.type === "dismissed") {
+      (event: DateTimePickerEvent, selected?: Date) => {
+        if (Platform.OS === "android") {
+          if (event.type === "dismissed") {
+            setActivePicker(null);
+            return;
+          }
+          if (selected) {
+            updateForm(field, selected);
+          }
           setActivePicker(null);
           return;
         }
-        if (selected) {
-          updateForm(field, selected);
-        }
-        setActivePicker(null);
-        return;
-      }
 
-      if (selected) {
-        setPickerDraftDate(selected);
-      }
-    };
+        if (selected) {
+          setPickerDraftDate(selected);
+        }
+      };
 
   const openDatePicker = (field: Exclude<DateField, null>) => {
     setPickerDraftDate(form[field] ?? new Date());
@@ -353,24 +348,11 @@ export default function NewChallengeScreen() {
     }
 
     if (needsLocation) {
-      const latitude = parseCoordinate(form.targetLatitude);
-      const longitude = parseCoordinate(form.targetLongitude);
-
-      if (latitude == null || longitude == null) {
+      if (!form.targetLocation) {
         Alert.alert(
           "Error",
-          "Provide valid latitude and longitude for location challenges",
+          "Please select a location on the map for location challenges",
         );
-        return false;
-      }
-
-      if (latitude < -90 || latitude > 90) {
-        Alert.alert("Error", "Latitude must be between -90 and 90.");
-        return false;
-      }
-
-      if (longitude < -180 || longitude > 180) {
-        Alert.alert("Error", "Longitude must be between -180 and 180.");
         return false;
       }
     }
@@ -434,17 +416,17 @@ export default function NewChallengeScreen() {
     }
 
     const normalizedTargetLatitude = needsLocation
-      ? parseCoordinate(form.targetLatitude)
+      ? form.targetLocation?.latitude
       : undefined;
     const normalizedTargetLongitude = needsLocation
-      ? parseCoordinate(form.targetLongitude)
+      ? form.targetLocation?.longitude
       : undefined;
 
     if (
       needsLocation &&
       (normalizedTargetLatitude == null || normalizedTargetLongitude == null)
     ) {
-      Alert.alert("Error", "Provide valid latitude and longitude.");
+      Alert.alert("Error", "Please select a valid location on the map.");
       return;
     }
 
@@ -619,45 +601,40 @@ export default function NewChallengeScreen() {
           {needsLocation ? (
             <>
               <Text style={styles.label}>Target Location</Text>
-              <View style={styles.locationCard}>
-                <Text style={styles.locationText}>
-                  {form.targetLatitude && form.targetLongitude
-                    ? `Selected: ${Number(form.targetLatitude).toFixed(5)}, ${Number(
-                        form.targetLongitude,
-                      ).toFixed(5)}`
-                    : "No location selected"}
-                </Text>
-                <Text style={styles.hint}>
-                  Latitude: -90..90, Longitude: -180..180 (dot or comma).
-                </Text>
-                <View style={styles.inlineInputs}>
-                  <TextInput
-                    style={[styles.input, styles.inlineInput]}
-                    placeholder="Latitude"
-                    placeholderTextColor={colors.textTertiary}
-                    value={form.targetLatitude}
-                    onChangeText={(value) => updateForm("targetLatitude", value)}
-                    keyboardType="decimal-pad"
-                  />
-                  <TextInput
-                    style={[styles.input, styles.inlineInput]}
-                    placeholder="Longitude"
-                    placeholderTextColor={colors.textTertiary}
-                    value={form.targetLongitude}
-                    onChangeText={(value) => updateForm("targetLongitude", value)}
-                    keyboardType="decimal-pad"
-                  />
+              <TouchableOpacity
+                onPress={() => setShowLocationPicker(true)}
+                style={styles.locationCard}
+              >
+                <View style={styles.locationContent}>
+                  <View style={styles.locationInfo}>
+                    <Text style={styles.locationText}>
+                      {form.targetLocation
+                        ? `Selected: ${form.targetLocation.latitude.toFixed(5)}, ${form.targetLocation.longitude.toFixed(5)}`
+                        : "Tap to select location on map"
+                      }
+                    </Text>
+                    <Text style={styles.hint}>
+                      Tap to open map and select the exact location
+                    </Text>
+                  </View>
+                  <View style={styles.locationIcon}>
+                    <Ionicons
+                      name="location-sharp"
+                      size={20}
+                      color={colors.white}
+                      style={styles.mapControlButtonIcon}
+                    />
+                  </View>
                 </View>
+              </TouchableOpacity>
+              {form.targetLocation && (
                 <TouchableOpacity
-                  onPress={() => {
-                    updateForm("targetLatitude", "");
-                    updateForm("targetLongitude", "");
-                  }}
+                  onPress={() => updateForm("targetLocation", null)}
                   style={styles.clearButton}
                 >
-                  <Text style={styles.clearButtonText}>Clear</Text>
+                  <Text style={styles.clearButtonText}>Clear Location</Text>
                 </TouchableOpacity>
-              </View>
+              )}
             </>
           ) : null}
         </View>
@@ -875,7 +852,7 @@ export default function NewChallengeScreen() {
                 value={pickerDraftDate}
                 mode={
                   activePicker === "dailyStartTime" ||
-                  activePicker === "dailyEndTime"
+                    activePicker === "dailyEndTime"
                     ? "time"
                     : "datetime"
                 }
@@ -987,11 +964,25 @@ export default function NewChallengeScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Location Picker Modal */}
+      <LocationPicker
+        visible={showLocationPicker}
+        initialLocation={form.targetLocation}
+        onLocationSelected={(location) => {
+          updateForm("targetLocation", location);
+          setShowLocationPicker(false);
+        }}
+        onClose={() => setShowLocationPicker(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  mapControlButtonIcon: {
+    fontSize: 20,
+  },
   screen: {
     flex: 1,
     backgroundColor: colors.backgroundDark,
@@ -1252,6 +1243,25 @@ const styles = StyleSheet.create({
     borderColor: colors.borderDark,
     padding: spacing.md,
     gap: spacing.sm,
+  },
+  locationContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  locationInfo: {
+    flex: 1,
+  },
+  locationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,206,209,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationIconText: {
+    fontSize: 20,
   },
   locationText: {
     color: colors.white,
