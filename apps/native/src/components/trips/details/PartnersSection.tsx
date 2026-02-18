@@ -6,29 +6,37 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { borderRadius, colors, spacing, typography } from "~/styles";
+import { colors, spacing, typography } from "~/styles";
 
 export interface Partner {
   id: string;
   name: string;
   logo: ReturnType<typeof require>;
+  height?: number;
 }
 
 const PARTNERS: Partner[] = [
   {
-    id: "partner-1",
-    name: "Orange",
-    logo: require("../../../../assets/partners/partner1.jpg"),
-  },
-  {
     id: "partner-2",
     name: "AiSECLAB",
-    logo: require("../../../../assets/partners/partner2.jpg"),
+    logo: require("../../../../assets/partners/aiseclab.png"),
+    height: 30,
+  },
+  {
+    id: "partner-1",
+    name: "Orange",
+    logo: require("../../../../assets/partners/orange.png"),
+    height: 18,
   },
   {
     id: "partner-3",
     name: "Netcompany",
-    logo: require("../../../../assets/partners/partner3.jpg"),
+    logo: require("../../../../assets/partners/netcompany.png"),
+  },
+  {
+    id: "partner-4",
+    name: "Comtegra",
+    logo: require("../../../../assets/partners/comtegra.png"),
   },
 ];
 
@@ -39,19 +47,21 @@ export function PartnersSection() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Our Partners</Text>
-
-      <View style={styles.card}>
+      <Text style={styles.label}>Partners</Text>
+      <View style={styles.row}>
         {PARTNERS.map((partner) => (
           <TouchableOpacity
             key={partner.id}
-            style={styles.partnerSlot}
-            activeOpacity={0.7}
+            style={styles.slot}
+            activeOpacity={0.6}
             onPress={() =>
               router.push(`/trips/partners/${partner.id}` as const)
             }
           >
-            <Image source={partner.logo} style={styles.partnerLogo} />
+            <Image
+            source={partner.logo}
+            style={[styles.logo, partner.height ? { height: partner.height } : undefined]}
+          />
           </TouchableOpacity>
         ))}
       </View>
@@ -61,34 +71,33 @@ export function PartnersSection() {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: spacing.xxl,
-    marginBottom: spacing.lg,
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.xxxl,
     paddingHorizontal: spacing.lg,
-    gap: spacing.md,
   },
-  sectionTitle: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    color: colors.slate400,
+  label: {
+    fontSize: typography.xs - 1,
+    fontWeight: typography.semibold,
+    color: colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
-  card: {
+  row: {
     flexDirection: "row",
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primaryOpacity10,
-    padding: spacing.md,
+    alignItems: "center",
+    gap: spacing.sm,
+    width: "100%",
   },
-  partnerSlot: {
+  slot: {
     flex: 1,
-    height: 50,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
   },
-  partnerLogo: {
-    width: "75%",
+  logo: {
+    width: "100%",
     height: "100%",
     resizeMode: "contain",
   },
