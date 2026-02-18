@@ -353,6 +353,7 @@ export type ChallengeSubmissionWhereInput = {
   reviewedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   votes?: Prisma.ChallengeVoteListRelationFilter
   reports?: Prisma.SubmissionReportListRelationFilter
+  submissionActivities?: Prisma.SubmissionActivityListRelationFilter
 }
 
 export type ChallengeSubmissionOrderByWithRelationInput = {
@@ -380,6 +381,7 @@ export type ChallengeSubmissionOrderByWithRelationInput = {
   reviewedBy?: Prisma.UserOrderByWithRelationInput
   votes?: Prisma.ChallengeVoteOrderByRelationAggregateInput
   reports?: Prisma.SubmissionReportOrderByRelationAggregateInput
+  submissionActivities?: Prisma.SubmissionActivityOrderByRelationAggregateInput
 }
 
 export type ChallengeSubmissionWhereUniqueInput = Prisma.AtLeast<{
@@ -411,6 +413,7 @@ export type ChallengeSubmissionWhereUniqueInput = Prisma.AtLeast<{
   reviewedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   votes?: Prisma.ChallengeVoteListRelationFilter
   reports?: Prisma.SubmissionReportListRelationFilter
+  submissionActivities?: Prisma.SubmissionActivityListRelationFilter
 }, "id" | "challengeId_groupId">
 
 export type ChallengeSubmissionOrderByWithAggregationInput = {
@@ -487,6 +490,7 @@ export type ChallengeSubmissionCreateInput = {
   reviewedBy?: Prisma.UserCreateNestedOneWithoutChallengeSubmissionsInput
   votes?: Prisma.ChallengeVoteCreateNestedManyWithoutSubmissionInput
   reports?: Prisma.SubmissionReportCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionUncheckedCreateInput = {
@@ -511,6 +515,7 @@ export type ChallengeSubmissionUncheckedCreateInput = {
   updatedAt?: Date | string
   votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutSubmissionInput
   reports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionUpdateInput = {
@@ -535,6 +540,7 @@ export type ChallengeSubmissionUpdateInput = {
   reviewedBy?: Prisma.UserUpdateOneWithoutChallengeSubmissionsNestedInput
   votes?: Prisma.ChallengeVoteUpdateManyWithoutSubmissionNestedInput
   reports?: Prisma.SubmissionReportUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateInput = {
@@ -559,6 +565,7 @@ export type ChallengeSubmissionUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutSubmissionNestedInput
   reports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionCreateManyInput = {
@@ -903,6 +910,20 @@ export type ChallengeSubmissionUpdateOneRequiredWithoutReportsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ChallengeSubmissionUpdateToOneWithWhereWithoutReportsInput, Prisma.ChallengeSubmissionUpdateWithoutReportsInput>, Prisma.ChallengeSubmissionUncheckedUpdateWithoutReportsInput>
 }
 
+export type ChallengeSubmissionCreateNestedOneWithoutSubmissionActivitiesInput = {
+  create?: Prisma.XOR<Prisma.ChallengeSubmissionCreateWithoutSubmissionActivitiesInput, Prisma.ChallengeSubmissionUncheckedCreateWithoutSubmissionActivitiesInput>
+  connectOrCreate?: Prisma.ChallengeSubmissionCreateOrConnectWithoutSubmissionActivitiesInput
+  connect?: Prisma.ChallengeSubmissionWhereUniqueInput
+}
+
+export type ChallengeSubmissionUpdateOneRequiredWithoutSubmissionActivitiesNestedInput = {
+  create?: Prisma.XOR<Prisma.ChallengeSubmissionCreateWithoutSubmissionActivitiesInput, Prisma.ChallengeSubmissionUncheckedCreateWithoutSubmissionActivitiesInput>
+  connectOrCreate?: Prisma.ChallengeSubmissionCreateOrConnectWithoutSubmissionActivitiesInput
+  upsert?: Prisma.ChallengeSubmissionUpsertWithoutSubmissionActivitiesInput
+  connect?: Prisma.ChallengeSubmissionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ChallengeSubmissionUpdateToOneWithWhereWithoutSubmissionActivitiesInput, Prisma.ChallengeSubmissionUpdateWithoutSubmissionActivitiesInput>, Prisma.ChallengeSubmissionUncheckedUpdateWithoutSubmissionActivitiesInput>
+}
+
 export type ChallengeSubmissionCreateWithoutReviewedByInput = {
   id?: string
   imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
@@ -924,6 +945,7 @@ export type ChallengeSubmissionCreateWithoutReviewedByInput = {
   group: Prisma.GroupCreateNestedOneWithoutChallengeSubmissionsInput
   votes?: Prisma.ChallengeVoteCreateNestedManyWithoutSubmissionInput
   reports?: Prisma.SubmissionReportCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionUncheckedCreateWithoutReviewedByInput = {
@@ -947,6 +969,7 @@ export type ChallengeSubmissionUncheckedCreateWithoutReviewedByInput = {
   updatedAt?: Date | string
   votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutSubmissionInput
   reports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionCreateOrConnectWithoutReviewedByInput = {
@@ -1021,6 +1044,7 @@ export type ChallengeSubmissionCreateWithoutGroupInput = {
   reviewedBy?: Prisma.UserCreateNestedOneWithoutChallengeSubmissionsInput
   votes?: Prisma.ChallengeVoteCreateNestedManyWithoutSubmissionInput
   reports?: Prisma.SubmissionReportCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionUncheckedCreateWithoutGroupInput = {
@@ -1044,6 +1068,7 @@ export type ChallengeSubmissionUncheckedCreateWithoutGroupInput = {
   updatedAt?: Date | string
   votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutSubmissionInput
   reports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionCreateOrConnectWithoutGroupInput = {
@@ -1093,6 +1118,7 @@ export type ChallengeSubmissionCreateWithoutChallengeInput = {
   reviewedBy?: Prisma.UserCreateNestedOneWithoutChallengeSubmissionsInput
   votes?: Prisma.ChallengeVoteCreateNestedManyWithoutSubmissionInput
   reports?: Prisma.SubmissionReportCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionUncheckedCreateWithoutChallengeInput = {
@@ -1116,6 +1142,7 @@ export type ChallengeSubmissionUncheckedCreateWithoutChallengeInput = {
   updatedAt?: Date | string
   votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutSubmissionInput
   reports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionCreateOrConnectWithoutChallengeInput = {
@@ -1165,6 +1192,7 @@ export type ChallengeSubmissionCreateWithoutVotesInput = {
   group: Prisma.GroupCreateNestedOneWithoutChallengeSubmissionsInput
   reviewedBy?: Prisma.UserCreateNestedOneWithoutChallengeSubmissionsInput
   reports?: Prisma.SubmissionReportCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionUncheckedCreateWithoutVotesInput = {
@@ -1188,6 +1216,7 @@ export type ChallengeSubmissionUncheckedCreateWithoutVotesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   reports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionCreateOrConnectWithoutVotesInput = {
@@ -1227,6 +1256,7 @@ export type ChallengeSubmissionUpdateWithoutVotesInput = {
   group?: Prisma.GroupUpdateOneRequiredWithoutChallengeSubmissionsNestedInput
   reviewedBy?: Prisma.UserUpdateOneWithoutChallengeSubmissionsNestedInput
   reports?: Prisma.SubmissionReportUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateWithoutVotesInput = {
@@ -1250,6 +1280,7 @@ export type ChallengeSubmissionUncheckedUpdateWithoutVotesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   reports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionCreateWithoutReportsInput = {
@@ -1273,6 +1304,7 @@ export type ChallengeSubmissionCreateWithoutReportsInput = {
   group: Prisma.GroupCreateNestedOneWithoutChallengeSubmissionsInput
   reviewedBy?: Prisma.UserCreateNestedOneWithoutChallengeSubmissionsInput
   votes?: Prisma.ChallengeVoteCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionUncheckedCreateWithoutReportsInput = {
@@ -1296,6 +1328,7 @@ export type ChallengeSubmissionUncheckedCreateWithoutReportsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutSubmissionInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutSubmissionInput
 }
 
 export type ChallengeSubmissionCreateOrConnectWithoutReportsInput = {
@@ -1335,6 +1368,7 @@ export type ChallengeSubmissionUpdateWithoutReportsInput = {
   group?: Prisma.GroupUpdateOneRequiredWithoutChallengeSubmissionsNestedInput
   reviewedBy?: Prisma.UserUpdateOneWithoutChallengeSubmissionsNestedInput
   votes?: Prisma.ChallengeVoteUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateWithoutReportsInput = {
@@ -1358,6 +1392,119 @@ export type ChallengeSubmissionUncheckedUpdateWithoutReportsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutSubmissionNestedInput
+}
+
+export type ChallengeSubmissionCreateWithoutSubmissionActivitiesInput = {
+  id?: string
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
+  textContent?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  status?: $Enums.SubmissionStatus
+  reviewedAt?: Date | string | null
+  rejectionReason?: string | null
+  awardedPoints?: number
+  bonusPoints?: number
+  ranking?: number | null
+  voteCount?: number
+  voteScore?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  challenge: Prisma.ChallengeCreateNestedOneWithoutSubmissionsInput
+  group: Prisma.GroupCreateNestedOneWithoutChallengeSubmissionsInput
+  reviewedBy?: Prisma.UserCreateNestedOneWithoutChallengeSubmissionsInput
+  votes?: Prisma.ChallengeVoteCreateNestedManyWithoutSubmissionInput
+  reports?: Prisma.SubmissionReportCreateNestedManyWithoutSubmissionInput
+}
+
+export type ChallengeSubmissionUncheckedCreateWithoutSubmissionActivitiesInput = {
+  id?: string
+  challengeId: string
+  groupId: string
+  imageIds?: Prisma.ChallengeSubmissionCreateimageIdsInput | string[]
+  videoId?: string | null
+  textContent?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  status?: $Enums.SubmissionStatus
+  reviewedById?: string | null
+  reviewedAt?: Date | string | null
+  rejectionReason?: string | null
+  awardedPoints?: number
+  bonusPoints?: number
+  ranking?: number | null
+  voteCount?: number
+  voteScore?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutSubmissionInput
+  reports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutSubmissionInput
+}
+
+export type ChallengeSubmissionCreateOrConnectWithoutSubmissionActivitiesInput = {
+  where: Prisma.ChallengeSubmissionWhereUniqueInput
+  create: Prisma.XOR<Prisma.ChallengeSubmissionCreateWithoutSubmissionActivitiesInput, Prisma.ChallengeSubmissionUncheckedCreateWithoutSubmissionActivitiesInput>
+}
+
+export type ChallengeSubmissionUpsertWithoutSubmissionActivitiesInput = {
+  update: Prisma.XOR<Prisma.ChallengeSubmissionUpdateWithoutSubmissionActivitiesInput, Prisma.ChallengeSubmissionUncheckedUpdateWithoutSubmissionActivitiesInput>
+  create: Prisma.XOR<Prisma.ChallengeSubmissionCreateWithoutSubmissionActivitiesInput, Prisma.ChallengeSubmissionUncheckedCreateWithoutSubmissionActivitiesInput>
+  where?: Prisma.ChallengeSubmissionWhereInput
+}
+
+export type ChallengeSubmissionUpdateToOneWithWhereWithoutSubmissionActivitiesInput = {
+  where?: Prisma.ChallengeSubmissionWhereInput
+  data: Prisma.XOR<Prisma.ChallengeSubmissionUpdateWithoutSubmissionActivitiesInput, Prisma.ChallengeSubmissionUncheckedUpdateWithoutSubmissionActivitiesInput>
+}
+
+export type ChallengeSubmissionUpdateWithoutSubmissionActivitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumSubmissionStatusFieldUpdateOperationsInput | $Enums.SubmissionStatus
+  reviewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  awardedPoints?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusPoints?: Prisma.IntFieldUpdateOperationsInput | number
+  ranking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  voteCount?: Prisma.IntFieldUpdateOperationsInput | number
+  voteScore?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  challenge?: Prisma.ChallengeUpdateOneRequiredWithoutSubmissionsNestedInput
+  group?: Prisma.GroupUpdateOneRequiredWithoutChallengeSubmissionsNestedInput
+  reviewedBy?: Prisma.UserUpdateOneWithoutChallengeSubmissionsNestedInput
+  votes?: Prisma.ChallengeVoteUpdateManyWithoutSubmissionNestedInput
+  reports?: Prisma.SubmissionReportUpdateManyWithoutSubmissionNestedInput
+}
+
+export type ChallengeSubmissionUncheckedUpdateWithoutSubmissionActivitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  challengeId?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.StringFieldUpdateOperationsInput | string
+  imageIds?: Prisma.ChallengeSubmissionUpdateimageIdsInput | string[]
+  videoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  textContent?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumSubmissionStatusFieldUpdateOperationsInput | $Enums.SubmissionStatus
+  reviewedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rejectionReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  awardedPoints?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusPoints?: Prisma.IntFieldUpdateOperationsInput | number
+  ranking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  voteCount?: Prisma.IntFieldUpdateOperationsInput | number
+  voteScore?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutSubmissionNestedInput
+  reports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionCreateManyReviewedByInput = {
@@ -1402,6 +1549,7 @@ export type ChallengeSubmissionUpdateWithoutReviewedByInput = {
   group?: Prisma.GroupUpdateOneRequiredWithoutChallengeSubmissionsNestedInput
   votes?: Prisma.ChallengeVoteUpdateManyWithoutSubmissionNestedInput
   reports?: Prisma.SubmissionReportUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateWithoutReviewedByInput = {
@@ -1425,6 +1573,7 @@ export type ChallengeSubmissionUncheckedUpdateWithoutReviewedByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutSubmissionNestedInput
   reports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByInput = {
@@ -1490,6 +1639,7 @@ export type ChallengeSubmissionUpdateWithoutGroupInput = {
   reviewedBy?: Prisma.UserUpdateOneWithoutChallengeSubmissionsNestedInput
   votes?: Prisma.ChallengeVoteUpdateManyWithoutSubmissionNestedInput
   reports?: Prisma.SubmissionReportUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateWithoutGroupInput = {
@@ -1513,6 +1663,7 @@ export type ChallengeSubmissionUncheckedUpdateWithoutGroupInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutSubmissionNestedInput
   reports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateManyWithoutGroupInput = {
@@ -1578,6 +1729,7 @@ export type ChallengeSubmissionUpdateWithoutChallengeInput = {
   reviewedBy?: Prisma.UserUpdateOneWithoutChallengeSubmissionsNestedInput
   votes?: Prisma.ChallengeVoteUpdateManyWithoutSubmissionNestedInput
   reports?: Prisma.SubmissionReportUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateWithoutChallengeInput = {
@@ -1601,6 +1753,7 @@ export type ChallengeSubmissionUncheckedUpdateWithoutChallengeInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutSubmissionNestedInput
   reports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutSubmissionNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutSubmissionNestedInput
 }
 
 export type ChallengeSubmissionUncheckedUpdateManyWithoutChallengeInput = {
@@ -1632,11 +1785,13 @@ export type ChallengeSubmissionUncheckedUpdateManyWithoutChallengeInput = {
 export type ChallengeSubmissionCountOutputType = {
   votes: number
   reports: number
+  submissionActivities: number
 }
 
 export type ChallengeSubmissionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   votes?: boolean | ChallengeSubmissionCountOutputTypeCountVotesArgs
   reports?: boolean | ChallengeSubmissionCountOutputTypeCountReportsArgs
+  submissionActivities?: boolean | ChallengeSubmissionCountOutputTypeCountSubmissionActivitiesArgs
 }
 
 /**
@@ -1661,6 +1816,13 @@ export type ChallengeSubmissionCountOutputTypeCountVotesArgs<ExtArgs extends run
  */
 export type ChallengeSubmissionCountOutputTypeCountReportsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.SubmissionReportWhereInput
+}
+
+/**
+ * ChallengeSubmissionCountOutputType without action
+ */
+export type ChallengeSubmissionCountOutputTypeCountSubmissionActivitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SubmissionActivityWhereInput
 }
 
 
@@ -1689,6 +1851,7 @@ export type ChallengeSubmissionSelect<ExtArgs extends runtime.Types.Extensions.I
   reviewedBy?: boolean | Prisma.ChallengeSubmission$reviewedByArgs<ExtArgs>
   votes?: boolean | Prisma.ChallengeSubmission$votesArgs<ExtArgs>
   reports?: boolean | Prisma.ChallengeSubmission$reportsArgs<ExtArgs>
+  submissionActivities?: boolean | Prisma.ChallengeSubmission$submissionActivitiesArgs<ExtArgs>
   _count?: boolean | Prisma.ChallengeSubmissionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["challengeSubmission"]>
 
@@ -1771,6 +1934,7 @@ export type ChallengeSubmissionInclude<ExtArgs extends runtime.Types.Extensions.
   reviewedBy?: boolean | Prisma.ChallengeSubmission$reviewedByArgs<ExtArgs>
   votes?: boolean | Prisma.ChallengeSubmission$votesArgs<ExtArgs>
   reports?: boolean | Prisma.ChallengeSubmission$reportsArgs<ExtArgs>
+  submissionActivities?: boolean | Prisma.ChallengeSubmission$submissionActivitiesArgs<ExtArgs>
   _count?: boolean | Prisma.ChallengeSubmissionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ChallengeSubmissionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1792,6 +1956,7 @@ export type $ChallengeSubmissionPayload<ExtArgs extends runtime.Types.Extensions
     reviewedBy: Prisma.$UserPayload<ExtArgs> | null
     votes: Prisma.$ChallengeVotePayload<ExtArgs>[]
     reports: Prisma.$SubmissionReportPayload<ExtArgs>[]
+    submissionActivities: Prisma.$SubmissionActivityPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2212,6 +2377,7 @@ export interface Prisma__ChallengeSubmissionClient<T, Null = never, ExtArgs exte
   reviewedBy<T extends Prisma.ChallengeSubmission$reviewedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChallengeSubmission$reviewedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   votes<T extends Prisma.ChallengeSubmission$votesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChallengeSubmission$votesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengeVotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   reports<T extends Prisma.ChallengeSubmission$reportsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChallengeSubmission$reportsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubmissionReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  submissionActivities<T extends Prisma.ChallengeSubmission$submissionActivitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ChallengeSubmission$submissionActivitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubmissionActivityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2720,6 +2886,30 @@ export type ChallengeSubmission$reportsArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.SubmissionReportScalarFieldEnum | Prisma.SubmissionReportScalarFieldEnum[]
+}
+
+/**
+ * ChallengeSubmission.submissionActivities
+ */
+export type ChallengeSubmission$submissionActivitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SubmissionActivity
+   */
+  select?: Prisma.SubmissionActivitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SubmissionActivity
+   */
+  omit?: Prisma.SubmissionActivityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SubmissionActivityInclude<ExtArgs> | null
+  where?: Prisma.SubmissionActivityWhereInput
+  orderBy?: Prisma.SubmissionActivityOrderByWithRelationInput | Prisma.SubmissionActivityOrderByWithRelationInput[]
+  cursor?: Prisma.SubmissionActivityWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SubmissionActivityScalarFieldEnum | Prisma.SubmissionActivityScalarFieldEnum[]
 }
 
 /**

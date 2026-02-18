@@ -52,27 +52,30 @@ enum SubmissionStatus {
 }
 
 model User {
-  id                        String                 @id @default(uuid())
-  authUserId                String                @unique
+  id                        String                   @id @default(uuid())
+  authUserId                String                   @unique
   firstName                 String
   lastName                  String
-  hasAvatar                 Boolean                @default(false)
-  role                      Role                   @default(USER)
-  organizerGroup            Group[]                @relation("UserOrganizerGroups")
-  coinTransactionsAdmin     CoinTransaction[]      @relation("UserCoinTransactionsAdmin")
-  notificationSchedules     NotificationSchedule[] @relation("NotificationScheduleAdmin")
+  hasAvatar                 Boolean                  @default(false)
+  role                      Role                     @default(USER)
+  organizerGroup            Group[]                  @relation("UserOrganizerGroups")
+  coinTransactionsAdmin     CoinTransaction[]        @relation("UserCoinTransactionsAdmin")
+  notificationSchedules     NotificationSchedule[]   @relation("NotificationScheduleAdmin")
   receivedPushNotifications NotificationPush[]
-  sentPushNotifications     Notification[]         @relation("NotificationAdmin")
+  sentPushNotifications     Notification[]           @relation("NotificationAdmin")
   pushSubscriptions         PushSubscription[]
   createdEvents             Event[]
   userEvents                UserEvent[]
   location                  Location?
-  locationsSharedWithMe     Location[]             @relation("LocationSharingUsers")
+  locationsSharedWithMe     Location[]               @relation("LocationSharingUsers")
   sentLocationRequests      LocationSharingRequest[] @relation("SentLocationSharingRequests")
   receivedLocationRequests  LocationSharingRequest[] @relation("ReceivedLocationSharingRequests")
   trips                     TripParticipant[]
-  createdAt                 DateTime               @default(now())
-  updatedAt                 DateTime               @updatedAt
+  activityFeedAdmin         ActivityFeed[]           @relation("ActivityFeedAdmin")
+  activityFeedHidden        ActivityFeed[]           @relation("ActivityFeedHiddenBy")
+  activityReactions         ActivityReaction[]       @relation("ActivityReactionUser")
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
 
   challengeSubmissions ChallengeSubmission[]
 }
@@ -92,6 +95,7 @@ model Trip {
   notificationSchedules  NotificationSchedule[]
   notificationDeliveries NotificationDelivery[]
   challenges             Challenge[]
+  activityFeed           ActivityFeed[]
 }
 
 model TripParticipant {
@@ -108,6 +112,7 @@ model TripParticipant {
   group             Group?             @relation(fields: [groupId], references: [id])
   challengeVotes    ChallengeVote[]
   submissionReports SubmissionReport[]
+  userPosts         UserPost[]
 
   @@unique([userId, tripId])
   @@unique([tripId, wristNumber])
@@ -162,6 +167,8 @@ model Group {
   updatedAt        DateTime          @updatedAt
 
   challengeSubmissions ChallengeSubmission[]
+  submissionActivities SubmissionActivity[]  @relation("SubmissionActivityGroup")
+  rankChangeActivities RankChangeActivity[]  @relation("RankChangeActivityGroup")
 }
 
 model Challenge {
@@ -196,8 +203,10 @@ model Challenge {
 
   autoApprove Boolean @default(false)
 
-  submissions ChallengeSubmission[]
-  votes       ChallengeVote[]
+  submissions          ChallengeSubmission[]
+  votes                ChallengeVote[]
+  submissionActivities SubmissionActivity[]  @relation("SubmissionActivityChallenge")
+  challengeActivities  ChallengeActivity[]   @relation("ChallengeActivityChallenge")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -232,8 +241,9 @@ model ChallengeSubmission {
   voteCount Int   @default(0)
   voteScore Float @default(0)
 
-  votes   ChallengeVote[]
-  reports SubmissionReport[]
+  votes                ChallengeVote[]
+  reports              SubmissionReport[]
+  submissionActivities SubmissionActivity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -277,6 +287,128 @@ model SubmissionReport {
   createdAt DateTime @default(now())
 
   @@index([submissionId])
+}
+
+model ActivityFeed {
+  id           String @id @default(uuid())
+  tripId       String
+  trip         Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  activityType String
+
+  title       String
+  description String?
+  imageUrl    String?
+
+  isPinned Boolean @default(false)
+
+  isHidden      Boolean   @default(false)
+  hiddenByAdmin String?
+  hiddenBy      User?     @relation("ActivityFeedHiddenBy", fields: [hiddenByAdmin], references: [id], onDelete: SetNull)
+  hiddenAt      DateTime?
+  hiddenReason  String?
+
+  createdByAdmin String?
+  admin          User?   @relation("ActivityFeedAdmin", fields: [createdByAdmin], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  submissionActivity SubmissionActivity?
+  challengeActivity  ChallengeActivity?
+  rankChangeActivity RankChangeActivity?
+  userPost           UserPost?
+
+  reactions ActivityReaction[]
+
+  @@index([tripId, createdAt(sort: Desc)])
+  @@index([tripId, isPinned])
+  @@index([tripId, isHidden])
+  @@index([tripId, activityType])
+}
+
+model ActivityReaction {
+  id           String       @id @default(uuid())
+  activityId   String
+  activity     ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User         @relation("ActivityReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  reactionType String
+  createdAt    DateTime     @default(now())
+
+  @@unique([activityId, userId, reactionType])
+  @@index([activityId])
+  @@index([userId])
+}
+
+model SubmissionActivity {
+  activityId String       @id
+  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  submissionId String
+  challengeId  String
+  groupId      String
+
+  submission ChallengeSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  challenge  Challenge           @relation("SubmissionActivityChallenge", fields: [challengeId], references: [id], onDelete: Cascade)
+  group      Group               @relation("SubmissionActivityGroup", fields: [groupId], references: [id], onDelete: Cascade)
+
+  hasVideo Boolean
+
+  isWinner      Boolean @default(false)
+  ranking       Int?
+  pointsAwarded Int?
+
+  @@index([submissionId])
+  @@index([challengeId])
+  @@index([groupId])
+  @@index([isWinner])
+}
+
+model ChallengeActivity {
+  activityId String       @id
+  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  challengeId String
+  challenge   Challenge @relation("ChallengeActivityChallenge", fields: [challengeId], references: [id], onDelete: Cascade)
+
+  eventType String
+
+  endTime DateTime?
+
+  submissionType SubmissionType?
+  basePoints     Int?
+
+  submissionCount Int?
+
+  @@index([challengeId])
+  @@index([eventType])
+}
+
+model RankChangeActivity {
+  activityId String       @id
+  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  groupId String
+  group   Group  @relation("RankChangeActivityGroup", fields: [groupId], references: [id], onDelete: Cascade)
+
+  newRank     Int
+  totalCoins  Int
+  coinsGained Int
+
+  @@index([groupId])
+  @@index([newRank])
+}
+
+model UserPost {
+  activityId String       @id
+  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   TripParticipant @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  additionalImages String[] @default([])
+
+  @@index([authorId])
 }
 
 model CoinTransaction {
@@ -409,14 +541,14 @@ enum LocationSharingRequestStatus {
 }
 
 model LocationSharingRequest {
-  id         String                        @id @default(cuid())
+  id         String                       @id @default(cuid())
   senderId   String
   receiverId String
-  sender     User                          @relation("SentLocationSharingRequests", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver   User                          @relation("ReceivedLocationSharingRequests", fields: [receiverId], references: [id], onDelete: Cascade)
-  status     LocationSharingRequestStatus  @default(PENDING)
-  createdAt  DateTime                      @default(now())
-  updatedAt  DateTime                      @updatedAt
+  sender     User                         @relation("SentLocationSharingRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User                         @relation("ReceivedLocationSharingRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     LocationSharingRequestStatus @default(PENDING)
+  createdAt  DateTime                     @default(now())
+  updatedAt  DateTime                     @updatedAt
 
   @@unique([senderId, receiverId])
   @@index([receiverId, status])
