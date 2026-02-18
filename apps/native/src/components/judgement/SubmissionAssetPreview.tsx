@@ -2,11 +2,27 @@ import { View, Text, ActivityIndicator, useWindowDimensions } from 'react-native
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { VideoView, useVideoPlayer } from 'expo-video';
 import { colors } from '~/styles';
 import { type Submission } from '~/contexts/JudgementContext';
 import { useFileDownload } from '~/hooks/files';
 import { viewStyles, textStyles } from '~/styles/judgement';
+
+let VideoView: typeof import('expo-video').VideoView | null = null;
+let useVideoPlayerImported: typeof import('expo-video').useVideoPlayer | null = null;
+try {
+  const expoVideo = require('expo-video') as typeof import('expo-video');
+  VideoView = expoVideo.VideoView;
+  useVideoPlayerImported = expoVideo.useVideoPlayer;
+} catch {
+  console.warn('expo-video native module not available — video features disabled');
+}
+
+const useVideoPlayerSafe: typeof import('expo-video').useVideoPlayer = (source, setup) => {
+  if (useVideoPlayerImported) {
+    return useVideoPlayerImported(source, setup);
+  }
+  return { play: () => {}, pause: () => {}, muted: true, loop: true } as ReturnType<typeof import('expo-video').useVideoPlayer>;
+};
 
 const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const { width, height } = useWindowDimensions();
@@ -29,7 +45,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
     abort: abortVideo,
   } = useFileDownload();
 
-  const videoPlayer = useVideoPlayer(videoFile?.uri ? { uri: videoFile.uri, useCaching: true } : null, (player) => {
+  const videoPlayer = useVideoPlayerSafe(videoFile?.uri ? { uri: videoFile.uri, useCaching: true } : null, (player) => {
     player.muted = true;
     player.loop = true;
   });
@@ -135,7 +151,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
         style={[viewStyles.mediaWrapper, viewStyles.videoPlaceholder]}
         onLayout={checkVideoVisibility}
       >
-        {videoFile?.uri ? (
+        {videoFile?.uri && VideoView ? (
           <VideoView player={videoPlayer} style={viewStyles.mediaImage} />
         ) : videoStatus === 'loading' ? (
           <ActivityIndicator size="small" color={colors.white} />

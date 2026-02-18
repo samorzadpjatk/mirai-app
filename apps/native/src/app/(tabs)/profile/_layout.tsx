@@ -18,12 +18,19 @@ export default function ProfileLayout() {
         
       }}
     >
-      <Stack.Screen 
-        name="Profile" 
-        options={{ 
+      <Stack.Screen
+        name="index"
+        options={{
           headerShown: false,
-          title: "Profile"
-        }} 
+          title: "Profile",
+        }}
+      />
+      <Stack.Screen
+        name="edit"
+        options={{
+          headerShown: true,
+          title: "Edit Profile",
+        }}
       />
     </Stack>
   );

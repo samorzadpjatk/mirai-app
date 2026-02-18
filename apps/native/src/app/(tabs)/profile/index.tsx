@@ -1,4 +1,8 @@
 import { View, ScrollView, StyleSheet } from "react-native";
+import { useCallback } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { colors, spacing } from "../../../styles";
 import { AccountInfoSection } from "~/components/profile/AccountInfoSection";
@@ -8,6 +12,18 @@ import { ProfileHeader } from "~/components/profile/ProfileHeader";
 
 export default function ProfileScreen() {
   const insets = useAppSafeAreaInsets();
+  const router = useRouter();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const userMyQueryOptions = trpc.user.getMy.queryOptions();
+
+  useFocusEffect(
+    useCallback(() => {
+      void queryClient.invalidateQueries({
+        queryKey: userMyQueryOptions.queryKey,
+      });
+    }, [queryClient, userMyQueryOptions.queryKey]),
+  );
 
   return (
     <View style={styles.container}>
@@ -29,7 +45,7 @@ export default function ProfileScreen() {
         <AccountInfoSection />
 
         {/* Actions */}
-        <ProfileActionsSection />
+        <ProfileActionsSection onEditProfile={() => router.push("/profile/edit")} />
 
         {/* App Info */}
         <AppInfoFooter
