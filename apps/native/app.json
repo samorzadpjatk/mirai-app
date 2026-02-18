@@ -20,6 +20,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "scheme": "native",
+    "notification": {
+      "icon": "./assets/mirai_logo.png",
+      "color": "#000000",
+      "androidMode": "default",
+      "androidCollapsedTitle": "MIRAI",
+      "iosDisplayInForeground": true
+    },
     "splash": {
       "image": "./assets/mirai_logo.png",
       "resizeMode": "contain",
