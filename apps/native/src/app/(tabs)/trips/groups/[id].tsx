@@ -104,14 +104,16 @@ export default function GroupDetailsScreen() {
         {
           text: "Leave",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await leaveGroupMutation.mutateAsync({ groupId: group.id });
-              router.replace(`/trips/groups?tripId=${group.trip.id}`);
-            } catch (error) {
-              console.error("Failed to leave group:", error);
-              Alert.alert("Error", "Failed to leave group");
-            }
+          onPress: () => {
+            void (async () => {
+              try {
+                await leaveGroupMutation.mutateAsync({ groupId: group.id });
+                router.replace(`/trips/groups?tripId=${group.trip.id}`);
+              } catch (error) {
+                console.error("Failed to leave group:", error);
+                Alert.alert("Error", "Failed to leave group");
+              }
+            })();
           },
         },
       ],

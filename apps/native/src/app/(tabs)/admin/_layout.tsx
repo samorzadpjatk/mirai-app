@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { colors } from '~/styles';
 
 const backgroundColor = "#17181c";
-const headerTintColor = "#00ced1";
 
 export default function AdminLayout() {
   const trpc = useTRPC();

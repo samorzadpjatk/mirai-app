@@ -7,6 +7,7 @@ interface TripQuickAccessGridProps {
   onOpenMap: () => void;
   onOpenChallenges: () => void;
   onOpenLeaderboard: () => void;
+  onOpenRewards: () => void;
   onOpenInfo: () => void;
 }
 
@@ -15,6 +16,7 @@ export function TripQuickAccessGrid({
   onOpenMap,
   onOpenChallenges,
   onOpenLeaderboard,
+  onOpenRewards,
   onOpenInfo,
 }: TripQuickAccessGridProps) {
   return (
@@ -52,6 +54,16 @@ export function TripQuickAccessGrid({
         </View>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.gridCard} onPress={onOpenRewards}>
+        <View style={styles.gridIconWrapper}>
+          <Ionicons name="gift" size={24} color={colors.primary} />
+        </View>
+        <View style={styles.gridCardContent}>
+          <Text style={styles.gridCardTitle}>Rewards</Text>
+          <Text style={styles.gridCardSubtitle}>Prize Store</Text>
+        </View>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.gridCard} onPress={onOpenLeaderboard}>
         <View style={styles.gridIconWrapper}>
           <Ionicons name="ribbon" size={24} color={colors.primary} />
@@ -62,25 +74,20 @@ export function TripQuickAccessGrid({
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.gridCardWide} onPress={onOpenInfo}>
-        <View style={styles.gridIconWrapperLarge}>
+      <TouchableOpacity style={styles.gridCard} onPress={onOpenInfo}>
+        <View style={styles.gridIconWrapper}>
           <Ionicons
             name="information-circle"
             size={24}
             color={colors.primary}
           />
         </View>
-        <View style={styles.gridCardContentWide}>
+        <View style={styles.gridCardContent}>
           <Text style={styles.gridCardTitle}>Trip Info</Text>
           <Text style={styles.gridCardSubtitle}>
-            Schedules, documents & rules
+            Schedules & Rules
           </Text>
         </View>
-        <Ionicons
-          name="chevron-forward"
-          size={24}
-          color={colors.textTertiary}
-        />
       </TouchableOpacity>
     </View>
   );

@@ -72,7 +72,7 @@ export function useChallengeCapture({
       }
 
       const uriLastSegment = asset.uri.split("/").pop();
-      if (uriLastSegment && uriLastSegment.includes(".")) {
+      if (uriLastSegment?.includes(".")) {
         return uriLastSegment;
       }
 
