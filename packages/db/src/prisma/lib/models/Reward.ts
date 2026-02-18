@@ -41,6 +41,7 @@ export type RewardMinAggregateOutputType = {
   name: string | null
   description: string | null
   availableQuantity: number | null
+  isHidden: boolean | null
   image: string | null
   coinCost: number | null
   tripId: string | null
@@ -54,6 +55,7 @@ export type RewardMaxAggregateOutputType = {
   name: string | null
   description: string | null
   availableQuantity: number | null
+  isHidden: boolean | null
   image: string | null
   coinCost: number | null
   tripId: string | null
@@ -67,6 +69,7 @@ export type RewardCountAggregateOutputType = {
   name: number
   description: number
   availableQuantity: number
+  isHidden: number
   image: number
   coinCost: number
   tripId: number
@@ -92,6 +95,7 @@ export type RewardMinAggregateInputType = {
   name?: true
   description?: true
   availableQuantity?: true
+  isHidden?: true
   image?: true
   coinCost?: true
   tripId?: true
@@ -105,6 +109,7 @@ export type RewardMaxAggregateInputType = {
   name?: true
   description?: true
   availableQuantity?: true
+  isHidden?: true
   image?: true
   coinCost?: true
   tripId?: true
@@ -118,6 +123,7 @@ export type RewardCountAggregateInputType = {
   name?: true
   description?: true
   availableQuantity?: true
+  isHidden?: true
   image?: true
   coinCost?: true
   tripId?: true
@@ -218,6 +224,7 @@ export type RewardGroupByOutputType = {
   name: string
   description: string
   availableQuantity: number
+  isHidden: boolean
   image: string | null
   coinCost: number
   tripId: string
@@ -254,6 +261,7 @@ export type RewardWhereInput = {
   name?: Prisma.StringFilter<"Reward"> | string
   description?: Prisma.StringFilter<"Reward"> | string
   availableQuantity?: Prisma.IntFilter<"Reward"> | number
+  isHidden?: Prisma.BoolFilter<"Reward"> | boolean
   image?: Prisma.StringNullableFilter<"Reward"> | string | null
   coinCost?: Prisma.IntFilter<"Reward"> | number
   tripId?: Prisma.StringFilter<"Reward"> | string
@@ -270,6 +278,7 @@ export type RewardOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   availableQuantity?: Prisma.SortOrder
+  isHidden?: Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   coinCost?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
@@ -289,6 +298,7 @@ export type RewardWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Reward"> | string
   description?: Prisma.StringFilter<"Reward"> | string
   availableQuantity?: Prisma.IntFilter<"Reward"> | number
+  isHidden?: Prisma.BoolFilter<"Reward"> | boolean
   image?: Prisma.StringNullableFilter<"Reward"> | string | null
   coinCost?: Prisma.IntFilter<"Reward"> | number
   tripId?: Prisma.StringFilter<"Reward"> | string
@@ -305,6 +315,7 @@ export type RewardOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   availableQuantity?: Prisma.SortOrder
+  isHidden?: Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   coinCost?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
@@ -326,6 +337,7 @@ export type RewardScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Reward"> | string
   description?: Prisma.StringWithAggregatesFilter<"Reward"> | string
   availableQuantity?: Prisma.IntWithAggregatesFilter<"Reward"> | number
+  isHidden?: Prisma.BoolWithAggregatesFilter<"Reward"> | boolean
   image?: Prisma.StringNullableWithAggregatesFilter<"Reward"> | string | null
   coinCost?: Prisma.IntWithAggregatesFilter<"Reward"> | number
   tripId?: Prisma.StringWithAggregatesFilter<"Reward"> | string
@@ -339,6 +351,7 @@ export type RewardCreateInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   createdAt?: Date | string
@@ -353,6 +366,7 @@ export type RewardUncheckedCreateInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   tripId: string
@@ -367,6 +381,7 @@ export type RewardUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -381,6 +396,7 @@ export type RewardUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -395,6 +411,7 @@ export type RewardCreateManyInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   tripId: string
@@ -408,6 +425,7 @@ export type RewardUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -419,6 +437,7 @@ export type RewardUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -442,6 +461,7 @@ export type RewardCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   availableQuantity?: Prisma.SortOrder
+  isHidden?: Prisma.SortOrder
   image?: Prisma.SortOrder
   coinCost?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
@@ -460,6 +480,7 @@ export type RewardMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   availableQuantity?: Prisma.SortOrder
+  isHidden?: Prisma.SortOrder
   image?: Prisma.SortOrder
   coinCost?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
@@ -473,6 +494,7 @@ export type RewardMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   availableQuantity?: Prisma.SortOrder
+  isHidden?: Prisma.SortOrder
   image?: Prisma.SortOrder
   coinCost?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
@@ -594,6 +616,7 @@ export type RewardCreateWithoutCreatedByInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   createdAt?: Date | string
@@ -607,6 +630,7 @@ export type RewardUncheckedCreateWithoutCreatedByInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   tripId: string
@@ -649,6 +673,7 @@ export type RewardScalarWhereInput = {
   name?: Prisma.StringFilter<"Reward"> | string
   description?: Prisma.StringFilter<"Reward"> | string
   availableQuantity?: Prisma.IntFilter<"Reward"> | number
+  isHidden?: Prisma.BoolFilter<"Reward"> | boolean
   image?: Prisma.StringNullableFilter<"Reward"> | string | null
   coinCost?: Prisma.IntFilter<"Reward"> | number
   tripId?: Prisma.StringFilter<"Reward"> | string
@@ -662,6 +687,7 @@ export type RewardCreateWithoutTripInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   createdAt?: Date | string
@@ -675,6 +701,7 @@ export type RewardUncheckedCreateWithoutTripInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   createdById: string
@@ -714,6 +741,7 @@ export type RewardCreateWithoutPurchasesInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   createdAt?: Date | string
@@ -727,6 +755,7 @@ export type RewardUncheckedCreateWithoutPurchasesInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   tripId: string
@@ -756,6 +785,7 @@ export type RewardUpdateWithoutPurchasesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -769,6 +799,7 @@ export type RewardUncheckedUpdateWithoutPurchasesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -782,6 +813,7 @@ export type RewardCreateManyCreatedByInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   tripId: string
@@ -794,6 +826,7 @@ export type RewardUpdateWithoutCreatedByInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -807,6 +840,7 @@ export type RewardUncheckedUpdateWithoutCreatedByInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -820,6 +854,7 @@ export type RewardUncheckedUpdateManyWithoutCreatedByInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -832,6 +867,7 @@ export type RewardCreateManyTripInput = {
   name: string
   description: string
   availableQuantity: number
+  isHidden?: boolean
   image?: string | null
   coinCost: number
   createdById: string
@@ -844,6 +880,7 @@ export type RewardUpdateWithoutTripInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -857,6 +894,7 @@ export type RewardUncheckedUpdateWithoutTripInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -870,6 +908,7 @@ export type RewardUncheckedUpdateManyWithoutTripInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.StringFieldUpdateOperationsInput | string
   availableQuantity?: Prisma.IntFieldUpdateOperationsInput | number
+  isHidden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coinCost?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -913,6 +952,7 @@ export type RewardSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name?: boolean
   description?: boolean
   availableQuantity?: boolean
+  isHidden?: boolean
   image?: boolean
   coinCost?: boolean
   tripId?: boolean
@@ -930,6 +970,7 @@ export type RewardSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   name?: boolean
   description?: boolean
   availableQuantity?: boolean
+  isHidden?: boolean
   image?: boolean
   coinCost?: boolean
   tripId?: boolean
@@ -945,6 +986,7 @@ export type RewardSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   name?: boolean
   description?: boolean
   availableQuantity?: boolean
+  isHidden?: boolean
   image?: boolean
   coinCost?: boolean
   tripId?: boolean
@@ -960,6 +1002,7 @@ export type RewardSelectScalar = {
   name?: boolean
   description?: boolean
   availableQuantity?: boolean
+  isHidden?: boolean
   image?: boolean
   coinCost?: boolean
   tripId?: boolean
@@ -968,7 +1011,7 @@ export type RewardSelectScalar = {
   updatedAt?: boolean
 }
 
-export type RewardOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "availableQuantity" | "image" | "coinCost" | "tripId" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["reward"]>
+export type RewardOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "availableQuantity" | "isHidden" | "image" | "coinCost" | "tripId" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["reward"]>
 export type RewardInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   trip?: boolean | Prisma.TripDefaultArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -996,6 +1039,7 @@ export type $RewardPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     name: string
     description: string
     availableQuantity: number
+    isHidden: boolean
     image: string | null
     coinCost: number
     tripId: string
@@ -1432,6 +1476,7 @@ export interface RewardFieldRefs {
   readonly name: Prisma.FieldRef<"Reward", 'String'>
   readonly description: Prisma.FieldRef<"Reward", 'String'>
   readonly availableQuantity: Prisma.FieldRef<"Reward", 'Int'>
+  readonly isHidden: Prisma.FieldRef<"Reward", 'Boolean'>
   readonly image: Prisma.FieldRef<"Reward", 'String'>
   readonly coinCost: Prisma.FieldRef<"Reward", 'Int'>
   readonly tripId: Prisma.FieldRef<"Reward", 'String'>

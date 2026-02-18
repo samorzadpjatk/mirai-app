@@ -477,6 +477,7 @@ export const RewardScalarFieldEnum = {
   name: 'name',
   description: 'description',
   availableQuantity: 'availableQuantity',
+  isHidden: 'isHidden',
   image: 'image',
   coinCost: 'coinCost',
   tripId: 'tripId',
@@ -494,7 +495,11 @@ export const RewardPurchaseScalarFieldEnum = {
   groupId: 'groupId',
   quantity: 'quantity',
   totalCost: 'totalCost',
+  status: 'status',
+  collectionMethod: 'collectionMethod',
   purchasedById: 'purchasedById',
+  statusUpdatedById: 'statusUpdatedById',
+  statusUpdatedAt: 'statusUpdatedAt',
   purchasedAt: 'purchasedAt'
 } as const
 

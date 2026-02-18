@@ -4,6 +4,33 @@ import { createTRPCRouter, moderatorProcedure, protectedProcedure } from "../../
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 
 const REWARD_IMAGE_SIGNED_URL_SECONDS = 60 * 10;
+const rewardPurchaseStatusSchema = z.enum([
+  "BOUGHT",
+  "ACCEPTED",
+  "IN_DELIVERY",
+  "CANCELLED",
+  "DELIVERED",
+]);
+const userRewardPurchaseStatusSchema = z.enum(["IN_DELIVERY", "CANCELLED"]);
+
+type RewardPurchaseStatus = z.infer<typeof rewardPurchaseStatusSchema>;
+
+const canTransitionPurchaseStatus = (
+  from: RewardPurchaseStatus,
+  to: RewardPurchaseStatus,
+) => {
+  if (from === to) return true;
+
+  const transitions: Record<RewardPurchaseStatus, RewardPurchaseStatus[]> = {
+    BOUGHT: ["ACCEPTED", "CANCELLED"],
+    ACCEPTED: ["IN_DELIVERY", "CANCELLED"],
+    IN_DELIVERY: ["DELIVERED", "CANCELLED"],
+    CANCELLED: [],
+    DELIVERED: [],
+  };
+
+  return transitions[from].includes(to);
+};
 
 const resolveRewardImage = async (
   supabase: {
@@ -44,7 +71,7 @@ export const rewardRouter = createTRPCRouter({
       const isAllTrips = input.tripId === "all";
 
       const rewards = await ctx.db.reward.findMany({
-        where: isAllTrips ? undefined : { tripId: input.tripId },
+        where: isAllTrips ? { isHidden: false } : { tripId: input.tripId, isHidden: false },
         include: {
           createdBy: {
             select: {
@@ -171,6 +198,13 @@ export const rewardRouter = createTRPCRouter({
                   lastName: true,
                 },
               },
+              statusUpdatedBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
             },
             orderBy: { purchasedAt: "desc" },
           },
@@ -178,6 +212,11 @@ export const rewardRouter = createTRPCRouter({
       });
 
       if (!reward) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
+      }
+
+      const isStaff = ctx.dbUser.role === "ADMIN" || ctx.dbUser.role === "MODERATOR";
+      if (reward.isHidden && !isStaff) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
       }
 
@@ -195,6 +234,7 @@ export const rewardRouter = createTRPCRouter({
         availableQuantity: z.number().min(0),
         image: z.string().optional(),
         coinCost: z.number().min(1),
+        isHidden: z.boolean().optional(),
         tripId: z.string(),
       }),
     )
@@ -206,6 +246,7 @@ export const rewardRouter = createTRPCRouter({
           availableQuantity: input.availableQuantity,
           image: input.image,
           coinCost: input.coinCost,
+          isHidden: input.isHidden ?? false,
           tripId: input.tripId,
           createdById: ctx.dbUser.id,
         },
@@ -261,6 +302,32 @@ export const rewardRouter = createTRPCRouter({
       return reward;
     }),
 
+  setHidden: moderatorProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        isHidden: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.reward.update({
+        where: { id: input.id },
+        data: {
+          isHidden: input.isHidden,
+          updatedAt: new Date(),
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+    }),
+
   // Delete reward (admin/moderator only)
   delete: moderatorProcedure
     .input(z.object({ id: z.string() }))
@@ -301,6 +368,13 @@ export const rewardRouter = createTRPCRouter({
 
         if (!reward) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
+        }
+
+        if (reward.isHidden) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Reward is hidden",
+          });
         }
 
         if (reward.availableQuantity < input.quantity) {
@@ -375,6 +449,9 @@ export const rewardRouter = createTRPCRouter({
             quantity: input.quantity,
             totalCost,
             purchasedById: ctx.dbUser.id,
+            status: "BOUGHT",
+            statusUpdatedById: ctx.dbUser.id,
+            statusUpdatedAt: new Date(),
           },
           include: {
             reward: true,
@@ -391,6 +468,13 @@ export const rewardRouter = createTRPCRouter({
                 lastName: true,
               },
             },
+            statusUpdatedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         });
 
@@ -399,7 +483,7 @@ export const rewardRouter = createTRPCRouter({
           data: {
             groupId: userParticipant.group.id,
             amount: -totalCost,
-            reason: `Purchased ${input.quantity}x ${reward.name}`,
+            reason: `Claimed ${input.quantity}x ${reward.name}`,
             adminId: ctx.dbUser.id,
           },
         });
@@ -408,13 +492,298 @@ export const rewardRouter = createTRPCRouter({
       });
     }),
 
+  updateMyPurchaseStatus: protectedProcedure
+    .input(
+      z.object({
+        purchaseId: z.string(),
+        status: userRewardPurchaseStatusSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.$transaction(async (tx) => {
+        const purchase = await tx.rewardPurchase.findUnique({
+          where: { id: input.purchaseId },
+          include: {
+            reward: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            group: {
+              select: {
+                id: true,
+                organizerId: true,
+              },
+            },
+          },
+        });
+
+        if (!purchase) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Purchase not found" });
+        }
+
+        if (purchase.group.organizerId !== ctx.dbUser.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only group organizer can update purchase status",
+          });
+        }
+
+        const currentStatus = purchase.status as RewardPurchaseStatus;
+
+        if (input.status === "IN_DELIVERY") {
+          if (currentStatus !== "ACCEPTED") {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Purchase can be moved to in delivery only after acceptance",
+            });
+          }
+
+          return await tx.rewardPurchase.update({
+            where: { id: purchase.id },
+            data: {
+              status: "IN_DELIVERY",
+              statusUpdatedById: ctx.dbUser.id,
+              statusUpdatedAt: new Date(),
+            },
+            include: {
+              reward: true,
+              group: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              purchasedBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              statusUpdatedBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          });
+        }
+
+        if (currentStatus !== "BOUGHT") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only pending purchases can be cancelled by user",
+          });
+        }
+
+        await tx.group.update({
+          where: { id: purchase.groupId },
+          data: { coins: { increment: purchase.totalCost } },
+        });
+
+        await tx.reward.update({
+          where: { id: purchase.rewardId },
+          data: { availableQuantity: { increment: purchase.quantity } },
+        });
+
+        await tx.coinTransaction.create({
+          data: {
+            groupId: purchase.groupId,
+            amount: purchase.totalCost,
+            reason: `Cancelled reward claim by user: ${purchase.quantity}x ${purchase.reward.name}`,
+            adminId: ctx.dbUser.id,
+          },
+        });
+
+        return await tx.rewardPurchase.update({
+          where: { id: purchase.id },
+          data: {
+            status: "CANCELLED",
+            statusUpdatedById: ctx.dbUser.id,
+            statusUpdatedAt: new Date(),
+          },
+          include: {
+            reward: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            purchasedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            statusUpdatedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        });
+      });
+    }),
+
+  updatePurchaseStatus: moderatorProcedure
+    .input(
+      z.object({
+        purchaseId: z.string(),
+        status: rewardPurchaseStatusSchema,
+        collectionMethod: z.string().trim().min(1).max(500).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.$transaction(async (tx) => {
+        const purchase = await tx.rewardPurchase.findUnique({
+          where: { id: input.purchaseId },
+          include: {
+            reward: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            group: {
+              select: {
+                id: true,
+                name: true,
+                coins: true,
+              },
+            },
+          },
+        });
+
+        if (!purchase) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Purchase not found" });
+        }
+
+        const currentStatus = purchase.status as RewardPurchaseStatus;
+        const nextStatus = input.status;
+
+        if (!canTransitionPurchaseStatus(currentStatus, nextStatus)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot change status from ${currentStatus} to ${nextStatus}`,
+          });
+        }
+
+        if (nextStatus === "ACCEPTED" && !input.collectionMethod?.trim()) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Collection method is required when accepting a purchase",
+          });
+        }
+
+        if (
+          nextStatus === "IN_DELIVERY" &&
+          !input.collectionMethod?.trim() &&
+          !purchase.collectionMethod?.trim()
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Collection method must be provided before moving to in delivery",
+          });
+        }
+
+        if (nextStatus === "CANCELLED" && currentStatus !== "CANCELLED") {
+          await tx.group.update({
+            where: { id: purchase.groupId },
+            data: { coins: { increment: purchase.totalCost } },
+          });
+
+          await tx.reward.update({
+            where: { id: purchase.rewardId },
+            data: { availableQuantity: { increment: purchase.quantity } },
+          });
+
+          await tx.coinTransaction.create({
+            data: {
+              groupId: purchase.groupId,
+              amount: purchase.totalCost,
+              reason: `Refunded reward claim: ${purchase.quantity}x ${purchase.reward.name}`,
+              adminId: ctx.dbUser.id,
+            },
+          });
+        }
+
+        return await tx.rewardPurchase.update({
+          where: { id: purchase.id },
+          data: {
+            status: nextStatus,
+            statusUpdatedById: ctx.dbUser.id,
+            statusUpdatedAt: new Date(),
+            ...(input.collectionMethod?.trim()
+              ? { collectionMethod: input.collectionMethod.trim() }
+              : {}),
+          },
+          include: {
+            reward: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            purchasedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            statusUpdatedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        });
+      });
+    }),
+
   // Get purchase history for a trip
   getPurchaseHistory: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const isStaff = ctx.dbUser.role === "ADMIN" || ctx.dbUser.role === "MODERATOR";
+      let groupIdFilter: string | undefined;
+
+      if (!isStaff) {
+        const participant = await ctx.db.tripParticipant.findFirst({
+          where: {
+            userId: ctx.dbUser.id,
+            tripId: input.tripId,
+          },
+          select: {
+            groupId: true,
+          },
+        });
+
+        if (!participant?.groupId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only trip participants with a group can view reward history",
+          });
+        }
+
+        groupIdFilter = participant.groupId;
+      }
+
       const purchases = await ctx.db.rewardPurchase.findMany({
         where: {
           reward: { tripId: input.tripId },
+          ...(groupIdFilter ? { groupId: groupIdFilter } : {}),
         },
         include: {
           reward: true,
@@ -425,6 +794,13 @@ export const rewardRouter = createTRPCRouter({
             },
           },
           purchasedBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          statusUpdatedBy: {
             select: {
               id: true,
               firstName: true,

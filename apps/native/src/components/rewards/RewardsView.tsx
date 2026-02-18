@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@integral-2025-app/auth/client";
+import { useRouter } from "expo-router";
 import { useRewards, usePurchaseReward } from "~/hooks/rewards";
 import { useGroups } from "~/hooks/groups";
 import type { RewardListItem } from "./types";
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export default function RewardsView({ tripId }: Props) {
+  const router = useRouter();
   const { user } = useAuth();
   const { data: rewards, isLoading, error } = useRewards(tripId);
   const { groups } = useGroups(tripId);
@@ -75,15 +77,15 @@ export default function RewardsView({ tripId }: Props) {
   const handlePurchase = async () => {
     if (!selectedReward || !quantity) return;
 
-    const qty = parseInt(quantity);
+    const qty = parseInt(quantity, 10);
     if (isNaN(qty) || qty < 1) {
-      Alert.alert("Błąd", "Podaj prawidłową ilość");
+      Alert.alert("Error", "Enter a valid quantity");
       return;
     }
 
     const totalCost = selectedReward.coinCost * qty;
     if (totalCost > groupCoins) {
-      Alert.alert("Błąd", "Nie masz wystarczającej liczby monet");
+      Alert.alert("Error", "You do not have enough coins");
       return;
     }
 
@@ -93,18 +95,18 @@ export default function RewardsView({ tripId }: Props) {
         quantity: qty,
       });
       
-      Alert.alert("Sukces", `Zakupiono ${qty}x ${selectedReward.name}`);
+      Alert.alert("Success", `Claimed ${qty}x ${selectedReward.name}`);
       setShowPurchaseModal(false);
       setQuantity("1");
       setSelectedReward(null);
     } catch {
-      Alert.alert("Błąd", "Nie udało się zakupić nagrody");
+      Alert.alert("Error", "Failed to claim reward");
     }
   };
 
   const openPurchaseModal = (reward: RewardListItem) => {
     if (!organizerGroup) {
-      Alert.alert("Błąd", "Tylko lider grupy może zakupić nagrody");
+      Alert.alert("Error", "Only group leader can claim rewards");
       return;
     }
     setSelectedReward(reward);
@@ -115,7 +117,7 @@ export default function RewardsView({ tripId }: Props) {
     return (
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator size="large" color="#00ced1" />
-                <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Ładowanie nagród...</Text>
+                <Text style={[commonStyles.textSecondary, { marginTop: 16 }]}>Loading rewards...</Text>
       </View>
     );
   }
@@ -125,7 +127,7 @@ export default function RewardsView({ tripId }: Props) {
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
         <Ionicons name="alert-circle" size={48} color="#ef4444" />
         <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
-          Nie udało się załadować nagród
+          Failed to load rewards
         </Text>
       </View>
     );
@@ -136,7 +138,7 @@ export default function RewardsView({ tripId }: Props) {
       <View style={[commonStyles.container, { justifyContent: "center", alignItems: "center" }]}>
         <Ionicons name="gift" size={48} color="#6b7280" />
         <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
-          Brak dostępnych nagród dla tej wycieczki
+          No rewards available for this trip
         </Text>
       </View>
     );
@@ -146,12 +148,30 @@ export default function RewardsView({ tripId }: Props) {
     <View style={commonStyles.container}>
       {/* Header with group coins */}
       <View style={{
-        backgroundColor: "#0f2323",
         padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#273a3a",
       }}>
-        <Text style={[commonStyles.h3, { marginBottom: 8 }]}>Nagrody</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <Text style={[commonStyles.h3]}>Rewards</Text>
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: "/trips/rewards/history", params: { tripId } })}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              borderWidth: 1,
+              borderColor: "#273a3a",
+              borderRadius: 999,
+              paddingHorizontal: 14,
+              paddingVertical: 9,
+              backgroundColor: "#102424",
+            }}
+          >
+            <Ionicons name="time-outline" size={16} color="#00ced1" />
+            <Text style={[commonStyles.label, { color: "#00ced1", letterSpacing: 0.8, fontSize: 12 }]}>
+              My rewards
+            </Text>
+          </TouchableOpacity>
+        </View>
         {organizerGroup && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Ionicons name="people" size={16} color="#00ced1" />
@@ -161,7 +181,7 @@ export default function RewardsView({ tripId }: Props) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Ionicons name="cash" size={16} color="#fbbf24" />
               <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}> 
-                {groupCoins} monet
+                {groupCoins} coins
               </Text>
             </View>
           </View>
@@ -169,11 +189,12 @@ export default function RewardsView({ tripId }: Props) {
       </View>
 
       <ScrollView style={{ flex: 1, padding: 16 }}>
-        <View style={{ gap: 16 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 16 }}>
           {safeRewards.map((reward) => (
             <View
               key={reward.id}
               style={{
+                width: "48%",
                 backgroundColor: "#0f2323",
                 borderWidth: 1,
                 borderColor: reward.isOutOfStock ? "#ef4444" : "#273a3a",
@@ -182,7 +203,7 @@ export default function RewardsView({ tripId }: Props) {
               }}
             >
               {/* Reward Image */}
-              {(reward.signedImageUrl ?? reward.image) && (
+              {(reward.signedImageUrl ?? reward.image) ? (
                 <Image
                   source={{ uri: reward.signedImageUrl ?? reward.image ?? undefined }}
                   style={{
@@ -193,6 +214,22 @@ export default function RewardsView({ tripId }: Props) {
                   }}
                   resizeMode="cover"
                 />
+              ) : (
+                <View
+                  style={{
+                    width: "100%",
+                    aspectRatio: 1,
+                    borderRadius: 8,
+                    marginBottom: 12,
+                    borderWidth: 1,
+                    borderColor: "#273a3a",
+                    backgroundColor: "#0b1a1a",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="gift-outline" size={36} color="#6b7280" />
+                </View>
               )}
 
               {/* Reward Info */}
@@ -208,7 +245,7 @@ export default function RewardsView({ tripId }: Props) {
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                     <Ionicons name="cash" size={16} color="#fbbf24" />
                     <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
-                      {reward.coinCost} monet
+                      {reward.coinCost} coins
                     </Text>
                   </View>
                   
@@ -216,7 +253,7 @@ export default function RewardsView({ tripId }: Props) {
                     color: reward.isOutOfStock ? "#ef4444" : "#10b981",
                     fontWeight: "600"
                   }]}>
-                    {reward.isOutOfStock ? "Wyprzedane" : `${reward.availableQuantity ?? 0} szt.`}
+                    {reward.isOutOfStock ? "Sold out" : `${reward.availableQuantity ?? 0} pcs.`}
                   </Text>
                 </View>
               </View>
@@ -234,10 +271,10 @@ export default function RewardsView({ tripId }: Props) {
                 ]}
               >
                 <Text style={commonStyles.buttonText}>
-                  {reward.isOutOfStock ? "Wyprzedane" : 
-                   !reward.isEligibleToBuy ? "Tylko lider grupy" : 
-                   !reward.canAfford ? "Brak monet" : 
-                   "Kup nagrodę"}
+                  {reward.isOutOfStock ? "Sold out" : 
+                   !reward.isEligibleToBuy ? "Only group leader" : 
+                   !reward.canAfford ? "Not enough coins" : 
+                   "Claim reward"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -261,7 +298,7 @@ export default function RewardsView({ tripId }: Props) {
             justifyContent: "space-between",
             alignItems: "center",
           }}>
-            <Text style={[commonStyles.h3]}>Kup nagrodę</Text>
+            <Text style={[commonStyles.h3]}>Claim reward</Text>
             <TouchableOpacity onPress={() => setShowPurchaseModal(false)}>
               <Ionicons name="close" size={24} color="#9ca3af" />
             </TouchableOpacity>
@@ -282,19 +319,19 @@ export default function RewardsView({ tripId }: Props) {
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                       <Ionicons name="cash" size={16} color="#fbbf24" />
                       <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
-                        {selectedReward.coinCost} monet / sztuka
+                        {selectedReward.coinCost} coins / item
                       </Text>
                     </View>
                     
                     <Text style={[commonStyles.textPrimary, { color: "#10b981" }]}>
-                      Dostępne: {selectedReward.availableQuantity} szt.
+                      Available: {selectedReward.availableQuantity} pcs.
                     </Text>
                   </View>
                 </View>
 
                 <View style={{ marginBottom: 20 }}>
                   <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
-                    Ilość
+                    Quantity
                   </Text>
                   <TextInput
                     style={{
@@ -320,10 +357,10 @@ export default function RewardsView({ tripId }: Props) {
                   marginBottom: 24,
                 }}>
                   <Text style={[commonStyles.textSecondary, { marginBottom: 8 }]}>
-                    Całkowity koszt:
+                    Total cost:
                   </Text>
                   <Text style={[commonStyles.h4, { color: "#fbbf24" }]}>
-                    {selectedReward.coinCost * (parseInt(quantity) || 1)} monet
+                    {selectedReward.coinCost * (parseInt(quantity, 10) || 1)} coins
                   </Text>
                 </View>
 
@@ -333,7 +370,7 @@ export default function RewardsView({ tripId }: Props) {
                   style={[commonStyles.button, { marginBottom: 24 }]}
                 >
                   <Text style={commonStyles.buttonText}>
-                    {purchaseReward.isPending ? "Kupowanie..." : "Potwierdź zakup"}
+                    {purchaseReward.isPending ? "Claiming..." : "Confirm claim"}
                   </Text>
                 </TouchableOpacity>
               </>
