@@ -11,6 +11,7 @@
   },
   "scripts": {
     "clean": "rm -rf node_modules",
+    "db:migrate": "bunx prisma migrate deploy",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit"
