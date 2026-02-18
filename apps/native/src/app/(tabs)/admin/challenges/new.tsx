@@ -147,12 +147,6 @@ export default function NewChallengeScreen() {
     return Number.isFinite(parsed) ? parsed : undefined;
   };
 
-  const toOptionalFloat = (value: string) => {
-    if (!value) return undefined;
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  };
-
   const createChallengeMutation = useMutation(
     trpc.challenge.create.mutationOptions({
       onSuccess: () => {
@@ -296,7 +290,7 @@ export default function NewChallengeScreen() {
       const storagePath = `challenge/${tripId}/cover-${Date.now()}.${extension}`;
       const contentType = asset.mimeType ?? getImageContentType(extension);
       const fileName =
-        asset.fileName?.trim() ||
+        asset.fileName?.trim() ??
         `challenge-cover-${Date.now()}.${extension}`;
 
       await upload({

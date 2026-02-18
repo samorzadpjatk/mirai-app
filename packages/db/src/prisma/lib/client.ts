@@ -164,3 +164,13 @@ export type Location = Prisma.LocationModel
  * 
  */
 export type LocationSharingRequest = Prisma.LocationSharingRequestModel
+/**
+ * Model Reward
+ * 
+ */
+export type Reward = Prisma.RewardModel
+/**
+ * Model RewardPurchase
+ * 
+ */
+export type RewardPurchase = Prisma.RewardPurchaseModel

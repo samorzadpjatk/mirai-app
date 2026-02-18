@@ -66,6 +66,9 @@ export default function TripDetailsScreen() {
             onOpenChallenges={() =>
               router.push(`/trips/challenges?tripId=${trip.id}`)
             }
+            onOpenRewards={() =>
+              router.push(`/trips/rewards?tripId=${trip.id}`)
+            }
             onOpenLeaderboard={() =>
               router.push(`/trips/leaderboard?tripId=${trip.id}`)
             }

@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
@@ -27,8 +27,6 @@ import type { Group, User } from '~/hooks/admin/useAdminGroups';
 
 export default function AdminGroupsScreen() {
   const insets = useAppSafeAreaInsets();
-  const router = useRouter();
-  
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
   
@@ -36,8 +34,7 @@ export default function AdminGroupsScreen() {
   const {
     groups,
     groupsLoading,
-    users,
-    usersLoading,
+    users: rawUsers,
     createGroup,
     updateGroup,
     deleteGroup,
@@ -45,6 +42,7 @@ export default function AdminGroupsScreen() {
     isUpdatingGroup,
     isDeletingGroup,
   } = useAdminGroups(tripId ?? '');
+  const users = (rawUsers ?? []) as User[];
   
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -80,6 +78,7 @@ export default function AdminGroupsScreen() {
       await createGroup(name);
       setShowCreateModal(false);
     } catch (error) {
+      console.error(error);
       Alert.alert('Error', 'Failed to create group');
     }
   };
@@ -90,6 +89,7 @@ export default function AdminGroupsScreen() {
       setShowEditModal(false);
       setSelectedGroup(null);
     } catch (error) {
+      console.error(error);
       Alert.alert('Error', 'Failed to update group');
     }
   };
@@ -100,6 +100,7 @@ export default function AdminGroupsScreen() {
       setShowDeleteModal(false);
       setSelectedGroup(null);
     } catch (error) {
+      console.error(error);
       Alert.alert('Error', 'Failed to delete group');
     }
   };
@@ -110,6 +111,7 @@ export default function AdminGroupsScreen() {
       setShowOrganizerModal(false);
       setSelectedGroup(null);
     } catch (error) {
+      console.error(error);
       Alert.alert('Error', 'Failed to assign organizer');
     }
   };

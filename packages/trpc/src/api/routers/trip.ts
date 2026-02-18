@@ -112,7 +112,86 @@ export const tripRouter = createTRPCRouter({
                   _count: {
                     select: { participants: true }
                   }
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!trip) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Trip not found" });
+      }
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        trip.participants.map((participant) => participant.user.authUserId),
+      );
+
+      return {
+        ...trip,
+        groups: await Promise.all(
+          trip.groups.map(async (group) => ({
+            ...group,
+            image: await resolveGroupImage(ctx.supabase, group.image),
+          })),
+        ),
+        participants: trip.participants.map((participant) => {
+          const { authUserId, ...user } = participant.user;
+          return {
+            ...participant,
+            group: participant.group
+              ? {
+                  ...participant.group,
+                  image: participant.group.image,
                 }
+              : participant.group,
+            user: {
+              ...user,
+              email: resolveAuthEmail(emailByAuthUserId, authUserId),
+            },
+          };
+        }),
+      };
+    }),
+  getByIdAdmin: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const trip = await ctx.db.trip.findUnique({
+        where: { id: input.id },
+        include: {
+          groups: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              image: true,
+              coins: true,
+              _count: {
+                select: { participants: true }
+              }
+            },
+          },
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  authUserId: true,
+                  role: true,
+                },
+              },
+              group: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  coins: true,
+                  _count: {
+                    select: { participants: true }
+                  }
+                },
               },
             },
           },

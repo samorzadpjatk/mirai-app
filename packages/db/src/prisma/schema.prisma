@@ -78,6 +78,8 @@ model User {
   updatedAt                 DateTime                 @updatedAt
 
   challengeSubmissions ChallengeSubmission[]
+  createdRewards       Reward[]                 @relation("RewardCreator")
+  rewardPurchases      RewardPurchase[]         @relation("RewardPurchaser")
 }
 
 model Trip {
@@ -95,6 +97,7 @@ model Trip {
   notificationSchedules  NotificationSchedule[]
   notificationDeliveries NotificationDelivery[]
   challenges             Challenge[]
+  rewards                Reward[]
   activityFeed           ActivityFeed[]
 }
 
@@ -105,6 +108,7 @@ model TripParticipant {
   groupId           String?
   wristNumber       String?
   houseNumber       String?
+  role              String             @default("MEMBER") // MEMBER, LEADER
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   user              User               @relation(fields: [userId], references: [id])
@@ -167,6 +171,7 @@ model Group {
   updatedAt        DateTime          @updatedAt
 
   challengeSubmissions ChallengeSubmission[]
+  rewardPurchases      RewardPurchase[]
   submissionActivities SubmissionActivity[]  @relation("SubmissionActivityGroup")
   rankChangeActivities RankChangeActivity[]  @relation("RankChangeActivityGroup")
 }
@@ -553,4 +558,39 @@ model LocationSharingRequest {
   @@unique([senderId, receiverId])
   @@index([receiverId, status])
   @@index([senderId, status])
+}
+
+model Reward {
+  id               String   @id @default(cuid())
+  name             String
+  description      String
+  availableQuantity Int
+  image            String?
+  coinCost         Int
+  tripId           String
+  trip             Trip     @relation(fields: [tripId], references: [id])
+  createdById      String
+  createdBy        User     @relation("RewardCreator", fields: [createdById], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  purchases        RewardPurchase[]
+  
+  @@index([tripId])
+}
+
+model RewardPurchase {
+  id           String   @id @default(cuid())
+  rewardId     String
+  reward       Reward   @relation(fields: [rewardId], references: [id])
+  groupId      String
+  group        Group    @relation(fields: [groupId], references: [id])
+  quantity     Int
+  totalCost    Int
+  purchasedById String
+  purchasedBy  User     @relation("RewardPurchaser", fields: [purchasedById], references: [id])
+  purchasedAt  DateTime @default(now())
+  
+  @@index([rewardId])
+  @@index([groupId])
 }
