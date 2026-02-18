@@ -109,6 +109,13 @@ export default function AdminLayout() {
             headerBackTitle: "Back"
           }}
         />
+        <Stack.Screen
+          name="rewards/index"
+          options={{
+            title: "Rewards",
+            headerBackTitle: "Back"
+          }}
+        />
       </Stack.Protected>
     </Stack>
   );
