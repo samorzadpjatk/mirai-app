@@ -213,6 +213,7 @@ export type TripWhereInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryListRelationFilter
   challenges?: Prisma.ChallengeListRelationFilter
   rewards?: Prisma.RewardListRelationFilter
+  activityFeed?: Prisma.ActivityFeedListRelationFilter
 }
 
 export type TripOrderByWithRelationInput = {
@@ -231,6 +232,7 @@ export type TripOrderByWithRelationInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryOrderByRelationAggregateInput
   challenges?: Prisma.ChallengeOrderByRelationAggregateInput
   rewards?: Prisma.RewardOrderByRelationAggregateInput
+  activityFeed?: Prisma.ActivityFeedOrderByRelationAggregateInput
 }
 
 export type TripWhereUniqueInput = Prisma.AtLeast<{
@@ -252,6 +254,7 @@ export type TripWhereUniqueInput = Prisma.AtLeast<{
   notificationDeliveries?: Prisma.NotificationDeliveryListRelationFilter
   challenges?: Prisma.ChallengeListRelationFilter
   rewards?: Prisma.RewardListRelationFilter
+  activityFeed?: Prisma.ActivityFeedListRelationFilter
 }, "id">
 
 export type TripOrderByWithAggregationInput = {
@@ -298,6 +301,7 @@ export type TripCreateInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
 }
 
 export type TripUncheckedCreateInput = {
@@ -316,6 +320,7 @@ export type TripUncheckedCreateInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
 }
 
 export type TripUpdateInput = {
@@ -334,6 +339,7 @@ export type TripUpdateInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateInput = {
@@ -352,6 +358,7 @@ export type TripUncheckedUpdateInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
 }
 
 export type TripCreateManyInput = {
@@ -476,6 +483,20 @@ export type TripUpdateOneRequiredWithoutChallengesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TripUpdateToOneWithWhereWithoutChallengesInput, Prisma.TripUpdateWithoutChallengesInput>, Prisma.TripUncheckedUpdateWithoutChallengesInput>
 }
 
+export type TripCreateNestedOneWithoutActivityFeedInput = {
+  create?: Prisma.XOR<Prisma.TripCreateWithoutActivityFeedInput, Prisma.TripUncheckedCreateWithoutActivityFeedInput>
+  connectOrCreate?: Prisma.TripCreateOrConnectWithoutActivityFeedInput
+  connect?: Prisma.TripWhereUniqueInput
+}
+
+export type TripUpdateOneRequiredWithoutActivityFeedNestedInput = {
+  create?: Prisma.XOR<Prisma.TripCreateWithoutActivityFeedInput, Prisma.TripUncheckedCreateWithoutActivityFeedInput>
+  connectOrCreate?: Prisma.TripCreateOrConnectWithoutActivityFeedInput
+  upsert?: Prisma.TripUpsertWithoutActivityFeedInput
+  connect?: Prisma.TripWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TripUpdateToOneWithWhereWithoutActivityFeedInput, Prisma.TripUpdateWithoutActivityFeedInput>, Prisma.TripUncheckedUpdateWithoutActivityFeedInput>
+}
+
 export type TripCreateNestedOneWithoutNotificationSchedulesInput = {
   create?: Prisma.XOR<Prisma.TripCreateWithoutNotificationSchedulesInput, Prisma.TripUncheckedCreateWithoutNotificationSchedulesInput>
   connectOrCreate?: Prisma.TripCreateOrConnectWithoutNotificationSchedulesInput
@@ -553,6 +574,7 @@ export type TripCreateWithoutParticipantsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutParticipantsInput = {
@@ -570,6 +592,7 @@ export type TripUncheckedCreateWithoutParticipantsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutParticipantsInput = {
@@ -603,6 +626,7 @@ export type TripUpdateWithoutParticipantsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutParticipantsInput = {
@@ -620,6 +644,7 @@ export type TripUncheckedUpdateWithoutParticipantsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
 }
 
 export type TripCreateWithoutGroupsInput = {
@@ -637,6 +662,7 @@ export type TripCreateWithoutGroupsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutGroupsInput = {
@@ -654,6 +680,7 @@ export type TripUncheckedCreateWithoutGroupsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutGroupsInput = {
@@ -687,6 +714,7 @@ export type TripUpdateWithoutGroupsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutGroupsInput = {
@@ -704,6 +732,7 @@ export type TripUncheckedUpdateWithoutGroupsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
 }
 
 export type TripCreateWithoutChallengesInput = {
@@ -721,6 +750,7 @@ export type TripCreateWithoutChallengesInput = {
   notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutTripInput
   notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutChallengesInput = {
@@ -738,6 +768,7 @@ export type TripUncheckedCreateWithoutChallengesInput = {
   notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutTripInput
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutChallengesInput = {
@@ -771,6 +802,7 @@ export type TripUpdateWithoutChallengesInput = {
   notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutTripNestedInput
   notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutChallengesInput = {
@@ -787,6 +819,95 @@ export type TripUncheckedUpdateWithoutChallengesInput = {
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTripNestedInput
   notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutTripNestedInput
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
+  rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
+}
+
+export type TripCreateWithoutActivityFeedInput = {
+  id?: string
+  name: string
+  description?: string | null
+  startDate: Date | string
+  endDate: Date | string
+  backgroundImagePath?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  groups?: Prisma.GroupCreateNestedManyWithoutTripInput
+  participants?: Prisma.TripParticipantCreateNestedManyWithoutTripInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutTripInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutTripInput
+  notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
+  challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
+  rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+}
+
+export type TripUncheckedCreateWithoutActivityFeedInput = {
+  id?: string
+  name: string
+  description?: string | null
+  startDate: Date | string
+  endDate: Date | string
+  backgroundImagePath?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  groups?: Prisma.GroupUncheckedCreateNestedManyWithoutTripInput
+  participants?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutTripInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTripInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutTripInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
+  challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
+  rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+}
+
+export type TripCreateOrConnectWithoutActivityFeedInput = {
+  where: Prisma.TripWhereUniqueInput
+  create: Prisma.XOR<Prisma.TripCreateWithoutActivityFeedInput, Prisma.TripUncheckedCreateWithoutActivityFeedInput>
+}
+
+export type TripUpsertWithoutActivityFeedInput = {
+  update: Prisma.XOR<Prisma.TripUpdateWithoutActivityFeedInput, Prisma.TripUncheckedUpdateWithoutActivityFeedInput>
+  create: Prisma.XOR<Prisma.TripCreateWithoutActivityFeedInput, Prisma.TripUncheckedCreateWithoutActivityFeedInput>
+  where?: Prisma.TripWhereInput
+}
+
+export type TripUpdateToOneWithWhereWithoutActivityFeedInput = {
+  where?: Prisma.TripWhereInput
+  data: Prisma.XOR<Prisma.TripUpdateWithoutActivityFeedInput, Prisma.TripUncheckedUpdateWithoutActivityFeedInput>
+}
+
+export type TripUpdateWithoutActivityFeedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  backgroundImagePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  groups?: Prisma.GroupUpdateManyWithoutTripNestedInput
+  participants?: Prisma.TripParticipantUpdateManyWithoutTripNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutTripNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutTripNestedInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
+  challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
+  rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+}
+
+export type TripUncheckedUpdateWithoutActivityFeedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  backgroundImagePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  groups?: Prisma.GroupUncheckedUpdateManyWithoutTripNestedInput
+  participants?: Prisma.TripParticipantUncheckedUpdateManyWithoutTripNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTripNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutTripNestedInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
+  challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
 }
 
@@ -805,6 +926,7 @@ export type TripCreateWithoutNotificationSchedulesInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutNotificationSchedulesInput = {
@@ -822,6 +944,7 @@ export type TripUncheckedCreateWithoutNotificationSchedulesInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutNotificationSchedulesInput = {
@@ -855,6 +978,7 @@ export type TripUpdateWithoutNotificationSchedulesInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutNotificationSchedulesInput = {
@@ -872,6 +996,7 @@ export type TripUncheckedUpdateWithoutNotificationSchedulesInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
 }
 
 export type TripCreateWithoutNotificationsInput = {
@@ -889,6 +1014,7 @@ export type TripCreateWithoutNotificationsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutNotificationsInput = {
@@ -906,6 +1032,7 @@ export type TripUncheckedCreateWithoutNotificationsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutNotificationsInput = {
@@ -939,6 +1066,7 @@ export type TripUpdateWithoutNotificationsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutNotificationsInput = {
@@ -956,6 +1084,7 @@ export type TripUncheckedUpdateWithoutNotificationsInput = {
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
 }
 
 export type TripCreateWithoutNotificationDeliveriesInput = {
@@ -973,6 +1102,7 @@ export type TripCreateWithoutNotificationDeliveriesInput = {
   notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutNotificationDeliveriesInput = {
@@ -990,6 +1120,7 @@ export type TripUncheckedCreateWithoutNotificationDeliveriesInput = {
   notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutNotificationDeliveriesInput = {
@@ -1023,6 +1154,7 @@ export type TripUpdateWithoutNotificationDeliveriesInput = {
   notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutNotificationDeliveriesInput = {
@@ -1040,6 +1172,7 @@ export type TripUncheckedUpdateWithoutNotificationDeliveriesInput = {
   notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
 }
 
 export type TripCreateWithoutRewardsInput = {
@@ -1057,6 +1190,7 @@ export type TripCreateWithoutRewardsInput = {
   notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutTripInput
   notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutRewardsInput = {
@@ -1074,6 +1208,7 @@ export type TripUncheckedCreateWithoutRewardsInput = {
   notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutTripInput
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
   challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutRewardsInput = {
@@ -1107,6 +1242,7 @@ export type TripUpdateWithoutRewardsInput = {
   notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutTripNestedInput
   notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutRewardsInput = {
@@ -1124,6 +1260,7 @@ export type TripUncheckedUpdateWithoutRewardsInput = {
   notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutTripNestedInput
   notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
   challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
 }
 
 
@@ -1139,6 +1276,7 @@ export type TripCountOutputType = {
   notificationDeliveries: number
   challenges: number
   rewards: number
+  activityFeed: number
 }
 
 export type TripCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1149,6 +1287,7 @@ export type TripCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   notificationDeliveries?: boolean | TripCountOutputTypeCountNotificationDeliveriesArgs
   challenges?: boolean | TripCountOutputTypeCountChallengesArgs
   rewards?: boolean | TripCountOutputTypeCountRewardsArgs
+  activityFeed?: boolean | TripCountOutputTypeCountActivityFeedArgs
 }
 
 /**
@@ -1210,6 +1349,13 @@ export type TripCountOutputTypeCountRewardsArgs<ExtArgs extends runtime.Types.Ex
   where?: Prisma.RewardWhereInput
 }
 
+/**
+ * TripCountOutputType without action
+ */
+export type TripCountOutputTypeCountActivityFeedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ActivityFeedWhereInput
+}
+
 
 export type TripSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1227,6 +1373,7 @@ export type TripSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   notificationDeliveries?: boolean | Prisma.Trip$notificationDeliveriesArgs<ExtArgs>
   challenges?: boolean | Prisma.Trip$challengesArgs<ExtArgs>
   rewards?: boolean | Prisma.Trip$rewardsArgs<ExtArgs>
+  activityFeed?: boolean | Prisma.Trip$activityFeedArgs<ExtArgs>
   _count?: boolean | Prisma.TripCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["trip"]>
 
@@ -1272,6 +1419,7 @@ export type TripInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   notificationDeliveries?: boolean | Prisma.Trip$notificationDeliveriesArgs<ExtArgs>
   challenges?: boolean | Prisma.Trip$challengesArgs<ExtArgs>
   rewards?: boolean | Prisma.Trip$rewardsArgs<ExtArgs>
+  activityFeed?: boolean | Prisma.Trip$activityFeedArgs<ExtArgs>
   _count?: boolean | Prisma.TripCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TripIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1287,6 +1435,7 @@ export type $TripPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     notificationDeliveries: Prisma.$NotificationDeliveryPayload<ExtArgs>[]
     challenges: Prisma.$ChallengePayload<ExtArgs>[]
     rewards: Prisma.$RewardPayload<ExtArgs>[]
+    activityFeed: Prisma.$ActivityFeedPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1698,6 +1847,7 @@ export interface Prisma__TripClient<T, Null = never, ExtArgs extends runtime.Typ
   notificationDeliveries<T extends Prisma.Trip$notificationDeliveriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$notificationDeliveriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationDeliveryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   challenges<T extends Prisma.Trip$challengesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$challengesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   rewards<T extends Prisma.Trip$rewardsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$rewardsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RewardPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  activityFeed<T extends Prisma.Trip$activityFeedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$activityFeedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityFeedPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2288,6 +2438,30 @@ export type Trip$rewardsArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.RewardScalarFieldEnum | Prisma.RewardScalarFieldEnum[]
+}
+
+/**
+ * Trip.activityFeed
+ */
+export type Trip$activityFeedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ActivityFeed
+   */
+  select?: Prisma.ActivityFeedSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ActivityFeed
+   */
+  omit?: Prisma.ActivityFeedOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ActivityFeedInclude<ExtArgs> | null
+  where?: Prisma.ActivityFeedWhereInput
+  orderBy?: Prisma.ActivityFeedOrderByWithRelationInput | Prisma.ActivityFeedOrderByWithRelationInput[]
+  cursor?: Prisma.ActivityFeedWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ActivityFeedScalarFieldEnum | Prisma.ActivityFeedScalarFieldEnum[]
 }
 
 /**

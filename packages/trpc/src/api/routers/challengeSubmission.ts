@@ -9,6 +9,12 @@ import {
 import { type Prisma } from "@integral-2025-app/db";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { calculateDistance } from "../../utils/location-validation";
+import {
+  captureTripRankingSnapshot,
+  createChallengeStatusActivityById,
+  createRankChangeActivities,
+  promoteVisibleChallengesToActiveWithFeed,
+} from "../../utils/activityFeed";
 
 const QR_MARKER_REGEX = /\[\[QR_EXPECTED_B64:([A-Za-z0-9+/=]+)\]\]/;
 
@@ -50,6 +56,30 @@ const submissionSelect: Prisma.ChallengeSubmissionSelect = {
       firstName: true,
       lastName: true,
       authUserId: true,
+    },
+  },
+} as const;
+
+const submissionApprovalActivitySelect: Prisma.ChallengeSubmissionSelect = {
+  id: true,
+  challengeId: true,
+  groupId: true,
+  imageIds: true,
+  videoId: true,
+  awardedPoints: true,
+  bonusPoints: true,
+  ranking: true,
+  challenge: {
+    select: {
+      id: true,
+      tripId: true,
+      name: true,
+    },
+  },
+  group: {
+    select: {
+      id: true,
+      name: true,
     },
   },
 } as const;
@@ -99,16 +129,10 @@ const ensureChallengeInTrip = async (
     },
   });
 
-  await ctx.db.challenge.updateMany({
-    where: {
-      id: challengeId,
-      tripId,
-      status: "VISIBLE",
-      startTime: { lte: new Date() },
-    },
-    data: {
-      status: "ACTIVE",
-    },
+  await promoteVisibleChallengesToActiveWithFeed({
+    tx: ctx.db,
+    where: { id: challengeId, tripId },
+    createdByAdmin: null,
   });
 
   await ctx.db.challenge.updateMany({
@@ -516,6 +540,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
           message: "Użytkownik nie jest przypisany do grupy",
         });
       }
+      const participantGroupId = participant.groupId;
 
       const challenge = await ensureChallengeInTrip(
         ctx,
@@ -534,7 +559,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
         where: {
           challengeId_groupId: {
             challengeId: input.challengeId,
-            groupId: participant.groupId,
+            groupId: participantGroupId,
           },
         },
         select: { id: true },
@@ -569,11 +594,15 @@ export const challengeSubmissionRouter = createTRPCRouter({
         : 0;
       const shouldAwardCoins = autoApproved && awardPoints > 0;
 
-      const [submission] = await ctx.db.$transaction([
-        ctx.db.challengeSubmission.create({
+      const createdSubmissionId = await ctx.db.$transaction(async (tx) => {
+        const previousRankingSnapshot = shouldAwardCoins
+          ? await captureTripRankingSnapshot(tx, input.tripId)
+          : null;
+
+        const createdSubmission = await tx.challengeSubmission.create({
           data: {
             challengeId: input.challengeId,
-            groupId: participant.groupId,
+            groupId: participantGroupId,
             imageIds: input.imageIds ?? [],
             videoId: input.videoId,
             textContent: input.textContent,
@@ -582,25 +611,47 @@ export const challengeSubmissionRouter = createTRPCRouter({
             status: autoApproved ? "APPROVED" : "PENDING",
             reviewedAt: autoApproved ? now : undefined,
           },
-          select: submissionSelect,
-        }),
-        ...(shouldAwardCoins
-          ? [
-              ctx.db.group.update({
-                where: { id: participant.groupId },
-                data: { coins: { increment: awardPoints } },
-              }),
-              ctx.db.coinTransaction.create({
-                data: {
-                  groupId: participant.groupId,
-                  amount: awardPoints,
-                  reason: `Auto-approved challenge: ${challenge.name}`,
-                  adminId: ctx.dbUser.id,
-                },
-              }),
-            ]
-          : []),
-      ]);
+          select: { id: true },
+        });
+
+        if (shouldAwardCoins) {
+          await tx.group.update({
+            where: { id: participantGroupId },
+            data: { coins: { increment: awardPoints } },
+          });
+          await tx.coinTransaction.create({
+            data: {
+              groupId: participantGroupId,
+              amount: awardPoints,
+              reason: `Auto-approved challenge: ${challenge.name}`,
+              adminId: ctx.dbUser.id,
+            },
+          });
+
+          if (previousRankingSnapshot) {
+            await createRankChangeActivities({
+              tx,
+              tripId: input.tripId,
+              previousSnapshot: previousRankingSnapshot,
+              createdByAdmin: ctx.dbUser.id,
+            });
+          }
+        }
+
+        return createdSubmission;
+      });
+
+      const submission = await ctx.db.challengeSubmission.findUnique({
+        where: { id: createdSubmissionId.id },
+        select: submissionSelect,
+      });
+
+      if (!submission) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Submission not found",
+        });
+      }
 
       const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
         submission.reviewedBy?.authUserId,
@@ -696,10 +747,22 @@ export const challengeSubmissionRouter = createTRPCRouter({
         submission.challenge.startTime &&
         submission.challenge.startTime <= new Date()
       ) {
-        await ctx.db.challenge.update({
-          where: { id: submission.challenge.id },
+        const activation = await ctx.db.challenge.updateMany({
+          where: {
+            id: submission.challenge.id,
+            status: "VISIBLE",
+          },
           data: { status: "ACTIVE" },
         });
+
+        if (activation.count > 0) {
+          await createChallengeStatusActivityById({
+            tx: ctx.db,
+            challengeId: submission.challenge.id,
+            eventType: "challenge_started",
+            createdByAdmin: null,
+          });
+        }
         submission.challenge.status = "ACTIVE";
       }
 
@@ -828,6 +891,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
           challenge: {
             select: {
               id: true,
+              tripId: true,
               name: true,
               scoringCategory: true,
               basePoints: true,
@@ -846,8 +910,9 @@ export const challengeSubmissionRouter = createTRPCRouter({
         });
       }
 
-      const shouldAwardCoins =
+      const shouldCreateApprovalActivity =
         input.status === "APPROVED" && submission.status !== "APPROVED";
+      const shouldAwardCoins = shouldCreateApprovalActivity;
       const awardPoints = shouldAwardCoins
         ? resolveAwardedPoints(submission.challenge, {
             awardedPoints: input.awardedPoints,
@@ -858,8 +923,12 @@ export const challengeSubmissionRouter = createTRPCRouter({
       const totalAwardPoints = awardPoints + bonusPoints;
 
       const updatedSubmission = await ctx.db.$transaction(async (tx) => {
+        const previousRankingSnapshot = shouldCreateApprovalActivity
+          ? await captureTripRankingSnapshot(tx, submission.challenge.tripId)
+          : null;
+
         const isSpeed = submission.challenge.scoringCategory === "SPEED";
-        const updated = await tx.challengeSubmission.update({
+        await tx.challengeSubmission.update({
           where: { id: input.id },
           data: {
             status: input.status,
@@ -871,7 +940,6 @@ export const challengeSubmissionRouter = createTRPCRouter({
             bonusPoints: input.bonusPoints,
             ranking: isSpeed ? undefined : input.ranking,
           },
-          select: submissionSelect,
         });
 
         if (isSpeed && input.status === "APPROVED") {
@@ -895,7 +963,75 @@ export const challengeSubmissionRouter = createTRPCRouter({
           });
         }
 
-        return updated;
+        const refreshedForResponse = await tx.challengeSubmission.findUnique({
+          where: { id: input.id },
+          select: submissionSelect,
+        });
+
+        if (!refreshedForResponse) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Zgłoszenie nie zostało znalezione",
+          });
+        }
+
+        if (shouldCreateApprovalActivity) {
+          const existingSubmissionActivity = await tx.submissionActivity.findFirst({
+            where: { submissionId: input.id },
+            select: { activityId: true },
+          });
+
+          if (!existingSubmissionActivity) {
+            const refreshedForActivity = await tx.challengeSubmission.findUnique({
+              where: { id: input.id },
+              select: submissionApprovalActivitySelect,
+            });
+
+            if (!refreshedForActivity) {
+              throw new TRPCError({
+                code: "NOT_FOUND",
+                message: "Zgłoszenie nie zostało znalezione",
+              });
+            }
+
+            const totalPoints =
+              (refreshedForActivity.awardedPoints ?? 0) +
+              (refreshedForActivity.bonusPoints ?? 0);
+
+            await tx.activityFeed.create({
+              data: {
+                tripId: refreshedForActivity.challenge.tripId,
+                activityType: "submission",
+                title: `Druzyna ${refreshedForActivity.group.name} dodala zdjecie do wyzwania ${refreshedForActivity.challenge.name}`,
+                description: "Ty tez mozesz wziac udzial w challengu",
+                imageUrl: refreshedForActivity.imageIds[0],
+                createdByAdmin: ctx.dbUser.id,
+                submissionActivity: {
+                  create: {
+                    submissionId: refreshedForActivity.id,
+                    challengeId: refreshedForActivity.challengeId,
+                    groupId: refreshedForActivity.groupId,
+                    hasVideo: Boolean(refreshedForActivity.videoId),
+                    isWinner: refreshedForActivity.ranking === 1,
+                    ranking: refreshedForActivity.ranking,
+                    pointsAwarded: totalPoints,
+                  },
+                },
+              },
+            });
+          }
+        }
+
+        if (previousRankingSnapshot) {
+          await createRankChangeActivities({
+            tx,
+            tripId: submission.challenge.tripId,
+            previousSnapshot: previousRankingSnapshot,
+            createdByAdmin: ctx.dbUser.id,
+          });
+        }
+
+        return refreshedForResponse;
       });
 
       const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [

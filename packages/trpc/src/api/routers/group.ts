@@ -10,6 +10,10 @@ import {
 } from "../../api/trpc";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
+import {
+  captureTripRankingSnapshot,
+  createRankChangeActivities,
+} from "../../utils/activityFeed";
 
 const toUserWithEmail = <T extends { authUserId?: string | null }>(
   user: T,
@@ -768,37 +772,51 @@ export const groupRouter = createTRPCRouter({
       z.object({ groupId: z.string(), amount: z.number(), tripId: z.string() }),
     )
     .mutation(async ({ ctx, input }) => {
-      const group = await ctx.db.group.findUnique({
-        where: { id: input.groupId },
-      });
-      if (group?.tripId !== input.tripId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
-      }
-      // Update group coins
-      await ctx.db.group.update({
-        where: { id: input.groupId },
-        data: { coins: { increment: input.amount } },
-      });
+      return await ctx.db.$transaction(async (tx) => {
+        const previousRankingSnapshot = await captureTripRankingSnapshot(
+          tx,
+          input.tripId,
+        );
 
-      // Create transaction record
-      const transaction = await ctx.db.coinTransaction.create({
-        data: {
-          groupId: input.groupId,
-          amount: input.amount,
-          adminId: ctx.dbUser.id,
-        },
-        include: {
-          group: {
-            select: {
-              id: true,
-              name: true,
-              coins: true,
+        const group = await tx.group.findUnique({
+          where: { id: input.groupId },
+        });
+        if (group?.tripId !== input.tripId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+        }
+        // Update group coins
+        await tx.group.update({
+          where: { id: input.groupId },
+          data: { coins: { increment: input.amount } },
+        });
+
+        // Create transaction record
+        const transaction = await tx.coinTransaction.create({
+          data: {
+            groupId: input.groupId,
+            amount: input.amount,
+            adminId: ctx.dbUser.id,
+          },
+          include: {
+            group: {
+              select: {
+                id: true,
+                name: true,
+                coins: true,
+              },
             },
           },
-        },
-      });
+        });
 
-      return transaction;
+        await createRankChangeActivities({
+          tx,
+          tripId: input.tripId,
+          previousSnapshot: previousRankingSnapshot,
+          createdByAdmin: ctx.dbUser.id,
+        });
+
+        return transaction;
+      });
     }),
   ranking: protectedProcedure
     .input(z.object({ tripId: z.string() }))

@@ -61,6 +61,12 @@ export const ModelName = {
   ChallengeSubmission: 'ChallengeSubmission',
   ChallengeVote: 'ChallengeVote',
   SubmissionReport: 'SubmissionReport',
+  ActivityFeed: 'ActivityFeed',
+  ActivityReaction: 'ActivityReaction',
+  SubmissionActivity: 'SubmissionActivity',
+  ChallengeActivity: 'ChallengeActivity',
+  RankChangeActivity: 'RankChangeActivity',
+  UserPost: 'UserPost',
   CoinTransaction: 'CoinTransaction',
   NotificationSchedule: 'NotificationSchedule',
   Notification: 'Notification',
@@ -257,6 +263,84 @@ export const SubmissionReportScalarFieldEnum = {
 } as const
 
 export type SubmissionReportScalarFieldEnum = (typeof SubmissionReportScalarFieldEnum)[keyof typeof SubmissionReportScalarFieldEnum]
+
+
+export const ActivityFeedScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  activityType: 'activityType',
+  title: 'title',
+  description: 'description',
+  imageUrl: 'imageUrl',
+  isPinned: 'isPinned',
+  isHidden: 'isHidden',
+  hiddenByAdmin: 'hiddenByAdmin',
+  hiddenAt: 'hiddenAt',
+  hiddenReason: 'hiddenReason',
+  createdByAdmin: 'createdByAdmin',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ActivityFeedScalarFieldEnum = (typeof ActivityFeedScalarFieldEnum)[keyof typeof ActivityFeedScalarFieldEnum]
+
+
+export const ActivityReactionScalarFieldEnum = {
+  id: 'id',
+  activityId: 'activityId',
+  userId: 'userId',
+  reactionType: 'reactionType',
+  createdAt: 'createdAt'
+} as const
+
+export type ActivityReactionScalarFieldEnum = (typeof ActivityReactionScalarFieldEnum)[keyof typeof ActivityReactionScalarFieldEnum]
+
+
+export const SubmissionActivityScalarFieldEnum = {
+  activityId: 'activityId',
+  submissionId: 'submissionId',
+  challengeId: 'challengeId',
+  groupId: 'groupId',
+  hasVideo: 'hasVideo',
+  isWinner: 'isWinner',
+  ranking: 'ranking',
+  pointsAwarded: 'pointsAwarded'
+} as const
+
+export type SubmissionActivityScalarFieldEnum = (typeof SubmissionActivityScalarFieldEnum)[keyof typeof SubmissionActivityScalarFieldEnum]
+
+
+export const ChallengeActivityScalarFieldEnum = {
+  activityId: 'activityId',
+  challengeId: 'challengeId',
+  eventType: 'eventType',
+  endTime: 'endTime',
+  submissionType: 'submissionType',
+  basePoints: 'basePoints',
+  submissionCount: 'submissionCount'
+} as const
+
+export type ChallengeActivityScalarFieldEnum = (typeof ChallengeActivityScalarFieldEnum)[keyof typeof ChallengeActivityScalarFieldEnum]
+
+
+export const RankChangeActivityScalarFieldEnum = {
+  activityId: 'activityId',
+  groupId: 'groupId',
+  newRank: 'newRank',
+  totalCoins: 'totalCoins',
+  coinsGained: 'coinsGained'
+} as const
+
+export type RankChangeActivityScalarFieldEnum = (typeof RankChangeActivityScalarFieldEnum)[keyof typeof RankChangeActivityScalarFieldEnum]
+
+
+export const UserPostScalarFieldEnum = {
+  activityId: 'activityId',
+  authorId: 'authorId',
+  additionalImages: 'additionalImages'
+} as const
+
+export type UserPostScalarFieldEnum = (typeof UserPostScalarFieldEnum)[keyof typeof UserPostScalarFieldEnum]
 
 
 export const CoinTransactionScalarFieldEnum = {

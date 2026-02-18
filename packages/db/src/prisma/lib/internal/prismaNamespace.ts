@@ -394,6 +394,12 @@ export const ModelName = {
   ChallengeSubmission: 'ChallengeSubmission',
   ChallengeVote: 'ChallengeVote',
   SubmissionReport: 'SubmissionReport',
+  ActivityFeed: 'ActivityFeed',
+  ActivityReaction: 'ActivityReaction',
+  SubmissionActivity: 'SubmissionActivity',
+  ChallengeActivity: 'ChallengeActivity',
+  RankChangeActivity: 'RankChangeActivity',
+  UserPost: 'UserPost',
   CoinTransaction: 'CoinTransaction',
   NotificationSchedule: 'NotificationSchedule',
   Notification: 'Notification',
@@ -420,7 +426,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase"
+    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "activityFeed" | "activityReaction" | "submissionActivity" | "challengeActivity" | "rankChangeActivity" | "userPost" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1161,6 +1167,450 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.SubmissionReportCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.SubmissionReportCountAggregateOutputType> | number
+        }
+      }
+    }
+    ActivityFeed: {
+      payload: Prisma.$ActivityFeedPayload<ExtArgs>
+      fields: Prisma.ActivityFeedFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ActivityFeedFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ActivityFeedFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>
+        }
+        findFirst: {
+          args: Prisma.ActivityFeedFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ActivityFeedFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>
+        }
+        findMany: {
+          args: Prisma.ActivityFeedFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>[]
+        }
+        create: {
+          args: Prisma.ActivityFeedCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>
+        }
+        createMany: {
+          args: Prisma.ActivityFeedCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ActivityFeedCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>[]
+        }
+        delete: {
+          args: Prisma.ActivityFeedDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>
+        }
+        update: {
+          args: Prisma.ActivityFeedUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>
+        }
+        deleteMany: {
+          args: Prisma.ActivityFeedDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ActivityFeedUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ActivityFeedUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>[]
+        }
+        upsert: {
+          args: Prisma.ActivityFeedUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityFeedPayload>
+        }
+        aggregate: {
+          args: Prisma.ActivityFeedAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateActivityFeed>
+        }
+        groupBy: {
+          args: Prisma.ActivityFeedGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ActivityFeedGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ActivityFeedCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ActivityFeedCountAggregateOutputType> | number
+        }
+      }
+    }
+    ActivityReaction: {
+      payload: Prisma.$ActivityReactionPayload<ExtArgs>
+      fields: Prisma.ActivityReactionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ActivityReactionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ActivityReactionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>
+        }
+        findFirst: {
+          args: Prisma.ActivityReactionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ActivityReactionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>
+        }
+        findMany: {
+          args: Prisma.ActivityReactionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>[]
+        }
+        create: {
+          args: Prisma.ActivityReactionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>
+        }
+        createMany: {
+          args: Prisma.ActivityReactionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ActivityReactionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>[]
+        }
+        delete: {
+          args: Prisma.ActivityReactionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>
+        }
+        update: {
+          args: Prisma.ActivityReactionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>
+        }
+        deleteMany: {
+          args: Prisma.ActivityReactionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ActivityReactionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ActivityReactionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>[]
+        }
+        upsert: {
+          args: Prisma.ActivityReactionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivityReactionPayload>
+        }
+        aggregate: {
+          args: Prisma.ActivityReactionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateActivityReaction>
+        }
+        groupBy: {
+          args: Prisma.ActivityReactionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ActivityReactionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ActivityReactionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ActivityReactionCountAggregateOutputType> | number
+        }
+      }
+    }
+    SubmissionActivity: {
+      payload: Prisma.$SubmissionActivityPayload<ExtArgs>
+      fields: Prisma.SubmissionActivityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SubmissionActivityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SubmissionActivityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>
+        }
+        findFirst: {
+          args: Prisma.SubmissionActivityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SubmissionActivityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>
+        }
+        findMany: {
+          args: Prisma.SubmissionActivityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>[]
+        }
+        create: {
+          args: Prisma.SubmissionActivityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>
+        }
+        createMany: {
+          args: Prisma.SubmissionActivityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SubmissionActivityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>[]
+        }
+        delete: {
+          args: Prisma.SubmissionActivityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>
+        }
+        update: {
+          args: Prisma.SubmissionActivityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>
+        }
+        deleteMany: {
+          args: Prisma.SubmissionActivityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SubmissionActivityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SubmissionActivityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>[]
+        }
+        upsert: {
+          args: Prisma.SubmissionActivityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SubmissionActivityPayload>
+        }
+        aggregate: {
+          args: Prisma.SubmissionActivityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSubmissionActivity>
+        }
+        groupBy: {
+          args: Prisma.SubmissionActivityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SubmissionActivityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SubmissionActivityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SubmissionActivityCountAggregateOutputType> | number
+        }
+      }
+    }
+    ChallengeActivity: {
+      payload: Prisma.$ChallengeActivityPayload<ExtArgs>
+      fields: Prisma.ChallengeActivityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ChallengeActivityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ChallengeActivityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>
+        }
+        findFirst: {
+          args: Prisma.ChallengeActivityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ChallengeActivityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>
+        }
+        findMany: {
+          args: Prisma.ChallengeActivityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>[]
+        }
+        create: {
+          args: Prisma.ChallengeActivityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>
+        }
+        createMany: {
+          args: Prisma.ChallengeActivityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ChallengeActivityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>[]
+        }
+        delete: {
+          args: Prisma.ChallengeActivityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>
+        }
+        update: {
+          args: Prisma.ChallengeActivityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>
+        }
+        deleteMany: {
+          args: Prisma.ChallengeActivityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ChallengeActivityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ChallengeActivityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>[]
+        }
+        upsert: {
+          args: Prisma.ChallengeActivityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChallengeActivityPayload>
+        }
+        aggregate: {
+          args: Prisma.ChallengeActivityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChallengeActivity>
+        }
+        groupBy: {
+          args: Prisma.ChallengeActivityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChallengeActivityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ChallengeActivityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChallengeActivityCountAggregateOutputType> | number
+        }
+      }
+    }
+    RankChangeActivity: {
+      payload: Prisma.$RankChangeActivityPayload<ExtArgs>
+      fields: Prisma.RankChangeActivityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RankChangeActivityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RankChangeActivityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>
+        }
+        findFirst: {
+          args: Prisma.RankChangeActivityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RankChangeActivityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>
+        }
+        findMany: {
+          args: Prisma.RankChangeActivityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>[]
+        }
+        create: {
+          args: Prisma.RankChangeActivityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>
+        }
+        createMany: {
+          args: Prisma.RankChangeActivityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RankChangeActivityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>[]
+        }
+        delete: {
+          args: Prisma.RankChangeActivityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>
+        }
+        update: {
+          args: Prisma.RankChangeActivityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>
+        }
+        deleteMany: {
+          args: Prisma.RankChangeActivityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RankChangeActivityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RankChangeActivityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>[]
+        }
+        upsert: {
+          args: Prisma.RankChangeActivityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RankChangeActivityPayload>
+        }
+        aggregate: {
+          args: Prisma.RankChangeActivityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRankChangeActivity>
+        }
+        groupBy: {
+          args: Prisma.RankChangeActivityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RankChangeActivityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RankChangeActivityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RankChangeActivityCountAggregateOutputType> | number
+        }
+      }
+    }
+    UserPost: {
+      payload: Prisma.$UserPostPayload<ExtArgs>
+      fields: Prisma.UserPostFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserPostFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserPostFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>
+        }
+        findFirst: {
+          args: Prisma.UserPostFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserPostFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>
+        }
+        findMany: {
+          args: Prisma.UserPostFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>[]
+        }
+        create: {
+          args: Prisma.UserPostCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>
+        }
+        createMany: {
+          args: Prisma.UserPostCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserPostCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>[]
+        }
+        delete: {
+          args: Prisma.UserPostDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>
+        }
+        update: {
+          args: Prisma.UserPostUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserPostDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserPostUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserPostUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserPostUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserPostPayload>
+        }
+        aggregate: {
+          args: Prisma.UserPostAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserPost>
+        }
+        groupBy: {
+          args: Prisma.UserPostGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserPostGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserPostCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserPostCountAggregateOutputType> | number
         }
       }
     }
@@ -2186,6 +2636,84 @@ export const SubmissionReportScalarFieldEnum = {
 export type SubmissionReportScalarFieldEnum = (typeof SubmissionReportScalarFieldEnum)[keyof typeof SubmissionReportScalarFieldEnum]
 
 
+export const ActivityFeedScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  activityType: 'activityType',
+  title: 'title',
+  description: 'description',
+  imageUrl: 'imageUrl',
+  isPinned: 'isPinned',
+  isHidden: 'isHidden',
+  hiddenByAdmin: 'hiddenByAdmin',
+  hiddenAt: 'hiddenAt',
+  hiddenReason: 'hiddenReason',
+  createdByAdmin: 'createdByAdmin',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ActivityFeedScalarFieldEnum = (typeof ActivityFeedScalarFieldEnum)[keyof typeof ActivityFeedScalarFieldEnum]
+
+
+export const ActivityReactionScalarFieldEnum = {
+  id: 'id',
+  activityId: 'activityId',
+  userId: 'userId',
+  reactionType: 'reactionType',
+  createdAt: 'createdAt'
+} as const
+
+export type ActivityReactionScalarFieldEnum = (typeof ActivityReactionScalarFieldEnum)[keyof typeof ActivityReactionScalarFieldEnum]
+
+
+export const SubmissionActivityScalarFieldEnum = {
+  activityId: 'activityId',
+  submissionId: 'submissionId',
+  challengeId: 'challengeId',
+  groupId: 'groupId',
+  hasVideo: 'hasVideo',
+  isWinner: 'isWinner',
+  ranking: 'ranking',
+  pointsAwarded: 'pointsAwarded'
+} as const
+
+export type SubmissionActivityScalarFieldEnum = (typeof SubmissionActivityScalarFieldEnum)[keyof typeof SubmissionActivityScalarFieldEnum]
+
+
+export const ChallengeActivityScalarFieldEnum = {
+  activityId: 'activityId',
+  challengeId: 'challengeId',
+  eventType: 'eventType',
+  endTime: 'endTime',
+  submissionType: 'submissionType',
+  basePoints: 'basePoints',
+  submissionCount: 'submissionCount'
+} as const
+
+export type ChallengeActivityScalarFieldEnum = (typeof ChallengeActivityScalarFieldEnum)[keyof typeof ChallengeActivityScalarFieldEnum]
+
+
+export const RankChangeActivityScalarFieldEnum = {
+  activityId: 'activityId',
+  groupId: 'groupId',
+  newRank: 'newRank',
+  totalCoins: 'totalCoins',
+  coinsGained: 'coinsGained'
+} as const
+
+export type RankChangeActivityScalarFieldEnum = (typeof RankChangeActivityScalarFieldEnum)[keyof typeof RankChangeActivityScalarFieldEnum]
+
+
+export const UserPostScalarFieldEnum = {
+  activityId: 'activityId',
+  authorId: 'authorId',
+  additionalImages: 'additionalImages'
+} as const
+
+export type UserPostScalarFieldEnum = (typeof UserPostScalarFieldEnum)[keyof typeof UserPostScalarFieldEnum]
+
+
 export const CoinTransactionScalarFieldEnum = {
   id: 'id',
   groupId: 'groupId',
@@ -2625,6 +3153,12 @@ export type GlobalOmitConfig = {
   challengeSubmission?: Prisma.ChallengeSubmissionOmit
   challengeVote?: Prisma.ChallengeVoteOmit
   submissionReport?: Prisma.SubmissionReportOmit
+  activityFeed?: Prisma.ActivityFeedOmit
+  activityReaction?: Prisma.ActivityReactionOmit
+  submissionActivity?: Prisma.SubmissionActivityOmit
+  challengeActivity?: Prisma.ChallengeActivityOmit
+  rankChangeActivity?: Prisma.RankChangeActivityOmit
+  userPost?: Prisma.UserPostOmit
   coinTransaction?: Prisma.CoinTransactionOmit
   notificationSchedule?: Prisma.NotificationScheduleOmit
   notification?: Prisma.NotificationOmit

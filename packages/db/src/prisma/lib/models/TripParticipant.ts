@@ -219,6 +219,7 @@ export type TripParticipantWhereInput = {
   group?: Prisma.XOR<Prisma.GroupNullableScalarRelationFilter, Prisma.GroupWhereInput> | null
   challengeVotes?: Prisma.ChallengeVoteListRelationFilter
   submissionReports?: Prisma.SubmissionReportListRelationFilter
+  userPosts?: Prisma.UserPostListRelationFilter
 }
 
 export type TripParticipantOrderByWithRelationInput = {
@@ -236,6 +237,7 @@ export type TripParticipantOrderByWithRelationInput = {
   group?: Prisma.GroupOrderByWithRelationInput
   challengeVotes?: Prisma.ChallengeVoteOrderByRelationAggregateInput
   submissionReports?: Prisma.SubmissionReportOrderByRelationAggregateInput
+  userPosts?: Prisma.UserPostOrderByRelationAggregateInput
 }
 
 export type TripParticipantWhereUniqueInput = Prisma.AtLeast<{
@@ -258,6 +260,7 @@ export type TripParticipantWhereUniqueInput = Prisma.AtLeast<{
   group?: Prisma.XOR<Prisma.GroupNullableScalarRelationFilter, Prisma.GroupWhereInput> | null
   challengeVotes?: Prisma.ChallengeVoteListRelationFilter
   submissionReports?: Prisma.SubmissionReportListRelationFilter
+  userPosts?: Prisma.UserPostListRelationFilter
 }, "id" | "userId_tripId" | "tripId_wristNumber">
 
 export type TripParticipantOrderByWithAggregationInput = {
@@ -302,6 +305,7 @@ export type TripParticipantCreateInput = {
   group?: Prisma.GroupCreateNestedOneWithoutParticipantsInput
   challengeVotes?: Prisma.ChallengeVoteCreateNestedManyWithoutVoterInput
   submissionReports?: Prisma.SubmissionReportCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantUncheckedCreateInput = {
@@ -316,6 +320,7 @@ export type TripParticipantUncheckedCreateInput = {
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
   submissionReports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostUncheckedCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantUpdateInput = {
@@ -330,6 +335,7 @@ export type TripParticipantUpdateInput = {
   group?: Prisma.GroupUpdateOneWithoutParticipantsNestedInput
   challengeVotes?: Prisma.ChallengeVoteUpdateManyWithoutVoterNestedInput
   submissionReports?: Prisma.SubmissionReportUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateInput = {
@@ -344,6 +350,7 @@ export type TripParticipantUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
   submissionReports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUncheckedUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantCreateManyInput = {
@@ -594,6 +601,20 @@ export type TripParticipantUpdateOneRequiredWithoutSubmissionReportsNestedInput 
   update?: Prisma.XOR<Prisma.XOR<Prisma.TripParticipantUpdateToOneWithWhereWithoutSubmissionReportsInput, Prisma.TripParticipantUpdateWithoutSubmissionReportsInput>, Prisma.TripParticipantUncheckedUpdateWithoutSubmissionReportsInput>
 }
 
+export type TripParticipantCreateNestedOneWithoutUserPostsInput = {
+  create?: Prisma.XOR<Prisma.TripParticipantCreateWithoutUserPostsInput, Prisma.TripParticipantUncheckedCreateWithoutUserPostsInput>
+  connectOrCreate?: Prisma.TripParticipantCreateOrConnectWithoutUserPostsInput
+  connect?: Prisma.TripParticipantWhereUniqueInput
+}
+
+export type TripParticipantUpdateOneRequiredWithoutUserPostsNestedInput = {
+  create?: Prisma.XOR<Prisma.TripParticipantCreateWithoutUserPostsInput, Prisma.TripParticipantUncheckedCreateWithoutUserPostsInput>
+  connectOrCreate?: Prisma.TripParticipantCreateOrConnectWithoutUserPostsInput
+  upsert?: Prisma.TripParticipantUpsertWithoutUserPostsInput
+  connect?: Prisma.TripParticipantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TripParticipantUpdateToOneWithWhereWithoutUserPostsInput, Prisma.TripParticipantUpdateWithoutUserPostsInput>, Prisma.TripParticipantUncheckedUpdateWithoutUserPostsInput>
+}
+
 export type TripParticipantCreateWithoutUserInput = {
   id?: string
   wristNumber?: string | null
@@ -605,6 +626,7 @@ export type TripParticipantCreateWithoutUserInput = {
   group?: Prisma.GroupCreateNestedOneWithoutParticipantsInput
   challengeVotes?: Prisma.ChallengeVoteCreateNestedManyWithoutVoterInput
   submissionReports?: Prisma.SubmissionReportCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantUncheckedCreateWithoutUserInput = {
@@ -618,6 +640,7 @@ export type TripParticipantUncheckedCreateWithoutUserInput = {
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
   submissionReports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostUncheckedCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantCreateOrConnectWithoutUserInput = {
@@ -672,6 +695,7 @@ export type TripParticipantCreateWithoutTripInput = {
   group?: Prisma.GroupCreateNestedOneWithoutParticipantsInput
   challengeVotes?: Prisma.ChallengeVoteCreateNestedManyWithoutVoterInput
   submissionReports?: Prisma.SubmissionReportCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantUncheckedCreateWithoutTripInput = {
@@ -685,6 +709,7 @@ export type TripParticipantUncheckedCreateWithoutTripInput = {
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
   submissionReports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostUncheckedCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantCreateOrConnectWithoutTripInput = {
@@ -724,6 +749,7 @@ export type TripParticipantCreateWithoutGroupInput = {
   trip: Prisma.TripCreateNestedOneWithoutParticipantsInput
   challengeVotes?: Prisma.ChallengeVoteCreateNestedManyWithoutVoterInput
   submissionReports?: Prisma.SubmissionReportCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantUncheckedCreateWithoutGroupInput = {
@@ -737,6 +763,7 @@ export type TripParticipantUncheckedCreateWithoutGroupInput = {
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
   submissionReports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostUncheckedCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantCreateOrConnectWithoutGroupInput = {
@@ -776,6 +803,7 @@ export type TripParticipantCreateWithoutChallengeVotesInput = {
   trip: Prisma.TripCreateNestedOneWithoutParticipantsInput
   group?: Prisma.GroupCreateNestedOneWithoutParticipantsInput
   submissionReports?: Prisma.SubmissionReportCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantUncheckedCreateWithoutChallengeVotesInput = {
@@ -789,6 +817,7 @@ export type TripParticipantUncheckedCreateWithoutChallengeVotesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   submissionReports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutReporterInput
+  userPosts?: Prisma.UserPostUncheckedCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantCreateOrConnectWithoutChallengeVotesInput = {
@@ -818,6 +847,7 @@ export type TripParticipantUpdateWithoutChallengeVotesInput = {
   trip?: Prisma.TripUpdateOneRequiredWithoutParticipantsNestedInput
   group?: Prisma.GroupUpdateOneWithoutParticipantsNestedInput
   submissionReports?: Prisma.SubmissionReportUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateWithoutChallengeVotesInput = {
@@ -831,6 +861,7 @@ export type TripParticipantUncheckedUpdateWithoutChallengeVotesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissionReports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUncheckedUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantCreateWithoutSubmissionReportsInput = {
@@ -844,6 +875,7 @@ export type TripParticipantCreateWithoutSubmissionReportsInput = {
   trip: Prisma.TripCreateNestedOneWithoutParticipantsInput
   group?: Prisma.GroupCreateNestedOneWithoutParticipantsInput
   challengeVotes?: Prisma.ChallengeVoteCreateNestedManyWithoutVoterInput
+  userPosts?: Prisma.UserPostCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantUncheckedCreateWithoutSubmissionReportsInput = {
@@ -857,6 +889,7 @@ export type TripParticipantUncheckedCreateWithoutSubmissionReportsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
+  userPosts?: Prisma.UserPostUncheckedCreateNestedManyWithoutAuthorInput
 }
 
 export type TripParticipantCreateOrConnectWithoutSubmissionReportsInput = {
@@ -886,6 +919,7 @@ export type TripParticipantUpdateWithoutSubmissionReportsInput = {
   trip?: Prisma.TripUpdateOneRequiredWithoutParticipantsNestedInput
   group?: Prisma.GroupUpdateOneWithoutParticipantsNestedInput
   challengeVotes?: Prisma.ChallengeVoteUpdateManyWithoutVoterNestedInput
+  userPosts?: Prisma.UserPostUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateWithoutSubmissionReportsInput = {
@@ -899,6 +933,75 @@ export type TripParticipantUncheckedUpdateWithoutSubmissionReportsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
+  userPosts?: Prisma.UserPostUncheckedUpdateManyWithoutAuthorNestedInput
+}
+
+export type TripParticipantCreateWithoutUserPostsInput = {
+  id?: string
+  wristNumber?: string | null
+  houseNumber?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutTripsInput
+  trip: Prisma.TripCreateNestedOneWithoutParticipantsInput
+  group?: Prisma.GroupCreateNestedOneWithoutParticipantsInput
+  challengeVotes?: Prisma.ChallengeVoteCreateNestedManyWithoutVoterInput
+  submissionReports?: Prisma.SubmissionReportCreateNestedManyWithoutReporterInput
+}
+
+export type TripParticipantUncheckedCreateWithoutUserPostsInput = {
+  id?: string
+  userId: string
+  tripId: string
+  groupId?: string | null
+  wristNumber?: string | null
+  houseNumber?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
+  submissionReports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutReporterInput
+}
+
+export type TripParticipantCreateOrConnectWithoutUserPostsInput = {
+  where: Prisma.TripParticipantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TripParticipantCreateWithoutUserPostsInput, Prisma.TripParticipantUncheckedCreateWithoutUserPostsInput>
+}
+
+export type TripParticipantUpsertWithoutUserPostsInput = {
+  update: Prisma.XOR<Prisma.TripParticipantUpdateWithoutUserPostsInput, Prisma.TripParticipantUncheckedUpdateWithoutUserPostsInput>
+  create: Prisma.XOR<Prisma.TripParticipantCreateWithoutUserPostsInput, Prisma.TripParticipantUncheckedCreateWithoutUserPostsInput>
+  where?: Prisma.TripParticipantWhereInput
+}
+
+export type TripParticipantUpdateToOneWithWhereWithoutUserPostsInput = {
+  where?: Prisma.TripParticipantWhereInput
+  data: Prisma.XOR<Prisma.TripParticipantUpdateWithoutUserPostsInput, Prisma.TripParticipantUncheckedUpdateWithoutUserPostsInput>
+}
+
+export type TripParticipantUpdateWithoutUserPostsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutTripsNestedInput
+  trip?: Prisma.TripUpdateOneRequiredWithoutParticipantsNestedInput
+  group?: Prisma.GroupUpdateOneWithoutParticipantsNestedInput
+  challengeVotes?: Prisma.ChallengeVoteUpdateManyWithoutVoterNestedInput
+  submissionReports?: Prisma.SubmissionReportUpdateManyWithoutReporterNestedInput
+}
+
+export type TripParticipantUncheckedUpdateWithoutUserPostsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  tripId?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
+  submissionReports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutReporterNestedInput
 }
 
 export type TripParticipantCreateManyUserInput = {
@@ -923,6 +1026,7 @@ export type TripParticipantUpdateWithoutUserInput = {
   group?: Prisma.GroupUpdateOneWithoutParticipantsNestedInput
   challengeVotes?: Prisma.ChallengeVoteUpdateManyWithoutVoterNestedInput
   submissionReports?: Prisma.SubmissionReportUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateWithoutUserInput = {
@@ -936,6 +1040,7 @@ export type TripParticipantUncheckedUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
   submissionReports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUncheckedUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateManyWithoutUserInput = {
@@ -971,6 +1076,7 @@ export type TripParticipantUpdateWithoutTripInput = {
   group?: Prisma.GroupUpdateOneWithoutParticipantsNestedInput
   challengeVotes?: Prisma.ChallengeVoteUpdateManyWithoutVoterNestedInput
   submissionReports?: Prisma.SubmissionReportUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateWithoutTripInput = {
@@ -984,6 +1090,7 @@ export type TripParticipantUncheckedUpdateWithoutTripInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
   submissionReports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUncheckedUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateManyWithoutTripInput = {
@@ -1019,6 +1126,7 @@ export type TripParticipantUpdateWithoutGroupInput = {
   trip?: Prisma.TripUpdateOneRequiredWithoutParticipantsNestedInput
   challengeVotes?: Prisma.ChallengeVoteUpdateManyWithoutVoterNestedInput
   submissionReports?: Prisma.SubmissionReportUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateWithoutGroupInput = {
@@ -1032,6 +1140,7 @@ export type TripParticipantUncheckedUpdateWithoutGroupInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
   submissionReports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutReporterNestedInput
+  userPosts?: Prisma.UserPostUncheckedUpdateManyWithoutAuthorNestedInput
 }
 
 export type TripParticipantUncheckedUpdateManyWithoutGroupInput = {
@@ -1053,11 +1162,13 @@ export type TripParticipantUncheckedUpdateManyWithoutGroupInput = {
 export type TripParticipantCountOutputType = {
   challengeVotes: number
   submissionReports: number
+  userPosts: number
 }
 
 export type TripParticipantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   challengeVotes?: boolean | TripParticipantCountOutputTypeCountChallengeVotesArgs
   submissionReports?: boolean | TripParticipantCountOutputTypeCountSubmissionReportsArgs
+  userPosts?: boolean | TripParticipantCountOutputTypeCountUserPostsArgs
 }
 
 /**
@@ -1084,6 +1195,13 @@ export type TripParticipantCountOutputTypeCountSubmissionReportsArgs<ExtArgs ext
   where?: Prisma.SubmissionReportWhereInput
 }
 
+/**
+ * TripParticipantCountOutputType without action
+ */
+export type TripParticipantCountOutputTypeCountUserPostsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserPostWhereInput
+}
+
 
 export type TripParticipantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1100,6 +1218,7 @@ export type TripParticipantSelect<ExtArgs extends runtime.Types.Extensions.Inter
   group?: boolean | Prisma.TripParticipant$groupArgs<ExtArgs>
   challengeVotes?: boolean | Prisma.TripParticipant$challengeVotesArgs<ExtArgs>
   submissionReports?: boolean | Prisma.TripParticipant$submissionReportsArgs<ExtArgs>
+  userPosts?: boolean | Prisma.TripParticipant$userPostsArgs<ExtArgs>
   _count?: boolean | Prisma.TripParticipantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tripParticipant"]>
 
@@ -1152,6 +1271,7 @@ export type TripParticipantInclude<ExtArgs extends runtime.Types.Extensions.Inte
   group?: boolean | Prisma.TripParticipant$groupArgs<ExtArgs>
   challengeVotes?: boolean | Prisma.TripParticipant$challengeVotesArgs<ExtArgs>
   submissionReports?: boolean | Prisma.TripParticipant$submissionReportsArgs<ExtArgs>
+  userPosts?: boolean | Prisma.TripParticipant$userPostsArgs<ExtArgs>
   _count?: boolean | Prisma.TripParticipantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TripParticipantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1173,6 +1293,7 @@ export type $TripParticipantPayload<ExtArgs extends runtime.Types.Extensions.Int
     group: Prisma.$GroupPayload<ExtArgs> | null
     challengeVotes: Prisma.$ChallengeVotePayload<ExtArgs>[]
     submissionReports: Prisma.$SubmissionReportPayload<ExtArgs>[]
+    userPosts: Prisma.$UserPostPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1583,6 +1704,7 @@ export interface Prisma__TripParticipantClient<T, Null = never, ExtArgs extends 
   group<T extends Prisma.TripParticipant$groupArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TripParticipant$groupArgs<ExtArgs>>): Prisma.Prisma__GroupClient<runtime.Types.Result.GetResult<Prisma.$GroupPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   challengeVotes<T extends Prisma.TripParticipant$challengeVotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TripParticipant$challengeVotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengeVotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   submissionReports<T extends Prisma.TripParticipant$submissionReportsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TripParticipant$submissionReportsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubmissionReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  userPosts<T extends Prisma.TripParticipant$userPostsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TripParticipant$userPostsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2081,6 +2203,30 @@ export type TripParticipant$submissionReportsArgs<ExtArgs extends runtime.Types.
   take?: number
   skip?: number
   distinct?: Prisma.SubmissionReportScalarFieldEnum | Prisma.SubmissionReportScalarFieldEnum[]
+}
+
+/**
+ * TripParticipant.userPosts
+ */
+export type TripParticipant$userPostsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserPost
+   */
+  select?: Prisma.UserPostSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserPost
+   */
+  omit?: Prisma.UserPostOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserPostInclude<ExtArgs> | null
+  where?: Prisma.UserPostWhereInput
+  orderBy?: Prisma.UserPostOrderByWithRelationInput | Prisma.UserPostOrderByWithRelationInput[]
+  cursor?: Prisma.UserPostWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserPostScalarFieldEnum | Prisma.UserPostScalarFieldEnum[]
 }
 
 /**
