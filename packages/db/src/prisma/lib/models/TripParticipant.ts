@@ -940,6 +940,7 @@ export type TripParticipantCreateWithoutUserPostsInput = {
   id?: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTripsInput
@@ -956,6 +957,7 @@ export type TripParticipantUncheckedCreateWithoutUserPostsInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
@@ -982,6 +984,7 @@ export type TripParticipantUpdateWithoutUserPostsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTripsNestedInput
@@ -998,6 +1001,7 @@ export type TripParticipantUncheckedUpdateWithoutUserPostsInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
