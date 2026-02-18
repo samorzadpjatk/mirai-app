@@ -4,7 +4,6 @@ import { assetsRoot } from "./constants";
 import type { SeedEnv } from "./types";
 import { listFilesRecursive, readFile } from "./utils/fs";
 import { joinPath, normalizePath, relativePath } from "./utils/path";
-import { STANDARD_BUCKETS, normalizeStoragePath } from '@integral-2025-app/shared';
 
 export const BUCKET_MAP = {
   public: () => env.publicBucket,
@@ -12,6 +11,7 @@ export const BUCKET_MAP = {
   videos: () => env.videoBucket,
   "trip/images": () => env.imageBucket,
   "trip/videos": () => env.videoBucket,
+  rewards: () => env.imageBucket,
 } as const;
 
 export const ensureBuckets = async () => {

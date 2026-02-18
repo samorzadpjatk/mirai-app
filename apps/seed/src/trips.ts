@@ -151,10 +151,23 @@ export const seedTrip = async (
 
   const ghostAuth = await ensureGhostAuthUser(authUsers);
   if (ghostAuth) {
-    const ghostUser = await prisma.user.findFirst({ where: { authUserId: ghostAuth.id } });
+    let ghostUser = await prisma.user.findFirst({ where: { authUserId: ghostAuth.id } });
     if (!ghostUser) {
-      console.warn(`✗ Ghost DB user missing for auth id ${ghostAuth.id}. Ensure trigger ran.`);
-      return;
+      console.warn(`✗ Ghost DB user missing for auth id ${ghostAuth.id}. Creating manually...`);
+      try {
+        ghostUser = await prisma.user.create({
+          data: {
+            authUserId: ghostAuth.id,
+            firstName: "Ghost",
+            lastName: "User",
+            role: "USER",
+          },
+        });
+        console.log(`✓ Manually created ghost DB user`);
+      } catch (error) {
+        console.warn(`✗ Failed to create ghost DB user manually:`, error);
+        return trip;
+      }
     }
 
     await prisma.tripParticipant.upsert({
@@ -168,4 +181,5 @@ export const seedTrip = async (
   }
 
   console.log(`Trip seeded: ${trip.name} (${users.length} participants)`);
+  return trip;
 };
