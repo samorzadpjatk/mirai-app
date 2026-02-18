@@ -3,6 +3,7 @@ export type ChallengeStatus =
   | "submitted"
   | "solved"
   | "rejected"
+  | "completed"
   | "locked";
 
 export interface ChallengeListItem {
@@ -15,6 +16,7 @@ export interface ChallengeListItem {
   description?: string;
   image?: string;
   participantGroupsCount: number;
+  scoringCategory?: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
   lifecycleStatus:
     | "HIDDEN"
     | "VISIBLE"

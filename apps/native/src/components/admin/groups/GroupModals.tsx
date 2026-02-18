@@ -8,7 +8,7 @@ import type { Group, User } from '~/hooks/admin/useAdminGroups';
 interface CreateGroupModalProps {
   visible: boolean;
   onClose: () => void;
-  onCreateGroup: (name: string, code: string) => void;
+  onCreateGroup: (name: string) => void;
   isCreating: boolean;
 }
 
@@ -17,8 +17,7 @@ export function CreateGroupModal({ visible, onClose, onCreateGroup, isCreating }
 
   const handleCreate = () => {
     if (!groupName.trim()) return;
-    const code = groupName.trim().toUpperCase().slice(0, 4);
-    onCreateGroup(groupName.trim(), code);
+    onCreateGroup(groupName.trim());
     setGroupName('');
   };
 

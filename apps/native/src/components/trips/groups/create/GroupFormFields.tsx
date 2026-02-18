@@ -3,41 +3,24 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface GroupFormFieldsProps {
   groupName: string;
-  groupCode: string;
   onChangeName: (value: string) => void;
-  onChangeCode: (value: string) => void;
 }
 
 export function GroupFormFields({
   groupName,
-  groupCode,
   onChangeName,
-  onChangeCode,
 }: GroupFormFieldsProps) {
   return (
-    <>
-      <View style={styles.inputSection}>
-        <Text style={styles.inputLabel}>Group Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter group name"
-          placeholderTextColor="rgba(148, 163, 184, 0.4)"
-          value={groupName}
-          onChangeText={onChangeName}
-        />
-      </View>
-
-      <View style={styles.inputSection}>
-        <Text style={styles.inputLabel}>Group Code</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter group code"
-          placeholderTextColor="rgba(148, 163, 184, 0.4)"
-          value={groupCode}
-          onChangeText={onChangeCode}
-        />
-      </View>
-    </>
+    <View style={styles.inputSection}>
+      <Text style={styles.inputLabel}>Group Name</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter group name"
+        placeholderTextColor="rgba(148, 163, 184, 0.4)"
+        value={groupName}
+        onChangeText={onChangeName}
+      />
+    </View>
   );
 }
 

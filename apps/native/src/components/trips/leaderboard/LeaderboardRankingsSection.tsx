@@ -5,10 +5,12 @@ import { LeaderboardListItem } from "./LeaderboardListItem";
 
 interface LeaderboardRankingsSectionProps {
   groups: RankedGroup[];
+  onPressGroup?: (group: RankedGroup) => void;
 }
 
 export function LeaderboardRankingsSection({
   groups,
+  onPressGroup,
 }: LeaderboardRankingsSectionProps) {
   return (
     <View style={styles.container}>
@@ -19,7 +21,11 @@ export function LeaderboardRankingsSection({
 
       <View style={styles.list}>
         {groups.map((group) => (
-          <LeaderboardListItem key={group.id} group={group} />
+          <LeaderboardListItem
+            key={group.id}
+            group={group}
+            onPress={onPressGroup}
+          />
         ))}
       </View>
 

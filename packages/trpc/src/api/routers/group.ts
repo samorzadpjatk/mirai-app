@@ -9,6 +9,7 @@ import {
   moderatorProcedure,
 } from "../../api/trpc";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
+import { normalizeSupabaseStoragePath } from "../../utils/storage";
 
 const toUserWithEmail = <T extends { authUserId?: string | null }>(
   user: T,
@@ -45,6 +46,57 @@ const batchEmailLookup = async (
 
   // Single batch lookup for all emails
   return await buildAuthEmailLookup(supabase, Array.from(allAuthUserIds));
+};
+
+const generateFourDigitCode = () =>
+  String(Math.floor(1000 + Math.random() * 9000));
+
+const GROUP_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
+
+const groupImageSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((value) => {
+    if (normalizeSupabaseStoragePath(value)) {
+      return true;
+    }
+
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Image must be a valid URL or storage path")
+  .optional();
+
+const normalizeGroupImageInput = (value: string | undefined) => {
+  if (!value) return undefined;
+  const normalized = normalizeSupabaseStoragePath(value);
+  if (normalized) {
+    return normalized.storagePath;
+  }
+  return value;
+};
+
+const resolveGroupImage = async (
+  supabase: SupabaseClient,
+  image: string | null | undefined,
+) => {
+  if (!image) return null;
+  const parsed = normalizeSupabaseStoragePath(image);
+  if (!parsed) {
+    return image;
+  }
+  const { data, error } = await supabase.storage
+    .from(parsed.bucket)
+    .createSignedUrl(parsed.path, GROUP_IMAGE_SIGNED_URL_SECONDS);
+
+  if (error || !data?.signedUrl) {
+    return null;
+  }
+  return data.signedUrl;
 };
 
 export const groupRouter = createTRPCRouter({
@@ -119,6 +171,7 @@ export const groupRouter = createTRPCRouter({
 
       return {
         ...group,
+        image: await resolveGroupImage(ctx.supabase, group.image),
         organizer: group.organizer
           ? toUserWithEmail(group.organizer, emailByAuthUserId)
           : group.organizer,
@@ -174,21 +227,24 @@ export const groupRouter = createTRPCRouter({
       // Use optimized batch email lookup
       const emailByAuthUserId = await batchEmailLookup(ctx.supabase, groups);
 
-      return groups.map((group) => ({
-        ...group,
-        organizer: group.organizer
-          ? toUserWithEmail(group.organizer, emailByAuthUserId)
-          : group.organizer,
-        participants: group.participants.map((participant) => ({
-          ...participant,
-          user: toUserWithEmail(participant.user, emailByAuthUserId),
+      return await Promise.all(
+        groups.map(async (group) => ({
+          ...group,
+          image: await resolveGroupImage(ctx.supabase, group.image),
+          organizer: group.organizer
+            ? toUserWithEmail(group.organizer, emailByAuthUserId)
+            : group.organizer,
+          participants: group.participants.map((participant) => ({
+            ...participant,
+            user: toUserWithEmail(participant.user, emailByAuthUserId),
+          })),
         })),
-      }));
+      );
     }),
   getGroupList: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.group.findMany({
+      const groups = await ctx.db.group.findMany({
         where: { tripId: input.tripId },
         select: {
           id: true,
@@ -205,6 +261,13 @@ export const groupRouter = createTRPCRouter({
           },
         },
       });
+
+      return await Promise.all(
+        groups.map(async (group) => ({
+          ...group,
+          image: await resolveGroupImage(ctx.supabase, group.image),
+        })),
+      );
     }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -259,6 +322,7 @@ export const groupRouter = createTRPCRouter({
 
       return {
         ...group,
+        image: await resolveGroupImage(ctx.supabase, group.image),
         organizer: group.organizer
           ? toUserWithEmail(group.organizer, emailByAuthUserId)
           : group.organizer,
@@ -290,32 +354,52 @@ export const groupRouter = createTRPCRouter({
         tripId: z.string(),
         name: z.string().min(1),
         description: z.string().optional(),
-        image: z.string().url().optional(),
-        code: z.string().min(1),
+        image: groupImageSchema,
         organizerId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const group = await ctx.db.group.create({
-        data: {
-          name: input.name,
-          description: input.description,
-          image: input.image,
-          code: input.code,
-          tripId: input.tripId,
-          organizerId: input.organizerId ?? ctx.dbUser.id,
-        },
-        include: {
-          organizer: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              authUserId: true,
-            },
-          },
-        },
-      });
+      const group = await (async () => {
+        for (let attempt = 0; attempt < 30; attempt += 1) {
+          const code = generateFourDigitCode();
+          try {
+            return await ctx.db.group.create({
+              data: {
+                name: input.name,
+                description: input.description,
+                image: normalizeGroupImageInput(input.image),
+                code,
+                tripId: input.tripId,
+                organizerId: input.organizerId ?? ctx.dbUser.id,
+              },
+              include: {
+                organizer: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    authUserId: true,
+                  },
+                },
+              },
+            });
+          } catch (error: unknown) {
+            const prismaCode =
+              typeof error === "object" && error !== null && "code" in error
+                ? String((error as { code?: unknown }).code ?? "")
+                : "";
+            if (prismaCode === "P2002") {
+              continue;
+            }
+            throw error;
+          }
+        }
+
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate a unique group code",
+        });
+      })();
 
       // Add creator as a member of the group
       await ctx.db.tripParticipant.upsert({
@@ -341,6 +425,7 @@ export const groupRouter = createTRPCRouter({
 
       return {
         ...group,
+        image: await resolveGroupImage(ctx.supabase, group.image),
         organizer: group.organizer
           ? toUserWithEmail(group.organizer, emailByAuthUserId)
           : group.organizer,
@@ -355,7 +440,7 @@ export const groupRouter = createTRPCRouter({
         tripId: z.string(),
         name: z.string().min(1).optional(),
         description: z.string().optional(),
-        image: z.string().url().optional(),
+        image: groupImageSchema,
         organizerId: z.string().optional(),
       }),
     )
@@ -367,7 +452,10 @@ export const groupRouter = createTRPCRouter({
       }
       const updatedGroup = await ctx.db.group.update({
         where: { id },
-        data: updateData,
+        data: {
+          ...updateData,
+          image: normalizeGroupImageInput(input.image),
+        },
         include: {
           organizer: {
             select: {
@@ -386,6 +474,7 @@ export const groupRouter = createTRPCRouter({
 
       return {
         ...updatedGroup,
+        image: await resolveGroupImage(ctx.supabase, updatedGroup.image),
         organizer: updatedGroup.organizer
           ? toUserWithEmail(updatedGroup.organizer, emailByAuthUserId)
           : updatedGroup.organizer,
@@ -589,6 +678,91 @@ export const groupRouter = createTRPCRouter({
         data: { groupId: null },
       });
     }),
+  leaveMyGroup: protectedProcedure
+    .input(
+      z.object({
+        groupId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: { id: true, tripId: true, organizerId: true },
+      });
+
+      if (!group) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      const membership = await ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: {
+            userId: ctx.dbUser.id,
+            tripId: group.tripId,
+          },
+        },
+        select: { groupId: true },
+      });
+
+      if (!membership || membership.groupId !== group.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a member of this group",
+        });
+      }
+
+      const isOrganizer = group.organizerId === ctx.dbUser.id;
+
+      if (!isOrganizer) {
+        await ctx.db.tripParticipant.update({
+          where: {
+            userId_tripId: {
+              userId: ctx.dbUser.id,
+              tripId: group.tripId,
+            },
+          },
+          data: { groupId: null },
+        });
+
+        return { left: true, reassignedOrganizerId: null };
+      }
+
+      const remainingParticipants = await ctx.db.tripParticipant.findMany({
+        where: {
+          tripId: group.tripId,
+          groupId: group.id,
+          NOT: { userId: ctx.dbUser.id },
+        },
+        orderBy: { createdAt: "asc" },
+        select: { userId: true },
+      });
+
+      const nextOrganizerId = remainingParticipants[0]?.userId ?? null;
+
+      await ctx.db.$transaction(async (tx) => {
+        if (nextOrganizerId) {
+          await tx.group.update({
+            where: { id: group.id },
+            data: { organizerId: nextOrganizerId },
+          });
+        }
+
+        await tx.tripParticipant.update({
+          where: {
+            userId_tripId: {
+              userId: ctx.dbUser.id,
+              tripId: group.tripId,
+            },
+          },
+          data: { groupId: null },
+        });
+      });
+
+      return {
+        left: true,
+        reassignedOrganizerId: nextOrganizerId,
+      };
+    }),
   addCoins: moderatorProcedure
     .input(
       z.object({ groupId: z.string(), amount: z.number(), tripId: z.string() }),
@@ -673,16 +847,19 @@ export const groupRouter = createTRPCRouter({
       const emailByAuthUserId = await batchEmailLookup(ctx.supabase, data);
 
       return {
-        data: data.map((group) => ({
-          ...group,
-          organizer: group.organizer
-            ? toUserWithEmail(group.organizer, emailByAuthUserId)
-            : group.organizer,
-          participants: group.participants.map((participant) => ({
-            ...participant,
-            user: toUserWithEmail(participant.user, emailByAuthUserId),
+        data: await Promise.all(
+          data.map(async (group) => ({
+            ...group,
+            image: await resolveGroupImage(ctx.supabase, group.image),
+            organizer: group.organizer
+              ? toUserWithEmail(group.organizer, emailByAuthUserId)
+              : group.organizer,
+            participants: group.participants.map((participant) => ({
+              ...participant,
+              user: toUserWithEmail(participant.user, emailByAuthUserId),
+            })),
           })),
-        })),
+        ),
         currentDate,
       };
     }),

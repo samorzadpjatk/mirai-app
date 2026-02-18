@@ -12,6 +12,7 @@ import type { RankedGroup } from "~/components/trips/leaderboard/types";
 
 export default function LeaderboardScreen() {
   const params = useLocalSearchParams();
+  const router = useRouter();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const trpc = useTRPC();
@@ -37,6 +38,7 @@ export default function LeaderboardScreen() {
       .map((group, index) => ({
         id: group.id,
         name: group.name,
+        image: group.image,
         coins: group.coins,
         memberCount: group._count?.participants ?? 0,
         rank: index + 1,
@@ -82,10 +84,16 @@ export default function LeaderboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Podium Section */}
-        <LeaderboardPodium topThree={topThree} />
+        <LeaderboardPodium
+          topThree={topThree}
+          onPressGroup={(group) => router.push(`/trips/groups/${group.id}`)}
+        />
 
         {/* Rankings List */}
-        <LeaderboardRankingsSection groups={restOfGroups} />
+        <LeaderboardRankingsSection
+          groups={restOfGroups}
+          onPressGroup={(group) => router.push(`/trips/groups/${group.id}`)}
+        />
       </ScrollView>
     </View>
   );

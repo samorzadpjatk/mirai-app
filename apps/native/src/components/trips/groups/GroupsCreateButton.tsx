@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius, typography, shadows } from "~/styles";
+import { colors, spacing, borderRadius, typography } from "~/styles";
 
 interface GroupsCreateButtonProps {
   onPress: () => void;
@@ -9,12 +9,12 @@ interface GroupsCreateButtonProps {
 export function GroupsCreateButton({ onPress }: GroupsCreateButtonProps) {
   return (
     <TouchableOpacity
-      style={[styles.createButton, shadows.primaryGlow]}
-      activeOpacity={0.9}
       onPress={onPress}
+      style={styles.createButton}
+      activeOpacity={0.9}
     >
-      <Ionicons name="add-circle" size={20} color={colors.backgroundDark} />
-      <Text style={styles.createButtonText}>CREATE GROUP</Text>
+      <Ionicons name="add-circle" size={24} color={colors.backgroundDark} />
+      <Text style={styles.createButtonText}>Add New</Text>
     </TouchableOpacity>
   );
 }
@@ -22,19 +22,25 @@ export function GroupsCreateButton({ onPress }: GroupsCreateButtonProps) {
 const styles = StyleSheet.create({
   createButton: {
     backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.xl,
+    gap: spacing.md,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    minWidth: 120,
     marginBottom: spacing.lg,
   },
   createButtonText: {
-    fontSize: typography.base,
+    fontSize: 14,
     fontWeight: typography.bold,
     color: colors.backgroundDark,
-    letterSpacing: 1.5,
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
 });

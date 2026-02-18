@@ -41,6 +41,14 @@ export default function ChallengesScreen() {
     useState<StatusFilter>("to_solve");
 
   const handleChallengePress = (challenge: ChallengeListItem) => {
+    if (
+      challenge.scoringCategory === "PEER_VOTING" &&
+      challenge.lifecycleStatus === "VOTING_PHASE"
+    ) {
+      router.push(`/trips/challenges/vote/${challenge.id}?tripId=${tripId}`);
+      return;
+    }
+
     if (challenge.status !== "locked") {
       router.push(`/trips/challenges/${challenge.id}?tripId=${tripId}`);
     }

@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
@@ -14,17 +15,31 @@ interface GroupMemberListProps {
 }
 
 export function GroupMemberList({ members }: GroupMemberListProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasMoreThanPreview = members.length > 3;
+  const visibleMembers = useMemo(
+    () => (isExpanded ? members : members.slice(0, 3)),
+    [isExpanded, members],
+  );
+
   return (
     <View style={styles.memberSection}>
       <View style={styles.memberHeader}>
         <Text style={styles.memberHeaderTitle}>Member Directory</Text>
-        <TouchableOpacity activeOpacity={0.7}>
-          <Text style={styles.viewAllButton}>View All</Text>
-        </TouchableOpacity>
+        {hasMoreThanPreview ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsExpanded((prev) => !prev)}
+          >
+            <Text style={styles.viewAllButton}>
+              {isExpanded ? "Show Less" : "View All"}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <View style={styles.memberList}>
-        {members.map((member) => (
+        {visibleMembers.map((member) => (
           <View key={member.id} style={styles.memberCard}>
             <View style={styles.memberInfo}>
               <View

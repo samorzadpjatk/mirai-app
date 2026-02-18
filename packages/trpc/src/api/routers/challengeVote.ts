@@ -193,4 +193,95 @@ export const challengeVoteRouter = createTRPCRouter({
         orderBy: { votePosition: "asc" },
       });
     }),
+  submitVote: protectedProcedure
+    .input(
+      z.object({
+        tripId: z.string(),
+        challengeId: z.string(),
+        submissionId: z.string(),
+        votePosition: z.number().int().min(1).max(3),
+        votePoints: z.number().int().min(0),
+        normalizedWeight: z.number().positive().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const participant = await ensureTripParticipant(ctx, input.tripId);
+      await ensureChallengeVoting(ctx, input.challengeId, input.tripId);
+
+      const submission = await ctx.db.challengeSubmission.findFirst({
+        where: {
+          id: input.submissionId,
+          challengeId: input.challengeId,
+        },
+        select: { id: true, groupId: true },
+      });
+
+      if (!submission) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Nieprawidlowe zgloszenie",
+        });
+      }
+
+      if (participant.groupId && submission.groupId === participant.groupId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Nie mozna glosowac na wlasna grupe",
+        });
+      }
+
+      const existingByPosition = await ctx.db.challengeVote.findFirst({
+        where: {
+          challengeId: input.challengeId,
+          voterId: participant.id,
+          votePosition: input.votePosition,
+        },
+        select: { id: true, submissionId: true },
+      });
+
+      if (existingByPosition) {
+        if (existingByPosition.submissionId === input.submissionId) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Glos juz istnieje",
+          });
+        }
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Pozycja glosu jest juz zajeta",
+        });
+      }
+
+      try {
+        const createdVote = await ctx.db.challengeVote.create({
+          data: {
+            challengeId: input.challengeId,
+            submissionId: input.submissionId,
+            voterId: participant.id,
+            votePosition: input.votePosition,
+            votePoints: input.votePoints,
+            normalizedWeight: input.normalizedWeight ?? 1.0,
+          },
+          select: voteSelect,
+        });
+
+        await recomputeSubmissionVotes(ctx, input.challengeId);
+
+        return createdVote;
+      } catch (error: unknown) {
+        const prismaCode =
+          typeof error === "object" && error !== null && "code" in error
+            ? (error as { code?: unknown }).code
+            : undefined;
+        const prismaCodeValue =
+          typeof prismaCode === "string" ? prismaCode : "";
+        if (prismaCodeValue === "P2002") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Glos juz istnieje",
+          });
+        }
+        throw error;
+      }
+    }),
 });

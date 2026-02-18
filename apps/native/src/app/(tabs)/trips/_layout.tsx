@@ -28,6 +28,7 @@ export default function TripsLayout() {
       <Stack.Screen name="groups/edit/[id]" options={{ title: "Edit Group" }} />
       <Stack.Screen name="challenges/index" options={{ title: "Challenges" }} />
       <Stack.Screen name="challenges/[id]" options={{ title: "Challenge Details" }} />
+      <Stack.Screen name="challenges/vote/[id]" options={{ title: "Peer Voting" }} />
       <Stack.Screen name="leaderboard/index" options={{ title: "Leaderboard" }} />
     </Stack>
   );

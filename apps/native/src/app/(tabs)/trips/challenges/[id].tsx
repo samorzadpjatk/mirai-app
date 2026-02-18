@@ -36,6 +36,14 @@ import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/fiord";
+const isOnOrAfterNow = (value?: string | Date | null) => {
+  if (!value) return false;
+  return new Date(value).getTime() <= Date.now();
+};
+const isOnOrBeforeNow = (value?: string | Date | null) => {
+  if (!value) return false;
+  return Date.now() <= new Date(value).getTime();
+};
 
 export default function ChallengeDetailScreen() {
   const router = useRouter();
@@ -167,6 +175,10 @@ export default function ChallengeDetailScreen() {
     );
   }
 
+  const isPeerVotingChallengeInVotingPhase =
+    challenge.scoringCategory === "PEER_VOTING" &&
+    challenge.status === "VOTING_PHASE";
+
   const isQrChallenge = challenge.submissionType === "QR_CODE";
   const isLocationChallenge = challenge.submissionType === "LOCATION";
   const hasTargetLocation =
@@ -217,11 +229,18 @@ export default function ChallengeDetailScreen() {
     challenge.scoringCategory === "PEER_VOTING" &&
     Boolean(challenge.votingStartTime) &&
     Boolean(challenge.votingEndTime);
+  const isWithinVotingWindow =
+    hasVotingWindow &&
+    isOnOrAfterNow(challenge.votingStartTime) &&
+    isOnOrBeforeNow(challenge.votingEndTime);
   const shouldShowVotingTime =
     hasVotingWindow &&
-    (challenge.status === "VOTING_PHASE" ||
-      new Date(challenge.votingStartTime as string | Date).getTime() <= Date.now());
+    (challenge.status === "VOTING_PHASE" || isWithinVotingWindow);
   const shouldShowSubmissionTime = !shouldShowVotingTime;
+  const heroStatus =
+    challenge.status !== "CANCELLED" && isWithinVotingWindow
+      ? "VOTING_PHASE"
+      : challenge.status;
 
   return (
     <View style={styles.container}>
@@ -241,7 +260,7 @@ export default function ChallengeDetailScreen() {
           imageUrl={challenge.image}
           submissionType={challenge.submissionType}
           scoringCategory={challenge.scoringCategory}
-          status={challenge.status}
+          status={heroStatus}
           endTime={challenge.endTime}
           isRecurring={challenge.isRecurring}
           firstPlacePoints={challenge.firstPlacePoints}
@@ -361,8 +380,21 @@ export default function ChallengeDetailScreen() {
           />
         )}
 
+        {isPeerVotingChallengeInVotingPhase && (
+          <ChallengeActionButton
+            isLoading={false}
+            label="Vote"
+            iconName="checkmark-circle"
+            onPress={() =>
+              router.push(`/trips/challenges/vote/${challenge.id}?tripId=${tripId}`)
+            }
+          />
+        )}
+
         {/* Camera Button */}
-        {!mySubmission && (
+        {!isPeerVotingChallengeInVotingPhase &&
+          !mySubmission &&
+          challenge.status !== "COMPLETED" && (
           <ChallengeActionButton
             isLoading={
               cameraLoading ||
@@ -408,7 +440,7 @@ export default function ChallengeDetailScreen() {
               );
             }}
           />
-        )}
+          )}
       </ScrollView>
 
       <Modal

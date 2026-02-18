@@ -73,10 +73,9 @@ export function useAdminGroups(tripId: string) {
     })
   );
 
-  const createGroup = (name: string, code: string) => {
+  const createGroup = (name: string) => {
     return createGroupMutation.mutateAsync({
       name,
-      code,
       tripId,
     });
   };
