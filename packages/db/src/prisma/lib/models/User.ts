@@ -219,7 +219,13 @@ export type UserWhereInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestListRelationFilter
   receivedLocationRequests?: Prisma.LocationSharingRequestListRelationFilter
   trips?: Prisma.TripParticipantListRelationFilter
+  activityFeedAdmin?: Prisma.ActivityFeedListRelationFilter
+  activityFeedHidden?: Prisma.ActivityFeedListRelationFilter
+  activityReactions?: Prisma.ActivityReactionListRelationFilter
   challengeSubmissions?: Prisma.ChallengeSubmissionListRelationFilter
+  createdRewards?: Prisma.RewardListRelationFilter
+  rewardPurchases?: Prisma.RewardPurchaseListRelationFilter
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -244,7 +250,13 @@ export type UserOrderByWithRelationInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestOrderByRelationAggregateInput
   receivedLocationRequests?: Prisma.LocationSharingRequestOrderByRelationAggregateInput
   trips?: Prisma.TripParticipantOrderByRelationAggregateInput
+  activityFeedAdmin?: Prisma.ActivityFeedOrderByRelationAggregateInput
+  activityFeedHidden?: Prisma.ActivityFeedOrderByRelationAggregateInput
+  activityReactions?: Prisma.ActivityReactionOrderByRelationAggregateInput
   challengeSubmissions?: Prisma.ChallengeSubmissionOrderByRelationAggregateInput
+  createdRewards?: Prisma.RewardOrderByRelationAggregateInput
+  rewardPurchases?: Prisma.RewardPurchaseOrderByRelationAggregateInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -272,7 +284,13 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   sentLocationRequests?: Prisma.LocationSharingRequestListRelationFilter
   receivedLocationRequests?: Prisma.LocationSharingRequestListRelationFilter
   trips?: Prisma.TripParticipantListRelationFilter
+  activityFeedAdmin?: Prisma.ActivityFeedListRelationFilter
+  activityFeedHidden?: Prisma.ActivityFeedListRelationFilter
+  activityReactions?: Prisma.ActivityReactionListRelationFilter
   challengeSubmissions?: Prisma.ChallengeSubmissionListRelationFilter
+  createdRewards?: Prisma.RewardListRelationFilter
+  rewardPurchases?: Prisma.RewardPurchaseListRelationFilter
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseListRelationFilter
 }, "id" | "authUserId">
 
 export type UserOrderByWithAggregationInput = {
@@ -325,7 +343,13 @@ export type UserCreateInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -350,7 +374,13 @@ export type UserUncheckedCreateInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUpdateInput = {
@@ -375,7 +405,13 @@ export type UserUpdateInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -400,7 +436,13 @@ export type UserUncheckedUpdateInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -577,6 +619,52 @@ export type UserUpdateOneWithoutChallengeSubmissionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutChallengeSubmissionsInput, Prisma.UserUpdateWithoutChallengeSubmissionsInput>, Prisma.UserUncheckedUpdateWithoutChallengeSubmissionsInput>
 }
 
+export type UserCreateNestedOneWithoutActivityFeedHiddenInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutActivityFeedHiddenInput, Prisma.UserUncheckedCreateWithoutActivityFeedHiddenInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivityFeedHiddenInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutActivityFeedAdminInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutActivityFeedAdminInput, Prisma.UserUncheckedCreateWithoutActivityFeedAdminInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivityFeedAdminInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutActivityFeedHiddenNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutActivityFeedHiddenInput, Prisma.UserUncheckedCreateWithoutActivityFeedHiddenInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivityFeedHiddenInput
+  upsert?: Prisma.UserUpsertWithoutActivityFeedHiddenInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutActivityFeedHiddenInput, Prisma.UserUpdateWithoutActivityFeedHiddenInput>, Prisma.UserUncheckedUpdateWithoutActivityFeedHiddenInput>
+}
+
+export type UserUpdateOneWithoutActivityFeedAdminNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutActivityFeedAdminInput, Prisma.UserUncheckedCreateWithoutActivityFeedAdminInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivityFeedAdminInput
+  upsert?: Prisma.UserUpsertWithoutActivityFeedAdminInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutActivityFeedAdminInput, Prisma.UserUpdateWithoutActivityFeedAdminInput>, Prisma.UserUncheckedUpdateWithoutActivityFeedAdminInput>
+}
+
+export type UserCreateNestedOneWithoutActivityReactionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutActivityReactionsInput, Prisma.UserUncheckedCreateWithoutActivityReactionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivityReactionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutActivityReactionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutActivityReactionsInput, Prisma.UserUncheckedCreateWithoutActivityReactionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivityReactionsInput
+  upsert?: Prisma.UserUpsertWithoutActivityReactionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutActivityReactionsInput, Prisma.UserUpdateWithoutActivityReactionsInput>, Prisma.UserUncheckedUpdateWithoutActivityReactionsInput>
+}
+
 export type UserCreateNestedOneWithoutCoinTransactionsAdminInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutCoinTransactionsAdminInput, Prisma.UserUncheckedCreateWithoutCoinTransactionsAdminInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutCoinTransactionsAdminInput
@@ -727,6 +815,50 @@ export type UserUpdateOneRequiredWithoutReceivedLocationRequestsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReceivedLocationRequestsInput, Prisma.UserUpdateWithoutReceivedLocationRequestsInput>, Prisma.UserUncheckedUpdateWithoutReceivedLocationRequestsInput>
 }
 
+export type UserCreateNestedOneWithoutCreatedRewardsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedRewardsInput, Prisma.UserUncheckedCreateWithoutCreatedRewardsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedRewardsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCreatedRewardsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedRewardsInput, Prisma.UserUncheckedCreateWithoutCreatedRewardsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedRewardsInput
+  upsert?: Prisma.UserUpsertWithoutCreatedRewardsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedRewardsInput, Prisma.UserUpdateWithoutCreatedRewardsInput>, Prisma.UserUncheckedUpdateWithoutCreatedRewardsInput>
+}
+
+export type UserCreateNestedOneWithoutRewardPurchasesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRewardPurchasesInput, Prisma.UserUncheckedCreateWithoutRewardPurchasesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRewardPurchasesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutRewardPurchaseStatusUpdatesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRewardPurchaseStatusUpdatesInput, Prisma.UserUncheckedCreateWithoutRewardPurchaseStatusUpdatesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRewardPurchaseStatusUpdatesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRewardPurchasesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRewardPurchasesInput, Prisma.UserUncheckedCreateWithoutRewardPurchasesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRewardPurchasesInput
+  upsert?: Prisma.UserUpsertWithoutRewardPurchasesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRewardPurchasesInput, Prisma.UserUpdateWithoutRewardPurchasesInput>, Prisma.UserUncheckedUpdateWithoutRewardPurchasesInput>
+}
+
+export type UserUpdateOneWithoutRewardPurchaseStatusUpdatesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRewardPurchaseStatusUpdatesInput, Prisma.UserUncheckedCreateWithoutRewardPurchaseStatusUpdatesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRewardPurchaseStatusUpdatesInput
+  upsert?: Prisma.UserUpsertWithoutRewardPurchaseStatusUpdatesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRewardPurchaseStatusUpdatesInput, Prisma.UserUpdateWithoutRewardPurchaseStatusUpdatesInput>, Prisma.UserUncheckedUpdateWithoutRewardPurchaseStatusUpdatesInput>
+}
+
 export type UserCreateWithoutTripsInput = {
   id?: string
   authUserId: string
@@ -748,7 +880,13 @@ export type UserCreateWithoutTripsInput = {
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutTripsInput = {
@@ -772,7 +910,13 @@ export type UserUncheckedCreateWithoutTripsInput = {
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutTripsInput = {
@@ -812,7 +956,13 @@ export type UserUpdateWithoutTripsInput = {
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTripsInput = {
@@ -836,7 +986,13 @@ export type UserUncheckedUpdateWithoutTripsInput = {
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutCreatedEventsInput = {
@@ -860,7 +1016,13 @@ export type UserCreateWithoutCreatedEventsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedEventsInput = {
@@ -884,7 +1046,13 @@ export type UserUncheckedCreateWithoutCreatedEventsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedEventsInput = {
@@ -924,7 +1092,13 @@ export type UserUpdateWithoutCreatedEventsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedEventsInput = {
@@ -948,7 +1122,13 @@ export type UserUncheckedUpdateWithoutCreatedEventsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutUserEventsInput = {
@@ -972,7 +1152,13 @@ export type UserCreateWithoutUserEventsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutUserEventsInput = {
@@ -996,7 +1182,13 @@ export type UserUncheckedCreateWithoutUserEventsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutUserEventsInput = {
@@ -1036,7 +1228,13 @@ export type UserUpdateWithoutUserEventsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUserEventsInput = {
@@ -1060,7 +1258,13 @@ export type UserUncheckedUpdateWithoutUserEventsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutOrganizerGroupInput = {
@@ -1084,7 +1288,13 @@ export type UserCreateWithoutOrganizerGroupInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutOrganizerGroupInput = {
@@ -1108,7 +1318,13 @@ export type UserUncheckedCreateWithoutOrganizerGroupInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutOrganizerGroupInput = {
@@ -1148,7 +1364,13 @@ export type UserUpdateWithoutOrganizerGroupInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOrganizerGroupInput = {
@@ -1172,7 +1394,13 @@ export type UserUncheckedUpdateWithoutOrganizerGroupInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutChallengeSubmissionsInput = {
@@ -1197,6 +1425,12 @@ export type UserCreateWithoutChallengeSubmissionsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutChallengeSubmissionsInput = {
@@ -1221,6 +1455,12 @@ export type UserUncheckedCreateWithoutChallengeSubmissionsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutChallengeSubmissionsInput = {
@@ -1261,6 +1501,12 @@ export type UserUpdateWithoutChallengeSubmissionsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChallengeSubmissionsInput = {
@@ -1285,6 +1531,420 @@ export type UserUncheckedUpdateWithoutChallengeSubmissionsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserCreateWithoutActivityFeedHiddenInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserUncheckedCreateWithoutActivityFeedHiddenInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventUncheckedCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserCreateOrConnectWithoutActivityFeedHiddenInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutActivityFeedHiddenInput, Prisma.UserUncheckedCreateWithoutActivityFeedHiddenInput>
+}
+
+export type UserCreateWithoutActivityFeedAdminInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserUncheckedCreateWithoutActivityFeedAdminInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventUncheckedCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserCreateOrConnectWithoutActivityFeedAdminInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutActivityFeedAdminInput, Prisma.UserUncheckedCreateWithoutActivityFeedAdminInput>
+}
+
+export type UserUpsertWithoutActivityFeedHiddenInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutActivityFeedHiddenInput, Prisma.UserUncheckedUpdateWithoutActivityFeedHiddenInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutActivityFeedHiddenInput, Prisma.UserUncheckedCreateWithoutActivityFeedHiddenInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutActivityFeedHiddenInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutActivityFeedHiddenInput, Prisma.UserUncheckedUpdateWithoutActivityFeedHiddenInput>
+}
+
+export type UserUpdateWithoutActivityFeedHiddenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutActivityFeedHiddenInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUncheckedUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUncheckedUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserUpsertWithoutActivityFeedAdminInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutActivityFeedAdminInput, Prisma.UserUncheckedUpdateWithoutActivityFeedAdminInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutActivityFeedAdminInput, Prisma.UserUncheckedCreateWithoutActivityFeedAdminInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutActivityFeedAdminInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutActivityFeedAdminInput, Prisma.UserUncheckedUpdateWithoutActivityFeedAdminInput>
+}
+
+export type UserUpdateWithoutActivityFeedAdminInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutActivityFeedAdminInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUncheckedUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUncheckedUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserCreateWithoutActivityReactionsInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserUncheckedCreateWithoutActivityReactionsInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventUncheckedCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserCreateOrConnectWithoutActivityReactionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutActivityReactionsInput, Prisma.UserUncheckedCreateWithoutActivityReactionsInput>
+}
+
+export type UserUpsertWithoutActivityReactionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutActivityReactionsInput, Prisma.UserUncheckedUpdateWithoutActivityReactionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutActivityReactionsInput, Prisma.UserUncheckedCreateWithoutActivityReactionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutActivityReactionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutActivityReactionsInput, Prisma.UserUncheckedUpdateWithoutActivityReactionsInput>
+}
+
+export type UserUpdateWithoutActivityReactionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutActivityReactionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUncheckedUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUncheckedUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutCoinTransactionsAdminInput = {
@@ -1308,7 +1968,13 @@ export type UserCreateWithoutCoinTransactionsAdminInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutCoinTransactionsAdminInput = {
@@ -1332,7 +1998,13 @@ export type UserUncheckedCreateWithoutCoinTransactionsAdminInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutCoinTransactionsAdminInput = {
@@ -1372,7 +2044,13 @@ export type UserUpdateWithoutCoinTransactionsAdminInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCoinTransactionsAdminInput = {
@@ -1396,7 +2074,13 @@ export type UserUncheckedUpdateWithoutCoinTransactionsAdminInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutNotificationSchedulesInput = {
@@ -1420,7 +2104,13 @@ export type UserCreateWithoutNotificationSchedulesInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutNotificationSchedulesInput = {
@@ -1444,7 +2134,13 @@ export type UserUncheckedCreateWithoutNotificationSchedulesInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutNotificationSchedulesInput = {
@@ -1484,7 +2180,13 @@ export type UserUpdateWithoutNotificationSchedulesInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationSchedulesInput = {
@@ -1508,7 +2210,13 @@ export type UserUncheckedUpdateWithoutNotificationSchedulesInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutSentPushNotificationsInput = {
@@ -1532,7 +2240,13 @@ export type UserCreateWithoutSentPushNotificationsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutSentPushNotificationsInput = {
@@ -1556,7 +2270,13 @@ export type UserUncheckedCreateWithoutSentPushNotificationsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutSentPushNotificationsInput = {
@@ -1596,7 +2316,13 @@ export type UserUpdateWithoutSentPushNotificationsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSentPushNotificationsInput = {
@@ -1620,7 +2346,13 @@ export type UserUncheckedUpdateWithoutSentPushNotificationsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutReceivedPushNotificationsInput = {
@@ -1644,7 +2376,13 @@ export type UserCreateWithoutReceivedPushNotificationsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutReceivedPushNotificationsInput = {
@@ -1668,7 +2406,13 @@ export type UserUncheckedCreateWithoutReceivedPushNotificationsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutReceivedPushNotificationsInput = {
@@ -1708,7 +2452,13 @@ export type UserUpdateWithoutReceivedPushNotificationsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReceivedPushNotificationsInput = {
@@ -1732,7 +2482,13 @@ export type UserUncheckedUpdateWithoutReceivedPushNotificationsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutPushSubscriptionsInput = {
@@ -1756,7 +2512,13 @@ export type UserCreateWithoutPushSubscriptionsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
@@ -1780,7 +2542,13 @@ export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutPushSubscriptionsInput = {
@@ -1820,7 +2588,13 @@ export type UserUpdateWithoutPushSubscriptionsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
@@ -1844,7 +2618,13 @@ export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserCreateWithoutLocationInput = {
@@ -1868,7 +2648,13 @@ export type UserCreateWithoutLocationInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutLocationInput = {
@@ -1892,7 +2678,13 @@ export type UserUncheckedCreateWithoutLocationInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutLocationInput = {
@@ -1921,7 +2713,13 @@ export type UserCreateWithoutLocationsSharedWithMeInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutLocationsSharedWithMeInput = {
@@ -1945,7 +2743,13 @@ export type UserUncheckedCreateWithoutLocationsSharedWithMeInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutLocationsSharedWithMeInput = {
@@ -1985,7 +2789,13 @@ export type UserUpdateWithoutLocationInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLocationInput = {
@@ -2009,7 +2819,13 @@ export type UserUncheckedUpdateWithoutLocationInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUpsertWithWhereUniqueWithoutLocationsSharedWithMeInput = {
@@ -2063,7 +2879,13 @@ export type UserCreateWithoutSentLocationRequestsInput = {
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutSentLocationRequestsInput = {
@@ -2087,7 +2909,13 @@ export type UserUncheckedCreateWithoutSentLocationRequestsInput = {
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutSentLocationRequestsInput = {
@@ -2116,7 +2944,13 @@ export type UserCreateWithoutReceivedLocationRequestsInput = {
   locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
   sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
   trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserUncheckedCreateWithoutReceivedLocationRequestsInput = {
@@ -2140,7 +2974,13 @@ export type UserUncheckedCreateWithoutReceivedLocationRequestsInput = {
   locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
   trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
 }
 
 export type UserCreateOrConnectWithoutReceivedLocationRequestsInput = {
@@ -2180,7 +3020,13 @@ export type UserUpdateWithoutSentLocationRequestsInput = {
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSentLocationRequestsInput = {
@@ -2204,7 +3050,13 @@ export type UserUncheckedUpdateWithoutSentLocationRequestsInput = {
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUpsertWithoutReceivedLocationRequestsInput = {
@@ -2239,7 +3091,13 @@ export type UserUpdateWithoutReceivedLocationRequestsInput = {
   locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReceivedLocationRequestsInput = {
@@ -2263,7 +3121,421 @@ export type UserUncheckedUpdateWithoutReceivedLocationRequestsInput = {
   locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserCreateWithoutCreatedRewardsInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserUncheckedCreateWithoutCreatedRewardsInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventUncheckedCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserCreateOrConnectWithoutCreatedRewardsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedRewardsInput, Prisma.UserUncheckedCreateWithoutCreatedRewardsInput>
+}
+
+export type UserUpsertWithoutCreatedRewardsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCreatedRewardsInput, Prisma.UserUncheckedUpdateWithoutCreatedRewardsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedRewardsInput, Prisma.UserUncheckedCreateWithoutCreatedRewardsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCreatedRewardsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCreatedRewardsInput, Prisma.UserUncheckedUpdateWithoutCreatedRewardsInput>
+}
+
+export type UserUpdateWithoutCreatedRewardsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCreatedRewardsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUncheckedUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUncheckedUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserCreateWithoutRewardPurchasesInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserUncheckedCreateWithoutRewardPurchasesInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventUncheckedCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput
+}
+
+export type UserCreateOrConnectWithoutRewardPurchasesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRewardPurchasesInput, Prisma.UserUncheckedCreateWithoutRewardPurchasesInput>
+}
+
+export type UserCreateWithoutRewardPurchaseStatusUpdatesInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutPurchasedByInput
+}
+
+export type UserUncheckedCreateWithoutRewardPurchaseStatusUpdatesInput = {
+  id?: string
+  authUserId: string
+  firstName: string
+  lastName: string
+  hasAvatar?: boolean
+  role?: $Enums.Role
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutAdminInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutCreatedByInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedCreateNestedManyWithoutTargetUserInput
+  sentPushNotifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutCreatedByInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  createdEvents?: Prisma.EventUncheckedCreateNestedManyWithoutCreatorInput
+  userEvents?: Prisma.UserEventUncheckedCreateNestedManyWithoutUserInput
+  location?: Prisma.LocationUncheckedCreateNestedOneWithoutUserInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedCreateNestedManyWithoutUsersToShareWithInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutSenderInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedCreateNestedManyWithoutReceiverInput
+  trips?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutUserInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutAdminInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutHiddenByInput
+  activityReactions?: Prisma.ActivityReactionUncheckedCreateNestedManyWithoutUserInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutReviewedByInput
+  createdRewards?: Prisma.RewardUncheckedCreateNestedManyWithoutCreatedByInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput
+}
+
+export type UserCreateOrConnectWithoutRewardPurchaseStatusUpdatesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRewardPurchaseStatusUpdatesInput, Prisma.UserUncheckedCreateWithoutRewardPurchaseStatusUpdatesInput>
+}
+
+export type UserUpsertWithoutRewardPurchasesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRewardPurchasesInput, Prisma.UserUncheckedUpdateWithoutRewardPurchasesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRewardPurchasesInput, Prisma.UserUncheckedCreateWithoutRewardPurchasesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRewardPurchasesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRewardPurchasesInput, Prisma.UserUncheckedUpdateWithoutRewardPurchasesInput>
+}
+
+export type UserUpdateWithoutRewardPurchasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRewardPurchasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUncheckedUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUncheckedUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
+}
+
+export type UserUpsertWithoutRewardPurchaseStatusUpdatesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRewardPurchaseStatusUpdatesInput, Prisma.UserUncheckedUpdateWithoutRewardPurchaseStatusUpdatesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRewardPurchaseStatusUpdatesInput, Prisma.UserUncheckedCreateWithoutRewardPurchaseStatusUpdatesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRewardPurchaseStatusUpdatesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRewardPurchaseStatusUpdatesInput, Prisma.UserUncheckedUpdateWithoutRewardPurchaseStatusUpdatesInput>
+}
+
+export type UserUpdateWithoutRewardPurchaseStatusUpdatesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRewardPurchaseStatusUpdatesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  authUserId?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
+  coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutCreatedByNestedInput
+  receivedPushNotifications?: Prisma.NotificationPushUncheckedUpdateManyWithoutTargetUserNestedInput
+  sentPushNotifications?: Prisma.NotificationUncheckedUpdateManyWithoutCreatedByNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  createdEvents?: Prisma.EventUncheckedUpdateManyWithoutCreatorNestedInput
+  userEvents?: Prisma.UserEventUncheckedUpdateManyWithoutUserNestedInput
+  location?: Prisma.LocationUncheckedUpdateOneWithoutUserNestedInput
+  locationsSharedWithMe?: Prisma.LocationUncheckedUpdateManyWithoutUsersToShareWithNestedInput
+  sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
+  receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
+  trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
 }
 
 export type UserUpdateWithoutLocationsSharedWithMeInput = {
@@ -2287,7 +3559,13 @@ export type UserUpdateWithoutLocationsSharedWithMeInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLocationsSharedWithMeInput = {
@@ -2311,7 +3589,13 @@ export type UserUncheckedUpdateWithoutLocationsSharedWithMeInput = {
   sentLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutSenderNestedInput
   receivedLocationRequests?: Prisma.LocationSharingRequestUncheckedUpdateManyWithoutReceiverNestedInput
   trips?: Prisma.TripParticipantUncheckedUpdateManyWithoutUserNestedInput
+  activityFeedAdmin?: Prisma.ActivityFeedUncheckedUpdateManyWithoutAdminNestedInput
+  activityFeedHidden?: Prisma.ActivityFeedUncheckedUpdateManyWithoutHiddenByNestedInput
+  activityReactions?: Prisma.ActivityReactionUncheckedUpdateManyWithoutUserNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutReviewedByNestedInput
+  createdRewards?: Prisma.RewardUncheckedUpdateManyWithoutCreatedByNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput
+  rewardPurchaseStatusUpdates?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutLocationsSharedWithMeInput = {
@@ -2343,7 +3627,13 @@ export type UserCountOutputType = {
   sentLocationRequests: number
   receivedLocationRequests: number
   trips: number
+  activityFeedAdmin: number
+  activityFeedHidden: number
+  activityReactions: number
   challengeSubmissions: number
+  createdRewards: number
+  rewardPurchases: number
+  rewardPurchaseStatusUpdates: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2359,7 +3649,13 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   sentLocationRequests?: boolean | UserCountOutputTypeCountSentLocationRequestsArgs
   receivedLocationRequests?: boolean | UserCountOutputTypeCountReceivedLocationRequestsArgs
   trips?: boolean | UserCountOutputTypeCountTripsArgs
+  activityFeedAdmin?: boolean | UserCountOutputTypeCountActivityFeedAdminArgs
+  activityFeedHidden?: boolean | UserCountOutputTypeCountActivityFeedHiddenArgs
+  activityReactions?: boolean | UserCountOutputTypeCountActivityReactionsArgs
   challengeSubmissions?: boolean | UserCountOutputTypeCountChallengeSubmissionsArgs
+  createdRewards?: boolean | UserCountOutputTypeCountCreatedRewardsArgs
+  rewardPurchases?: boolean | UserCountOutputTypeCountRewardPurchasesArgs
+  rewardPurchaseStatusUpdates?: boolean | UserCountOutputTypeCountRewardPurchaseStatusUpdatesArgs
 }
 
 /**
@@ -2459,8 +3755,50 @@ export type UserCountOutputTypeCountTripsArgs<ExtArgs extends runtime.Types.Exte
 /**
  * UserCountOutputType without action
  */
+export type UserCountOutputTypeCountActivityFeedAdminArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ActivityFeedWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountActivityFeedHiddenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ActivityFeedWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountActivityReactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ActivityReactionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
 export type UserCountOutputTypeCountChallengeSubmissionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ChallengeSubmissionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCreatedRewardsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RewardWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRewardPurchasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RewardPurchaseWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRewardPurchaseStatusUpdatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RewardPurchaseWhereInput
 }
 
 
@@ -2486,7 +3824,13 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   sentLocationRequests?: boolean | Prisma.User$sentLocationRequestsArgs<ExtArgs>
   receivedLocationRequests?: boolean | Prisma.User$receivedLocationRequestsArgs<ExtArgs>
   trips?: boolean | Prisma.User$tripsArgs<ExtArgs>
+  activityFeedAdmin?: boolean | Prisma.User$activityFeedAdminArgs<ExtArgs>
+  activityFeedHidden?: boolean | Prisma.User$activityFeedHiddenArgs<ExtArgs>
+  activityReactions?: boolean | Prisma.User$activityReactionsArgs<ExtArgs>
   challengeSubmissions?: boolean | Prisma.User$challengeSubmissionsArgs<ExtArgs>
+  createdRewards?: boolean | Prisma.User$createdRewardsArgs<ExtArgs>
+  rewardPurchases?: boolean | Prisma.User$rewardPurchasesArgs<ExtArgs>
+  rewardPurchaseStatusUpdates?: boolean | Prisma.User$rewardPurchaseStatusUpdatesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2538,7 +3882,13 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   sentLocationRequests?: boolean | Prisma.User$sentLocationRequestsArgs<ExtArgs>
   receivedLocationRequests?: boolean | Prisma.User$receivedLocationRequestsArgs<ExtArgs>
   trips?: boolean | Prisma.User$tripsArgs<ExtArgs>
+  activityFeedAdmin?: boolean | Prisma.User$activityFeedAdminArgs<ExtArgs>
+  activityFeedHidden?: boolean | Prisma.User$activityFeedHiddenArgs<ExtArgs>
+  activityReactions?: boolean | Prisma.User$activityReactionsArgs<ExtArgs>
   challengeSubmissions?: boolean | Prisma.User$challengeSubmissionsArgs<ExtArgs>
+  createdRewards?: boolean | Prisma.User$createdRewardsArgs<ExtArgs>
+  rewardPurchases?: boolean | Prisma.User$rewardPurchasesArgs<ExtArgs>
+  rewardPurchaseStatusUpdates?: boolean | Prisma.User$rewardPurchaseStatusUpdatesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -2560,7 +3910,13 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     sentLocationRequests: Prisma.$LocationSharingRequestPayload<ExtArgs>[]
     receivedLocationRequests: Prisma.$LocationSharingRequestPayload<ExtArgs>[]
     trips: Prisma.$TripParticipantPayload<ExtArgs>[]
+    activityFeedAdmin: Prisma.$ActivityFeedPayload<ExtArgs>[]
+    activityFeedHidden: Prisma.$ActivityFeedPayload<ExtArgs>[]
+    activityReactions: Prisma.$ActivityReactionPayload<ExtArgs>[]
     challengeSubmissions: Prisma.$ChallengeSubmissionPayload<ExtArgs>[]
+    createdRewards: Prisma.$RewardPayload<ExtArgs>[]
+    rewardPurchases: Prisma.$RewardPurchasePayload<ExtArgs>[]
+    rewardPurchaseStatusUpdates: Prisma.$RewardPurchasePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2978,7 +4334,13 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   sentLocationRequests<T extends Prisma.User$sentLocationRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sentLocationRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LocationSharingRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   receivedLocationRequests<T extends Prisma.User$receivedLocationRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$receivedLocationRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LocationSharingRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   trips<T extends Prisma.User$tripsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$tripsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TripParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  activityFeedAdmin<T extends Prisma.User$activityFeedAdminArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activityFeedAdminArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityFeedPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  activityFeedHidden<T extends Prisma.User$activityFeedHiddenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activityFeedHiddenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityFeedPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  activityReactions<T extends Prisma.User$activityReactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activityReactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityReactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   challengeSubmissions<T extends Prisma.User$challengeSubmissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$challengeSubmissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengeSubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  createdRewards<T extends Prisma.User$createdRewardsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdRewardsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RewardPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  rewardPurchases<T extends Prisma.User$rewardPurchasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$rewardPurchasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RewardPurchasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  rewardPurchaseStatusUpdates<T extends Prisma.User$rewardPurchaseStatusUpdatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$rewardPurchaseStatusUpdatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RewardPurchasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3711,6 +5073,78 @@ export type User$tripsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
 }
 
 /**
+ * User.activityFeedAdmin
+ */
+export type User$activityFeedAdminArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ActivityFeed
+   */
+  select?: Prisma.ActivityFeedSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ActivityFeed
+   */
+  omit?: Prisma.ActivityFeedOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ActivityFeedInclude<ExtArgs> | null
+  where?: Prisma.ActivityFeedWhereInput
+  orderBy?: Prisma.ActivityFeedOrderByWithRelationInput | Prisma.ActivityFeedOrderByWithRelationInput[]
+  cursor?: Prisma.ActivityFeedWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ActivityFeedScalarFieldEnum | Prisma.ActivityFeedScalarFieldEnum[]
+}
+
+/**
+ * User.activityFeedHidden
+ */
+export type User$activityFeedHiddenArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ActivityFeed
+   */
+  select?: Prisma.ActivityFeedSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ActivityFeed
+   */
+  omit?: Prisma.ActivityFeedOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ActivityFeedInclude<ExtArgs> | null
+  where?: Prisma.ActivityFeedWhereInput
+  orderBy?: Prisma.ActivityFeedOrderByWithRelationInput | Prisma.ActivityFeedOrderByWithRelationInput[]
+  cursor?: Prisma.ActivityFeedWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ActivityFeedScalarFieldEnum | Prisma.ActivityFeedScalarFieldEnum[]
+}
+
+/**
+ * User.activityReactions
+ */
+export type User$activityReactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ActivityReaction
+   */
+  select?: Prisma.ActivityReactionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ActivityReaction
+   */
+  omit?: Prisma.ActivityReactionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ActivityReactionInclude<ExtArgs> | null
+  where?: Prisma.ActivityReactionWhereInput
+  orderBy?: Prisma.ActivityReactionOrderByWithRelationInput | Prisma.ActivityReactionOrderByWithRelationInput[]
+  cursor?: Prisma.ActivityReactionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ActivityReactionScalarFieldEnum | Prisma.ActivityReactionScalarFieldEnum[]
+}
+
+/**
  * User.challengeSubmissions
  */
 export type User$challengeSubmissionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3732,6 +5166,78 @@ export type User$challengeSubmissionsArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   distinct?: Prisma.ChallengeSubmissionScalarFieldEnum | Prisma.ChallengeSubmissionScalarFieldEnum[]
+}
+
+/**
+ * User.createdRewards
+ */
+export type User$createdRewardsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Reward
+   */
+  select?: Prisma.RewardSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Reward
+   */
+  omit?: Prisma.RewardOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RewardInclude<ExtArgs> | null
+  where?: Prisma.RewardWhereInput
+  orderBy?: Prisma.RewardOrderByWithRelationInput | Prisma.RewardOrderByWithRelationInput[]
+  cursor?: Prisma.RewardWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RewardScalarFieldEnum | Prisma.RewardScalarFieldEnum[]
+}
+
+/**
+ * User.rewardPurchases
+ */
+export type User$rewardPurchasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RewardPurchase
+   */
+  select?: Prisma.RewardPurchaseSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RewardPurchase
+   */
+  omit?: Prisma.RewardPurchaseOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RewardPurchaseInclude<ExtArgs> | null
+  where?: Prisma.RewardPurchaseWhereInput
+  orderBy?: Prisma.RewardPurchaseOrderByWithRelationInput | Prisma.RewardPurchaseOrderByWithRelationInput[]
+  cursor?: Prisma.RewardPurchaseWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RewardPurchaseScalarFieldEnum | Prisma.RewardPurchaseScalarFieldEnum[]
+}
+
+/**
+ * User.rewardPurchaseStatusUpdates
+ */
+export type User$rewardPurchaseStatusUpdatesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RewardPurchase
+   */
+  select?: Prisma.RewardPurchaseSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RewardPurchase
+   */
+  omit?: Prisma.RewardPurchaseOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RewardPurchaseInclude<ExtArgs> | null
+  where?: Prisma.RewardPurchaseWhereInput
+  orderBy?: Prisma.RewardPurchaseOrderByWithRelationInput | Prisma.RewardPurchaseOrderByWithRelationInput[]
+  cursor?: Prisma.RewardPurchaseWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RewardPurchaseScalarFieldEnum | Prisma.RewardPurchaseScalarFieldEnum[]
 }
 
 /**

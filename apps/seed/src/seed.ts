@@ -3,6 +3,7 @@ import { ensureBuckets, uploadAssets, ensurePlaceholderImage } from "./storage";
 import { loadAuthUsers } from "./auth";
 import { loadTripConfigs } from "./tripConfigs";
 import { seedTrip } from "./trips";
+import { loadRewardConfigs, seedRewards } from "./rewards";
 import { dirExists } from "./utils/fs";
 import { joinPath } from "./utils/path";
 import type { SeedEnv } from "./types";
@@ -25,7 +26,22 @@ export const runSeed = async () => {
 
   const trips = await loadTripConfigs(envRoot);
   for (const trip of trips) {
-    await seedTrip(trip, trip.users, envRoot, authUsers);
+    const seededTrip = await seedTrip(trip, trip.users, envRoot, authUsers);
+    
+    if (!seededTrip) {
+      console.warn(`✗ Failed to seed trip: ${trip.key}`);
+      continue;
+    }
+    
+    // Seed rewards if the trip has a rewards config
+    if (trip.rewards) {
+      try {
+        const rewardConfigs = await loadRewardConfigs(envRoot, trip.rewards);
+        await seedRewards(rewardConfigs, seededTrip.id, authUsers);
+      } catch (error) {
+        console.warn(`✗ Failed to seed rewards for trip ${trip.key}:`, error);
+      }
+    }
   }
 
   console.log("Seeding completed");

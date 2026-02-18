@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTrips } from "~/hooks/trips";
 import { useAdminChallenges } from "~/hooks/admin";
 import { commonStyles } from "~/styles/commonStyles";
+import { LocationPicker, type LocationCoordinate } from "../../map/LocationPicker";
 
 interface Props {
   visible: boolean;
@@ -25,6 +26,7 @@ interface NewChallengeState {
   points: string;
   category: "standard" | "wintegral" | "special";
   icon: string;
+  location?: LocationCoordinate | null;
 }
 
 export default function AddChallengeModal({ visible, onClose }: Props) {
@@ -37,6 +39,7 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
   });
   const [tripId, setTripId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { trips } = useTrips();
   const { createChallenge } = useAdminChallenges();
 
@@ -59,6 +62,8 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
         points: Number(newChallenge.points),
         category: newChallenge.category,
         icon: newChallenge.icon,
+        targetLatitude: newChallenge.location?.latitude,
+        targetLongitude: newChallenge.location?.longitude,
       });
       setNewChallenge({
         title: "",
@@ -66,6 +71,7 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
         points: "",
         category: "standard",
         icon: "star",
+        location: null,
       });
       setTripId("");
       onClose();
@@ -202,6 +208,55 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
               />
             </View>
 
+            {/* Location Selection */}
+            <View style={{ marginBottom: 20 }}>
+              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
+                Location (Optional)
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowLocationPicker(true)}
+                style={{
+                  backgroundColor: "#0f2323",
+                  borderWidth: 1,
+                  borderColor: newChallenge.location ? "#00ced1" : "#273a3a",
+                  borderRadius: 12,
+                  padding: 12,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <Ionicons 
+                    name="location" 
+                    size={20} 
+                    color={newChallenge.location ? "#00ced1" : "#6b7280"} 
+                  />
+                  <Text 
+                    style={{ 
+                      color: newChallenge.location ? "#00ced1" : "#6b7280",
+                      flex: 1
+                    }}
+                  >
+                    {newChallenge.location 
+                      ? `${newChallenge.location.latitude.toFixed(4)}, ${newChallenge.location.longitude.toFixed(4)}`
+                      : "Tap to select location"
+                    }
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+              </TouchableOpacity>
+              {newChallenge.location && (
+                <TouchableOpacity
+                  onPress={() => setNewChallenge({ ...newChallenge, location: null })}
+                  style={{ marginTop: 8, flexDirection: "row", alignItems: "center", gap: 6 }}
+                >
+                  <Ionicons name="close-circle" size={16} color="#ef4444" />
+                  <Text style={{ color: "#ef4444", fontSize: 12 }}>Clear location</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             <TouchableOpacity
               onPress={handleAdd}
               disabled={isSubmitting}
@@ -214,6 +269,17 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
           </ScrollView>
         </SafeAreaView>
       </View>
+
+      {/* Location Picker Modal */}
+      <LocationPicker
+        visible={showLocationPicker}
+        initialLocation={newChallenge.location}
+        onLocationSelected={(location) => {
+          setNewChallenge({ ...newChallenge, location });
+          setShowLocationPicker(false);
+        }}
+        onClose={() => setShowLocationPicker(false)}
+      />
     </Modal>
   );
 }

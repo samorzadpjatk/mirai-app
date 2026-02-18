@@ -68,6 +68,36 @@ export type ChallengeVote = Prisma.ChallengeVoteModel
  */
 export type SubmissionReport = Prisma.SubmissionReportModel
 /**
+ * Model ActivityFeed
+ * 
+ */
+export type ActivityFeed = Prisma.ActivityFeedModel
+/**
+ * Model ActivityReaction
+ * 
+ */
+export type ActivityReaction = Prisma.ActivityReactionModel
+/**
+ * Model SubmissionActivity
+ * 
+ */
+export type SubmissionActivity = Prisma.SubmissionActivityModel
+/**
+ * Model ChallengeActivity
+ * 
+ */
+export type ChallengeActivity = Prisma.ChallengeActivityModel
+/**
+ * Model RankChangeActivity
+ * 
+ */
+export type RankChangeActivity = Prisma.RankChangeActivityModel
+/**
+ * Model UserPost
+ * 
+ */
+export type UserPost = Prisma.UserPostModel
+/**
  * Model CoinTransaction
  * 
  */
@@ -112,3 +142,13 @@ export type Location = Prisma.LocationModel
  * 
  */
 export type LocationSharingRequest = Prisma.LocationSharingRequestModel
+/**
+ * Model Reward
+ * 
+ */
+export type Reward = Prisma.RewardModel
+/**
+ * Model RewardPurchase
+ * 
+ */
+export type RewardPurchase = Prisma.RewardPurchaseModel

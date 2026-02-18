@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { colors } from '~/styles';
 
 const backgroundColor = "#17181c";
-const headerTintColor = "#00ced1";
 
 export default function AdminLayout() {
   const trpc = useTRPC();
@@ -96,6 +95,13 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="activity/index"
+          options={{
+            title: "Activity",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
           name="notifications/index"
           options={{
             title: "Notifications",
@@ -106,6 +112,13 @@ export default function AdminLayout() {
           name="schedules/index"
           options={{
             title: "Schedules",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="rewards/index"
+          options={{
+            title: "Rewards",
             headerBackTitle: "Back"
           }}
         />

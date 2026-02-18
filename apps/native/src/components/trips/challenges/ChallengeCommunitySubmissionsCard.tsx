@@ -67,7 +67,7 @@ export function ChallengeCommunitySubmissionsCard({
   const podiumByRank = useMemo(
     () =>
       new Map(
-        podiumSubmissions.map((submission) => [submission.ranking as number, submission]),
+        podiumSubmissions.map((submission) => [submission.ranking!, submission]),
       ),
     [podiumSubmissions],
   );

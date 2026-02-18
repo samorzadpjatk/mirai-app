@@ -341,6 +341,23 @@ export type FloatWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedFloatFilter<$PrismaModel>
 }
 
+export type EnumSubmissionTypeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.SubmissionType | Prisma.EnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel> | $Enums.SubmissionType | null
+}
+
+export type EnumSubmissionTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SubmissionType | Prisma.EnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumSubmissionTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.SubmissionType | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel>
+}
+
 export type EnumLocationSharingRequestStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.LocationSharingRequestStatus | Prisma.EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
   in?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
@@ -356,6 +373,23 @@ export type EnumLocationSharingRequestStatusWithAggregatesFilter<$PrismaModel = 
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel>
+}
+
+export type EnumRewardPurchaseStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.RewardPurchaseStatus | Prisma.EnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.RewardPurchaseStatus[] | Prisma.ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.RewardPurchaseStatus[] | Prisma.ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumRewardPurchaseStatusFilter<$PrismaModel> | $Enums.RewardPurchaseStatus
+}
+
+export type EnumRewardPurchaseStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.RewardPurchaseStatus | Prisma.EnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.RewardPurchaseStatus[] | Prisma.ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.RewardPurchaseStatus[] | Prisma.ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumRewardPurchaseStatusWithAggregatesFilter<$PrismaModel> | $Enums.RewardPurchaseStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumRewardPurchaseStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumRewardPurchaseStatusFilter<$PrismaModel>
 }
 
 export type NestedStringFilter<$PrismaModel = never> = {
@@ -676,6 +710,23 @@ export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedFloatFilter<$PrismaModel>
 }
 
+export type NestedEnumSubmissionTypeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.SubmissionType | Prisma.EnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel> | $Enums.SubmissionType | null
+}
+
+export type NestedEnumSubmissionTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SubmissionType | Prisma.EnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.SubmissionType[] | Prisma.ListEnumSubmissionTypeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumSubmissionTypeNullableWithAggregatesFilter<$PrismaModel> | $Enums.SubmissionType | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSubmissionTypeNullableFilter<$PrismaModel>
+}
+
 export type NestedEnumLocationSharingRequestStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.LocationSharingRequestStatus | Prisma.EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
   in?: $Enums.LocationSharingRequestStatus[] | Prisma.ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel>
@@ -691,6 +742,23 @@ export type NestedEnumLocationSharingRequestStatusWithAggregatesFilter<$PrismaMo
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumLocationSharingRequestStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumRewardPurchaseStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.RewardPurchaseStatus | Prisma.EnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.RewardPurchaseStatus[] | Prisma.ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.RewardPurchaseStatus[] | Prisma.ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumRewardPurchaseStatusFilter<$PrismaModel> | $Enums.RewardPurchaseStatus
+}
+
+export type NestedEnumRewardPurchaseStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.RewardPurchaseStatus | Prisma.EnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.RewardPurchaseStatus[] | Prisma.ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.RewardPurchaseStatus[] | Prisma.ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumRewardPurchaseStatusWithAggregatesFilter<$PrismaModel> | $Enums.RewardPurchaseStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumRewardPurchaseStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumRewardPurchaseStatusFilter<$PrismaModel>
 }
 
 

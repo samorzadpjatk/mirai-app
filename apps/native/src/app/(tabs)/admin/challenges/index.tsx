@@ -14,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 
 interface ChallengeItem {
   id: string;
@@ -217,7 +218,7 @@ export default function AdminChallengesScreen() {
                     {filter.label}
                   </Text>
                   <Text style={{ color, fontWeight: "800", fontSize: 16 }}>
-                    {statusCounts[filter.value as keyof typeof statusCounts] ?? 0}
+                    {statusCounts[filter.value] ?? 0}
                   </Text>
                 </View>
               );
@@ -421,30 +422,10 @@ export default function AdminChallengesScreen() {
         </View>
       </ScrollView>
 
-      <TouchableOpacity
+      <AdminAddFab
         onPress={handleAddChallenge}
-        style={{
-          position: "absolute",
-          right: 20,
-          bottom: 96,
-          width: 58,
-          height: 58,
-          borderRadius: 999,
-          backgroundColor: colors.primary,
-          alignItems: "center",
-          justifyContent: "center",
-          shadowColor: colors.primary,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.35,
-          shadowRadius: 16,
-          elevation: 8,
-        }}
-        accessibilityRole="button"
         accessibilityLabel="Add challenge"
-      >
-        <Ionicons name="add" size={32} color={colors.backgroundDark} />
-      </TouchableOpacity>
+      />
     </View>
   );
 }
-
