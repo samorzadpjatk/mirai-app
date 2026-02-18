@@ -31,6 +31,7 @@ export type TripParticipantMinAggregateOutputType = {
   groupId: string | null
   wristNumber: string | null
   houseNumber: string | null
+  role: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -42,6 +43,7 @@ export type TripParticipantMaxAggregateOutputType = {
   groupId: string | null
   wristNumber: string | null
   houseNumber: string | null
+  role: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -53,6 +55,7 @@ export type TripParticipantCountAggregateOutputType = {
   groupId: number
   wristNumber: number
   houseNumber: number
+  role: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -66,6 +69,7 @@ export type TripParticipantMinAggregateInputType = {
   groupId?: true
   wristNumber?: true
   houseNumber?: true
+  role?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -77,6 +81,7 @@ export type TripParticipantMaxAggregateInputType = {
   groupId?: true
   wristNumber?: true
   houseNumber?: true
+  role?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -88,6 +93,7 @@ export type TripParticipantCountAggregateInputType = {
   groupId?: true
   wristNumber?: true
   houseNumber?: true
+  role?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -172,6 +178,7 @@ export type TripParticipantGroupByOutputType = {
   groupId: string | null
   wristNumber: string | null
   houseNumber: string | null
+  role: string
   createdAt: Date
   updatedAt: Date
   _count: TripParticipantCountAggregateOutputType | null
@@ -204,6 +211,7 @@ export type TripParticipantWhereInput = {
   groupId?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
   wristNumber?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
   houseNumber?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
+  role?: Prisma.StringFilter<"TripParticipant"> | string
   createdAt?: Prisma.DateTimeFilter<"TripParticipant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TripParticipant"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -220,6 +228,7 @@ export type TripParticipantOrderByWithRelationInput = {
   groupId?: Prisma.SortOrderInput | Prisma.SortOrder
   wristNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   houseNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
@@ -241,6 +250,7 @@ export type TripParticipantWhereUniqueInput = Prisma.AtLeast<{
   groupId?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
   wristNumber?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
   houseNumber?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
+  role?: Prisma.StringFilter<"TripParticipant"> | string
   createdAt?: Prisma.DateTimeFilter<"TripParticipant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TripParticipant"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -257,6 +267,7 @@ export type TripParticipantOrderByWithAggregationInput = {
   groupId?: Prisma.SortOrderInput | Prisma.SortOrder
   wristNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   houseNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.TripParticipantCountOrderByAggregateInput
@@ -274,6 +285,7 @@ export type TripParticipantScalarWhereWithAggregatesInput = {
   groupId?: Prisma.StringNullableWithAggregatesFilter<"TripParticipant"> | string | null
   wristNumber?: Prisma.StringNullableWithAggregatesFilter<"TripParticipant"> | string | null
   houseNumber?: Prisma.StringNullableWithAggregatesFilter<"TripParticipant"> | string | null
+  role?: Prisma.StringWithAggregatesFilter<"TripParticipant"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"TripParticipant"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"TripParticipant"> | Date | string
 }
@@ -282,6 +294,7 @@ export type TripParticipantCreateInput = {
   id?: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTripsInput
@@ -298,6 +311,7 @@ export type TripParticipantUncheckedCreateInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
@@ -308,6 +322,7 @@ export type TripParticipantUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTripsNestedInput
@@ -324,6 +339,7 @@ export type TripParticipantUncheckedUpdateInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
@@ -337,6 +353,7 @@ export type TripParticipantCreateManyInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -345,6 +362,7 @@ export type TripParticipantUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -356,6 +374,7 @@ export type TripParticipantUncheckedUpdateManyInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -387,6 +406,7 @@ export type TripParticipantCountOrderByAggregateInput = {
   groupId?: Prisma.SortOrder
   wristNumber?: Prisma.SortOrder
   houseNumber?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -398,6 +418,7 @@ export type TripParticipantMaxOrderByAggregateInput = {
   groupId?: Prisma.SortOrder
   wristNumber?: Prisma.SortOrder
   houseNumber?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -409,6 +430,7 @@ export type TripParticipantMinOrderByAggregateInput = {
   groupId?: Prisma.SortOrder
   wristNumber?: Prisma.SortOrder
   houseNumber?: Prisma.SortOrder
+  role?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -576,6 +598,7 @@ export type TripParticipantCreateWithoutUserInput = {
   id?: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   trip: Prisma.TripCreateNestedOneWithoutParticipantsInput
@@ -590,6 +613,7 @@ export type TripParticipantUncheckedCreateWithoutUserInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
@@ -632,6 +656,7 @@ export type TripParticipantScalarWhereInput = {
   groupId?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
   wristNumber?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
   houseNumber?: Prisma.StringNullableFilter<"TripParticipant"> | string | null
+  role?: Prisma.StringFilter<"TripParticipant"> | string
   createdAt?: Prisma.DateTimeFilter<"TripParticipant"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"TripParticipant"> | Date | string
 }
@@ -640,6 +665,7 @@ export type TripParticipantCreateWithoutTripInput = {
   id?: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTripsInput
@@ -654,6 +680,7 @@ export type TripParticipantUncheckedCreateWithoutTripInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
@@ -690,6 +717,7 @@ export type TripParticipantCreateWithoutGroupInput = {
   id?: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTripsInput
@@ -704,6 +732,7 @@ export type TripParticipantUncheckedCreateWithoutGroupInput = {
   tripId: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
@@ -740,6 +769,7 @@ export type TripParticipantCreateWithoutChallengeVotesInput = {
   id?: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTripsInput
@@ -755,6 +785,7 @@ export type TripParticipantUncheckedCreateWithoutChallengeVotesInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   submissionReports?: Prisma.SubmissionReportUncheckedCreateNestedManyWithoutReporterInput
@@ -780,6 +811,7 @@ export type TripParticipantUpdateWithoutChallengeVotesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTripsNestedInput
@@ -795,6 +827,7 @@ export type TripParticipantUncheckedUpdateWithoutChallengeVotesInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissionReports?: Prisma.SubmissionReportUncheckedUpdateManyWithoutReporterNestedInput
@@ -804,6 +837,7 @@ export type TripParticipantCreateWithoutSubmissionReportsInput = {
   id?: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutTripsInput
@@ -819,6 +853,7 @@ export type TripParticipantUncheckedCreateWithoutSubmissionReportsInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutVoterInput
@@ -844,6 +879,7 @@ export type TripParticipantUpdateWithoutSubmissionReportsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTripsNestedInput
@@ -859,6 +895,7 @@ export type TripParticipantUncheckedUpdateWithoutSubmissionReportsInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
@@ -870,6 +907,7 @@ export type TripParticipantCreateManyUserInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -878,6 +916,7 @@ export type TripParticipantUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   trip?: Prisma.TripUpdateOneRequiredWithoutParticipantsNestedInput
@@ -892,6 +931,7 @@ export type TripParticipantUncheckedUpdateWithoutUserInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
@@ -904,6 +944,7 @@ export type TripParticipantUncheckedUpdateManyWithoutUserInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -914,6 +955,7 @@ export type TripParticipantCreateManyTripInput = {
   groupId?: string | null
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -922,6 +964,7 @@ export type TripParticipantUpdateWithoutTripInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTripsNestedInput
@@ -936,6 +979,7 @@ export type TripParticipantUncheckedUpdateWithoutTripInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
@@ -948,6 +992,7 @@ export type TripParticipantUncheckedUpdateManyWithoutTripInput = {
   groupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -958,6 +1003,7 @@ export type TripParticipantCreateManyGroupInput = {
   tripId: string
   wristNumber?: string | null
   houseNumber?: string | null
+  role?: string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -966,6 +1012,7 @@ export type TripParticipantUpdateWithoutGroupInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutTripsNestedInput
@@ -980,6 +1027,7 @@ export type TripParticipantUncheckedUpdateWithoutGroupInput = {
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   challengeVotes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutVoterNestedInput
@@ -992,6 +1040,7 @@ export type TripParticipantUncheckedUpdateManyWithoutGroupInput = {
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
   wristNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   houseNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1043,6 +1092,7 @@ export type TripParticipantSelect<ExtArgs extends runtime.Types.Extensions.Inter
   groupId?: boolean
   wristNumber?: boolean
   houseNumber?: boolean
+  role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1060,6 +1110,7 @@ export type TripParticipantSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   groupId?: boolean
   wristNumber?: boolean
   houseNumber?: boolean
+  role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1074,6 +1125,7 @@ export type TripParticipantSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   groupId?: boolean
   wristNumber?: boolean
   houseNumber?: boolean
+  role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1088,11 +1140,12 @@ export type TripParticipantSelectScalar = {
   groupId?: boolean
   wristNumber?: boolean
   houseNumber?: boolean
+  role?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type TripParticipantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "tripId" | "groupId" | "wristNumber" | "houseNumber" | "createdAt" | "updatedAt", ExtArgs["result"]["tripParticipant"]>
+export type TripParticipantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "tripId" | "groupId" | "wristNumber" | "houseNumber" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["tripParticipant"]>
 export type TripParticipantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   trip?: boolean | Prisma.TripDefaultArgs<ExtArgs>
@@ -1128,6 +1181,7 @@ export type $TripParticipantPayload<ExtArgs extends runtime.Types.Extensions.Int
     groupId: string | null
     wristNumber: string | null
     houseNumber: string | null
+    role: string
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["tripParticipant"]>
@@ -1564,6 +1618,7 @@ export interface TripParticipantFieldRefs {
   readonly groupId: Prisma.FieldRef<"TripParticipant", 'String'>
   readonly wristNumber: Prisma.FieldRef<"TripParticipant", 'String'>
   readonly houseNumber: Prisma.FieldRef<"TripParticipant", 'String'>
+  readonly role: Prisma.FieldRef<"TripParticipant", 'String'>
   readonly createdAt: Prisma.FieldRef<"TripParticipant", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"TripParticipant", 'DateTime'>
 }
