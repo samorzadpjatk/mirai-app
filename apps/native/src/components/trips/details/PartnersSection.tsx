@@ -1,6 +1,5 @@
 import {
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,26 +14,20 @@ export interface Partner {
   logo: ReturnType<typeof require>;
 }
 
-// ---------------------------------------------------------------
-// ZAMIEN PLACEHOLDERY NA PRAWDZIWE PLIKI .jpg:
-//   1) Wrzuć pliki do: assets/partners/
-//   2) Podmień require() poniżej na właściwy plik
-//      np. require("../../../../assets/partners/partner1.jpg")
-// ---------------------------------------------------------------
 const PARTNERS: Partner[] = [
   {
     id: "partner-1",
-    name: "Partner 1",
+    name: "Orange",
     logo: require("../../../../assets/partners/partner1.jpg"),
   },
   {
     id: "partner-2",
-    name: "Partner 2",
+    name: "AiSECLAB",
     logo: require("../../../../assets/partners/partner2.jpg"),
   },
   {
     id: "partner-3",
-    name: "Partner 3",
+    name: "Netcompany",
     logo: require("../../../../assets/partners/partner3.jpg"),
   },
 ];
@@ -46,44 +39,32 @@ export function PartnersSection() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.sectionTitle}>Our Partners</Text>
-      </View>
+      <Text style={styles.sectionTitle}>Our Partners</Text>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <View style={styles.card}>
         {PARTNERS.map((partner) => (
           <TouchableOpacity
             key={partner.id}
-            style={styles.partnerCard}
+            style={styles.partnerSlot}
             activeOpacity={0.7}
             onPress={() =>
               router.push(`/trips/partners/${partner.id}` as const)
             }
           >
             <Image source={partner.logo} style={styles.partnerLogo} />
-            <Text style={styles.partnerName} numberOfLines={1}>
-              {partner.name}
-            </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
-const CARD_WIDTH = 130;
-
 const styles = StyleSheet.create({
   container: {
     marginTop: spacing.xxl,
-  },
-  header: {
+    marginBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    gap: spacing.md,
   },
   sectionTitle: {
     fontSize: typography.xs,
@@ -92,31 +73,23 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 2,
   },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-  },
-  partnerCard: {
-    width: CARD_WIDTH,
+  card: {
+    flexDirection: "row",
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.primaryOpacity10,
-    alignItems: "center",
     padding: spacing.md,
-    gap: spacing.sm,
+  },
+  partnerSlot: {
+    flex: 1,
+    height: 50,
+    alignItems: "center",
+    justifyContent: "center",
   },
   partnerLogo: {
-    width: CARD_WIDTH - spacing.md * 2,
-    height: 70,
-    borderRadius: borderRadius.sm,
+    width: "75%",
+    height: "100%",
     resizeMode: "contain",
-    backgroundColor: colors.surfaceDark,
-  },
-  partnerName: {
-    fontSize: typography.xs,
-    fontWeight: typography.semibold,
-    color: colors.textSecondary,
-    textAlign: "center",
   },
 });

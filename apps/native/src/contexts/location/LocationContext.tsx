@@ -3,7 +3,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert } from "react-native";
-import * as Location from "expo-location";
+
+let Location: typeof import("expo-location") | null = null;
+try {
+  Location = require("expo-location") as typeof import("expo-location");
+} catch {
+  console.warn("expo-location native module not available — location features disabled");
+}
 
 const LOCATION_SETTINGS_KEY = "location_sharing_enabled";
 
@@ -126,6 +132,10 @@ export function LocationProvider({ children }: LocationProviderProps) {
 
   // Check current permission status
   useEffect(() => {
+    if (!Location) {
+      dispatch({ type: "SET_PERMISSION_STATUS", payload: "denied" });
+      return;
+    }
     void (async () => {
       try {
         const { status } = await Location.getForegroundPermissionsAsync();
@@ -138,6 +148,10 @@ export function LocationProvider({ children }: LocationProviderProps) {
   }, []);
 
   const requestLocationPermissions = async (): Promise<LocationPermissionStatus> => {
+    if (!Location) {
+      dispatch({ type: "SET_PERMISSION_STATUS", payload: "denied" });
+      return "denied";
+    }
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       dispatch({ type: "SET_PERMISSION_STATUS", payload: status as LocationPermissionStatus });
