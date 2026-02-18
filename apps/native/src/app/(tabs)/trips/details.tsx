@@ -10,6 +10,7 @@ import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
 import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessGrid";
+import { PartnersSection } from "~/components/trips/details/PartnersSection";
 
 export default function TripDetailsScreen() {
   const { session, isLoading } = useAuth();
@@ -58,6 +59,9 @@ export default function TripDetailsScreen() {
             endDate={trip.endDate}
             backgroundImagePath={trip.backgroundImagePath}
           />
+
+          {/* Partners */}
+          <PartnersSection />
 
           {/* Quick Access Grid */}
           <TripQuickAccessGrid

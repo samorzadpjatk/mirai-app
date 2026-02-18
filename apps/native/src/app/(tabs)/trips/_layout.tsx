@@ -32,6 +32,7 @@ export default function TripsLayout() {
       <Stack.Screen name="rewards/index" options={{ title: "Rewards" }} />
       <Stack.Screen name="rewards/history" options={{ title: "My Rewards" }} />
       <Stack.Screen name="leaderboard/index" options={{ title: "Leaderboard" }} />
+      <Stack.Screen name="partners/[id]" options={{ title: "Partner" }} />
     </Stack>
   );
 }
