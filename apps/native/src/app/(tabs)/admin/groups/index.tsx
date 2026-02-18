@@ -75,9 +75,9 @@ export default function AdminGroupsScreen() {
   }
 
   // Event handlers
-  const handleCreateGroup = async (name: string, code: string) => {
+  const handleCreateGroup = async (name: string) => {
     try {
-      await createGroup(name, code);
+      await createGroup(name);
       setShowCreateModal(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to create group');

@@ -1,9 +1,10 @@
 import { useGroups } from "~/hooks/groups";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing } from "../../../../styles";
-import { GroupsCreateButton } from "~/components/trips/groups/GroupsCreateButton";
 import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
 import { GroupsListHeader } from "~/components/trips/groups/GroupsListHeader";
 import { GroupsList } from "~/components/trips/groups/GroupsList";
@@ -19,7 +20,15 @@ export default function GroupsListScreen() {
 
   const { filteredGroups, isLoading, searchQuery, setSearchQuery } =
     useGroups(tripId);
+  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
+    useQuery({
+      ...trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }),
+      enabled: !!tripId,
+    });
   const groupsLoading = isLoading;
+  const hasGroupInCurrentTrip = Boolean(
+    currentUserWithGroup?.trips?.some((trip) => trip.group),
+  );
 
   if (!tripId) {
     return <GroupsNoTripState onGoBack={() => router.back()} />;
@@ -32,19 +41,11 @@ export default function GroupsListScreen() {
         contentContainerStyle={[styles.scrollContent]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Create Group Button */}
-        <GroupsCreateButton
-          onPress={() => router.push(`/trips/groups/create?tripId=${tripId}`)}
-        />
-
         {/* Search Bar */}
         <GroupsSearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
         {/* Header */}
-        <GroupsListHeader
-          title="Active Trip Clusters"
-          count={filteredGroups.length}
-        />
+        <GroupsListHeader title="Groups" count={filteredGroups.length} />
 
         {/* Groups List */}
         {groupsLoading ? (
@@ -56,6 +57,17 @@ export default function GroupsListScreen() {
           />
         )}
       </ScrollView>
+
+      {!isLoadingCurrentUserGroup && !hasGroupInCurrentTrip ? (
+        <TouchableOpacity
+          onPress={() => router.push(`/trips/groups/create?tripId=${tripId}`)}
+          style={styles.fab}
+          accessibilityRole="button"
+          accessibilityLabel="Add group"
+        >
+          <Ionicons name="add" size={32} color={colors.backgroundDark} />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
@@ -71,5 +83,21 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.xl,
     paddingBottom: spacing.xxxl,
+  },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 96,
+    width: 58,
+    height: 58,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
   },
 });

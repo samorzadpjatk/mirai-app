@@ -22,6 +22,7 @@ export function useGroups(tripId?: string | null) {
         id: group.id,
         name: group.name,
         code: group.code,
+        image: group.image,
         participantCount: group.participants.length,
       }));
   }, [groups, searchQuery]);

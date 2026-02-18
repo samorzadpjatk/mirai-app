@@ -48,6 +48,10 @@ const inferBucketFromPath = (rawPath: string): { bucket: string; path: string } 
     return { bucket, path: normalized };
   }
 
+  if (normalized.startsWith("group/")) {
+    return { bucket: IMAGE_BUCKET, path: normalized };
+  }
+
   if (normalized.startsWith("trips/")) {
     return { bucket: IMAGE_BUCKET, path: normalized };
   }
@@ -127,7 +131,7 @@ export const parseSupabaseStoragePath = (
     }
 
     if (!SUPABASE_OBJECT_PREFIXES.has(firstSegment) &&
-      !["challenge", "avatar", "files-public", "trips"].includes(firstSegment)) {
+      !["challenge", "group", "avatar", "files-public", "trips"].includes(firstSegment)) {
       const bucket = normalizeBucketName(segments.shift());
       if (!bucket) return null;
 

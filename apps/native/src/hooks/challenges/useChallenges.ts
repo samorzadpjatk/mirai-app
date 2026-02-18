@@ -76,11 +76,13 @@ export function useChallenges(tripId?: string | null) {
             ? "solved"
             : mySubmissionStatus === "PENDING"
               ? "submitted"
-              : mySubmissionStatus === "REJECTED"
-                ? "rejected"
-                : rawStatus === "VOTING_PHASE" || rawStatus === "COMPLETED"
-                  ? "locked"
-                  : "to_solve";
+            : mySubmissionStatus === "REJECTED"
+              ? "rejected"
+              : rawStatus === "VOTING_PHASE"
+                ? "locked"
+              : rawStatus === "COMPLETED"
+                ? "completed"
+              : "to_solve";
 
       const basePoints = dbChallenge.basePoints ?? 0;
       const maxPoints =
@@ -95,6 +97,7 @@ export function useChallenges(tripId?: string | null) {
         icon: "trophy",
         iconColor: colors.primary,
         status: cardStatus,
+        scoringCategory: dbChallenge.scoringCategory ?? undefined,
         lifecycleStatus: rawStatus,
         description: dbChallenge.description ?? undefined,
         image: dbChallenge.image ?? undefined,

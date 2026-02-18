@@ -50,7 +50,7 @@ export function useGroupEditor(groupId?: string | null) {
   const updateGroup = async (data: {
     id: string;
     name?: string;
-    code?: string;
+    image?: string;
     tripId?: string;
   }) => {
     const tripId = data.tripId ?? groupQuery.data?.trip?.id;

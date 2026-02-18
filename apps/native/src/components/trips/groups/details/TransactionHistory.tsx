@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, borderRadius } from "../../../../styles";
+import { colors, spacing, borderRadius, typography } from "../../../../styles";
 
 interface CoinTransaction {
   id: string;
@@ -45,12 +45,12 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   if (!transactions || transactions.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Treasury Transactions</Text>
+        <Text style={styles.title}>Coin Transactions</Text>
         <View style={styles.emptyState}>
           <Ionicons name="receipt-outline" size={48} color="#64748b" />
           <Text style={styles.emptyText}>No transactions yet</Text>
           <Text style={styles.emptySubtext}>
-            Treasury transactions will appear here once coins are added or removed
+            Coin transactions will appear here once coins are added or removed
           </Text>
         </View>
       </View>
@@ -59,7 +59,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Treasury Transactions</Text>
+      <Text style={styles.title}>Coin Transactions</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -106,11 +106,12 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: colors.white,
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    color: colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    paddingHorizontal: spacing.xs,
   },
   emptyState: {
     backgroundColor: "rgba(35, 38, 43, 0.8)",
@@ -136,6 +137,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     gap: spacing.md,
     paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
   },
   transactionCard: {
     backgroundColor: "rgba(35, 38, 43, 0.8)",

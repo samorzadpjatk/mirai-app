@@ -128,6 +128,13 @@ const getStatusMeta = (status: ChallengeListItem["status"]) => {
         borderColor: "rgba(239,68,68,0.45)",
         backgroundColor: "rgba(239,68,68,0.2)",
       };
+    case "completed":
+      return {
+        label: "Completed",
+        textColor: "#94a3b8",
+        borderColor: "rgba(148,163,184,0.45)",
+        backgroundColor: "rgba(15,23,42,0.78)",
+      };
     case "locked":
       return {
         label: "Locked",

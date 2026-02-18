@@ -22,14 +22,14 @@ export function useCreateGroup(tripId?: string | null) {
 
   const createGroup = async (args: {
     name: string;
-    code: string;
+    image?: string;
     selectedMembers?: string[];
   }) => {
-    const { name, code, selectedMembers = [] } = args;
+    const { name, image, selectedMembers = [] } = args;
     const result = await createMutation.mutateAsync({
       tripId: tripId ?? "",
       name,
-      code,
+      image,
     });
 
     // assign members if any

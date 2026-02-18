@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { RankedGroup } from "./types";
@@ -12,9 +12,10 @@ const MEDAL_COLORS = {
 interface PodiumPlaceProps {
   group?: RankedGroup;
   position: 1 | 2 | 3;
+  onPressGroup?: (group: RankedGroup) => void;
 }
 
-function PodiumPlace({ group, position }: PodiumPlaceProps) {
+function PodiumPlace({ group, position, onPressGroup }: PodiumPlaceProps) {
   if (!group) {
     return (
       <View style={styles.podiumColumn}>
@@ -38,7 +39,11 @@ function PodiumPlace({ group, position }: PodiumPlaceProps) {
     position === 1 ? "rgba(255, 204, 0, 0.3)" : "rgba(255, 255, 255, 0.1)";
 
   return (
-    <View style={styles.podiumColumn}>
+    <TouchableOpacity
+      style={styles.podiumColumn}
+      activeOpacity={0.85}
+      onPress={() => onPressGroup?.(group)}
+    >
       <View style={styles.avatarContainer}>
         <View
           style={[
@@ -52,9 +57,17 @@ function PodiumPlace({ group, position }: PodiumPlaceProps) {
             position === 1 && styles.avatarGlow,
           ]}
         >
-          <Text style={[styles.avatarText, { color: medalColor }]}>
-            {group.name.charAt(0)}
-          </Text>
+          {group.image ? (
+            <Image
+              source={{ uri: group.image }}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={[styles.avatarText, { color: medalColor }]}>
+              {group.name.charAt(0)}
+            </Text>
+          )}
         </View>
 
         {position === 1 && (
@@ -103,24 +116,25 @@ function PodiumPlace({ group, position }: PodiumPlaceProps) {
           {group.coins.toLocaleString()} pts
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 interface LeaderboardPodiumProps {
   topThree: RankedGroup[];
+  onPressGroup?: (group: RankedGroup) => void;
 }
 
-export function LeaderboardPodium({ topThree }: LeaderboardPodiumProps) {
+export function LeaderboardPodium({ topThree, onPressGroup }: LeaderboardPodiumProps) {
   return (
     <View style={styles.container}>
       <View style={styles.glow} />
       <View style={styles.podiumRow}>
-        <PodiumPlace group={topThree[1]} position={2} />
+        <PodiumPlace group={topThree[1]} position={2} onPressGroup={onPressGroup} />
         <View style={styles.firstPlaceOffset}>
-          <PodiumPlace group={topThree[0]} position={1} />
+          <PodiumPlace group={topThree[0]} position={1} onPressGroup={onPressGroup} />
         </View>
-        <PodiumPlace group={topThree[2]} position={3} />
+        <PodiumPlace group={topThree[2]} position={3} onPressGroup={onPressGroup} />
       </View>
     </View>
   );
@@ -184,6 +198,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardDark,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   avatarGlow: {
     shadowColor: MEDAL_COLORS.gold,

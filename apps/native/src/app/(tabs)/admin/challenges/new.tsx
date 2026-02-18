@@ -66,6 +66,13 @@ const formatTime = (date: Date | null) => {
 
 const formatIso = (date: Date | null) => (date ? date.toISOString() : "");
 
+const parseCoordinate = (value: string) => {
+  const normalized = value.trim().replace(",", ".");
+  if (!normalized) return undefined;
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
   if (asset.fileName) {
     const parts = asset.fileName.split(".");
@@ -345,12 +352,27 @@ export default function NewChallengeScreen() {
       return false;
     }
 
-    if (needsLocation && (!form.targetLatitude || !form.targetLongitude)) {
-      Alert.alert(
-        "Error",
-        "Provide target latitude and longitude for location challenges",
-      );
-      return false;
+    if (needsLocation) {
+      const latitude = parseCoordinate(form.targetLatitude);
+      const longitude = parseCoordinate(form.targetLongitude);
+
+      if (latitude == null || longitude == null) {
+        Alert.alert(
+          "Error",
+          "Provide valid latitude and longitude for location challenges",
+        );
+        return false;
+      }
+
+      if (latitude < -90 || latitude > 90) {
+        Alert.alert("Error", "Latitude must be between -90 and 90.");
+        return false;
+      }
+
+      if (longitude < -180 || longitude > 180) {
+        Alert.alert("Error", "Longitude must be between -180 and 180.");
+        return false;
+      }
     }
 
     if (form.submissionType === "QR_CODE" && !form.qrCodeValue.trim()) {
@@ -411,6 +433,21 @@ export default function NewChallengeScreen() {
       return;
     }
 
+    const normalizedTargetLatitude = needsLocation
+      ? parseCoordinate(form.targetLatitude)
+      : undefined;
+    const normalizedTargetLongitude = needsLocation
+      ? parseCoordinate(form.targetLongitude)
+      : undefined;
+
+    if (
+      needsLocation &&
+      (normalizedTargetLatitude == null || normalizedTargetLongitude == null)
+    ) {
+      Alert.alert("Error", "Provide valid latitude and longitude.");
+      return;
+    }
+
     try {
       await createChallengeMutation.mutateAsync({
         tripId,
@@ -453,8 +490,8 @@ export default function NewChallengeScreen() {
           ? formatIso(form.votingStartTime) || undefined
           : undefined,
         votingEndTime: isPeerVoting ? formatIso(form.votingEndTime) || undefined : undefined,
-        targetLatitude: needsLocation ? toOptionalFloat(form.targetLatitude) : undefined,
-        targetLongitude: needsLocation ? toOptionalFloat(form.targetLongitude) : undefined,
+        targetLatitude: normalizedTargetLatitude,
+        targetLongitude: normalizedTargetLongitude,
         qrCodeValue:
           form.submissionType === "QR_CODE"
             ? form.qrCodeValue.trim() || undefined
@@ -589,6 +626,9 @@ export default function NewChallengeScreen() {
                         form.targetLongitude,
                       ).toFixed(5)}`
                     : "No location selected"}
+                </Text>
+                <Text style={styles.hint}>
+                  Latitude: -90..90, Longitude: -180..180 (dot or comma).
                 </Text>
                 <View style={styles.inlineInputs}>
                   <TextInput

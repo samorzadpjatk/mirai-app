@@ -1,4 +1,5 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { GroupListItem } from "./types";
 
@@ -6,9 +7,6 @@ interface GroupCardProps {
   group: GroupListItem;
   onPress: (group: GroupListItem) => void;
 }
-
-const fallbackImageUrl =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAAS2zSMxTSKS4ahYOJMp2FPODvfnWpJWEx9wVJoEo-NKcKOJ3sToQUAvVyXxwV7M5kUP4YtUFW5ONJgD2pQvHLDnK_DmMoh89v7OnFKnNPTGk7XoT57atxbRKstTxXX-SxO3b9Vg0YDkpxvwIV6h3INZMiZkO7q-me9guXfO0PQKfepPR1UUWhTtyN_DkaPl0tGzOfpO66rVeit7Y6hAeigW4DJrqFN_RtUvpZRB2CC7eILz_EO85S_q_X7UvLXc3Zm8bgT_iWuww";
 
 export function GroupCard({ group, onPress }: GroupCardProps) {
   return (
@@ -18,11 +16,17 @@ export function GroupCard({ group, onPress }: GroupCardProps) {
       onPress={() => onPress(group)}
     >
       <View style={styles.groupImageContainer}>
-        <Image
-          source={{ uri: fallbackImageUrl }}
-          style={styles.groupImage}
-          resizeMode="cover"
-        />
+        {group.image ? (
+          <Image
+            source={{ uri: group.image }}
+            style={styles.groupImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.groupImagePlaceholder}>
+            <Ionicons name="images-outline" size={20} color={colors.primary} />
+          </View>
+        )}
       </View>
 
       <View style={styles.groupInfo}>
@@ -58,6 +62,16 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  groupImagePlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(39, 41, 53, 0.8)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   groupInfo: {
     flex: 1,

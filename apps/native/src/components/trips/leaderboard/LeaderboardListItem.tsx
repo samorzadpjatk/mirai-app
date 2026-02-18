@@ -1,14 +1,19 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { RankedGroup } from "./types";
 
 interface LeaderboardListItemProps {
   group: RankedGroup;
+  onPress?: (group: RankedGroup) => void;
 }
 
-export function LeaderboardListItem({ group }: LeaderboardListItemProps) {
+export function LeaderboardListItem({ group, onPress }: LeaderboardListItemProps) {
   return (
-    <View style={[styles.row, group.isCurrentUserGroup && styles.rowActive]}>
+    <TouchableOpacity
+      style={[styles.row, group.isCurrentUserGroup && styles.rowActive]}
+      activeOpacity={0.85}
+      onPress={() => onPress?.(group)}
+    >
       <View style={styles.rankCell}>
         <Text
           style={[
@@ -23,7 +28,11 @@ export function LeaderboardListItem({ group }: LeaderboardListItemProps) {
       <View
         style={[styles.avatar, group.isCurrentUserGroup && styles.avatarActive]}
       >
-        <Text style={styles.avatarText}>{group.name.charAt(0)}</Text>
+        {group.image ? (
+          <Image source={{ uri: group.image }} style={styles.avatarImage} resizeMode="cover" />
+        ) : (
+          <Text style={styles.avatarText}>{group.name.charAt(0)}</Text>
+        )}
       </View>
 
       <View style={styles.content}>
@@ -50,7 +59,7 @@ export function LeaderboardListItem({ group }: LeaderboardListItemProps) {
           {group.coins.toLocaleString()} pts
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -91,6 +100,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardDark,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   avatarActive: {
     borderWidth: 2,

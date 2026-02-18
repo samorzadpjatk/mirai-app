@@ -3,35 +3,32 @@ import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography, shadows } from "~/styles";
 
 interface GroupDetailsHeroProps {
-  code: string;
   name: string;
-  imageUrl: string;
+  imageUrl?: string | null;
 }
 
 export function GroupDetailsHero({
-  code,
   name,
   imageUrl,
 }: GroupDetailsHeroProps) {
   return (
     <View style={[styles.heroCard, shadows.primaryGlow]}>
       <View style={styles.heroImageContainer}>
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.heroImage}
-          resizeMode="cover"
-        />
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.heroImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.heroImagePlaceholder}>
+            <Ionicons name="images-outline" size={40} color={colors.primary} />
+            <Text style={styles.placeholderText}>No group image</Text>
+          </View>
+        )}
         <View style={styles.heroGradient} />
       </View>
 
       <View style={styles.heroContent}>
         <View style={styles.heroHeader}>
           <View style={styles.heroTextSection}>
-            <Text style={styles.squadLabel}>{code}</Text>
             <Text style={styles.groupName}>{name}</Text>
-          </View>
-          <View style={styles.shieldBadge}>
-            <Ionicons name="shield" size={32} color={colors.primary} />
           </View>
         </View>
       </View>
@@ -56,6 +53,21 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  heroImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    backgroundColor: "rgba(39, 41, 53, 0.9)",
+  },
+  placeholderText: {
+    fontSize: typography.sm,
+    fontWeight: typography.medium,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
   heroGradient: {
     position: "absolute",
     bottom: 0,
@@ -78,14 +90,6 @@ const styles = StyleSheet.create({
   heroTextSection: {
     flex: 1,
   },
-  squadLabel: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    marginBottom: spacing.xs,
-  },
   groupName: {
     fontSize: 28,
     fontWeight: typography.bold,
@@ -93,12 +97,5 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: -1,
     lineHeight: 28,
-  },
-  shieldBadge: {
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.3)",
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
   },
 });

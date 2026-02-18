@@ -6,12 +6,14 @@ interface ChallengeActionButtonProps {
   isLoading: boolean;
   onPress: () => void;
   label?: string;
+  iconName?: keyof typeof Ionicons.glyphMap;
 }
 
 export function ChallengeActionButton({
   isLoading,
   onPress,
   label,
+  iconName = "camera",
 }: ChallengeActionButtonProps) {
   const buttonLabel =
     label ?? (isLoading ? "Loading..." : "Take Challenge Photo");
@@ -21,7 +23,7 @@ export function ChallengeActionButton({
       disabled={isLoading}
       style={[styles.button, isLoading && styles.buttonLoading]}
     >
-      <Ionicons name="camera" size={24} color={colors.backgroundDark} />
+      <Ionicons name={iconName} size={24} color={colors.backgroundDark} />
       <Text style={styles.buttonText}>{buttonLabel}</Text>
     </TouchableOpacity>
   );

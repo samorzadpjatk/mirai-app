@@ -4,13 +4,13 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 interface GroupStatsGridProps {
   membersCount: number;
   points: number;
-  code: string;
+  rankingPosition?: number | null;
 }
 
 export function GroupStatsGrid({
   membersCount,
   points,
-  code,
+  rankingPosition,
 }: GroupStatsGridProps) {
   return (
     <View style={styles.statsGrid}>
@@ -27,8 +27,10 @@ export function GroupStatsGrid({
       </View>
 
       <View style={styles.statCard}>
-        <Text style={styles.statLabel}>Code</Text>
-        <Text style={[styles.statValue, styles.statValueCode]}>{code}</Text>
+        <Text style={styles.statLabel}>Position</Text>
+        <Text style={[styles.statValue, styles.statValuePosition]}>
+          {rankingPosition ? `#${rankingPosition}` : "--"}
+        </Text>
       </View>
     </View>
   );
@@ -64,8 +66,8 @@ const styles = StyleSheet.create({
     color: colors.white,
     lineHeight: typography.xl,
   },
-  statValueCode: {
-    color: colors.accentMagenta,
-    fontSize: typography.base,
+  statValuePosition: {
+    color: colors.primary,
+    fontSize: typography.lg,
   },
 });

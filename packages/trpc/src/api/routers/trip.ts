@@ -6,6 +6,40 @@ import {
   protectedProcedure,
 } from "../../api/trpc";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
+import { normalizeSupabaseStoragePath } from "../../utils/storage";
+
+const GROUP_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
+
+const resolveGroupImage = async (
+  supabase: {
+    storage: {
+      from: (bucket: string) => {
+        createSignedUrl: (
+          path: string,
+          expiresIn: number,
+        ) => Promise<{ data: { signedUrl?: string | null } | null; error: unknown }>;
+      };
+    };
+  },
+  image: string | null | undefined,
+) => {
+  if (!image) return null;
+
+  const parsed = normalizeSupabaseStoragePath(image);
+  if (!parsed) {
+    return image;
+  }
+
+  const { data, error } = await supabase.storage
+    .from(parsed.bucket)
+    .createSignedUrl(parsed.path, GROUP_IMAGE_SIGNED_URL_SECONDS);
+
+  if (error || !data?.signedUrl) {
+    return null;
+  }
+
+  return data.signedUrl;
+};
 
 export const tripRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -51,6 +85,7 @@ export const tripRouter = createTRPCRouter({
               id: true,
               name: true,
               code: true,
+              image: true,
               coins: true,
               _count: {
                 select: { participants: true }
@@ -72,6 +107,7 @@ export const tripRouter = createTRPCRouter({
                 select: {
                   id: true,
                   name: true,
+                  image: true,
                   coins: true,
                   _count: {
                     select: { participants: true }
@@ -93,10 +129,22 @@ export const tripRouter = createTRPCRouter({
 
       return {
         ...trip,
+        groups: await Promise.all(
+          trip.groups.map(async (group) => ({
+            ...group,
+            image: await resolveGroupImage(ctx.supabase, group.image),
+          })),
+        ),
         participants: trip.participants.map((participant) => {
           const { authUserId, ...user } = participant.user;
           return {
             ...participant,
+            group: participant.group
+              ? {
+                  ...participant.group,
+                  image: participant.group.image,
+                }
+              : participant.group,
             user: {
               ...user,
               email: resolveAuthEmail(emailByAuthUserId, authUserId),
