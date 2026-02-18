@@ -262,6 +262,7 @@ export type GroupWhereInput = {
   coinTransactions?: Prisma.CoinTransactionListRelationFilter
   organizedEvents?: Prisma.EventListRelationFilter
   challengeSubmissions?: Prisma.ChallengeSubmissionListRelationFilter
+  rewardPurchases?: Prisma.RewardPurchaseListRelationFilter
   submissionActivities?: Prisma.SubmissionActivityListRelationFilter
   rankChangeActivities?: Prisma.RankChangeActivityListRelationFilter
 }
@@ -283,6 +284,7 @@ export type GroupOrderByWithRelationInput = {
   coinTransactions?: Prisma.CoinTransactionOrderByRelationAggregateInput
   organizedEvents?: Prisma.EventOrderByRelationAggregateInput
   challengeSubmissions?: Prisma.ChallengeSubmissionOrderByRelationAggregateInput
+  rewardPurchases?: Prisma.RewardPurchaseOrderByRelationAggregateInput
   submissionActivities?: Prisma.SubmissionActivityOrderByRelationAggregateInput
   rankChangeActivities?: Prisma.RankChangeActivityOrderByRelationAggregateInput
 }
@@ -307,6 +309,7 @@ export type GroupWhereUniqueInput = Prisma.AtLeast<{
   coinTransactions?: Prisma.CoinTransactionListRelationFilter
   organizedEvents?: Prisma.EventListRelationFilter
   challengeSubmissions?: Prisma.ChallengeSubmissionListRelationFilter
+  rewardPurchases?: Prisma.RewardPurchaseListRelationFilter
   submissionActivities?: Prisma.SubmissionActivityListRelationFilter
   rankChangeActivities?: Prisma.RankChangeActivityListRelationFilter
 }, "id" | "code">
@@ -360,6 +363,7 @@ export type GroupCreateInput = {
   coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
 }
@@ -379,6 +383,7 @@ export type GroupUncheckedCreateInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
 }
@@ -398,6 +403,7 @@ export type GroupUpdateInput = {
   coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
 }
@@ -417,6 +423,7 @@ export type GroupUncheckedUpdateInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedUpdateManyWithoutGroupNestedInput
 }
@@ -705,6 +712,20 @@ export type GroupUpdateOneRequiredWithoutCoinTransactionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.GroupUpdateToOneWithWhereWithoutCoinTransactionsInput, Prisma.GroupUpdateWithoutCoinTransactionsInput>, Prisma.GroupUncheckedUpdateWithoutCoinTransactionsInput>
 }
 
+export type GroupCreateNestedOneWithoutRewardPurchasesInput = {
+  create?: Prisma.XOR<Prisma.GroupCreateWithoutRewardPurchasesInput, Prisma.GroupUncheckedCreateWithoutRewardPurchasesInput>
+  connectOrCreate?: Prisma.GroupCreateOrConnectWithoutRewardPurchasesInput
+  connect?: Prisma.GroupWhereUniqueInput
+}
+
+export type GroupUpdateOneRequiredWithoutRewardPurchasesNestedInput = {
+  create?: Prisma.XOR<Prisma.GroupCreateWithoutRewardPurchasesInput, Prisma.GroupUncheckedCreateWithoutRewardPurchasesInput>
+  connectOrCreate?: Prisma.GroupCreateOrConnectWithoutRewardPurchasesInput
+  upsert?: Prisma.GroupUpsertWithoutRewardPurchasesInput
+  connect?: Prisma.GroupWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.GroupUpdateToOneWithWhereWithoutRewardPurchasesInput, Prisma.GroupUpdateWithoutRewardPurchasesInput>, Prisma.GroupUncheckedUpdateWithoutRewardPurchasesInput>
+}
+
 export type GroupCreateWithoutOrganizerInput = {
   id?: string
   name: string
@@ -719,6 +740,7 @@ export type GroupCreateWithoutOrganizerInput = {
   coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
 }
@@ -737,6 +759,7 @@ export type GroupUncheckedCreateWithoutOrganizerInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
 }
@@ -797,6 +820,7 @@ export type GroupCreateWithoutTripInput = {
   coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
 }
@@ -815,6 +839,7 @@ export type GroupUncheckedCreateWithoutTripInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
 }
@@ -859,6 +884,7 @@ export type GroupCreateWithoutParticipantsInput = {
   coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
 }
@@ -877,6 +903,7 @@ export type GroupUncheckedCreateWithoutParticipantsInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
 }
@@ -911,6 +938,7 @@ export type GroupUpdateWithoutParticipantsInput = {
   coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
 }
@@ -929,6 +957,7 @@ export type GroupUncheckedUpdateWithoutParticipantsInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedUpdateManyWithoutGroupNestedInput
 }
@@ -947,6 +976,7 @@ export type GroupCreateWithoutOrganizedEventsInput = {
   participants?: Prisma.TripParticipantCreateNestedManyWithoutGroupInput
   coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
 }
@@ -965,6 +995,7 @@ export type GroupUncheckedCreateWithoutOrganizedEventsInput = {
   participants?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutGroupInput
   coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
 }
@@ -999,6 +1030,7 @@ export type GroupUpdateWithoutOrganizedEventsInput = {
   participants?: Prisma.TripParticipantUpdateManyWithoutGroupNestedInput
   coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
 }
@@ -1017,6 +1049,7 @@ export type GroupUncheckedUpdateWithoutOrganizedEventsInput = {
   participants?: Prisma.TripParticipantUncheckedUpdateManyWithoutGroupNestedInput
   coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedUpdateManyWithoutGroupNestedInput
 }
@@ -1035,6 +1068,7 @@ export type GroupCreateWithoutChallengeSubmissionsInput = {
   participants?: Prisma.TripParticipantCreateNestedManyWithoutGroupInput
   coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
 }
@@ -1053,6 +1087,7 @@ export type GroupUncheckedCreateWithoutChallengeSubmissionsInput = {
   participants?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutGroupInput
   coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
 }
@@ -1087,6 +1122,7 @@ export type GroupUpdateWithoutChallengeSubmissionsInput = {
   participants?: Prisma.TripParticipantUpdateManyWithoutGroupNestedInput
   coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
 }
@@ -1105,6 +1141,7 @@ export type GroupUncheckedUpdateWithoutChallengeSubmissionsInput = {
   participants?: Prisma.TripParticipantUncheckedUpdateManyWithoutGroupNestedInput
   coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedUpdateManyWithoutGroupNestedInput
 }
@@ -1124,6 +1161,7 @@ export type GroupCreateWithoutSubmissionActivitiesInput = {
   coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
 }
 
@@ -1142,6 +1180,7 @@ export type GroupUncheckedCreateWithoutSubmissionActivitiesInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
 }
 
@@ -1176,6 +1215,7 @@ export type GroupUpdateWithoutSubmissionActivitiesInput = {
   coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
 }
 
@@ -1194,6 +1234,7 @@ export type GroupUncheckedUpdateWithoutSubmissionActivitiesInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedUpdateManyWithoutGroupNestedInput
 }
 
@@ -1212,6 +1253,7 @@ export type GroupCreateWithoutRankChangeActivitiesInput = {
   coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
 }
 
@@ -1230,6 +1272,7 @@ export type GroupUncheckedCreateWithoutRankChangeActivitiesInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
 }
 
@@ -1264,6 +1307,7 @@ export type GroupUpdateWithoutRankChangeActivitiesInput = {
   coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
 }
 
@@ -1282,6 +1326,7 @@ export type GroupUncheckedUpdateWithoutRankChangeActivitiesInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
 }
 
@@ -1299,6 +1344,7 @@ export type GroupCreateWithoutCoinTransactionsInput = {
   participants?: Prisma.TripParticipantCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
 }
@@ -1317,6 +1363,7 @@ export type GroupUncheckedCreateWithoutCoinTransactionsInput = {
   participants?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutGroupInput
   organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedCreateNestedManyWithoutGroupInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
 }
@@ -1351,6 +1398,7 @@ export type GroupUpdateWithoutCoinTransactionsInput = {
   participants?: Prisma.TripParticipantUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
 }
@@ -1367,6 +1415,99 @@ export type GroupUncheckedUpdateWithoutCoinTransactionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   participants?: Prisma.TripParticipantUncheckedUpdateManyWithoutGroupNestedInput
+  organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
+  rankChangeActivities?: Prisma.RankChangeActivityUncheckedUpdateManyWithoutGroupNestedInput
+}
+
+export type GroupCreateWithoutRewardPurchasesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  image?: string | null
+  code: string
+  coins?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  organizer: Prisma.UserCreateNestedOneWithoutOrganizerGroupInput
+  trip: Prisma.TripCreateNestedOneWithoutGroupsInput
+  participants?: Prisma.TripParticipantCreateNestedManyWithoutGroupInput
+  coinTransactions?: Prisma.CoinTransactionCreateNestedManyWithoutGroupInput
+  organizedEvents?: Prisma.EventCreateNestedManyWithoutOrganizerGroupInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutGroupInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutGroupInput
+  rankChangeActivities?: Prisma.RankChangeActivityCreateNestedManyWithoutGroupInput
+}
+
+export type GroupUncheckedCreateWithoutRewardPurchasesInput = {
+  id?: string
+  tripId: string
+  name: string
+  description?: string | null
+  image?: string | null
+  organizerId: string
+  code: string
+  coins?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  participants?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutGroupInput
+  coinTransactions?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutGroupInput
+  organizedEvents?: Prisma.EventUncheckedCreateNestedManyWithoutOrganizerGroupInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutGroupInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutGroupInput
+  rankChangeActivities?: Prisma.RankChangeActivityUncheckedCreateNestedManyWithoutGroupInput
+}
+
+export type GroupCreateOrConnectWithoutRewardPurchasesInput = {
+  where: Prisma.GroupWhereUniqueInput
+  create: Prisma.XOR<Prisma.GroupCreateWithoutRewardPurchasesInput, Prisma.GroupUncheckedCreateWithoutRewardPurchasesInput>
+}
+
+export type GroupUpsertWithoutRewardPurchasesInput = {
+  update: Prisma.XOR<Prisma.GroupUpdateWithoutRewardPurchasesInput, Prisma.GroupUncheckedUpdateWithoutRewardPurchasesInput>
+  create: Prisma.XOR<Prisma.GroupCreateWithoutRewardPurchasesInput, Prisma.GroupUncheckedCreateWithoutRewardPurchasesInput>
+  where?: Prisma.GroupWhereInput
+}
+
+export type GroupUpdateToOneWithWhereWithoutRewardPurchasesInput = {
+  where?: Prisma.GroupWhereInput
+  data: Prisma.XOR<Prisma.GroupUpdateWithoutRewardPurchasesInput, Prisma.GroupUncheckedUpdateWithoutRewardPurchasesInput>
+}
+
+export type GroupUpdateWithoutRewardPurchasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  coins?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organizer?: Prisma.UserUpdateOneRequiredWithoutOrganizerGroupNestedInput
+  trip?: Prisma.TripUpdateOneRequiredWithoutGroupsNestedInput
+  participants?: Prisma.TripParticipantUpdateManyWithoutGroupNestedInput
+  coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
+  organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
+  challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
+  rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
+}
+
+export type GroupUncheckedUpdateWithoutRewardPurchasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tripId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organizerId?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  coins?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  participants?: Prisma.TripParticipantUncheckedUpdateManyWithoutGroupNestedInput
+  coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
@@ -1399,6 +1540,7 @@ export type GroupUpdateWithoutOrganizerInput = {
   coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
 }
@@ -1417,6 +1559,7 @@ export type GroupUncheckedUpdateWithoutOrganizerInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedUpdateManyWithoutGroupNestedInput
 }
@@ -1459,6 +1602,7 @@ export type GroupUpdateWithoutTripInput = {
   coinTransactions?: Prisma.CoinTransactionUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUpdateManyWithoutGroupNestedInput
 }
@@ -1477,6 +1621,7 @@ export type GroupUncheckedUpdateWithoutTripInput = {
   coinTransactions?: Prisma.CoinTransactionUncheckedUpdateManyWithoutGroupNestedInput
   organizedEvents?: Prisma.EventUncheckedUpdateManyWithoutOrganizerGroupNestedInput
   challengeSubmissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutGroupNestedInput
+  rewardPurchases?: Prisma.RewardPurchaseUncheckedUpdateManyWithoutGroupNestedInput
   submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutGroupNestedInput
   rankChangeActivities?: Prisma.RankChangeActivityUncheckedUpdateManyWithoutGroupNestedInput
 }
@@ -1503,6 +1648,7 @@ export type GroupCountOutputType = {
   coinTransactions: number
   organizedEvents: number
   challengeSubmissions: number
+  rewardPurchases: number
   submissionActivities: number
   rankChangeActivities: number
 }
@@ -1512,6 +1658,7 @@ export type GroupCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.
   coinTransactions?: boolean | GroupCountOutputTypeCountCoinTransactionsArgs
   organizedEvents?: boolean | GroupCountOutputTypeCountOrganizedEventsArgs
   challengeSubmissions?: boolean | GroupCountOutputTypeCountChallengeSubmissionsArgs
+  rewardPurchases?: boolean | GroupCountOutputTypeCountRewardPurchasesArgs
   submissionActivities?: boolean | GroupCountOutputTypeCountSubmissionActivitiesArgs
   rankChangeActivities?: boolean | GroupCountOutputTypeCountRankChangeActivitiesArgs
 }
@@ -1557,6 +1704,13 @@ export type GroupCountOutputTypeCountChallengeSubmissionsArgs<ExtArgs extends ru
 /**
  * GroupCountOutputType without action
  */
+export type GroupCountOutputTypeCountRewardPurchasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RewardPurchaseWhereInput
+}
+
+/**
+ * GroupCountOutputType without action
+ */
 export type GroupCountOutputTypeCountSubmissionActivitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.SubmissionActivityWhereInput
 }
@@ -1586,6 +1740,7 @@ export type GroupSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   coinTransactions?: boolean | Prisma.Group$coinTransactionsArgs<ExtArgs>
   organizedEvents?: boolean | Prisma.Group$organizedEventsArgs<ExtArgs>
   challengeSubmissions?: boolean | Prisma.Group$challengeSubmissionsArgs<ExtArgs>
+  rewardPurchases?: boolean | Prisma.Group$rewardPurchasesArgs<ExtArgs>
   submissionActivities?: boolean | Prisma.Group$submissionActivitiesArgs<ExtArgs>
   rankChangeActivities?: boolean | Prisma.Group$rankChangeActivitiesArgs<ExtArgs>
   _count?: boolean | Prisma.GroupCountOutputTypeDefaultArgs<ExtArgs>
@@ -1642,6 +1797,7 @@ export type GroupInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   coinTransactions?: boolean | Prisma.Group$coinTransactionsArgs<ExtArgs>
   organizedEvents?: boolean | Prisma.Group$organizedEventsArgs<ExtArgs>
   challengeSubmissions?: boolean | Prisma.Group$challengeSubmissionsArgs<ExtArgs>
+  rewardPurchases?: boolean | Prisma.Group$rewardPurchasesArgs<ExtArgs>
   submissionActivities?: boolean | Prisma.Group$submissionActivitiesArgs<ExtArgs>
   rankChangeActivities?: boolean | Prisma.Group$rankChangeActivitiesArgs<ExtArgs>
   _count?: boolean | Prisma.GroupCountOutputTypeDefaultArgs<ExtArgs>
@@ -1664,6 +1820,7 @@ export type $GroupPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     coinTransactions: Prisma.$CoinTransactionPayload<ExtArgs>[]
     organizedEvents: Prisma.$EventPayload<ExtArgs>[]
     challengeSubmissions: Prisma.$ChallengeSubmissionPayload<ExtArgs>[]
+    rewardPurchases: Prisma.$RewardPurchasePayload<ExtArgs>[]
     submissionActivities: Prisma.$SubmissionActivityPayload<ExtArgs>[]
     rankChangeActivities: Prisma.$RankChangeActivityPayload<ExtArgs>[]
   }
@@ -2078,6 +2235,7 @@ export interface Prisma__GroupClient<T, Null = never, ExtArgs extends runtime.Ty
   coinTransactions<T extends Prisma.Group$coinTransactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$coinTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CoinTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   organizedEvents<T extends Prisma.Group$organizedEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$organizedEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   challengeSubmissions<T extends Prisma.Group$challengeSubmissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$challengeSubmissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengeSubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  rewardPurchases<T extends Prisma.Group$rewardPurchasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$rewardPurchasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RewardPurchasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   submissionActivities<T extends Prisma.Group$submissionActivitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$submissionActivitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubmissionActivityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   rankChangeActivities<T extends Prisma.Group$rankChangeActivitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Group$rankChangeActivitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RankChangeActivityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2608,6 +2766,30 @@ export type Group$challengeSubmissionsArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.ChallengeSubmissionScalarFieldEnum | Prisma.ChallengeSubmissionScalarFieldEnum[]
+}
+
+/**
+ * Group.rewardPurchases
+ */
+export type Group$rewardPurchasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RewardPurchase
+   */
+  select?: Prisma.RewardPurchaseSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RewardPurchase
+   */
+  omit?: Prisma.RewardPurchaseOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RewardPurchaseInclude<ExtArgs> | null
+  where?: Prisma.RewardPurchaseWhereInput
+  orderBy?: Prisma.RewardPurchaseOrderByWithRelationInput | Prisma.RewardPurchaseOrderByWithRelationInput[]
+  cursor?: Prisma.RewardPurchaseWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RewardPurchaseScalarFieldEnum | Prisma.RewardPurchaseScalarFieldEnum[]
 }
 
 /**

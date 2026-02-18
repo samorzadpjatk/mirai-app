@@ -17,6 +17,7 @@ import { challengeVoteRouter } from "./routers/challengeVote";
 import { submissionReportRouter } from "./routers/submissionReport";
 import { notificationSenderRouter } from "./routers/notificationSender";
 import { storageRouter } from "./routers/storage";
+import { rewardRouter } from "./routers/reward";
 import { activityFeedRouter } from "./routers/activityFeed";
 
 /**
@@ -40,6 +41,7 @@ export const appRouter = createTRPCRouter({
   challengeVote: challengeVoteRouter,
   submissionReport: submissionReportRouter,
   storage: storageRouter,
+  reward: rewardRouter,
   activityFeed: activityFeedRouter,
 });
 

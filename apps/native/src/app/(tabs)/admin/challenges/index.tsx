@@ -217,7 +217,7 @@ export default function AdminChallengesScreen() {
                     {filter.label}
                   </Text>
                   <Text style={{ color, fontWeight: "800", fontSize: 16 }}>
-                    {statusCounts[filter.value as keyof typeof statusCounts] ?? 0}
+                    {statusCounts[filter.value] ?? 0}
                   </Text>
                 </View>
               );

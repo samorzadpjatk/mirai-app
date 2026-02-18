@@ -300,8 +300,8 @@ export default function ChallengeDetailScreen() {
                 <Camera
                   defaultSettings={{
                     centerCoordinate: [
-                      challenge.targetLongitude as number,
-                      challenge.targetLatitude as number,
+                      challenge.targetLongitude!,
+                      challenge.targetLatitude!,
                     ],
                     zoomLevel: 15,
                   }}
@@ -323,8 +323,8 @@ export default function ChallengeDetailScreen() {
                 <PointAnnotation
                   id="challenge-target"
                   coordinate={[
-                    challenge.targetLongitude as number,
-                    challenge.targetLatitude as number,
+                    challenge.targetLongitude!,
+                    challenge.targetLatitude!,
                   ]}
                 >
                   <View style={styles.targetLocationMarker} />

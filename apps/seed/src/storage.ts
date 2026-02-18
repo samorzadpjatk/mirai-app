@@ -4,7 +4,6 @@ import { assetsRoot } from "./constants";
 import type { SeedEnv } from "./types";
 import { listFilesRecursive, readFile } from "./utils/fs";
 import { joinPath, normalizePath, relativePath } from "./utils/path";
-import { STANDARD_BUCKETS, normalizeStoragePath } from '@integral-2025-app/shared';
 
 export const BUCKET_MAP = {
   public: () => env.publicBucket,
@@ -12,6 +11,7 @@ export const BUCKET_MAP = {
   videos: () => env.videoBucket,
   "trip/images": () => env.imageBucket,
   "trip/videos": () => env.videoBucket,
+  rewards: () => env.imageBucket,
 } as const;
 
 export const ensureBuckets = async () => {
@@ -76,9 +76,11 @@ export const uploadAssets = async (seedEnv: SeedEnv) => {
     const bucketEntry = Object.entries(BUCKET_MAP).find(([prefix]) => rel.startsWith(`${prefix}/`));
     if (!bucketEntry) continue;
 
-    const [, bucketFn] = bucketEntry;
+    const [prefix, bucketFn] = bucketEntry;
     const bucketName = bucketFn();
-    const objectPath = rel.replace(/^[^/]+\//, "");
+    const objectPath = prefix === "rewards"
+      ? rel // keep rewards/ namespace inside images bucket
+      : rel.replace(new RegExp(`^${prefix}/`), "");
 
     const file = readFile(absPath);
     const { size } = await file.stat();

@@ -1,0 +1,29 @@
+- name: "Pizza na wieczór"
+  description: "Zamówienie pizzy dla całej grupy na wieczorny relaks"
+  availableQuantity: 3
+  coinCost: 50
+  image: "pizza.jpg"
+
+- name: "Noc spóźnionego wstawania"
+  description: "Jednorazowe prawo do spóźnionego wstawania o 1 godzinę"
+  availableQuantity: 10
+  coinCost: 20
+  image: "sleep.jpg"
+
+- name: "Voucher na kawę"
+  description: "Kupon na kawę lub napój w trakcie wyprawy"
+  availableQuantity: 15
+  coinCost: 15
+  image: "coffee.jpg"
+
+- name: "Wybór muzyki"
+  description: "Możliwość wybrania playlisty na 1 godzinę podróży"
+  availableQuantity: 5
+  coinCost: 25
+  image: "music.jpg"
+
+- name: "Dodatkowy deser"
+  description: "Dodatkowy porcja deseru podczas posiłku"
+  availableQuantity: 8
+  coinCost: 30
+  image: "dessert.jpg"
