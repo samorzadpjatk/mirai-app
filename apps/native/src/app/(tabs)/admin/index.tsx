@@ -73,6 +73,15 @@ const tiles: TileType[] = [
     accentBg: colors.primaryOpacity10,
     route: '/admin/challenges',
   },
+  {
+    key: 'activity',
+    title: 'Activity',
+    subtitle: 'Feed moderation',
+    icon: 'pulse',
+    accent: colors.slate400,
+    accentBg: colors.cardDarkOpacity40,
+    route: '/admin/activity',
+  },
 ];
 
 export default function AdminPanelScreen() {

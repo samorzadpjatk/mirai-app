@@ -391,6 +391,8 @@ export type ChallengeWhereInput = {
   trip?: Prisma.XOR<Prisma.TripScalarRelationFilter, Prisma.TripWhereInput>
   submissions?: Prisma.ChallengeSubmissionListRelationFilter
   votes?: Prisma.ChallengeVoteListRelationFilter
+  submissionActivities?: Prisma.SubmissionActivityListRelationFilter
+  challengeActivities?: Prisma.ChallengeActivityListRelationFilter
 }
 
 export type ChallengeOrderByWithRelationInput = {
@@ -421,6 +423,8 @@ export type ChallengeOrderByWithRelationInput = {
   trip?: Prisma.TripOrderByWithRelationInput
   submissions?: Prisma.ChallengeSubmissionOrderByRelationAggregateInput
   votes?: Prisma.ChallengeVoteOrderByRelationAggregateInput
+  submissionActivities?: Prisma.SubmissionActivityOrderByRelationAggregateInput
+  challengeActivities?: Prisma.ChallengeActivityOrderByRelationAggregateInput
 }
 
 export type ChallengeWhereUniqueInput = Prisma.AtLeast<{
@@ -454,6 +458,8 @@ export type ChallengeWhereUniqueInput = Prisma.AtLeast<{
   trip?: Prisma.XOR<Prisma.TripScalarRelationFilter, Prisma.TripWhereInput>
   submissions?: Prisma.ChallengeSubmissionListRelationFilter
   votes?: Prisma.ChallengeVoteListRelationFilter
+  submissionActivities?: Prisma.SubmissionActivityListRelationFilter
+  challengeActivities?: Prisma.ChallengeActivityListRelationFilter
 }, "id">
 
 export type ChallengeOrderByWithAggregationInput = {
@@ -545,6 +551,8 @@ export type ChallengeCreateInput = {
   trip: Prisma.TripCreateNestedOneWithoutChallengesInput
   submissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutChallengeInput
   votes?: Prisma.ChallengeVoteCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityCreateNestedManyWithoutChallengeInput
 }
 
 export type ChallengeUncheckedCreateInput = {
@@ -574,6 +582,8 @@ export type ChallengeUncheckedCreateInput = {
   updatedAt?: Date | string
   submissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutChallengeInput
   votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedCreateNestedManyWithoutChallengeInput
 }
 
 export type ChallengeUpdateInput = {
@@ -603,6 +613,8 @@ export type ChallengeUpdateInput = {
   trip?: Prisma.TripUpdateOneRequiredWithoutChallengesNestedInput
   submissions?: Prisma.ChallengeSubmissionUpdateManyWithoutChallengeNestedInput
   votes?: Prisma.ChallengeVoteUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUpdateManyWithoutChallengeNestedInput
 }
 
 export type ChallengeUncheckedUpdateInput = {
@@ -632,6 +644,8 @@ export type ChallengeUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutChallengeNestedInput
   votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedUpdateManyWithoutChallengeNestedInput
 }
 
 export type ChallengeCreateManyInput = {
@@ -930,6 +944,34 @@ export type ChallengeUpdateOneRequiredWithoutVotesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ChallengeUpdateToOneWithWhereWithoutVotesInput, Prisma.ChallengeUpdateWithoutVotesInput>, Prisma.ChallengeUncheckedUpdateWithoutVotesInput>
 }
 
+export type ChallengeCreateNestedOneWithoutSubmissionActivitiesInput = {
+  create?: Prisma.XOR<Prisma.ChallengeCreateWithoutSubmissionActivitiesInput, Prisma.ChallengeUncheckedCreateWithoutSubmissionActivitiesInput>
+  connectOrCreate?: Prisma.ChallengeCreateOrConnectWithoutSubmissionActivitiesInput
+  connect?: Prisma.ChallengeWhereUniqueInput
+}
+
+export type ChallengeUpdateOneRequiredWithoutSubmissionActivitiesNestedInput = {
+  create?: Prisma.XOR<Prisma.ChallengeCreateWithoutSubmissionActivitiesInput, Prisma.ChallengeUncheckedCreateWithoutSubmissionActivitiesInput>
+  connectOrCreate?: Prisma.ChallengeCreateOrConnectWithoutSubmissionActivitiesInput
+  upsert?: Prisma.ChallengeUpsertWithoutSubmissionActivitiesInput
+  connect?: Prisma.ChallengeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ChallengeUpdateToOneWithWhereWithoutSubmissionActivitiesInput, Prisma.ChallengeUpdateWithoutSubmissionActivitiesInput>, Prisma.ChallengeUncheckedUpdateWithoutSubmissionActivitiesInput>
+}
+
+export type ChallengeCreateNestedOneWithoutChallengeActivitiesInput = {
+  create?: Prisma.XOR<Prisma.ChallengeCreateWithoutChallengeActivitiesInput, Prisma.ChallengeUncheckedCreateWithoutChallengeActivitiesInput>
+  connectOrCreate?: Prisma.ChallengeCreateOrConnectWithoutChallengeActivitiesInput
+  connect?: Prisma.ChallengeWhereUniqueInput
+}
+
+export type ChallengeUpdateOneRequiredWithoutChallengeActivitiesNestedInput = {
+  create?: Prisma.XOR<Prisma.ChallengeCreateWithoutChallengeActivitiesInput, Prisma.ChallengeUncheckedCreateWithoutChallengeActivitiesInput>
+  connectOrCreate?: Prisma.ChallengeCreateOrConnectWithoutChallengeActivitiesInput
+  upsert?: Prisma.ChallengeUpsertWithoutChallengeActivitiesInput
+  connect?: Prisma.ChallengeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ChallengeUpdateToOneWithWhereWithoutChallengeActivitiesInput, Prisma.ChallengeUpdateWithoutChallengeActivitiesInput>, Prisma.ChallengeUncheckedUpdateWithoutChallengeActivitiesInput>
+}
+
 export type ChallengeCreateWithoutTripInput = {
   id?: string
   name: string
@@ -956,6 +998,8 @@ export type ChallengeCreateWithoutTripInput = {
   updatedAt?: Date | string
   submissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutChallengeInput
   votes?: Prisma.ChallengeVoteCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityCreateNestedManyWithoutChallengeInput
 }
 
 export type ChallengeUncheckedCreateWithoutTripInput = {
@@ -984,6 +1028,8 @@ export type ChallengeUncheckedCreateWithoutTripInput = {
   updatedAt?: Date | string
   submissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutChallengeInput
   votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedCreateNestedManyWithoutChallengeInput
 }
 
 export type ChallengeCreateOrConnectWithoutTripInput = {
@@ -1068,6 +1114,8 @@ export type ChallengeCreateWithoutSubmissionsInput = {
   updatedAt?: Date | string
   trip: Prisma.TripCreateNestedOneWithoutChallengesInput
   votes?: Prisma.ChallengeVoteCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityCreateNestedManyWithoutChallengeInput
 }
 
 export type ChallengeUncheckedCreateWithoutSubmissionsInput = {
@@ -1096,6 +1144,8 @@ export type ChallengeUncheckedCreateWithoutSubmissionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedCreateNestedManyWithoutChallengeInput
 }
 
 export type ChallengeCreateOrConnectWithoutSubmissionsInput = {
@@ -1140,6 +1190,8 @@ export type ChallengeUpdateWithoutSubmissionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   trip?: Prisma.TripUpdateOneRequiredWithoutChallengesNestedInput
   votes?: Prisma.ChallengeVoteUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUpdateManyWithoutChallengeNestedInput
 }
 
 export type ChallengeUncheckedUpdateWithoutSubmissionsInput = {
@@ -1168,6 +1220,8 @@ export type ChallengeUncheckedUpdateWithoutSubmissionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedUpdateManyWithoutChallengeNestedInput
 }
 
 export type ChallengeCreateWithoutVotesInput = {
@@ -1196,6 +1250,8 @@ export type ChallengeCreateWithoutVotesInput = {
   updatedAt?: Date | string
   trip: Prisma.TripCreateNestedOneWithoutChallengesInput
   submissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityCreateNestedManyWithoutChallengeInput
 }
 
 export type ChallengeUncheckedCreateWithoutVotesInput = {
@@ -1224,6 +1280,8 @@ export type ChallengeUncheckedCreateWithoutVotesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   submissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedCreateNestedManyWithoutChallengeInput
 }
 
 export type ChallengeCreateOrConnectWithoutVotesInput = {
@@ -1268,6 +1326,8 @@ export type ChallengeUpdateWithoutVotesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   trip?: Prisma.TripUpdateOneRequiredWithoutChallengesNestedInput
   submissions?: Prisma.ChallengeSubmissionUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUpdateManyWithoutChallengeNestedInput
 }
 
 export type ChallengeUncheckedUpdateWithoutVotesInput = {
@@ -1296,6 +1356,280 @@ export type ChallengeUncheckedUpdateWithoutVotesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedUpdateManyWithoutChallengeNestedInput
+}
+
+export type ChallengeCreateWithoutSubmissionActivitiesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  image?: string | null
+  submissionType: $Enums.SubmissionType
+  scoringCategory: $Enums.ScoringCategory
+  isRecurring?: boolean
+  dailyStartTime?: string | null
+  dailyEndTime?: string | null
+  basePoints?: number
+  firstPlacePoints?: number | null
+  secondPlacePoints?: number | null
+  thirdPlacePoints?: number | null
+  status?: $Enums.ChallengeStatus
+  startTime?: Date | string | null
+  endTime?: Date | string | null
+  votingStartTime?: Date | string | null
+  votingEndTime?: Date | string | null
+  targetLatitude?: number | null
+  targetLongitude?: number | null
+  autoApprove?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  trip: Prisma.TripCreateNestedOneWithoutChallengesInput
+  submissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutChallengeInput
+  votes?: Prisma.ChallengeVoteCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityCreateNestedManyWithoutChallengeInput
+}
+
+export type ChallengeUncheckedCreateWithoutSubmissionActivitiesInput = {
+  id?: string
+  tripId: string
+  name: string
+  description?: string | null
+  image?: string | null
+  submissionType: $Enums.SubmissionType
+  scoringCategory: $Enums.ScoringCategory
+  isRecurring?: boolean
+  dailyStartTime?: string | null
+  dailyEndTime?: string | null
+  basePoints?: number
+  firstPlacePoints?: number | null
+  secondPlacePoints?: number | null
+  thirdPlacePoints?: number | null
+  status?: $Enums.ChallengeStatus
+  startTime?: Date | string | null
+  endTime?: Date | string | null
+  votingStartTime?: Date | string | null
+  votingEndTime?: Date | string | null
+  targetLatitude?: number | null
+  targetLongitude?: number | null
+  autoApprove?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  submissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutChallengeInput
+  votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutChallengeInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedCreateNestedManyWithoutChallengeInput
+}
+
+export type ChallengeCreateOrConnectWithoutSubmissionActivitiesInput = {
+  where: Prisma.ChallengeWhereUniqueInput
+  create: Prisma.XOR<Prisma.ChallengeCreateWithoutSubmissionActivitiesInput, Prisma.ChallengeUncheckedCreateWithoutSubmissionActivitiesInput>
+}
+
+export type ChallengeUpsertWithoutSubmissionActivitiesInput = {
+  update: Prisma.XOR<Prisma.ChallengeUpdateWithoutSubmissionActivitiesInput, Prisma.ChallengeUncheckedUpdateWithoutSubmissionActivitiesInput>
+  create: Prisma.XOR<Prisma.ChallengeCreateWithoutSubmissionActivitiesInput, Prisma.ChallengeUncheckedCreateWithoutSubmissionActivitiesInput>
+  where?: Prisma.ChallengeWhereInput
+}
+
+export type ChallengeUpdateToOneWithWhereWithoutSubmissionActivitiesInput = {
+  where?: Prisma.ChallengeWhereInput
+  data: Prisma.XOR<Prisma.ChallengeUpdateWithoutSubmissionActivitiesInput, Prisma.ChallengeUncheckedUpdateWithoutSubmissionActivitiesInput>
+}
+
+export type ChallengeUpdateWithoutSubmissionActivitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submissionType?: Prisma.EnumSubmissionTypeFieldUpdateOperationsInput | $Enums.SubmissionType
+  scoringCategory?: Prisma.EnumScoringCategoryFieldUpdateOperationsInput | $Enums.ScoringCategory
+  isRecurring?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailyStartTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dailyEndTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  basePoints?: Prisma.IntFieldUpdateOperationsInput | number
+  firstPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  secondPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thirdPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumChallengeStatusFieldUpdateOperationsInput | $Enums.ChallengeStatus
+  startTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  votingStartTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trip?: Prisma.TripUpdateOneRequiredWithoutChallengesNestedInput
+  submissions?: Prisma.ChallengeSubmissionUpdateManyWithoutChallengeNestedInput
+  votes?: Prisma.ChallengeVoteUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUpdateManyWithoutChallengeNestedInput
+}
+
+export type ChallengeUncheckedUpdateWithoutSubmissionActivitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tripId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submissionType?: Prisma.EnumSubmissionTypeFieldUpdateOperationsInput | $Enums.SubmissionType
+  scoringCategory?: Prisma.EnumScoringCategoryFieldUpdateOperationsInput | $Enums.ScoringCategory
+  isRecurring?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailyStartTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dailyEndTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  basePoints?: Prisma.IntFieldUpdateOperationsInput | number
+  firstPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  secondPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thirdPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumChallengeStatusFieldUpdateOperationsInput | $Enums.ChallengeStatus
+  startTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  votingStartTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  submissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutChallengeNestedInput
+  votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedUpdateManyWithoutChallengeNestedInput
+}
+
+export type ChallengeCreateWithoutChallengeActivitiesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  image?: string | null
+  submissionType: $Enums.SubmissionType
+  scoringCategory: $Enums.ScoringCategory
+  isRecurring?: boolean
+  dailyStartTime?: string | null
+  dailyEndTime?: string | null
+  basePoints?: number
+  firstPlacePoints?: number | null
+  secondPlacePoints?: number | null
+  thirdPlacePoints?: number | null
+  status?: $Enums.ChallengeStatus
+  startTime?: Date | string | null
+  endTime?: Date | string | null
+  votingStartTime?: Date | string | null
+  votingEndTime?: Date | string | null
+  targetLatitude?: number | null
+  targetLongitude?: number | null
+  autoApprove?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  trip: Prisma.TripCreateNestedOneWithoutChallengesInput
+  submissions?: Prisma.ChallengeSubmissionCreateNestedManyWithoutChallengeInput
+  votes?: Prisma.ChallengeVoteCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityCreateNestedManyWithoutChallengeInput
+}
+
+export type ChallengeUncheckedCreateWithoutChallengeActivitiesInput = {
+  id?: string
+  tripId: string
+  name: string
+  description?: string | null
+  image?: string | null
+  submissionType: $Enums.SubmissionType
+  scoringCategory: $Enums.ScoringCategory
+  isRecurring?: boolean
+  dailyStartTime?: string | null
+  dailyEndTime?: string | null
+  basePoints?: number
+  firstPlacePoints?: number | null
+  secondPlacePoints?: number | null
+  thirdPlacePoints?: number | null
+  status?: $Enums.ChallengeStatus
+  startTime?: Date | string | null
+  endTime?: Date | string | null
+  votingStartTime?: Date | string | null
+  votingEndTime?: Date | string | null
+  targetLatitude?: number | null
+  targetLongitude?: number | null
+  autoApprove?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  submissions?: Prisma.ChallengeSubmissionUncheckedCreateNestedManyWithoutChallengeInput
+  votes?: Prisma.ChallengeVoteUncheckedCreateNestedManyWithoutChallengeInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedCreateNestedManyWithoutChallengeInput
+}
+
+export type ChallengeCreateOrConnectWithoutChallengeActivitiesInput = {
+  where: Prisma.ChallengeWhereUniqueInput
+  create: Prisma.XOR<Prisma.ChallengeCreateWithoutChallengeActivitiesInput, Prisma.ChallengeUncheckedCreateWithoutChallengeActivitiesInput>
+}
+
+export type ChallengeUpsertWithoutChallengeActivitiesInput = {
+  update: Prisma.XOR<Prisma.ChallengeUpdateWithoutChallengeActivitiesInput, Prisma.ChallengeUncheckedUpdateWithoutChallengeActivitiesInput>
+  create: Prisma.XOR<Prisma.ChallengeCreateWithoutChallengeActivitiesInput, Prisma.ChallengeUncheckedCreateWithoutChallengeActivitiesInput>
+  where?: Prisma.ChallengeWhereInput
+}
+
+export type ChallengeUpdateToOneWithWhereWithoutChallengeActivitiesInput = {
+  where?: Prisma.ChallengeWhereInput
+  data: Prisma.XOR<Prisma.ChallengeUpdateWithoutChallengeActivitiesInput, Prisma.ChallengeUncheckedUpdateWithoutChallengeActivitiesInput>
+}
+
+export type ChallengeUpdateWithoutChallengeActivitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submissionType?: Prisma.EnumSubmissionTypeFieldUpdateOperationsInput | $Enums.SubmissionType
+  scoringCategory?: Prisma.EnumScoringCategoryFieldUpdateOperationsInput | $Enums.ScoringCategory
+  isRecurring?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailyStartTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dailyEndTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  basePoints?: Prisma.IntFieldUpdateOperationsInput | number
+  firstPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  secondPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thirdPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumChallengeStatusFieldUpdateOperationsInput | $Enums.ChallengeStatus
+  startTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  votingStartTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  trip?: Prisma.TripUpdateOneRequiredWithoutChallengesNestedInput
+  submissions?: Prisma.ChallengeSubmissionUpdateManyWithoutChallengeNestedInput
+  votes?: Prisma.ChallengeVoteUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutChallengeNestedInput
+}
+
+export type ChallengeUncheckedUpdateWithoutChallengeActivitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tripId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submissionType?: Prisma.EnumSubmissionTypeFieldUpdateOperationsInput | $Enums.SubmissionType
+  scoringCategory?: Prisma.EnumScoringCategoryFieldUpdateOperationsInput | $Enums.ScoringCategory
+  isRecurring?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dailyStartTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dailyEndTime?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  basePoints?: Prisma.IntFieldUpdateOperationsInput | number
+  firstPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  secondPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  thirdPlacePoints?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumChallengeStatusFieldUpdateOperationsInput | $Enums.ChallengeStatus
+  startTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  votingStartTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  submissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutChallengeNestedInput
+  votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutChallengeNestedInput
 }
 
 export type ChallengeCreateManyTripInput = {
@@ -1350,6 +1684,8 @@ export type ChallengeUpdateWithoutTripInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissions?: Prisma.ChallengeSubmissionUpdateManyWithoutChallengeNestedInput
   votes?: Prisma.ChallengeVoteUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUpdateManyWithoutChallengeNestedInput
 }
 
 export type ChallengeUncheckedUpdateWithoutTripInput = {
@@ -1378,6 +1714,8 @@ export type ChallengeUncheckedUpdateWithoutTripInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissions?: Prisma.ChallengeSubmissionUncheckedUpdateManyWithoutChallengeNestedInput
   votes?: Prisma.ChallengeVoteUncheckedUpdateManyWithoutChallengeNestedInput
+  submissionActivities?: Prisma.SubmissionActivityUncheckedUpdateManyWithoutChallengeNestedInput
+  challengeActivities?: Prisma.ChallengeActivityUncheckedUpdateManyWithoutChallengeNestedInput
 }
 
 export type ChallengeUncheckedUpdateManyWithoutTripInput = {
@@ -1414,11 +1752,15 @@ export type ChallengeUncheckedUpdateManyWithoutTripInput = {
 export type ChallengeCountOutputType = {
   submissions: number
   votes: number
+  submissionActivities: number
+  challengeActivities: number
 }
 
 export type ChallengeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   submissions?: boolean | ChallengeCountOutputTypeCountSubmissionsArgs
   votes?: boolean | ChallengeCountOutputTypeCountVotesArgs
+  submissionActivities?: boolean | ChallengeCountOutputTypeCountSubmissionActivitiesArgs
+  challengeActivities?: boolean | ChallengeCountOutputTypeCountChallengeActivitiesArgs
 }
 
 /**
@@ -1443,6 +1785,20 @@ export type ChallengeCountOutputTypeCountSubmissionsArgs<ExtArgs extends runtime
  */
 export type ChallengeCountOutputTypeCountVotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ChallengeVoteWhereInput
+}
+
+/**
+ * ChallengeCountOutputType without action
+ */
+export type ChallengeCountOutputTypeCountSubmissionActivitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SubmissionActivityWhereInput
+}
+
+/**
+ * ChallengeCountOutputType without action
+ */
+export type ChallengeCountOutputTypeCountChallengeActivitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChallengeActivityWhereInput
 }
 
 
@@ -1474,6 +1830,8 @@ export type ChallengeSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   trip?: boolean | Prisma.TripDefaultArgs<ExtArgs>
   submissions?: boolean | Prisma.Challenge$submissionsArgs<ExtArgs>
   votes?: boolean | Prisma.Challenge$votesArgs<ExtArgs>
+  submissionActivities?: boolean | Prisma.Challenge$submissionActivitiesArgs<ExtArgs>
+  challengeActivities?: boolean | Prisma.Challenge$challengeActivitiesArgs<ExtArgs>
   _count?: boolean | Prisma.ChallengeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["challenge"]>
 
@@ -1565,6 +1923,8 @@ export type ChallengeInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   trip?: boolean | Prisma.TripDefaultArgs<ExtArgs>
   submissions?: boolean | Prisma.Challenge$submissionsArgs<ExtArgs>
   votes?: boolean | Prisma.Challenge$votesArgs<ExtArgs>
+  submissionActivities?: boolean | Prisma.Challenge$submissionActivitiesArgs<ExtArgs>
+  challengeActivities?: boolean | Prisma.Challenge$challengeActivitiesArgs<ExtArgs>
   _count?: boolean | Prisma.ChallengeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ChallengeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1580,6 +1940,8 @@ export type $ChallengePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     trip: Prisma.$TripPayload<ExtArgs>
     submissions: Prisma.$ChallengeSubmissionPayload<ExtArgs>[]
     votes: Prisma.$ChallengeVotePayload<ExtArgs>[]
+    submissionActivities: Prisma.$SubmissionActivityPayload<ExtArgs>[]
+    challengeActivities: Prisma.$ChallengeActivityPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2003,6 +2365,8 @@ export interface Prisma__ChallengeClient<T, Null = never, ExtArgs extends runtim
   trip<T extends Prisma.TripDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TripDefaultArgs<ExtArgs>>): Prisma.Prisma__TripClient<runtime.Types.Result.GetResult<Prisma.$TripPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   submissions<T extends Prisma.Challenge$submissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Challenge$submissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengeSubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   votes<T extends Prisma.Challenge$votesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Challenge$votesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengeVotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  submissionActivities<T extends Prisma.Challenge$submissionActivitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Challenge$submissionActivitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubmissionActivityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  challengeActivities<T extends Prisma.Challenge$challengeActivitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Challenge$challengeActivitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChallengeActivityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2497,6 +2861,54 @@ export type Challenge$votesArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.ChallengeVoteScalarFieldEnum | Prisma.ChallengeVoteScalarFieldEnum[]
+}
+
+/**
+ * Challenge.submissionActivities
+ */
+export type Challenge$submissionActivitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SubmissionActivity
+   */
+  select?: Prisma.SubmissionActivitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SubmissionActivity
+   */
+  omit?: Prisma.SubmissionActivityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SubmissionActivityInclude<ExtArgs> | null
+  where?: Prisma.SubmissionActivityWhereInput
+  orderBy?: Prisma.SubmissionActivityOrderByWithRelationInput | Prisma.SubmissionActivityOrderByWithRelationInput[]
+  cursor?: Prisma.SubmissionActivityWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SubmissionActivityScalarFieldEnum | Prisma.SubmissionActivityScalarFieldEnum[]
+}
+
+/**
+ * Challenge.challengeActivities
+ */
+export type Challenge$challengeActivitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChallengeActivity
+   */
+  select?: Prisma.ChallengeActivitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChallengeActivity
+   */
+  omit?: Prisma.ChallengeActivityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChallengeActivityInclude<ExtArgs> | null
+  where?: Prisma.ChallengeActivityWhereInput
+  orderBy?: Prisma.ChallengeActivityOrderByWithRelationInput | Prisma.ChallengeActivityOrderByWithRelationInput[]
+  cursor?: Prisma.ChallengeActivityWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ChallengeActivityScalarFieldEnum | Prisma.ChallengeActivityScalarFieldEnum[]
 }
 
 /**

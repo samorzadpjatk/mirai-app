@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, moderatorProcedure } from "../../api/trpc";
+import {
+  captureTripRankingSnapshot,
+  createRankChangeActivities,
+} from "../../utils/activityFeed";
 
 export const coinRouter = createTRPCRouter({
   // Add coins to a group (enhanced version)
@@ -15,6 +19,11 @@ export const coinRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.$transaction(async (tx) => {
+        const previousRankingSnapshot = await captureTripRankingSnapshot(
+          tx,
+          input.tripId,
+        );
+
         // Verify group exists and belongs to the trip
         const group = await tx.group.findUnique({
           where: { id: input.groupId },
@@ -56,6 +65,13 @@ export const coinRouter = createTRPCRouter({
           },
         });
 
+        await createRankChangeActivities({
+          tx,
+          tripId: input.tripId,
+          previousSnapshot: previousRankingSnapshot,
+          createdByAdmin: ctx.dbUser.id,
+        });
+
         return transaction;
       });
     }),
@@ -72,6 +88,11 @@ export const coinRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.$transaction(async (tx) => {
+        const previousRankingSnapshot = await captureTripRankingSnapshot(
+          tx,
+          input.tripId,
+        );
+
         // Lock the group row for update to prevent race conditions
         const group = await tx.group.findUnique({
           where: { id: input.groupId },
@@ -118,6 +139,13 @@ export const coinRouter = createTRPCRouter({
               },
             },
           },
+        });
+
+        await createRankChangeActivities({
+          tx,
+          tripId: input.tripId,
+          previousSnapshot: previousRankingSnapshot,
+          createdByAdmin: ctx.dbUser.id,
         });
 
         return transaction;
