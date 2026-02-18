@@ -107,9 +107,14 @@ const ACTIVITY_FILTERS: Array<{ key: ActivityFilter; label: string }> = [
   { key: "submission", label: "Submissions" },
   { key: "challenge_event", label: "Challenge" },
   { key: "rank_change", label: "Ranking" },
-  { key: "custom", label: "Custom" },
+  { key: "custom", label: "News" },
   { key: "user_post", label: "Posts" },
 ];
+
+const getActivityTypeLabel = (type: ActivityType) => {
+  if (type === "custom") return "news";
+  return type;
+};
 
 const formatName = (firstName?: string, lastName?: string) => {
   const raw = `${firstName ?? ""} ${lastName ?? ""}`.trim();
@@ -496,7 +501,9 @@ function CommunityActivityCard({
 
         <View style={styles.cardFooter}>
           <View style={styles.activityTypePill}>
-            <Text style={styles.activityTypePillText}>{activity.activityType}</Text>
+            <Text style={styles.activityTypePillText}>
+              {getActivityTypeLabel(activity.activityType)}
+            </Text>
           </View>
 
           <View style={styles.reactionRow}>
