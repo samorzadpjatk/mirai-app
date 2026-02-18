@@ -51,17 +51,19 @@ const colors = {
   textLight: "#000000",
 };
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-const TRPC_HTTP_URL = process.env.EXPO_PUBLIC_TRPC_API_URL;
+const getEnvString = (value: unknown, name: string): string => {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`Missing ${name} environment variable`);
+  }
+  return value;
+};
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error("Missing Supabase configuration");
-}
-
-if (!TRPC_HTTP_URL) {
-  throw new Error("Missing tRPC API URL");
-}
+const SUPABASE_URL = getEnvString(process.env.EXPO_PUBLIC_SUPABASE_URL, "SUPABASE_URL");
+const SUPABASE_ANON_KEY = getEnvString(
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+  "SUPABASE_ANON_KEY",
+);
+const TRPC_HTTP_URL = getEnvString(process.env.EXPO_PUBLIC_TRPC_API_URL, "TRPC_HTTP_URL");
 
 const TRPC_WS_URL = TRPC_HTTP_URL.replace(/^http/, "ws");
 
