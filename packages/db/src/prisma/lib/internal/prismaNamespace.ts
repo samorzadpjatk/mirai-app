@@ -402,7 +402,9 @@ export const ModelName = {
   NotificationDelivery: 'NotificationDelivery',
   PushSubscription: 'PushSubscription',
   Location: 'Location',
-  LocationSharingRequest: 'LocationSharingRequest'
+  LocationSharingRequest: 'LocationSharingRequest',
+  Reward: 'Reward',
+  RewardPurchase: 'RewardPurchase'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -418,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest"
+    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1828,6 +1830,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Reward: {
+      payload: Prisma.$RewardPayload<ExtArgs>
+      fields: Prisma.RewardFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RewardFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RewardFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>
+        }
+        findFirst: {
+          args: Prisma.RewardFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RewardFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>
+        }
+        findMany: {
+          args: Prisma.RewardFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>[]
+        }
+        create: {
+          args: Prisma.RewardCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>
+        }
+        createMany: {
+          args: Prisma.RewardCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RewardCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>[]
+        }
+        delete: {
+          args: Prisma.RewardDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>
+        }
+        update: {
+          args: Prisma.RewardUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>
+        }
+        deleteMany: {
+          args: Prisma.RewardDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RewardUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RewardUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>[]
+        }
+        upsert: {
+          args: Prisma.RewardUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPayload>
+        }
+        aggregate: {
+          args: Prisma.RewardAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateReward>
+        }
+        groupBy: {
+          args: Prisma.RewardGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RewardGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RewardCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RewardCountAggregateOutputType> | number
+        }
+      }
+    }
+    RewardPurchase: {
+      payload: Prisma.$RewardPurchasePayload<ExtArgs>
+      fields: Prisma.RewardPurchaseFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RewardPurchaseFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RewardPurchaseFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>
+        }
+        findFirst: {
+          args: Prisma.RewardPurchaseFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RewardPurchaseFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>
+        }
+        findMany: {
+          args: Prisma.RewardPurchaseFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>[]
+        }
+        create: {
+          args: Prisma.RewardPurchaseCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>
+        }
+        createMany: {
+          args: Prisma.RewardPurchaseCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RewardPurchaseCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>[]
+        }
+        delete: {
+          args: Prisma.RewardPurchaseDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>
+        }
+        update: {
+          args: Prisma.RewardPurchaseUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>
+        }
+        deleteMany: {
+          args: Prisma.RewardPurchaseDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RewardPurchaseUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RewardPurchaseUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>[]
+        }
+        upsert: {
+          args: Prisma.RewardPurchaseUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RewardPurchasePayload>
+        }
+        aggregate: {
+          args: Prisma.RewardPurchaseAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRewardPurchase>
+        }
+        groupBy: {
+          args: Prisma.RewardPurchaseGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RewardPurchaseGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RewardPurchaseCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RewardPurchaseCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1902,6 +2052,7 @@ export const TripParticipantScalarFieldEnum = {
   groupId: 'groupId',
   wristNumber: 'wristNumber',
   houseNumber: 'houseNumber',
+  role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -2162,6 +2313,35 @@ export const LocationSharingRequestScalarFieldEnum = {
 } as const
 
 export type LocationSharingRequestScalarFieldEnum = (typeof LocationSharingRequestScalarFieldEnum)[keyof typeof LocationSharingRequestScalarFieldEnum]
+
+
+export const RewardScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  availableQuantity: 'availableQuantity',
+  image: 'image',
+  coinCost: 'coinCost',
+  tripId: 'tripId',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RewardScalarFieldEnum = (typeof RewardScalarFieldEnum)[keyof typeof RewardScalarFieldEnum]
+
+
+export const RewardPurchaseScalarFieldEnum = {
+  id: 'id',
+  rewardId: 'rewardId',
+  groupId: 'groupId',
+  quantity: 'quantity',
+  totalCost: 'totalCost',
+  purchasedById: 'purchasedById',
+  purchasedAt: 'purchasedAt'
+} as const
+
+export type RewardPurchaseScalarFieldEnum = (typeof RewardPurchaseScalarFieldEnum)[keyof typeof RewardPurchaseScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -2454,6 +2634,8 @@ export type GlobalOmitConfig = {
   pushSubscription?: Prisma.PushSubscriptionOmit
   location?: Prisma.LocationOmit
   locationSharingRequest?: Prisma.LocationSharingRequestOmit
+  reward?: Prisma.RewardOmit
+  rewardPurchase?: Prisma.RewardPurchaseOmit
 }
 
 /* Types for Logging */

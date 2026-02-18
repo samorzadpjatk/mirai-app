@@ -69,7 +69,9 @@ export const ModelName = {
   NotificationDelivery: 'NotificationDelivery',
   PushSubscription: 'PushSubscription',
   Location: 'Location',
-  LocationSharingRequest: 'LocationSharingRequest'
+  LocationSharingRequest: 'LocationSharingRequest',
+  Reward: 'Reward',
+  RewardPurchase: 'RewardPurchase'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -123,6 +125,7 @@ export const TripParticipantScalarFieldEnum = {
   groupId: 'groupId',
   wristNumber: 'wristNumber',
   houseNumber: 'houseNumber',
+  role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -383,6 +386,35 @@ export const LocationSharingRequestScalarFieldEnum = {
 } as const
 
 export type LocationSharingRequestScalarFieldEnum = (typeof LocationSharingRequestScalarFieldEnum)[keyof typeof LocationSharingRequestScalarFieldEnum]
+
+
+export const RewardScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  availableQuantity: 'availableQuantity',
+  image: 'image',
+  coinCost: 'coinCost',
+  tripId: 'tripId',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RewardScalarFieldEnum = (typeof RewardScalarFieldEnum)[keyof typeof RewardScalarFieldEnum]
+
+
+export const RewardPurchaseScalarFieldEnum = {
+  id: 'id',
+  rewardId: 'rewardId',
+  groupId: 'groupId',
+  quantity: 'quantity',
+  totalCost: 'totalCost',
+  purchasedById: 'purchasedById',
+  purchasedAt: 'purchasedAt'
+} as const
+
+export type RewardPurchaseScalarFieldEnum = (typeof RewardPurchaseScalarFieldEnum)[keyof typeof RewardPurchaseScalarFieldEnum]
 
 
 export const SortOrder = {
