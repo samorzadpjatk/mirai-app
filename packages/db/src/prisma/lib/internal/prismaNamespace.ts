@@ -2848,6 +2848,7 @@ export const RewardScalarFieldEnum = {
   name: 'name',
   description: 'description',
   availableQuantity: 'availableQuantity',
+  isHidden: 'isHidden',
   image: 'image',
   coinCost: 'coinCost',
   tripId: 'tripId',
@@ -2865,7 +2866,11 @@ export const RewardPurchaseScalarFieldEnum = {
   groupId: 'groupId',
   quantity: 'quantity',
   totalCost: 'totalCost',
+  status: 'status',
+  collectionMethod: 'collectionMethod',
   purchasedById: 'purchasedById',
+  statusUpdatedById: 'statusUpdatedById',
+  statusUpdatedAt: 'statusUpdatedAt',
   purchasedAt: 'purchasedAt'
 } as const
 
@@ -3046,6 +3051,20 @@ export type EnumLocationSharingRequestStatusFieldRefInput<$PrismaModel> = FieldR
  * Reference to a field of type 'LocationSharingRequestStatus[]'
  */
 export type ListEnumLocationSharingRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LocationSharingRequestStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RewardPurchaseStatus'
+ */
+export type EnumRewardPurchaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RewardPurchaseStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'RewardPurchaseStatus[]'
+ */
+export type ListEnumRewardPurchaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RewardPurchaseStatus[]'>
     
 
 /**

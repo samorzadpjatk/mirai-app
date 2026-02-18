@@ -20,7 +20,6 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   tripId?: string | null;
-  tripName?: string | null;
 }
 
 interface NewRewardState {
@@ -29,6 +28,7 @@ interface NewRewardState {
   availableQuantity: string;
   coinCost: string;
   image: string;
+  isHidden: boolean;
 }
 
 const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
@@ -62,9 +62,10 @@ const getImageContentType = (extension: string) => {
   }
 };
 
-export default function AdminRewardsModal({ visible, onClose, tripId, tripName }: Props) {
+export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
   const createReward = useCreateReward();
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
+  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
 
   const [newReward, setNewReward] = useState<NewRewardState>({
     name: "",
@@ -72,6 +73,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
     availableQuantity: "",
     coinCost: "",
     image: "",
+    isHidden: false,
   });
 
   const tripIdToUse = tripId ?? "";
@@ -83,13 +85,13 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
 
   const handleCreate = async () => {
     if (!tripIdToUse || tripIdToUse === "all") {
-      Alert.alert("Błąd", "Wybierz najpierw wycieczkę w panelu admina");
+      Alert.alert("Error", "Select a trip in the admin panel first");
       return;
     }
 
     if (!newReward.name || !newReward.description || !newReward.availableQuantity || 
         !newReward.coinCost) {
-      Alert.alert("Błąd", "Wypełnij wszystkie wymagane pola");
+      Alert.alert("Error", "Fill in all required fields");
       return;
     }
 
@@ -97,9 +99,10 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
       await createReward.mutateAsync({
         name: newReward.name,
         description: newReward.description,
-        availableQuantity: parseInt(newReward.availableQuantity),
-        coinCost: parseInt(newReward.coinCost),
+        availableQuantity: parseInt(newReward.availableQuantity, 10),
+        coinCost: parseInt(newReward.coinCost, 10),
         image: newReward.image || undefined,
+        isHidden: newReward.isHidden,
         tripId: tripIdToUse,
       });
 
@@ -109,11 +112,13 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
         availableQuantity: "",
         coinCost: "",
         image: "",
+        isHidden: false,
       });
-      Alert.alert("Sukces", "Nagroda została utworzona");
+      setImagePreviewUri(null);
+      Alert.alert("Success", "Reward has been created");
       onClose();
     } catch {
-      Alert.alert("Błąd", "Nie udało się utworzyć nagrody");
+      Alert.alert("Error", "Failed to create reward");
     }
   };
 
@@ -144,6 +149,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
         });
 
         setNewReward((prev) => ({ ...prev, image: storagePath }));
+        setImagePreviewUri(asset.uri);
       }
     } catch (error) {
       const message =
@@ -168,7 +174,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
           justifyContent: "space-between",
           alignItems: "center",
         }}>
-          <Text style={[commonStyles.h3]}>Nowa nagroda</Text>
+          <Text style={[commonStyles.h3]}>New Reward</Text>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color="#9ca3af" />
           </TouchableOpacity>
@@ -177,7 +183,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
         <ScrollView style={{ padding: 24 }}>
           <View style={{ marginBottom: 20 }}>
             <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-              Nazwa nagrody
+              Reward name
             </Text>
             <TextInput
               style={{
@@ -188,7 +194,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
                 padding: 12,
                 color: "#fff",
               }}
-              placeholder="np. Koszulka z logo"
+              placeholder="e.g. Branded T-shirt"
               placeholderTextColor="#6b7280"
               value={newReward.name}
               onChangeText={(text) => setNewReward({ ...newReward, name: text })}
@@ -196,29 +202,8 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
           </View>
 
           <View style={{ marginBottom: 20 }}>
-            <Text style={[commonStyles.label, { marginBottom: 8 }]}>Wycieczka</Text>
-            <View
-              style={{
-                backgroundColor: "#0f2323",
-                borderWidth: 1,
-                borderColor: "#273a3a",
-                borderRadius: 12,
-                padding: 12,
-              }}
-            >
-              <Text style={{ color: tripIdToUse ? "#fff" : "#f87171" }}>
-                {tripName ?? (tripIdToUse && tripIdToUse !== "all"
-                  ? "Wybrana wycieczka"
-                  : "Brak wybranej wycieczki")}
-              </Text>
-              <Text style={{ color: "#6b7280", marginTop: 4, fontSize: 12 }}>
-                Wybierz wycieczkę w panelu admina przed dodaniem nagrody
-              </Text>
-            </View>
-          </View>
-          <View style={{ marginBottom: 20 }}>
             <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-              Opis
+              Description
             </Text>
             <TextInput
               style={{
@@ -230,7 +215,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
                 color: "#fff",
                 textAlignVertical: "top",
               }}
-              placeholder="Opisz nagrodę"
+              placeholder="Describe the reward"
               placeholderTextColor="#6b7280"
               value={newReward.description}
               onChangeText={(text) => setNewReward({ ...newReward, description: text })}
@@ -242,7 +227,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
           <View style={{ flexDirection: "row", gap: 16, marginBottom: 20 }}>
             <View style={{ flex: 1 }}>
               <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Dostępna ilość
+                Available quantity
               </Text>
               <TextInput
                 style={{
@@ -263,7 +248,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
 
             <View style={{ flex: 1 }}>
               <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Koszt w monetach
+                Cost in coins
               </Text>
               <TextInput
                 style={{
@@ -285,13 +270,53 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
 
           <View style={{ marginBottom: 20 }}>
             <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-              Obrazek nagrody (opcjonalnie)
+              Visibility
+            </Text>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => setNewReward((prev) => ({ ...prev, isHidden: false }))}
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: !newReward.isHidden ? "#22c55e" : "#273a3a",
+                  backgroundColor: !newReward.isHidden ? "rgba(34, 197, 94, 0.14)" : "#0f2323",
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={[commonStyles.label, { color: !newReward.isHidden ? "#22c55e" : "#9ca3af", letterSpacing: 0.8 }]}>
+                  Visible
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setNewReward((prev) => ({ ...prev, isHidden: true }))}
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: newReward.isHidden ? "#ef4444" : "#273a3a",
+                  backgroundColor: newReward.isHidden ? "rgba(239, 68, 68, 0.14)" : "#0f2323",
+                  borderRadius: 12,
+                  paddingVertical: 12,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={[commonStyles.label, { color: newReward.isHidden ? "#ef4444" : "#9ca3af", letterSpacing: 0.8 }]}>
+                  Hidden
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={{ marginBottom: 20 }}>
+            <Text style={[commonStyles.label, { marginBottom: 8 }]}>
+              Reward image (optional)
             </Text>
             
             {newReward.image ? (
               <View style={{ position: "relative" }}>
                 <Image
-                  source={{ uri: newReward.image }}
+                  source={{ uri: imagePreviewUri ?? newReward.image }}
                   style={{
                     width: "100%",
                     height: 120,
@@ -301,7 +326,10 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
                   resizeMode="cover"
                 />
                 <TouchableOpacity
-                  onPress={() => setNewReward({ ...newReward, image: "" })}
+                  onPress={() => {
+                    setNewReward({ ...newReward, image: "" });
+                    setImagePreviewUri(null);
+                  }}
                   style={{
                     position: "absolute",
                     top: 8,
@@ -339,7 +367,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
                   <View style={{ alignItems: "center" }}>
                     <Ionicons name="image" size={24} color="#6b7280" />
                     <Text style={{ color: "#6b7280", marginTop: 8 }}>
-                      Dodaj obrazek
+                      Add image
                     </Text>
                   </View>
                 )}
@@ -353,7 +381,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId, tripName }
             style={[commonStyles.button, { marginBottom: 24 }]}
           >
             <Text style={commonStyles.buttonText}>
-              {createReward.isPending ? "Tworzenie..." : "Utwórz nagrodę"}
+              {createReward.isPending ? "Creating..." : "Create reward"}
             </Text>
           </TouchableOpacity>
         </ScrollView>

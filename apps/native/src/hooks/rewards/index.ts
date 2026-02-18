@@ -63,6 +63,23 @@ export const useUpdateReward = () => {
   );
 };
 
+export const useSetRewardHidden = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.reward.setHidden.mutationOptions({
+      onSuccess: async (data) => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.reward.getById.queryKey({ id: data.id }),
+        });
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getByTrip"]] });
+        await queryClient.invalidateQueries({ queryKey: [["reward", "getByTripAdmin"]] });
+      },
+    }),
+  );
+};
+
 export const useDeleteReward = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -103,5 +120,53 @@ export const useRewardPurchaseHistory = (tripId: string) => {
   
   return useQuery(
     trpc.reward.getPurchaseHistory.queryOptions({ tripId })
+  );
+};
+
+export const useUpdateRewardPurchaseStatus = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.reward.updatePurchaseStatus.mutationOptions({
+      onSuccess: async (data) => {
+        await queryClient.invalidateQueries({
+          queryKey: [["reward", "getPurchaseHistory"]],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.reward.getById.queryKey({ id: data.rewardId }),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: [["reward", "getByTrip"]],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: [["reward", "getByTripAdmin"]],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: [["group"]],
+        });
+      },
+    }),
+  );
+};
+
+export const useUpdateMyRewardPurchaseStatus = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.reward.updateMyPurchaseStatus.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: [["reward", "getPurchaseHistory"]],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: [["reward", "getByTrip"]],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: [["group"]],
+        });
+      },
+    }),
   );
 };

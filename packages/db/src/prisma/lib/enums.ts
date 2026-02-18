@@ -70,3 +70,14 @@ export const LocationSharingRequestStatus = {
 } as const
 
 export type LocationSharingRequestStatus = (typeof LocationSharingRequestStatus)[keyof typeof LocationSharingRequestStatus]
+
+
+export const RewardPurchaseStatus = {
+  BOUGHT: 'BOUGHT',
+  ACCEPTED: 'ACCEPTED',
+  IN_DELIVERY: 'IN_DELIVERY',
+  CANCELLED: 'CANCELLED',
+  DELIVERED: 'DELIVERED'
+} as const
+
+export type RewardPurchaseStatus = (typeof RewardPurchaseStatus)[keyof typeof RewardPurchaseStatus]

@@ -80,6 +80,7 @@ model User {
   challengeSubmissions ChallengeSubmission[]
   createdRewards       Reward[]                 @relation("RewardCreator")
   rewardPurchases      RewardPurchase[]         @relation("RewardPurchaser")
+  rewardPurchaseStatusUpdates RewardPurchase[]  @relation("RewardPurchaseStatusUpdater")
 }
 
 model Trip {
@@ -545,6 +546,14 @@ enum LocationSharingRequestStatus {
   REJECTED
 }
 
+enum RewardPurchaseStatus {
+  BOUGHT
+  ACCEPTED
+  IN_DELIVERY
+  CANCELLED
+  DELIVERED
+}
+
 model LocationSharingRequest {
   id         String                       @id @default(cuid())
   senderId   String
@@ -565,6 +574,7 @@ model Reward {
   name             String
   description      String
   availableQuantity Int
+  isHidden         Boolean  @default(false)
   image            String?
   coinCost         Int
   tripId           String
@@ -587,10 +597,17 @@ model RewardPurchase {
   group        Group    @relation(fields: [groupId], references: [id])
   quantity     Int
   totalCost    Int
+  status       RewardPurchaseStatus @default(BOUGHT)
+  collectionMethod String?
   purchasedById String
   purchasedBy  User     @relation("RewardPurchaser", fields: [purchasedById], references: [id])
+  statusUpdatedById String?
+  statusUpdatedBy User? @relation("RewardPurchaseStatusUpdater", fields: [statusUpdatedById], references: [id])
+  statusUpdatedAt DateTime @default(now())
   purchasedAt  DateTime @default(now())
   
   @@index([rewardId])
   @@index([groupId])
+  @@index([status])
+  @@index([statusUpdatedById])
 }

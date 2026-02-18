@@ -17,6 +17,7 @@ export interface CreateRewardInput {
   availableQuantity: number;
   image?: string;
   coinCost: number;
+  isHidden?: boolean;
   tripId: string;
 }
 
@@ -34,6 +35,14 @@ export interface RewardPurchase {
   groupId: string;
   quantity: number;
   totalCost: number;
+  status: "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
+  collectionMethod?: string | null;
+  statusUpdatedAt?: Date | string;
+  statusUpdatedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
   purchasedAt: Date;
   purchasedBy: string;
   reward: Reward;

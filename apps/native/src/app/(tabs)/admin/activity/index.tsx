@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminHeader } from "~/components/admin/AdminHeader";
+import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useTRPC } from "@integral-2025-app/trpc/client";
@@ -216,15 +217,6 @@ export default function AdminActivityScreen() {
       <AdminHeader
         title="Activity"
         subtitle="Manage community activity feed"
-        rightComponent={
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setIsCreateModalOpen(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="add" size={20} color={colors.white} />
-          </TouchableOpacity>
-        }
       />
 
       <View style={styles.filtersWrap}>
@@ -397,6 +389,10 @@ export default function AdminActivityScreen() {
           }}
         />
       )}
+      <AdminAddFab
+        onPress={() => setIsCreateModalOpen(true)}
+        accessibilityLabel="Add activity"
+      />
 
       <Modal
         visible={isEditModalOpen}
@@ -558,14 +554,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundDark,
   },
-  addButton: {
-    width: 42,
-    height: 42,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   filtersWrap: {
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
@@ -606,7 +594,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: 120,
     gap: spacing.md,
   },
   card: {

@@ -42,7 +42,11 @@ export type RewardPurchaseMinAggregateOutputType = {
   groupId: string | null
   quantity: number | null
   totalCost: number | null
+  status: $Enums.RewardPurchaseStatus | null
+  collectionMethod: string | null
   purchasedById: string | null
+  statusUpdatedById: string | null
+  statusUpdatedAt: Date | null
   purchasedAt: Date | null
 }
 
@@ -52,7 +56,11 @@ export type RewardPurchaseMaxAggregateOutputType = {
   groupId: string | null
   quantity: number | null
   totalCost: number | null
+  status: $Enums.RewardPurchaseStatus | null
+  collectionMethod: string | null
   purchasedById: string | null
+  statusUpdatedById: string | null
+  statusUpdatedAt: Date | null
   purchasedAt: Date | null
 }
 
@@ -62,7 +70,11 @@ export type RewardPurchaseCountAggregateOutputType = {
   groupId: number
   quantity: number
   totalCost: number
+  status: number
+  collectionMethod: number
   purchasedById: number
+  statusUpdatedById: number
+  statusUpdatedAt: number
   purchasedAt: number
   _all: number
 }
@@ -84,7 +96,11 @@ export type RewardPurchaseMinAggregateInputType = {
   groupId?: true
   quantity?: true
   totalCost?: true
+  status?: true
+  collectionMethod?: true
   purchasedById?: true
+  statusUpdatedById?: true
+  statusUpdatedAt?: true
   purchasedAt?: true
 }
 
@@ -94,7 +110,11 @@ export type RewardPurchaseMaxAggregateInputType = {
   groupId?: true
   quantity?: true
   totalCost?: true
+  status?: true
+  collectionMethod?: true
   purchasedById?: true
+  statusUpdatedById?: true
+  statusUpdatedAt?: true
   purchasedAt?: true
 }
 
@@ -104,7 +124,11 @@ export type RewardPurchaseCountAggregateInputType = {
   groupId?: true
   quantity?: true
   totalCost?: true
+  status?: true
+  collectionMethod?: true
   purchasedById?: true
+  statusUpdatedById?: true
+  statusUpdatedAt?: true
   purchasedAt?: true
   _all?: true
 }
@@ -201,7 +225,11 @@ export type RewardPurchaseGroupByOutputType = {
   groupId: string
   quantity: number
   totalCost: number
+  status: $Enums.RewardPurchaseStatus
+  collectionMethod: string | null
   purchasedById: string
+  statusUpdatedById: string | null
+  statusUpdatedAt: Date
   purchasedAt: Date
   _count: RewardPurchaseCountAggregateOutputType | null
   _avg: RewardPurchaseAvgAggregateOutputType | null
@@ -234,11 +262,16 @@ export type RewardPurchaseWhereInput = {
   groupId?: Prisma.StringFilter<"RewardPurchase"> | string
   quantity?: Prisma.IntFilter<"RewardPurchase"> | number
   totalCost?: Prisma.IntFilter<"RewardPurchase"> | number
+  status?: Prisma.EnumRewardPurchaseStatusFilter<"RewardPurchase"> | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.StringNullableFilter<"RewardPurchase"> | string | null
   purchasedById?: Prisma.StringFilter<"RewardPurchase"> | string
+  statusUpdatedById?: Prisma.StringNullableFilter<"RewardPurchase"> | string | null
+  statusUpdatedAt?: Prisma.DateTimeFilter<"RewardPurchase"> | Date | string
   purchasedAt?: Prisma.DateTimeFilter<"RewardPurchase"> | Date | string
   reward?: Prisma.XOR<Prisma.RewardScalarRelationFilter, Prisma.RewardWhereInput>
   group?: Prisma.XOR<Prisma.GroupScalarRelationFilter, Prisma.GroupWhereInput>
   purchasedBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  statusUpdatedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
 export type RewardPurchaseOrderByWithRelationInput = {
@@ -247,11 +280,16 @@ export type RewardPurchaseOrderByWithRelationInput = {
   groupId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   totalCost?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  collectionMethod?: Prisma.SortOrderInput | Prisma.SortOrder
   purchasedById?: Prisma.SortOrder
+  statusUpdatedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  statusUpdatedAt?: Prisma.SortOrder
   purchasedAt?: Prisma.SortOrder
   reward?: Prisma.RewardOrderByWithRelationInput
   group?: Prisma.GroupOrderByWithRelationInput
   purchasedBy?: Prisma.UserOrderByWithRelationInput
+  statusUpdatedBy?: Prisma.UserOrderByWithRelationInput
 }
 
 export type RewardPurchaseWhereUniqueInput = Prisma.AtLeast<{
@@ -263,11 +301,16 @@ export type RewardPurchaseWhereUniqueInput = Prisma.AtLeast<{
   groupId?: Prisma.StringFilter<"RewardPurchase"> | string
   quantity?: Prisma.IntFilter<"RewardPurchase"> | number
   totalCost?: Prisma.IntFilter<"RewardPurchase"> | number
+  status?: Prisma.EnumRewardPurchaseStatusFilter<"RewardPurchase"> | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.StringNullableFilter<"RewardPurchase"> | string | null
   purchasedById?: Prisma.StringFilter<"RewardPurchase"> | string
+  statusUpdatedById?: Prisma.StringNullableFilter<"RewardPurchase"> | string | null
+  statusUpdatedAt?: Prisma.DateTimeFilter<"RewardPurchase"> | Date | string
   purchasedAt?: Prisma.DateTimeFilter<"RewardPurchase"> | Date | string
   reward?: Prisma.XOR<Prisma.RewardScalarRelationFilter, Prisma.RewardWhereInput>
   group?: Prisma.XOR<Prisma.GroupScalarRelationFilter, Prisma.GroupWhereInput>
   purchasedBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  statusUpdatedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id">
 
 export type RewardPurchaseOrderByWithAggregationInput = {
@@ -276,7 +319,11 @@ export type RewardPurchaseOrderByWithAggregationInput = {
   groupId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   totalCost?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  collectionMethod?: Prisma.SortOrderInput | Prisma.SortOrder
   purchasedById?: Prisma.SortOrder
+  statusUpdatedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  statusUpdatedAt?: Prisma.SortOrder
   purchasedAt?: Prisma.SortOrder
   _count?: Prisma.RewardPurchaseCountOrderByAggregateInput
   _avg?: Prisma.RewardPurchaseAvgOrderByAggregateInput
@@ -294,7 +341,11 @@ export type RewardPurchaseScalarWhereWithAggregatesInput = {
   groupId?: Prisma.StringWithAggregatesFilter<"RewardPurchase"> | string
   quantity?: Prisma.IntWithAggregatesFilter<"RewardPurchase"> | number
   totalCost?: Prisma.IntWithAggregatesFilter<"RewardPurchase"> | number
+  status?: Prisma.EnumRewardPurchaseStatusWithAggregatesFilter<"RewardPurchase"> | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.StringNullableWithAggregatesFilter<"RewardPurchase"> | string | null
   purchasedById?: Prisma.StringWithAggregatesFilter<"RewardPurchase"> | string
+  statusUpdatedById?: Prisma.StringNullableWithAggregatesFilter<"RewardPurchase"> | string | null
+  statusUpdatedAt?: Prisma.DateTimeWithAggregatesFilter<"RewardPurchase"> | Date | string
   purchasedAt?: Prisma.DateTimeWithAggregatesFilter<"RewardPurchase"> | Date | string
 }
 
@@ -302,10 +353,14 @@ export type RewardPurchaseCreateInput = {
   id?: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
   reward: Prisma.RewardCreateNestedOneWithoutPurchasesInput
   group: Prisma.GroupCreateNestedOneWithoutRewardPurchasesInput
   purchasedBy: Prisma.UserCreateNestedOneWithoutRewardPurchasesInput
+  statusUpdatedBy?: Prisma.UserCreateNestedOneWithoutRewardPurchaseStatusUpdatesInput
 }
 
 export type RewardPurchaseUncheckedCreateInput = {
@@ -314,7 +369,11 @@ export type RewardPurchaseUncheckedCreateInput = {
   groupId: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
   purchasedById: string
+  statusUpdatedById?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
 }
 
@@ -322,10 +381,14 @@ export type RewardPurchaseUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   reward?: Prisma.RewardUpdateOneRequiredWithoutPurchasesNestedInput
   group?: Prisma.GroupUpdateOneRequiredWithoutRewardPurchasesNestedInput
   purchasedBy?: Prisma.UserUpdateOneRequiredWithoutRewardPurchasesNestedInput
+  statusUpdatedBy?: Prisma.UserUpdateOneWithoutRewardPurchaseStatusUpdatesNestedInput
 }
 
 export type RewardPurchaseUncheckedUpdateInput = {
@@ -334,7 +397,11 @@ export type RewardPurchaseUncheckedUpdateInput = {
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchasedById?: Prisma.StringFieldUpdateOperationsInput | string
+  statusUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -344,7 +411,11 @@ export type RewardPurchaseCreateManyInput = {
   groupId: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
   purchasedById: string
+  statusUpdatedById?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
 }
 
@@ -352,6 +423,9 @@ export type RewardPurchaseUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -361,7 +435,11 @@ export type RewardPurchaseUncheckedUpdateManyInput = {
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchasedById?: Prisma.StringFieldUpdateOperationsInput | string
+  statusUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -381,7 +459,11 @@ export type RewardPurchaseCountOrderByAggregateInput = {
   groupId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   totalCost?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  collectionMethod?: Prisma.SortOrder
   purchasedById?: Prisma.SortOrder
+  statusUpdatedById?: Prisma.SortOrder
+  statusUpdatedAt?: Prisma.SortOrder
   purchasedAt?: Prisma.SortOrder
 }
 
@@ -396,7 +478,11 @@ export type RewardPurchaseMaxOrderByAggregateInput = {
   groupId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   totalCost?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  collectionMethod?: Prisma.SortOrder
   purchasedById?: Prisma.SortOrder
+  statusUpdatedById?: Prisma.SortOrder
+  statusUpdatedAt?: Prisma.SortOrder
   purchasedAt?: Prisma.SortOrder
 }
 
@@ -406,7 +492,11 @@ export type RewardPurchaseMinOrderByAggregateInput = {
   groupId?: Prisma.SortOrder
   quantity?: Prisma.SortOrder
   totalCost?: Prisma.SortOrder
+  status?: Prisma.SortOrder
+  collectionMethod?: Prisma.SortOrder
   purchasedById?: Prisma.SortOrder
+  statusUpdatedById?: Prisma.SortOrder
+  statusUpdatedAt?: Prisma.SortOrder
   purchasedAt?: Prisma.SortOrder
 }
 
@@ -422,10 +512,24 @@ export type RewardPurchaseCreateNestedManyWithoutPurchasedByInput = {
   connect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
 }
 
+export type RewardPurchaseCreateNestedManyWithoutStatusUpdatedByInput = {
+  create?: Prisma.XOR<Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput, Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput> | Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput[] | Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput[]
+  connectOrCreate?: Prisma.RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput | Prisma.RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput[]
+  createMany?: Prisma.RewardPurchaseCreateManyStatusUpdatedByInputEnvelope
+  connect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+}
+
 export type RewardPurchaseUncheckedCreateNestedManyWithoutPurchasedByInput = {
   create?: Prisma.XOR<Prisma.RewardPurchaseCreateWithoutPurchasedByInput, Prisma.RewardPurchaseUncheckedCreateWithoutPurchasedByInput> | Prisma.RewardPurchaseCreateWithoutPurchasedByInput[] | Prisma.RewardPurchaseUncheckedCreateWithoutPurchasedByInput[]
   connectOrCreate?: Prisma.RewardPurchaseCreateOrConnectWithoutPurchasedByInput | Prisma.RewardPurchaseCreateOrConnectWithoutPurchasedByInput[]
   createMany?: Prisma.RewardPurchaseCreateManyPurchasedByInputEnvelope
+  connect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+}
+
+export type RewardPurchaseUncheckedCreateNestedManyWithoutStatusUpdatedByInput = {
+  create?: Prisma.XOR<Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput, Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput> | Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput[] | Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput[]
+  connectOrCreate?: Prisma.RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput | Prisma.RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput[]
+  createMany?: Prisma.RewardPurchaseCreateManyStatusUpdatedByInputEnvelope
   connect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
 }
 
@@ -443,6 +547,20 @@ export type RewardPurchaseUpdateManyWithoutPurchasedByNestedInput = {
   deleteMany?: Prisma.RewardPurchaseScalarWhereInput | Prisma.RewardPurchaseScalarWhereInput[]
 }
 
+export type RewardPurchaseUpdateManyWithoutStatusUpdatedByNestedInput = {
+  create?: Prisma.XOR<Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput, Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput> | Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput[] | Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput[]
+  connectOrCreate?: Prisma.RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput | Prisma.RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput[]
+  upsert?: Prisma.RewardPurchaseUpsertWithWhereUniqueWithoutStatusUpdatedByInput | Prisma.RewardPurchaseUpsertWithWhereUniqueWithoutStatusUpdatedByInput[]
+  createMany?: Prisma.RewardPurchaseCreateManyStatusUpdatedByInputEnvelope
+  set?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+  disconnect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+  delete?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+  connect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+  update?: Prisma.RewardPurchaseUpdateWithWhereUniqueWithoutStatusUpdatedByInput | Prisma.RewardPurchaseUpdateWithWhereUniqueWithoutStatusUpdatedByInput[]
+  updateMany?: Prisma.RewardPurchaseUpdateManyWithWhereWithoutStatusUpdatedByInput | Prisma.RewardPurchaseUpdateManyWithWhereWithoutStatusUpdatedByInput[]
+  deleteMany?: Prisma.RewardPurchaseScalarWhereInput | Prisma.RewardPurchaseScalarWhereInput[]
+}
+
 export type RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput = {
   create?: Prisma.XOR<Prisma.RewardPurchaseCreateWithoutPurchasedByInput, Prisma.RewardPurchaseUncheckedCreateWithoutPurchasedByInput> | Prisma.RewardPurchaseCreateWithoutPurchasedByInput[] | Prisma.RewardPurchaseUncheckedCreateWithoutPurchasedByInput[]
   connectOrCreate?: Prisma.RewardPurchaseCreateOrConnectWithoutPurchasedByInput | Prisma.RewardPurchaseCreateOrConnectWithoutPurchasedByInput[]
@@ -454,6 +572,20 @@ export type RewardPurchaseUncheckedUpdateManyWithoutPurchasedByNestedInput = {
   connect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
   update?: Prisma.RewardPurchaseUpdateWithWhereUniqueWithoutPurchasedByInput | Prisma.RewardPurchaseUpdateWithWhereUniqueWithoutPurchasedByInput[]
   updateMany?: Prisma.RewardPurchaseUpdateManyWithWhereWithoutPurchasedByInput | Prisma.RewardPurchaseUpdateManyWithWhereWithoutPurchasedByInput[]
+  deleteMany?: Prisma.RewardPurchaseScalarWhereInput | Prisma.RewardPurchaseScalarWhereInput[]
+}
+
+export type RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByNestedInput = {
+  create?: Prisma.XOR<Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput, Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput> | Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput[] | Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput[]
+  connectOrCreate?: Prisma.RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput | Prisma.RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput[]
+  upsert?: Prisma.RewardPurchaseUpsertWithWhereUniqueWithoutStatusUpdatedByInput | Prisma.RewardPurchaseUpsertWithWhereUniqueWithoutStatusUpdatedByInput[]
+  createMany?: Prisma.RewardPurchaseCreateManyStatusUpdatedByInputEnvelope
+  set?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+  disconnect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+  delete?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+  connect?: Prisma.RewardPurchaseWhereUniqueInput | Prisma.RewardPurchaseWhereUniqueInput[]
+  update?: Prisma.RewardPurchaseUpdateWithWhereUniqueWithoutStatusUpdatedByInput | Prisma.RewardPurchaseUpdateWithWhereUniqueWithoutStatusUpdatedByInput[]
+  updateMany?: Prisma.RewardPurchaseUpdateManyWithWhereWithoutStatusUpdatedByInput | Prisma.RewardPurchaseUpdateManyWithWhereWithoutStatusUpdatedByInput[]
   deleteMany?: Prisma.RewardPurchaseScalarWhereInput | Prisma.RewardPurchaseScalarWhereInput[]
 }
 
@@ -541,13 +673,21 @@ export type RewardPurchaseUncheckedUpdateManyWithoutRewardNestedInput = {
   deleteMany?: Prisma.RewardPurchaseScalarWhereInput | Prisma.RewardPurchaseScalarWhereInput[]
 }
 
+export type EnumRewardPurchaseStatusFieldUpdateOperationsInput = {
+  set?: $Enums.RewardPurchaseStatus
+}
+
 export type RewardPurchaseCreateWithoutPurchasedByInput = {
   id?: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
   reward: Prisma.RewardCreateNestedOneWithoutPurchasesInput
   group: Prisma.GroupCreateNestedOneWithoutRewardPurchasesInput
+  statusUpdatedBy?: Prisma.UserCreateNestedOneWithoutRewardPurchaseStatusUpdatesInput
 }
 
 export type RewardPurchaseUncheckedCreateWithoutPurchasedByInput = {
@@ -556,6 +696,10 @@ export type RewardPurchaseUncheckedCreateWithoutPurchasedByInput = {
   groupId: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  statusUpdatedById?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
 }
 
@@ -566,6 +710,42 @@ export type RewardPurchaseCreateOrConnectWithoutPurchasedByInput = {
 
 export type RewardPurchaseCreateManyPurchasedByInputEnvelope = {
   data: Prisma.RewardPurchaseCreateManyPurchasedByInput | Prisma.RewardPurchaseCreateManyPurchasedByInput[]
+  skipDuplicates?: boolean
+}
+
+export type RewardPurchaseCreateWithoutStatusUpdatedByInput = {
+  id?: string
+  quantity: number
+  totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  statusUpdatedAt?: Date | string
+  purchasedAt?: Date | string
+  reward: Prisma.RewardCreateNestedOneWithoutPurchasesInput
+  group: Prisma.GroupCreateNestedOneWithoutRewardPurchasesInput
+  purchasedBy: Prisma.UserCreateNestedOneWithoutRewardPurchasesInput
+}
+
+export type RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput = {
+  id?: string
+  rewardId: string
+  groupId: string
+  quantity: number
+  totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  purchasedById: string
+  statusUpdatedAt?: Date | string
+  purchasedAt?: Date | string
+}
+
+export type RewardPurchaseCreateOrConnectWithoutStatusUpdatedByInput = {
+  where: Prisma.RewardPurchaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput, Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput>
+}
+
+export type RewardPurchaseCreateManyStatusUpdatedByInputEnvelope = {
+  data: Prisma.RewardPurchaseCreateManyStatusUpdatedByInput | Prisma.RewardPurchaseCreateManyStatusUpdatedByInput[]
   skipDuplicates?: boolean
 }
 
@@ -594,17 +774,41 @@ export type RewardPurchaseScalarWhereInput = {
   groupId?: Prisma.StringFilter<"RewardPurchase"> | string
   quantity?: Prisma.IntFilter<"RewardPurchase"> | number
   totalCost?: Prisma.IntFilter<"RewardPurchase"> | number
+  status?: Prisma.EnumRewardPurchaseStatusFilter<"RewardPurchase"> | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.StringNullableFilter<"RewardPurchase"> | string | null
   purchasedById?: Prisma.StringFilter<"RewardPurchase"> | string
+  statusUpdatedById?: Prisma.StringNullableFilter<"RewardPurchase"> | string | null
+  statusUpdatedAt?: Prisma.DateTimeFilter<"RewardPurchase"> | Date | string
   purchasedAt?: Prisma.DateTimeFilter<"RewardPurchase"> | Date | string
+}
+
+export type RewardPurchaseUpsertWithWhereUniqueWithoutStatusUpdatedByInput = {
+  where: Prisma.RewardPurchaseWhereUniqueInput
+  update: Prisma.XOR<Prisma.RewardPurchaseUpdateWithoutStatusUpdatedByInput, Prisma.RewardPurchaseUncheckedUpdateWithoutStatusUpdatedByInput>
+  create: Prisma.XOR<Prisma.RewardPurchaseCreateWithoutStatusUpdatedByInput, Prisma.RewardPurchaseUncheckedCreateWithoutStatusUpdatedByInput>
+}
+
+export type RewardPurchaseUpdateWithWhereUniqueWithoutStatusUpdatedByInput = {
+  where: Prisma.RewardPurchaseWhereUniqueInput
+  data: Prisma.XOR<Prisma.RewardPurchaseUpdateWithoutStatusUpdatedByInput, Prisma.RewardPurchaseUncheckedUpdateWithoutStatusUpdatedByInput>
+}
+
+export type RewardPurchaseUpdateManyWithWhereWithoutStatusUpdatedByInput = {
+  where: Prisma.RewardPurchaseScalarWhereInput
+  data: Prisma.XOR<Prisma.RewardPurchaseUpdateManyMutationInput, Prisma.RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByInput>
 }
 
 export type RewardPurchaseCreateWithoutGroupInput = {
   id?: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
   reward: Prisma.RewardCreateNestedOneWithoutPurchasesInput
   purchasedBy: Prisma.UserCreateNestedOneWithoutRewardPurchasesInput
+  statusUpdatedBy?: Prisma.UserCreateNestedOneWithoutRewardPurchaseStatusUpdatesInput
 }
 
 export type RewardPurchaseUncheckedCreateWithoutGroupInput = {
@@ -612,7 +816,11 @@ export type RewardPurchaseUncheckedCreateWithoutGroupInput = {
   rewardId: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
   purchasedById: string
+  statusUpdatedById?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
 }
 
@@ -646,9 +854,13 @@ export type RewardPurchaseCreateWithoutRewardInput = {
   id?: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
   group: Prisma.GroupCreateNestedOneWithoutRewardPurchasesInput
   purchasedBy: Prisma.UserCreateNestedOneWithoutRewardPurchasesInput
+  statusUpdatedBy?: Prisma.UserCreateNestedOneWithoutRewardPurchaseStatusUpdatesInput
 }
 
 export type RewardPurchaseUncheckedCreateWithoutRewardInput = {
@@ -656,7 +868,11 @@ export type RewardPurchaseUncheckedCreateWithoutRewardInput = {
   groupId: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
   purchasedById: string
+  statusUpdatedById?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
 }
 
@@ -692,6 +908,23 @@ export type RewardPurchaseCreateManyPurchasedByInput = {
   groupId: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  statusUpdatedById?: string | null
+  statusUpdatedAt?: Date | string
+  purchasedAt?: Date | string
+}
+
+export type RewardPurchaseCreateManyStatusUpdatedByInput = {
+  id?: string
+  rewardId: string
+  groupId: string
+  quantity: number
+  totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
+  purchasedById: string
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
 }
 
@@ -699,9 +932,13 @@ export type RewardPurchaseUpdateWithoutPurchasedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   reward?: Prisma.RewardUpdateOneRequiredWithoutPurchasesNestedInput
   group?: Prisma.GroupUpdateOneRequiredWithoutRewardPurchasesNestedInput
+  statusUpdatedBy?: Prisma.UserUpdateOneWithoutRewardPurchaseStatusUpdatesNestedInput
 }
 
 export type RewardPurchaseUncheckedUpdateWithoutPurchasedByInput = {
@@ -710,6 +947,10 @@ export type RewardPurchaseUncheckedUpdateWithoutPurchasedByInput = {
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -719,6 +960,49 @@ export type RewardPurchaseUncheckedUpdateManyWithoutPurchasedByInput = {
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type RewardPurchaseUpdateWithoutStatusUpdatedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  reward?: Prisma.RewardUpdateOneRequiredWithoutPurchasesNestedInput
+  group?: Prisma.GroupUpdateOneRequiredWithoutRewardPurchasesNestedInput
+  purchasedBy?: Prisma.UserUpdateOneRequiredWithoutRewardPurchasesNestedInput
+}
+
+export type RewardPurchaseUncheckedUpdateWithoutStatusUpdatedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  rewardId?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  purchasedById?: Prisma.StringFieldUpdateOperationsInput | string
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type RewardPurchaseUncheckedUpdateManyWithoutStatusUpdatedByInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  rewardId?: Prisma.StringFieldUpdateOperationsInput | string
+  groupId?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  purchasedById?: Prisma.StringFieldUpdateOperationsInput | string
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -727,7 +1011,11 @@ export type RewardPurchaseCreateManyGroupInput = {
   rewardId: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
   purchasedById: string
+  statusUpdatedById?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
 }
 
@@ -735,9 +1023,13 @@ export type RewardPurchaseUpdateWithoutGroupInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   reward?: Prisma.RewardUpdateOneRequiredWithoutPurchasesNestedInput
   purchasedBy?: Prisma.UserUpdateOneRequiredWithoutRewardPurchasesNestedInput
+  statusUpdatedBy?: Prisma.UserUpdateOneWithoutRewardPurchaseStatusUpdatesNestedInput
 }
 
 export type RewardPurchaseUncheckedUpdateWithoutGroupInput = {
@@ -745,7 +1037,11 @@ export type RewardPurchaseUncheckedUpdateWithoutGroupInput = {
   rewardId?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchasedById?: Prisma.StringFieldUpdateOperationsInput | string
+  statusUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -754,7 +1050,11 @@ export type RewardPurchaseUncheckedUpdateManyWithoutGroupInput = {
   rewardId?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchasedById?: Prisma.StringFieldUpdateOperationsInput | string
+  statusUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -763,7 +1063,11 @@ export type RewardPurchaseCreateManyRewardInput = {
   groupId: string
   quantity: number
   totalCost: number
+  status?: $Enums.RewardPurchaseStatus
+  collectionMethod?: string | null
   purchasedById: string
+  statusUpdatedById?: string | null
+  statusUpdatedAt?: Date | string
   purchasedAt?: Date | string
 }
 
@@ -771,9 +1075,13 @@ export type RewardPurchaseUpdateWithoutRewardInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   group?: Prisma.GroupUpdateOneRequiredWithoutRewardPurchasesNestedInput
   purchasedBy?: Prisma.UserUpdateOneRequiredWithoutRewardPurchasesNestedInput
+  statusUpdatedBy?: Prisma.UserUpdateOneWithoutRewardPurchaseStatusUpdatesNestedInput
 }
 
 export type RewardPurchaseUncheckedUpdateWithoutRewardInput = {
@@ -781,7 +1089,11 @@ export type RewardPurchaseUncheckedUpdateWithoutRewardInput = {
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchasedById?: Prisma.StringFieldUpdateOperationsInput | string
+  statusUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -790,7 +1102,11 @@ export type RewardPurchaseUncheckedUpdateManyWithoutRewardInput = {
   groupId?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   totalCost?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.EnumRewardPurchaseStatusFieldUpdateOperationsInput | $Enums.RewardPurchaseStatus
+  collectionMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   purchasedById?: Prisma.StringFieldUpdateOperationsInput | string
+  statusUpdatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  statusUpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   purchasedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -802,11 +1118,16 @@ export type RewardPurchaseSelect<ExtArgs extends runtime.Types.Extensions.Intern
   groupId?: boolean
   quantity?: boolean
   totalCost?: boolean
+  status?: boolean
+  collectionMethod?: boolean
   purchasedById?: boolean
+  statusUpdatedById?: boolean
+  statusUpdatedAt?: boolean
   purchasedAt?: boolean
   reward?: boolean | Prisma.RewardDefaultArgs<ExtArgs>
   group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>
   purchasedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  statusUpdatedBy?: boolean | Prisma.RewardPurchase$statusUpdatedByArgs<ExtArgs>
 }, ExtArgs["result"]["rewardPurchase"]>
 
 export type RewardPurchaseSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -815,11 +1136,16 @@ export type RewardPurchaseSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   groupId?: boolean
   quantity?: boolean
   totalCost?: boolean
+  status?: boolean
+  collectionMethod?: boolean
   purchasedById?: boolean
+  statusUpdatedById?: boolean
+  statusUpdatedAt?: boolean
   purchasedAt?: boolean
   reward?: boolean | Prisma.RewardDefaultArgs<ExtArgs>
   group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>
   purchasedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  statusUpdatedBy?: boolean | Prisma.RewardPurchase$statusUpdatedByArgs<ExtArgs>
 }, ExtArgs["result"]["rewardPurchase"]>
 
 export type RewardPurchaseSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -828,11 +1154,16 @@ export type RewardPurchaseSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   groupId?: boolean
   quantity?: boolean
   totalCost?: boolean
+  status?: boolean
+  collectionMethod?: boolean
   purchasedById?: boolean
+  statusUpdatedById?: boolean
+  statusUpdatedAt?: boolean
   purchasedAt?: boolean
   reward?: boolean | Prisma.RewardDefaultArgs<ExtArgs>
   group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>
   purchasedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  statusUpdatedBy?: boolean | Prisma.RewardPurchase$statusUpdatedByArgs<ExtArgs>
 }, ExtArgs["result"]["rewardPurchase"]>
 
 export type RewardPurchaseSelectScalar = {
@@ -841,25 +1172,32 @@ export type RewardPurchaseSelectScalar = {
   groupId?: boolean
   quantity?: boolean
   totalCost?: boolean
+  status?: boolean
+  collectionMethod?: boolean
   purchasedById?: boolean
+  statusUpdatedById?: boolean
+  statusUpdatedAt?: boolean
   purchasedAt?: boolean
 }
 
-export type RewardPurchaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "rewardId" | "groupId" | "quantity" | "totalCost" | "purchasedById" | "purchasedAt", ExtArgs["result"]["rewardPurchase"]>
+export type RewardPurchaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "rewardId" | "groupId" | "quantity" | "totalCost" | "status" | "collectionMethod" | "purchasedById" | "statusUpdatedById" | "statusUpdatedAt" | "purchasedAt", ExtArgs["result"]["rewardPurchase"]>
 export type RewardPurchaseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reward?: boolean | Prisma.RewardDefaultArgs<ExtArgs>
   group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>
   purchasedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  statusUpdatedBy?: boolean | Prisma.RewardPurchase$statusUpdatedByArgs<ExtArgs>
 }
 export type RewardPurchaseIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reward?: boolean | Prisma.RewardDefaultArgs<ExtArgs>
   group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>
   purchasedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  statusUpdatedBy?: boolean | Prisma.RewardPurchase$statusUpdatedByArgs<ExtArgs>
 }
 export type RewardPurchaseIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reward?: boolean | Prisma.RewardDefaultArgs<ExtArgs>
   group?: boolean | Prisma.GroupDefaultArgs<ExtArgs>
   purchasedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  statusUpdatedBy?: boolean | Prisma.RewardPurchase$statusUpdatedByArgs<ExtArgs>
 }
 
 export type $RewardPurchasePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -868,6 +1206,7 @@ export type $RewardPurchasePayload<ExtArgs extends runtime.Types.Extensions.Inte
     reward: Prisma.$RewardPayload<ExtArgs>
     group: Prisma.$GroupPayload<ExtArgs>
     purchasedBy: Prisma.$UserPayload<ExtArgs>
+    statusUpdatedBy: Prisma.$UserPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -875,7 +1214,11 @@ export type $RewardPurchasePayload<ExtArgs extends runtime.Types.Extensions.Inte
     groupId: string
     quantity: number
     totalCost: number
+    status: $Enums.RewardPurchaseStatus
+    collectionMethod: string | null
     purchasedById: string
+    statusUpdatedById: string | null
+    statusUpdatedAt: Date
     purchasedAt: Date
   }, ExtArgs["result"]["rewardPurchase"]>
   composites: {}
@@ -1274,6 +1617,7 @@ export interface Prisma__RewardPurchaseClient<T, Null = never, ExtArgs extends r
   reward<T extends Prisma.RewardDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RewardDefaultArgs<ExtArgs>>): Prisma.Prisma__RewardClient<runtime.Types.Result.GetResult<Prisma.$RewardPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   group<T extends Prisma.GroupDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.GroupDefaultArgs<ExtArgs>>): Prisma.Prisma__GroupClient<runtime.Types.Result.GetResult<Prisma.$GroupPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   purchasedBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  statusUpdatedBy<T extends Prisma.RewardPurchase$statusUpdatedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RewardPurchase$statusUpdatedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1308,7 +1652,11 @@ export interface RewardPurchaseFieldRefs {
   readonly groupId: Prisma.FieldRef<"RewardPurchase", 'String'>
   readonly quantity: Prisma.FieldRef<"RewardPurchase", 'Int'>
   readonly totalCost: Prisma.FieldRef<"RewardPurchase", 'Int'>
+  readonly status: Prisma.FieldRef<"RewardPurchase", 'RewardPurchaseStatus'>
+  readonly collectionMethod: Prisma.FieldRef<"RewardPurchase", 'String'>
   readonly purchasedById: Prisma.FieldRef<"RewardPurchase", 'String'>
+  readonly statusUpdatedById: Prisma.FieldRef<"RewardPurchase", 'String'>
+  readonly statusUpdatedAt: Prisma.FieldRef<"RewardPurchase", 'DateTime'>
   readonly purchasedAt: Prisma.FieldRef<"RewardPurchase", 'DateTime'>
 }
     
@@ -1703,6 +2051,25 @@ export type RewardPurchaseDeleteManyArgs<ExtArgs extends runtime.Types.Extension
    * Limit how many RewardPurchases to delete.
    */
   limit?: number
+}
+
+/**
+ * RewardPurchase.statusUpdatedBy
+ */
+export type RewardPurchase$statusUpdatedByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**

@@ -15,6 +15,8 @@ import { commonStyles } from "~/styles/commonStyles";
 import {
   useDeleteReward,
   useReward,
+  useSetRewardHidden,
+  useUpdateRewardPurchaseStatus,
   useUpdateReward,
 } from "~/hooks/rewards";
 import * as ImagePicker from "expo-image-picker";
@@ -25,6 +27,19 @@ interface Props {
   onClose: () => void;
 }
 
+type PurchaseStatus = "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
+
+const purchaseStatusMeta: Record<
+  PurchaseStatus,
+  { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
+  BOUGHT: { label: "Bought", color: "#fbbf24", icon: "receipt-outline" },
+  ACCEPTED: { label: "Accepted", color: "#22c55e", icon: "checkmark-circle-outline" },
+  IN_DELIVERY: { label: "In delivery", color: "#38bdf8", icon: "car-outline" },
+  CANCELLED: { label: "Cancelled", color: "#ef4444", icon: "close-circle-outline" },
+  DELIVERED: { label: "Delivered", color: "#10b981", icon: "cube-outline" },
+};
+
 export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
   const { upload, status: uploadStatus } = useFileUpload();
 
@@ -34,6 +49,8 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
   const { data: reward, isLoading } = useReward(rewardId);
   const updateReward = useUpdateReward();
   const deleteReward = useDeleteReward();
+  const setRewardHidden = useSetRewardHidden();
+  const updatePurchaseStatus = useUpdateRewardPurchaseStatus();
 
   const [form, setForm] = useState({
     name: "",
@@ -42,6 +59,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
     coinCost: "",
     image: "",
   });
+  const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (reward) {
@@ -52,6 +70,14 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
         coinCost: String(reward.coinCost),
         image: reward.image ?? "",
       });
+      const initialCollectionMethods = reward.purchases.reduce<Record<string, string>>(
+        (acc, purchase) => {
+          acc[purchase.id] = purchase.collectionMethod ?? "";
+          return acc;
+        },
+        {},
+      );
+      setCollectionMethodByPurchase(initialCollectionMethods);
     }
   }, [reward]);
 
@@ -59,7 +85,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
 
   const handleSave = async () => {
     if (!form.name || !form.description || !form.availableQuantity || !form.coinCost) {
-      Alert.alert("Błąd", "Wypełnij wszystkie wymagane pola");
+      Alert.alert("Error", "Fill in all required fields");
       return;
     }
 
@@ -72,11 +98,11 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
         coinCost: parseInt(form.coinCost, 10),
         image: form.image || null,
       });
-      Alert.alert("Zapisano", "Nagroda została zaktualizowana");
+      Alert.alert("Saved", "Reward has been updated");
       onClose();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Nie udało się zapisać";
-      Alert.alert("Błąd", message);
+      const message = error instanceof Error ? error.message : "Failed to save";
+      Alert.alert("Error", message);
     }
   };
 
@@ -84,22 +110,22 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
     if (!rewardId) return;
 
     Alert.alert(
-      "Usuń nagrodę",
-      "Czy na pewno chcesz usunąć tę nagrodę?",
+      "Delete reward",
+      "Are you sure you want to delete this reward?",
       [
-        { text: "Anuluj", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "Usuń",
+          text: "Delete",
           style: "destructive",
           onPress: async () => {
             try {
               await deleteReward.mutateAsync({ id: rewardId });
-              Alert.alert("Usunięto", "Nagroda została usunięta");
+              Alert.alert("Deleted", "Reward has been deleted");
               onClose();
             } catch (error) {
               const message =
-                error instanceof Error ? error.message : "Nie udało się usunąć nagrody";
-              Alert.alert("Błąd", message);
+                error instanceof Error ? error.message : "Failed to delete reward";
+              Alert.alert("Error", message);
             }
           },
         },
@@ -107,8 +133,60 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
     );
   };
 
-  const isMutating = updateReward.isPending || deleteReward.isPending;
+  const isMutating =
+    updateReward.isPending ||
+    deleteReward.isPending ||
+    updatePurchaseStatus.isPending ||
+    setRewardHidden.isPending;
   const isUploadingImage = uploadStatus === "uploading";
+
+  const handleToggleHidden = async () => {
+    if (!reward) return;
+
+    try {
+      await setRewardHidden.mutateAsync({
+        id: reward.id,
+        isHidden: !reward.isHidden,
+      });
+      Alert.alert("Saved", reward.isHidden ? "Reward is now visible." : "Reward has been hidden.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update visibility";
+      Alert.alert("Error", message);
+    }
+  };
+
+  const handlePurchaseStatusChange = async (
+    purchaseId: string,
+    nextStatus: PurchaseStatus,
+  ) => {
+    const collectionMethod = collectionMethodByPurchase[purchaseId]?.trim();
+
+    if (nextStatus === "ACCEPTED" && !collectionMethod) {
+      Alert.alert("Collection method required", "Provide pickup instructions before accepting.");
+      return;
+    }
+
+    if (nextStatus === "IN_DELIVERY") {
+      const purchase = reward?.purchases.find((item) => item.id === purchaseId);
+      const savedCollectionMethod = purchase?.collectionMethod?.trim();
+      if (!collectionMethod && !savedCollectionMethod) {
+        Alert.alert("Collection method required", "Provide pickup instructions first.");
+        return;
+      }
+    }
+
+    try {
+      await updatePurchaseStatus.mutateAsync({
+        purchaseId,
+        status: nextStatus,
+        ...(collectionMethod ? { collectionMethod } : {}),
+      });
+      Alert.alert("Saved", `Purchase moved to ${purchaseStatusMeta[nextStatus].label}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update purchase status";
+      Alert.alert("Error", message);
+    }
+  };
 
   const handlePickImage = async () => {
     try {
@@ -136,8 +214,8 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
         setForm((prev) => ({ ...prev, image: storagePath }));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Nie udało się przesłać zdjęcia";
-      Alert.alert("Błąd", message);
+      const message = error instanceof Error ? error.message : "Failed to upload image";
+      Alert.alert("Error", message);
     }
   };
 
@@ -145,10 +223,10 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
     try {
       await updateReward.mutateAsync({ id: rewardId, image: null });
       setForm((prev) => ({ ...prev, image: "" }));
-      Alert.alert("Usunięto", "Obraz nagrody został usunięty");
+      Alert.alert("Deleted", "Reward image has been removed");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Nie udało się usunąć zdjęcia";
-      Alert.alert("Błąd", message);
+      const message = error instanceof Error ? error.message : "Failed to remove image";
+      Alert.alert("Error", message);
     }
   };
 
@@ -169,12 +247,17 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
           alignItems: "center",
         }}>
           <View>
-            <Text style={[commonStyles.h3]}>Szczegóły nagrody</Text>
+            <Text style={[commonStyles.h3]}>Reward Details</Text>
             {reward && (
               <Text style={[commonStyles.textSecondary, { color: "#9ca3af", marginTop: 4 }]}>
-                Utworzona: {new Date(reward.createdAt).toLocaleDateString()} | {reward.createdBy?.firstName} {reward.createdBy?.lastName}
+                Created: {new Date(reward.createdAt).toLocaleDateString()} | {reward.createdBy?.firstName} {reward.createdBy?.lastName}
               </Text>
             )}
+            {reward?.isHidden ? (
+              <Text style={[commonStyles.textSecondary, { color: "#fca5a5", marginTop: 4 }]}>
+                Hidden from users
+              </Text>
+            ) : null}
           </View>
           <TouchableOpacity onPress={onClose} disabled={isMutating}>
             <Ionicons name="close" size={24} color="#9ca3af" />
@@ -209,7 +292,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                     {isUploadingImage ? (
                       <ActivityIndicator color="#fff" />
                     ) : (
-                      <Text style={commonStyles.buttonText}>Zmień obraz</Text>
+                      <Text style={commonStyles.buttonText}>Change image</Text>
                     )}
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -222,7 +305,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                       alignItems: "center",
                     }}
                   >
-                    <Text style={commonStyles.buttonText}>Usuń obraz</Text>
+                    <Text style={commonStyles.buttonText}>Remove image</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -245,13 +328,13 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 {isUploadingImage ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={commonStyles.buttonText}>Dodaj obraz</Text>
+                  <Text style={commonStyles.buttonText}>Add image</Text>
                 )}
               </TouchableOpacity>
             )}
 
             <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>Nazwa</Text>
+              <Text style={[commonStyles.label, { marginBottom: 8 }]}>Name</Text>
               <TextInput
                 style={{
                   backgroundColor: "#0f2323",
@@ -261,7 +344,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                   padding: 12,
                   color: "#fff",
                 }}
-                placeholder="Nazwa nagrody"
+                placeholder="Reward name"
                 placeholderTextColor="#6b7280"
                 value={form.name}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
@@ -269,7 +352,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
             </View>
 
             <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>Opis</Text>
+              <Text style={[commonStyles.label, { marginBottom: 8 }]}>Description</Text>
               <TextInput
                 style={{
                   backgroundColor: "#0f2323",
@@ -281,7 +364,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                   minHeight: 80,
                   textAlignVertical: "top",
                 }}
-                placeholder="Opis nagrody"
+                placeholder="Reward description"
                 placeholderTextColor="#6b7280"
                 multiline
                 value={form.description}
@@ -291,7 +374,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
 
             <View style={{ flexDirection: "row", gap: 12, marginBottom: 20 }}>
               <View style={{ flex: 1 }}>
-                <Text style={[commonStyles.label, { marginBottom: 8 }]}>Dostępna ilość</Text>
+                <Text style={[commonStyles.label, { marginBottom: 8 }]}>Available quantity</Text>
                 <TextInput
                   keyboardType="numeric"
                   style={{
@@ -307,7 +390,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[commonStyles.label, { marginBottom: 8 }]}>Koszt (monety)</Text>
+                <Text style={[commonStyles.label, { marginBottom: 8 }]}>Cost (coins)</Text>
                 <TextInput
                   keyboardType="numeric"
                   style={{
@@ -325,11 +408,205 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
             </View>
 
             <View style={{ marginBottom: 24, gap: 8 }}>
-              <Text style={[commonStyles.label]}>Zakupione</Text>
+              <Text style={[commonStyles.label]}>Purchases</Text>
               <Text style={[commonStyles.textSecondary, { color: "#9ca3af" }]}>
-                {purchasedCount} zakupionych
+                {purchasedCount} purchased
               </Text>
+              {reward.purchases.length > 0 ? (
+                <View style={{ gap: 10 }}>
+                  {reward.purchases.map((purchase) => {
+                    const status = (purchase.status ?? "BOUGHT") as PurchaseStatus;
+                    const statusInfo = purchaseStatusMeta[status] ?? purchaseStatusMeta.BOUGHT;
+                    const purchaserName =
+                      `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
+                    const canEditCollectionMethod =
+                      status === "BOUGHT" || status === "ACCEPTED";
+
+                    return (
+                      <View
+                        key={purchase.id}
+                        style={{
+                          backgroundColor: "#0f2323",
+                          borderWidth: 1,
+                          borderColor: "#273a3a",
+                          borderRadius: 12,
+                          padding: 12,
+                          gap: 10,
+                        }}
+                      >
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                          <Text style={[commonStyles.textPrimary]}>
+                            {purchase.quantity} pcs. • {purchase.totalCost} coins
+                          </Text>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                              borderWidth: 1,
+                              borderColor: statusInfo.color,
+                              borderRadius: 999,
+                              paddingHorizontal: 8,
+                              paddingVertical: 3,
+                              backgroundColor: `${statusInfo.color}20`,
+                            }}
+                          >
+                            <Ionicons name={statusInfo.icon} size={12} color={statusInfo.color} />
+                            <Text style={[commonStyles.label, { color: statusInfo.color, letterSpacing: 0.6 }]}>
+                              {statusInfo.label}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text style={[commonStyles.textSecondary]}>
+                          Group: {purchase.group?.name ?? "Unknown"}
+                        </Text>
+                        {purchaserName ? (
+                          <Text style={[commonStyles.textSecondary]}>
+                            Claimed by: {purchaserName}
+                          </Text>
+                        ) : null}
+                        <Text style={[commonStyles.textSecondary]}>
+                          {new Date(purchase.purchasedAt).toLocaleString()}
+                        </Text>
+
+                        <TextInput
+                          style={{
+                            backgroundColor: canEditCollectionMethod ? "#0b1a1a" : "#0a1414",
+                            borderWidth: 1,
+                            borderColor: canEditCollectionMethod ? "#273a3a" : "#1f2a2a",
+                            borderRadius: 10,
+                            paddingHorizontal: 10,
+                            paddingVertical: 8,
+                            color: canEditCollectionMethod ? "#fff" : "#9ca3af",
+                          }}
+                          placeholder="Collection method (e.g. pick up at HQ desk)"
+                          placeholderTextColor="#6b7280"
+                          value={collectionMethodByPurchase[purchase.id] ?? ""}
+                          editable={canEditCollectionMethod}
+                          onChangeText={(text) =>
+                            setCollectionMethodByPurchase((prev) => ({
+                              ...prev,
+                              [purchase.id]: text,
+                            }))
+                          }
+                        />
+
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                          {status === "BOUGHT" ? (
+                            <>
+                              <TouchableOpacity
+                                onPress={() => handlePurchaseStatusChange(purchase.id, "ACCEPTED")}
+                                disabled={isMutating}
+                                style={{
+                                  backgroundColor: "#22c55e",
+                                  borderRadius: 999,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 7,
+                                }}
+                              >
+                                <Text style={[commonStyles.label, { color: "#062b06", letterSpacing: 0.6 }]}>Accept</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => handlePurchaseStatusChange(purchase.id, "CANCELLED")}
+                                disabled={isMutating}
+                                style={{
+                                  backgroundColor: "#ef4444",
+                                  borderRadius: 999,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 7,
+                                }}
+                              >
+                                <Text style={[commonStyles.label, { color: "#2f0606", letterSpacing: 0.6 }]}>Cancel + refund</Text>
+                              </TouchableOpacity>
+                            </>
+                          ) : null}
+
+                          {status === "ACCEPTED" ? (
+                            <>
+                              <TouchableOpacity
+                                onPress={() => handlePurchaseStatusChange(purchase.id, "IN_DELIVERY")}
+                                disabled={isMutating}
+                                style={{
+                                  backgroundColor: "#38bdf8",
+                                  borderRadius: 999,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 7,
+                                }}
+                              >
+                                <Text style={[commonStyles.label, { color: "#062134", letterSpacing: 0.6 }]}>Set in delivery</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => handlePurchaseStatusChange(purchase.id, "CANCELLED")}
+                                disabled={isMutating}
+                                style={{
+                                  backgroundColor: "#ef4444",
+                                  borderRadius: 999,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 7,
+                                }}
+                              >
+                                <Text style={[commonStyles.label, { color: "#2f0606", letterSpacing: 0.6 }]}>Cancel + refund</Text>
+                              </TouchableOpacity>
+                            </>
+                          ) : null}
+
+                          {status === "IN_DELIVERY" ? (
+                            <>
+                              <TouchableOpacity
+                                onPress={() => handlePurchaseStatusChange(purchase.id, "DELIVERED")}
+                                disabled={isMutating}
+                                style={{
+                                  backgroundColor: "#10b981",
+                                  borderRadius: 999,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 7,
+                                }}
+                              >
+                                <Text style={[commonStyles.label, { color: "#03281d", letterSpacing: 0.6 }]}>Mark delivered</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                onPress={() => handlePurchaseStatusChange(purchase.id, "CANCELLED")}
+                                disabled={isMutating}
+                                style={{
+                                  backgroundColor: "#ef4444",
+                                  borderRadius: 999,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 7,
+                                }}
+                              >
+                                <Text style={[commonStyles.label, { color: "#2f0606", letterSpacing: 0.6 }]}>Cancel + refund</Text>
+                              </TouchableOpacity>
+                            </>
+                          ) : null}
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
             </View>
+
+            <TouchableOpacity
+              onPress={handleToggleHidden}
+              disabled={isMutating}
+              style={{
+                backgroundColor: reward.isHidden ? "#0f4a4a" : "#7f1d1d",
+                padding: 14,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 12,
+              }}
+            >
+              {setRewardHidden.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={commonStyles.buttonText}>
+                  {reward.isHidden ? "Unhide reward" : "Hide reward"}
+                </Text>
+              )}
+            </TouchableOpacity>
 
             <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity
@@ -346,7 +623,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 {updateReward.isPending ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={commonStyles.buttonText}>Zapisz zmiany</Text>
+                  <Text style={commonStyles.buttonText}>Save changes</Text>
                 )}
               </TouchableOpacity>
 
@@ -363,7 +640,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 {deleteReward.isPending ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={commonStyles.buttonText}>Usuń</Text>
+                  <Text style={commonStyles.buttonText}>Delete</Text>
                 )}
               </TouchableOpacity>
             </View>
