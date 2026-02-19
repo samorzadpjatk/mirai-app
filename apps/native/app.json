@@ -38,7 +38,8 @@
       "bundleIdentifier": "edu.samorzadpjatk.mirai",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app uses your location to provide nearby features.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location even when the app is in the background."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location even when the app is in the background.",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
         "aps-environment": "development"
@@ -67,6 +68,16 @@
           "assets": [
             "./assets/mirai_logo.png"
           ]
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "This app uses your location to provide nearby features.",
+          "locationAlwaysAndWhenInUsePermission": "This app needs access to your location even when the app is in the background.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "@maplibre/maplibre-react-native",
