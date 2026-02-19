@@ -30,9 +30,9 @@ services:
     ports:
       - "2022:2022"
     environment:
-      PORT: "2022"
+      TRPC_SERVER_PORT: "2022"
       TRPC_SERVER_HOST: "0.0.0.0"
-      SUPABASE_URL: "http://kong:${KONG_HTTP_PORT}"
+      SUPABASE_URL: "https://supabase.sspj.online"
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
       ADMIN_ROLE: "PJAPP Admin"
       MODERATOR_ROLE: "PJAPP Moderator"
@@ -45,6 +45,8 @@ services:
         condition: service_healthy
       db-migrations:
         condition: service_completed_successfully
+      supavisor:
+        condition: service_healthy
 
   notification-sender:
     image: ghcr.io/samorzadpjatk/pjapp-notification-sender:latest
@@ -54,7 +56,7 @@ services:
       PORT: "3011"
       HOST: "0.0.0.0"
       TRPC_HOST: "backend-server:2022"
-      SUPABASE_URL: "http://kong:${KONG_HTTP_PORT}"
+      SUPABASE_URL: "https://supabase.sspj.online"
       SUPABASE_SERVICE_ROLE_KEY: "${SERVICE_ROLE_KEY}"
 
     depends_on:
@@ -371,6 +373,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       TENANT_ID: stub
       REGION: ${MINIO_REGION:-pl-waw-1}
+      STORAGE_S3_FORCE_PATH_STYLE: "true"
       GLOBAL_S3_BUCKET: ${MINIO_BUCKET:-pjapp}
       ENABLE_IMAGE_TRANSFORMATION: "true"
       IMGPROXY_URL: http://imgproxy:5001
