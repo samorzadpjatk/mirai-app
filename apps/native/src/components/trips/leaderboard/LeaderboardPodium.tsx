@@ -125,16 +125,30 @@ interface LeaderboardPodiumProps {
   onPressGroup?: (group: RankedGroup) => void;
 }
 
-export function LeaderboardPodium({ topThree, onPressGroup }: LeaderboardPodiumProps) {
+export function LeaderboardPodium({
+  topThree,
+  onPressGroup,
+}: LeaderboardPodiumProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.glow} />
       <View style={styles.podiumRow}>
-        <PodiumPlace group={topThree[1]} position={2} onPressGroup={onPressGroup} />
+        <PodiumPlace
+          group={topThree[1]}
+          position={2}
+          onPressGroup={onPressGroup}
+        />
         <View style={styles.firstPlaceOffset}>
-          <PodiumPlace group={topThree[0]} position={1} onPressGroup={onPressGroup} />
+          <PodiumPlace
+            group={topThree[0]}
+            position={1}
+            onPressGroup={onPressGroup}
+          />
         </View>
-        <PodiumPlace group={topThree[2]} position={3} onPressGroup={onPressGroup} />
+        <PodiumPlace
+          group={topThree[2]}
+          position={3}
+          onPressGroup={onPressGroup}
+        />
       </View>
     </View>
   );
@@ -146,17 +160,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl * 3,
     paddingBottom: spacing.xl,
     position: "relative",
-  },
-  glow: {
-    position: "absolute",
-    top: 0,
-    left: "50%",
-    width: 300,
-    height: 300,
-    backgroundColor: colors.primary,
-    borderRadius: 150,
-    opacity: 0.1,
-    transform: [{ translateX: -150 }],
   },
   podiumRow: {
     flexDirection: "row",

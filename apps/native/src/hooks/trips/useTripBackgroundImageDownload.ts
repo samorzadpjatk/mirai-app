@@ -1,19 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFileDownload } from "~/hooks/files/useFileDownload";
 
 let placeholderUriCache: string | null | undefined;
 let placeholderErrorLogged = false;
 
-export function useTripBackgroundImageDownload(backgroundImagePath: string | null | undefined) {
+export function useTripBackgroundImageDownload(
+  backgroundImagePath: string | null | undefined,
+) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { download, status: downloadStatus, error: downloadError } = useFileDownload();
+  const {
+    download,
+    status: downloadStatus,
+    error: downloadError,
+  } = useFileDownload();
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const loadImage = async () => {
+      if (!mountedRef.current) return;
       setIsLoading(true);
       setImageUrl(null);
-      
+
       try {
         // If there's a background image path, download it using useFileDownload
         if (backgroundImagePath) {
@@ -21,13 +36,17 @@ export function useTripBackgroundImageDownload(backgroundImagePath: string | nul
             storagePath: backgroundImagePath,
             expiresInSeconds: 60 * 60, // 1 hour
           });
-          
+
+          if (!mountedRef.current) return;
+
           if (result?.uri) {
             setImageUrl(result.uri);
             return;
           }
         }
-        
+
+        if (!mountedRef.current) return;
+
         // If no background image or download failed, try to get placeholder from Supabase (once)
         if (placeholderUriCache === undefined) {
           const placeholderPath = "image/placeholder/trip-background.png";
@@ -36,7 +55,7 @@ export function useTripBackgroundImageDownload(backgroundImagePath: string | nul
               storagePath: placeholderPath,
               expiresInSeconds: 60 * 60, // 1 hour
             });
-            
+
             if (placeholderResult?.uri) {
               placeholderUriCache = placeholderResult.uri;
             } else {
@@ -45,34 +64,43 @@ export function useTripBackgroundImageDownload(backgroundImagePath: string | nul
           } catch (placeholderError) {
             placeholderUriCache = null;
             if (!placeholderErrorLogged) {
-              console.warn('Failed to download placeholder image:', placeholderError);
+              console.warn(
+                "Failed to download placeholder image:",
+                placeholderError,
+              );
               placeholderErrorLogged = true;
             }
           }
         }
 
+        if (!mountedRef.current) return;
+
         if (placeholderUriCache) {
           setImageUrl(placeholderUriCache);
           return;
         }
-        
+
         // Final fallback - null (no image)
         setImageUrl(null);
       } catch (error) {
-        console.error('Failed to load trip background image:', error);
-        setImageUrl(null);
+        if (!mountedRef.current) return;
+        const message = error instanceof Error ? error.message : String(error);
+        if (!message.includes("component unmounted")) {
+          console.error("Failed to load trip background image:", error);
+        }
+        if (mountedRef.current) setImageUrl(null);
       } finally {
-        setIsLoading(false);
+        if (mountedRef.current) setIsLoading(false);
       }
     };
 
     void loadImage();
   }, [backgroundImagePath, download]);
 
-  return { 
-    imageUrl, 
+  return {
+    imageUrl,
     isLoading: isLoading || downloadStatus === "loading",
     error: downloadError,
-    status: downloadStatus
+    status: downloadStatus,
   };
 }
