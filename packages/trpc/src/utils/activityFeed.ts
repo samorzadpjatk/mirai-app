@@ -188,6 +188,8 @@ const createChallengeCompletionWithWinnersById = async (params: {
       groupId: true,
       imageIds: true,
       videoId: true,
+      status: true,
+      ranking: true,
       voteCount: true,
       voteScore: true,
       group: {
@@ -200,6 +202,34 @@ const createChallengeCompletionWithWinnersById = async (params: {
 
   if (topSubmissions.length === 0) {
     return;
+  }
+
+  const completedAt = new Date();
+  for (let index = 0; index < topSubmissions.length; index += 1) {
+    const submission = topSubmissions[index];
+    if (!submission) continue;
+
+    const nextRanking = index + 1;
+    const shouldApprove = submission.status !== "APPROVED";
+    const shouldUpdateRanking = submission.ranking !== nextRanking;
+    if (!shouldApprove && !shouldUpdateRanking) {
+      continue;
+    }
+
+    await params.tx.challengeSubmission.update({
+      where: { id: submission.id },
+      data: {
+        ranking: nextRanking,
+        ...(shouldApprove
+          ? {
+              status: "APPROVED",
+              reviewedAt: completedAt,
+              reviewedById: null,
+              rejectionReason: null,
+            }
+          : {}),
+      },
+    });
   }
 
   const existingWinnerIds = new Set(
