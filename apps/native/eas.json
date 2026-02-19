@@ -21,8 +21,7 @@
         "track": "internal"
       },
       "ios": {
-        "ascAppId": "6759354332",
-        "group": ["Wintegral-KADRA","Wintegral 2026"]
+        "ascAppId": "6759354332"
       }
     }
   }
