@@ -6,9 +6,10 @@ import type { GroupListItem } from "./types";
 interface GroupsListProps {
   groups: GroupListItem[];
   onSelectGroup: (group: GroupListItem) => void;
+  myGroupId?: string | null;
 }
 
-export function GroupsList({ groups, onSelectGroup }: GroupsListProps) {
+export function GroupsList({ groups, onSelectGroup, myGroupId }: GroupsListProps) {
   if (groups.length === 0) {
     return (
       <View style={styles.emptyState}>
@@ -20,7 +21,12 @@ export function GroupsList({ groups, onSelectGroup }: GroupsListProps) {
   return (
     <View style={styles.groupsList}>
       {groups.map((group) => (
-        <GroupCard key={group.id} group={group} onPress={onSelectGroup} />
+        <GroupCard
+          key={group.id}
+          group={group}
+          onPress={onSelectGroup}
+          isMyGroup={Boolean(myGroupId && group.id === myGroupId)}
+        />
       ))}
     </View>
   );

@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TRPCProvider } from "./react";
 import { getTRPCClient } from "./vanilia";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useSession, useAuthLoading } from "@integral-2025-app/auth/client";
+import { useSession, useAuthLoading, useAuth } from "@integral-2025-app/auth/client";
 
 function makeQueryClient() {
     return new QueryClient({
@@ -32,9 +32,16 @@ function getQueryClient() {
     }
 }
 
+const isUnauthorizedError = (error: unknown) => {
+    const anyError = error as { data?: { code?: string }; shape?: { data?: { code?: string } } };
+    const code = anyError?.data?.code ?? anyError?.shape?.data?.code;
+    return code === "UNAUTHORIZED";
+};
+
 const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: string; children: React.ReactNode }) => {
     const session = useSession();
     const isAuthLoading = useAuthLoading();
+    const { signOut } = useAuth();
     const authToken = session?.access_token;
     const queryClient = getQueryClient();
     const cleanupRef = useRef<(() => Promise<void>) | null>(null);
@@ -54,6 +61,29 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
 
     // Clean up previous client's WebSocket connection when token changes
     useEffect(() => {
+        const queryCache = queryClient.getQueryCache();
+        const mutationCache = queryClient.getMutationCache();
+
+        const handleError = (error: unknown) => {
+            if (isUnauthorizedError(error)) {
+                void signOut();
+            }
+        };
+
+        const unsubscribeQuery = queryCache.subscribe((event) => {
+            const error = event?.query?.state?.error;
+            if (error) {
+                handleError(error);
+            }
+        });
+
+        const unsubscribeMutation = mutationCache.subscribe((event) => {
+            const error = event?.mutation?.state?.error;
+            if (error) {
+                handleError(error);
+            }
+        });
+
         // Clean up previous WebSocket connection if it exists
         if (cleanupRef.current) {
             console.log("[APIProvider] Cleaning up previous WebSocket connection");
@@ -72,6 +102,8 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
         }
 
         return () => {
+            unsubscribeQuery();
+            unsubscribeMutation();
             // Cleanup on unmount
             if (cleanupRef.current) {
               console.log(
@@ -90,7 +122,7 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
                 });
             }
         };
-    }, [trpcClientWrapper]);
+    }, [trpcClientWrapper, queryClient, signOut]);
 
     // Only render TRPCProvider when we have a valid client
     if (isAuthLoading || !trpcClientWrapper) {

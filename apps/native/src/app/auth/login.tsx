@@ -7,10 +7,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useState } from "react";
+import { useSupabaseClient } from "@integral-2025-app/supabase/react";
+import { getTRPCClient } from "@integral-2025-app/trpc/client";
+import { TRPC_HTTP_URL, TRPC_WS_URL } from "~/lib/runtimeEnv";
 
 export default function LoginScreen() {
   const { formState, setEmail, handleSubmit, clearSent, clearError } = useLoginForm();
-  const { verifyOtp, signInWithPassword } = useAuth();
+  const { verifyOtp, signInWithPassword, signOut } = useAuth();
+  const supabase = useSupabaseClient();
   const router = useRouter();
   const insets = useAppSafeAreaInsets();
 
@@ -20,11 +24,49 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [precheckError, setPrecheckError] = useState<string | null>(null);
 
   const { email, isLoading, isSent, error } = formState;
   const ghostEmail = (process.env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL as string | undefined)?.toLowerCase() ?? "";
   const isGhostLogin = ghostEmail.length > 0 && email.trim().toLowerCase() === ghostEmail;
   const isBusy = isLoading || passwordLoading;
+
+  const checkBanStatus = async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) {
+      return { banned: false, bannedUntil: null as string | null, reason: null as string | null };
+    }
+    const { client, cleanup } = getTRPCClient(TRPC_HTTP_URL, TRPC_WS_URL, token);
+    try {
+      return await client.user.getBanStatus.query();
+    } finally {
+      await cleanup();
+    }
+  };
+
+  const checkBanStatusByEmail = async () => {
+    const { client, cleanup } = getTRPCClient(TRPC_HTTP_URL, TRPC_WS_URL);
+    try {
+      return await client.user.getBanStatusByEmail.query({ email });
+    } finally {
+      await cleanup();
+    }
+  };
+
+  const handleBannedLogin = async (reason: string | null, bannedUntil: string | null) => {
+    await signOut();
+    const formattedDate = bannedUntil
+      ? new Date(bannedUntil).toLocaleString()
+      : "unknown date";
+    const message = `Your account is banned until ${formattedDate}.` +
+      (reason ? ` Reason: ${reason}.` : "");
+    if (isGhostLogin) {
+      setPasswordError(message);
+    } else {
+      setVerifyError(message);
+    }
+  };
 
   const onSubmit = async () => {
     if (isGhostLogin) {
@@ -38,6 +80,11 @@ export default function LoginScreen() {
 
       try {
         await signInWithPassword({ email, password });
+        const banStatus = await checkBanStatus();
+        if (banStatus.banned) {
+          await handleBannedLogin(banStatus.reason ?? null, banStatus.bannedUntil ?? null);
+          return;
+        }
         router.replace("/");
       } catch (err) {
         setPasswordError(err instanceof Error ? err.message : "Sign in failed");
@@ -47,12 +94,45 @@ export default function LoginScreen() {
       return;
     }
 
+    if (!email.trim()) {
+      await handleSubmit();
+      return;
+    }
+
+    setPrecheckError(null);
+    clearError();
+
+    try {
+      const status = await checkBanStatusByEmail();
+      if (status && status.exists === false) {
+        clearSent();
+        setPrecheckError("This email is not in database. Use your email that you provided on Taksidi site.");
+        return;
+      }
+      if (status?.banned) {
+        clearSent();
+        const formattedDate = status.bannedUntil
+          ? new Date(status.bannedUntil).toLocaleString()
+          : "unknown date";
+        const message = `Your account is banned until ${formattedDate}.` +
+          (status.reason ? ` Reason: ${status.reason}.` : "");
+        setPrecheckError(message);
+        return;
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to verify ban status";
+      setPrecheckError(message);
+      return;
+    }
+
     await handleSubmit();
   };
 
   const onEmailChange = (value: string) => {
     clearError();
     clearSent();
+    setPrecheckError(null);
     setPasswordError(null);
     setPassword("");
     setEmail(value);
@@ -69,6 +149,11 @@ export default function LoginScreen() {
 
     try {
       await verifyOtp({ email, token: otp });
+      const banStatus = await checkBanStatus();
+      if (banStatus.banned) {
+        await handleBannedLogin(banStatus.reason ?? null, banStatus.bannedUntil ?? null);
+        return;
+      }
       router.replace("/");
     } catch (err) {
       setVerifyError(err instanceof Error ? err.message : "Verification failed");
@@ -99,7 +184,7 @@ export default function LoginScreen() {
             <Logo size={96} />
           </View>
           <Text style={styles.title}>
-            Welcome back
+            PJApp
           </Text>
           <Text style={styles.subtitle}>
             Unlock your next adventure with PJapp
@@ -109,10 +194,10 @@ export default function LoginScreen() {
         {/* Form Container */}
         <View style={styles.formContainer}>
           {/* Error Message */}
-          {error && (
+          {(error || precheckError) && (
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle" size={20} color="#ef4444" />
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>{precheckError ?? error}</Text>
             </View>
           )}
 
@@ -121,7 +206,7 @@ export default function LoginScreen() {
             {/* Email Input */}
             <View style={[styles.inputSection, styles.inputSectionBorder]}>
               <Text style={styles.inputLabel}>
-                Student Email or ID
+                Email
               </Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.iconOpacity}>

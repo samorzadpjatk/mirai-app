@@ -11,6 +11,9 @@ export interface User {
   houseNumber?: string | null;
   group?: { id: string; name: string } | null;
   tripId: string;
+  bannedUntil?: string | null;
+  banReason?: string | null;
+  isBanned?: boolean;
 }
 
 export interface Group {
@@ -50,7 +53,22 @@ export function useAdminUsers(tripId: string) {
     },
   }));
 
-  const toggleAdminMutation = useMutation(trpc.user.updateUserAdminStatus.mutationOptions({
+  const createUserMutation = useMutation(trpc.user.createUser.mutationOptions({
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
+    },
+  }));
+  const banUserMutation = useMutation(trpc.user.banUserUntil.mutationOptions({
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
+    },
+  }));
+  const deleteUserMutation = useMutation(trpc.user.deleteUser.mutationOptions({
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
+    },
+  }));
+  const updateNameMutation = useMutation(trpc.user.updateName.mutationOptions({
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
     },
@@ -107,11 +125,23 @@ export function useAdminUsers(tripId: string) {
     });
   };
 
-  const toggleAdmin = async (userId: string, currentRole: string): Promise<void> => {
-    const newRole = currentRole === 'ADMIN' ? 'USER' : 'ADMIN' as const;
-    await toggleAdminMutation.mutateAsync({ 
-      userId, 
-      role: newRole 
+  const createUser = (input: { tripId: string; firstName: string; lastName: string; email: string }) => {
+    return createUserMutation.mutateAsync(input);
+  };
+
+  const banUserUntil = (input: { userId: string; bannedUntilMs: number; reason?: string }) => {
+    return banUserMutation.mutateAsync(input);
+  };
+
+  const deleteUser = (input: { userId: string; tripId: string }) => {
+    return deleteUserMutation.mutateAsync(input);
+  };
+
+  const updateName = (input: { userId: string; firstName: string; lastName: string }) => {
+    return updateNameMutation.mutateAsync({
+      userId: input.userId,
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
     });
   };
 
@@ -148,15 +178,21 @@ export function useAdminUsers(tripId: string) {
     useSearchUsers,
     assignToGroup,
     removeFromGroup,
-    toggleAdmin,
+    updateName,
     updateWristNumber,
     updateHouseNumber,
+    createUser,
+    banUserUntil,
+    deleteUser,
     isAssigningToGroup: assignToGroupMutation.isPending,
     isRemovingFromGroup: removeFromGroupMutation.isPending,
-    isTogglingAdmin: toggleAdminMutation.isPending,
+    isUpdatingName: updateNameMutation.isPending,
     isUpdatingWristNumber: updateWristNumberMutation.isPending,
     isRemovingWristNumber: removeWristNumberMutation.isPending,
     isUpdatingHouseNumber: updateHouseNumberMutation.isPending,
     isRemovingHouseNumber: removeHouseNumberMutation.isPending,
+    isCreatingUser: createUserMutation.isPending,
+    isBanningUser: banUserMutation.isPending,
+    isDeletingUser: deleteUserMutation.isPending,
   };
 }
