@@ -1,2 +1,2 @@
 -- DropIndex
-DROP INDEX "Group_tripId_isDeleted_idx";
+DROP INDEX IF EXISTS "Group_tripId_isDeleted_idx";
