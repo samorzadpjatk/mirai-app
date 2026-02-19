@@ -225,17 +225,17 @@ export default function ChallengeDetailScreen() {
     }
   };
 
+  const isVotingPhase = challenge.status === "VOTING_PHASE";
   const hasVotingWindow =
-    challenge.scoringCategory === "PEER_VOTING" &&
-    Boolean(challenge.votingStartTime) &&
-    Boolean(challenge.votingEndTime);
+    Boolean(challenge.votingStartTime) && Boolean(challenge.votingEndTime);
   const isWithinVotingWindow =
+    challenge.scoringCategory === "PEER_VOTING" &&
     hasVotingWindow &&
     isOnOrAfterNow(challenge.votingStartTime) &&
     isOnOrBeforeNow(challenge.votingEndTime);
   const shouldShowVotingTime =
-    hasVotingWindow &&
-    (challenge.status === "VOTING_PHASE" || isWithinVotingWindow);
+    challenge.scoringCategory === "PEER_VOTING" &&
+    (isVotingPhase || isWithinVotingWindow);
   const shouldShowSubmissionTime = !shouldShowVotingTime;
   const heroStatus =
     challenge.status !== "CANCELLED" && isWithinVotingWindow
@@ -287,8 +287,8 @@ export default function ChallengeDetailScreen() {
         {shouldShowVotingTime ? (
           <ChallengeTimeLeftCard
             phaseLabel="Voting"
-            startTime={challenge.votingStartTime}
-            endTime={challenge.votingEndTime}
+            startTime={challenge.votingStartTime ?? challenge.startTime}
+            endTime={challenge.votingEndTime ?? challenge.endTime}
           />
         ) : null}
 
