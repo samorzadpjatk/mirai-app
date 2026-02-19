@@ -41,7 +41,14 @@ import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { SupabaseProvider } from "@integral-2025-app/supabase/react";
 import { APIProvider } from "@integral-2025-app/trpc/client";
+import {
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+  TRPC_HTTP_URL,
+  TRPC_WS_URL,
+} from "~/lib/runtimeEnv";
 import "../../global.css";
+import "~/tasks/backgroundLocationTask";
 
 // Theme colors
 const colors = {
@@ -50,22 +57,6 @@ const colors = {
   textDark: "#ffffff",
   textLight: "#000000",
 };
-
-const getEnvString = (value: unknown, name: string): string => {
-  if (typeof value !== "string" || value.length === 0) {
-    throw new Error(`Missing ${name} environment variable`);
-  }
-  return value;
-};
-
-const SUPABASE_URL = getEnvString(process.env.EXPO_PUBLIC_SUPABASE_URL, "SUPABASE_URL");
-const SUPABASE_ANON_KEY = getEnvString(
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-  "SUPABASE_ANON_KEY",
-);
-const TRPC_HTTP_URL = getEnvString(process.env.EXPO_PUBLIC_TRPC_API_URL, "TRPC_HTTP_URL");
-
-const TRPC_WS_URL = TRPC_HTTP_URL.replace(/^http/, "ws");
 
 const supabaseClient = createSupabaseClient(
   SUPABASE_URL,

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useAuth } from "@integral-2025-app/auth/client";
@@ -19,7 +19,13 @@ export function ProfileActionsSection({
   const { 
     isLocationSharingEnabled, 
     isLoading: isLocationLoading, 
-    toggleLocationSharing 
+    toggleLocationSharing,
+    isBackgroundLocationEnabled,
+    isUpdatingBackgroundLocation,
+    permissionStatus,
+    backgroundPermissionStatus,
+    toggleBackgroundLocationUpdates,
+    openSystemLocationSettings,
   } = useLocationContext();
 
   const handleToggle = () => {
@@ -29,6 +35,25 @@ export function ProfileActionsSection({
   const handleLocationToggle = () => {
     void toggleLocationSharing();
   };
+
+  const handleBackgroundToggle = () => {
+    void toggleBackgroundLocationUpdates();
+  };
+
+  const handleOpenSystemSettings = () => {
+    void openSystemLocationSettings();
+  };
+
+  const permissionModeLabel =
+    permissionStatus !== "granted"
+      ? "Location access: Off"
+      : backgroundPermissionStatus === "granted"
+        ? "Access mode: Always"
+        : "Access mode: While in use";
+  const isBackgroundControlDisabled =
+    !isLocationSharingEnabled || isLocationLoading || isUpdatingBackgroundLocation;
+  const isBackgroundDisplayedOn =
+    isLocationSharingEnabled && isBackgroundLocationEnabled;
 
   const handleSignOut = async () => {
     await signOut();
@@ -92,6 +117,70 @@ export function ProfileActionsSection({
       </TouchableOpacity>
 
       <TouchableOpacity
+        style={[
+          styles.actionButton,
+          isBackgroundDisplayedOn && styles.activeButton,
+          isBackgroundControlDisabled && styles.disabledButton,
+        ]}
+        onPress={handleBackgroundToggle}
+        disabled={isBackgroundControlDisabled}
+      >
+        <View
+          style={[
+            styles.actionIcon,
+            isBackgroundDisplayedOn && styles.activeIcon,
+            isBackgroundControlDisabled && styles.disabledIcon,
+          ]}
+        >
+          <Ionicons
+            name={isBackgroundDisplayedOn ? "navigate" : "navigate-outline"}
+            size={20}
+            color={
+              isBackgroundControlDisabled
+                ? colors.textMuted
+                : isBackgroundDisplayedOn
+                  ? colors.primary
+                  : colors.white
+            }
+          />
+        </View>
+        <View style={styles.actionTextWrap}>
+          <Text
+            style={[styles.actionTitle, isBackgroundControlDisabled && styles.disabledText]}
+          >
+            Background Location
+          </Text>
+          <Text
+            style={[styles.actionSubtext, isBackgroundControlDisabled && styles.disabledText]}
+          >
+            {!isLocationSharingEnabled ? "Enable location sharing first" : permissionModeLabel}
+          </Text>
+        </View>
+        {isUpdatingBackgroundLocation ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <View style={[styles.activeBadge, !isBackgroundDisplayedOn && styles.offBadge]}>
+            <Text
+              style={[
+                styles.activeBadgeText,
+                !isBackgroundDisplayedOn && styles.offBadgeText,
+              ]}
+            >
+              {isBackgroundDisplayedOn ? "ON" : "OFF"}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.settingsAction}
+        onPress={handleOpenSystemSettings}
+      >
+        <Ionicons name="settings-outline" size={16} color={colors.primary} />
+        <Text style={styles.settingsActionText}>Open system location settings</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={[styles.actionButton, styles.dangerButton]}
         onPress={() => void handleSignOut()}
       >
@@ -142,6 +231,19 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
     color: colors.white,
   },
+  actionTitle: {
+    fontSize: typography.base,
+    fontWeight: typography.medium,
+    color: colors.white,
+  },
+  actionTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  actionSubtext: {
+    color: colors.textMuted,
+    fontSize: typography.xs,
+  },
   dangerButton: {
     borderColor: "rgba(239, 68, 68, 0.2)",
   },
@@ -168,5 +270,39 @@ const styles = StyleSheet.create({
     fontWeight: typography.bold,
     color: colors.backgroundDark,
     letterSpacing: 1,
+  },
+  offBadge: {
+    backgroundColor: "rgba(148, 163, 184, 0.2)",
+  },
+  offBadgeText: {
+    color: colors.white,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  disabledIcon: {
+    backgroundColor: "rgba(148, 163, 184, 0.12)",
+  },
+  disabledText: {
+    color: colors.textMuted,
+  },
+  settingsAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    alignSelf: "flex-start",
+    marginTop: -spacing.xs,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 206, 209, 0.25)",
+    backgroundColor: "rgba(0, 206, 209, 0.08)",
+  },
+  settingsActionText: {
+    color: colors.primary,
+    fontSize: typography.xs,
+    fontWeight: typography.medium,
   },
 });
