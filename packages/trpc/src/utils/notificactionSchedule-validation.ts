@@ -53,12 +53,12 @@ export function validateScheduleTime(
 
 export function validateMinimumDuration(startDate: Date, endDate: Date): void {
   const durationMs = endDate.getTime() - startDate.getTime();
-  const oneDayMs = 24 * 60 * 60 * 1000;
+  const oneMinuteMs = 60 * 1000;
 
-  if (durationMs < oneDayMs) {
+  if (durationMs < oneMinuteMs) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `Schedule must run for at least 24 hours. Current duration: ${Math.round(durationMs / (60 * 60 * 1000))} hours`,
+      message: `Schedule must run for at least 1 minute. Current duration: ${Math.floor(durationMs / 1000)} seconds`,
     });
   }
 }
@@ -167,6 +167,7 @@ export const paginationSchema = z.object({
 });
 
 export const filterSchema = z.object({
+  tripId: z.string().optional(),
   notificationType: z.enum(["custom", "ranking"]).optional(),
   isActive: z.boolean().optional(),
   startDateFrom: z.date().optional(),

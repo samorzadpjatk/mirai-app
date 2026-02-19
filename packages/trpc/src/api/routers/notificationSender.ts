@@ -1,10 +1,6 @@
 import { sendMobileNotifications } from "../../services/notificationService";
-import { INACTIVITY_NOTIFICATION } from "../../utils/notificationTemplates";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import z from "zod";
-
-const INACTIVITY_THRESHOLD_MINUTES = 30;
-const NOTIFICATION_COOLDOWN_MINUTES = 30;
 
 export interface InactivityCheckResult {
   checked: number;
@@ -155,87 +151,14 @@ export const notificationSenderRouter = createTRPCRouter({
         );
       }
     }),
-  checkInactiveUsers: publicProcedure.mutation(async ({ ctx }) => {
-    const now = new Date();
-    const inactivityThreshold = new Date(
-      now.getTime() - INACTIVITY_THRESHOLD_MINUTES * 60 * 1000,
-    );
-    const notificationCooldown = new Date(
-      now.getTime() - NOTIFICATION_COOLDOWN_MINUTES * 60 * 1000,
-    );
-
-    const inactiveUsers = await ctx.db.location.findMany({
-      where: {
-        timestamp: {
-          lt: inactivityThreshold,
-        },
-        isSharingLocation: true,
-        OR: [
-          { lastInactivityNotification: null },
-          { lastInactivityNotification: { lt: notificationCooldown } },
-        ],
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    const result: InactivityCheckResult = {
-      checked: inactiveUsers.length,
+  checkInactiveUsers: publicProcedure.mutation(async () => {
+    // Inactivity nudge notifications are disabled.
+    return {
+      checked: 0,
       notified: 0,
       skipped: 0,
       errors: 0,
-    };
-
-    if (inactiveUsers.length === 0) {
-      return result;
-    }
-
-    const firstUser = inactiveUsers[0];
-    if (!firstUser) {
-      return result;
-    }
-
-    // Notification template (shared)
-    const notificationData = INACTIVITY_NOTIFICATION;
-
-    // Send mobile notifications to each inactive user
-    for (const location of inactiveUsers) {
-      try {
-        // Create notification for this specific user
-        const userNotification = await ctx.db.notification.create({
-          data: {
-            ...notificationData,
-            createdById: location.userId,
-          },
-        });
-
-        // Send mobile notification
-        const sendResult = await sendMobileNotifications(
-          ctx.db,
-          userNotification.id,
-        );
-
-        if (sendResult.sent > 0) {
-          // Update last notification timestamp to prevent duplicate notifications
-          await ctx.db.location.update({
-            where: { id: location.id },
-            data: { lastInactivityNotification: now },
-          });
-          result.notified++;
-        } else {
-          result.skipped++;
-        }
-      } catch (error) {
-        console.error(
-          `Failed to send inactivity notification to user ${location.userId}:`,
-          error,
-        );
-        result.errors++;
-      }
-    }
-
-    return result;
+    } satisfies InactivityCheckResult;
   }),
 });
 

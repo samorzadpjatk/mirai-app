@@ -27,7 +27,7 @@ export function ScheduleCard({
         <View style={styles.titleSection}>
           <Text style={styles.title}>{schedule.name}</Text>
           <Text style={styles.triggerTime}>
-            {Ionicons.name === 'time' && <Ionicons name="time" size={14} color={colors.textSecondary} />}
+            <Ionicons name="time" size={14} color={colors.textSecondary} />
             {' '}{schedule.triggerTime}
           </Text>
         </View>

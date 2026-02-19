@@ -4,6 +4,8 @@ import { useTRPC } from '@integral-2025-app/trpc/client';
 
 export interface Notification {
   id: string;
+  tripId?: string | null;
+  url: string;
   title: string;
   body: string;
   createdAt: Date | string;
@@ -13,29 +15,21 @@ export interface Notification {
     lastName?: string;
   };
   pushes: {
-    status: 'sent' | 'failed' | 'pending';
+    targetUserId: string;
+    status: string;
     sentAt?: Date | null;
     failureReason?: string | null;
-    targetUser: {
-      id: string;
-      firstName?: string;
-      lastName?: string;
-    };
   }[];
 }
 
 export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'all';
 
-export function useAdminNotifications() {
+export function useAdminNotifications(tripId?: string) {
   const trpc = useTRPC();
-  const [page, setPage] = useState(1);
   const [status, setStatus] = useState<NotificationStatus>('all');
 
   const { data: result, isLoading, refetch } = useQuery(
-    trpc.notifications.getAll.queryOptions({
-      page,
-      pageSize: 20,
-    })
+    trpc.notifications.getAll.queryOptions(tripId ? { tripId } : undefined)
   );
 
   const retryMutation = useMutation(trpc.notifications.retryNotification.mutationOptions({
@@ -51,7 +45,6 @@ export function useAdminNotifications() {
   }));
 
   const notifications = result?.notifications ?? [];
-  const pagination = result?.pagination;
 
   const retryNotification = (notificationId: string) => {
     return retryMutation.mutateAsync({ notificationId });
@@ -76,11 +69,8 @@ export function useAdminNotifications() {
 
   return {
     notifications,
-    pagination,
     isLoading,
-    page,
     status,
-    setPage,
     setStatus,
     retryNotification,
     deleteNotification,

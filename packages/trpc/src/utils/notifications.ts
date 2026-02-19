@@ -28,6 +28,8 @@ export async function sendNotification({
   try {
     return await executeWithRetry(
       async () => {
+        const uniqueUserIds = Array.from(new Set(input.userIds));
+
         const notification = await db.notification.create({
           data: {
             title: input.title,
@@ -37,6 +39,19 @@ export async function sendNotification({
             tripId: input.tripId,
           },
         });
+
+        if (uniqueUserIds.length > 0) {
+          await db.notificationPush.createMany({
+            data: uniqueUserIds.map((targetUserId) => ({
+              notificationId: notification.id,
+              targetUserId,
+              status: "pending",
+              sentAt: null,
+              failureReason: null,
+            })),
+            skipDuplicates: true,
+          });
+        }
 
         return {
           success: true,

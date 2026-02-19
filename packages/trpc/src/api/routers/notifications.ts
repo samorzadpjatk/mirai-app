@@ -9,6 +9,7 @@ import {
 import { NotificationService } from "../../services/notificationService";
 import { sendNotification, sendRankingUpdate } from "../../utils/notifications";
 import type { SendNotificationResult } from "../../utils/notifications";
+import { sendMobileNotifications } from "../../services/notificationService";
 
 export const notificationRouter = createTRPCRouter({
   subscribe: protectedProcedure
@@ -157,21 +158,15 @@ export const notificationRouter = createTRPCRouter({
 
   getAll: adminProcedure
     .input(
-      z.object({
-        page: z.number().min(1).default(1),
-        pageSize: z.number().min(1).max(100).default(20),
-      }),
+      z
+        .object({
+          tripId: z.string().optional(),
+        })
+        .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const count = await ctx.db.notification.count();
-      const totalPages = Math.ceil(count / input.pageSize);
-      if (input.page > totalPages && totalPages > 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Page ${input.page} exceeds total pages ${totalPages}`,
-        });
-      }
       const notifications = await ctx.db.notification.findMany({
+        where: input?.tripId ? { tripId: input.tripId } : undefined,
         orderBy: { createdAt: "desc" },
         include: {
           createdBy: {
@@ -179,27 +174,15 @@ export const notificationRouter = createTRPCRouter({
           },
           pushes: {
             select: {
+              targetUserId: true,
               sentAt: true,
               status: true,
               failureReason: true,
-              targetUser: {
-                select: { id: true, firstName: true, lastName: true },
-              },
             },
           },
         },
-        take: input.pageSize,
-        skip: (input.page - 1) * input.pageSize,
       });
-      return {
-        notifications,
-        pagination: {
-          total: count,
-          page: input.page,
-          pageSize: input.pageSize,
-          totalPages,
-        },
-      };
+      return { notifications };
     }),
 
   sendToGroup: moderatorProcedure
@@ -228,7 +211,7 @@ export const notificationRouter = createTRPCRouter({
           select: { userId: true },
         });
         const userIds = participants.map((p) => p.userId);
-        return await sendNotification({
+        const result = await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
           input: {
@@ -239,6 +222,8 @@ export const notificationRouter = createTRPCRouter({
             tripId: input.tripId,
           },
         });
+        await sendMobileNotifications(ctx.db, result.notificationId);
+        return result;
       } catch (error) {
         console.error("Error sending notification to group:", error);
         throw new TRPCError({
@@ -264,7 +249,7 @@ export const notificationRouter = createTRPCRouter({
           select: { userId: true },
         });
         const userIds = participants.map((p) => p.userId);
-        return await sendNotification({
+        const result = await sendNotification({
           db: ctx.db,
           userId: ctx.dbUser.id,
           input: {
@@ -275,6 +260,8 @@ export const notificationRouter = createTRPCRouter({
             tripId: input.tripId,
           },
         });
+        await sendMobileNotifications(ctx.db, result.notificationId);
+        return result;
       } catch (error) {
         console.error("Error sending notification to all:", error);
         throw new TRPCError({
@@ -562,17 +549,28 @@ export const notificationRouter = createTRPCRouter({
             message: "No failed pushes to retry",
           });
         }
-        return await sendNotification({
-          db: ctx.db,
-          userId: ctx.dbUser.id,
-          input: {
-            userIds: pushes.map((p) => p.targetUserId),
-            title: notification.title,
-            body: notification.body,
-            url: notification.url,
-            tripId: notification.tripId,
+
+        await ctx.db.notificationPush.updateMany({
+          where: {
+            notificationId: input.notificationId,
+            status: "failed",
+          },
+          data: {
+            status: "pending",
+            sentAt: null,
+            failureReason: null,
           },
         });
+
+        const retryResult = await sendMobileNotifications(ctx.db, input.notificationId);
+
+        return {
+          success: retryResult.success,
+          notificationId: input.notificationId,
+          retriedCount: pushes.length,
+          sent: retryResult.sent,
+          failed: retryResult.failed,
+        };
       } catch (error) {
         console.error("Error retrying notification:", error);
         throw new TRPCError({
