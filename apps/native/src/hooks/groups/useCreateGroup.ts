@@ -16,38 +16,20 @@ export function useCreateGroup(tripId?: string | null) {
     }),
   );
 
-  const assignMutation = useMutation(
-    trpc.group.assignUserToGroup.mutationOptions(),
-  );
-
   const createGroup = async (args: {
     name: string;
     image?: string;
-    selectedMembers?: string[];
   }) => {
-    const { name, image, selectedMembers = [] } = args;
-    const result = await createMutation.mutateAsync({
+    const { name, image } = args;
+    return await createMutation.mutateAsync({
       tripId: tripId ?? "",
       name,
       image,
     });
-
-    // assign members if any
-    if (result && selectedMembers.length > 0) {
-      for (const userId of selectedMembers) {
-        await assignMutation.mutateAsync({
-          userId,
-          tripId: tripId ?? "",
-          groupId: result.id,
-        });
-      }
-    }
-
-    return result;
   };
 
   return {
     createGroup,
-    isCreating: createMutation.isPending || assignMutation.isPending,
+    isCreating: createMutation.isPending,
   } as const;
 }

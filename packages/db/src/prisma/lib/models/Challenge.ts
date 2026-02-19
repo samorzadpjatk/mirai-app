@@ -66,6 +66,7 @@ export type ChallengeMinAggregateOutputType = {
   votingEndTime: Date | null
   targetLatitude: number | null
   targetLongitude: number | null
+  expectedValue: string | null
   autoApprove: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -93,6 +94,7 @@ export type ChallengeMaxAggregateOutputType = {
   votingEndTime: Date | null
   targetLatitude: number | null
   targetLongitude: number | null
+  expectedValue: string | null
   autoApprove: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -120,6 +122,7 @@ export type ChallengeCountAggregateOutputType = {
   votingEndTime: number
   targetLatitude: number
   targetLongitude: number
+  expectedValue: number
   autoApprove: number
   createdAt: number
   updatedAt: number
@@ -167,6 +170,7 @@ export type ChallengeMinAggregateInputType = {
   votingEndTime?: true
   targetLatitude?: true
   targetLongitude?: true
+  expectedValue?: true
   autoApprove?: true
   createdAt?: true
   updatedAt?: true
@@ -194,6 +198,7 @@ export type ChallengeMaxAggregateInputType = {
   votingEndTime?: true
   targetLatitude?: true
   targetLongitude?: true
+  expectedValue?: true
   autoApprove?: true
   createdAt?: true
   updatedAt?: true
@@ -221,6 +226,7 @@ export type ChallengeCountAggregateInputType = {
   votingEndTime?: true
   targetLatitude?: true
   targetLongitude?: true
+  expectedValue?: true
   autoApprove?: true
   createdAt?: true
   updatedAt?: true
@@ -335,6 +341,7 @@ export type ChallengeGroupByOutputType = {
   votingEndTime: Date | null
   targetLatitude: number | null
   targetLongitude: number | null
+  expectedValue: string | null
   autoApprove: boolean
   createdAt: Date
   updatedAt: Date
@@ -385,6 +392,7 @@ export type ChallengeWhereInput = {
   votingEndTime?: Prisma.DateTimeNullableFilter<"Challenge"> | Date | string | null
   targetLatitude?: Prisma.FloatNullableFilter<"Challenge"> | number | null
   targetLongitude?: Prisma.FloatNullableFilter<"Challenge"> | number | null
+  expectedValue?: Prisma.StringNullableFilter<"Challenge"> | string | null
   autoApprove?: Prisma.BoolFilter<"Challenge"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Challenge"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Challenge"> | Date | string
@@ -417,6 +425,7 @@ export type ChallengeOrderByWithRelationInput = {
   votingEndTime?: Prisma.SortOrderInput | Prisma.SortOrder
   targetLatitude?: Prisma.SortOrderInput | Prisma.SortOrder
   targetLongitude?: Prisma.SortOrderInput | Prisma.SortOrder
+  expectedValue?: Prisma.SortOrderInput | Prisma.SortOrder
   autoApprove?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -452,6 +461,7 @@ export type ChallengeWhereUniqueInput = Prisma.AtLeast<{
   votingEndTime?: Prisma.DateTimeNullableFilter<"Challenge"> | Date | string | null
   targetLatitude?: Prisma.FloatNullableFilter<"Challenge"> | number | null
   targetLongitude?: Prisma.FloatNullableFilter<"Challenge"> | number | null
+  expectedValue?: Prisma.StringNullableFilter<"Challenge"> | string | null
   autoApprove?: Prisma.BoolFilter<"Challenge"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Challenge"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Challenge"> | Date | string
@@ -484,6 +494,7 @@ export type ChallengeOrderByWithAggregationInput = {
   votingEndTime?: Prisma.SortOrderInput | Prisma.SortOrder
   targetLatitude?: Prisma.SortOrderInput | Prisma.SortOrder
   targetLongitude?: Prisma.SortOrderInput | Prisma.SortOrder
+  expectedValue?: Prisma.SortOrderInput | Prisma.SortOrder
   autoApprove?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -519,6 +530,7 @@ export type ChallengeScalarWhereWithAggregatesInput = {
   votingEndTime?: Prisma.DateTimeNullableWithAggregatesFilter<"Challenge"> | Date | string | null
   targetLatitude?: Prisma.FloatNullableWithAggregatesFilter<"Challenge"> | number | null
   targetLongitude?: Prisma.FloatNullableWithAggregatesFilter<"Challenge"> | number | null
+  expectedValue?: Prisma.StringNullableWithAggregatesFilter<"Challenge"> | string | null
   autoApprove?: Prisma.BoolWithAggregatesFilter<"Challenge"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Challenge"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Challenge"> | Date | string
@@ -545,6 +557,7 @@ export type ChallengeCreateInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -577,6 +590,7 @@ export type ChallengeUncheckedCreateInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -607,6 +621,7 @@ export type ChallengeUpdateInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -639,6 +654,7 @@ export type ChallengeUncheckedUpdateInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -670,6 +686,7 @@ export type ChallengeCreateManyInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -696,6 +713,7 @@ export type ChallengeUpdateManyMutationInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -723,6 +741,7 @@ export type ChallengeUncheckedUpdateManyInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -760,6 +779,7 @@ export type ChallengeCountOrderByAggregateInput = {
   votingEndTime?: Prisma.SortOrder
   targetLatitude?: Prisma.SortOrder
   targetLongitude?: Prisma.SortOrder
+  expectedValue?: Prisma.SortOrder
   autoApprove?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -796,6 +816,7 @@ export type ChallengeMaxOrderByAggregateInput = {
   votingEndTime?: Prisma.SortOrder
   targetLatitude?: Prisma.SortOrder
   targetLongitude?: Prisma.SortOrder
+  expectedValue?: Prisma.SortOrder
   autoApprove?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -823,6 +844,7 @@ export type ChallengeMinOrderByAggregateInput = {
   votingEndTime?: Prisma.SortOrder
   targetLatitude?: Prisma.SortOrder
   targetLongitude?: Prisma.SortOrder
+  expectedValue?: Prisma.SortOrder
   autoApprove?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -993,6 +1015,7 @@ export type ChallengeCreateWithoutTripInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1023,6 +1046,7 @@ export type ChallengeUncheckedCreateWithoutTripInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1083,6 +1107,7 @@ export type ChallengeScalarWhereInput = {
   votingEndTime?: Prisma.DateTimeNullableFilter<"Challenge"> | Date | string | null
   targetLatitude?: Prisma.FloatNullableFilter<"Challenge"> | number | null
   targetLongitude?: Prisma.FloatNullableFilter<"Challenge"> | number | null
+  expectedValue?: Prisma.StringNullableFilter<"Challenge"> | string | null
   autoApprove?: Prisma.BoolFilter<"Challenge"> | boolean
   createdAt?: Prisma.DateTimeFilter<"Challenge"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Challenge"> | Date | string
@@ -1109,6 +1134,7 @@ export type ChallengeCreateWithoutSubmissionsInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1140,6 +1166,7 @@ export type ChallengeUncheckedCreateWithoutSubmissionsInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1185,6 +1212,7 @@ export type ChallengeUpdateWithoutSubmissionsInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1216,6 +1244,7 @@ export type ChallengeUncheckedUpdateWithoutSubmissionsInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1245,6 +1274,7 @@ export type ChallengeCreateWithoutVotesInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1276,6 +1306,7 @@ export type ChallengeUncheckedCreateWithoutVotesInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1321,6 +1352,7 @@ export type ChallengeUpdateWithoutVotesInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1352,6 +1384,7 @@ export type ChallengeUncheckedUpdateWithoutVotesInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1381,6 +1414,7 @@ export type ChallengeCreateWithoutSubmissionActivitiesInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1412,6 +1446,7 @@ export type ChallengeUncheckedCreateWithoutSubmissionActivitiesInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1457,6 +1492,7 @@ export type ChallengeUpdateWithoutSubmissionActivitiesInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1488,6 +1524,7 @@ export type ChallengeUncheckedUpdateWithoutSubmissionActivitiesInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1517,6 +1554,7 @@ export type ChallengeCreateWithoutChallengeActivitiesInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1548,6 +1586,7 @@ export type ChallengeUncheckedCreateWithoutChallengeActivitiesInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1593,6 +1632,7 @@ export type ChallengeUpdateWithoutChallengeActivitiesInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1624,6 +1664,7 @@ export type ChallengeUncheckedUpdateWithoutChallengeActivitiesInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1653,6 +1694,7 @@ export type ChallengeCreateManyTripInput = {
   votingEndTime?: Date | string | null
   targetLatitude?: number | null
   targetLongitude?: number | null
+  expectedValue?: string | null
   autoApprove?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1679,6 +1721,7 @@ export type ChallengeUpdateWithoutTripInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1709,6 +1752,7 @@ export type ChallengeUncheckedUpdateWithoutTripInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1739,6 +1783,7 @@ export type ChallengeUncheckedUpdateManyWithoutTripInput = {
   votingEndTime?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   targetLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   targetLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  expectedValue?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   autoApprove?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1824,6 +1869,7 @@ export type ChallengeSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   votingEndTime?: boolean
   targetLatitude?: boolean
   targetLongitude?: boolean
+  expectedValue?: boolean
   autoApprove?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1857,6 +1903,7 @@ export type ChallengeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   votingEndTime?: boolean
   targetLatitude?: boolean
   targetLongitude?: boolean
+  expectedValue?: boolean
   autoApprove?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1885,6 +1932,7 @@ export type ChallengeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   votingEndTime?: boolean
   targetLatitude?: boolean
   targetLongitude?: boolean
+  expectedValue?: boolean
   autoApprove?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1913,12 +1961,13 @@ export type ChallengeSelectScalar = {
   votingEndTime?: boolean
   targetLatitude?: boolean
   targetLongitude?: boolean
+  expectedValue?: boolean
   autoApprove?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ChallengeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tripId" | "name" | "description" | "image" | "submissionType" | "scoringCategory" | "isRecurring" | "dailyStartTime" | "dailyEndTime" | "basePoints" | "firstPlacePoints" | "secondPlacePoints" | "thirdPlacePoints" | "status" | "startTime" | "endTime" | "votingStartTime" | "votingEndTime" | "targetLatitude" | "targetLongitude" | "autoApprove" | "createdAt" | "updatedAt", ExtArgs["result"]["challenge"]>
+export type ChallengeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tripId" | "name" | "description" | "image" | "submissionType" | "scoringCategory" | "isRecurring" | "dailyStartTime" | "dailyEndTime" | "basePoints" | "firstPlacePoints" | "secondPlacePoints" | "thirdPlacePoints" | "status" | "startTime" | "endTime" | "votingStartTime" | "votingEndTime" | "targetLatitude" | "targetLongitude" | "expectedValue" | "autoApprove" | "createdAt" | "updatedAt", ExtArgs["result"]["challenge"]>
 export type ChallengeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   trip?: boolean | Prisma.TripDefaultArgs<ExtArgs>
   submissions?: boolean | Prisma.Challenge$submissionsArgs<ExtArgs>
@@ -1965,6 +2014,7 @@ export type $ChallengePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     votingEndTime: Date | null
     targetLatitude: number | null
     targetLongitude: number | null
+    expectedValue: string | null
     autoApprove: boolean
     createdAt: Date
     updatedAt: Date
@@ -2417,6 +2467,7 @@ export interface ChallengeFieldRefs {
   readonly votingEndTime: Prisma.FieldRef<"Challenge", 'DateTime'>
   readonly targetLatitude: Prisma.FieldRef<"Challenge", 'Float'>
   readonly targetLongitude: Prisma.FieldRef<"Challenge", 'Float'>
+  readonly expectedValue: Prisma.FieldRef<"Challenge", 'String'>
   readonly autoApprove: Prisma.FieldRef<"Challenge", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"Challenge", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Challenge", 'DateTime'>

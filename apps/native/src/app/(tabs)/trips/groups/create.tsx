@@ -1,18 +1,14 @@
-import { useMemo, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
+import { useState } from "react";
+import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
-import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useCreateGroup } from "~/hooks/groups";
-import { colors, spacing, typography } from "../../../../styles";
+import { colors, spacing } from "../../../../styles";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { useFileUpload } from "~/hooks/files";
 import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupButton";
 import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCreateNoTripState";
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";
-import { MembersPicker } from "~/components/trips/groups/create/MembersPicker";
-import { MembersSearchBar } from "~/components/trips/groups/create/MembersSearchBar";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
 
 const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
@@ -49,38 +45,16 @@ export default function CreateGroupScreen() {
   const params = useLocalSearchParams();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const trpc = useTRPC();
   const insets = useAppSafeAreaInsets();
-
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
   const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(
     null,
   );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
-    new Set(),
-  );
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
-  const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
-    enabled: !!tripId,
-  });
-
   const { createGroup, isCreating } = useCreateGroup(tripId);
-
-  const toggleMember = (userId: string) => {
-    const newSelected = new Set(selectedMembers);
-    if (newSelected.has(userId)) {
-      newSelected.delete(userId);
-    } else {
-      newSelected.add(userId);
-    }
-    setSelectedMembers(newSelected);
-  };
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
@@ -96,7 +70,6 @@ export default function CreateGroupScreen() {
       const newGroup = await createGroup({
         name: groupName,
         image: groupImagePath,
-        selectedMembers: Array.from(selectedMembers),
       });
       Alert.alert("Success", "Group created successfully!");
       router.push(`/trips/groups/${newGroup.id}`);
@@ -147,16 +120,6 @@ export default function CreateGroupScreen() {
     }
   };
 
-  const filteredParticipants = useMemo(() => {
-    const participants = trip?.participants ?? [];
-    return participants.filter((participant) => {
-      if (participant.user.id === currentUser?.id) return false;
-      const fullName =
-        `${participant.user.firstName} ${participant.user.lastName}`.toLowerCase();
-      return fullName.includes(searchQuery.toLowerCase());
-    });
-  }, [trip?.participants, currentUser?.id, searchQuery]);
-
   if (!tripId) {
     return <GroupCreateNoTripState onGoBack={() => router.back()} />;
   }
@@ -188,22 +151,6 @@ export default function CreateGroupScreen() {
               : null
           }
         />
-
-        {/* Add Members Section */}
-        <View style={styles.memberSection}>
-          <Text style={styles.inputLabel}>Add Members</Text>
-
-          {/* Search */}
-          <MembersSearchBar value={searchQuery} onChangeText={setSearchQuery} />
-
-          {/* Members List */}
-          <MembersPicker
-            participants={filteredParticipants}
-            selectedMembers={selectedMembers}
-            isLoading={tripLoading}
-            onToggleMember={toggleMember}
-          />
-        </View>
         {/* Create Button at bottom of scroll */}
         <CreateGroupButton
           isSubmitting={isCreating}
@@ -225,17 +172,5 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.xl,
     paddingBottom: spacing.xxxl,
-  },
-  memberSection: {
-    marginBottom: spacing.xl,
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
   },
 });

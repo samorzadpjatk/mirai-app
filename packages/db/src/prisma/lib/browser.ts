@@ -48,6 +48,11 @@ export type UserEvent = Prisma.UserEventModel
  */
 export type Group = Prisma.GroupModel
 /**
+ * Model GroupJoinRequest
+ * 
+ */
+export type GroupJoinRequest = Prisma.GroupJoinRequestModel
+/**
  * Model Challenge
  * 
  */

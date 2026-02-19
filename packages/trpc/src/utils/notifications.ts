@@ -87,7 +87,7 @@ export async function sendRankingUpdate({
   notificationIds: string[];
 }> {
   const groups = await db.group.findMany({
-    where: { tripId },
+    where: { tripId, isDeleted: false },
     orderBy: { coins: "desc" },
   });
 

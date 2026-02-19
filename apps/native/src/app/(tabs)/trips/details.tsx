@@ -3,9 +3,10 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTripDetails } from "~/hooks/trips";
+import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
@@ -15,8 +16,11 @@ import { PartnersSection } from "~/components/trips/details/PartnersSection";
 export default function TripDetailsScreen() {
   const { session, isLoading } = useAuth();
   const router = useRouter();
+  const insets = useAppSafeAreaInsets();
   const params = useLocalSearchParams();
-  const tripId = typeof params.id === "string" ? params.id : params.id?.[0];
+  const paramTripId = typeof params.id === "string" ? params.id : params.id?.[0];
+  const { selectedTripId, isLoadingSelectedTrip } = useSelectedTrip();
+  const tripId = selectedTripId ?? paramTripId;
 
   const { isLoadingUser, trip, isLoadingTrip } = useTripDetails(tripId);
 
@@ -26,7 +30,7 @@ export default function TripDetailsScreen() {
     }
   }, [isLoading, session, router]);
 
-  if (isLoadingUser || isLoadingTrip) {
+  if (isLoadingUser || isLoadingTrip || isLoadingSelectedTrip) {
     return <LoadingScreen message="Loading..." />;
   }
 
@@ -49,7 +53,13 @@ export default function TripDetailsScreen() {
         {/* Main Content */}
         <ScrollView
           style={styles.mainContent}
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[
+            styles.contentContainer,
+            {
+              paddingTop: insets.top + spacing.xs,
+              paddingBottom: insets.bottom + spacing.xxxl + spacing.xxl,
+            },
+          ]}
         >
           {/* Hero Image */}
           <TripHeroCard
@@ -80,7 +90,7 @@ export default function TripDetailsScreen() {
           />
 
           {/* Latest News Section */}
-          <TripNewsSection />
+          <TripNewsSection tripId={trip.id} />
         </ScrollView>
       </View>
     </>
@@ -96,6 +106,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: spacing.xxxl,
+    paddingBottom: 0,
   },
 });

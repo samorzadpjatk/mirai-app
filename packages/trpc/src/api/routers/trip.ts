@@ -52,6 +52,7 @@ export const tripRouter = createTRPCRouter({
       orderBy: { startDate: "asc" },
       include: {
         groups: {
+          where: { isDeleted: false },
           select: { id: true, name: true },
         },
       },
@@ -81,6 +82,7 @@ export const tripRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           groups: {
+            where: { isDeleted: false },
             select: {
               id: true,
               name: true,
@@ -109,6 +111,7 @@ export const tripRouter = createTRPCRouter({
                   name: true,
                   image: true,
                   coins: true,
+                  isDeleted: true,
                   _count: {
                     select: { participants: true }
                   }
@@ -140,7 +143,9 @@ export const tripRouter = createTRPCRouter({
           return {
             ...participant,
             group: participant.group
-              ? {
+              ? participant.group.isDeleted
+                ? null
+                : {
                   ...participant.group,
                   image: participant.group.image,
                 }
@@ -160,6 +165,7 @@ export const tripRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           groups: {
+            where: { isDeleted: false },
             select: {
               id: true,
               name: true,
@@ -188,6 +194,7 @@ export const tripRouter = createTRPCRouter({
                   name: true,
                   image: true,
                   coins: true,
+                  isDeleted: true,
                   _count: {
                     select: { participants: true }
                   }
@@ -219,7 +226,9 @@ export const tripRouter = createTRPCRouter({
           return {
             ...participant,
             group: participant.group
-              ? {
+              ? participant.group.isDeleted
+                ? null
+                : {
                   ...participant.group,
                   image: participant.group.image,
                 }

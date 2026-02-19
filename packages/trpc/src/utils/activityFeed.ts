@@ -5,7 +5,7 @@ type ChallengeEventType =
   | "voting_started"
   | "completed";
 
-type ChallengeForFeed = {
+interface ChallengeForFeed {
   id: string;
   tripId: string;
   name: string;
@@ -25,7 +25,7 @@ type ChallengeForFeed = {
   thirdPlacePoints: number | null;
   endTime: Date | null;
   votingEndTime: Date | null;
-};
+}
 
 type RankSnapshot = Map<
   string,
@@ -85,7 +85,7 @@ const createChallengeEventActivity = async (params: {
       : params.challenge.description?.trim();
 
   const description =
-    challengeDescription ||
+    challengeDescription ??
     (params.eventType === "challenge_started"
       ? "Challenge is now active"
       : params.eventType === "voting_started"
@@ -455,7 +455,7 @@ export const captureTripRankingSnapshot = async (
   tripId: string,
 ): Promise<RankSnapshot> => {
   const groups = await tx.group.findMany({
-    where: { tripId },
+    where: { tripId, isDeleted: false },
     orderBy: [{ coins: "desc" }, { id: "asc" }],
     select: {
       id: true,
@@ -492,7 +492,7 @@ export const createRankChangeActivities = async (params: {
   }
 
   const groupsAfter = await params.tx.group.findMany({
-    where: { tripId: params.tripId },
+    where: { tripId: params.tripId, isDeleted: false },
     orderBy: [{ coins: "desc" }, { id: "asc" }],
     select: {
       id: true,

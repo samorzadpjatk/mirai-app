@@ -390,6 +390,7 @@ export const ModelName = {
   Event: 'Event',
   UserEvent: 'UserEvent',
   Group: 'Group',
+  GroupJoinRequest: 'GroupJoinRequest',
   Challenge: 'Challenge',
   ChallengeSubmission: 'ChallengeSubmission',
   ChallengeVote: 'ChallengeVote',
@@ -426,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "activityFeed" | "activityReaction" | "submissionActivity" | "challengeActivity" | "rankChangeActivity" | "userPost" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase"
+    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "groupJoinRequest" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "activityFeed" | "activityReaction" | "submissionActivity" | "challengeActivity" | "rankChangeActivity" | "userPost" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -871,6 +872,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.GroupCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.GroupCountAggregateOutputType> | number
+        }
+      }
+    }
+    GroupJoinRequest: {
+      payload: Prisma.$GroupJoinRequestPayload<ExtArgs>
+      fields: Prisma.GroupJoinRequestFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.GroupJoinRequestFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.GroupJoinRequestFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>
+        }
+        findFirst: {
+          args: Prisma.GroupJoinRequestFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.GroupJoinRequestFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>
+        }
+        findMany: {
+          args: Prisma.GroupJoinRequestFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>[]
+        }
+        create: {
+          args: Prisma.GroupJoinRequestCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>
+        }
+        createMany: {
+          args: Prisma.GroupJoinRequestCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.GroupJoinRequestCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>[]
+        }
+        delete: {
+          args: Prisma.GroupJoinRequestDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>
+        }
+        update: {
+          args: Prisma.GroupJoinRequestUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>
+        }
+        deleteMany: {
+          args: Prisma.GroupJoinRequestDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.GroupJoinRequestUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.GroupJoinRequestUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>[]
+        }
+        upsert: {
+          args: Prisma.GroupJoinRequestUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GroupJoinRequestPayload>
+        }
+        aggregate: {
+          args: Prisma.GroupJoinRequestAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateGroupJoinRequest>
+        }
+        groupBy: {
+          args: Prisma.GroupJoinRequestGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.GroupJoinRequestGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.GroupJoinRequestCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.GroupJoinRequestCountAggregateOutputType> | number
         }
       }
     }
@@ -2545,6 +2620,7 @@ export const GroupScalarFieldEnum = {
   name: 'name',
   description: 'description',
   image: 'image',
+  isDeleted: 'isDeleted',
   organizerId: 'organizerId',
   code: 'code',
   coins: 'coins',
@@ -2553,6 +2629,17 @@ export const GroupScalarFieldEnum = {
 } as const
 
 export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof GroupScalarFieldEnum]
+
+
+export const GroupJoinRequestScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  groupId: 'groupId',
+  userId: 'userId',
+  createdAt: 'createdAt'
+} as const
+
+export type GroupJoinRequestScalarFieldEnum = (typeof GroupJoinRequestScalarFieldEnum)[keyof typeof GroupJoinRequestScalarFieldEnum]
 
 
 export const ChallengeScalarFieldEnum = {
@@ -2577,6 +2664,7 @@ export const ChallengeScalarFieldEnum = {
   votingEndTime: 'votingEndTime',
   targetLatitude: 'targetLatitude',
   targetLongitude: 'targetLongitude',
+  expectedValue: 'expectedValue',
   autoApprove: 'autoApprove',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -3168,6 +3256,7 @@ export type GlobalOmitConfig = {
   event?: Prisma.EventOmit
   userEvent?: Prisma.UserEventOmit
   group?: Prisma.GroupOmit
+  groupJoinRequest?: Prisma.GroupJoinRequestOmit
   challenge?: Prisma.ChallengeOmit
   challengeSubmission?: Prisma.ChallengeSubmissionOmit
   challengeVote?: Prisma.ChallengeVoteOmit

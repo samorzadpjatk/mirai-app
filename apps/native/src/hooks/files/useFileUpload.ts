@@ -52,6 +52,7 @@ export const useFileUpload = () => {
   const urlStorage = useMemo(() => tusUrlStorage(), []);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       void uploadRef.current?.abort();
@@ -78,8 +79,10 @@ export const useFileUpload = () => {
   const upload = useCallback(
     async (input: UploadInput): Promise<UploadResult> => {
       abort();
+      // Image picker can transiently unmount/remount screen trees on some devices.
+      // Keep upload flow resilient instead of hard-failing.
       if (!mountedRef.current) {
-        throw new Error("Upload aborted: component unmounted");
+        mountedRef.current = true;
       }
 
       setStatus("uploading");

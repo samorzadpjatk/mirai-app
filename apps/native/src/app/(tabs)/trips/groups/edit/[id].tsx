@@ -1,16 +1,26 @@
 import { useMemo, useState, useEffect } from "react";
-import { View, Text, ScrollView, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useGroupEditor } from "~/hooks/groups";
-import { colors, spacing, typography } from "../../../../../styles";
+import {
+  borderRadius as radius,
+  colors,
+  spacing,
+  typography,
+} from "../../../../../styles";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { useFileUpload } from "~/hooks/files";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
-import { EditMembersSearchBar } from "~/components/trips/groups/edit/EditMembersSearchBar";
-import { EditMembersPicker } from "~/components/trips/groups/edit/EditMembersPicker";
 import { GroupEditLoadingState } from "~/components/trips/groups/edit/GroupEditLoadingState";
 import { GroupEditNoTripState } from "~/components/trips/groups/edit/GroupEditNoTripState";
 import { GroupEditNotFoundState } from "~/components/trips/groups/edit/GroupEditNotFoundState";
@@ -47,6 +57,13 @@ const getImageContentType = (extension: string) => {
   }
 };
 
+const getInitials = (firstName?: string | null, lastName?: string | null) => {
+  const f = (firstName ?? "")[0] ?? "";
+  const l = (lastName ?? "")[0] ?? "";
+  const initials = `${f}${l}`.toUpperCase();
+  return initials || "?";
+};
+
 export default function EditGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -58,17 +75,11 @@ export default function EditGroupScreen() {
 
   const { group, isLoading: groupLoading } = useGroupEditor(groupId);
 
-  const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: group?.trip?.id ?? "" }),
-    enabled: !!group?.trip?.id,
-  });
-
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
   const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(
     null,
   );
-  const [searchQuery, setSearchQuery] = useState("");
   const [currentMembers, setCurrentMembers] = useState<Set<string>>(new Set());
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
@@ -84,8 +95,7 @@ export default function EditGroupScreen() {
     return () => clearTimeout(id);
   }, [group]);
 
-  const { updateGroup, assignUser, removeUser, isUpdating } =
-    useGroupEditor(groupId);
+  const { updateGroup, removeUser, isUpdating } = useGroupEditor(groupId);
 
   const handleSave = async () => {
     if (!groupName.trim()) {
@@ -98,30 +108,19 @@ export default function EditGroupScreen() {
     }
 
     try {
-      // Update group name
       await updateGroup({
         id: groupId ?? "",
         name: groupName,
         image: groupImagePath,
       });
 
-      // Handle member changes
       const originalMembers = new Set(
         group?.participants?.map((p) => p.user.id) ?? [],
-      );
-      const membersToAdd = Array.from(currentMembers).filter(
-        (id) => !originalMembers.has(id),
       );
       const membersToRemove = Array.from(originalMembers).filter(
         (id) => !currentMembers.has(id),
       );
 
-      // Add new members
-      for (const userId of membersToAdd) {
-        await assignUser(userId, group?.trip?.id ?? "");
-      }
-
-      // Remove members
       for (const userId of membersToRemove) {
         await removeUser(userId);
       }
@@ -169,31 +168,28 @@ export default function EditGroupScreen() {
     }
   };
 
-  const toggleMember = (userId: string) => {
-    const newMembers = new Set(currentMembers);
-    if (newMembers.has(userId)) {
-      // Don't allow removing the organizer
-      if (userId === group?.organizer?.id) {
-        Alert.alert("Error", "Cannot remove group organizer");
-        return;
-      }
-      newMembers.delete(userId);
-    } else {
-      newMembers.add(userId);
+  const removeMember = (userId: string) => {
+    if (userId === group?.organizer?.id) {
+      Alert.alert("Error", "Cannot remove group leader");
+      return;
     }
-    setCurrentMembers(newMembers);
+
+    setCurrentMembers((previous) => {
+      const next = new Set(previous);
+      next.delete(userId);
+      return next;
+    });
   };
 
-  const availableParticipants = useMemo(() => {
-    const participants = trip?.participants ?? [];
-    return participants.filter((participant) => {
-      const fullName =
-        `${participant.user.firstName} ${participant.user.lastName}`.toLowerCase();
-      return fullName.includes(searchQuery.toLowerCase());
-    });
-  }, [trip?.participants, searchQuery]);
+  const visibleMembers = useMemo(() => {
+    const members = group?.participants ?? [];
+    return members
+      .filter((participant) => currentMembers.has(participant.user.id))
+      .sort((a, b) =>
+        a.user.id === group?.organizer?.id ? -1 : b.user.id === group?.organizer?.id ? 1 : 0,
+      );
+  }, [currentMembers, group?.organizer?.id, group?.participants]);
 
-  // Check if current user is the organizer
   const isOrganizer = currentUser?.id === group?.organizer?.id;
 
   if (!groupId) {
@@ -245,27 +241,59 @@ export default function EditGroupScreen() {
           }
         />
 
-        {/* Manage Members Section */}
         <View style={styles.memberSection}>
-          <Text style={styles.inputLabel}>Manage Members</Text>
+          <Text style={styles.inputLabel}>Member Directory</Text>
 
-          {/* Search */}
-          <EditMembersSearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+          <View style={styles.memberListContainer}>
+            {visibleMembers.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No members left in this group</Text>
+              </View>
+            ) : (
+              visibleMembers.map((participant) => {
+                const userId = participant.user.id;
+                const isLeader = userId === group.organizer?.id;
 
-          {/* Members List */}
-          <EditMembersPicker
-            participants={availableParticipants ?? []}
-            selectedMembers={currentMembers}
-            isLoading={tripLoading}
-            organizerId={group.organizer?.id}
-            onToggleMember={toggleMember}
-          />
+                return (
+                  <View key={userId} style={styles.memberItem}>
+                    <View style={styles.memberAvatar}>
+                      <Text style={styles.memberAvatarText}>
+                        {getInitials(participant.user.firstName, participant.user.lastName)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.memberInfo}>
+                      <Text style={styles.memberName}>
+                        {[participant.user.firstName, participant.user.lastName]
+                          .filter(Boolean)
+                          .join(" ") || "Unknown user"}
+                      </Text>
+                      <Text style={styles.memberMeta}>
+                        {participant.user.email ?? "No email"}
+                        {isLeader ? " (Leader)" : ""}
+                      </Text>
+                    </View>
+
+                    {isLeader ? (
+                      <View style={[styles.removeButton, styles.removeButtonDisabled]}>
+                        <Text style={styles.removeButtonText}>Leader</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        activeOpacity={0.8}
+                        onPress={() => removeMember(userId)}
+                      >
+                        <Text style={styles.removeButtonText}>Remove</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })
+            )}
+          </View>
         </View>
 
-        {/* Save Button */}
         <SaveGroupButton
           isSubmitting={isUpdating}
           onPress={() => void handleSave()}
@@ -298,5 +326,76 @@ const styles = StyleSheet.create({
   },
   memberSection: {
     marginBottom: spacing.xl,
+  },
+  memberListContainer: {
+    backgroundColor: colors.cardDark,
+    borderWidth: 1,
+    borderColor: "rgba(48, 54, 61, 1)",
+    borderRadius: radius.xl,
+    overflow: "hidden",
+  },
+  memberItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+  },
+  memberAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.textMuted,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  memberAvatarText: {
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    color: colors.white,
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+    color: colors.white,
+    marginBottom: 2,
+  },
+  memberMeta: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  removeButton: {
+    backgroundColor: "rgba(239, 68, 68, 0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.5)",
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  removeButtonDisabled: {
+    opacity: 0.7,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+  },
+  removeButtonText: {
+    fontSize: 11,
+    fontWeight: typography.bold,
+    color: colors.white,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  emptyState: {
+    paddingVertical: spacing.xxxl,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    fontSize: typography.base,
+    color: colors.textMuted,
   },
 });

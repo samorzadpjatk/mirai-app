@@ -16,8 +16,6 @@ import {
   promoteVisibleChallengesToActiveWithFeed,
 } from "../../utils/activityFeed";
 
-const QR_MARKER_REGEX = /\[\[QR_EXPECTED_B64:([A-Za-z0-9+/=]+)\]\]/;
-
 const submissionBaseSelect: Prisma.ChallengeSubmissionSelect = {
   id: true,
   challengeId: true,
@@ -155,6 +153,7 @@ const ensureChallengeInTrip = async (
       status: true,
       submissionType: true,
       description: true,
+      expectedValue: true,
       targetLatitude: true,
       targetLongitude: true,
       autoApprove: true,
@@ -172,25 +171,11 @@ const ensureChallengeInTrip = async (
 
 const LOCATION_AUTO_APPROVE_RADIUS_METERS = 50;
 
-const extractExpectedQrValue = (
-  description: string | null | undefined,
-): string | undefined => {
-  if (!description) return undefined;
-  const encoded = description.match(QR_MARKER_REGEX)?.[1];
-  if (!encoded) return undefined;
-  try {
-    const value = Buffer.from(encoded, "base64").toString("utf8").trim();
-    return value.length > 0 ? value : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
 const shouldAutoApproveSubmission = (params: {
   challenge: {
     submissionType: string;
     autoApprove: boolean;
-    description?: string | null;
+    expectedValue: string | null;
     targetLatitude: number | null;
     targetLongitude: number | null;
   };
@@ -199,7 +184,7 @@ const shouldAutoApproveSubmission = (params: {
   longitude?: number | null;
 }) => {
   if (params.challenge.submissionType === "QR_CODE") {
-    const expected = extractExpectedQrValue(params.challenge.description);
+    const expected = params.challenge.expectedValue?.trim();
     const submitted = params.textContent?.trim();
     if (!expected) {
       throw new TRPCError({
@@ -244,6 +229,21 @@ const shouldAutoApproveSubmission = (params: {
     }
 
     return true;
+  }
+
+  if (params.challenge.submissionType === "TEXT") {
+    const expected = params.challenge.expectedValue?.trim();
+    if (expected) {
+      const submitted = params.textContent?.trim();
+      if (!submitted || submitted !== expected) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Incorrect phrase",
+        });
+      }
+      return true;
+    }
+    // No phrase configured — fall through to autoApprove flag
   }
 
   if (params.challenge.autoApprove) {
@@ -712,6 +712,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
               targetLatitude: true,
               targetLongitude: true,
               autoApprove: true,
+              expectedValue: true,
             },
           },
         },
@@ -976,16 +977,18 @@ export const challengeSubmissionRouter = createTRPCRouter({
         }
 
         if (shouldCreateApprovalActivity) {
-          const existingSubmissionActivity = await tx.submissionActivity.findFirst({
-            where: { submissionId: input.id },
-            select: { activityId: true },
-          });
+          const existingSubmissionActivity =
+            await tx.submissionActivity.findFirst({
+              where: { submissionId: input.id },
+              select: { activityId: true },
+            });
 
           if (!existingSubmissionActivity) {
-            const refreshedForActivity = await tx.challengeSubmission.findUnique({
-              where: { id: input.id },
-              select: submissionApprovalActivitySelect,
-            });
+            const refreshedForActivity =
+              await tx.challengeSubmission.findUnique({
+                where: { id: input.id },
+                select: submissionApprovalActivitySelect,
+              });
 
             if (!refreshedForActivity) {
               throw new TRPCError({

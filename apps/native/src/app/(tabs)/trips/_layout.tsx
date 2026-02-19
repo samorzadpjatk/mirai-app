@@ -19,7 +19,7 @@ export default function TripsLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="details" options={{ title: "Trip Details", headerBackTitle: "Back" }} />
+      <Stack.Screen name="details" options={{ headerShown: false }} />
       <Stack.Screen name="info" options={{ title: "Trip Info" }} />
       <Stack.Screen name="map/index" options={{ title: "Map" }} />
       <Stack.Screen name="groups/index" options={{ title: "Groups" }} />

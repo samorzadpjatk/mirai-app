@@ -36,17 +36,13 @@ export default function TabsLayout() {
         selected: { color: activeColor },
       }}
     >
-      <NativeTabs.Trigger name="index">
-        <Icon src={<VectorIcon family={Ionicons} name="home" />} />
-        <Label>Home</Label>
+      <NativeTabs.Trigger name="community">
+        <Icon src={<VectorIcon family={Ionicons} name="people" />} />
+        <Label>Community</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="trips">
         <Icon src={<VectorIcon family={Ionicons} name="snow" />} />
         <Label>Trips</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="community">
-        <Icon src={<VectorIcon family={Ionicons} name="people" />} />
-        <Label>Community</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="notifications">
         <Icon src={<VectorIcon family={Ionicons} name="notifications" />} />

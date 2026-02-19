@@ -11,12 +11,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { useRewards, usePurchaseReward } from "~/hooks/rewards";
-import { useGroups } from "~/hooks/groups";
+import { useMyGroup } from "~/hooks/groups";
 import type { RewardListItem } from "./types";
-import type { GroupListItem } from "../trips/groups/types";
 import { commonStyles } from "~/styles/commonStyles";
 
 interface Props {
@@ -25,9 +23,8 @@ interface Props {
 
 export default function RewardsView({ tripId }: Props) {
   const router = useRouter();
-  const { user } = useAuth();
   const { data: rewards, isLoading, error } = useRewards(tripId);
-  const { groups } = useGroups(tripId);
+  const { group: currentUserGroup } = useMyGroup(tripId);
   const purchaseReward = usePurchaseReward();
   const [selectedReward, setSelectedReward] = useState<RewardListItem | null>(null);
   const [quantity, setQuantity] = useState("1");
@@ -44,35 +41,7 @@ export default function RewardsView({ tripId }: Props) {
     return [];
   }, [rewards]);
 
-  type RawGroup = Partial<GroupListItem> & {
-    participants?: unknown[];
-    coins?: number;
-    organizer?: GroupListItem["organizer"];
-    groups?: GroupListItem[];
-  };
-
-  const safeGroups: GroupListItem[] = useMemo(() => {
-    const rawGroups = Array.isArray(groups)
-      ? (groups as RawGroup[])
-      : ((groups as { groups?: RawGroup[] } | undefined)?.groups ?? []);
-
-    return rawGroups
-      .filter((g): g is Required<Pick<RawGroup, 'id' | 'name' | 'code'>> & RawGroup => 
-        g.id !== undefined && g.name !== undefined && g.code !== undefined
-      )
-      .map((g) => ({
-        ...g,
-        participantCount: g.participantCount ?? g.participants?.length ?? 0,
-        coins: g.coins ?? 0,
-        organizer: g.organizer ?? null,
-      }));
-  }, [groups]);
-
-  const organizerGroup = useMemo(
-    () => safeGroups.find((g) => g.organizer?.authUserId === user?.authUserId),
-    [safeGroups, user?.authUserId],
-  );
-  const groupCoins = organizerGroup?.coins ?? 0;
+  const groupCoins = currentUserGroup?.coins ?? 0;
 
   const handlePurchase = async () => {
     if (!selectedReward || !quantity) return;
@@ -105,10 +74,16 @@ export default function RewardsView({ tripId }: Props) {
   };
 
   const openPurchaseModal = (reward: RewardListItem) => {
-    if (!organizerGroup) {
+    if (!currentUserGroup) {
+      Alert.alert("Error", "You are not assigned to any group");
+      return;
+    }
+
+    if (!reward.isEligibleToBuy) {
       Alert.alert("Error", "Only group leader can claim rewards");
       return;
     }
+
     setSelectedReward(reward);
     setShowPurchaseModal(true);
   };
@@ -172,11 +147,11 @@ export default function RewardsView({ tripId }: Props) {
             </Text>
           </TouchableOpacity>
         </View>
-        {organizerGroup && (
+        {currentUserGroup && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Ionicons name="people" size={16} color="#00ced1" />
             <Text style={[commonStyles.textPrimary, { color: "#00ced1" }]}> 
-              {organizerGroup.name}
+              {currentUserGroup.name}
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Ionicons name="cash" size={16} color="#fbbf24" />

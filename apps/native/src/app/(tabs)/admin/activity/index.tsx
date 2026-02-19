@@ -3,7 +3,10 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
+  Keyboard,
   Modal,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -13,6 +16,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -20,6 +24,7 @@ import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useFileUpload } from "~/hooks/files";
 
 type ActivityType =
   | "submission"
@@ -81,10 +86,41 @@ const getActivityGroupName = (activity: AdminActivity) =>
   activity.userPost?.author?.group?.name?.trim() ||
   "";
 
+const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
+  if (asset.fileName) {
+    const parts = asset.fileName.split(".");
+    if (parts.length > 1) {
+      return parts[parts.length - 1]?.toLowerCase() ?? "jpg";
+    }
+  }
+
+  const contentType = asset.mimeType ?? "";
+  if (contentType === "image/png") return "png";
+  if (contentType === "image/webp") return "webp";
+  if (contentType === "image/heic" || contentType === "image/heif") return "heic";
+  return "jpg";
+};
+
+const getImageContentType = (extension: string) => {
+  switch (extension) {
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "heic":
+    case "heif":
+      return "image/heic";
+    default:
+      return "image/jpeg";
+  }
+};
+
 export default function AdminActivityScreen() {
   const trpc = useTRPC();
   const insets = useAppSafeAreaInsets();
   const queryClient = useQueryClient();
+  const { upload, reset: resetUpload, status: uploadStatus, progress: uploadProgress } =
+    useFileUpload();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
@@ -97,6 +133,8 @@ export default function AdminActivityScreen() {
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newPinned, setNewPinned] = useState(false);
+  const [newImagePath, setNewImagePath] = useState("");
+  const [newImagePreviewUri, setNewImagePreviewUri] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
@@ -124,6 +162,9 @@ export default function AdminActivityScreen() {
         setNewTitle("");
         setNewDescription("");
         setNewPinned(false);
+        setNewImagePath("");
+        setNewImagePreviewUri(null);
+        resetUpload();
       },
       onError: (error) => Alert.alert("Error", error.message),
     }),
@@ -193,8 +234,44 @@ export default function AdminActivityScreen() {
     hideMutation.isPending ||
     unhideMutation.isPending ||
     deleteMutation.isPending;
+  const isUploadingImage = uploadStatus === "uploading";
+  const imageUploadPercent =
+    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
 
   const canDelete = currentUser?.role === "ADMIN";
+
+  const handlePickImageForCustom = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.85,
+      });
+
+      if (result.canceled || !result.assets[0]) return;
+
+      const asset = result.assets[0];
+      const extension = getImageExtension(asset);
+      const fileName = asset.fileName?.trim() ?? `custom-activity-${Date.now()}.${extension}`;
+      const storagePath = `activity/${tripId}/custom-${Date.now()}.${extension}`;
+      const contentType = asset.mimeType ?? getImageContentType(extension);
+
+      await upload({
+        storagePath,
+        fileUri: asset.uri,
+        fileName,
+        contentType,
+        upsert: true,
+      });
+
+      setNewImagePath(storagePath);
+      setNewImagePreviewUri(asset.uri);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to upload image";
+      Alert.alert("Upload error", message);
+    }
+  };
 
   if (!tripId) {
     return (
@@ -312,6 +389,10 @@ export default function AdminActivityScreen() {
                   </Text>
                 ) : null}
 
+                {item.imageUrl ? (
+                  <Image source={{ uri: item.imageUrl }} style={styles.cardImagePreview} />
+                ) : null}
+
                 <View style={styles.actions}>
                   <TouchableOpacity
                     style={styles.actionButton}
@@ -400,8 +481,13 @@ export default function AdminActivityScreen() {
         transparent
         onRequestClose={() => setIsEditModalOpen(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+        <Pressable style={styles.modalBackdrop} onPress={Keyboard.dismiss}>
+          <Pressable
+            style={styles.modalCard}
+            onPress={(event) => {
+              event.stopPropagation();
+            }}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit activity</Text>
               <TouchableOpacity onPress={() => setIsEditModalOpen(false)}>
@@ -471,8 +557,8 @@ export default function AdminActivityScreen() {
                 <Text style={styles.submitButtonText}>Save changes</Text>
               )}
             </TouchableOpacity>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       <Modal
@@ -481,8 +567,13 @@ export default function AdminActivityScreen() {
         transparent
         onRequestClose={() => setIsCreateModalOpen(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+        <Pressable style={styles.modalBackdrop} onPress={Keyboard.dismiss}>
+          <Pressable
+            style={styles.modalCard}
+            onPress={(event) => {
+              event.stopPropagation();
+            }}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create custom activity</Text>
               <TouchableOpacity onPress={() => setIsCreateModalOpen(false)}>
@@ -505,33 +596,95 @@ export default function AdminActivityScreen() {
               style={[styles.modalInput, styles.modalTextarea]}
               multiline
             />
+
+            <View style={styles.imageRow}>
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={() => {
+                  void handlePickImageForCustom();
+                }}
+                activeOpacity={0.85}
+                disabled={isUploadingImage}
+              >
+                <Ionicons name="image-outline" size={16} color={colors.primary} />
+                <Text style={styles.imagePickerButtonText}>
+                  {newImagePath ? "Change image" : "Add image"}
+                </Text>
+              </TouchableOpacity>
+
+              {newImagePath ? (
+                <TouchableOpacity
+                  style={styles.imageRemoveButton}
+                  onPress={() => {
+                    setNewImagePath("");
+                    setNewImagePreviewUri(null);
+                  }}
+                  activeOpacity={0.85}
+                  disabled={isUploadingImage}
+                >
+                  <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                  <Text style={styles.imageRemoveButtonText}>Remove</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {isUploadingImage ? (
+              <Text style={styles.readOnlyHint}>
+                Uploading image{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+              </Text>
+            ) : null}
+
+            {newImagePreviewUri ? (
+              <Image source={{ uri: newImagePreviewUri }} style={styles.imagePreview} />
+            ) : null}
+
+            <Text style={styles.readOnlyHint}>Image is optional for custom activity.</Text>
+
+            <Text style={styles.fieldLabel}>Publish mode</Text>
+            <View style={styles.publishModeRow}>
+              <TouchableOpacity
+                style={[styles.typeChip, !newPinned && styles.typeChipActive]}
+                onPress={() => setNewPinned(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.typeChipText, !newPinned && styles.typeChipTextActive]}>
+                  Normal
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.typeChip, newPinned && styles.typeChipActive]}
+                onPress={() => setNewPinned(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.typeChipText, newPinned && styles.typeChipTextActive]}>
+                  Pin to top
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.readOnlyHint}>
-              Image is generated from source data to avoid storage duplicates.
+              Pin to top keeps this post above regular feed entries.
             </Text>
 
             <TouchableOpacity
-              style={[styles.typeChip, newPinned && styles.typeChipActive]}
-              onPress={() => setNewPinned((value) => !value)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.typeChipText, newPinned && styles.typeChipTextActive]}>
-                {newPinned ? "Pinned on publish" : "Publish as normal"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
               style={styles.submitButton}
-              disabled={createCustomMutation.isPending}
+              disabled={createCustomMutation.isPending || isUploadingImage}
               onPress={() => {
                 const title = newTitle.trim();
                 if (!title) {
                   Alert.alert("Validation", "Title is required");
                   return;
                 }
+                if (isUploadingImage) {
+                  Alert.alert("Please wait", "Image upload is still in progress.");
+                  return;
+                }
                 createCustomMutation.mutate({
                   tripId,
                   title,
                   description: newDescription.trim() || undefined,
+                  imageUrl: newImagePath || undefined,
                   isPinned: newPinned,
                 });
               }}
@@ -542,8 +695,8 @@ export default function AdminActivityScreen() {
                 <Text style={styles.submitButtonText}>Create</Text>
               )}
             </TouchableOpacity>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
@@ -662,6 +815,13 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.sm,
   },
+  cardImagePreview: {
+    width: "100%",
+    height: 140,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderWhite10,
+  },
   actions: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -740,6 +900,61 @@ const styles = StyleSheet.create({
   readOnlyHint: {
     fontSize: typography.sm,
     color: colors.textSecondary,
+  },
+  imageRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    alignItems: "center",
+    marginTop: spacing.xs,
+  },
+  imagePickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity30,
+    backgroundColor: colors.primaryOpacity10,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+  },
+  imagePickerButtonText: {
+    color: colors.primary,
+    fontSize: typography.sm,
+    fontWeight: "600",
+  },
+  imageRemoveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.borderWhite10,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+  },
+  imageRemoveButtonText: {
+    color: colors.danger,
+    fontSize: typography.sm,
+    fontWeight: "600",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 140,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderWhite10,
+    marginTop: spacing.xs,
+  },
+  fieldLabel: {
+    color: colors.textSecondary,
+    fontSize: typography.sm,
+    fontWeight: "600",
+    marginTop: spacing.xs,
+  },
+  publishModeRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
   },
   submitButton: {
     marginTop: spacing.xs,

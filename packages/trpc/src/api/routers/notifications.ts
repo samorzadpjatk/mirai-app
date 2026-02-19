@@ -200,7 +200,7 @@ export const notificationRouter = createTRPCRouter({
         const group = await ctx.db.group.findUnique({
           where: { id: input.groupId },
         });
-        if (group?.tripId !== input.tripId) {
+        if (group?.tripId !== input.tripId || group.isDeleted) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Group not found",
@@ -492,7 +492,7 @@ export const notificationRouter = createTRPCRouter({
         const group = await ctx.db.group.findUnique({
           where: { id: input.groupId },
         });
-        if (group?.tripId !== input.tripId) {
+        if (group?.tripId !== input.tripId || group.isDeleted) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Group not found",

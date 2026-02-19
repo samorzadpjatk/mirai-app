@@ -56,6 +56,7 @@ const generateFourDigitCode = () =>
   String(Math.floor(1000 + Math.random() * 9000));
 
 const GROUP_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
+const joinRequestDecisionSchema = z.enum(["ACCEPT", "REJECT"]);
 
 const groupImageSchema = z
   .string()
@@ -112,7 +113,7 @@ export const groupRouter = createTRPCRouter({
           id: true,
           name: true,
         },
-        where: { tripId: input.tripId },
+        where: { tripId: input.tripId, isDeleted: false },
       });
     }),
   getMy: protectedProcedure
@@ -163,7 +164,7 @@ export const groupRouter = createTRPCRouter({
         },
       });
 
-      if (!group) return null;
+      if (!group || group.isDeleted) return null;
 
       const emailByAuthUserId = await buildAuthEmailLookup(
         ctx.supabase,
@@ -189,7 +190,7 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
       const groups = await ctx.db.group.findMany({
-        where: { tripId: input.tripId },
+        where: { tripId: input.tripId, isDeleted: false },
         include: {
           participants: {
             include: {
@@ -249,7 +250,7 @@ export const groupRouter = createTRPCRouter({
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
       const groups = await ctx.db.group.findMany({
-        where: { tripId: input.tripId },
+        where: { tripId: input.tripId, isDeleted: false },
         select: {
           id: true,
           name: true,
@@ -312,7 +313,7 @@ export const groupRouter = createTRPCRouter({
         },
       });
 
-      if (!group) {
+      if (!group || group.isDeleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       }
 
@@ -339,8 +340,8 @@ export const groupRouter = createTRPCRouter({
   getByIdWithOrganizer: moderatorProcedure
     .input(z.object({ groupId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return await ctx.db.group.findUnique({
-        where: { id: input.groupId },
+      return await ctx.db.group.findFirst({
+        where: { id: input.groupId, isDeleted: false },
         select: {
           id: true,
           name: true,
@@ -388,10 +389,13 @@ export const groupRouter = createTRPCRouter({
               },
             });
           } catch (error: unknown) {
-            const prismaCode =
-              typeof error === "object" && error !== null && "code" in error
-                ? String((error as { code?: unknown }).code ?? "")
-                : "";
+            let prismaCode = "";
+            if (typeof error === "object" && error !== null && "code" in error) {
+              const code = (error as { code?: unknown }).code;
+              if (typeof code === "string") {
+                prismaCode = code;
+              }
+            }
             if (prismaCode === "P2002") {
               continue;
             }
@@ -420,6 +424,12 @@ export const groupRouter = createTRPCRouter({
         },
         update: {
           groupId: group.id,
+        },
+      });
+      await ctx.db.groupJoinRequest.deleteMany({
+        where: {
+          tripId: input.tripId,
+          userId: ctx.dbUser.id,
         },
       });
 
@@ -451,7 +461,7 @@ export const groupRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, tripId, ...updateData } = input;
       const group = await ctx.db.group.findUnique({ where: { id } });
-      if (group?.tripId !== tripId) {
+      if (group?.tripId !== tripId || group.isDeleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       }
       const updatedGroup = await ctx.db.group.update({
@@ -489,19 +499,65 @@ export const groupRouter = createTRPCRouter({
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // First, delete all related records
-      await ctx.db.tripParticipant.updateMany({
-        where: { groupId: input.id },
-        data: { groupId: null },
-      });
-
-      await ctx.db.coinTransaction.deleteMany({
-        where: { groupId: input.id },
-      });
-
-      return await ctx.db.group.delete({
+      const group = await ctx.db.group.findUnique({
         where: { id: input.id },
+        select: { id: true, isDeleted: true },
       });
+
+      if (!group || group.isDeleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      await ctx.db.$transaction(async (tx) => {
+        await tx.tripParticipant.updateMany({
+          where: { groupId: input.id },
+          data: { groupId: null },
+        });
+        await tx.groupJoinRequest.deleteMany({
+          where: { groupId: input.id },
+        });
+        await tx.group.update({
+          where: { id: input.id },
+          data: { isDeleted: true },
+        });
+      });
+
+      return { success: true };
+    }),
+  deleteMyGroup: protectedProcedure
+    .input(z.object({ groupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: { id: true, organizerId: true, isDeleted: true },
+      });
+
+      if (!group || group.isDeleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      if (group.organizerId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only group organizer can delete this group",
+        });
+      }
+
+      await ctx.db.$transaction(async (tx) => {
+        await tx.tripParticipant.updateMany({
+          where: { groupId: input.groupId },
+          data: { groupId: null },
+        });
+        await tx.groupJoinRequest.deleteMany({
+          where: { groupId: input.groupId },
+        });
+        await tx.group.update({
+          where: { id: input.groupId },
+          data: { isDeleted: true },
+        });
+      });
+
+      return { success: true };
     }),
   join: adminProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
@@ -513,7 +569,7 @@ export const groupRouter = createTRPCRouter({
       if (!group)
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
 
-      if (group.tripId !== input.tripId) {
+      if (group.tripId !== input.tripId || group.isDeleted) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Group not in trip",
@@ -532,7 +588,7 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      return await ctx.db.tripParticipant.upsert({
+      const participant = await ctx.db.tripParticipant.upsert({
         where: {
           userId_tripId: { userId: ctx.dbUser.id, tripId: input.tripId },
         },
@@ -542,6 +598,228 @@ export const groupRouter = createTRPCRouter({
           groupId: input.id,
         },
         update: { groupId: input.id },
+      });
+      await ctx.db.groupJoinRequest.deleteMany({
+        where: {
+          tripId: input.tripId,
+          userId: ctx.dbUser.id,
+        },
+      });
+      return participant;
+    }),
+  requestToJoin: protectedProcedure
+    .input(z.object({ groupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: { id: true, tripId: true, organizerId: true, isDeleted: true },
+      });
+
+      if (!group || group.isDeleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      const participant = await ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: {
+            userId: ctx.dbUser.id,
+            tripId: group.tripId,
+          },
+        },
+        select: { groupId: true },
+      });
+
+      if (!participant) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only trip participants can request joining a group",
+        });
+      }
+
+      if (participant.groupId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You are already in a group",
+        });
+      }
+
+      const existingRequest = await ctx.db.groupJoinRequest.findUnique({
+        where: {
+          tripId_userId: {
+            tripId: group.tripId,
+            userId: ctx.dbUser.id,
+          },
+        },
+      });
+
+      if (existingRequest) {
+        if (existingRequest.groupId === group.id) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Join request for this group is already pending",
+          });
+        }
+
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "You already have a pending request for another group",
+        });
+      }
+
+      return await ctx.db.groupJoinRequest.create({
+        data: {
+          groupId: group.id,
+          tripId: group.tripId,
+          userId: ctx.dbUser.id,
+        },
+      });
+    }),
+  getMyJoinRequestForGroup: protectedProcedure
+    .input(z.object({ groupId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: { id: true, tripId: true, isDeleted: true },
+      });
+
+      if (!group || group.isDeleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      return await ctx.db.groupJoinRequest.findFirst({
+        where: {
+          groupId: group.id,
+          tripId: group.tripId,
+          userId: ctx.dbUser.id,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }),
+  getPendingJoinRequests: protectedProcedure
+    .input(z.object({ groupId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: { id: true, organizerId: true, isDeleted: true },
+      });
+
+      if (!group || group.isDeleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      if (group.organizerId !== ctx.dbUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only group organizer can view join requests",
+        });
+      }
+
+      const requests = await ctx.db.groupJoinRequest.findMany({
+        where: { groupId: group.id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              authUserId: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        requests.map((request) => request.user.authUserId),
+      );
+
+      return requests.map((request) => ({
+        ...request,
+        user: toUserWithEmail(request.user, emailByAuthUserId),
+      }));
+    }),
+  respondToJoinRequest: protectedProcedure
+    .input(
+      z.object({
+        requestId: z.string(),
+        decision: joinRequestDecisionSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.$transaction(async (tx) => {
+        const request = await tx.groupJoinRequest.findUnique({
+          where: { id: input.requestId },
+          include: {
+            group: {
+              select: { id: true, tripId: true, organizerId: true, isDeleted: true },
+            },
+          },
+        });
+
+        if (!request) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Join request not found",
+          });
+        }
+
+        if (request.group.organizerId !== ctx.dbUser.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only group organizer can respond to join requests",
+          });
+        }
+
+        if (request.group.isDeleted) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
+        }
+
+        if (input.decision === "REJECT") {
+          await tx.groupJoinRequest.delete({ where: { id: request.id } });
+          return { status: "REJECTED" as const };
+        }
+
+        const participant = await tx.tripParticipant.findUnique({
+          where: {
+            userId_tripId: {
+              userId: request.userId,
+              tripId: request.tripId,
+            },
+          },
+          select: { id: true, groupId: true },
+        });
+
+        if (!participant) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "User is not a participant of this trip",
+          });
+        }
+
+        if (participant.groupId && participant.groupId !== request.groupId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "User is already in another group",
+          });
+        }
+
+        await tx.tripParticipant.update({
+          where: { id: participant.id },
+          data: { groupId: request.groupId },
+        });
+
+        await tx.groupJoinRequest.deleteMany({
+          where: {
+            tripId: request.tripId,
+            userId: request.userId,
+          },
+        });
+
+        return { status: "ACCEPTED" as const };
       });
     }),
   assignUserToGroup: protectedProcedure
@@ -560,7 +838,7 @@ export const groupRouter = createTRPCRouter({
       if (!group)
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
 
-      if (group.tripId !== input.tripId) {
+      if (group.tripId !== input.tripId || group.isDeleted) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Group not in trip",
@@ -579,7 +857,7 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      return await ctx.db.tripParticipant.upsert({
+      const participant = await ctx.db.tripParticipant.upsert({
         where: {
           userId_tripId: { userId: input.userId, tripId: input.tripId },
         },
@@ -590,6 +868,13 @@ export const groupRouter = createTRPCRouter({
         },
         update: { groupId: input.groupId },
       });
+      await ctx.db.groupJoinRequest.deleteMany({
+        where: {
+          tripId: input.tripId,
+          userId: input.userId,
+        },
+      });
+      return participant;
     }),
 
   bulkAssignUsersToGroup: protectedProcedure
@@ -603,14 +888,14 @@ export const groupRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
-        select: { organizerId: true, tripId: true },
+        select: { organizerId: true, tripId: true, isDeleted: true },
       });
 
-      if (group?.tripId !== input.tripId) {
+      if (group?.tripId !== input.tripId || group?.isDeleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       }
 
-      if (group.organizerId !== ctx.dbUser.id) {
+      if (group?.organizerId !== ctx.dbUser.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Only the organizer can assign users to this group",
@@ -634,6 +919,12 @@ export const groupRouter = createTRPCRouter({
           }),
         ),
       );
+      await ctx.db.groupJoinRequest.deleteMany({
+        where: {
+          tripId: input.tripId,
+          userId: { in: uniqueUserIds },
+        },
+      });
 
       const participants = await ctx.db.tripParticipant.findMany({
         where: {
@@ -675,11 +966,41 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.tripParticipant.update({
-        where: {
-          userId_tripId: { userId: input.userId, tripId: input.tripId },
-        },
-        data: { groupId: null },
+      return await ctx.db.$transaction(async (tx) => {
+        const participant = await tx.tripParticipant.findUnique({
+          where: {
+            userId_tripId: { userId: input.userId, tripId: input.tripId },
+          },
+          select: { id: true, groupId: true },
+        });
+
+        if (!participant) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Participant not found" });
+        }
+
+        const updated = await tx.tripParticipant.update({
+          where: {
+            userId_tripId: { userId: input.userId, tripId: input.tripId },
+          },
+          data: { groupId: null },
+        });
+
+        if (participant.groupId) {
+          const membersLeft = await tx.tripParticipant.count({
+            where: { tripId: input.tripId, groupId: participant.groupId },
+          });
+          if (membersLeft === 0) {
+            await tx.groupJoinRequest.deleteMany({
+              where: { groupId: participant.groupId },
+            });
+            await tx.group.update({
+              where: { id: participant.groupId },
+              data: { isDeleted: true },
+            });
+          }
+        }
+
+        return updated;
       });
     }),
   leaveMyGroup: protectedProcedure
@@ -691,10 +1012,10 @@ export const groupRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
-        select: { id: true, tripId: true, organizerId: true },
+        select: { id: true, tripId: true, organizerId: true, isDeleted: true },
       });
 
-      if (!group) {
+      if (!group || group.isDeleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       }
 
@@ -708,7 +1029,7 @@ export const groupRouter = createTRPCRouter({
         select: { groupId: true },
       });
 
-      if (!membership || membership.groupId !== group.id) {
+      if (membership?.groupId !== group.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You are not a member of this group",
@@ -718,17 +1039,34 @@ export const groupRouter = createTRPCRouter({
       const isOrganizer = group.organizerId === ctx.dbUser.id;
 
       if (!isOrganizer) {
-        await ctx.db.tripParticipant.update({
-          where: {
-            userId_tripId: {
-              userId: ctx.dbUser.id,
-              tripId: group.tripId,
+        return await ctx.db.$transaction(async (tx) => {
+          await tx.tripParticipant.update({
+            where: {
+              userId_tripId: {
+                userId: ctx.dbUser.id,
+                tripId: group.tripId,
+              },
             },
-          },
-          data: { groupId: null },
-        });
+            data: { groupId: null },
+          });
 
-        return { left: true, reassignedOrganizerId: null };
+          const membersLeft = await tx.tripParticipant.count({
+            where: { tripId: group.tripId, groupId: group.id },
+          });
+
+          if (membersLeft === 0) {
+            await tx.groupJoinRequest.deleteMany({
+              where: { groupId: group.id },
+            });
+            await tx.group.update({
+              where: { id: group.id },
+              data: { isDeleted: true },
+            });
+            return { left: true, reassignedOrganizerId: null, groupDeleted: true };
+          }
+
+          return { left: true, reassignedOrganizerId: null, groupDeleted: false };
+        });
       }
 
       const remainingParticipants = await ctx.db.tripParticipant.findMany({
@@ -749,6 +1087,14 @@ export const groupRouter = createTRPCRouter({
             where: { id: group.id },
             data: { organizerId: nextOrganizerId },
           });
+        } else {
+          await tx.groupJoinRequest.deleteMany({
+            where: { groupId: group.id },
+          });
+          await tx.group.update({
+            where: { id: group.id },
+            data: { isDeleted: true },
+          });
         }
 
         await tx.tripParticipant.update({
@@ -765,6 +1111,7 @@ export const groupRouter = createTRPCRouter({
       return {
         left: true,
         reassignedOrganizerId: nextOrganizerId,
+        groupDeleted: !nextOrganizerId,
       };
     }),
   addCoins: moderatorProcedure
@@ -781,7 +1128,7 @@ export const groupRouter = createTRPCRouter({
         const group = await tx.group.findUnique({
           where: { id: input.groupId },
         });
-        if (group?.tripId !== input.tripId) {
+        if (group?.tripId !== input.tripId || group?.isDeleted) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
         }
         // Update group coins
@@ -823,7 +1170,7 @@ export const groupRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const currentDate = new Date();
       const data = await ctx.db.group.findMany({
-        where: { tripId: input.tripId },
+        where: { tripId: input.tripId, isDeleted: false },
         orderBy: { coins: "desc" },
         include: {
           organizer: {
