@@ -22,6 +22,7 @@ import Logo from "../../components/Logo";
 import LoadingScreen from "../../components/LoadingScreen";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { useSelectedTrip } from "~/hooks/trips";
+import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { colors, spacing, typography } from "../../styles";
@@ -115,7 +116,11 @@ const ACTIVITY_FILTERS: Array<{ key: ActivityFilter; label: string }> = [
 ];
 
 const getActivityTypeLabel = (type: ActivityType) => {
+  if (type === "challenge_event") return "challenge";
+  if (type === "submission") return "submission";
+  if (type === "rank_change") return "ranking";
   if (type === "custom") return "news";
+  if (type === "user_post") return "post";
   return type;
 };
 
@@ -201,7 +206,9 @@ const parseRankChangeDetails = (description?: string | null) => {
 
 const resolveCardImage = (activity: CommunityFeedActivity) => {
   if (activity.imageUrl) return activity.imageUrl;
-  const extra = activity.userPost?.additionalImages?.find((img) => Boolean(img));
+  const extra = activity.userPost?.additionalImages?.find((img) =>
+    Boolean(img),
+  );
   return extra ?? null;
 };
 
@@ -219,14 +226,16 @@ const resolveOwnerMeta = (activity: CommunityFeedActivity): OwnerMeta => {
 
   if (activity.activityType === "submission") {
     const group = activity.submissionActivity?.group;
-    const isApprovedSubmission = activity.submissionActivity?.isWinner === false;
+    const isApprovedSubmission =
+      activity.submissionActivity?.isWinner === false;
     const currentGroupRank = activity.submissionActivity?.currentGroupRank;
 
     const subtitle = isApprovedSubmission
       ? typeof currentGroupRank === "number"
         ? `Miejsce w rankingu: #${currentGroupRank}`
         : "Miejsce w rankingu: -"
-      : activity.submissionActivity?.challenge?.name ?? "Challenge submission";
+      : (activity.submissionActivity?.challenge?.name ??
+        "Challenge submission");
 
     return {
       name: group?.name ?? "Group",
@@ -271,6 +280,39 @@ const resolveOwnerMeta = (activity: CommunityFeedActivity): OwnerMeta => {
   };
 };
 
+const buildRankChangeMessage = (
+  movements: RankMovement[],
+  anchorGroupName: string | null | undefined,
+): string => {
+  if (movements.length === 0) return "";
+
+  const parts: string[] = [];
+
+  for (const m of movements) {
+    if (m.direction === "up") {
+      parts.push(
+        `Drużyna ${m.team} objęła ${m.newRank}. miejsce (awans z #${m.previousRank}).`,
+      );
+    } else {
+      parts.push(
+        `Drużyna ${m.team} spadła z pozycji #${m.previousRank} na #${m.newRank}.`,
+      );
+    }
+  }
+
+  const winner = movements.find((m) => m.newRank === 1);
+  if (winner) {
+    parts.push(`Gratulacje dla drużyny ${winner.team}! 🎉`);
+  } else if (anchorGroupName) {
+    const anchor = movements.find((m) => m.team === anchorGroupName);
+    if (anchor?.direction === "up") {
+      parts.push(`Gratulacje dla drużyny ${anchorGroupName}! 🎉`);
+    }
+  }
+
+  return parts.join(" ");
+};
+
 function CommunityActivityCard({
   activity,
   onPress,
@@ -305,7 +347,8 @@ function CommunityActivityCard({
     ...trpc.group.ranking.queryOptions({
       tripId: activity.tripId,
     }),
-    enabled: activity.activityType === "rank_change" && Boolean(activity.tripId),
+    enabled:
+      activity.activityType === "rank_change" && Boolean(activity.tripId),
     staleTime: 2 * 60 * 1000,
   });
   const rankChangeTopThree = useMemo(() => {
@@ -332,16 +375,17 @@ function CommunityActivityCard({
     return [1, 2, 3].map((rank) => {
       const parsedName = rankChangeDetails.podium[rank - 1];
       const name =
-        parsedName ??
-        (anchorRank === rank ? anchorGroupName : `Rank #${rank}`);
+        parsedName ?? (anchorRank === rank ? anchorGroupName : `Rank #${rank}`);
 
       const isAnchor = name === anchorGroupName || anchorRank === rank;
 
       return {
         id: `rank-change-${activity.id}-${rank}`,
         name,
-        image: isAnchor ? activity.rankChangeActivity?.group?.image ?? null : null,
-        coins: isAnchor ? activity.rankChangeActivity?.totalCoins ?? 0 : 0,
+        image: isAnchor
+          ? (activity.rankChangeActivity?.group?.image ?? null)
+          : null,
+        coins: isAnchor ? (activity.rankChangeActivity?.totalCoins ?? 0) : 0,
         memberCount: 0,
         rank,
         isCurrentUserGroup: false,
@@ -365,11 +409,23 @@ function CommunityActivityCard({
   });
 
   const avatarUri = owner.avatarImage ?? avatarData?.signedUrl ?? null;
+  const rankChangeMessage = useMemo(() => {
+    if (activity.activityType !== "rank_change") return null;
+    return (
+      buildRankChangeMessage(
+        rankChangeDetails.movements,
+        activity.rankChangeActivity?.group?.name,
+      ) || null
+    );
+  }, [activity, rankChangeDetails.movements]);
+
   const resolvedDescription =
-    activity.activityType === "challenge_event"
-      ? activity.challengeActivity?.challenge?.description?.trim() ||
-        activity.description
-      : activity.description;
+    activity.activityType === "rank_change"
+      ? rankChangeMessage
+      : activity.activityType === "challenge_event"
+        ? activity.challengeActivity?.challenge?.description?.trim() ||
+          activity.description
+        : activity.description;
 
   return (
     <TouchableOpacity
@@ -387,10 +443,16 @@ function CommunityActivityCard({
         >
           <View style={styles.avatarFrame}>
             {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.avatarImage}
+                contentFit="cover"
+              />
             ) : (
               <View style={styles.avatarFallback}>
-                <Text style={styles.avatarFallbackText}>{getInitials(owner.name)}</Text>
+                <Text style={styles.avatarFallbackText}>
+                  {getInitials(owner.name)}
+                </Text>
               </View>
             )}
           </View>
@@ -405,56 +467,14 @@ function CommunityActivityCard({
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.cardTime}>{formatRelativeTime(activity.createdAt)}</Text>
+        <Text style={styles.cardTime}>
+          {formatRelativeTime(activity.createdAt)}
+        </Text>
       </View>
 
       {activity.activityType === "rank_change" ? (
         <View style={styles.mediaWrap}>
           <View style={styles.rankChangeWrap}>
-            <View style={styles.rankChangeTopRow}>
-              <View style={styles.rankChangeDirectionWrap}>
-                <Ionicons
-                  name={
-                    (anchorMovement?.direction ?? "up") === "up"
-                      ? "arrow-up"
-                      : "arrow-down"
-                  }
-                  size={16}
-                  color={
-                    (anchorMovement?.direction ?? "up") === "up"
-                      ? colors.green400
-                      : colors.orange400
-                  }
-                />
-                <Text style={styles.rankChangeDirectionText}>
-                  {anchorMovement
-                    ? `#${anchorMovement.previousRank} -> #${anchorMovement.newRank}`
-                    : `Now #${activity.rankChangeActivity?.newRank ?? "-"}`}
-                </Text>
-              </View>
-
-              <View style={styles.rankChangeCoinsWrap}>
-                <Ionicons name="trophy-outline" size={14} color={colors.yellow400} />
-                <Text style={styles.rankChangeCoinsText}>
-                  {activity.rankChangeActivity?.totalCoins ?? 0}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.rankDeltaWrap}>
-              <Text
-                style={[
-                  styles.rankDeltaText,
-                  (activity.rankChangeActivity?.coinsGained ?? 0) >= 0
-                    ? styles.rankDeltaTextUp
-                    : styles.rankDeltaTextDown,
-                ]}
-              >
-                {(activity.rankChangeActivity?.coinsGained ?? 0) >= 0 ? "+" : ""}
-                {activity.rankChangeActivity?.coinsGained ?? 0} coins
-              </Text>
-            </View>
-
             <View style={styles.rankLeaderboardWrap}>
               <View style={styles.rankLeaderboardScale}>
                 <LeaderboardPodium
@@ -467,7 +487,11 @@ function CommunityActivityCard({
         </View>
       ) : cardImage ? (
         <View style={styles.mediaWrap}>
-          <Image source={{ uri: cardImage }} style={styles.mediaImage} contentFit="cover" />
+          <Image
+            source={{ uri: cardImage }}
+            style={styles.mediaImage}
+            contentFit="cover"
+          />
         </View>
       ) : null}
 
@@ -485,8 +509,14 @@ function CommunityActivityCard({
           </View>
 
           <View style={styles.reactionRow}>
-            <Ionicons name="heart-outline" size={16} color={colors.textSecondary} />
-            <Text style={styles.reactionCount}>{activity.reactionsSummary?.total ?? 0}</Text>
+            <Ionicons
+              name="heart-outline"
+              size={16}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.reactionCount}>
+              {activity.reactionsSummary?.total ?? 0}
+            </Text>
           </View>
         </View>
       </View>
@@ -503,9 +533,11 @@ export default function CommunityScreen() {
   }>();
   const trpc = useTRPC();
   const insets = useAppSafeAreaInsets();
-  const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
+  const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } =
+    useSelectedTrip();
 
-  const [isTripPickerManuallyOpen, setIsTripPickerManuallyOpen] = useState(false);
+  const [isTripPickerManuallyOpen, setIsTripPickerManuallyOpen] =
+    useState(false);
   const [hasDismissedAutoPicker, setHasDismissedAutoPicker] = useState(false);
 
   useEffect(() => {
@@ -521,6 +553,10 @@ export default function CommunityScreen() {
     if (!selectedTripId) return null;
     return trips.find((trip) => trip.id === selectedTripId) ?? null;
   }, [selectedTripId, trips]);
+
+  const { imageUrl: tripImageUrl } = useTripBackgroundImageDownload(
+    selectedTrip?.backgroundImagePath,
+  );
 
   const shouldAutoOpenTripPicker =
     trips.length > 0 &&
@@ -575,7 +611,9 @@ export default function CommunityScreen() {
     const base =
       selectedFilter === "all"
         ? activities
-        : activities.filter((activity) => activity.activityType === selectedFilter);
+        : activities.filter(
+            (activity) => activity.activityType === selectedFilter,
+          );
 
     if (!focusActivityId) return base;
 
@@ -646,7 +684,8 @@ export default function CommunityScreen() {
             item.activityType === "rank_change" ? item.tripId : null;
           const submissionGroupId =
             item.activityType === "submission"
-              ? item.submissionActivity?.groupId ?? item.submissionActivity?.group?.id
+              ? (item.submissionActivity?.groupId ??
+                item.submissionActivity?.group?.id)
               : null;
 
           return (
@@ -660,8 +699,11 @@ export default function CommunityScreen() {
                         `/trips/challenges/${challengeId}?tripId=${item.tripId}`,
                       )
                   : leaderboardTripId
-                    ? () => router.push(`/trips/leaderboard?tripId=${leaderboardTripId}`)
-                  : undefined
+                    ? () =>
+                        router.push(
+                          `/trips/leaderboard?tripId=${leaderboardTripId}`,
+                        )
+                    : undefined
               }
               onPressOwner={
                 submissionGroupId
@@ -674,7 +716,10 @@ export default function CommunityScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + 120 },
+          {
+            paddingTop: insets.top + spacing.lg,
+            paddingBottom: insets.bottom + 120,
+          },
         ]}
         refreshControl={
           <RefreshControl
@@ -697,20 +742,31 @@ export default function CommunityScreen() {
               </View>
 
               <TouchableOpacity
-                style={styles.changeTripButton}
+                style={styles.tripTile}
                 onPress={handleOpenTripPicker}
-                activeOpacity={0.85}
+                activeOpacity={0.8}
               >
-                <Ionicons name="swap-horizontal" size={14} color={colors.primary} />
-                <Text style={styles.changeTripButtonText}>
-                  {selectedTrip ? "Change trip" : "Select trip"}
-                </Text>
+                {tripImageUrl ? (
+                  <Image
+                    source={{ uri: tripImageUrl }}
+                    style={styles.tripTileImage}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View style={styles.tripTileImagePlaceholder} />
+                )}
+                <View style={styles.tripTileOverlay}>
+                  <Text style={styles.tripTileName} numberOfLines={1}>
+                    {selectedTrip?.name ?? "Select trip"}
+                  </Text>
+                  <Ionicons
+                    name="swap-horizontal"
+                    size={12}
+                    color="rgba(255,255,255,0.7)"
+                  />
+                </View>
               </TouchableOpacity>
             </View>
-
-            <Text style={styles.tripLabel} numberOfLines={1}>
-              {selectedTrip?.name ?? "Trip not selected"}
-            </Text>
 
             {selectedTrip ? (
               <View style={styles.filterRow}>
@@ -718,13 +774,19 @@ export default function CommunityScreen() {
                   const isActive = selectedFilter === filter.key;
                   return (
                     <TouchableOpacity
-                    key={filter.key}
-                    style={[styles.filterChip, isActive && styles.filterChipActive]}
-                    onPress={() => handleSelectFilter(filter.key)}
-                    activeOpacity={0.85}
-                  >
+                      key={filter.key}
+                      style={[
+                        styles.filterChip,
+                        isActive && styles.filterChipActive,
+                      ]}
+                      onPress={() => handleSelectFilter(filter.key)}
+                      activeOpacity={0.85}
+                    >
                       <Text
-                        style={[styles.filterChipText, isActive && styles.filterChipTextActive]}
+                        style={[
+                          styles.filterChipText,
+                          isActive && styles.filterChipTextActive,
+                        ]}
                       >
                         {filter.label}
                       </Text>
@@ -745,7 +807,11 @@ export default function CommunityScreen() {
         ListEmptyComponent={
           !selectedTrip ? (
             <View style={styles.emptyState}>
-              <Ionicons name="navigate-outline" size={36} color={colors.textSecondary} />
+              <Ionicons
+                name="navigate-outline"
+                size={36}
+                color={colors.textSecondary}
+              />
               <Text style={styles.emptyStateTitle}>Select trip first</Text>
               <Text style={styles.emptyStateText}>
                 Pick your trip to load the community feed.
@@ -753,7 +819,11 @@ export default function CommunityScreen() {
             </View>
           ) : !feedQuery.isLoading ? (
             <View style={styles.emptyState}>
-              <Ionicons name="chatbubbles-outline" size={36} color={colors.textSecondary} />
+              <Ionicons
+                name="chatbubbles-outline"
+                size={36}
+                color={colors.textSecondary}
+              />
               <Text style={styles.emptyStateTitle}>No activities yet</Text>
               <Text style={styles.emptyStateText}>
                 Pull to refresh to load new community posts.
@@ -787,7 +857,11 @@ export default function CommunityScreen() {
                 >
                   <Text style={styles.modalItemText}>{trip.name}</Text>
                   {selectedTrip?.id === trip.id ? (
-                    <Ionicons name="checkmark" size={18} color={colors.primary} />
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={colors.primary}
+                    />
                   ) : null}
                 </TouchableOpacity>
               ))}
@@ -849,25 +923,35 @@ const styles = StyleSheet.create({
     fontWeight: typography.semibold,
     marginTop: -2,
   },
-  changeTripButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: 999,
+  tripTile: {
+    width: 130,
+    height: 52,
+    borderRadius: 10,
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.primaryOpacity30,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  tripTileImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  tripTileImagePlaceholder: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.primaryOpacity10,
   },
-  changeTripButtonText: {
-    color: colors.primary,
+  tripTileOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.38)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+    gap: 4,
+  },
+  tripTileName: {
+    color: colors.white,
     fontSize: typography.xs,
     fontWeight: typography.semibold,
-  },
-  tripLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
+    flex: 1,
   },
   filterRow: {
     flexDirection: "row",
@@ -999,11 +1083,7 @@ const styles = StyleSheet.create({
   },
   rankChangeWrap: {
     flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
     justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: "rgba(9, 21, 24, 0.95)",
   },
   rankChangeTopRow: {
     flexDirection: "row",
@@ -1065,16 +1145,11 @@ const styles = StyleSheet.create({
   },
   rankLeaderboardWrap: {
     flex: 1,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.borderWhite10,
-    backgroundColor: "rgba(8, 16, 18, 0.92)",
     justifyContent: "center",
   },
   rankLeaderboardScale: {
-    transform: [{ scale: 0.72 }],
-    marginVertical: -64,
+    transform: [{ scale: 0.85 }],
+    marginVertical: -40,
   },
   cardBody: {
     paddingHorizontal: spacing.md,

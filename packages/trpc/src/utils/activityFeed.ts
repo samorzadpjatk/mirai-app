@@ -1,9 +1,6 @@
 import { type Prisma } from "@integral-2025-app/db";
 
-type ChallengeEventType =
-  | "challenge_started"
-  | "voting_started"
-  | "completed";
+type ChallengeEventType = "challenge_started" | "voting_started" | "completed";
 
 interface ChallengeForFeed {
   id: string;
@@ -74,7 +71,7 @@ const createChallengeEventActivity = async (params: {
 
   const title =
     params.eventType === "challenge_started"
-      ? `Challenge started: ${params.challenge.name}`
+      ? `Nowe wyzwanie: ${params.challenge.name}`
       : params.eventType === "voting_started"
         ? `Voting started: ${params.challenge.name}`
         : `Challenge completed: ${params.challenge.name}`;
@@ -87,7 +84,7 @@ const createChallengeEventActivity = async (params: {
   const description =
     challengeDescription ??
     (params.eventType === "challenge_started"
-      ? "Challenge is now active"
+      ? `Wyzwanie już gotowe na wysyłanie Waszych zdjęć!`
       : params.eventType === "voting_started"
         ? "Challenge entered voting phase"
         : "Voting has ended");
@@ -563,7 +560,7 @@ export const createRankChangeActivities = async (params: {
     data: {
       tripId: params.tripId,
       activityType: "rank_change",
-      title: `Leaderboard update: ${anchor.group.name} now #${anchor.newRank}`,
+      title: `Zmiany w rankingu: ${anchor.group.name} teraz #${anchor.newRank}`,
       description,
       imageUrl: anchor.group.image,
       createdByAdmin: params.createdByAdmin ?? null,
