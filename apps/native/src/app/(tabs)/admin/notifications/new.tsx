@@ -99,13 +99,17 @@ function getNextDailyOccurrence(hour: number, minute: number): Date {
     candidate.setDate(candidate.getDate() + 1);
   }
 
-  return candidate;
+  return toUTC(candidate);
 }
 
 function combineDateAndTime(date: Date, hour: number, minute: number): Date {
   const combined = new Date(date);
   combined.setHours(hour, minute, 0, 0);
-  return combined;
+  return toUTC(combined);
+}
+
+function toUTC(date: Date): Date {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000);
 }
 
 const placeholderLegend = [
@@ -236,6 +240,7 @@ export default function AdminCreateNotificationScreen() {
       const now = new Date();
       const endDate = new Date(now);
       endDate.setFullYear(endDate.getFullYear() + 1);
+      const endDateUtc = toUTC(endDate);
 
       if (deliveryType === "recurring_daily") {
         const startDate = getNextDailyOccurrence(hour, minute);
@@ -251,7 +256,7 @@ export default function AdminCreateNotificationScreen() {
           notificationBody: normalizedBody,
           notificationUrl,
           startDate,
-          endDate,
+          endDate: endDateUtc,
           hour,
           minute,
           isActive: true,
@@ -274,6 +279,7 @@ export default function AdminCreateNotificationScreen() {
         return;
       }
       const oneTimeEndDate = new Date(startDate.getTime() + 2 * 60 * 1000);
+      const oneTimeEndDateUtc = toUTC(oneTimeEndDate);
 
       await createScheduleMutation.mutateAsync({
         tripId,
@@ -286,7 +292,7 @@ export default function AdminCreateNotificationScreen() {
         notificationBody: normalizedBody,
         notificationUrl,
         startDate,
-        endDate: oneTimeEndDate,
+        endDate: oneTimeEndDateUtc,
         hour,
         minute,
         isActive: true,
