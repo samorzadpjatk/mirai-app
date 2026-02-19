@@ -47,6 +47,7 @@ import {
   TRPC_HTTP_URL,
   TRPC_WS_URL,
 } from "~/lib/runtimeEnv";
+import { useAutoPushSubscription } from "~/hooks/notifications";
 import "../../global.css";
 import "~/tasks/backgroundLocationTask";
 
@@ -64,6 +65,11 @@ const supabaseClient = createSupabaseClient(
   authStorage,
 );
 
+function AutoPushSubscriptionBootstrap() {
+  useAutoPushSubscription();
+  return null;
+}
+
 function RootLayoutContent() {
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
@@ -79,6 +85,7 @@ function RootLayoutContent() {
 
   return (
     <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
+      {!isAuthLoading && hasSession ? <AutoPushSubscriptionBootstrap /> : null}
       {!isAuthLoading && (
         <SafeAreaInsetsProvider value={insets}>
           <LocationProvider>

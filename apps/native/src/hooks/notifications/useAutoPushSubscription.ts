@@ -1,0 +1,133 @@
+import { useEffect, useMemo, useRef } from "react";
+import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useAuth } from "@integral-2025-app/auth/client";
+
+function resolveProjectId(): string | undefined {
+  const expoConfigExtra = (Constants.expoConfig?.extra ?? null) as unknown;
+  if (typeof expoConfigExtra === "object" && expoConfigExtra !== null) {
+    const eas = (expoConfigExtra as { eas?: unknown }).eas;
+    if (typeof eas === "object" && eas !== null) {
+      const maybeProjectId = (eas as { projectId?: unknown }).projectId;
+      if (typeof maybeProjectId === "string" && maybeProjectId.length > 0) {
+        return maybeProjectId;
+      }
+    }
+  }
+
+  const easConfig = (Constants.easConfig ?? null) as unknown;
+  if (typeof easConfig === "object" && easConfig !== null) {
+    const maybeProjectId = (easConfig as { projectId?: unknown }).projectId;
+    if (typeof maybeProjectId === "string" && maybeProjectId.length > 0) {
+      return maybeProjectId;
+    }
+  }
+
+  return undefined;
+}
+
+function parseToken(value: unknown): string | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+
+  const tokenData = (value as { data?: unknown }).data;
+  if (typeof tokenData !== "string") {
+    return null;
+  }
+
+  const trimmedToken = tokenData.trim();
+  return trimmedToken.length > 0 ? trimmedToken : null;
+}
+
+export function useAutoPushSubscription() {
+  const { session } = useAuth();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const attemptedForUserRef = useRef<string | null>(null);
+
+  const hasSession = !!session?.access_token;
+  const authUserId = session?.user?.id ?? null;
+
+  const subscriptionQueryOptions = useMemo(
+    () => trpc.notifications.getSubscriptionStatus.queryOptions(),
+    [trpc],
+  );
+
+  const { data: subscriptionStatus, isLoading: isStatusLoading } = useQuery({
+    ...subscriptionQueryOptions,
+    enabled: hasSession,
+  });
+
+  const subscribeMutation = useMutation(
+    trpc.notifications.subscribe.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: subscriptionQueryOptions.queryKey,
+        });
+      },
+      onError: (error) => {
+        console.warn("Automatic push subscription failed:", error);
+      },
+    }),
+  );
+
+  const hasSubscription = subscriptionStatus?.isSubscribed ?? false;
+
+  useEffect(() => {
+    if (!hasSession || !authUserId) {
+      attemptedForUserRef.current = null;
+      return;
+    }
+
+    if (isStatusLoading || hasSubscription || subscribeMutation.isPending) {
+      return;
+    }
+
+    if (attemptedForUserRef.current === authUserId) {
+      return;
+    }
+
+    attemptedForUserRef.current = authUserId;
+
+    void (async () => {
+      try {
+        const currentPermission = await Notifications.getPermissionsAsync();
+        let finalStatus = currentPermission.status;
+
+        if (finalStatus === Notifications.PermissionStatus.UNDETERMINED) {
+          const requestedPermission =
+            await Notifications.requestPermissionsAsync();
+          finalStatus = requestedPermission.status;
+        }
+
+        if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
+          return;
+        }
+
+        const projectId = resolveProjectId();
+
+        const tokenData = projectId
+          ? await Notifications.getExpoPushTokenAsync({ projectId })
+          : await Notifications.getExpoPushTokenAsync();
+        const token = parseToken(tokenData);
+
+        if (!token) {
+          return;
+        }
+
+        await subscribeMutation.mutateAsync({ token });
+      } catch (error) {
+        console.warn("Failed to run automatic notification onboarding:", error);
+      }
+    })();
+  }, [
+    authUserId,
+    hasSession,
+    hasSubscription,
+    isStatusLoading,
+    subscribeMutation,
+  ]);
+}

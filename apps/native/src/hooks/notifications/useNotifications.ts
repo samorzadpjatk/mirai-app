@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-import { Alert } from "react-native";
+import { Alert, Linking } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 
@@ -37,7 +37,7 @@ export function useNotifications(): UseNotificationsReturn {
     false;
 
   useEffect(() => {
-    Notifications.requestPermissionsAsync()
+    Notifications.getPermissionsAsync()
       .then((data) => {
         setPermission(data.status);
       })
@@ -92,6 +92,13 @@ export function useNotifications(): UseNotificationsReturn {
     return finalStatus;
   }, []);
 
+  const openAppSettings = useCallback(() => {
+    void Linking.openSettings().catch((error) => {
+      console.warn("Failed to open app settings", error);
+      Alert.alert("Error", "Could not open device settings");
+    });
+  }, []);
+
   const toggleSubscription = useCallback(async () => {
     if (subscriptionStatus?.isSubscribed) {
       for (const sub of subscriptionStatus.subscriptions) {
@@ -105,6 +112,10 @@ export function useNotifications(): UseNotificationsReturn {
       Alert.alert(
         "Permission Required",
         "Please enable notifications in your device settings",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Open Settings", onPress: openAppSettings },
+        ],
       );
       return;
     }
@@ -120,6 +131,7 @@ export function useNotifications(): UseNotificationsReturn {
   }, [
     subscriptionStatus,
     requestPermission,
+    openAppSettings,
     subscribeMutation,
     unsubscribeMutation,
   ]);
