@@ -109,6 +109,13 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="notifications/new"
+          options={{
+            title: "Create Notification",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
           name="schedules/index"
           options={{
             title: "Schedules",

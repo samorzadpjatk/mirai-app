@@ -18,6 +18,10 @@ import {
   paginationSchema,
   filterSchema,
 } from "../../utils/notificactionSchedule-validation";
+import {
+  getDailyRankingScheduleTemplate,
+  type ScheduledNotificationTemplate,
+} from "../../utils/notificationTemplates";
 
 const toOptionalString = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
@@ -38,6 +42,34 @@ const attachCreatedByEmail = <T extends { createdBy?: { authUserId?: string | nu
   };
 };
 
+function getNextScheduledStartDate(
+  hour: number,
+  minute: number,
+  now = new Date(),
+): Date {
+  const startDate = new Date(now);
+  startDate.setHours(hour, minute, 0, 0);
+
+  const minimumDate = new Date(now.getTime() + 5 * 60 * 1000);
+  if (startDate < minimumDate) {
+    startDate.setDate(startDate.getDate() + 1);
+  }
+
+  return startDate;
+}
+
+function getTemplateScheduleDates(template: ScheduledNotificationTemplate): {
+  startDate: Date;
+  endDate: Date;
+} {
+  const now = new Date();
+  const startDate = getNextScheduledStartDate(template.hour, template.minute, now);
+  const endDate = new Date(now);
+  endDate.setFullYear(endDate.getFullYear() + 1);
+
+  return { startDate, endDate };
+}
+
 export const notificationScheduleRouter = createTRPCRouter({
   getAll: moderatorProcedure
     .input(
@@ -54,6 +86,7 @@ export const notificationScheduleRouter = createTRPCRouter({
       const offset = pagination?.offset ?? 0;
 
       interface WhereClause {
+        tripId?: string | null;
         notificationType?: string;
         isActive?: boolean;
         startDate?: {
@@ -67,6 +100,10 @@ export const notificationScheduleRouter = createTRPCRouter({
       }
 
       const where: WhereClause = {};
+
+      if (filter?.tripId !== undefined) {
+        where.tripId = filter.tripId;
+      }
 
       if (filter?.notificationType) {
         where.notificationType = filter.notificationType;
@@ -321,6 +358,122 @@ export const notificationScheduleRouter = createTRPCRouter({
       ]);
 
       return attachCreatedByEmail(schedule, emailByAuthUserId);
+    }),
+
+  upsertTemplate: adminProcedure
+    .input(
+      z.object({
+        tripId: z.string(),
+        templateKey: z.enum(["daily_morning", "daily_evening"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const trip = await ctx.db.trip.findUnique({
+        where: { id: input.tripId },
+        select: { id: true },
+      });
+
+      if (!trip) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Trip with ID ${input.tripId} not found`,
+        });
+      }
+
+      const template = getDailyRankingScheduleTemplate(input.templateKey);
+      const { startDate, endDate } = getTemplateScheduleDates(template);
+
+      validateNotificationContent(
+        template.notificationType,
+        template.notificationTitle,
+        template.notificationBody,
+        template.notificationUrl,
+      );
+      validateDateRange(startDate, endDate);
+      validateFutureDates(startDate, endDate);
+      validateReasonableDateRange(startDate, endDate);
+      validateMinimumDuration(startDate, endDate);
+      validateScheduleTime(startDate, template.hour, template.minute);
+
+      const existingSchedule = await ctx.db.notificationSchedule.findFirst({
+        where: {
+          tripId: input.tripId,
+          name: template.name,
+        },
+      });
+
+      const schedule = existingSchedule
+        ? await ctx.db.notificationSchedule.update({
+            where: { id: existingSchedule.id },
+            data: {
+              notificationType: template.notificationType,
+              notificationTitle: template.notificationTitle,
+              notificationBody: template.notificationBody,
+              notificationUrl: template.notificationUrl,
+              hour: template.hour,
+              minute: template.minute,
+              startDate,
+              endDate,
+              isActive: true,
+            },
+            include: {
+              createdBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  authUserId: true,
+                },
+              },
+              trip: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          })
+        : await ctx.db.notificationSchedule.create({
+            data: {
+              tripId: input.tripId,
+              name: template.name,
+              notificationType: template.notificationType,
+              notificationTitle: template.notificationTitle,
+              notificationBody: template.notificationBody,
+              notificationUrl: template.notificationUrl,
+              startDate,
+              endDate,
+              hour: template.hour,
+              minute: template.minute,
+              isActive: true,
+              createdById: ctx.dbUser.id,
+            },
+            include: {
+              createdBy: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  authUserId: true,
+                },
+              },
+              trip: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        schedule.createdBy?.authUserId,
+      ]);
+
+      return {
+        action: existingSchedule ? "updated" : "created",
+        schedule: attachCreatedByEmail(schedule, emailByAuthUserId),
+      };
     }),
 
   update: adminProcedure

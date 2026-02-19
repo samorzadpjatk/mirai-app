@@ -43,7 +43,16 @@ export function NotificationCard({
   isRetrying = false,
   isDeleting = false,
 }: NotificationCardProps) {
-  const statusBadge = getStatusBadge('pending'); // Default to pending for the main notification
+  const sentCount = notification.pushes.filter((push) => push.status === 'sent').length;
+  const failedCount = notification.pushes.filter((push) => push.status === 'failed').length;
+  const pendingCount = notification.pushes.filter((push) => push.status === 'pending').length;
+
+  const statusBadge =
+    failedCount > 0
+      ? getStatusBadge('failed')
+      : pendingCount > 0
+        ? getStatusBadge('pending')
+        : getStatusBadge('sent');
 
   return (
     <View style={styles.card}>
@@ -63,40 +72,34 @@ export function NotificationCard({
 
       <Text style={styles.body}>{notification.body}</Text>
       
-      <View style={styles.pushesSection}>
-        <Text style={styles.pushesTitle}>Push Notifications ({notification.pushes.length})</Text>
-        {notification.pushes.slice(0, 3).map((push, index) => {
-          const pushStatusBadge = getStatusBadge(push.status);
-          return (
-            <View key={index} style={styles.pushItem}>
-              <View style={styles.pushInfo}>
-                <Text style={styles.targetUser}>
-                  {getDisplayName(push.targetUser)}
-                </Text>
-                {push.failureReason && (
-                  <Text style={styles.failureReason}>
-                    {push.failureReason}
-                  </Text>
-                )}
-              </View>
-              <View style={[styles.pushStatus, { backgroundColor: pushStatusBadge.color }]}>
-                <Text style={styles.pushStatusText}>{pushStatusBadge.text}</Text>
-              </View>
-            </View>
-          );
-        })}
-        {notification.pushes.length > 3 && (
-          <Text style={styles.moreText}>
-            +{notification.pushes.length - 3} more...
-          </Text>
-        )}
+      <View style={styles.pushSummary}>
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>Sent</Text>
+          <Text style={[styles.summaryValue, { color: colors.success }]}>{sentCount}</Text>
+        </View>
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>Failed</Text>
+          <Text style={[styles.summaryValue, { color: colors.danger }]}>{failedCount}</Text>
+        </View>
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>Pending</Text>
+          <Text style={[styles.summaryValue, { color: colors.primary }]}>{pendingCount}</Text>
+        </View>
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>Total</Text>
+          <Text style={styles.summaryValue}>{notification.pushes.length}</Text>
+        </View>
       </View>
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={[styles.actionButton, styles.retryButton]}
+          style={[
+            styles.actionButton,
+            styles.retryButton,
+            failedCount === 0 && styles.disabledButton,
+          ]}
           onPress={() => onRetry(notification.id)}
-          disabled={isRetrying}
+          disabled={isRetrying || failedCount === 0}
         >
           <Ionicons name="refresh" size={16} color={colors.white} />
           <Text style={styles.actionButtonText}>
@@ -165,6 +168,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     lineHeight: 20,
   },
+  pushSummary: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  summaryItem: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.borderWhite5,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.xs,
+    alignItems: 'center' as const,
+    backgroundColor: colors.backgroundDark,
+  },
+  summaryLabel: {
+    fontSize: typography.xs,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  summaryValue: {
+    fontSize: typography.base,
+    fontWeight: typography.bold,
+    color: colors.white,
+  },
   pushesSection: {
     marginBottom: spacing.md,
   },
@@ -173,42 +201,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
     color: colors.white,
     marginBottom: spacing.sm,
-  },
-  pushItem: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
-    paddingVertical: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderWhite5,
-  },
-  pushInfo: {
-    flex: 1,
-  },
-  targetUser: {
-    fontSize: typography.sm,
-    color: colors.white,
-    marginBottom: 2,
-  },
-  failureReason: {
-    fontSize: typography.xs,
-    color: colors.danger,
-  },
-  pushStatus: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  pushStatusText: {
-    fontSize: typography.xs,
-    color: colors.white,
-    fontWeight: typography.medium,
-  },
-  moreText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-    fontStyle: 'italic',
   },
   actions: {
     flexDirection: 'row' as const,
@@ -228,6 +220,9 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: colors.danger,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   actionButtonText: {
     fontSize: typography.sm,

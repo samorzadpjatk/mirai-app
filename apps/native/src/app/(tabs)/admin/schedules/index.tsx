@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
 import { useAppSafeAreaInsets } from '../../../../contexts/SafeAreaInsetsContext';
 import { useAdminSchedules } from '~/hooks/admin/useAdminSchedules';
@@ -22,8 +23,46 @@ import {
 } from '~/components/admin/schedules/ScheduleModals';
 import type { NotificationSchedule } from '~/hooks/admin/useAdminSchedules';
 
+function parseTriggerTime(triggerTime: string): { hour: number; minute: number } {
+  const [hoursRaw, minutesRaw] = triggerTime.split(':');
+  const hour = parseInt(hoursRaw ?? '', 10);
+  const minute = parseInt(minutesRaw ?? '', 10);
+
+  if (
+    Number.isNaN(hour) ||
+    Number.isNaN(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    throw new Error('Invalid trigger time format');
+  }
+
+  return { hour, minute };
+}
+
+function getScheduleWindow(hour: number, minute: number): { startDate: Date; endDate: Date } {
+  const now = new Date();
+  const startDate = new Date(now);
+  startDate.setHours(hour, minute, 0, 0);
+
+  const minFutureDate = new Date(now.getTime() + 5 * 60 * 1000);
+  if (startDate < minFutureDate) {
+    startDate.setDate(startDate.getDate() + 1);
+  }
+
+  const endDate = new Date(now);
+  endDate.setFullYear(endDate.getFullYear() + 1);
+
+  return { startDate, endDate };
+}
+
 export default function AdminSchedulesScreen() {
   const insets = useAppSafeAreaInsets();
+  const params = useLocalSearchParams<{ tripId?: string | string[] }>();
+  const tripId =
+    typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0] ?? '';
 
   // Use the custom hook for all schedule operations
   const {
@@ -37,7 +76,7 @@ export default function AdminSchedulesScreen() {
     isUpdating,
     isDeleting,
     isToggling,
-  } = useAdminSchedules();
+  } = useAdminSchedules(tripId || undefined);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -48,16 +87,24 @@ export default function AdminSchedulesScreen() {
   // Event handlers
   const handleCreateSchedule = async (name: string, message: string, triggerTime: string) => {
     try {
-      const [hours, minutes] = triggerTime.split(':');
+      if (!tripId) {
+        Alert.alert('Error', 'Trip context is required to create schedules');
+        return;
+      }
+      const { hour, minute } = parseTriggerTime(triggerTime);
+      const { startDate, endDate } = getScheduleWindow(hour, minute);
+
       await createSchedule({ 
         name, 
+        tripId,
         notificationTitle: name,
         notificationBody: message,
-        hour: parseInt(hours ?? '9'),
-        minute: parseInt(minutes ?? '0'),
+        notificationUrl: '/ranking',
+        hour,
+        minute,
         notificationType: 'custom' as const,
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        startDate,
+        endDate,
       });
       setShowCreateModal(false);
     } catch (error) {
@@ -67,14 +114,15 @@ export default function AdminSchedulesScreen() {
 
   const handleUpdateSchedule = async (id: string, name: string, message: string, triggerTime: string) => {
     try {
-      const [hours, minutes] = triggerTime.split(':');
+      const { hour, minute } = parseTriggerTime(triggerTime);
       await updateSchedule({ 
         id,
         name,
         notificationTitle: name,
         notificationBody: message,
-        hour: parseInt(hours ?? '9'),
-        minute: parseInt(minutes ?? '0'),
+        notificationUrl: '/ranking',
+        hour,
+        minute,
       });
       setShowEditModal(false);
       setSelectedSchedule(null);
@@ -177,7 +225,7 @@ export default function AdminSchedulesScreen() {
         </View>
       ) : (
         <FlatList
-          data={Array.isArray(schedules) ? schedules : schedules?.schedules || []}
+          data={schedules}
           renderItem={renderSchedule}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.schedulesList}

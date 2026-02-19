@@ -1,7 +1,6 @@
 import { createSupabaseClient as createClient } from "@integral-2025-app/supabase";
 import type { RealtimePostgresInsertPayload } from "@integral-2025-app/supabase";
 import { getTRPCClient } from "@integral-2025-app/trpc/client";
-import { createInactivityScheduler } from "./utils/scheduler";
 
 interface NotificationRow {
   id: string;
@@ -71,16 +70,9 @@ function main() {
       console.log("Realtime channel status:", status);
     });
 
-  // Start the inactivity checker scheduler (runs every 5 minutes)
-  const inactivityScheduler = createInactivityScheduler(async () => {
-    await client.notificationSender.checkInactiveUsers.mutate();
-  }, 1);
-  inactivityScheduler.start();
-
   process.on("SIGINT", () => {
     void (async () => {
       console.log("Shutting down...");
-      inactivityScheduler.stop();
       await supabase.removeChannel(channel);
       await cleanup();
       process.exit(0);
