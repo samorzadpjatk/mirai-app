@@ -15,7 +15,9 @@ import { AdminHeader } from '~/components/admin/AdminHeader';
 import { AdminSearchBar } from '~/components/admin/AdminSearchBar';
 import { UserCard } from '~/components/admin/users/UserCard';
 import { GroupAssignmentModal } from '~/components/admin/groups/GroupAssignmentModal';
-import { AdminToggleModal } from '~/components/admin/common/AdminToggleModal';
+import { CreateUserModal } from '~/components/admin/users/CreateUserModal';
+import { EditUserModal } from '~/components/admin/users/EditUserModal';
+import { AdminAddFab } from '~/components/admin/common/AdminAddFab';
 import type { User } from '~/hooks/admin/useAdminUsers';
 
 export default function AdminUsersScreen() {
@@ -28,7 +30,8 @@ export default function AdminUsersScreen() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedField, setSelectedField] = useState<'firstName' | 'lastName' | 'email' | 'wristNumber' | 'houseNumber' | 'groupName'>('firstName');
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const {
@@ -36,11 +39,19 @@ export default function AdminUsersScreen() {
     groups,
     useSearchUsers,
     assignToGroup,
-    toggleAdmin,
+    updateName,
     updateWristNumber,
     updateHouseNumber,
+    createUser,
+    banUserUntil,
+    deleteUser,
     isAssigningToGroup,
-    isTogglingAdmin,
+    isCreatingUser,
+    isBanningUser,
+    isDeletingUser,
+    isUpdatingName,
+    isUpdatingWristNumber,
+    isUpdatingHouseNumber,
   } = useAdminUsers(tripId ?? '');
 
   const { data: searchedUsers } = useSearchUsers(searchTerm, currentPage, selectedField);
@@ -50,30 +61,94 @@ export default function AdminUsersScreen() {
     setShowAssignModal(true);
   }, []);
 
-  const handleToggleAdmin = useCallback((user: User) => {
+  const handleEditUser = useCallback((user: User) => {
     setSelectedUser(user);
-    setShowAdminModal(true);
+    setShowEditUserModal(true);
   }, []);
-
-  const handleUpdateWristNumber = useCallback((userId: string, wristNumber: string) => {
-    void updateWristNumber(userId, wristNumber);
-  }, [updateWristNumber]);
-
-  const handleUpdateHouseNumber = useCallback((userId: string, houseNumber: string) => {
-    void updateHouseNumber(userId, houseNumber);
-  }, [updateHouseNumber]);
 
   const renderUser = useCallback(({ item }: { item: User }) => {
     return (
       <UserCard
         user={item}
-        onUpdateWristNumber={handleUpdateWristNumber}
-        onUpdateHouseNumber={handleUpdateHouseNumber}
         onAssignGroup={handleAssignGroup}
-        onToggleAdmin={handleToggleAdmin}
+        onEdit={handleEditUser}
       />
     );
-  }, [handleUpdateWristNumber, handleUpdateHouseNumber, handleAssignGroup, handleToggleAdmin]);
+  }, [handleAssignGroup, handleEditUser]);
+
+  const handleCreateUser = useCallback(async (input: { firstName: string; lastName: string; email: string }) => {
+    if (!tripId) return;
+    try {
+      await createUser({ ...input, tripId });
+      setShowCreateUserModal(false);
+      Alert.alert('User created', 'New user has been created.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create user';
+      Alert.alert('Error', message);
+    }
+  }, [createUser, tripId]);
+
+  const handleSaveUser = useCallback(async (
+    userId: string,
+    firstName: string,
+    lastName: string,
+    wristNumber: string,
+    houseNumber: string
+  ) => {
+    try {
+      await Promise.all([
+        updateName({ userId, firstName, lastName }),
+        updateWristNumber(userId, wristNumber),
+        updateHouseNumber(userId, houseNumber),
+      ]);
+      setShowEditUserModal(false);
+      Alert.alert('Saved', 'User has been updated.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update user';
+      Alert.alert('Error', message);
+    }
+  }, [updateName, updateWristNumber, updateHouseNumber]);
+
+  const handleDeleteUser = useCallback((userId: string) => {
+    if (!tripId) return;
+    Alert.alert('Delete user', 'Are you sure you want to delete this user?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteUser({ userId, tripId });
+            setShowEditUserModal(false);
+            Alert.alert('Deleted', 'User has been deleted.');
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to delete user';
+            Alert.alert('Error', message);
+          }
+        },
+      },
+    ]);
+  }, [deleteUser, tripId]);
+
+  const handleBanUser = useCallback((userId: string, bannedUntilMs: number, reason: string) => {
+    Alert.alert('Ban user', 'Ban this user until the selected date and time?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Ban',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await banUserUntil({ userId, bannedUntilMs, reason });
+            setShowEditUserModal(false);
+            Alert.alert('Banned', 'User has been banned.');
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to ban user';
+            Alert.alert('Error', message);
+          }
+        },
+      },
+    ]);
+  }, [banUserUntil]);
 
   if (!tripId) {
     return (
@@ -97,7 +172,10 @@ export default function AdminUsersScreen() {
     <View style={[{ flex: 1, backgroundColor: colors.backgroundDark, paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
 
-      <AdminHeader title="User Management" subtitle="Manage accounts and permissions" />
+      <AdminHeader
+        title="User Management"
+        subtitle="Manage accounts and permissions"
+      />
 
       <AdminSearchBar
         searchTerm={searchTerm}
@@ -135,14 +213,29 @@ export default function AdminUsersScreen() {
         loading={isAssigningToGroup}
       />
 
-      <AdminToggleModal
-        visible={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
+      <CreateUserModal
+        visible={showCreateUserModal}
+        onClose={() => setShowCreateUserModal(false)}
+        onCreate={handleCreateUser}
+        isCreating={isCreatingUser}
+      />
+
+      <EditUserModal
+        visible={showEditUserModal}
         user={selectedUser}
-        onToggle={toggleAdmin}
-        loading={isTogglingAdmin}
+        onClose={() => setShowEditUserModal(false)}
+        onSave={handleSaveUser}
+        onDelete={handleDeleteUser}
+        onBan={handleBanUser}
+        isSaving={isUpdatingName || isUpdatingWristNumber || isUpdatingHouseNumber}
+        isDeleting={isDeletingUser}
+        isBanning={isBanningUser}
+      />
+
+      <AdminAddFab
+        onPress={() => setShowCreateUserModal(true)}
+        accessibilityLabel="Add user"
       />
     </View>
   );
 }
-

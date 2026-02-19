@@ -264,6 +264,24 @@ export async function requireAuth(
     throw new AuthenticationError("Unauthorized");
   }
 
+  const adminLookup = await supabase.auth.admin.getUserById(
+    session.authUserId!,
+  );
+
+  if (adminLookup.error) {
+    console.warn(
+      `[Auth] Failed to check ban status for ${session.authUserId}: ${adminLookup.error.message}`,
+    );
+  } else {
+    const bannedUntilRaw = (adminLookup.data.user as any)?.banned_until;
+    if (bannedUntilRaw) {
+      const bannedUntil = new Date(bannedUntilRaw as string);
+      if (!Number.isNaN(bannedUntil.getTime()) && bannedUntil.getTime() > Date.now()) {
+        throw new AuthenticationError("User is banned");
+      }
+    }
+  }
+
   const dbUser = await db.user.findFirst({
     where: { authUserId: session.authUserId! },
   });

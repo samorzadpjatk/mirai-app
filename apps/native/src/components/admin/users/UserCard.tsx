@@ -1,26 +1,25 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '~/styles';
 import type { User } from '~/hooks/admin/useAdminUsers';
 
 interface UserCardProps {
   user: User;
-  onUpdateWristNumber: (userId: string, wristNumber: string) => void;
-  onUpdateHouseNumber: (userId: string, houseNumber: string) => void;
   onAssignGroup: (user: User) => void;
-  onToggleAdmin: (user: User) => void;
+  onEdit: (user: User) => void;
 }
 
 export function UserCard({
   user,
-  onUpdateWristNumber,
-  onUpdateHouseNumber,
   onAssignGroup,
-  onToggleAdmin,
+  onEdit,
 }: UserCardProps) {
   const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') ?? user.email ?? 'Unknown User';
   const isAdmin = user.role === 'ADMIN';
+  const bannedUntilLabel = user.bannedUntil
+    ? new Date(user.bannedUntil).toLocaleString()
+    : null;
 
   return (
     <View style={styles.userCard}>
@@ -28,6 +27,9 @@ export function UserCard({
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{userName}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
+          {user.isBanned && bannedUntilLabel ? (
+            <Text style={styles.userBanned}>Banned until {bannedUntilLabel}</Text>
+          ) : null}
           {user.group && (
             <Text style={styles.userGroup}>Group: {user.group.name}</Text>
           )}
@@ -43,26 +45,14 @@ export function UserCard({
       </View>
 
       <View style={styles.userActions}>
-        <View style={styles.numberInputs}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Wrist #</Text>
-            <TextInput
-              style={styles.numberInput}
-              value={user.wristNumber?.toString() ?? ''}
-              onChangeText={(value) => onUpdateWristNumber(user.id, value)}
-              placeholder="None"
-              keyboardType="numeric"
-            />
+        <View style={styles.numberSummary}>
+          <View style={styles.numberItem}>
+            <Text style={styles.numberLabel}>Wrist #</Text>
+            <Text style={styles.numberValue}>{user.wristNumber ?? '—'}</Text>
           </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>House #</Text>
-            <TextInput
-              style={styles.numberInput}
-              value={user.houseNumber?.toString() ?? ''}
-              onChangeText={(value) => onUpdateHouseNumber(user.id, value)}
-              placeholder="None"
-              keyboardType="numeric"
-            />
+          <View style={styles.numberItem}>
+            <Text style={styles.numberLabel}>House #</Text>
+            <Text style={styles.numberValue}>{user.houseNumber ?? '—'}</Text>
           </View>
         </View>
 
@@ -74,15 +64,12 @@ export function UserCard({
             <Ionicons name="people" size={16} color={colors.white} />
             <Text style={styles.actionButtonText}>Group</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
-            style={[styles.actionButton, isAdmin ? styles.removeAdminButton : styles.adminButton]}
-            onPress={() => onToggleAdmin(user)}
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => onEdit(user)}
           >
-            <Ionicons name="shield" size={16} color={colors.white} />
-            <Text style={styles.actionButtonText}>
-              {isAdmin ? 'Remove Admin' : 'Make Admin'}
-            </Text>
+            <Ionicons name="create" size={16} color={colors.white} />
+            <Text style={styles.actionButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -119,6 +106,12 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
+  userBanned: {
+    fontSize: typography.sm,
+    color: colors.danger,
+    marginBottom: spacing.xs,
+    fontWeight: typography.medium,
+  },
   userGroup: {
     fontSize: typography.sm,
     color: colors.primary,
@@ -146,27 +139,22 @@ const styles = StyleSheet.create({
   userActions: {
     gap: spacing.md,
   },
-  numberInputs: {
+  numberSummary: {
     flexDirection: 'row',
     gap: spacing.md,
   },
-  inputGroup: {
+  numberItem: {
     flex: 1,
   },
-  inputLabel: {
+  numberLabel: {
     fontSize: typography.sm,
     color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
-  numberInput: {
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+  numberValue: {
     fontSize: typography.base,
     color: colors.white,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
+    fontWeight: typography.medium,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -184,11 +172,10 @@ const styles = StyleSheet.create({
   assignButton: {
     backgroundColor: colors.primary,
   },
-  adminButton: {
-    backgroundColor: colors.success,
-  },
-  removeAdminButton: {
-    backgroundColor: colors.warning,
+  editButton: {
+    backgroundColor: colors.cardDark,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
   },
   actionButtonText: {
     fontSize: typography.sm,

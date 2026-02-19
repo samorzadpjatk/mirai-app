@@ -6,12 +6,13 @@ import type { GroupListItem } from "./types";
 interface GroupCardProps {
   group: GroupListItem;
   onPress: (group: GroupListItem) => void;
+  isMyGroup?: boolean;
 }
 
-export function GroupCard({ group, onPress }: GroupCardProps) {
+export function GroupCard({ group, onPress, isMyGroup = false }: GroupCardProps) {
   return (
     <TouchableOpacity
-      style={styles.groupCard}
+      style={[styles.groupCard, isMyGroup ? styles.groupCardMine : null]}
       activeOpacity={0.8}
       onPress={() => onPress(group)}
     >
@@ -30,6 +31,11 @@ export function GroupCard({ group, onPress }: GroupCardProps) {
       </View>
 
       <View style={styles.groupInfo}>
+        {isMyGroup ? (
+          <View style={styles.myGroupBadge}>
+            <Text style={styles.myGroupBadgeText}>Your group</Text>
+          </View>
+        ) : null}
         <Text style={styles.groupName}>{group.name}</Text>
         <Text style={styles.groupCode}>{group.code}</Text>
       </View>
@@ -52,6 +58,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.lg,
+  },
+  groupCardMine: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryOpacity10,
   },
   groupImageContainer: {
     position: "relative",
@@ -76,6 +86,22 @@ const styles = StyleSheet.create({
   groupInfo: {
     flex: 1,
     gap: spacing.xs,
+  },
+  myGroupBadge: {
+    alignSelf: "flex-start",
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.primaryOpacity20,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity30,
+  },
+  myGroupBadgeText: {
+    fontSize: 10,
+    fontWeight: typography.bold,
+    color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
   },
   groupName: {
     fontSize: typography.lg,

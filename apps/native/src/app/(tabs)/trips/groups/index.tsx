@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+import { useMemo } from "react";
 import { colors, spacing } from "../../../../styles";
 import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
 import { GroupsListHeader } from "~/components/trips/groups/GroupsListHeader";
@@ -29,6 +30,25 @@ export default function GroupsListScreen() {
   const hasGroupInCurrentTrip = Boolean(
     currentUserWithGroup?.trips?.some((trip) => trip.group),
   );
+  const myGroupId = useMemo(() => {
+    if (!currentUserWithGroup?.trips?.length) return null;
+    const match = currentUserWithGroup.trips.find(
+      (trip) => trip.tripId === tripId,
+    );
+    return match?.group?.id ?? null;
+  }, [currentUserWithGroup?.trips, tripId]);
+
+  const orderedGroups = useMemo(() => {
+    if (!myGroupId) return filteredGroups;
+    const index = filteredGroups.findIndex((group) => group.id === myGroupId);
+    if (index <= 0) return filteredGroups;
+    const mine = filteredGroups[index];
+    return [
+      mine,
+      ...filteredGroups.slice(0, index),
+      ...filteredGroups.slice(index + 1),
+    ];
+  }, [filteredGroups, myGroupId]);
 
   if (!tripId) {
     return <GroupsNoTripState onGoBack={() => router.back()} />;
@@ -45,14 +65,15 @@ export default function GroupsListScreen() {
         <GroupsSearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
         {/* Header */}
-        <GroupsListHeader title="Groups" count={filteredGroups.length} />
+        <GroupsListHeader title="Groups" count={orderedGroups.length} />
 
         {/* Groups List */}
         {groupsLoading ? (
           <GroupsLoadingState />
         ) : (
           <GroupsList
-            groups={filteredGroups}
+            groups={orderedGroups}
+            myGroupId={myGroupId}
             onSelectGroup={(group) => router.push(`/trips/groups/${group.id}`)}
           />
         )}

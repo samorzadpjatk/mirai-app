@@ -5,8 +5,13 @@ import {
   moderatorProcedure,
   adminProcedure,
   protectedProcedure,
+  publicProcedure,
 } from "../../api/trpc";
-import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
+import {
+  buildAuthEmailLookup,
+  buildAuthUserSummaryLookup,
+  resolveAuthEmail,
+} from "../../utils/authEmails";
 const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
 
 interface PublicUser {
@@ -15,6 +20,9 @@ interface PublicUser {
   lastName: string | null;
   email: string | null;
   role: z.infer<typeof roleSchema>;
+  bannedUntil?: string | null;
+  banReason?: string | null;
+  isBanned?: boolean;
 }
 
 const userWithAuthSelect = {
@@ -57,7 +65,155 @@ const toPublicUser = (
   email: resolveAuthEmail(emailByAuthUserId, user.authUserId),
 });
 
+const toPublicUserWithAuthSummary = (
+  user: {
+    id: string;
+    authUserId?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    role: z.infer<typeof roleSchema>;
+  },
+  authByAuthUserId: Map<
+    string,
+    { email: string | null; bannedUntil: string | null; banReason: string | null; isBanned: boolean }
+  >,
+): PublicUser => {
+  const summary = user.authUserId
+    ? authByAuthUserId.get(user.authUserId) ?? null
+    : null;
+  return {
+    id: user.id,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
+    role: user.role,
+    email: summary?.email ?? null,
+    bannedUntil: summary?.bannedUntil ?? null,
+    banReason: summary?.banReason ?? null,
+    isBanned: summary?.isBanned ?? false,
+  };
+};
+
 export const userRouter = createTRPCRouter({
+  getBanStatus: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx.accessToken) {
+      return { banned: false, bannedUntil: null, reason: null };
+    }
+
+    const { data, error } = await ctx.supabase.auth.getUser(ctx.accessToken);
+    if (error || !data.user) {
+      return { banned: false, bannedUntil: null, reason: null };
+    }
+
+    const adminLookup = await ctx.supabase.auth.admin.getUserById(data.user.id);
+    if (adminLookup.error) {
+      console.warn(
+        `[Auth] Failed to check ban status for ${data.user.id}: ${adminLookup.error.message}`,
+      );
+      return { banned: false, bannedUntil: null, reason: null };
+    }
+
+    const bannedUntilRaw = (adminLookup.data.user as any)?.banned_until as
+      | string
+      | null
+      | undefined;
+    const reasonRaw = (adminLookup.data.user as any)?.app_metadata?.ban_reason as
+      | string
+      | null
+      | undefined;
+
+    if (!bannedUntilRaw) {
+      return { banned: false, bannedUntil: null, reason: null };
+    }
+
+    const bannedUntil = new Date(bannedUntilRaw);
+    if (Number.isNaN(bannedUntil.getTime()) || bannedUntil.getTime() <= Date.now()) {
+      return { banned: false, bannedUntil: null, reason: null };
+    }
+
+    return {
+      banned: true,
+      bannedUntil: bannedUntil.toISOString(),
+      reason: reasonRaw ?? "Temporary ban",
+    };
+  }),
+  getBanStatusByEmail: publicProcedure
+    .input(
+      z.object({
+        email: z.string().trim().email("Invalid email"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const normalizedEmail = input.email.trim().toLowerCase();
+      const perPage = 1000;
+      let page = 1;
+      let authUserId: string | null = null;
+
+      while (true) {
+        const { data, error } = await ctx.supabase.auth.admin.listUsers({
+          page,
+          perPage,
+        });
+
+        if (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: error.message,
+          });
+        }
+
+        const found = data?.users?.find(
+          (user) => user.email?.toLowerCase() === normalizedEmail,
+        );
+
+        if (found?.id) {
+          authUserId = found.id;
+          break;
+        }
+
+        if (!data || data.users.length < perPage) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      if (!authUserId) {
+        return { exists: false, banned: false, bannedUntil: null, reason: null };
+      }
+
+      const lookup = await ctx.supabase.auth.admin.getUserById(authUserId);
+      if (lookup.error || !lookup.data.user) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: lookup.error?.message ?? "Failed to fetch auth user",
+        });
+      }
+
+      const bannedUntilRaw = (lookup.data.user as any)?.banned_until as
+        | string
+        | null
+        | undefined;
+      const reasonRaw = (lookup.data.user as any)?.app_metadata?.ban_reason as
+        | string
+        | null
+        | undefined;
+
+      if (!bannedUntilRaw) {
+        return { exists: true, banned: false, bannedUntil: null, reason: null };
+      }
+
+      const bannedUntil = new Date(bannedUntilRaw);
+      if (Number.isNaN(bannedUntil.getTime()) || bannedUntil.getTime() <= Date.now()) {
+        return { exists: true, banned: false, bannedUntil: null, reason: null };
+      }
+
+      return {
+        exists: true,
+        banned: true,
+        bannedUntil: bannedUntil.toISOString(),
+        reason: reasonRaw ?? "Temporary ban",
+      };
+    }),
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -217,6 +373,248 @@ export const userRouter = createTRPCRouter({
       ]);
 
       return toPublicUser(updatedUser, emailByAuthUserId);
+    }),
+  createUser: adminProcedure
+    .input(
+      z.object({
+        tripId: z.string(),
+        firstName: z.string().trim().min(1, "Imię jest wymagane"),
+        lastName: z.string().trim().min(1, "Nazwisko jest wymagane"),
+        email: z.string().trim().email("Nieprawidłowy adres email"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const firstName = input.firstName.trim();
+      const lastName = input.lastName.trim();
+      const email = input.email.trim().toLowerCase();
+
+      const { data, error } = await ctx.supabase.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: { firstName, lastName },
+        app_metadata: { role: roleSchema.enum.USER },
+      });
+
+      if (error || !data?.user) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error?.message ?? "Failed to create auth user",
+        });
+      }
+
+      const authUserId = data.user.id;
+
+      const existingUser = await ctx.db.user.findUnique({
+        where: { authUserId },
+        select: userWithAuthSelect,
+      });
+
+      const dbUser =
+        existingUser ??
+        (await ctx.db.user.create({
+          data: {
+            authUserId,
+            firstName,
+            lastName,
+            role: roleSchema.enum.USER,
+          },
+          select: userWithAuthSelect,
+        }));
+
+      const participant = await ctx.db.tripParticipant.upsert({
+        where: {
+          userId_tripId: { userId: dbUser.id, tripId: input.tripId },
+        },
+        update: {},
+        create: {
+          userId: dbUser.id,
+          tripId: input.tripId,
+        },
+        select: {
+          user: {
+            select: userWithAuthSelect,
+          },
+          wristNumber: true,
+          houseNumber: true,
+          group: { select: { id: true, name: true } },
+          tripId: true,
+        },
+      });
+
+      const emailByAuthUserId = new Map([
+        [authUserId, data.user.email ?? email],
+      ]);
+
+      return {
+        ...toPublicUser(participant.user, emailByAuthUserId),
+        wristNumber: participant.wristNumber,
+        houseNumber: participant.houseNumber,
+        group: participant.group,
+        tripId: participant.tripId,
+      };
+    }),
+  updateName: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        firstName: z.string().trim().min(1, "Imię jest wymagane"),
+        lastName: z.string().trim().min(1, "Nazwisko jest wymagane"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updatedUser = await ctx.db.user.update({
+        where: { id: input.userId },
+        data: {
+          firstName: input.firstName.trim(),
+          lastName: input.lastName.trim(),
+        },
+        select: userWithAuthSelect,
+      });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        updatedUser.authUserId,
+      ]);
+
+      return toPublicUser(updatedUser, emailByAuthUserId);
+    }),
+  banUserUntil: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        bannedUntilMs: z.number(),
+        reason: z.string().trim().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { id: input.userId },
+        select: { authUserId: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      const bannedUntil = new Date(input.bannedUntilMs);
+
+      if (Number.isNaN(bannedUntil.getTime())) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid ban date",
+        });
+      }
+
+      const diffMs = bannedUntil.getTime() - Date.now();
+      if (diffMs <= 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Ban date must be in the future",
+        });
+      }
+
+      const diffMinutes = Math.ceil(diffMs / 60000);
+      const banDuration = `${diffMinutes}m`;
+
+      const adminUser = await ctx.supabase.auth.admin.getUserById(
+        user.authUserId,
+      );
+
+      if (adminUser.error || !adminUser.data.user) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: adminUser.error?.message ?? "Failed to fetch auth user",
+        });
+      }
+
+      const existingMetadata = (adminUser.data.user as any)?.app_metadata ?? {};
+      const reason = input.reason?.trim();
+      const nextMetadata = {
+        ...existingMetadata,
+        ban_reason: reason && reason.length > 0 ? reason : null,
+      };
+
+      const { error } = await ctx.supabase.auth.admin.updateUserById(
+        user.authUserId,
+        { ban_duration: banDuration, app_metadata: nextMetadata } as any,
+      );
+
+      if (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error.message,
+        });
+      }
+
+      return { bannedUntil: bannedUntil.toISOString() };
+    }),
+  deleteUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        tripId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await ctx.db.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, authUserId: true },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      const result = await ctx.db.$transaction(async (tx) => {
+        const participant = await tx.tripParticipant.findUnique({
+          where: {
+            userId_tripId: { userId: input.userId, tripId: input.tripId },
+          },
+          select: { id: true },
+        });
+
+        if (!participant) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User is not assigned to this trip",
+          });
+        }
+
+        await tx.tripParticipant.delete({
+          where: {
+            userId_tripId: { userId: input.userId, tripId: input.tripId },
+          },
+        });
+
+        const remainingTrips = await tx.tripParticipant.count({
+          where: { userId: input.userId },
+        });
+
+        if (remainingTrips === 0) {
+          await tx.user.delete({ where: { id: input.userId } });
+        }
+
+        return { remainingTrips };
+      });
+
+      if (result.remainingTrips === 0) {
+        const { error } = await ctx.supabase.auth.admin.deleteUser(
+          user.authUserId,
+        );
+        if (error) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: error.message,
+          });
+        }
+      }
+
+      return { deletedFromSystem: result.remainingTrips === 0 };
     }),
 
   // Update user wrist number
@@ -428,7 +826,7 @@ export const userRouter = createTRPCRouter({
           ],
         }));
 
-        const emailByAuthUserId = await buildAuthEmailLookup(
+        const authSummaryById = await buildAuthUserSummaryLookup(
           ctx.supabase,
           participants.map((participant) => participant.user.authUserId),
         );
@@ -436,16 +834,14 @@ export const userRouter = createTRPCRouter({
         const normalizedSearch = searchTerm?.toLowerCase();
         const filtered = participants.filter((participant) => {
           if (!normalizedSearch) return true;
-          const email = resolveAuthEmail(
-            emailByAuthUserId,
-            participant.user.authUserId,
-          );
+          const email =
+            authSummaryById.get(participant.user.authUserId)?.email ?? null;
           return email?.toLowerCase().includes(normalizedSearch) ?? false;
         });
 
         const sorted = filtered.sort((a, b) => {
-          const aUser = toPublicUser(a.user, emailByAuthUserId);
-          const bUser = toPublicUser(b.user, emailByAuthUserId);
+          const aUser = toPublicUserWithAuthSummary(a.user, authSummaryById);
+          const bUser = toPublicUserWithAuthSummary(b.user, authSummaryById);
           const firstNameCompare = (aUser.firstName ?? "").localeCompare(
             bUser.firstName ?? "",
           );
@@ -465,7 +861,7 @@ export const userRouter = createTRPCRouter({
 
         return {
           users: paged.map((participant) => ({
-            ...toPublicUser(participant.user, emailByAuthUserId),
+            ...toPublicUserWithAuthSummary(participant.user, authSummaryById),
             wristNumber: participant.wristNumber,
             houseNumber: participant.houseNumber,
             group: participant.group,
@@ -539,7 +935,7 @@ export const userRouter = createTRPCRouter({
         take: limit,
       }));
 
-      const emailByAuthUserId = await buildAuthEmailLookup(
+      const authSummaryById = await buildAuthUserSummaryLookup(
         ctx.supabase,
         participants.map((participant) => participant.user.authUserId),
       );
@@ -548,7 +944,7 @@ export const userRouter = createTRPCRouter({
 
       return {
         users: participants.map((participant) => ({
-          ...toPublicUser(participant.user, emailByAuthUserId),
+          ...toPublicUserWithAuthSummary(participant.user, authSummaryById),
           wristNumber: participant.wristNumber,
           houseNumber: participant.houseNumber,
           group: participant.group,
