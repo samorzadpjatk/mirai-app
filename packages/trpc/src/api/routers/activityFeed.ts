@@ -361,7 +361,7 @@ const enrichActivities = async (
   await Promise.all(
     submissionTripIds.map(async (tripId) => {
       const rankedGroups = await ctx.db.group.findMany({
-        where: { tripId },
+        where: { tripId, isDeleted: false },
         orderBy: [{ coins: "desc" }, { id: "asc" }],
         select: { id: true },
       });

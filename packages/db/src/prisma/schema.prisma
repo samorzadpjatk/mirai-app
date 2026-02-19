@@ -81,6 +81,7 @@ model User {
   createdRewards       Reward[]                 @relation("RewardCreator")
   rewardPurchases      RewardPurchase[]         @relation("RewardPurchaser")
   rewardPurchaseStatusUpdates RewardPurchase[]  @relation("RewardPurchaseStatusUpdater")
+  groupJoinRequests    GroupJoinRequest[]
 }
 
 model Trip {
@@ -100,6 +101,7 @@ model Trip {
   challenges             Challenge[]
   rewards                Reward[]
   activityFeed           ActivityFeed[]
+  groupJoinRequests      GroupJoinRequest[]
 }
 
 model TripParticipant {
@@ -160,6 +162,7 @@ model Group {
   name             String
   description      String?
   image            String?
+  isDeleted        Boolean           @default(false)
   organizerId      String
   organizer        User              @relation("UserOrganizerGroups", fields: [organizerId], references: [id])
   code             String            @unique
@@ -175,6 +178,23 @@ model Group {
   rewardPurchases      RewardPurchase[]
   submissionActivities SubmissionActivity[]  @relation("SubmissionActivityGroup")
   rankChangeActivities RankChangeActivity[]  @relation("RankChangeActivityGroup")
+  joinRequests         GroupJoinRequest[]
+}
+
+model GroupJoinRequest {
+  id        String   @id @default(cuid())
+  tripId    String
+  groupId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  trip  Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@index([groupId, createdAt(sort: Asc)])
+  @@index([userId, tripId])
 }
 
 model Challenge {
@@ -206,6 +226,8 @@ model Challenge {
 
   targetLatitude  Float?
   targetLongitude Float?
+
+  expectedValue String?
 
   autoApprove Boolean @default(false)
 

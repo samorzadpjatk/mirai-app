@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,13 +14,14 @@ import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import Logo from "../../components/Logo";
 import LoadingScreen from "../../components/LoadingScreen";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSelectedTrip } from "~/hooks/trips";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { colors, spacing, typography } from "../../styles";
@@ -196,30 +199,6 @@ const parseRankChangeDetails = (description?: string | null) => {
   return { movements, podium };
 };
 
-const pickTrip = <T extends { id: string; startDate: Date | string; endDate: Date | string }>(
-  trips: T[] | undefined,
-): T | null => {
-  if (!trips || trips.length === 0) return null;
-
-  const now = Date.now();
-  const ongoing = trips.find((trip) => {
-    const start = new Date(trip.startDate).getTime();
-    const end = new Date(trip.endDate).getTime();
-    return start <= now && end >= now;
-  });
-  if (ongoing) return ongoing;
-
-  const upcoming = [...trips]
-    .filter((trip) => new Date(trip.startDate).getTime() > now)
-    .sort(
-      (a, b) =>
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
-    )[0];
-  if (upcoming) return upcoming;
-
-  return trips[0] ?? null;
-};
-
 const resolveCardImage = (activity: CommunityFeedActivity) => {
   if (activity.imageUrl) return activity.imageUrl;
   const extra = activity.userPost?.additionalImages?.find((img) => Boolean(img));
@@ -296,10 +275,12 @@ function CommunityActivityCard({
   activity,
   onPress,
   onPressOwner,
+  isFocused = false,
 }: {
   activity: CommunityFeedActivity;
   onPress?: () => void;
   onPressOwner?: () => void;
+  isFocused?: boolean;
 }) {
   const trpc = useTRPC();
 
@@ -392,7 +373,7 @@ function CommunityActivityCard({
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, isFocused && styles.cardFocused]}
       onPress={onPress}
       disabled={!onPress}
       activeOpacity={onPress ? 0.9 : 1}
@@ -427,8 +408,8 @@ function CommunityActivityCard({
         <Text style={styles.cardTime}>{formatRelativeTime(activity.createdAt)}</Text>
       </View>
 
-      <View style={styles.mediaWrap}>
-        {activity.activityType === "rank_change" ? (
+      {activity.activityType === "rank_change" ? (
+        <View style={styles.mediaWrap}>
           <View style={styles.rankChangeWrap}>
             <View style={styles.rankChangeTopRow}>
               <View style={styles.rankChangeDirectionWrap}>
@@ -483,15 +464,12 @@ function CommunityActivityCard({
               </View>
             </View>
           </View>
-        ) : cardImage ? (
+        </View>
+      ) : cardImage ? (
+        <View style={styles.mediaWrap}>
           <Image source={{ uri: cardImage }} style={styles.mediaImage} contentFit="cover" />
-        ) : (
-          <View style={styles.mediaPlaceholder}>
-            <Ionicons name="image-outline" size={36} color={colors.primary} />
-            <Text style={styles.mediaPlaceholderText}>No image</Text>
-          </View>
-        )}
-      </View>
+        </View>
+      ) : null}
 
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle}>{activity.title}</Text>
@@ -519,10 +497,16 @@ function CommunityActivityCard({
 export default function CommunityScreen() {
   const { session, isLoading: isLoadingSession } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    filter?: string | string[];
+    focusActivityId?: string | string[];
+  }>();
   const trpc = useTRPC();
   const insets = useAppSafeAreaInsets();
+  const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
 
-  const [selectedFilter, setSelectedFilter] = useState<ActivityFilter>("all");
+  const [isTripPickerManuallyOpen, setIsTripPickerManuallyOpen] = useState(false);
+  const [hasDismissedAutoPicker, setHasDismissedAutoPicker] = useState(false);
 
   useEffect(() => {
     if (!isLoadingSession && !session) {
@@ -531,7 +515,47 @@ export default function CommunityScreen() {
   }, [isLoadingSession, session, router]);
 
   const tripsQuery = useQuery(trpc.trip.getAll.queryOptions());
-  const selectedTrip = useMemo(() => pickTrip(tripsQuery.data), [tripsQuery.data]);
+  const trips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data]);
+
+  const selectedTrip = useMemo(() => {
+    if (!selectedTripId) return null;
+    return trips.find((trip) => trip.id === selectedTripId) ?? null;
+  }, [selectedTripId, trips]);
+
+  const shouldAutoOpenTripPicker =
+    trips.length > 0 &&
+    (!selectedTripId || !selectedTrip) &&
+    !hasDismissedAutoPicker;
+  const isTripPickerOpen = isTripPickerManuallyOpen || shouldAutoOpenTripPicker;
+
+  const selectedFilter = useMemo<ActivityFilter>(() => {
+    const rawFilter =
+      typeof params.filter === "string" ? params.filter : params.filter?.[0];
+
+    if (!rawFilter) return "all";
+    if (rawFilter === "news") return "custom";
+    if (rawFilter === "all") return "all";
+    if (rawFilter === "submission") return "submission";
+    if (rawFilter === "challenge_event") return "challenge_event";
+    if (rawFilter === "rank_change") return "rank_change";
+    if (rawFilter === "custom") return "custom";
+    if (rawFilter === "user_post") return "user_post";
+    return "all";
+  }, [params.filter]);
+
+  const focusActivityId = useMemo(() => {
+    return typeof params.focusActivityId === "string"
+      ? params.focusActivityId
+      : params.focusActivityId?.[0];
+  }, [params.focusActivityId]);
+
+  const handleSelectFilter = useCallback(
+    (filter: ActivityFilter) => {
+      const paramValue = filter === "custom" ? "news" : filter;
+      router.setParams({ filter: paramValue, focusActivityId: undefined });
+    },
+    [router],
+  );
 
   const feedQuery = useQuery({
     ...trpc.activityFeed.getByTrip.queryOptions({
@@ -548,21 +572,50 @@ export default function CommunityScreen() {
   );
 
   const filteredActivities = useMemo(() => {
-    if (selectedFilter === "all") return activities;
-    return activities.filter((activity) => activity.activityType === selectedFilter);
-  }, [activities, selectedFilter]);
+    const base =
+      selectedFilter === "all"
+        ? activities
+        : activities.filter((activity) => activity.activityType === selectedFilter);
+
+    if (!focusActivityId) return base;
+
+    const focused = base.find((activity) => activity.id === focusActivityId);
+    if (!focused) return base;
+
+    const rest = base.filter((activity) => activity.id !== focusActivityId);
+    return [focused, ...rest];
+  }, [activities, focusActivityId, selectedFilter]);
 
   const isRefreshing = tripsQuery.isRefetching || feedQuery.isRefetching;
 
   const handleRefresh = useCallback(() => {
-    const requests: Array<Promise<unknown>> = [tripsQuery.refetch()];
+    const requests: Promise<unknown>[] = [tripsQuery.refetch()];
     if (selectedTrip?.id) {
       requests.push(feedQuery.refetch());
     }
     void Promise.all(requests);
   }, [feedQuery, selectedTrip?.id, tripsQuery]);
 
-  if (isLoadingSession || tripsQuery.isLoading) {
+  const handleOpenTripPicker = useCallback(() => {
+    setHasDismissedAutoPicker(false);
+    setIsTripPickerManuallyOpen(true);
+  }, []);
+
+  const handleSelectTrip = useCallback(
+    (tripId: string) => {
+      setSelectedTripId(tripId);
+      setHasDismissedAutoPicker(false);
+      setIsTripPickerManuallyOpen(false);
+    },
+    [setSelectedTripId],
+  );
+
+  const handleCloseTripPicker = useCallback(() => {
+    setIsTripPickerManuallyOpen(false);
+    setHasDismissedAutoPicker(true);
+  }, []);
+
+  if (isLoadingSession || tripsQuery.isLoading || isLoadingSelectedTrip) {
     return <LoadingScreen message="Loading community..." />;
   }
 
@@ -599,6 +652,7 @@ export default function CommunityScreen() {
           return (
             <CommunityActivityCard
               activity={item}
+              isFocused={item.id === focusActivityId}
               onPress={
                 challengeId
                   ? () =>
@@ -631,41 +685,56 @@ export default function CommunityScreen() {
         }
         ListHeaderComponent={
           <View style={styles.headerWrap}>
-            <View style={styles.brandRow}>
-              <View style={styles.logoWrap}>
-                <Logo size={40} />
+            <View style={styles.headerTopRow}>
+              <View style={styles.brandRow}>
+                <View style={styles.logoWrap}>
+                  <Logo size={40} />
+                </View>
+                <View style={styles.brandTextWrap}>
+                  <Text style={styles.brandTitle}>MIRAI</Text>
+                  <Text style={styles.brandSubtitle}>Feed</Text>
+                </View>
               </View>
-              <View style={styles.brandTextWrap}>
-                <Text style={styles.brandTitle}>MIRAI</Text>
-                <Text style={styles.brandSubtitle}>Feed</Text>
-              </View>
+
+              <TouchableOpacity
+                style={styles.changeTripButton}
+                onPress={handleOpenTripPicker}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="swap-horizontal" size={14} color={colors.primary} />
+                <Text style={styles.changeTripButtonText}>
+                  {selectedTrip ? "Change trip" : "Select trip"}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.tripLabel} numberOfLines={1}>
-              {selectedTrip?.name ?? "No active trip"}
+              {selectedTrip?.name ?? "Trip not selected"}
             </Text>
 
-            <View style={styles.filterRow}>
-              {ACTIVITY_FILTERS.map((filter) => {
-                const isActive = selectedFilter === filter.key;
-                return (
-                  <TouchableOpacity
+            {selectedTrip ? (
+              <View style={styles.filterRow}>
+                {ACTIVITY_FILTERS.map((filter) => {
+                  const isActive = selectedFilter === filter.key;
+                  return (
+                    <TouchableOpacity
                     key={filter.key}
                     style={[styles.filterChip, isActive && styles.filterChipActive]}
-                    onPress={() => setSelectedFilter(filter.key)}
+                    onPress={() => handleSelectFilter(filter.key)}
                     activeOpacity={0.85}
                   >
-                    <Text
-                      style={[styles.filterChipText, isActive && styles.filterChipTextActive]}
-                    >
-                      {filter.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                      <Text
+                        style={[styles.filterChipText, isActive && styles.filterChipTextActive]}
+                      >
+                        {filter.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : null}
 
-            {feedQuery.isLoading ? (
+            {selectedTrip && feedQuery.isLoading ? (
               <View style={styles.loadingState}>
                 <ActivityIndicator size="small" color={colors.primary} />
                 <Text style={styles.loadingStateText}>Loading feed...</Text>
@@ -674,7 +743,15 @@ export default function CommunityScreen() {
           </View>
         }
         ListEmptyComponent={
-          !feedQuery.isLoading ? (
+          !selectedTrip ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="navigate-outline" size={36} color={colors.textSecondary} />
+              <Text style={styles.emptyStateTitle}>Select trip first</Text>
+              <Text style={styles.emptyStateText}>
+                Pick your trip to load the community feed.
+              </Text>
+            </View>
+          ) : !feedQuery.isLoading ? (
             <View style={styles.emptyState}>
               <Ionicons name="chatbubbles-outline" size={36} color={colors.textSecondary} />
               <Text style={styles.emptyStateTitle}>No activities yet</Text>
@@ -685,6 +762,43 @@ export default function CommunityScreen() {
           ) : null
         }
       />
+
+      <Modal
+        visible={isTripPickerOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={handleCloseTripPicker}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select trip</Text>
+              <TouchableOpacity onPress={handleCloseTripPicker}>
+                <Ionicons name="close" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalList}>
+              {trips.map((trip) => (
+                <TouchableOpacity
+                  key={trip.id}
+                  style={styles.modalItem}
+                  onPress={() => handleSelectTrip(trip.id)}
+                >
+                  <Text style={styles.modalItemText}>{trip.name}</Text>
+                  {selectedTrip?.id === trip.id ? (
+                    <Ionicons name="checkmark" size={18} color={colors.primary} />
+                  ) : null}
+                </TouchableOpacity>
+              ))}
+
+              {trips.length === 0 ? (
+                <Text style={styles.modalEmpty}>No trips available</Text>
+              ) : null}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -702,10 +816,17 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginBottom: spacing.sm,
   },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
   brandRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flexShrink: 1,
   },
   logoWrap: {
     width: 40,
@@ -727,6 +848,22 @@ const styles = StyleSheet.create({
     fontSize: typography.base,
     fontWeight: typography.semibold,
     marginTop: -2,
+  },
+  changeTripButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity30,
+    backgroundColor: colors.primaryOpacity10,
+  },
+  changeTripButtonText: {
+    color: colors.primary,
+    fontSize: typography.xs,
+    fontWeight: typography.semibold,
   },
   tripLabel: {
     color: colors.textSecondary,
@@ -774,6 +911,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderWhite10,
     backgroundColor: "rgba(16, 34, 34, 0.78)",
+  },
+  cardFocused: {
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
   },
   cardHeader: {
     flexDirection: "row",
@@ -994,5 +1139,56 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.base,
     textAlign: "center",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: colors.blackOpacity40,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  modalCard: {
+    backgroundColor: colors.cardDark,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    maxHeight: "70%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  modalTitle: {
+    color: colors.white,
+    fontSize: typography.lg,
+    fontWeight: typography.bold,
+  },
+  modalList: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  modalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderWhite5,
+  },
+  modalItemText: {
+    color: colors.white,
+    fontSize: typography.base,
+    flex: 1,
+    paddingRight: spacing.sm,
+  },
+  modalEmpty: {
+    color: colors.textSecondary,
+    fontSize: typography.sm,
+    textAlign: "center",
+    paddingVertical: spacing.md,
   },
 });

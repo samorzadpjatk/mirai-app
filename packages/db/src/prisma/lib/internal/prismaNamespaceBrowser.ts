@@ -57,6 +57,7 @@ export const ModelName = {
   Event: 'Event',
   UserEvent: 'UserEvent',
   Group: 'Group',
+  GroupJoinRequest: 'GroupJoinRequest',
   Challenge: 'Challenge',
   ChallengeSubmission: 'ChallengeSubmission',
   ChallengeVote: 'ChallengeVote',
@@ -174,6 +175,7 @@ export const GroupScalarFieldEnum = {
   name: 'name',
   description: 'description',
   image: 'image',
+  isDeleted: 'isDeleted',
   organizerId: 'organizerId',
   code: 'code',
   coins: 'coins',
@@ -182,6 +184,17 @@ export const GroupScalarFieldEnum = {
 } as const
 
 export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof GroupScalarFieldEnum]
+
+
+export const GroupJoinRequestScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  groupId: 'groupId',
+  userId: 'userId',
+  createdAt: 'createdAt'
+} as const
+
+export type GroupJoinRequestScalarFieldEnum = (typeof GroupJoinRequestScalarFieldEnum)[keyof typeof GroupJoinRequestScalarFieldEnum]
 
 
 export const ChallengeScalarFieldEnum = {
@@ -206,6 +219,7 @@ export const ChallengeScalarFieldEnum = {
   votingEndTime: 'votingEndTime',
   targetLatitude: 'targetLatitude',
   targetLongitude: 'targetLongitude',
+  expectedValue: 'expectedValue',
   autoApprove: 'autoApprove',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

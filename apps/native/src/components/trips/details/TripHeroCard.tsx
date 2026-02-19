@@ -16,7 +16,7 @@ const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   if (now >= start && now <= end) return "Ongoing Trip";
-  if (now < start) return "Upcoming Trip";
+  if (now < start) return "Ongoing trip";
   return "Past Trip";
 };
 
@@ -28,7 +28,7 @@ export function TripHeroCard({
   imageUrl,
   backgroundImagePath,
 }: TripHeroCardProps) {
-  const { imageUrl: backgroundImageUrl, isLoading } = useTripBackgroundImageDownload(backgroundImagePath);
+  const { imageUrl: backgroundImageUrl } = useTripBackgroundImageDownload(backgroundImagePath);
   const finalImageUrl = imageUrl ?? backgroundImageUrl ?? undefined;
 
   // Don't render the image if no URL is available
@@ -73,7 +73,9 @@ const styles = StyleSheet.create({
   heroCard: {
     position: "relative",
     height: 192,
-    margin: spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+    marginHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
     overflow: "hidden",
     backgroundColor: colors.primaryOpacity20,

@@ -6,7 +6,10 @@ import {
   Alert,
   Modal,
   Text,
+  TextInput,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
@@ -78,15 +81,14 @@ export default function ChallengeDetailScreen() {
   const uploadLabel = isUploading
     ? uploadPercent != null
       ? `Uploading ${uploadPercent}%`
-    : "Uploading..."
+      : "Uploading..."
     : undefined;
 
-  const submissionQuery = trpc.challengeSubmission.getMyForChallenge.queryOptions(
-    {
+  const submissionQuery =
+    trpc.challengeSubmission.getMyForChallenge.queryOptions({
       challengeId: challengeId ?? "",
       tripId: tripId ?? "",
-    },
-  );
+    });
   const challengeSubmissionsQuery =
     trpc.challengeSubmission.getByChallenge.queryOptions({
       challengeId: challengeId ?? "",
@@ -107,8 +109,9 @@ export default function ChallengeDetailScreen() {
   });
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
-  const [hasScannedQrThisSession, setHasScannedQrThisSession] =
-    useState(false);
+  const [hasScannedQrThisSession, setHasScannedQrThisSession] = useState(false);
+  const [isTextInputOpen, setIsTextInputOpen] = useState(false);
+  const [textInputValue, setTextInputValue] = useState("");
   const [currentDeviceCoords, setCurrentDeviceCoords] = useState<
     [number, number] | null
   >(null);
@@ -117,7 +120,9 @@ export default function ChallengeDetailScreen() {
   const withdrawMutation = useMutation(
     trpc.challengeSubmission.deleteMine.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: submissionQuery.queryKey });
+        await queryClient.invalidateQueries({
+          queryKey: submissionQuery.queryKey,
+        });
         await queryClient.invalidateQueries({
           queryKey: challengeSubmissionsQuery.queryKey,
         });
@@ -127,7 +132,9 @@ export default function ChallengeDetailScreen() {
   const qrSubmitMutation = useMutation(
     trpc.challengeSubmission.create.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: submissionQuery.queryKey });
+        await queryClient.invalidateQueries({
+          queryKey: submissionQuery.queryKey,
+        });
         await queryClient.invalidateQueries({
           queryKey: challengeSubmissionsQuery.queryKey,
         });
@@ -137,7 +144,21 @@ export default function ChallengeDetailScreen() {
   const locationSubmitMutation = useMutation(
     trpc.challengeSubmission.create.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: submissionQuery.queryKey });
+        await queryClient.invalidateQueries({
+          queryKey: submissionQuery.queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: challengeSubmissionsQuery.queryKey,
+        });
+      },
+    }),
+  );
+  const textSubmitMutation = useMutation(
+    trpc.challengeSubmission.create.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: submissionQuery.queryKey,
+        });
         await queryClient.invalidateQueries({
           queryKey: challengeSubmissionsQuery.queryKey,
         });
@@ -181,6 +202,7 @@ export default function ChallengeDetailScreen() {
 
   const isQrChallenge = challenge.submissionType === "QR_CODE";
   const isLocationChallenge = challenge.submissionType === "LOCATION";
+  const isTextChallenge = challenge.submissionType === "TEXT";
   const hasTargetLocation =
     typeof challenge.targetLatitude === "number" &&
     typeof challenge.targetLongitude === "number";
@@ -193,8 +215,9 @@ export default function ChallengeDetailScreen() {
     challenge.submissionType === "TEXT" ||
     challenge.submissionType === "LOCATION";
   const solvedGroupsCount =
-    challengeSubmissions?.filter((submission) => submission.status === "APPROVED")
-      .length ?? 0;
+    challengeSubmissions?.filter(
+      (submission) => submission.status === "APPROVED",
+    ).length ?? 0;
   const totalGroupsCount = trip?.groups?.length ?? 0;
   const handleSendCurrentLocation = async () => {
     if (!tripId || !challengeId) return;
@@ -222,6 +245,34 @@ export default function ChallengeDetailScreen() {
       const message =
         error instanceof Error ? error.message : "Failed to send location";
       Alert.alert("Location failed", message);
+    }
+  };
+
+  const handleSubmitText = async (text: string) => {
+    if (!tripId || !challengeId) return;
+    const trimmed = text.trim();
+    if (!trimmed) {
+      Alert.alert("Error", "Please enter a text answer.");
+      return;
+    }
+    try {
+      const submission = await textSubmitMutation.mutateAsync({
+        tripId,
+        challengeId,
+        textContent: trimmed,
+      });
+      setIsTextInputOpen(false);
+      setTextInputValue("");
+      Alert.alert(
+        "Submitted",
+        submission.status === "APPROVED"
+          ? "Correct! Points granted."
+          : "Answer submitted.",
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to submit";
+      Alert.alert("Incorrect", message);
     }
   };
 
@@ -269,9 +320,7 @@ export default function ChallengeDetailScreen() {
         />
 
         {/* Description */}
-        <ChallengeDescriptionCard
-          description={challenge.description}
-        />
+        <ChallengeDescriptionCard description={challenge.description} />
 
         {shouldShowSubmissionTime ? (
           <ChallengeTimeLeftCard
@@ -386,7 +435,9 @@ export default function ChallengeDetailScreen() {
             label="Vote"
             iconName="checkmark-circle"
             onPress={() =>
-              router.push(`/trips/challenges/vote/${challenge.id}?tripId=${tripId}`)
+              router.push(
+                `/trips/challenges/vote/${challenge.id}?tripId=${tripId}`,
+              )
             }
           />
         )}
@@ -395,53 +446,130 @@ export default function ChallengeDetailScreen() {
         {!isPeerVotingChallengeInVotingPhase &&
           !mySubmission &&
           challenge.status !== "COMPLETED" && (
-          <ChallengeActionButton
-            isLoading={
-              cameraLoading ||
-              qrSubmitMutation.isPending ||
-              locationSubmitMutation.isPending
-            }
-            label={
-              isQrChallenge
-                ? qrSubmitMutation.isPending
-                  ? "Checking QR..."
-                  : "Scan QR code"
-                : isLocationChallenge
-                  ? locationSubmitMutation.isPending
-                    ? "Sending location..."
-                    : "Send current location"
-                : uploadLabel
-            }
-            onPress={async () => {
-              if (isQrChallenge) {
-                const permission =
-                  cameraPermission?.granted
+            <ChallengeActionButton
+              isLoading={
+                cameraLoading ||
+                qrSubmitMutation.isPending ||
+                locationSubmitMutation.isPending ||
+                textSubmitMutation.isPending
+              }
+              label={
+                isQrChallenge
+                  ? qrSubmitMutation.isPending
+                    ? "Checking QR..."
+                    : "Scan QR code"
+                  : isLocationChallenge
+                    ? locationSubmitMutation.isPending
+                      ? "Sending location..."
+                      : "Send current location"
+                    : isTextChallenge
+                      ? textSubmitMutation.isPending
+                        ? "Submitting..."
+                        : "Enter answer"
+                      : uploadLabel
+              }
+              onPress={async () => {
+                if (isQrChallenge) {
+                  const permission = cameraPermission?.granted
                     ? cameraPermission
                     : await requestCameraPermission();
-                if (!permission?.granted) {
-                  Alert.alert(
-                    "Permission required",
-                    "Camera permission is needed to scan QR code.",
-                  );
+                  if (!permission?.granted) {
+                    Alert.alert(
+                      "Permission required",
+                      "Camera permission is needed to scan QR code.",
+                    );
+                    return;
+                  }
+                  qrScanLockRef.current = false;
+                  setHasScannedQrThisSession(false);
+                  setIsQrScannerOpen(true);
                   return;
                 }
-                qrScanLockRef.current = false;
-                setHasScannedQrThisSession(false);
-                setIsQrScannerOpen(true);
-                return;
-              }
-              if (isLocationChallenge) {
-                await handleSendCurrentLocation();
-                return;
-              }
-              void handleOpenCamera(
-                challenge?.name,
-                challenge?.basePoints ?? 0,
-              );
-            }}
-          />
+                if (isLocationChallenge) {
+                  await handleSendCurrentLocation();
+                  return;
+                }
+                if (isTextChallenge) {
+                  setTextInputValue("");
+                  setIsTextInputOpen(true);
+                  return;
+                }
+                void handleOpenCamera(
+                  challenge?.name,
+                  challenge?.basePoints ?? 0,
+                );
+              }}
+            />
           )}
       </ScrollView>
+
+      <Modal
+        visible={isTextInputOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsTextInputOpen(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.textModalBackdrop}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => {
+              setIsTextInputOpen(false);
+              setTextInputValue("");
+            }}
+          />
+          <View
+            style={[
+              styles.textModalCard,
+              { paddingBottom: insets.bottom + spacing.lg },
+            ]}
+          >
+            <Text style={styles.textModalTitle}>Enter your answer</Text>
+            <TextInput
+              style={styles.textModalInput}
+              placeholder="Type your answer here..."
+              placeholderTextColor={colors.textTertiary}
+              value={textInputValue}
+              onChangeText={setTextInputValue}
+              autoFocus
+              autoCapitalize="none"
+              autoCorrect={false}
+              multiline={false}
+              returnKeyType="send"
+              onSubmitEditing={() => handleSubmitText(textInputValue)}
+            />
+            <View style={styles.textModalActions}>
+              <TouchableOpacity
+                style={styles.textModalCancelButton}
+                onPress={() => {
+                  setIsTextInputOpen(false);
+                  setTextInputValue("");
+                }}
+              >
+                <Text style={styles.textModalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.textModalSubmitButton,
+                  (!textInputValue.trim() || textSubmitMutation.isPending) &&
+                    styles.textModalSubmitButtonDisabled,
+                ]}
+                onPress={() => handleSubmitText(textInputValue)}
+                disabled={
+                  !textInputValue.trim() || textSubmitMutation.isPending
+                }
+              >
+                <Text style={styles.textModalSubmitText}>
+                  {textSubmitMutation.isPending ? "Submitting..." : "Submit"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       <Modal
         visible={isQrScannerOpen}
@@ -476,36 +604,38 @@ export default function ChallengeDetailScreen() {
                 hasScannedQrThisSession
                   ? undefined
                   : async (event) => {
-                if (
-                  qrScanLockRef.current ||
-                  hasScannedQrThisSession ||
-                  !tripId ||
-                  !challengeId
-                ) {
-                  return;
-                }
-                qrScanLockRef.current = true;
-                setHasScannedQrThisSession(true);
-                try {
-                  const submission = await qrSubmitMutation.mutateAsync({
-                    tripId,
-                    challengeId,
-                    textContent: event.data ?? "",
-                  });
-                  setIsQrScannerOpen(false);
-                  Alert.alert(
-                    "Challenge completed",
-                    submission.status === "APPROVED"
-                      ? "QR code valid. Points granted."
-                      : "Submission sent.",
-                  );
-                } catch (error) {
-                  setIsQrScannerOpen(false);
-                  const message =
-                    error instanceof Error ? error.message : "Invalid QR code";
-                  Alert.alert("Invalid QR code", message);
-                }
-              }
+                      if (
+                        qrScanLockRef.current ||
+                        hasScannedQrThisSession ||
+                        !tripId ||
+                        !challengeId
+                      ) {
+                        return;
+                      }
+                      qrScanLockRef.current = true;
+                      setHasScannedQrThisSession(true);
+                      try {
+                        const submission = await qrSubmitMutation.mutateAsync({
+                          tripId,
+                          challengeId,
+                          textContent: event.data ?? "",
+                        });
+                        setIsQrScannerOpen(false);
+                        Alert.alert(
+                          "Challenge completed",
+                          submission.status === "APPROVED"
+                            ? "QR code valid. Points granted."
+                            : "Submission sent.",
+                        );
+                      } catch (error) {
+                        setIsQrScannerOpen(false);
+                        const message =
+                          error instanceof Error
+                            ? error.message
+                            : "Invalid QR code";
+                        Alert.alert("Invalid QR code", message);
+                      }
+                    }
               }
             />
           </View>
@@ -636,5 +766,67 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 14,
     textAlign: "center",
+  },
+  textModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-end",
+  },
+  textModalCard: {
+    backgroundColor: colors.cardDark,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  textModalTitle: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: spacing.md,
+  },
+  textModalInput: {
+    backgroundColor: colors.backgroundDark,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    color: colors.white,
+    fontSize: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  textModalActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  textModalCancelButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+  },
+  textModalCancelText: {
+    color: colors.textSecondary,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  textModalSubmitButton: {
+    flex: 2,
+    paddingVertical: spacing.sm,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+  },
+  textModalSubmitButtonDisabled: {
+    opacity: 0.4,
+  },
+  textModalSubmitText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

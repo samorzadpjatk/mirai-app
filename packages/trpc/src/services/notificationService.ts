@@ -102,7 +102,7 @@ async function getRankingTemplateValuesByUser(
       },
     }),
     db.group.findMany({
-      where: { tripId },
+      where: { tripId, isDeleted: false },
       select: {
         id: true,
         name: true,

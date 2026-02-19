@@ -27,6 +27,29 @@ export default function GroupDetailsScreen() {
     ...trpc.group.getById.queryOptions({ id: groupId ?? "" }),
     enabled: !!groupId,
   });
+  const isCurrentUserMemberInViewedGroup = Boolean(
+    group?.participants.some((participant) => participant.user.id === currentUser?.id),
+  );
+  const isCurrentUserOrganizerOfViewedGroup = Boolean(
+    currentUser?.id && group?.organizer?.id === currentUser.id,
+  );
+
+  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } = useQuery({
+    ...trpc.user.getMyWithGroup.queryOptions({ tripId: group?.trip?.id ?? "" }),
+    enabled: !!group?.trip?.id,
+  });
+  const currentUserGroupId = currentUserWithGroup?.trips?.[0]?.group?.id ?? null;
+  const hasGroupInCurrentTrip = Boolean(currentUserGroupId);
+
+  const { data: myJoinRequest } = useQuery({
+    ...trpc.group.getMyJoinRequestForGroup.queryOptions({ groupId: groupId ?? "" }),
+    enabled: !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
+  });
+
+  const { data: pendingJoinRequests } = useQuery({
+    ...trpc.group.getPendingJoinRequests.queryOptions({ groupId: groupId ?? "" }),
+    enabled: !!groupId && isCurrentUserOrganizerOfViewedGroup,
+  });
 
   const { data: transactions } = useQuery({
     ...trpc.coinTransaction.getCoinTransactions.queryOptions({
@@ -51,6 +74,60 @@ export default function GroupDetailsScreen() {
         });
         await queryClient.invalidateQueries({
           queryKey: trpc.group.ranking.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.user.getMyWithGroup.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+        });
+      },
+    }),
+  );
+  const requestToJoinMutation = useMutation(
+    trpc.group.requestToJoin.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.getMyJoinRequestForGroup.queryOptions({
+            groupId: groupId ?? "",
+          }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
+            groupId: groupId ?? "",
+          }).queryKey,
+        });
+      },
+    }),
+  );
+  const respondToJoinRequestMutation = useMutation(
+    trpc.group.respondToJoinRequest.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
+            groupId: groupId ?? "",
+          }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.getAll.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.ranking.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+        });
+      },
+    }),
+  );
+  const deleteGroupMutation = useMutation(
+    trpc.group.deleteMyGroup.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.getAll.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.ranking.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.user.getMyWithGroup.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
         });
       },
     }),
@@ -79,6 +156,9 @@ export default function GroupDetailsScreen() {
   );
   const isOrganizer = currentUser?.id === organizerId;
   const canManageGroup = isGroupMember && isOrganizer;
+  const canRequestToJoin =
+    !isLoadingCurrentUserGroup && !isGroupMember && !hasGroupInCurrentTrip;
+  const hasPendingRequestToThisGroup = Boolean(myJoinRequest);
   const sortedParticipants = [...group.participants].sort(
     (a, b) =>
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
@@ -119,6 +199,68 @@ export default function GroupDetailsScreen() {
       ],
     );
   };
+  const handleRequestToJoin = () => {
+    if (!groupId) return;
+    void (async () => {
+      try {
+        await requestToJoinMutation.mutateAsync({ groupId });
+        Alert.alert("Success", "Join request sent");
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Failed to send join request";
+        Alert.alert("Error", message);
+      }
+    })();
+  };
+
+  const handleRespondToJoinRequest = (
+    requestId: string,
+    decision: "ACCEPT" | "REJECT",
+  ) => {
+    void (async () => {
+      try {
+        await respondToJoinRequestMutation.mutateAsync({ requestId, decision });
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Failed to update join request";
+        Alert.alert("Error", message);
+      }
+    })();
+  };
+  const handleDeleteGroup = () => {
+    Alert.alert(
+      "Delete Group",
+      "This will archive the group and remove all members. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              try {
+                await deleteGroupMutation.mutateAsync({ groupId: group.id });
+                router.replace(`/trips/groups?tripId=${group.trip.id}`);
+              } catch (error: unknown) {
+                const message =
+                  error instanceof Error ? error.message : "Failed to delete group";
+                Alert.alert("Error", message);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+  const formatJoinRequestTime = (date: Date | string) => {
+    const parsed = date instanceof Date ? date : new Date(date);
+    return new Intl.DateTimeFormat("pl-PL", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(parsed);
+  };
 
   return (
     <View style={styles.container}>
@@ -145,7 +287,37 @@ export default function GroupDetailsScreen() {
           imageUrl={group.image}
         />
 
-        {canManageGroup ? (
+        {canRequestToJoin && !hasPendingRequestToThisGroup ? (
+          <TouchableOpacity
+            style={styles.joinButton}
+            activeOpacity={0.8}
+            onPress={handleRequestToJoin}
+            disabled={requestToJoinMutation.isPending}
+          >
+            <Ionicons name="log-in-outline" size={18} color={colors.white} />
+            <Text style={styles.joinButtonText}>
+              {requestToJoinMutation.isPending ? "Sending..." : "Join Group"}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {canRequestToJoin && hasPendingRequestToThisGroup ? (
+          <View style={styles.pendingRequestBadge}>
+            <Ionicons name="time-outline" size={16} color={colors.primary} />
+            <Text style={styles.pendingRequestText}>Join request pending approval</Text>
+          </View>
+        ) : null}
+
+        {!isLoadingCurrentUserGroup && !isGroupMember && hasGroupInCurrentTrip ? (
+          <View style={styles.groupLockedBadge}>
+            <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
+            <Text style={styles.groupLockedText}>
+              Leave your current group first to join this one
+            </Text>
+          </View>
+        ) : null}
+
+        {isGroupMember ? (
           <TouchableOpacity
             style={styles.leaveButton}
             activeOpacity={0.8}
@@ -157,6 +329,72 @@ export default function GroupDetailsScreen() {
               {leaveGroupMutation.isPending ? "Leaving..." : "Leave Group"}
             </Text>
           </TouchableOpacity>
+        ) : null}
+
+        {canManageGroup ? (
+          <TouchableOpacity
+            style={styles.deleteButton}
+            activeOpacity={0.8}
+            onPress={handleDeleteGroup}
+            disabled={deleteGroupMutation.isPending}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.white} />
+            <Text style={styles.deleteButtonText}>
+              {deleteGroupMutation.isPending ? "Deleting..." : "Delete Group"}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {canManageGroup ? (
+          <View style={styles.joinRequestsCard}>
+            <Text style={styles.joinRequestsTitle}>Pending join requests</Text>
+            {(pendingJoinRequests ?? []).length === 0 ? (
+              <Text style={styles.joinRequestsEmpty}>No pending requests</Text>
+            ) : (
+              pendingJoinRequests?.map((request) => (
+                <View key={request.id} style={styles.joinRequestRow}>
+                  <View style={styles.joinRequestTop}>
+                    <View style={styles.joinRequestAvatar}>
+                      <Text style={styles.joinRequestAvatarText}>
+                        {`${request.user.firstName?.[0] ?? ""}${request.user.lastName?.[0] ?? ""}`.toUpperCase() || "?"}
+                      </Text>
+                    </View>
+                    <Text style={styles.joinRequestDate}>
+                      {formatJoinRequestTime(request.createdAt)}
+                    </Text>
+                  </View>
+                  <View style={styles.joinRequestUser}>
+                    <Text style={styles.joinRequestName}>
+                      {[request.user.firstName, request.user.lastName]
+                        .filter(Boolean)
+                        .join(" ") || "Unknown user"}
+                    </Text>
+                    <Text style={styles.joinRequestEmail}>
+                      {request.user.email ?? "No email"}
+                    </Text>
+                  </View>
+                  <View style={styles.joinRequestActions}>
+                    <TouchableOpacity
+                      style={[styles.joinRequestButton, styles.joinRequestRejectButton]}
+                      onPress={() => handleRespondToJoinRequest(request.id, "REJECT")}
+                      disabled={respondToJoinRequestMutation.isPending}
+                    >
+                      <Ionicons name="close" size={14} color={colors.white} />
+                      <Text style={styles.joinRequestButtonText}>Reject</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.joinRequestButton, styles.joinRequestAcceptButton]}
+                      onPress={() => handleRespondToJoinRequest(request.id, "ACCEPT")}
+                      disabled={respondToJoinRequestMutation.isPending}
+                    >
+                      <Ionicons name="checkmark" size={14} color={colors.white} />
+                      <Text style={styles.joinRequestButtonText}>Accept</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
         ) : null}
 
         {/* Stats Grid */}
@@ -194,6 +432,60 @@ const styles = StyleSheet.create({
     bottom: 96,
     zIndex: 20,
   },
+  joinButton: {
+    marginBottom: spacing.lg,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  joinButtonText: {
+    color: colors.backgroundDark,
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  pendingRequestBadge: {
+    marginBottom: spacing.lg,
+    backgroundColor: "rgba(0, 206, 209, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(0, 206, 209, 0.35)",
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  pendingRequestText: {
+    color: colors.primary,
+    fontSize: typography.sm,
+    fontWeight: typography.semibold,
+  },
+  groupLockedBadge: {
+    marginBottom: spacing.lg,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  groupLockedText: {
+    color: colors.textMuted,
+    fontSize: typography.sm,
+    fontWeight: typography.medium,
+  },
   leaveButton: {
     marginBottom: spacing.lg,
     backgroundColor: "rgba(239, 68, 68, 0.15)",
@@ -213,5 +505,120 @@ const styles = StyleSheet.create({
     fontWeight: typography.bold,
     textTransform: "uppercase",
     letterSpacing: 0.8,
+  },
+  deleteButton: {
+    marginBottom: spacing.lg,
+    backgroundColor: "rgba(220, 38, 38, 0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(220, 38, 38, 0.55)",
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  deleteButtonText: {
+    color: colors.white,
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  joinRequestsCard: {
+    marginBottom: spacing.lg,
+    backgroundColor: "rgba(39, 41, 53, 0.45)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  joinRequestsTitle: {
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 1.1,
+  },
+  joinRequestsEmpty: {
+    fontSize: typography.sm,
+    color: colors.textMuted,
+  },
+  joinRequestRow: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: "rgba(0, 0, 0, 0.12)",
+  },
+  joinRequestTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  joinRequestAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: borderRadius.full,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  joinRequestAvatarText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+  },
+  joinRequestDate: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: typography.medium,
+  },
+  joinRequestUser: {
+    gap: 4,
+  },
+  joinRequestName: {
+    fontSize: typography.base,
+    fontWeight: typography.semibold,
+    color: colors.white,
+  },
+  joinRequestEmail: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  joinRequestActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  joinRequestButton: {
+    flex: 1,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+  },
+  joinRequestRejectButton: {
+    borderColor: "rgba(239, 68, 68, 0.5)",
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+  },
+  joinRequestAcceptButton: {
+    borderColor: "rgba(16, 185, 129, 0.5)",
+    backgroundColor: "rgba(16, 185, 129, 0.12)",
+  },
+  joinRequestButtonText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
 });

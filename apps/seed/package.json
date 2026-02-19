@@ -7,6 +7,7 @@
     "db:seed": "bun run index.ts",
     "db:generate": "bunx --bun prisma generate --config ../../packages/db/prisma.config.ts",
     "db:migrate": "bunx --bun prisma migrate --config ../../packages/db/prisma.config.ts",
+    "db:migrate:deploy": "bunx --bun prisma migrate deploy --config ../../packages/db/prisma.config.ts",
     "db:migrate:dev": "bunx --bun prisma migrate dev --config ../../packages/db/prisma.config.ts",
     "db:migrate:reset": "bunx --bun prisma migrate reset --config ../../packages/db/prisma.config.ts",
     "db:reset": "bunx --bun prisma migrate reset --config ../../packages/db/prisma.config.ts",

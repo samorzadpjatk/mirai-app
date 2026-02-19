@@ -1,67 +1,166 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useMemo } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@integral-2025-app/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
-const newsItems = [
-  {
-    id: "meeting",
-    icon: "time" as const,
-    iconColor: colors.primary,
-    iconBackground: colors.primaryOpacity20,
-    title: "Meeting at lobby in 15 mins",
-    time: "2m ago",
-    description:
-      "Mandatory gathering for all students for the evening briefing.",
-  },
-  {
-    id: "scavenger",
-    icon: "star" as const,
-    iconColor: colors.accentMagenta,
-    iconBackground: colors.magentaOpacity10,
-    title: "Group B wins the Scavenger Hunt!",
-    time: "1h ago",
-    description:
-      "Congrats to the 'Snow Leopards' for finding all items in record time.",
-  },
-  {
-    id: "dinner",
-    icon: "restaurant" as const,
-    iconColor: colors.textSecondary,
-    iconBackground: colors.slate800,
-    title: "Dinner menu updated",
-    time: "3h ago",
-    description:
-      "Check the 'Trip Info' section for tonight's alpine dining choices.",
-  },
-];
+interface TripNewsSectionProps {
+  tripId: string;
+}
 
-export function TripNewsSection() {
+interface AdminNewsItem {
+  id: string;
+  activityType: "custom";
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  createdAt: Date | string;
+  admin?: {
+    firstName: string;
+    lastName: string;
+  } | null;
+}
+
+const formatRelativeTime = (value: Date | string) => {
+  const date = value instanceof Date ? value : new Date(value);
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.floor(diffMs / 60000);
+
+  if (minutes < 1) return "just now";
+  if (minutes <= 30) return `${minutes}m ago`;
+
+  const datePart = date.toLocaleDateString("pl-PL");
+  const timePart = date.toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${datePart} ${timePart}`;
+};
+
+const formatAdminName = (item: AdminNewsItem) => {
+  const firstName = item.admin?.firstName?.trim();
+  const lastName = item.admin?.lastName?.trim();
+  const full = `${firstName ?? ""} ${lastName ?? ""}`.trim();
+  return full.length > 0 ? full : "Admin";
+};
+
+export function TripNewsSection({ tripId }: TripNewsSectionProps) {
+  const trpc = useTRPC();
+  const router = useRouter();
+
+  const newsQuery = useQuery({
+    ...trpc.activityFeed.getByTrip.queryOptions({
+      tripId,
+      page: 1,
+      pageSize: 100,
+    }),
+    enabled: Boolean(tripId),
+  });
+
+  const customNews = useMemo(() => {
+    const activities = (newsQuery.data?.activities ?? []) as {
+      id: string;
+      activityType: string;
+      title: string;
+      description: string | null;
+      imageUrl: string | null;
+      createdAt: Date | string;
+      admin?: {
+        firstName: string;
+        lastName: string;
+      } | null;
+    }[];
+
+    return activities.filter(
+      (activity): activity is AdminNewsItem =>
+        activity.activityType === "custom",
+    );
+  }, [newsQuery.data?.activities]);
+
   return (
     <View style={styles.newsSection}>
       <View style={styles.newsSectionHeader}>
         <Text style={styles.sectionTitle}>Latest News</Text>
-        <Text style={styles.viewAllLink}>View All</Text>
+        <TouchableOpacity
+          style={styles.viewAllButton}
+          onPress={() =>
+            router.push({
+              pathname: "/(tabs)/community",
+              params: { filter: "news" },
+            })
+          }
+          activeOpacity={0.85}
+        >
+          <Text style={styles.viewAllButtonText}>View all</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.newsList}>
-        {newsItems.map((item) => (
-          <View key={item.id} style={styles.newsItem}>
-            <View
-              style={[
-                styles.newsIcon,
-                { backgroundColor: item.iconBackground },
-              ]}
-            >
-              <Ionicons name={item.icon} size={20} color={item.iconColor} />
+        {newsQuery.isLoading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading admin news...</Text>
+          </View>
+        ) : null}
+
+        {!newsQuery.isLoading && customNews.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="megaphone-outline"
+              size={18}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.emptyText}>No news yet.</Text>
+          </View>
+        ) : null}
+
+        {customNews.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.newsItem}
+            activeOpacity={0.9}
+            onPress={() =>
+              router.push({
+                pathname: "/(tabs)/community",
+                params: {
+                  filter: "news",
+                  focusActivityId: item.id,
+                },
+              })
+            }
+          >
+            <View style={styles.newsIcon}>
+              <Ionicons name="megaphone" size={18} color={colors.primary} />
             </View>
+
             <View style={styles.newsContent}>
               <View style={styles.newsHeader}>
                 <Text style={styles.newsTitle}>{item.title}</Text>
-                <Text style={styles.newsTime}>{item.time}</Text>
+                <Text style={styles.newsTime}>
+                  {formatRelativeTime(item.createdAt)}
+                </Text>
               </View>
-              <Text style={styles.newsDescription}>{item.description}</Text>
+
+              {item.description ? (
+                <Text style={styles.newsDescription}>{item.description}</Text>
+              ) : null}
+
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.newsImage}
+                  contentFit="cover"
+                />
+              ) : null}
+
+              <Text style={styles.newsAuthor}>
+                Added by {formatAdminName(item)}
+              </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     </View>
@@ -87,16 +186,48 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 2,
   },
-  viewAllLink: {
+  viewAllButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  viewAllButtonText: {
+    color: colors.primary,
     fontSize: typography.xs,
     fontWeight: typography.bold,
-    color: colors.primary,
     textTransform: "uppercase",
-    letterSpacing: 2,
+    letterSpacing: 1.2,
   },
   newsList: {
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
+  },
+  loadingState: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.cardDarkOpacity40,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity10,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+  },
+  loadingText: {
+    color: colors.textSecondary,
+    fontSize: typography.sm,
+  },
+  emptyState: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.cardDarkOpacity40,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity10,
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+  },
+  emptyText: {
+    color: colors.textSecondary,
+    fontSize: typography.sm,
   },
   newsItem: {
     backgroundColor: colors.cardDarkOpacity40,
@@ -108,11 +239,12 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   newsIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.primaryOpacity20,
   },
   newsContent: {
     flex: 1,
@@ -122,13 +254,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: spacing.xs,
+    gap: spacing.sm,
   },
   newsTitle: {
     fontSize: typography.sm,
     fontWeight: typography.bold,
     color: colors.white,
     flex: 1,
-    marginRight: spacing.sm,
   },
   newsTime: {
     fontSize: typography.xs,
@@ -139,5 +271,18 @@ const styles = StyleSheet.create({
     fontSize: typography.xs,
     color: colors.textTertiary,
     lineHeight: typography.xs * typography.relaxed,
+  },
+  newsAuthor: {
+    marginTop: spacing.sm,
+    fontSize: typography.xs,
+    color: colors.textSecondary,
+  },
+  newsImage: {
+    width: "100%",
+    height: 120,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.borderWhite10,
+    marginTop: spacing.sm,
   },
 });

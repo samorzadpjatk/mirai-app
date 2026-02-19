@@ -36,6 +36,7 @@ const challengeBaseSelect: Prisma.ChallengeSelect = {
   votingEndTime: true,
   targetLatitude: true,
   targetLongitude: true,
+  expectedValue: true,
   autoApprove: true,
   createdAt: true,
   updatedAt: true,
@@ -46,7 +47,6 @@ const challengeSelect: Prisma.ChallengeSelect = {
 } as const;
 
 const CHALLENGE_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
-const QR_MARKER_REGEX = /\[\[QR_EXPECTED_B64:([A-Za-z0-9+/=]+)\]\]/;
 
 const challengeImageSchema = z
   .string()
@@ -75,63 +75,16 @@ const normalizeChallengeImageInput = (value: string | undefined) => {
   return value;
 };
 
-const extractQrCodeValueFromDescription = (
-  description: string | null | undefined,
-): string | undefined => {
-  if (!description) return undefined;
-  const encoded = description.match(QR_MARKER_REGEX)?.[1];
-  if (!encoded) return undefined;
-
-  try {
-    const decoded = Buffer.from(encoded, "base64").toString("utf8").trim();
-    return decoded.length > 0 ? decoded : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-const stripQrMarkerFromDescription = (
-  description: string | null | undefined,
-): string | null => {
-  if (!description) return null;
-  const cleaned = description.replace(QR_MARKER_REGEX, "").trim();
-  return cleaned.length > 0 ? cleaned : null;
-};
-
-const buildStoredDescription = (params: {
-  submissionType:
-    | "IMAGE"
-    | "MULTI_IMAGE"
-    | "VIDEO"
-    | "TEXT"
-    | "IMAGE_LOCATION"
-    | "LOCATION"
-    | "QR_CODE";
-  description?: string;
-  qrCodeValue?: string;
-}) => {
-  const cleanDescription = stripQrMarkerFromDescription(params.description) ?? "";
-  if (params.submissionType !== "QR_CODE") {
-    return cleanDescription.length > 0 ? cleanDescription : null;
-  }
-
-  const qr = params.qrCodeValue?.trim();
-  if (!qr) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "QR code value is required for QR_CODE challenges",
-    });
-  }
-  const marker = `[[QR_EXPECTED_B64:${Buffer.from(qr, "utf8").toString("base64")}]]`;
-  return cleanDescription.length > 0 ? `${cleanDescription}\n\n${marker}` : marker;
-};
-
-const toClientChallenge = <T extends { description: string | null }>(
+// expectedValue holds the QR code value or the required text phrase.
+// It is stored directly in the dedicated DB column — no encoding needed.
+const toClientChallenge = <
+  T extends { description: string | null; expectedValue: string | null },
+>(
   challenge: T,
 ) => ({
   ...challenge,
-  description: stripQrMarkerFromDescription(challenge.description),
-  qrCodeValue: extractQrCodeValueFromDescription(challenge.description) ?? null,
+  // qrCodeValue kept for backwards-compat with existing clients
+  qrCodeValue: challenge.expectedValue,
 });
 
 const validatePeerVotingTimeline = (input: {
@@ -197,7 +150,10 @@ const resolveChallengeImage = async (
         createSignedUrl: (
           path: string,
           expiresIn: number,
-        ) => Promise<{ data: { signedUrl?: string | null } | null; error: unknown }>;
+        ) => Promise<{
+          data: { signedUrl?: string | null } | null;
+          error: unknown;
+        }>;
       };
     };
   },
@@ -228,7 +184,10 @@ const resolveChallengeImages = async <T extends { image: string | null }>(
         createSignedUrl: (
           path: string,
           expiresIn: number,
-        ) => Promise<{ data: { signedUrl?: string | null } | null; error: unknown }>;
+        ) => Promise<{
+          data: { signedUrl?: string | null } | null;
+          error: unknown;
+        }>;
       };
     };
   },
@@ -344,13 +303,19 @@ export const challengeRouter = createTRPCRouter({
         : [];
 
       const countByChallengeId = new Map(
-        groupedSubmissionCounts.map((item) => [item.challengeId, item._count._all]),
+        groupedSubmissionCounts.map((item) => [
+          item.challengeId,
+          item._count._all,
+        ]),
       );
       const mySubmissionStatusByChallengeId = new Map(
         myGroupSubmissions.map((item) => [item.challengeId, item.status]),
       );
 
-      const withResolvedImages = await resolveChallengeImages(ctx.supabase, challenges);
+      const withResolvedImages = await resolveChallengeImages(
+        ctx.supabase,
+        challenges,
+      );
 
       return withResolvedImages.map((challenge) => ({
         ...toClientChallenge(challenge),
@@ -395,6 +360,7 @@ export const challengeRouter = createTRPCRouter({
         name: z.string().min(1),
         description: z.string().optional(),
         qrCodeValue: z.string().trim().min(1).optional(),
+        textExpectedPhrase: z.string().trim().min(1).optional(),
         image: challengeImageSchema,
         submissionType: z.enum([
           "IMAGE",
@@ -442,17 +408,15 @@ export const challengeRouter = createTRPCRouter({
         Boolean(input.startTime) &&
         (input.startTime as Date) <= now &&
         (!input.endTime || input.endTime > now);
-      const initialStatus = shouldActivateImmediately ? "ACTIVE" : requestedStatus;
+      const initialStatus = shouldActivateImmediately
+        ? "ACTIVE"
+        : requestedStatus;
 
       const challenge = await ctx.db.challenge.create({
         data: {
           tripId: input.tripId,
           name: input.name,
-          description: buildStoredDescription({
-            submissionType: input.submissionType,
-            description: input.description,
-            qrCodeValue: input.qrCodeValue,
-          }),
+          description: input.description ?? null,
           image: normalizeChallengeImageInput(input.image),
           submissionType: input.submissionType,
           scoringCategory: input.scoringCategory,
@@ -470,8 +434,15 @@ export const challengeRouter = createTRPCRouter({
           votingEndTime: input.votingEndTime,
           targetLatitude: input.targetLatitude,
           targetLongitude: input.targetLongitude,
+          expectedValue:
+            input.submissionType === "QR_CODE"
+              ? (input.qrCodeValue ?? null)
+              : input.submissionType === "TEXT"
+                ? (input.textExpectedPhrase ?? null)
+                : null,
           autoApprove:
-            input.submissionType === "QR_CODE" || input.submissionType === "LOCATION"
+            input.submissionType === "QR_CODE" ||
+            input.submissionType === "LOCATION"
               ? true
               : input.autoApprove,
         },
@@ -501,6 +472,7 @@ export const challengeRouter = createTRPCRouter({
         name: z.string().min(1).optional(),
         description: z.string().optional(),
         qrCodeValue: z.string().trim().min(1).optional(),
+        textExpectedPhrase: z.string().trim().min(1).optional(),
         image: challengeImageSchema,
         submissionType: z
           .enum([
@@ -550,6 +522,7 @@ export const challengeRouter = createTRPCRouter({
           description: true,
           submissionType: true,
           scoringCategory: true,
+          expectedValue: true,
           endTime: true,
           votingStartTime: true,
           votingEndTime: true,
@@ -575,14 +548,10 @@ export const challengeRouter = createTRPCRouter({
         where: { id: input.id },
         data: {
           name: input.name,
-          description: buildStoredDescription({
-            submissionType: input.submissionType ?? existing.submissionType,
-            description: input.description ?? existing.description ?? undefined,
-            qrCodeValue:
-              input.qrCodeValue ??
-              extractQrCodeValueFromDescription(existing.description) ??
-              undefined,
-          }),
+          description:
+            input.description !== undefined
+              ? (input.description ?? null)
+              : undefined,
           image: normalizeChallengeImageInput(input.image),
           submissionType: input.submissionType,
           scoringCategory: input.scoringCategory,
@@ -600,6 +569,17 @@ export const challengeRouter = createTRPCRouter({
           votingEndTime: input.votingEndTime,
           targetLatitude: input.targetLatitude,
           targetLongitude: input.targetLongitude,
+          expectedValue: (() => {
+            const effectiveType =
+              input.submissionType ?? existing.submissionType;
+            if (effectiveType === "QR_CODE") {
+              return input.qrCodeValue ?? existing.expectedValue ?? null;
+            }
+            if (effectiveType === "TEXT") {
+              return input.textExpectedPhrase ?? existing.expectedValue ?? null;
+            }
+            return null;
+          })(),
           autoApprove:
             (input.submissionType ?? existing.submissionType) === "QR_CODE" ||
             (input.submissionType ?? existing.submissionType) === "LOCATION"

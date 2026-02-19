@@ -26,7 +26,10 @@ import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useFileUpload } from "~/hooks/files";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { LocationPicker, type LocationCoordinate } from "../../../../components/map/LocationPicker";
+import {
+  LocationPicker,
+  type LocationCoordinate,
+} from "../../../../components/map/LocationPicker";
 import { Ionicons } from "@expo/vector-icons";
 
 const submissionTypes = [
@@ -102,11 +105,17 @@ const getImageContentType = (extension: string) => {
 export default function NewChallengeScreen() {
   const params = useLocalSearchParams();
   const trpc = useTRPC();
-  const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
+  const {
+    upload,
+    status: uploadStatus,
+    progress: uploadProgress,
+  } = useFileUpload();
   const insets = useAppSafeAreaInsets();
 
   const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
   const [form, setForm] = useState({
     title: "",
@@ -128,6 +137,7 @@ export default function NewChallengeScreen() {
     votingEndTime: null as Date | null,
     targetLocation: null as LocationCoordinate | null,
     qrCodeValue: "",
+    textExpectedPhrase: "",
     autoApprove: false,
   });
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
@@ -164,8 +174,11 @@ export default function NewChallengeScreen() {
   const showPodiumPoints = form.scoringCategory !== "UNLIMITED";
   const isAutoApproveForced =
     form.submissionType === "QR_CODE" || form.submissionType === "LOCATION";
+  const isAutoApproveDisabled =
+    form.submissionType === "IMAGE" || form.submissionType === "VIDEO";
   const needsLocation =
-    form.submissionType === "LOCATION" || form.submissionType === "IMAGE_LOCATION";
+    form.submissionType === "LOCATION" ||
+    form.submissionType === "IMAGE_LOCATION";
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
     uploadProgress.percent != null
@@ -174,20 +187,22 @@ export default function NewChallengeScreen() {
 
   const submissionTypeLabel = useMemo(
     () =>
-      submissionTypes.find((item) => item.value === form.submissionType)?.label ??
-      "Select",
+      submissionTypes.find((item) => item.value === form.submissionType)
+        ?.label ?? "Select",
     [form.submissionType],
   );
 
   const scoringCategoryLabel = useMemo(
     () =>
-      scoringCategories.find((item) => item.value === form.scoringCategory)?.label ??
-      "Select",
+      scoringCategories.find((item) => item.value === form.scoringCategory)
+        ?.label ?? "Select",
     [form.scoringCategory],
   );
 
   const statusLabel = useMemo(
-    () => statusOptions.find((item) => item.value === form.status)?.label ?? "Select",
+    () =>
+      statusOptions.find((item) => item.value === form.status)?.label ??
+      "Select",
     [form.status],
   );
 
@@ -202,8 +217,10 @@ export default function NewChallengeScreen() {
     return [];
   }, [activeSelect, canUsePeerVoting]);
 
-  const updateForm = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const updateForm = <K extends keyof typeof form>(
+    field: K,
+    value: (typeof form)[K],
+  ) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleScoringChange = (value: string) => {
     if (
@@ -211,7 +228,10 @@ export default function NewChallengeScreen() {
       form.submissionType !== "IMAGE" &&
       form.submissionType !== "VIDEO"
     ) {
-      Alert.alert("Error", "Peer voting is available only for Image or Video challenges.");
+      Alert.alert(
+        "Error",
+        "Peer voting is available only for Image or Video challenges.",
+      );
       return;
     }
 
@@ -220,16 +240,16 @@ export default function NewChallengeScreen() {
       scoringCategory: value,
       ...(value === "UNLIMITED"
         ? {
-          firstPlacePoints: "",
-          secondPlacePoints: "",
-          thirdPlacePoints: "",
-        }
+            firstPlacePoints: "",
+            secondPlacePoints: "",
+            thirdPlacePoints: "",
+          }
         : {}),
       ...(value !== "PEER_VOTING"
         ? {
-          votingStartTime: null,
-          votingEndTime: null,
-        }
+            votingStartTime: null,
+            votingEndTime: null,
+          }
         : {}),
     }));
   };
@@ -246,27 +266,34 @@ export default function NewChallengeScreen() {
         submissionType: value,
         ...(value !== "QR_CODE"
           ? {
-            qrCodeValue: "",
-          }
+              qrCodeValue: "",
+            }
+          : {}),
+        ...(value !== "TEXT"
+          ? {
+              textExpectedPhrase: "",
+            }
           : {}),
         ...(shouldResetPeerVoting
           ? {
-            scoringCategory: "SPEED",
-            votingStartTime: null,
-            votingEndTime: null,
-          }
+              scoringCategory: "SPEED",
+              votingStartTime: null,
+              votingEndTime: null,
+            }
           : {}),
       };
     });
   };
 
   const openQrScanner = async () => {
-    const permission =
-      cameraPermission?.granted
-        ? cameraPermission
-        : await requestCameraPermission();
+    const permission = cameraPermission?.granted
+      ? cameraPermission
+      : await requestCameraPermission();
     if (!permission?.granted) {
-      Alert.alert("Permission required", "Camera permission is needed to scan QR code.");
+      Alert.alert(
+        "Permission required",
+        "Camera permission is needed to scan QR code.",
+      );
       return;
     }
     setHasScannedQrThisSession(false);
@@ -290,8 +317,7 @@ export default function NewChallengeScreen() {
       const storagePath = `challenge/${tripId}/cover-${Date.now()}.${extension}`;
       const contentType = asset.mimeType ?? getImageContentType(extension);
       const fileName =
-        asset.fileName?.trim() ??
-        `challenge-cover-${Date.now()}.${extension}`;
+        asset.fileName?.trim() ?? `challenge-cover-${Date.now()}.${extension}`;
 
       await upload({
         storagePath,
@@ -312,23 +338,23 @@ export default function NewChallengeScreen() {
 
   const handleDateChange =
     (field: Exclude<DateField, null>) =>
-      (event: DateTimePickerEvent, selected?: Date) => {
-        if (Platform.OS === "android") {
-          if (event.type === "dismissed") {
-            setActivePicker(null);
-            return;
-          }
-          if (selected) {
-            updateForm(field, selected);
-          }
+    (event: DateTimePickerEvent, selected?: Date) => {
+      if (Platform.OS === "android") {
+        if (event.type === "dismissed") {
           setActivePicker(null);
           return;
         }
-
         if (selected) {
-          setPickerDraftDate(selected);
+          updateForm(field, selected);
         }
-      };
+        setActivePicker(null);
+        return;
+      }
+
+      if (selected) {
+        setPickerDraftDate(selected);
+      }
+    };
 
   const openDatePicker = (field: Exclude<DateField, null>) => {
     setPickerDraftDate(form[field] ?? new Date());
@@ -356,13 +382,21 @@ export default function NewChallengeScreen() {
       return false;
     }
 
+    if (form.submissionType === "TEXT" && !form.textExpectedPhrase.trim()) {
+      Alert.alert("Error", "Provide the expected phrase for text challenges.");
+      return false;
+    }
+
     if (form.isRecurring) {
       if (!form.dailyStartTime || !form.dailyEndTime) {
         Alert.alert("Error", "Provide daily start and end time");
         return false;
       }
     } else {
-      if ((form.startTime && !form.endTime) || (!form.startTime && form.endTime)) {
+      if (
+        (form.startTime && !form.endTime) ||
+        (!form.startTime && form.endTime)
+      ) {
         Alert.alert("Error", "Provide both start and end time");
         return false;
       }
@@ -380,12 +414,19 @@ export default function NewChallengeScreen() {
         Alert.alert("Error", "Provide both voting start and end time");
         return false;
       }
-      if (form.votingStartTime && form.votingEndTime && form.votingStartTime >= form.votingEndTime) {
+      if (
+        form.votingStartTime &&
+        form.votingEndTime &&
+        form.votingStartTime >= form.votingEndTime
+      ) {
         Alert.alert("Error", "Voting start must be before voting end");
         return false;
       }
       if (!form.endTime) {
-        Alert.alert("Error", "Peer voting challenge requires submission end time");
+        Alert.alert(
+          "Error",
+          "Peer voting challenge requires submission end time",
+        );
         return false;
       }
       if (form.votingStartTime && form.votingStartTime <= form.endTime) {
@@ -460,19 +501,33 @@ export default function NewChallengeScreen() {
           ? toOptionalInt(form.thirdPlacePoints)
           : undefined,
         status: form.status as "HIDDEN" | "VISIBLE",
-        startTime: !form.isRecurring ? formatIso(form.startTime) || undefined : undefined,
-        endTime: !form.isRecurring ? formatIso(form.endTime) || undefined : undefined,
+        startTime: !form.isRecurring
+          ? formatIso(form.startTime) || undefined
+          : undefined,
+        endTime: !form.isRecurring
+          ? formatIso(form.endTime) || undefined
+          : undefined,
         votingStartTime: isPeerVoting
           ? formatIso(form.votingStartTime) || undefined
           : undefined,
-        votingEndTime: isPeerVoting ? formatIso(form.votingEndTime) || undefined : undefined,
+        votingEndTime: isPeerVoting
+          ? formatIso(form.votingEndTime) || undefined
+          : undefined,
         targetLatitude: normalizedTargetLatitude,
         targetLongitude: normalizedTargetLongitude,
         qrCodeValue:
           form.submissionType === "QR_CODE"
             ? form.qrCodeValue.trim() || undefined
             : undefined,
-        autoApprove: isAutoApproveForced ? true : form.autoApprove,
+        textExpectedPhrase:
+          form.submissionType === "TEXT"
+            ? form.textExpectedPhrase.trim() || undefined
+            : undefined,
+        autoApprove: isAutoApproveForced
+          ? true
+          : isAutoApproveDisabled
+            ? false
+            : form.autoApprove,
       });
     } catch {
       // onError already handles user-facing message; swallow to prevent unhandled rejections.
@@ -522,7 +577,10 @@ export default function NewChallengeScreen() {
 
           <Text style={styles.label}>Challenge Image</Text>
           {imagePreviewUri ? (
-            <Image source={{ uri: imagePreviewUri }} style={styles.coverPreview} />
+            <Image
+              source={{ uri: imagePreviewUri }}
+              style={styles.coverPreview}
+            />
           ) : (
             <View style={styles.coverPlaceholder}>
               <Text style={styles.coverPlaceholderText}>No image selected</Text>
@@ -579,7 +637,10 @@ export default function NewChallengeScreen() {
                 autoCorrect={false}
               />
               <View style={styles.rowButtons}>
-                <TouchableOpacity onPress={openQrScanner} style={styles.secondaryButton}>
+                <TouchableOpacity
+                  onPress={openQrScanner}
+                  style={styles.secondaryButton}
+                >
                   <Text style={styles.secondaryButtonText}>Scan QR</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -589,6 +650,27 @@ export default function NewChallengeScreen() {
                   <Text style={styles.clearButtonText}>Clear</Text>
                 </TouchableOpacity>
               </View>
+            </>
+          ) : null}
+
+          {form.submissionType === "TEXT" ? (
+            <>
+              <Text style={styles.label}>Expected phrase (optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Leave empty to not auto-approve by phrase"
+                placeholderTextColor={colors.textTertiary}
+                value={form.textExpectedPhrase}
+                onChangeText={(value) =>
+                  updateForm("textExpectedPhrase", value)
+                }
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <Text style={styles.hint}>
+                If set, submission will be auto-approved only when the user
+                types this exact phrase.
+              </Text>
             </>
           ) : null}
 
@@ -604,8 +686,7 @@ export default function NewChallengeScreen() {
                     <Text style={styles.locationText}>
                       {form.targetLocation
                         ? `Selected: ${form.targetLocation.latitude.toFixed(5)}, ${form.targetLocation.longitude.toFixed(5)}`
-                        : "Tap to select location on map"
-                      }
+                        : "Tap to select location on map"}
                     </Text>
                     <Text style={styles.hint}>
                       Tap to open map and select the exact location
@@ -664,7 +745,9 @@ export default function NewChallengeScreen() {
                   placeholder="1st"
                   placeholderTextColor={colors.textTertiary}
                   value={form.firstPlacePoints}
-                  onChangeText={(value) => updateForm("firstPlacePoints", value)}
+                  onChangeText={(value) =>
+                    updateForm("firstPlacePoints", value)
+                  }
                   keyboardType="numeric"
                 />
                 <TextInput
@@ -672,7 +755,9 @@ export default function NewChallengeScreen() {
                   placeholder="2nd"
                   placeholderTextColor={colors.textTertiary}
                   value={form.secondPlacePoints}
-                  onChangeText={(value) => updateForm("secondPlacePoints", value)}
+                  onChangeText={(value) =>
+                    updateForm("secondPlacePoints", value)
+                  }
                   keyboardType="numeric"
                 />
                 <TextInput
@@ -680,7 +765,9 @@ export default function NewChallengeScreen() {
                   placeholder="3rd"
                   placeholderTextColor={colors.textTertiary}
                   value={form.thirdPlacePoints}
-                  onChangeText={(value) => updateForm("thirdPlacePoints", value)}
+                  onChangeText={(value) =>
+                    updateForm("thirdPlacePoints", value)
+                  }
                   keyboardType="numeric"
                 />
               </View>
@@ -696,8 +783,13 @@ export default function NewChallengeScreen() {
             <Switch
               value={form.isRecurring}
               onValueChange={(value) => updateForm("isRecurring", value)}
-              trackColor={{ false: colors.borderDark, true: colors.primaryOpacity80 }}
-              thumbColor={form.isRecurring ? colors.primary : colors.textSecondary}
+              trackColor={{
+                false: colors.borderDark,
+                true: colors.primaryOpacity80,
+              }}
+              thumbColor={
+                form.isRecurring ? colors.primary : colors.textSecondary
+              }
             />
           </View>
 
@@ -710,7 +802,9 @@ export default function NewChallengeScreen() {
                   style={styles.dateButton}
                 >
                   <Text style={styles.dateText}>
-                    {form.dailyStartTime ? formatTime(form.dailyStartTime) : "Start"}
+                    {form.dailyStartTime
+                      ? formatTime(form.dailyStartTime)
+                      : "Start"}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -792,16 +886,35 @@ export default function NewChallengeScreen() {
           <View style={styles.switchRow}>
             <Text style={styles.labelInline}>Auto-approve submissions</Text>
             <Switch
-              value={isAutoApproveForced ? true : form.autoApprove}
+              value={
+                isAutoApproveForced
+                  ? true
+                  : isAutoApproveDisabled
+                    ? false
+                    : form.autoApprove
+              }
               onValueChange={(value) => updateForm("autoApprove", value)}
-              disabled={isAutoApproveForced}
-              trackColor={{ false: colors.borderDark, true: colors.primaryOpacity80 }}
-              thumbColor={(isAutoApproveForced || form.autoApprove) ? colors.primary : colors.textSecondary}
+              disabled={isAutoApproveForced || isAutoApproveDisabled}
+              trackColor={{
+                false: colors.borderDark,
+                true: colors.primaryOpacity80,
+              }}
+              thumbColor={
+                (isAutoApproveForced || form.autoApprove) &&
+                !isAutoApproveDisabled
+                  ? colors.primary
+                  : colors.textSecondary
+              }
             />
           </View>
           {isAutoApproveForced ? (
             <Text style={styles.hint}>
-              Auto-approve is always enabled for QR code and Location challenges.
+              Auto-approve is always enabled for QR code and Location
+              challenges.
+            </Text>
+          ) : isAutoApproveDisabled ? (
+            <Text style={styles.hint}>
+              Auto-approve is not available for Image and Video challenges.
             </Text>
           ) : null}
         </View>
@@ -846,7 +959,7 @@ export default function NewChallengeScreen() {
                 value={pickerDraftDate}
                 mode={
                   activePicker === "dailyStartTime" ||
-                    activePicker === "dailyEndTime"
+                  activePicker === "dailyEndTime"
                     ? "time"
                     : "datetime"
                 }
@@ -935,7 +1048,10 @@ export default function NewChallengeScreen() {
         animationType="fade"
         onRequestClose={() => setActiveSelect(null)}
       >
-        <Pressable style={styles.modalBackdrop} onPress={() => setActiveSelect(null)}>
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setActiveSelect(null)}
+        >
           <Pressable style={styles.modalCard}>
             {activeSelectOptions.map((option) => (
               <TouchableOpacity
