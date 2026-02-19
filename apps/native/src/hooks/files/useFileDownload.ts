@@ -162,7 +162,21 @@ export const useFileDownload = () => {
               } catch (deleteErr) {
                 console.warn("[Download] Failed to delete existing target file", deleteErr);
               }
-              return await File.downloadFileAsync(signedUrl, targetFile);
+              try {
+                return await File.downloadFileAsync(signedUrl, targetFile);
+              } catch (retryErr) {
+                const retryMessage =
+                  retryErr instanceof Error ? retryErr.message : String(retryErr);
+                if (
+                  retryMessage.toLowerCase().includes("destination already exists") &&
+                  targetFile.exists
+                ) {
+                  // Another parallel download already wrote the same file.
+                  // Reuse it instead of crashing with a race-condition error.
+                  return targetFile;
+                }
+                throw retryErr;
+              }
             }
             throw err;
           }
