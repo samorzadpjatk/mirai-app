@@ -14,30 +14,9 @@ const resolveStoragePath = (value: string) => {
   return info;
 };
 
-const getPublicBaseUrl = (headers: Headers) => {
-  const kongPort = process.env.KONG_HTTP_PORT ?? "8000";
-  const explicitPublicUrl = process.env.SUPABASE_PUBLIC_URL?.trim();
-
-  const inferredPublicUrl = (() => {
-    const forwardedHost = headers.get("x-forwarded-host");
-    const host = (forwardedHost ?? headers.get("host"))?.trim();
-    if (!host) return null;
-
-    const proto = (headers.get("x-forwarded-proto") ?? "http").trim();
-    try {
-      const url = new URL(`${proto}://${host}`);
-      url.port = kongPort;
-      return url.toString().replace(/\/$/, "");
-    } catch {
-      return null;
-    }
-  })();
-
-  return explicitPublicUrl || inferredPublicUrl || process.env.SUPABASE_URL;
-};
-
-const getResumableEndpoint = (headers: Headers) => {
-  const baseUrl = getPublicBaseUrl(headers);
+const getResumableEndpoint = () => {
+  const baseUrl =
+    process.env.SUPABASE_URL;
   if (!baseUrl) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
@@ -57,21 +36,6 @@ const getResumableEndpoint = (headers: Headers) => {
     return url.toString();
   } catch {
     return `${baseUrl.replace(/\/$/, "")}/storage/v1/upload/resumable/sign`;
-  }
-};
-
-const rewriteSignedUrlHost = (signedUrl: string, headers: Headers) => {
-  const publicBaseUrl = getPublicBaseUrl(headers);
-  if (!publicBaseUrl) return signedUrl;
-
-  try {
-    const target = new URL(signedUrl);
-    const publicUrl = new URL(publicBaseUrl);
-    target.protocol = publicUrl.protocol;
-    target.host = publicUrl.host;
-    return target.toString();
-  } catch {
-    return signedUrl;
   }
 };
 
@@ -98,7 +62,7 @@ export const storageRouter = createTRPCRouter({
       }
 
       return {
-        resumableUrl: getResumableEndpoint(ctx.headers),
+        resumableUrl: getResumableEndpoint(),
         token: data.token,
         bucket: objectInfo.bucket,
         objectPath: objectInfo.path,
@@ -139,7 +103,7 @@ export const storageRouter = createTRPCRouter({
       }
 
       return {
-        signedUrl: rewriteSignedUrlHost(data.signedUrl, ctx.headers),
+        signedUrl: data.signedUrl,
         expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
       };
     }),
