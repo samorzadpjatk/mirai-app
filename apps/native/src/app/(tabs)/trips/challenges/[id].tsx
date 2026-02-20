@@ -40,6 +40,31 @@ import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/fiord";
+const IMAGE_LOCATION_RADIUS_METERS = 50;
+
+const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+
+const calculateDistanceMeters = (
+  latitudeA: number,
+  longitudeA: number,
+  latitudeB: number,
+  longitudeB: number,
+) => {
+  const earthRadiusKm = 6371;
+  const deltaLatitude = toRadians(latitudeB - latitudeA);
+  const deltaLongitude = toRadians(longitudeB - longitudeA);
+  const haversineValue =
+    Math.sin(deltaLatitude / 2) * Math.sin(deltaLatitude / 2) +
+    Math.cos(toRadians(latitudeA)) *
+      Math.cos(toRadians(latitudeB)) *
+      Math.sin(deltaLongitude / 2) *
+      Math.sin(deltaLongitude / 2);
+  const centralAngle =
+    2 * Math.atan2(Math.sqrt(haversineValue), Math.sqrt(1 - haversineValue));
+
+  return earthRadiusKm * centralAngle * 1000;
+};
+
 const isOnOrAfterNow = (value?: string | Date | null) => {
   if (!value) return false;
   return new Date(value).getTime() <= Date.now();
@@ -73,9 +98,15 @@ export default function ChallengeDetailScreen() {
     submitAsset,
     submitCapturedPhoto,
     pickImageFromGallery,
+    pickVideoFromGallery,
+    submitVideoAsset,
     uploadStatus,
     uploadProgress,
-  } = useChallengeCapture({ tripId, challengeId });
+  } = useChallengeCapture({
+    tripId,
+    challengeId,
+    challengeCreatedAt: challenge?.createdAt,
+  });
   const isUploading = uploadStatus === "uploading";
   const uploadPercent =
     uploadProgress.percent != null
@@ -114,6 +145,10 @@ export default function ChallengeDetailScreen() {
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
   const [isPhotoCameraOpen, setIsPhotoCameraOpen] = useState(false);
   const [isUsingCapturedPhoto, setIsUsingCapturedPhoto] = useState(false);
+  const [imageSubmissionCoords, setImageSubmissionCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [hasScannedQrThisSession, setHasScannedQrThisSession] = useState(false);
   const [isTextInputOpen, setIsTextInputOpen] = useState(false);
   const [textInputValue, setTextInputValue] = useState("");
@@ -206,6 +241,7 @@ export default function ChallengeDetailScreen() {
     challenge.status === "VOTING_PHASE";
 
   const isQrChallenge = challenge.submissionType === "QR_CODE";
+  const isVideoChallenge = challenge.submissionType === "VIDEO";
   const isLocationChallenge = challenge.submissionType === "LOCATION";
   const isTextChallenge = challenge.submissionType === "TEXT";
   const hasTargetLocation =
@@ -224,6 +260,47 @@ export default function ChallengeDetailScreen() {
       (submission) => submission.status === "APPROVED",
     ).length ?? 0;
   const totalGroupsCount = trip?.groups?.length ?? 0;
+
+  const validateImageLocationSubmission = () => {
+    if (challenge.submissionType !== "IMAGE_LOCATION") {
+      return null;
+    }
+
+    if (!hasTargetLocation) {
+      Alert.alert(
+        "Location unavailable",
+        "Target location for this challenge is not configured.",
+      );
+      return undefined;
+    }
+
+    if (!currentDeviceCoords) {
+      Alert.alert(
+        "Location unavailable",
+        "Waiting for your current location. Keep this screen open for a moment and try again.",
+      );
+      return undefined;
+    }
+
+    const [longitude, latitude] = currentDeviceCoords;
+    const distanceMeters = calculateDistanceMeters(
+      latitude,
+      longitude,
+      challenge.targetLatitude!,
+      challenge.targetLongitude!,
+    );
+
+    if (distanceMeters > IMAGE_LOCATION_RADIUS_METERS) {
+      Alert.alert(
+        "Too far from target",
+        `Podejdź bliżej punktu zadania i spróbuj ponownie. Jesteście teraz około ${Math.round(distanceMeters)} m od celu.`,
+      );
+      return undefined;
+    }
+
+    return { latitude, longitude };
+  };
+
   const handleSendCurrentLocation = async () => {
     if (!tripId || !challengeId) return;
     if (!currentDeviceCoords) {
@@ -283,6 +360,10 @@ export default function ChallengeDetailScreen() {
 
   const handleOpenChallengeCamera = () => {
     void (async () => {
+      const validatedLocation = validateImageLocationSubmission();
+      if (validatedLocation === undefined) {
+        return;
+      }
       const permission = cameraPermission?.granted
         ? cameraPermission
         : await requestCameraPermission();
@@ -293,6 +374,7 @@ export default function ChallengeDetailScreen() {
         );
         return;
       }
+      setImageSubmissionCoords(validatedLocation ?? null);
       setIsPhotoCameraOpen(true);
     })();
   };
@@ -311,10 +393,20 @@ export default function ChallengeDetailScreen() {
         },
         {
           text: "Choose from Gallery",
-          onPress: () =>
+          onPress: () => {
+            const validatedLocation = validateImageLocationSubmission();
+            if (validatedLocation === undefined) {
+              return;
+            }
             void pickImageFromGallery((asset) =>
-              submitAsset(asset, challengeName, challengePoints),
-            ),
+              submitAsset(
+                asset,
+                challengeName,
+                challengePoints,
+                validatedLocation ?? undefined,
+              ),
+            );
+          },
         },
         {
           text: "Take Photo",
@@ -324,16 +416,31 @@ export default function ChallengeDetailScreen() {
     );
   };
 
+  const handleVideoChallengeAction = () => {
+    const challengeName = challenge.name;
+    const challengePoints = challenge.basePoints ?? 0;
+
+    void pickVideoFromGallery((asset) =>
+      submitVideoAsset(asset, challengeName, challengePoints),
+    );
+  };
+
   const handleUseChallengePhoto = async (photo: {
     uri: string;
     mimeType: "image/jpeg" | "image/png";
   }) => {
     try {
       setIsUsingCapturedPhoto(true);
-      await submitCapturedPhoto(photo, challenge.name, challenge.basePoints ?? 0);
+      await submitCapturedPhoto(
+        photo,
+        challenge.name,
+        challenge.basePoints ?? 0,
+        imageSubmissionCoords ?? undefined,
+      );
       setIsPhotoCameraOpen(false);
     } finally {
       setIsUsingCapturedPhoto(false);
+      setImageSubmissionCoords(null);
     }
   };
 
@@ -473,7 +580,10 @@ export default function ChallengeDetailScreen() {
         ) : (
           <ChallengeCommunitySubmissionsCard
             submissions={challengeSubmissions ?? []}
-            showPodium={challenge.scoringCategory !== "UNLIMITED"}
+            showPodium={
+              challenge.scoringCategory === "SPEED" ||
+              challenge.scoringCategory === "PEER_VOTING"
+            }
           />
         )}
 
@@ -519,15 +629,28 @@ export default function ChallengeDetailScreen() {
                   ? qrSubmitMutation.isPending
                     ? "Checking QR..."
                     : "Scan QR code"
+                  : isVideoChallenge
+                    ? (uploadLabel ?? "Take Challenge Video")
+                    : isLocationChallenge
+                      ? locationSubmitMutation.isPending
+                        ? "Sending location..."
+                        : "Send current location"
+                      : isTextChallenge
+                        ? textSubmitMutation.isPending
+                          ? "Submitting..."
+                          : "Enter answer"
+                        : uploadLabel
+              }
+              iconName={
+                isVideoChallenge
+                  ? "videocam"
                   : isLocationChallenge
-                    ? locationSubmitMutation.isPending
-                      ? "Sending location..."
-                      : "Send current location"
+                    ? "location"
                     : isTextChallenge
-                      ? textSubmitMutation.isPending
-                        ? "Submitting..."
-                        : "Enter answer"
-                      : uploadLabel
+                      ? "document-text"
+                      : isQrChallenge
+                        ? "qr-code"
+                        : "camera"
               }
               onPress={async () => {
                 if (isQrChallenge) {
@@ -553,6 +676,10 @@ export default function ChallengeDetailScreen() {
                 if (isTextChallenge) {
                   setTextInputValue("");
                   setIsTextInputOpen(true);
+                  return;
+                }
+                if (isVideoChallenge) {
+                  handleVideoChallengeAction();
                   return;
                 }
                 void handleImageChallengeAction();
@@ -635,7 +762,10 @@ export default function ChallengeDetailScreen() {
         facing="back"
         mirror={false}
         isUsingPhoto={isUsingCapturedPhoto}
-        onClose={() => setIsPhotoCameraOpen(false)}
+        onClose={() => {
+          setIsPhotoCameraOpen(false);
+          setImageSubmissionCoords(null);
+        }}
         onUsePhoto={handleUseChallengePhoto}
       />
 

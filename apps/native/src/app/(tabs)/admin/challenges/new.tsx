@@ -15,7 +15,7 @@ import {
   Image,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
@@ -104,6 +104,7 @@ const getImageContentType = (extension: string) => {
 
 export default function NewChallengeScreen() {
   const params = useLocalSearchParams();
+  const router = useRouter();
   const trpc = useTRPC();
   const {
     upload,
@@ -160,7 +161,17 @@ export default function NewChallengeScreen() {
   const createChallengeMutation = useMutation(
     trpc.challenge.create.mutationOptions({
       onSuccess: () => {
-        Alert.alert("Saved", "Challenge created successfully.");
+        Alert.alert("Saved", "Challenge created successfully.", [
+          {
+            text: "OK",
+            onPress: () => {
+              router.replace({
+                pathname: "/admin/challenges",
+                params: { tripId },
+              });
+            },
+          },
+        ]);
       },
       onError: (error) => {
         Alert.alert("Error", `Failed to create challenge: ${error.message}`);

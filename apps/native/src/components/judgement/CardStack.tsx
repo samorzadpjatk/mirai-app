@@ -1,5 +1,5 @@
-import { useCallback, useEffect } from 'react';
-import { View, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Modal, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import {
   Extrapolation,
   interpolate,
@@ -10,8 +10,9 @@ import {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { colors } from '~/styles';
 import { type ReviewStatus, useJudgement } from '~/contexts/JudgementContext';
-import { viewStyles } from '~/styles/judgement';
+import { textStyles, viewStyles } from '~/styles/judgement';
 import { QueuedSubmissionCard } from '~/components/judgement/QueuedSubmissionCard';
 import { CurrentSubmissionCard } from '~/components/judgement/CurrentSubmissionCard';
 import { EmptyStateCard } from '~/components/judgement/EmptyStateCard';
@@ -22,6 +23,8 @@ const CardStack = () => {
   const { width, height } = useWindowDimensions();
   const swipeThreshold = width * 0.25;
   const maxCardHeight = Math.min(560, height * 0.64);
+  const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -29,14 +32,29 @@ const CardStack = () => {
   useEffect(() => {
     translateX.value = 0;
     translateY.value = 0;
+    setIsRejectModalVisible(false);
+    setRejectionReason('');
   }, [currentSubmission, translateX, translateY]);
 
+  const openRejectModal = useCallback(() => {
+    if (!currentSubmission || isReviewing) return;
+    setIsRejectModalVisible(true);
+  }, [currentSubmission, isReviewing]);
+
+  const closeRejectModal = useCallback(() => {
+    if (isReviewing) return;
+    setIsRejectModalVisible(false);
+    setRejectionReason('');
+  }, [isReviewing]);
+
   const animateDecision = useCallback(
-    (status: ReviewStatus) => {
+    (status: ReviewStatus, customRejectionReason?: string) => {
       if (!currentSubmission || isReviewing) return;
+      const normalizedRejectionReason = customRejectionReason?.trim();
+      if (status === 'REJECTED' && !normalizedRejectionReason) return;
       const toValue = status === 'APPROVED' ? width * 1.2 : -width * 1.2;
       translateX.value = withTiming(toValue, { duration: 220 }, () => {
-        scheduleOnRN(reviewCurrent, status);
+        scheduleOnRN(reviewCurrent, status, normalizedRejectionReason);
         translateX.value = 0;
         translateY.value = 0;
       });
@@ -44,8 +62,21 @@ const CardStack = () => {
     [currentSubmission, isReviewing, reviewCurrent, translateX, translateY, width],
   );
 
+  const canSubmitReject = useMemo(
+    () => rejectionReason.trim().length > 0 && !isReviewing,
+    [rejectionReason, isReviewing],
+  );
+
+  const confirmReject = useCallback(() => {
+    const normalizedRejectionReason = rejectionReason.trim();
+    if (!normalizedRejectionReason || isReviewing) return;
+    setIsRejectModalVisible(false);
+    setRejectionReason('');
+    animateDecision('REJECTED', normalizedRejectionReason);
+  }, [animateDecision, isReviewing, rejectionReason]);
+
   const panGesture = Gesture.Pan()
-    .enabled(Boolean(currentSubmission) && !isReviewing)
+    .enabled(Boolean(currentSubmission) && !isReviewing && !isRejectModalVisible)
     .minDistance(10)
     .onUpdate((event) => {
       translateX.value = event.translationX;
@@ -65,11 +96,9 @@ const CardStack = () => {
       }
 
       if (shouldReject) {
-        translateX.value = withTiming(-width * 1.2, { duration: 220 }, () => {
-          scheduleOnRN(reviewCurrent, 'REJECTED');
-          translateX.value = 0;
-          translateY.value = 0;
-        });
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+        scheduleOnRN(openRejectModal);
         return;
       }
 
@@ -129,10 +158,55 @@ const CardStack = () => {
       </View>
 
       <ActionBar
-        disabled={!currentSubmission || isReviewing}
-        onReject={() => animateDecision('REJECTED')}
+        disabled={!currentSubmission || isReviewing || isRejectModalVisible}
+        onReject={openRejectModal}
         onApprove={() => animateDecision('APPROVED')}
       />
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isRejectModalVisible}
+        onRequestClose={closeRejectModal}
+      >
+        <Pressable style={viewStyles.rejectReasonBackdrop} onPress={closeRejectModal}>
+          <Pressable
+            style={viewStyles.rejectReasonCard}
+            onPress={(event) => event.stopPropagation()}
+          >
+            <Text style={textStyles.rejectReasonTitle}>Reject submission</Text>
+            <Text style={textStyles.rejectReasonSubtitle}>
+              Add a short reason for the team.
+            </Text>
+            <TextInput
+              style={viewStyles.rejectReasonInput}
+              placeholder="Why was this rejected?"
+              placeholderTextColor={colors.textTertiary}
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              multiline
+              numberOfLines={3}
+              maxLength={280}
+              editable={!isReviewing}
+            />
+            <View style={viewStyles.rejectReasonActions}>
+              <Pressable style={viewStyles.rejectReasonCancelButton} onPress={closeRejectModal}>
+                <Text style={textStyles.rejectReasonCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  viewStyles.rejectReasonConfirmButton,
+                  !canSubmitReject && viewStyles.rejectReasonConfirmButtonDisabled,
+                ]}
+                onPress={confirmReject}
+                disabled={!canSubmitReject}
+              >
+                <Text style={textStyles.rejectReasonConfirmText}>Reject</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </>
   );
 };

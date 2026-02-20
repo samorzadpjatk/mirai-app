@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { colors } from "~/styles";
@@ -7,15 +7,17 @@ import type { ChallengeListItem } from "~/components/trips/challenges/types";
 export function useChallenges(tripId?: string | null) {
   const trpc = useTRPC();
 
-  const { data: trip, isLoading: tripLoading } = useQuery({
+  const tripQuery = useQuery({
     ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
     enabled: !!tripId,
   });
+  const { data: trip, isLoading: tripLoading } = tripQuery;
 
-  const { data: challengesData, isLoading: challengesLoading } = useQuery({
+  const challengesQuery = useQuery({
     ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId ?? "" }),
     enabled: !!tripId,
   });
+  const { data: challengesData, isLoading: challengesLoading } = challengesQuery;
 
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
@@ -36,26 +38,59 @@ export function useChallenges(tripId?: string | null) {
     const position = sortedGroups.findIndex((g) => g.id === userGroup.id) + 1;
 
     let pointsDifference = 0;
+    let targetPosition: number | null = null;
+    let targetGroupName: string | null = null;
     if (position === 1 && sortedGroups.length > 1) {
       const secondPlace = sortedGroups[1];
       pointsDifference = (userGroup.coins ?? 0) - (secondPlace?.coins ?? 0);
+      targetPosition = 2;
+      targetGroupName = secondPlace?.name ?? null;
     } else if (position > 1) {
       const groupAhead = sortedGroups[position - 2];
       pointsDifference = (groupAhead?.coins ?? 0) - (userGroup.coins ?? 0);
+      targetPosition = position - 1;
+      targetGroupName = groupAhead?.name ?? null;
     }
 
-    return { position, pointsDifference, totalGroups: sortedGroups.length };
+    return {
+      position,
+      pointsDifference,
+      totalGroups: sortedGroups.length,
+      targetPosition,
+      targetGroupName,
+    };
   }, [userGroup, trip]);
 
   interface DBChallenge {
     id: string;
     name: string;
+    submissionType?:
+      | "IMAGE"
+      | "MULTI_IMAGE"
+      | "VIDEO"
+      | "TEXT"
+      | "IMAGE_LOCATION"
+      | "LOCATION"
+      | "QR_CODE"
+      | null;
     basePoints?: number | null;
     firstPlacePoints?: number | null;
-    scoringCategory?: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING" | null;
+    scoringCategory?:
+      | "SPEED"
+      | "UNLIMITED"
+      | "JUDGED_STAFF"
+      | "PEER_VOTING"
+      | null;
     description?: string | null;
     image?: string | null;
-    status?: "HIDDEN" | "VISIBLE" | "ACTIVE" | "VOTING_PHASE" | "COMPLETED" | "CANCELLED" | null;
+    status?:
+      | "HIDDEN"
+      | "VISIBLE"
+      | "ACTIVE"
+      | "VOTING_PHASE"
+      | "COMPLETED"
+      | "CANCELLED"
+      | null;
     participantGroupsCount?: number | null;
     myGroupSubmissionStatus?: "PENDING" | "APPROVED" | "REJECTED" | null;
   }
@@ -76,13 +111,13 @@ export function useChallenges(tripId?: string | null) {
             ? "solved"
             : mySubmissionStatus === "PENDING"
               ? "submitted"
-            : mySubmissionStatus === "REJECTED"
-              ? "rejected"
-              : rawStatus === "VOTING_PHASE"
-                ? "locked"
-              : rawStatus === "COMPLETED"
-                ? "completed"
-              : "to_solve";
+              : mySubmissionStatus === "REJECTED"
+                ? "rejected"
+                : rawStatus === "VOTING_PHASE"
+                  ? "locked"
+                  : rawStatus === "COMPLETED"
+                    ? "completed"
+                    : "to_solve";
 
       const basePoints = dbChallenge.basePoints ?? 0;
       const maxPoints =
@@ -97,6 +132,7 @@ export function useChallenges(tripId?: string | null) {
         icon: "trophy",
         iconColor: colors.primary,
         status: cardStatus,
+        submissionType: dbChallenge.submissionType ?? "IMAGE",
         scoringCategory: dbChallenge.scoringCategory ?? undefined,
         lifecycleStatus: rawStatus,
         description: dbChallenge.description ?? undefined,
@@ -115,11 +151,20 @@ export function useChallenges(tripId?: string | null) {
     [challenges],
   );
 
+  const isRefreshing = tripQuery.isRefetching || challengesQuery.isRefetching;
+
+  const refresh = useCallback(async () => {
+    if (!tripId) return;
+    await Promise.all([tripQuery.refetch(), challengesQuery.refetch()]);
+  }, [challengesQuery, tripId, tripQuery]);
+
   return {
     trip,
     challenges,
     completedChallengesCount,
     isLoading: tripLoading || challengesLoading,
+    isRefreshing,
+    refresh,
     userGroup,
     leaderboardInfo,
   };

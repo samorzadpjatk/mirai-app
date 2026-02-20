@@ -31,10 +31,8 @@ interface JudgementContextValue {
   stats: { approved: number; rejected: number };
   currentSubmission: Submission | null;
   nextSubmission: Submission | null;
-  reviewCurrent: (status: ReviewStatus) => void;
+  reviewCurrent: (status: ReviewStatus, rejectionReason?: string) => void;
 }
-
-const DEFAULT_REJECTION_REASON = "Rejected by admin";
 
 const JudgementContext = React.createContext<JudgementContextValue | null>(null);
 
@@ -123,8 +121,10 @@ const JudgementProvider = ({
   );
 
   const reviewCurrent = useCallback(
-    (status: ReviewStatus) => {
+    (status: ReviewStatus, rejectionReason?: string) => {
       if (!currentSubmission || reviewMutation.isPending) return;
+      const normalizedRejectionReason = rejectionReason?.trim();
+      if (status === "REJECTED" && !normalizedRejectionReason) return;
       setDismissedIds((prev) =>
         prev.includes(currentSubmission.id)
           ? prev
@@ -134,7 +134,7 @@ const JudgementProvider = ({
         id: currentSubmission.id,
         status,
         rejectionReason:
-          status === "REJECTED" ? DEFAULT_REJECTION_REASON : undefined,
+          status === "REJECTED" ? normalizedRejectionReason : undefined,
       });
     },
     [currentSubmission, reviewMutation],

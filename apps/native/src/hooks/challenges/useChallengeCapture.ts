@@ -9,16 +9,96 @@ import { useFileUpload } from "~/hooks/files";
 interface ChallengeCaptureOptions {
   tripId: string | undefined;
   challengeId: string | undefined;
+  challengeCreatedAt?: string | Date | null;
 }
 interface ChallengeUploadAsset {
   uri: string;
   fileName?: string | null;
   mimeType?: string | null;
+  creationTime?: number | null;
+  exif?: ImagePicker.ImagePickerAsset["exif"];
 }
+
+interface SubmissionLocation {
+  latitude: number;
+  longitude: number;
+}
+
+const MAX_GALLERY_IMAGE_AGE_BEFORE_CHALLENGE_MS = 4 * 60 * 60 * 1000;
+
+const normalizeTimestampToMs = (value: number) => {
+  // Some devices return seconds, others milliseconds.
+  return value < 1_000_000_000_000 ? value * 1000 : value;
+};
+
+const parseExifDateToMs = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return normalizeTimestampToMs(value);
+  }
+
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const exifDateMatch =
+    /^(\d{4})[:\-](\d{2})[:\-](\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(
+      trimmed,
+    );
+  if (exifDateMatch) {
+    const [, year, month, day, hour, minute, second] = exifDateMatch;
+    const parsed = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+    ).getTime();
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  const normalized = trimmed.replace(
+    /^(\d{4}):(\d{2}):(\d{2})/,
+    "$1-$2-$3",
+  );
+  const parsed = new Date(normalized).getTime();
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const resolveAssetCapturedAtMs = (
+  asset: Pick<ChallengeUploadAsset, "creationTime" | "exif">,
+) => {
+  if (
+    typeof asset.creationTime === "number" &&
+    Number.isFinite(asset.creationTime)
+  ) {
+    return normalizeTimestampToMs(asset.creationTime);
+  }
+
+  if (!asset.exif || typeof asset.exif !== "object") return null;
+
+  const exif = asset.exif as Record<string, unknown>;
+  const candidateKeys = [
+    "DateTimeOriginal",
+    "DateTimeDigitized",
+    "DateTime",
+    "CreationDate",
+    "DateCreated",
+    "creation_time",
+  ];
+
+  for (const key of candidateKeys) {
+    const parsed = parseExifDateToMs(exif[key]);
+    if (parsed != null) return parsed;
+  }
+
+  return null;
+};
 
 export function useChallengeCapture({
   tripId,
   challengeId,
+  challengeCreatedAt,
 }: ChallengeCaptureOptions) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -52,7 +132,12 @@ export function useChallengeCapture({
     const contentType = asset.mimeType ?? "";
     if (contentType === "image/png") return "png";
     if (contentType === "image/webp") return "webp";
-    if (contentType === "image/heic" || contentType === "image/heif") return "heic";
+    if (contentType === "image/heic" || contentType === "image/heif")
+      return "heic";
+    if (contentType === "video/quicktime") return "mov";
+    if (contentType === "video/x-m4v") return "m4v";
+    if (contentType === "video/mp4") return "mp4";
+    if (contentType === "video/webm") return "webm";
     return "jpg";
   }, []);
 
@@ -65,6 +150,14 @@ export function useChallengeCapture({
       case "heic":
       case "heif":
         return "image/heic";
+      case "mov":
+        return "video/quicktime";
+      case "m4v":
+        return "video/x-m4v";
+      case "mp4":
+        return "video/mp4";
+      case "webm":
+        return "video/webm";
       default:
         return "image/jpeg";
     }
@@ -84,6 +177,38 @@ export function useChallengeCapture({
       return `challenge-${Date.now()}.${extension}`;
     },
     [],
+  );
+
+  const validateGalleryAssetAge = useCallback(
+    (asset: ChallengeUploadAsset) => {
+      if (!challengeCreatedAt) return true;
+
+      const challengeCreatedAtMs = new Date(challengeCreatedAt).getTime();
+      if (Number.isNaN(challengeCreatedAtMs)) return true;
+
+      const capturedAtMs = resolveAssetCapturedAtMs(asset);
+      if (capturedAtMs == null) {
+        Alert.alert(
+          "Nie można zweryfikować zdjęcia",
+          "Nie udało się odczytać daty wykonania zdjęcia. Wybierz inne zdjęcie z galerii.",
+        );
+        return false;
+      }
+
+      const oldestAllowedMs =
+        challengeCreatedAtMs - MAX_GALLERY_IMAGE_AGE_BEFORE_CHALLENGE_MS;
+
+      if (capturedAtMs < oldestAllowedMs) {
+        Alert.alert(
+          "Zdjęcie jest za stare",
+          "Możesz dodać tylko zdjęcie wykonane maksymalnie 4 godziny przed utworzeniem wyzwania.",
+        );
+        return false;
+      }
+
+      return true;
+    },
+    [challengeCreatedAt],
   );
 
   const submissionMutation = useMutation(
@@ -126,30 +251,43 @@ export function useChallengeCapture({
     }),
   );
 
-  const showSuccessAlert = useCallback((challengeName?: string, points?: number, destinationTripId?: string | null) => {
-    const resolvedTripId = destinationTripId ?? tripId;
-    Alert.alert(
-      "Submission sent",
-      "Zdjęcie zostało wysłane i czeka na zaakceptowanie przez kadrę. Dostaniesz powiadomienie, gdy zostanie zaakceptowane.",
-      [
-        {
-          text: "View Challenges",
-          onPress: () =>
-            router.push(`/trips/challenges?tripId=${resolvedTripId ?? ""}`),
-        },
-        {
-          text: "Stay Here",
-          style: "cancel",
-        },
-      ],
-    );
-  }, [router, tripId]);
+  const showSuccessAlert = useCallback(
+    (
+      challengeName?: string,
+      points?: number,
+      destinationTripId?: string | null,
+    ) => {
+      const resolvedTripId = destinationTripId ?? tripId;
+      Alert.alert(
+        "Submission sent",
+        "Zgłoszenie zostało wysłane i czeka na zaakceptowanie przez kadrę. Dostaniesz powiadomienie, gdy zostanie zaakceptowane.",
+        [
+          {
+            text: "View Challenges",
+            onPress: () =>
+              router.push({
+                pathname: "/(tabs)/trips/challenges/index",
+                params: {
+                  tripId: resolvedTripId ?? "",
+                },
+              }),
+          },
+          {
+            text: "Stay Here",
+            style: "cancel",
+          },
+        ],
+      );
+    },
+    [router, tripId],
+  );
 
   const submitAsset = useCallback(
     async (
       asset: ChallengeUploadAsset,
       challengeName?: string,
       points?: number,
+      submissionLocation?: SubmissionLocation,
     ) => {
       if (!tripId || !challengeId) {
         Alert.alert("Error", "Missing trip or challenge information.");
@@ -177,6 +315,8 @@ export function useChallengeCapture({
           tripId,
           challengeId,
           imageIds: [storagePath],
+          latitude: submissionLocation?.latitude,
+          longitude: submissionLocation?.longitude,
         });
         createdSubmissionId = submission.id;
         setSubmissionId(submission.id);
@@ -235,21 +375,126 @@ export function useChallengeCapture({
         allowsEditing: false,
         aspect: [4, 3],
         quality: 0.8,
+        exif: true,
       });
 
       if (!result.canceled && result.assets[0]) {
-        await onSuccess?.(result.assets[0]);
+        const selectedAsset = result.assets[0];
+        if (!validateGalleryAssetAge(selectedAsset)) {
+          return;
+        }
+        await onSuccess?.(selectedAsset);
       }
     } catch {
       Alert.alert("Error", "Failed to pick image");
     }
   };
 
+  const pickVideoFromGallery = async (
+    onSuccess?: (asset: ChallengeUploadAsset) => Promise<void>,
+  ) => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "videos",
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await onSuccess?.(result.assets[0]);
+      }
+    } catch {
+      Alert.alert("Error", "Failed to pick video");
+    }
+  };
+
+  const submitVideoAsset = useCallback(
+    async (
+      asset: ChallengeUploadAsset,
+      challengeName?: string,
+      points?: number,
+    ) => {
+      if (!tripId || !challengeId) {
+        Alert.alert("Error", "Missing trip or challenge information.");
+        return;
+      }
+
+      if (!userTrip) {
+        Alert.alert("Error", "User is not part of the trip.");
+        return;
+      }
+
+      const groupId = userTrip.group?.id;
+
+      if (!groupId) {
+        Alert.alert("Error", "Missing group information.");
+        return;
+      }
+
+      setIsLoading(true);
+      let createdSubmissionId: string | null = null;
+      try {
+        const extension = resolveExtension(asset);
+        const storagePath = `challenge/${challengeId}/${groupId}-${Date.now()}.${extension}`;
+        const submission = await submissionMutation.mutateAsync({
+          tripId,
+          challengeId,
+          videoId: storagePath,
+        });
+        createdSubmissionId = submission.id;
+        setSubmissionId(submission.id);
+
+        const fileName = resolveFileName(asset, extension);
+        const contentType = asset.mimeType ?? resolveMimeType(extension);
+
+        await upload({
+          storagePath,
+          fileUri: asset.uri,
+          fileName,
+          contentType,
+          upsert: true,
+        });
+
+        setCapturedImage(null);
+        showSuccessAlert(challengeName, points, tripId);
+      } catch (error) {
+        if (createdSubmissionId && tripId) {
+          try {
+            await deleteSubmissionMutation.mutateAsync({
+              id: createdSubmissionId,
+              tripId,
+            });
+          } catch {
+            // Ignore cleanup failures, original upload error is shown below.
+          }
+        }
+        const message =
+          error instanceof Error ? error.message : "Failed to submit challenge";
+        Alert.alert("Upload Failed", message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [
+      challengeId,
+      deleteSubmissionMutation,
+      resolveExtension,
+      resolveFileName,
+      resolveMimeType,
+      showSuccessAlert,
+      submissionMutation,
+      tripId,
+      upload,
+      userTrip,
+    ],
+  );
+
   const submitCapturedPhoto = useCallback(
     async (
       photo: { uri: string; mimeType: "image/jpeg" | "image/png" },
       challengeName?: string,
       points?: number,
+      submissionLocation?: SubmissionLocation,
     ) => {
       const extension = photo.mimeType === "image/png" ? "png" : "jpg";
       await submitAsset(
@@ -260,6 +505,7 @@ export function useChallengeCapture({
         },
         challengeName,
         points,
+        submissionLocation,
       );
     },
     [submitAsset],
@@ -288,7 +534,13 @@ export function useChallengeCapture({
     }
 
     setSubmissionId(null);
-  }, [abortUpload, deleteSubmissionMutation, resetUpload, submissionId, tripId]);
+  }, [
+    abortUpload,
+    deleteSubmissionMutation,
+    resetUpload,
+    submissionId,
+    tripId,
+  ]);
 
   return {
     isLoading: isLoading || currentUserLoading,
@@ -299,6 +551,8 @@ export function useChallengeCapture({
     submitAsset,
     submitCapturedPhoto,
     pickImageFromGallery,
+    pickVideoFromGallery,
+    submitVideoAsset,
     showSuccessAlert,
     uploadStatus,
     uploadProgress,

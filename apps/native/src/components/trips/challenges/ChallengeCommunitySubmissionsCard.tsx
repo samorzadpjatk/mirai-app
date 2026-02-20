@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Image,
   Modal,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -30,11 +32,7 @@ interface ChallengeCommunitySubmissionsCardProps {
   showPodium: boolean;
 }
 
-const formatDateTime = (value: string | Date) => {
-  const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return "Unknown date";
-  return date.toLocaleString();
-};
+const PREVIEW_LIMIT = 9;
 
 const placeStyleMap: Record<number, { borderColor: string; label: string }> = {
   1: { borderColor: "#facc15", label: "1st Place" },
@@ -42,19 +40,33 @@ const placeStyleMap: Record<number, { borderColor: string; label: string }> = {
   3: { borderColor: "#d97706", label: "3rd Place" },
 };
 
+const formatDateTime = (value: string | Date) => {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "Unknown date";
+  return date.toLocaleString();
+};
+
 export function ChallengeCommunitySubmissionsCard({
   submissions,
   showPodium,
 }: ChallengeCommunitySubmissionsCardProps) {
-  const [expanded, setExpanded] = useState(false);
-  const [previewUri, setPreviewUri] = useState<string | null>(null);
-  const [previewTitle, setPreviewTitle] = useState<string>("");
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const galleryListRef = useRef<FlatList<CommunitySubmission>>(null);
+  const { width, height } = useWindowDimensions();
 
-  const filteredSubmissions = submissions;
+  const imageSubmissions = useMemo(
+    () =>
+      submissions.filter(
+        (submission) =>
+          submission.status !== "REJECTED" && Boolean(submission.imageIds[0]),
+      ),
+    [submissions],
+  );
 
   const podiumSubmissions = useMemo(() => {
     if (!showPodium) return [];
-    return filteredSubmissions
+    return imageSubmissions
       .filter(
         (submission) =>
           submission.status === "APPROVED" &&
@@ -63,309 +75,374 @@ export function ChallengeCommunitySubmissionsCard({
           submission.ranking <= 3,
       )
       .sort((a, b) => (a.ranking ?? 99) - (b.ranking ?? 99));
-  }, [filteredSubmissions, showPodium]);
+  }, [imageSubmissions, showPodium]);
+
   const podiumByRank = useMemo(
     () =>
       new Map(
-        podiumSubmissions.map((submission) => [submission.ranking!, submission]),
+        podiumSubmissions.map((submission) => [
+          submission.ranking!,
+          submission,
+        ]),
       ),
     [podiumSubmissions],
   );
 
-  const regularSubmissions = useMemo(
-    () =>
-      filteredSubmissions.filter((submission) => {
-        if (!showPodium) return true;
-        return !(
-          typeof submission.ranking === "number" &&
-          submission.ranking >= 1 &&
-          submission.ranking <= 3
-        );
-      }),
-    [filteredSubmissions, showPodium],
+  const regularSubmissions = useMemo(() => {
+    if (!showPodium) return imageSubmissions;
+    const podiumIds = new Set(
+      podiumSubmissions.map((submission) => submission.id),
+    );
+    return imageSubmissions.filter(
+      (submission) => !podiumIds.has(submission.id),
+    );
+  }, [imageSubmissions, podiumSubmissions, showPodium]);
+
+  const previewRegularLimit = showPodium
+    ? Math.max(0, PREVIEW_LIMIT - podiumSubmissions.length)
+    : PREVIEW_LIMIT;
+  const previewRegularSubmissions = regularSubmissions.slice(
+    0,
+    previewRegularLimit,
   );
-  const hasAnySubmissions = filteredSubmissions.length > 0;
+
+  const gallerySubmissions = useMemo(
+    () =>
+      showPodium
+        ? [...podiumSubmissions, ...regularSubmissions]
+        : imageSubmissions,
+    [imageSubmissions, podiumSubmissions, regularSubmissions, showPodium],
+  );
+
+  const galleryIndexBySubmissionId = useMemo(
+    () =>
+      new Map(
+        gallerySubmissions.map((submission, index) => [submission.id, index]),
+      ),
+    [gallerySubmissions],
+  );
+
+  const hasAnySubmissions = imageSubmissions.length > 0;
+
+  const openGalleryAt = useCallback(
+    (submissionId?: string) => {
+      if (!gallerySubmissions.length) return;
+      const nextIndex = submissionId
+        ? (galleryIndexBySubmissionId.get(submissionId) ?? 0)
+        : 0;
+      setActiveGalleryIndex(nextIndex);
+      setIsGalleryOpen(true);
+    },
+    [galleryIndexBySubmissionId, gallerySubmissions.length],
+  );
+
+  const closeGallery = useCallback(() => {
+    setIsGalleryOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isGalleryOpen || gallerySubmissions.length === 0) return;
+
+    const boundedIndex = Math.max(
+      0,
+      Math.min(activeGalleryIndex, gallerySubmissions.length - 1),
+    );
+    const timeoutId = setTimeout(() => {
+      galleryListRef.current?.scrollToIndex({
+        index: boundedIndex,
+        animated: false,
+      });
+    }, 30);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeGalleryIndex, gallerySubmissions.length, isGalleryOpen]);
+
+  const handleGalleryScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetX = event.nativeEvent.contentOffset.x;
+      const nextIndex = Math.round(offsetX / Math.max(width, 1));
+      const boundedIndex = Math.max(
+        0,
+        Math.min(nextIndex, Math.max(gallerySubmissions.length - 1, 0)),
+      );
+      if (boundedIndex !== activeGalleryIndex) {
+        setActiveGalleryIndex(boundedIndex);
+      }
+    },
+    [activeGalleryIndex, gallerySubmissions.length, width],
+  );
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.header}
-        onPress={() => setExpanded((current) => !current)}
-      >
-        <View>
-          <Text style={styles.title}>Groups submissions</Text>
-          <Text style={styles.subtitle}>
-            {hasAnySubmissions
-              ? `${filteredSubmissions.length} groups shared submissions`
-              : "No submissions yet. Your group can be first."}
+      <View style={styles.header}>
+        <Text style={styles.title}>Groups submissions</Text>
+        <Text style={styles.subtitle}>
+          {hasAnySubmissions
+            ? `${imageSubmissions.length} photos uploaded`
+            : "No photos yet. Your group can be first."}
+        </Text>
+      </View>
+
+      {!hasAnySubmissions ? (
+        <View style={styles.emptyGallery}>
+          <Ionicons name="images-outline" size={20} color={colors.textMuted} />
+          <Text style={styles.emptyGalleryText}>
+            No photos yet. Submit first and set the pace.
           </Text>
         </View>
-        <Ionicons
-          name={expanded ? "chevron-up" : "chevron-down"}
-          size={20}
-          color={colors.textSecondary}
-        />
-      </TouchableOpacity>
-
-      {!expanded && showPodium && (
-        <View style={styles.podiumPreviewRow}>
-          {[1, 2, 3].map((rank) => (
-            <PodiumPreviewTile
-              key={`podium-preview-${rank}`}
-              rank={rank}
-              submission={podiumByRank.get(rank)}
-              onOpenPreview={(uri) => {
-                const submission = podiumByRank.get(rank);
-                if (!submission) return;
-                setPreviewUri(uri);
-                setPreviewTitle(submission.group.name);
-              }}
-            />
-          ))}
-        </View>
-      )}
-
-      {expanded && (
-        <View style={styles.body}>
+      ) : (
+        <View style={styles.content}>
           {showPodium && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Podium</Text>
-              {podiumSubmissions.length > 0 ? (
-                podiumSubmissions.map((submission) => (
-                  <CommunitySubmissionRow
-                    key={submission.id}
-                    submission={submission}
-                    onOpenPreview={(uri) => {
-                      setPreviewUri(uri);
-                      setPreviewTitle(submission.group.name);
-                    }}
-                  />
-                ))
-              ) : (
-                <View style={styles.emptyRow}>
-                  <Text style={styles.emptyRowText}>1st place waiting...</Text>
-                  <Text style={styles.emptyRowText}>2nd place waiting...</Text>
-                  <Text style={styles.emptyRowText}>3rd place waiting...</Text>
-                </View>
-              )}
-            </View>
-          )}
+              <Text style={styles.sectionTitle}>Top 3</Text>
+              <View style={styles.podiumRow}>
+                {[1, 2, 3].map((rank) => {
+                  const submission = podiumByRank.get(rank);
+                  if (!submission) {
+                    return (
+                      <PodiumPlaceholder key={`podium-${rank}`} rank={rank} />
+                    );
+                  }
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Gallery</Text>
-            {regularSubmissions.length > 0 ? (
-              regularSubmissions.map((submission) => (
-                <CommunitySubmissionRow
-                  key={submission.id}
-                  submission={submission}
-                  onOpenPreview={(uri) => {
-                    setPreviewUri(uri);
-                    setPreviewTitle(submission.group.name);
-                  }}
-                />
-              ))
-            ) : (
-              <View style={styles.emptyGallery}>
-                <Ionicons
-                  name="images-outline"
-                  size={20}
-                  color={colors.textMuted}
-                />
-                <Text style={styles.emptyGalleryText}>
-                  No photos yet. Submit first and set the pace.
-                </Text>
+                  return (
+                    <SubmissionTile
+                      key={`podium-${submission.id}`}
+                      submission={submission}
+                      mode="podium"
+                      rank={rank}
+                      onPress={() => openGalleryAt(submission.id)}
+                    />
+                  );
+                })}
               </View>
-            )}
-          </View>
-
-          {!hasAnySubmissions && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Motivation</Text>
-              <Text style={styles.motivationText}>
-                Be the first group to post a submission and claim the top spot.
-              </Text>
             </View>
           )}
+
+          {previewRegularSubmissions.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                {showPodium ? "More photos" : "Gallery"}
+              </Text>
+              <View style={styles.previewGrid}>
+                {previewRegularSubmissions.map((submission) => (
+                  <SubmissionTile
+                    key={`preview-${submission.id}`}
+                    submission={submission}
+                    mode="preview"
+                    onPress={() => openGalleryAt(submission.id)}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.showAllButton}
+            onPress={() => openGalleryAt()}
+          >
+            <Text style={styles.showAllText}>View all ({imageSubmissions.length})</Text>
+            <Ionicons
+              name="arrow-forward-circle-outline"
+              size={16}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
         </View>
       )}
 
-      <Modal
-        visible={Boolean(previewUri)}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPreviewUri(null)}
-      >
-        <View style={styles.previewBackdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPreviewUri(null)} />
-          <View style={styles.previewCard}>
-            <View style={styles.previewHeader}>
-              <Text style={styles.previewTitle}>{previewTitle}</Text>
-              <Ionicons name="close" size={20} color={colors.white} />
+      <Modal visible={isGalleryOpen} animationType="slide" onRequestClose={closeGallery}>
+        <View style={styles.fullscreen}>
+          <View style={styles.fullscreenHeader}>
+            <Text style={styles.fullscreenTitle}>Groups submissions</Text>
+            <View style={styles.fullscreenHeaderRight}>
+              <Text style={styles.fullscreenCounter}>
+                {gallerySubmissions.length > 0
+                  ? `${activeGalleryIndex + 1}/${gallerySubmissions.length}`
+                  : "0/0"}
+              </Text>
+              <TouchableOpacity style={styles.fullscreenClose} onPress={closeGallery}>
+                <Ionicons name="close" size={20} color={colors.white} />
+              </TouchableOpacity>
             </View>
-            {previewUri ? (
-              <Image source={{ uri: previewUri }} style={styles.previewImage} />
-            ) : null}
           </View>
+
+          <FlatList
+            ref={galleryListRef}
+            data={gallerySubmissions}
+            keyExtractor={(item) => item.id}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handleGalleryScrollEnd}
+            getItemLayout={(_, index) => ({
+              length: width,
+              offset: width * index,
+              index,
+            })}
+            onScrollToIndexFailed={(info) => {
+              const fallbackIndex = Math.max(
+                0,
+                Math.min(info.index, Math.max(gallerySubmissions.length - 1, 0)),
+              );
+              setTimeout(() => {
+                galleryListRef.current?.scrollToIndex({
+                  index: fallbackIndex,
+                  animated: false,
+                });
+              }, 50);
+            }}
+            renderItem={({ item }) => (
+              <FullscreenSubmissionSlide
+                submission={item}
+                width={width}
+                height={height}
+              />
+            )}
+          />
         </View>
       </Modal>
     </View>
   );
 }
 
-function CommunitySubmissionRow({
-  submission,
-  onOpenPreview,
-}: {
-  submission: CommunitySubmission;
-  onOpenPreview: (uri: string) => void;
-}) {
-  const hasImage = submission.imageIds.length > 0;
-  const {
-    download,
-    status,
-    file,
-    reset,
-    abort,
-  } = useFileDownload();
-
-  useEffect(() => {
-    if (!hasImage) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({
-      storagePath: submission.imageIds[0] ?? "",
-    }).catch(() => {
-      // Keep row visible even if object is temporarily unavailable.
-    });
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, hasImage, reset, submission.imageIds]);
-
-  const rankingStyle =
-    typeof submission.ranking === "number" ? placeStyleMap[submission.ranking] : undefined;
-
+function PodiumPlaceholder({ rank }: { rank: number }) {
   return (
-    <View
-      style={[
-        styles.rowCard,
-        rankingStyle ? { borderColor: rankingStyle.borderColor } : undefined,
-      ]}
-    >
-      <View style={styles.rowMeta}>
-        <View style={styles.rowTop}>
-          <Text style={styles.groupName}>{submission.group.name}</Text>
-        </View>
-        <Text style={styles.dateText}>{formatDateTime(submission.createdAt)}</Text>
-        {rankingStyle ? (
-          <Text style={[styles.placeText, { color: rankingStyle.borderColor }]}>
-            {rankingStyle.label}
-          </Text>
-        ) : null}
+    <View style={styles.podiumPlaceholder}>
+      <View style={styles.podiumPlaceholderImage}>
+        <Ionicons name="trophy-outline" size={14} color={colors.textMuted} />
       </View>
-
-      <TouchableOpacity
-        style={styles.thumbWrap}
-        disabled={!file?.uri}
-        onPress={() => {
-          if (file?.uri) onOpenPreview(file.uri);
-        }}
-      >
-        {hasImage ? (
-          status === "loading" ? (
-            <View style={styles.thumbFallback}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : file?.uri ? (
-            <Image source={{ uri: file.uri }} style={styles.thumbImage} />
-          ) : (
-            <View style={styles.thumbFallback}>
-              <Ionicons name="image-outline" size={16} color={colors.textMuted} />
-            </View>
-          )
-        ) : (
-          <View style={styles.thumbFallback}>
-            <Ionicons name="document-text-outline" size={16} color={colors.textMuted} />
-          </View>
-        )}
-      </TouchableOpacity>
+      <Text style={styles.podiumPlaceholderText}>#{rank}</Text>
     </View>
   );
 }
 
-function PodiumPreviewTile({
-  rank,
+function SubmissionTile({
   submission,
-  onOpenPreview,
+  mode,
+  rank,
+  onPress,
 }: {
-  rank: number;
-  submission?: CommunitySubmission;
-  onOpenPreview: (uri: string) => void;
+  submission: CommunitySubmission;
+  mode: "podium" | "preview";
+  rank?: number;
+  onPress: () => void;
 }) {
-  const hasImage = Boolean(submission?.imageIds?.length);
+  const imagePath = submission.imageIds[0] ?? "";
   const { download, status, file, reset, abort } = useFileDownload();
 
   useEffect(() => {
-    if (!submission || !hasImage) {
+    if (!imagePath) {
       reset();
       return;
     }
 
     reset();
-    void download({
-      storagePath: submission.imageIds[0] ?? "",
-    }).catch(() => {});
+    void download({ storagePath: imagePath }).catch(() => undefined);
 
     return () => {
       abort();
     };
-  }, [abort, download, hasImage, reset, submission]);
+  }, [abort, download, imagePath, reset]);
 
-  const placeStyle = placeStyleMap[rank];
+  const placeStyle = rank ? placeStyleMap[rank] : undefined;
 
   return (
     <TouchableOpacity
-      disabled={!file?.uri}
-      onPress={() => {
-        if (file?.uri) onOpenPreview(file.uri);
-      }}
+      activeOpacity={0.9}
+      onPress={onPress}
       style={[
-        styles.podiumPreviewItem,
+        styles.tile,
+        mode === "podium" ? styles.podiumTile : styles.previewTile,
         placeStyle ? { borderColor: placeStyle.borderColor } : undefined,
       ]}
     >
-      <View style={styles.podiumPreviewThumb}>
-        {submission ? (
-          status === "loading" ? (
-            <View style={styles.thumbFallback}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : file?.uri ? (
-            <Image source={{ uri: file.uri }} style={styles.thumbImage} />
-          ) : (
-            <View style={styles.thumbFallback}>
-              <Ionicons name="image-outline" size={14} color={colors.textMuted} />
-            </View>
-          )
+      <View style={styles.tileImageWrap}>
+        {status === "loading" ? (
+          <View style={styles.tileFallback}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : file?.uri ? (
+          <Image source={{ uri: file.uri }} style={styles.tileImage} />
         ) : (
-          <View style={styles.thumbFallback}>
-            <Ionicons name="trophy-outline" size={14} color={colors.textMuted} />
+          <View style={styles.tileFallback}>
+            <Ionicons name="image-outline" size={16} color={colors.textMuted} />
           </View>
         )}
       </View>
-      <Text
-        style={[
-          styles.podiumPreviewLabel,
-          placeStyle ? { color: placeStyle.borderColor } : undefined,
-        ]}
-      >
-        #{rank}
-      </Text>
+
+      {mode === "podium" && (
+        <Text style={styles.podiumTileLabel} numberOfLines={1}>
+          {placeStyle?.label ?? submission.group.name}
+        </Text>
+      )}
     </TouchableOpacity>
+  );
+}
+
+function FullscreenSubmissionSlide({
+  submission,
+  width,
+  height,
+}: {
+  submission: CommunitySubmission;
+  width: number;
+  height: number;
+}) {
+  const imagePath = submission.imageIds[0] ?? "";
+  const { download, status, file, reset, abort } = useFileDownload();
+  const placeStyle =
+    typeof submission.ranking === "number"
+      ? placeStyleMap[submission.ranking]
+      : undefined;
+
+  useEffect(() => {
+    if (!imagePath) {
+      reset();
+      return;
+    }
+
+    reset();
+    void download({ storagePath: imagePath }).catch(() => undefined);
+
+    return () => {
+      abort();
+    };
+  }, [abort, download, imagePath, reset]);
+
+  return (
+    <View style={[styles.fullscreenSlide, { width, minHeight: height - 92 }]}>
+      <View style={styles.fullscreenImageWrap}>
+        {status === "loading" ? (
+          <View style={styles.fullscreenFallback}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : file?.uri ? (
+          <Image
+            source={{ uri: file.uri }}
+            style={styles.fullscreenImage}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={styles.fullscreenFallback}>
+            <Ionicons name="image-outline" size={28} color={colors.textMuted} />
+          </View>
+        )}
+      </View>
+
+      <View style={styles.fullscreenMeta}>
+        <Text style={styles.fullscreenGroupName} numberOfLines={1}>
+          {submission.group.name}
+        </Text>
+        {placeStyle ? (
+          <Text
+            style={[styles.fullscreenRankLabel, { color: placeStyle.borderColor }]}
+          >
+            {placeStyle.label}
+          </Text>
+        ) : null}
+        <Text style={styles.fullscreenDate}>{formatDateTime(submission.createdAt)}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -380,10 +457,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   title: {
     color: colors.textPrimary,
@@ -395,40 +470,10 @@ const styles = StyleSheet.create({
     fontSize: typography.xs,
     marginTop: 2,
   },
-  body: {
+  content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
     gap: spacing.md,
-  },
-  podiumPreviewRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  podiumPreviewItem: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceDark,
-    padding: 6,
-    gap: 4,
-  },
-  podiumPreviewThumb: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: borderRadius.sm,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: colors.cardDark,
-  },
-  podiumPreviewLabel: {
-    textAlign: "center",
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: typography.bold,
   },
   section: {
     gap: spacing.sm,
@@ -440,32 +485,84 @@ const styles = StyleSheet.create({
     letterSpacing: 1.1,
     fontWeight: typography.bold,
   },
-  rowCard: {
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.surfaceDark,
-    padding: spacing.sm,
+  podiumRow: {
     flexDirection: "row",
-    alignItems: "center",
     gap: spacing.sm,
   },
-  emptyRow: {
+  previewGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  tile: {
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    borderStyle: "dashed",
-    borderRadius: borderRadius.lg,
-    padding: spacing.sm,
+    borderColor: "rgba(255,255,255,0.16)",
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surfaceDark,
+    overflow: "hidden",
+  },
+  podiumTile: {
+    flex: 1,
+    padding: 6,
     gap: 6,
   },
-  emptyRowText: {
+  previewTile: {
+    width: "31.5%",
+    padding: 4,
+  },
+  tileImageWrap: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: borderRadius.sm,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.cardDark,
+  },
+  tileImage: {
+    width: "100%",
+    height: "100%",
+  },
+  tileFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  podiumTileLabel: {
+    textAlign: "center",
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: typography.bold,
+  },
+  podiumPlaceholder: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surfaceDark,
+    padding: 6,
+    gap: 6,
+    alignItems: "center",
+  },
+  podiumPlaceholderImage: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: borderRadius.sm,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.cardDark,
+  },
+  podiumPlaceholderText: {
     color: colors.textMuted,
-    fontSize: typography.xs,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
+    fontSize: 11,
     fontWeight: typography.bold,
   },
   emptyGallery: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
     borderStyle: "dashed",
@@ -480,85 +577,103 @@ const styles = StyleSheet.create({
     fontSize: typography.xs,
     flex: 1,
   },
-  motivationText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    lineHeight: 20,
-  },
-  rowMeta: {
-    flex: 1,
-    gap: 4,
-  },
-  rowTop: {
+  showAllButton: {
+    borderWidth: 1,
+    borderColor: "rgba(0,206,209,0.4)",
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     gap: spacing.xs,
+    backgroundColor: "rgba(0,206,209,0.12)",
   },
-  groupName: {
-    color: colors.white,
+  showAllText: {
+    color: colors.primary,
     fontSize: typography.sm,
     fontWeight: typography.bold,
-    flexShrink: 1,
   },
-  dateText: {
-    color: colors.textSecondary,
-    fontSize: typography.xs,
-  },
-  placeText: {
-    fontSize: typography.xs,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  thumbWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.md,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: colors.cardDark,
-  },
-  thumbImage: {
-    width: "100%",
-    height: "100%",
-  },
-  thumbFallback: {
+  fullscreen: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.backgroundDark,
   },
-  previewBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.78)",
-    justifyContent: "center",
-    padding: spacing.lg,
-  },
-  previewCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-  previewHeader: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  fullscreenHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.1)",
+    borderBottomColor: "rgba(255,255,255,0.08)",
   },
-  previewTitle: {
+  fullscreenTitle: {
     color: colors.white,
+    fontSize: typography.lg,
+    fontWeight: typography.bold,
+  },
+  fullscreenHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  fullscreenCounter: {
+    color: colors.textSecondary,
     fontSize: typography.sm,
     fontWeight: typography.bold,
   },
-  previewImage: {
+  fullscreenClose: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fullscreenSlide: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    justifyContent: "center",
+  },
+  fullscreenImageWrap: {
+    flex: 1,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    overflow: "hidden",
+    backgroundColor: "#090a0d",
+    minHeight: 300,
+  },
+  fullscreenImage: {
     width: "100%",
-    aspectRatio: 4 / 3,
-    backgroundColor: colors.surfaceDark,
+    height: "100%",
+  },
+  fullscreenFallback: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fullscreenMeta: {
+    marginTop: spacing.sm,
+    gap: 2,
+    paddingHorizontal: spacing.xs,
+  },
+  fullscreenGroupName: {
+    color: colors.white,
+    fontSize: typography.base,
+    fontWeight: typography.bold,
+  },
+  fullscreenRankLabel: {
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  fullscreenDate: {
+    color: colors.textSecondary,
+    fontSize: typography.xs,
   },
 });

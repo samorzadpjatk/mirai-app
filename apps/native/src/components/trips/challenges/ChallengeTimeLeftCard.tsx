@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
@@ -80,6 +80,15 @@ const formatCountdown = (ms: number) => {
   return `${seconds}s`;
 };
 
+const formatDeadlineDate = (date: Date) => {
+  const day = `${date.getDate()}`.padStart(2, "0");
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = `${date.getHours()}`.padStart(2, "0");
+  const minutes = `${date.getMinutes()}`.padStart(2, "0");
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
+};
+
 export function ChallengeTimeLeftCard({
   phaseLabel,
   isRecurring = false,
@@ -101,7 +110,10 @@ export function ChallengeTimeLeftCard({
 
   const start = toDate(startTime);
   const end = toDate(endTime);
-  const recurringDeadline = getNextRecurringDeadline(dailyEndTime, new Date(now));
+  const recurringDeadline = getNextRecurringDeadline(
+    dailyEndTime,
+    new Date(now),
+  );
   const deadline = isRecurring ? recurringDeadline : end;
 
   if (!deadline) {
@@ -111,9 +123,9 @@ export function ChallengeTimeLeftCard({
   const countdownText = formatCountdown(deadline.getTime() - now);
   const countdownSubtext = isRecurring
     ? `Daily reset at ${dailyEndTime ?? "--:--"}`
-    : `Ends ${deadline.toLocaleString()}`;
+    : `Ends ${formatDeadlineDate(deadline)}`;
 
-  const progressRatio = useMemo(() => {
+  const progressRatio = (() => {
     if (isRecurring) {
       const startMinutes = parseClockToMinutes(dailyStartTime);
       const endMinutes = parseClockToMinutes(dailyEndTime);
@@ -134,10 +146,14 @@ export function ChallengeTimeLeftCard({
     const totalMs = end.getTime() - start.getTime();
     if (totalMs <= 0) return 0;
     return clamp((deadline.getTime() - now) / totalMs, 0, 1);
-  }, [dailyEndTime, dailyStartTime, deadline, end, isRecurring, now, start]);
+  })();
 
   const progressColor =
-    progressRatio > 0.66 ? "#22c55e" : progressRatio > 0.33 ? "#f59e0b" : "#ef4444";
+    progressRatio > 0.66
+      ? "#22c55e"
+      : progressRatio > 0.33
+        ? "#f59e0b"
+        : "#ef4444";
 
   return (
     <View style={styles.container}>
