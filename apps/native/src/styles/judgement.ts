@@ -177,6 +177,54 @@ const viewStyles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.xl,
   },
+  rejectReasonBackdrop: {
+    flex: 1,
+    backgroundColor: colors.backgroundDarkOpacity80,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  rejectReasonCard: {
+    backgroundColor: colors.cardDark,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  rejectReasonInput: {
+    backgroundColor: colors.surfaceDark,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    color: colors.white,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 96,
+    textAlignVertical: "top",
+    fontSize: typography.base,
+  },
+  rejectReasonActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.sm,
+  },
+  rejectReasonCancelButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    backgroundColor: colors.surfaceDark,
+  },
+  rejectReasonConfirmButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.red400,
+  },
+  rejectReasonConfirmButtonDisabled: {
+    opacity: 0.5,
+  },
 });
 
 const textStyles = StyleSheet.create({
@@ -253,6 +301,25 @@ const textStyles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.sm,
     textAlign: "center",
+  },
+  rejectReasonTitle: {
+    color: colors.white,
+    fontSize: typography.lg,
+    fontWeight: typography.bold,
+  },
+  rejectReasonSubtitle: {
+    color: colors.textSecondary,
+    fontSize: typography.sm,
+  },
+  rejectReasonCancelText: {
+    color: colors.white,
+    fontSize: typography.base,
+    fontWeight: typography.medium,
+  },
+  rejectReasonConfirmText: {
+    color: colors.white,
+    fontSize: typography.base,
+    fontWeight: typography.bold,
   },
 });
 

@@ -6,6 +6,21 @@ export type ChallengeStatus =
   | "completed"
   | "locked";
 
+export type ChallengeSubmissionType =
+  | "IMAGE"
+  | "MULTI_IMAGE"
+  | "VIDEO"
+  | "TEXT"
+  | "IMAGE_LOCATION"
+  | "LOCATION"
+  | "QR_CODE";
+
+export type ChallengeScoringCategory =
+  | "SPEED"
+  | "UNLIMITED"
+  | "JUDGED_STAFF"
+  | "PEER_VOTING";
+
 export interface ChallengeListItem {
   id: string;
   title: string;
@@ -16,7 +31,8 @@ export interface ChallengeListItem {
   description?: string;
   image?: string;
   participantGroupsCount: number;
-  scoringCategory?: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
+  submissionType: ChallengeSubmissionType;
+  scoringCategory?: ChallengeScoringCategory;
   lifecycleStatus:
     | "HIDDEN"
     | "VISIBLE"

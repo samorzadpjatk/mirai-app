@@ -288,6 +288,17 @@ export const challengeRouter = createTRPCRouter({
           _all: true,
         },
       });
+      const groupedPendingSubmissionCounts =
+        await ctx.db.challengeSubmission.groupBy({
+          by: ["challengeId"],
+          where: {
+            challengeId: { in: challengeIds },
+            status: "PENDING",
+          },
+          _count: {
+            _all: true,
+          },
+        });
 
       const myGroupSubmissions = participant?.groupId
         ? await ctx.db.challengeSubmission.findMany({
@@ -308,6 +319,12 @@ export const challengeRouter = createTRPCRouter({
           item._count._all,
         ]),
       );
+      const pendingCountByChallengeId = new Map(
+        groupedPendingSubmissionCounts.map((item) => [
+          item.challengeId,
+          item._count._all,
+        ]),
+      );
       const mySubmissionStatusByChallengeId = new Map(
         myGroupSubmissions.map((item) => [item.challengeId, item.status]),
       );
@@ -320,6 +337,8 @@ export const challengeRouter = createTRPCRouter({
       return withResolvedImages.map((challenge) => ({
         ...toClientChallenge(challenge),
         participantGroupsCount: countByChallengeId.get(challenge.id) ?? 0,
+        pendingSubmissionsCount:
+          pendingCountByChallengeId.get(challenge.id) ?? 0,
         myGroupSubmissionStatus:
           mySubmissionStatusByChallengeId.get(challenge.id) ?? null,
       }));

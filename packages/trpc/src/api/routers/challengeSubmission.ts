@@ -1005,8 +1005,8 @@ export const challengeSubmissionRouter = createTRPCRouter({
               data: {
                 tripId: refreshedForActivity.challenge.tripId,
                 activityType: "submission",
-                title: `Druzyna ${refreshedForActivity.group.name} dodala zdjecie do wyzwania ${refreshedForActivity.challenge.name}`,
-                description: "Ty tez mozesz wziac udzial w challengu",
+                title: `Drużyna ${refreshedForActivity.group.name} wrzuciła fotę do wyzwania ${refreshedForActivity.challenge.name}`,
+                description: "Nie czekaj, ty też podejmij wyzwanie!",
                 imageUrl: refreshedForActivity.imageIds[0],
                 createdByAdmin: ctx.dbUser.id,
                 submissionActivity: {

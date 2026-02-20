@@ -11,7 +11,12 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
-import { borderRadius, colors, spacing, typography } from "../../../../../styles";
+import {
+  borderRadius,
+  colors,
+  spacing,
+  typography,
+} from "../../../../../styles";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
@@ -38,7 +43,8 @@ const rankByRating = (
   ratings: Record<string, number>,
 ) =>
   [...submissions].sort((a, b) => {
-    const ratingDelta = (ratings[b.id] ?? ELO_BASE_RATING) - (ratings[a.id] ?? ELO_BASE_RATING);
+    const ratingDelta =
+      (ratings[b.id] ?? ELO_BASE_RATING) - (ratings[a.id] ?? ELO_BASE_RATING);
     if (Math.abs(ratingDelta) > 0.0001) return ratingDelta;
     const createdAtDelta =
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -66,7 +72,8 @@ const pickNextPair = (
       const key = toPairKey(left.id, right.id);
       if (comparedPairs.has(key)) continue;
       const diff = Math.abs(
-        (ratings[left.id] ?? ELO_BASE_RATING) - (ratings[right.id] ?? ELO_BASE_RATING),
+        (ratings[left.id] ?? ELO_BASE_RATING) -
+          (ratings[right.id] ?? ELO_BASE_RATING),
       );
       candidates.push({ pair: [left.id, right.id], diff });
     }
@@ -135,7 +142,9 @@ function SubmissionImageCard({
       <View style={styles.voteCardBody}>
         <Text style={styles.voteCardTitle}>{title}</Text>
         <Text style={styles.voteCardGroup}>{submission.groupName}</Text>
-        {subtitle ? <Text style={styles.voteCardSubtitle}>{subtitle}</Text> : null}
+        {subtitle ? (
+          <Text style={styles.voteCardSubtitle}>{subtitle}</Text>
+        ) : null}
       </View>
     </View>
   );
@@ -143,7 +152,11 @@ function SubmissionImageCard({
   if (!onPress) return content;
 
   return (
-    <TouchableOpacity activeOpacity={0.85} onPress={onPress} disabled={disabled}>
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      disabled={disabled}
+    >
       {content}
     </TouchableOpacity>
   );
@@ -156,7 +169,8 @@ export default function ChallengePeerVotingScreen() {
   const trpc = useTRPC();
   const insets = useAppSafeAreaInsets();
 
-  const challengeId = typeof params.id === "string" ? params.id : params.id?.[0];
+  const challengeId =
+    typeof params.id === "string" ? params.id : params.id?.[0];
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
@@ -164,10 +178,12 @@ export default function ChallengePeerVotingScreen() {
     id: challengeId ?? "",
     tripId: tripId ?? "",
   });
-  const submissionsQuery = trpc.challengeSubmission.getByChallenge.queryOptions({
-    challengeId: challengeId ?? "",
-    tripId: tripId ?? "",
-  });
+  const submissionsQuery = trpc.challengeSubmission.getByChallenge.queryOptions(
+    {
+      challengeId: challengeId ?? "",
+      tripId: tripId ?? "",
+    },
+  );
   const myVotesQuery = trpc.challengeVote.getMyByChallenge.queryOptions({
     challengeId: challengeId ?? "",
     tripId: tripId ?? "",
@@ -190,7 +206,9 @@ export default function ChallengePeerVotingScreen() {
     enabled: !!tripId,
   });
 
-  const submitVoteMutation = useMutation(trpc.challengeVote.submitVote.mutationOptions());
+  const submitVoteMutation = useMutation(
+    trpc.challengeVote.submitVote.mutationOptions(),
+  );
 
   const [phase, setPhase] = useState<VotingPhase>("comparing");
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
@@ -222,7 +240,10 @@ export default function ChallengePeerVotingScreen() {
   }, [submissionsData, ownGroupId]);
 
   const submissionById = useMemo(
-    () => new Map(votingSubmissions.map((submission) => [submission.id, submission])),
+    () =>
+      new Map(
+        votingSubmissions.map((submission) => [submission.id, submission]),
+      ),
     [votingSubmissions],
   );
 
@@ -236,7 +257,9 @@ export default function ChallengePeerVotingScreen() {
     if (finalTopThreeIds.length > 0) {
       return finalTopThreeIds
         .map((id) => submissionById.get(id))
-        .filter((submission): submission is VotingSubmission => Boolean(submission));
+        .filter((submission): submission is VotingSubmission =>
+          Boolean(submission),
+        );
     }
     return calculatedTopThree;
   }, [calculatedTopThree, finalTopThreeIds, submissionById]);
@@ -245,9 +268,10 @@ export default function ChallengePeerVotingScreen() {
   const currentRight = currentPair ? submissionById.get(currentPair[1]) : null;
   const shouldRedirectToChallengeDetails = Boolean(
     challengeId &&
-      tripId &&
-      challenge &&
-      (challenge.scoringCategory !== "PEER_VOTING" || challenge.status !== "VOTING_PHASE"),
+    tripId &&
+    challenge &&
+    (challenge.scoringCategory !== "PEER_VOTING" ||
+      challenge.status !== "VOTING_PHASE"),
   );
 
   const startComparing = useCallback(() => {
@@ -256,7 +280,11 @@ export default function ChallengePeerVotingScreen() {
       votingSubmissions.map((submission) => [submission.id, ELO_BASE_RATING]),
     );
     const initialCompared = new Set<string>();
-    const pair = pickNextPair(votingSubmissions, initialRatings, initialCompared);
+    const pair = pickNextPair(
+      votingSubmissions,
+      initialRatings,
+      initialCompared,
+    );
 
     setRatings(initialRatings);
     setComparedPairs(initialCompared);
@@ -271,20 +299,34 @@ export default function ChallengePeerVotingScreen() {
 
   useEffect(() => {
     if (!shouldRedirectToChallengeDetails) return;
-    router.replace(`/trips/challenges/${challengeId}?tripId=${tripId}`);
+    router.replace({
+      pathname: "/(tabs)/trips/challenges/[id]",
+      params: {
+        id: challengeId ?? "",
+        tripId: tripId ?? "",
+      },
+    });
   }, [challengeId, router, shouldRedirectToChallengeDetails, tripId]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (bootstrapped) return;
     if (!challengeId || !tripId) return;
-    if (isLoadingChallenge || isLoadingSubmissions || isLoadingVotes || isLoadingMeWithGroup) {
+    if (
+      isLoadingChallenge ||
+      isLoadingSubmissions ||
+      isLoadingVotes ||
+      isLoadingMeWithGroup
+    ) {
       return;
     }
 
     if (!challenge) return;
 
-    if (challenge.scoringCategory !== "PEER_VOTING" || challenge.status !== "VOTING_PHASE") {
+    if (
+      challenge.scoringCategory !== "PEER_VOTING" ||
+      challenge.status !== "VOTING_PHASE"
+    ) {
       return;
     }
 
@@ -342,7 +384,9 @@ export default function ChallengePeerVotingScreen() {
     nextCompared.add(toPairKey(leftId, rightId));
     const nextComparisonCount = comparisonCount + 1;
     const nextRanking = rankByRating(votingSubmissions, nextRatings);
-    const nextTop3Ids = nextRanking.slice(0, 3).map((submission) => submission.id);
+    const nextTop3Ids = nextRanking
+      .slice(0, 3)
+      .map((submission) => submission.id);
     const nextTop3Key = nextTop3Ids.join("|");
     const nextStableTop3Count =
       previousTop3Key === nextTop3Key ? stableTop3Count + 1 : 0;
@@ -373,9 +417,21 @@ export default function ChallengePeerVotingScreen() {
     if (!tripId || !challengeId || finalTopThree.length < 3) return;
 
     const votesPayload = [
-      { submissionId: finalTopThree[0]?.id ?? "", votePosition: 1, votePoints: 3 },
-      { submissionId: finalTopThree[1]?.id ?? "", votePosition: 2, votePoints: 2 },
-      { submissionId: finalTopThree[2]?.id ?? "", votePosition: 3, votePoints: 1 },
+      {
+        submissionId: finalTopThree[0]?.id ?? "",
+        votePosition: 1,
+        votePoints: 3,
+      },
+      {
+        submissionId: finalTopThree[1]?.id ?? "",
+        votePosition: 2,
+        votePoints: 2,
+      },
+      {
+        submissionId: finalTopThree[2]?.id ?? "",
+        votePosition: 3,
+        votePoints: 1,
+      },
     ].filter((vote) => Boolean(vote.submissionId));
 
     try {
@@ -399,7 +455,9 @@ export default function ChallengePeerVotingScreen() {
       );
 
       await queryClient.invalidateQueries({ queryKey: myVotesQuery.queryKey });
-      await queryClient.invalidateQueries({ queryKey: submissionsQuery.queryKey });
+      await queryClient.invalidateQueries({
+        queryKey: submissionsQuery.queryKey,
+      });
       setPhase("done");
     } catch (error) {
       const message =
@@ -411,7 +469,12 @@ export default function ChallengePeerVotingScreen() {
 
   const progress = Math.min(comparisonCount / hardCap, 1);
 
-  if (!challengeId || !tripId || isLoadingChallenge || shouldRedirectToChallengeDetails) {
+  if (
+    !challengeId ||
+    !tripId ||
+    isLoadingChallenge ||
+    shouldRedirectToChallengeDetails
+  ) {
     return <ChallengeLoadingState />;
   }
 
@@ -443,7 +506,9 @@ export default function ChallengePeerVotingScreen() {
           <>
             <View style={styles.progressWrap}>
               <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+                <View
+                  style={[styles.progressFill, { width: `${progress * 100}%` }]}
+                />
               </View>
               <Text style={styles.progressLabel}>
                 {comparisonCount}/{hardCap} comparisons
@@ -491,7 +556,13 @@ export default function ChallengePeerVotingScreen() {
                   key={`${submission.id}-${index + 1}`}
                   submission={submission}
                   title={`#${index + 1}`}
-                  subtitle={index === 0 ? "3 points" : index === 1 ? "2 points" : "1 point"}
+                  subtitle={
+                    index === 0
+                      ? "3 points"
+                      : index === 1
+                        ? "2 points"
+                        : "1 point"
+                  }
                 />
               ))}
             </View>
@@ -508,7 +579,9 @@ export default function ChallengePeerVotingScreen() {
                 disabled={submitVoteMutation.isPending}
               >
                 <Text style={styles.actionPrimaryText}>
-                  {submitVoteMutation.isPending ? "Submitting..." : "Confirm Podium"}
+                  {submitVoteMutation.isPending
+                    ? "Submitting..."
+                    : "Confirm Podium"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -522,8 +595,19 @@ export default function ChallengePeerVotingScreen() {
               Your podium vote was saved. You can go back to challenges.
             </Text>
             <TouchableOpacity
-              style={[styles.actionButton, styles.actionPrimary, styles.doneButton]}
-              onPress={() => router.replace(`/trips/challenges?tripId=${tripId}`)}
+              style={[
+                styles.actionButton,
+                styles.actionPrimary,
+                styles.doneButton,
+              ]}
+              onPress={() =>
+                router.replace({
+                  pathname: "/(tabs)/trips/challenges/index",
+                  params: {
+                    tripId: tripId ?? "",
+                  },
+                })
+              }
             >
               <Text style={styles.actionPrimaryText}>Back To Challenges</Text>
             </TouchableOpacity>
@@ -537,8 +621,19 @@ export default function ChallengePeerVotingScreen() {
               {blockedReason ?? "Voting is not available right now."}
             </Text>
             <TouchableOpacity
-              style={[styles.actionButton, styles.actionPrimary, styles.doneButton]}
-              onPress={() => router.replace(`/trips/challenges?tripId=${tripId}`)}
+              style={[
+                styles.actionButton,
+                styles.actionPrimary,
+                styles.doneButton,
+              ]}
+              onPress={() =>
+                router.replace({
+                  pathname: "/(tabs)/trips/challenges/index",
+                  params: {
+                    tripId: tripId ?? "",
+                  },
+                })
+              }
             >
               <Text style={styles.actionPrimaryText}>Back To Challenges</Text>
             </TouchableOpacity>

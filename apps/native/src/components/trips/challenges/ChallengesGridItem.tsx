@@ -20,6 +20,8 @@ export function ChallengesGridItem({
 }: ChallengesGridItemProps) {
   const isLocked = challenge.status === "locked";
   const statusMeta = getStatusMeta(challenge.status);
+  const submissionTypeMeta = getSubmissionTypeMeta(challenge.submissionType);
+  const scoringMeta = getScoringMeta(challenge.scoringCategory);
   const cardStatusStyle =
     challenge.status === "to_solve"
       ? styles.cardToSolve
@@ -33,18 +35,16 @@ export function ChallengesGridItem({
     <TouchableOpacity
       onPress={() => onPress(challenge)}
       disabled={isLocked}
-      style={[
-        styles.card,
-        cardStatusStyle,
-        isLocked && styles.cardLocked,
-      ]}
+      style={[styles.card, cardStatusStyle, isLocked && styles.cardLocked]}
     >
       <ImageBackground
         source={challenge.image ? { uri: challenge.image } : undefined}
         style={[
           styles.imageFill,
           !challenge.image && {
-            backgroundColor: isLocked ? colors.surfaceDark : `${challenge.iconColor}1f`,
+            backgroundColor: isLocked
+              ? colors.surfaceDark
+              : `${challenge.iconColor}1f`,
           },
         ]}
         imageStyle={styles.imageFillRadius}
@@ -54,31 +54,50 @@ export function ChallengesGridItem({
 
         <View style={styles.cardInner}>
           <View style={styles.cardHeader}>
-          <View
-            style={[
-              styles.statusBadge,
-              isLocked && styles.statusBadgeLocked,
-              {
-                borderColor: statusMeta.borderColor,
-                backgroundColor: statusMeta.backgroundColor,
-              },
-            ]}
-          >
-            {isLocked && (
-              <Ionicons name="lock-closed" size={10} color={statusMeta.textColor} />
-            )}
-            <Text style={[styles.statusBadgeText, { color: statusMeta.textColor }]}>
-              {statusMeta.label}
-            </Text>
-          </View>
+            <View
+              style={[
+                styles.statusBadge,
+                isLocked && styles.statusBadgeLocked,
+                {
+                  borderColor: statusMeta.borderColor,
+                  backgroundColor: statusMeta.backgroundColor,
+                },
+              ]}
+            >
+              {isLocked && (
+                <Ionicons
+                  name="lock-closed"
+                  size={10}
+                  color={statusMeta.textColor}
+                />
+              )}
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  { color: statusMeta.textColor },
+                ]}
+              >
+                {statusMeta.label}
+              </Text>
+            </View>
 
-          {isLocked ? (
-            <Ionicons name="lock-closed" size={16} color={colors.textMuted} />
-          ) : (
-            <Text style={styles.pointsBadge}>
-              +{challenge.points} MAX
-            </Text>
-          )}
+            <View style={styles.headerRight}>
+              {isLocked ? (
+                <Ionicons
+                  name="lock-closed"
+                  size={16}
+                  color={colors.textMuted}
+                />
+              ) : (
+                <Text style={styles.pointsBadge}>+{challenge.points} MAX</Text>
+              )}
+              <View style={styles.headerJoinedRow}>
+                <Ionicons name="people" size={12} color="#22c55e" />
+                <Text style={styles.headerJoinedCount}>
+                  {challenge.participantGroupsCount}
+                </Text>
+              </View>
+            </View>
           </View>
 
           {!challenge.image && (
@@ -92,11 +111,30 @@ export function ChallengesGridItem({
           )}
 
           <View style={styles.content}>
+            <View style={styles.metaRow}>
+              <View style={styles.metaBadge}>
+                <Ionicons
+                  name={
+                    submissionTypeMeta.icon as keyof typeof Ionicons.glyphMap
+                  }
+                  size={11}
+                  color="#cbd5e1"
+                />
+                <Text style={styles.metaBadgeText}>
+                  {submissionTypeMeta.label}
+                </Text>
+              </View>
+              <View style={styles.metaBadge}>
+                <Ionicons
+                  name={scoringMeta.icon as keyof typeof Ionicons.glyphMap}
+                  size={11}
+                  color="#cbd5e1"
+                />
+                <Text style={styles.metaBadgeText}>{scoringMeta.label}</Text>
+              </View>
+            </View>
             <Text style={styles.title} numberOfLines={2}>
               {challenge.title}
-            </Text>
-            <Text style={styles.joinedText}>
-              {challenge.participantGroupsCount} groups joined
             </Text>
           </View>
         </View>
@@ -150,6 +188,45 @@ const getStatusMeta = (status: ChallengeListItem["status"]) => {
         borderColor: "rgba(0,206,209,0.45)",
         backgroundColor: "rgba(0,206,209,0.2)",
       };
+  }
+};
+
+const getSubmissionTypeMeta = (
+  submissionType: ChallengeListItem["submissionType"],
+) => {
+  switch (submissionType) {
+    case "MULTI_IMAGE":
+      return { label: "Multi", icon: "images-outline" };
+    case "VIDEO":
+      return { label: "Video", icon: "videocam-outline" };
+    case "TEXT":
+      return { label: "Text", icon: "document-text-outline" };
+    case "IMAGE_LOCATION":
+      return { label: "Photo+GPS", icon: "camera-outline" };
+    case "LOCATION":
+      return { label: "GPS", icon: "location-outline" };
+    case "QR_CODE":
+      return { label: "QR", icon: "qr-code-outline" };
+    case "IMAGE":
+    default:
+      return { label: "Photo", icon: "image-outline" };
+  }
+};
+
+const getScoringMeta = (
+  scoringCategory: ChallengeListItem["scoringCategory"],
+) => {
+  switch (scoringCategory) {
+    case "SPEED":
+      return { label: "Speed", icon: "flash-outline" };
+    case "UNLIMITED":
+      return { label: "Unlimited", icon: "infinite-outline" };
+    case "PEER_VOTING":
+      return { label: "Voting", icon: "people-outline" };
+    case "JUDGED_STAFF":
+      return { label: "Staff", icon: "shield-checkmark-outline" };
+    default:
+      return { label: "Scoring", icon: "stats-chart-outline" };
   }
 };
 
@@ -210,6 +287,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     zIndex: 1,
   },
+  headerRight: {
+    alignItems: "flex-end",
+  },
   statusBadge: {
     borderWidth: 1,
     borderRadius: borderRadius.sm,
@@ -254,6 +334,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.3)",
   },
+  headerJoinedRow: {
+    marginTop: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: "rgba(10,11,13,0.5)",
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.28)",
+  },
+  headerJoinedCount: {
+    fontSize: 11,
+    fontWeight: typography.bold,
+    color: "#22c55e",
+  },
   content: {
     alignSelf: "stretch",
     backgroundColor: "rgba(10,11,13,0.62)",
@@ -263,18 +360,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
   },
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginBottom: spacing.xs,
+  },
+  metaBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  metaBadgeText: {
+    fontSize: 8,
+    fontWeight: typography.bold,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    color: "#cbd5e1",
+  },
   title: {
     fontSize: typography.sm,
     fontWeight: typography.bold,
     color: colors.white,
     lineHeight: 18,
-  },
-  joinedText: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    letterSpacing: 1,
-    marginTop: spacing.sm,
-    textTransform: "uppercase",
-    color: colors.textMuted,
   },
 });
