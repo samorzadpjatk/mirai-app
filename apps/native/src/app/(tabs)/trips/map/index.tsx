@@ -15,6 +15,7 @@ import { useMapSharing } from "~/hooks/map";
 import { useMapActions } from "~/hooks/map";
 import { useFileDownload } from "~/hooks/files";
 import { useLocationContext } from "~/contexts/location";
+import { useSelectedTrip } from "~/hooks/trips";
 
 function MapScreenContent({
   onLocationUpdate,
@@ -57,6 +58,7 @@ function MapScreenContent({
 export default function MapScreen() {
   const { session } = useAuth();
   const trpc = useTRPC();
+  const { selectedTripId } = useSelectedTrip();
   const userMyQueryOptions = trpc.user.getMy.queryOptions();
   const { data: currentUser } = useQuery(userMyQueryOptions);
   const [mapTheme, setMapTheme] = useState<"dark" | "light">("dark");
@@ -76,7 +78,7 @@ export default function MapScreen() {
     updateSharing,
     removeUser,
     isRemovingUser,
-  } = useMapSharing(true);
+  } = useMapSharing(true, selectedTripId);
   const { sendLocation } = useMapActions();
   const {
     download: downloadAvatar,

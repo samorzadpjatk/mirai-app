@@ -3,7 +3,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { Alert } from "react-native";
 
-export function useMapSharing(enabledForAllUsersQuery: boolean) {
+export function useMapSharing(
+  enabledForAllUsersQuery: boolean,
+  tripId?: string | null,
+) {
   const trpc = useTRPC();
 
   const sharingQueryOptions = trpc.location.getMySharingSettings.queryOptions();
@@ -12,8 +15,9 @@ export function useMapSharing(enabledForAllUsersQuery: boolean) {
     enabled: true,
   });
 
-  const allUsersQueryOptions =
-    trpc.location.getAllUsersForSharing.queryOptions();
+  const allUsersQueryOptions = trpc.location.getAllUsersForSharing.queryOptions(
+    tripId ? { tripId } : undefined,
+  );
   const { data: allAvailableUsers } = useQuery({
     ...allUsersQueryOptions,
     enabled: enabledForAllUsersQuery,
@@ -82,14 +86,17 @@ export function useMapSharing(enabledForAllUsersQuery: boolean) {
     [sharingSettings],
   );
 
-  const updateSharing = (userIdsToShareWith: string[]) =>
-    updateSharingMutation.mutateAsync({
+  const updateSharing = async (userIdsToShareWith: string[]) => {
+    await updateSharingMutation.mutateAsync({
       isSharingLocation: true,
       userIdsToShareWith,
+      tripId: tripId ?? undefined,
     });
+  };
 
-  const removeUser = (userId: string) =>
-    removeUserMutation.mutateAsync({ userId });
+  const removeUser = async (userId: string) => {
+    await removeUserMutation.mutateAsync({ userId });
+  };
 
   return {
     sharingSettings,
