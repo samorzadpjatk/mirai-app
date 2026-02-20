@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, moderatorProcedure } from "../../api/trpc";
+import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  moderatorProcedure,
+  protectedProcedure,
+} from "../../api/trpc";
 
 const formatUserFullName = (user?: {
   firstName?: string | null;
@@ -181,7 +186,7 @@ export const coinTransactionRouter = createTRPCRouter({
         recentTransactions,
       };
     }),
-  getCoinTransactions: moderatorProcedure
+  getCoinTransactions: protectedProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -190,6 +195,37 @@ export const coinTransactionRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      const participant = await ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: {
+            userId: ctx.dbUser.id,
+            tripId: input.tripId,
+          },
+        },
+        select: { userId: true },
+      });
+
+      if (!participant) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a participant of this trip",
+        });
+      }
+
+      if (input.groupId) {
+        const group = await ctx.db.group.findUnique({
+          where: { id: input.groupId },
+          select: { id: true, tripId: true, isDeleted: true },
+        });
+
+        if (!group || group.tripId !== input.tripId || group.isDeleted) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
+        }
+      }
+
       const where = input.groupId
         ? { groupId: input.groupId, group: { tripId: input.tripId } }
         : { group: { tripId: input.tripId } };
