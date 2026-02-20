@@ -2,6 +2,9 @@ import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,6 +12,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -21,61 +27,49 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type DeliveryType = "instant" | "scheduled_once" | "recurring_daily";
 type AudienceType = "all" | "group";
+type ActivePicker = "date" | "time" | "datetime" | null;
 
 const AUDIENCE_MODE_PARAM = "__audience";
 const AUDIENCE_GROUP_PARAM = "__groupId";
 const DEFAULT_NOTIFICATION_URL = "/alerts";
 
-function parseTime(value: string): { hour: number; minute: number } {
-  const [hourRaw, minuteRaw] = value.trim().split(":");
-  const hour = Number.parseInt(hourRaw ?? "", 10);
-  const minute = Number.parseInt(minuteRaw ?? "", 10);
-
-  if (
-    Number.isNaN(hour) ||
-    Number.isNaN(minute) ||
-    hour < 0 ||
-    hour > 23 ||
-    minute < 0 ||
-    minute > 59
-  ) {
-    throw new Error("Invalid time format");
-  }
-
-  return { hour, minute };
+function buildInitialScheduleDateTime(): Date {
+  const initial = new Date();
+  initial.setDate(initial.getDate() + 1);
+  initial.setHours(13, 0, 0, 0);
+  return initial;
 }
 
-function parseDate(value: string): Date {
-  const [yearRaw, monthRaw, dayRaw] = value.trim().split("-");
-  const year = Number.parseInt(yearRaw ?? "", 10);
-  const month = Number.parseInt(monthRaw ?? "", 10);
-  const day = Number.parseInt(dayRaw ?? "", 10);
-
-  if (
-    Number.isNaN(year) ||
-    Number.isNaN(month) ||
-    Number.isNaN(day) ||
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    day > 31
-  ) {
-    throw new Error("Invalid date format");
-  }
-
-  const date = new Date(year, month - 1, day);
-  if (Number.isNaN(date.getTime())) {
-    throw new Error("Invalid date");
-  }
-
-  return date;
+function formatDateLabel(date: Date): string {
+  return new Intl.DateTimeFormat("pl-PL", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
 }
 
-function formatDateInput(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function formatTimeLabel(date: Date): string {
+  return new Intl.DateTimeFormat("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+function formatDateTimeLabel(date: Date): string {
+  return `${formatDateLabel(date)} • ${formatTimeLabel(date)}`;
+}
+
+function mergePickedDate(base: Date, picked: Date): Date {
+  const next = new Date(base);
+  next.setFullYear(picked.getFullYear(), picked.getMonth(), picked.getDate());
+  return next;
+}
+
+function mergePickedTime(base: Date, picked: Date): Date {
+  const next = new Date(base);
+  next.setHours(picked.getHours(), picked.getMinutes(), 0, 0);
+  return next;
 }
 
 function buildNotificationUrl(audience: AudienceType, groupId?: string): string {
@@ -100,12 +94,6 @@ function getNextDailyOccurrence(hour: number, minute: number): Date {
   }
 
   return candidate;
-}
-
-function combineDateAndTime(date: Date, hour: number, minute: number): Date {
-  const combined = new Date(date);
-  combined.setHours(hour, minute, 0, 0);
-  return combined;
 }
 
 const placeholderLegend = [
@@ -136,17 +124,21 @@ export default function AdminCreateNotificationScreen() {
   const [groupId, setGroupId] = useState<string>("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [scheduleDate, setScheduleDate] = useState<string>(
-    formatDateInput(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+  const [scheduleDateTime, setScheduleDateTime] = useState<Date>(
+    buildInitialScheduleDateTime,
   );
-  const [scheduleTime, setScheduleTime] = useState<string>("13:00");
+  const [activePicker, setActivePicker] = useState<ActivePicker>(null);
+  const [pickerDraftDate, setPickerDraftDate] = useState<Date>(
+    buildInitialScheduleDateTime,
+  );
+  const [isAndroidDateTimeFlow, setIsAndroidDateTimeFlow] = useState(false);
 
   const groupsQuery = useQuery({
     ...trpc.group.getAllNames.queryOptions({ tripId }),
     enabled: !!tripId,
   });
 
-  const groups = groupsQuery.data ?? [];
+  const groups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data]);
 
   const schedulesQueryOptions = trpc.notificationSchedule.getAll.queryOptions({
     ...(tripId ? { filter: { tripId } } : {}),
@@ -185,6 +177,66 @@ export default function AdminCreateNotificationScreen() {
         queryKey: sentNotificationsQueryOptions.queryKey,
       }),
     ]);
+  };
+
+  const openPicker = (mode: Exclude<ActivePicker, null>) => {
+    setPickerDraftDate(scheduleDateTime);
+    setActivePicker(mode);
+  };
+
+  const openDateTimePicker = () => {
+    setPickerDraftDate(scheduleDateTime);
+    if (Platform.OS === "ios") {
+      setActivePicker("datetime");
+      return;
+    }
+    setIsAndroidDateTimeFlow(true);
+    setActivePicker("date");
+  };
+
+  const onPickerChange = (event: DateTimePickerEvent, selected?: Date) => {
+    if (!activePicker) return;
+
+    if (Platform.OS === "android") {
+      if (event.type === "dismissed") {
+        setActivePicker(null);
+        setIsAndroidDateTimeFlow(false);
+        return;
+      }
+
+      if (!selected) return;
+
+      if (activePicker === "date") {
+        const withDate = mergePickedDate(scheduleDateTime, selected);
+        if (isAndroidDateTimeFlow) {
+          setPickerDraftDate(withDate);
+          setActivePicker("time");
+          return;
+        }
+        setScheduleDateTime(withDate);
+        setActivePicker(null);
+        return;
+      }
+
+      const baseDate = isAndroidDateTimeFlow ? pickerDraftDate : scheduleDateTime;
+      const withTime = mergePickedTime(baseDate, selected);
+      setScheduleDateTime(withTime);
+      setActivePicker(null);
+      setIsAndroidDateTimeFlow(false);
+      return;
+    }
+
+    const nextValue =
+      selected &&
+      (activePicker === "datetime"
+        ? selected
+        : activePicker === "date"
+          ? mergePickedDate(scheduleDateTime, selected)
+          : mergePickedTime(scheduleDateTime, selected));
+
+    if (nextValue) {
+      setPickerDraftDate(nextValue);
+    }
   };
 
   const submit = async () => {
@@ -232,7 +284,8 @@ export default function AdminCreateNotificationScreen() {
         return;
       }
 
-      const { hour, minute } = parseTime(scheduleTime);
+      const hour = scheduleDateTime.getHours();
+      const minute = scheduleDateTime.getMinutes();
       const now = new Date();
       const endDate = new Date(now);
       endDate.setFullYear(endDate.getFullYear() + 1);
@@ -263,8 +316,7 @@ export default function AdminCreateNotificationScreen() {
         return;
       }
 
-      const parsedDate = parseDate(scheduleDate);
-      const startDate = combineDateAndTime(parsedDate, hour, minute);
+      const startDate = new Date(scheduleDateTime);
       const minimumDate = new Date(Date.now() + 5 * 60 * 1000);
       if (startDate < minimumDate) {
         Alert.alert(
@@ -436,20 +488,14 @@ export default function AdminCreateNotificationScreen() {
         {deliveryType === "scheduled_once" ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>One-time schedule</Text>
-            <TextInput
-              style={styles.input}
-              value={scheduleDate}
-              onChangeText={setScheduleDate}
-              placeholder="Date (YYYY-MM-DD)"
-              placeholderTextColor={colors.textSecondary}
-            />
-            <TextInput
-              style={styles.input}
-              value={scheduleTime}
-              onChangeText={setScheduleTime}
-              placeholder="Time (HH:MM)"
-              placeholderTextColor={colors.textSecondary}
-            />
+            <TouchableOpacity
+              style={styles.pickerButton}
+              onPress={openDateTimePicker}
+            >
+              <Text style={styles.pickerButtonText}>
+                Date & time: {formatDateTimeLabel(scheduleDateTime)}
+              </Text>
+            </TouchableOpacity>
             <Text style={styles.helperText}>
               Notification will be sent once at the selected date and time.
             </Text>
@@ -459,13 +505,14 @@ export default function AdminCreateNotificationScreen() {
         {deliveryType === "recurring_daily" ? (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recurring schedule</Text>
-            <TextInput
-              style={styles.input}
-              value={scheduleTime}
-              onChangeText={setScheduleTime}
-              placeholder="Daily time (HH:MM)"
-              placeholderTextColor={colors.textSecondary}
-            />
+            <TouchableOpacity
+              style={styles.pickerButton}
+              onPress={() => openPicker("time")}
+            >
+              <Text style={styles.pickerButtonText}>
+                Daily time: {formatTimeLabel(scheduleDateTime)}
+              </Text>
+            </TouchableOpacity>
             <Text style={styles.helperText}>
               Notification will run daily at the selected time.
             </Text>
@@ -499,6 +546,68 @@ export default function AdminCreateNotificationScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      {activePicker && Platform.OS === "android" ? (
+        <DateTimePicker
+          value={activePicker === "time" ? pickerDraftDate : scheduleDateTime}
+          mode={activePicker === "datetime" ? "date" : activePicker}
+          display="default"
+          onChange={onPickerChange}
+        />
+      ) : null}
+
+      <Modal
+        visible={Boolean(activePicker) && Platform.OS === "ios"}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActivePicker(null)}
+      >
+        <Pressable
+          style={styles.pickerOverlay}
+          onPress={() => setActivePicker(null)}
+        >
+          <Pressable
+            style={styles.pickerCard}
+            onPress={(event) => event.stopPropagation()}
+          >
+            {activePicker ? (
+              <DateTimePicker
+                value={pickerDraftDate}
+                mode={activePicker === "datetime" ? "datetime" : activePicker}
+                display="spinner"
+                onChange={onPickerChange}
+              />
+            ) : null}
+            <View style={styles.pickerActions}>
+              <TouchableOpacity
+                style={styles.pickerActionButton}
+                onPress={() => setActivePicker(null)}
+              >
+                <Text style={styles.pickerActionText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.pickerActionButton,
+                  styles.pickerActionButtonPrimary,
+                ]}
+                onPress={() => {
+                  setScheduleDateTime(pickerDraftDate);
+                  setActivePicker(null);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.pickerActionText,
+                    styles.pickerActionTextPrimary,
+                  ]}
+                >
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -572,6 +681,18 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.sm,
   },
+  pickerButton: {
+    backgroundColor: colors.backgroundDark,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  pickerButtonText: {
+    color: colors.white,
+    fontSize: typography.base,
+  },
   groupList: {
     gap: spacing.xs,
   },
@@ -643,5 +764,40 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: typography.base,
     fontWeight: typography.medium,
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: colors.backgroundDarkOpacity80,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  pickerCard: {
+    backgroundColor: colors.cardDark,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  pickerActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  pickerActionButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+  },
+  pickerActionButtonPrimary: {
+    backgroundColor: colors.primaryOpacity20,
+    borderRadius: borderRadius.md,
+  },
+  pickerActionText: {
+    fontSize: typography.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.medium,
+  },
+  pickerActionTextPrimary: {
+    color: colors.primary,
+    fontWeight: typography.bold,
   },
 });

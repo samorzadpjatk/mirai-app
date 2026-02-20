@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -42,11 +42,7 @@ const purchaseStatusMeta: Record<
 
 export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
   const { upload, status: uploadStatus } = useFileUpload();
-
-  // Avoid firing queries without an id
-  if (!rewardId) return null;
-
-  const { data: reward, isLoading } = useReward(rewardId);
+  const { data: reward, isLoading } = useReward(rewardId ?? null);
   const updateReward = useUpdateReward();
   const deleteReward = useDeleteReward();
   const setRewardHidden = useSetRewardHidden();
@@ -57,33 +53,39 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
     description: "",
     availableQuantity: "",
     coinCost: "",
-    image: "",
+    images: [] as string[],
   });
   const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<Record<string, string>>({});
+  const [hydratedRewardId, setHydratedRewardId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (reward) {
-      setForm({
-        name: reward.name,
-        description: reward.description,
-        availableQuantity: String(reward.availableQuantity),
-        coinCost: String(reward.coinCost),
-        image: reward.image ?? "",
-      });
-      const initialCollectionMethods = reward.purchases.reduce<Record<string, string>>(
-        (acc, purchase) => {
-          acc[purchase.id] = purchase.collectionMethod ?? "";
-          return acc;
-        },
-        {},
-      );
-      setCollectionMethodByPurchase(initialCollectionMethods);
-    }
-  }, [reward]);
+  if (reward && hydratedRewardId !== reward.id) {
+    setForm({
+      name: reward.name,
+      description: reward.description,
+      availableQuantity: String(reward.availableQuantity),
+      coinCost: String(reward.coinCost),
+      images:
+        reward.images && reward.images.length > 0
+          ? reward.images
+          : reward.image
+            ? [reward.image]
+            : [],
+    });
+    const initialCollectionMethods = reward.purchases.reduce<Record<string, string>>(
+      (acc, purchase) => {
+        acc[purchase.id] = purchase.collectionMethod ?? "";
+        return acc;
+      },
+      {},
+    );
+    setCollectionMethodByPurchase(initialCollectionMethods);
+    setHydratedRewardId(reward.id);
+  }
 
   const purchasedCount = useMemo(() => reward?.purchases?.length ?? 0, [reward]);
 
   const handleSave = async () => {
+    if (!rewardId) return;
     if (!form.name || !form.description || !form.availableQuantity || !form.coinCost) {
       Alert.alert("Error", "Fill in all required fields");
       return;
@@ -96,7 +98,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
         description: form.description,
         availableQuantity: parseInt(form.availableQuantity, 10),
         coinCost: parseInt(form.coinCost, 10),
-        image: form.image || null,
+        images: form.images,
       });
       Alert.alert("Saved", "Reward has been updated");
       onClose();
@@ -117,16 +119,18 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
         {
           text: "Delete",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteReward.mutateAsync({ id: rewardId });
-              Alert.alert("Deleted", "Reward has been deleted");
-              onClose();
-            } catch (error) {
-              const message =
-                error instanceof Error ? error.message : "Failed to delete reward";
-              Alert.alert("Error", message);
-            }
+          onPress: () => {
+            void (async () => {
+              try {
+                await deleteReward.mutateAsync({ id: rewardId });
+                Alert.alert("Deleted", "Reward has been deleted");
+                onClose();
+              } catch (error) {
+                const message =
+                  error instanceof Error ? error.message : "Failed to delete reward";
+                Alert.alert("Error", message);
+              }
+            })();
           },
         },
       ],
@@ -139,6 +143,13 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
     updatePurchaseStatus.isPending ||
     setRewardHidden.isPending;
   const isUploadingImage = uploadStatus === "uploading";
+  const previewImage =
+    reward?.signedImageUrls?.[0] ??
+    reward?.signedImageUrl ??
+    reward?.images?.[0] ??
+    reward?.image ??
+    form.images[0] ??
+    null;
 
   const handleToggleHidden = async () => {
     if (!reward) return;
@@ -211,7 +222,13 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
           upsert: true,
         });
 
-        setForm((prev) => ({ ...prev, image: storagePath }));
+        setForm((prev) => ({
+          ...prev,
+          images:
+            prev.images.length > 0
+              ? [storagePath, ...prev.images.slice(1)]
+              : [storagePath],
+        }));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to upload image";
@@ -220,15 +237,18 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
   };
 
   const handleRemoveImage = async () => {
+    if (!rewardId) return;
     try {
-      await updateReward.mutateAsync({ id: rewardId, image: null });
-      setForm((prev) => ({ ...prev, image: "" }));
+      await updateReward.mutateAsync({ id: rewardId, images: [] });
+      setForm((prev) => ({ ...prev, images: [] }));
       Alert.alert("Deleted", "Reward image has been removed");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to remove image";
       Alert.alert("Error", message);
     }
   };
+
+  if (!rewardId) return null;
 
   return (
     <Modal
@@ -270,10 +290,10 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
           </View>
         ) : (
           <ScrollView style={{ padding: 24 }}>
-            {(reward.signedImageUrl ?? reward.image ?? form.image) && (
+            {previewImage && (
               <View style={{ marginBottom: 24 }}>
                 <Image
-                  source={{ uri: reward.signedImageUrl ?? reward.image ?? form.image }}
+                  source={{ uri: previewImage }}
                   style={{ width: "100%", aspectRatio: 1, borderRadius: 12, backgroundColor: "#0f2323" }}
                   resizeMode="cover"
                 />
@@ -311,7 +331,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
               </View>
             )}
 
-            {!reward.image && !form.image && (
+            {!previewImage && (
               <TouchableOpacity
                 onPress={handlePickImage}
                 disabled={isUploadingImage}
