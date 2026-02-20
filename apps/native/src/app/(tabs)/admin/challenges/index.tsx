@@ -788,6 +788,22 @@ export default function AdminChallengesScreen() {
                       style={{ padding: 8 }}
                       onPress={() => {
                         router.push({
+                          pathname: "/admin/challenges/submissions",
+                          params: { tripId, challengeId: challenge.id },
+                        });
+                      }}
+                    >
+                      <Ionicons
+                        name="images"
+                        size={20}
+                        color="#9ca3af"
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={{ padding: 8 }}
+                      onPress={() => {
+                        router.push({
                           pathname: "/admin/challenges/judgement",
                           params: { tripId, challengeId: challenge.id },
                         });

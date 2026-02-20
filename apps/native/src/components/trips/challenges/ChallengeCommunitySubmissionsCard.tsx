@@ -13,6 +13,7 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
+import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface CommunitySubmission {
@@ -50,6 +51,7 @@ export function ChallengeCommunitySubmissionsCard({
   submissions,
   showPodium,
 }: ChallengeCommunitySubmissionsCardProps) {
+  const insets = useAppSafeAreaInsets();
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const galleryListRef = useRef<FlatList<CommunitySubmission>>(null);
@@ -250,9 +252,19 @@ export function ChallengeCommunitySubmissionsCard({
         </View>
       )}
 
-      <Modal visible={isGalleryOpen} animationType="slide" onRequestClose={closeGallery}>
+      <Modal
+        visible={isGalleryOpen}
+        animationType="slide"
+        onRequestClose={closeGallery}
+        presentationStyle="fullScreen"
+      >
         <View style={styles.fullscreen}>
-          <View style={styles.fullscreenHeader}>
+          <View
+            style={[
+              styles.fullscreenHeader,
+              { paddingTop: insets.top + spacing.sm },
+            ]}
+          >
             <Text style={styles.fullscreenTitle}>Groups submissions</Text>
             <View style={styles.fullscreenHeaderRight}>
               <Text style={styles.fullscreenCounter}>
@@ -270,6 +282,7 @@ export function ChallengeCommunitySubmissionsCard({
             ref={galleryListRef}
             data={gallerySubmissions}
             keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: insets.bottom + spacing.md }}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -296,6 +309,7 @@ export function ChallengeCommunitySubmissionsCard({
                 submission={item}
                 width={width}
                 height={height}
+                topInset={insets.top}
               />
             )}
           />
@@ -362,7 +376,11 @@ function SubmissionTile({
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : file?.uri ? (
-          <Image source={{ uri: file.uri }} style={styles.tileImage} />
+          <Image
+            source={{ uri: file.uri }}
+            style={styles.tileImage}
+            resizeMode="contain"
+          />
         ) : (
           <View style={styles.tileFallback}>
             <Ionicons name="image-outline" size={16} color={colors.textMuted} />
@@ -383,10 +401,12 @@ function FullscreenSubmissionSlide({
   submission,
   width,
   height,
+  topInset,
 }: {
   submission: CommunitySubmission;
   width: number;
   height: number;
+  topInset: number;
 }) {
   const imagePath = submission.imageIds[0] ?? "";
   const { download, status, file, reset, abort } = useFileDownload();
@@ -410,7 +430,12 @@ function FullscreenSubmissionSlide({
   }, [abort, download, imagePath, reset]);
 
   return (
-    <View style={[styles.fullscreenSlide, { width, minHeight: height - 92 }]}>
+    <View
+      style={[
+        styles.fullscreenSlide,
+        { width, minHeight: height - (topInset + 92) },
+      ]}
+    >
       <View style={styles.fullscreenImageWrap}>
         {status === "loading" ? (
           <View style={styles.fullscreenFallback}>

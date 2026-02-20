@@ -95,6 +95,13 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="challenges/submissions"
+          options={{
+            title: "Challenge submissions",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
           name="activity/index"
           options={{
             title: "Activity",
