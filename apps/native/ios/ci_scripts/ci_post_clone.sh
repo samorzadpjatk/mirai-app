@@ -9,6 +9,7 @@ cd $CI_PRIMARY_REPOSITORY_PATH
 echo "Working dir: $(pwd)"
 
 # Zainstaluj Node i CocoaPods przez Homebrew
+export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_CLEANUP=TRUE
 brew install node cocoapods
 
