@@ -63,6 +63,67 @@ const resolveRewardImage = async (
   return data.signedUrl;
 };
 
+const parseRewardImages = (image: string | null | undefined): string[] => {
+  if (!image) return [];
+
+  const trimmed = image.trim();
+  if (!trimmed) return [];
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0);
+    }
+  } catch {
+    // Legacy single-image format.
+  }
+
+  return [trimmed];
+};
+
+const normalizeRewardImagesInput = (images: string[] | undefined): string[] =>
+  (images ?? [])
+    .map((image) => image.trim())
+    .filter((image) => image.length > 0);
+
+const serializeRewardImages = (images: string[]): string | null => {
+  if (images.length === 0) return null;
+  if (images.length === 1) return images[0] ?? null;
+  return JSON.stringify(images);
+};
+
+const resolveRewardImageData = async (
+  supabase: {
+    storage: {
+      from: (bucket: string) => {
+        createSignedUrl: (
+          path: string,
+          expiresIn: number,
+        ) => Promise<{ data: { signedUrl?: string | null } | null; error: unknown }>;
+      };
+    };
+  },
+  image: string | null | undefined,
+) => {
+  const images = parseRewardImages(image);
+  const signedImageCandidates = await Promise.all(
+    images.map((item) => resolveRewardImage(supabase, item)),
+  );
+  const signedImageUrls = signedImageCandidates.filter(
+    (url): url is string => typeof url === "string" && url.length > 0,
+  );
+
+  return {
+    image: images[0] ?? null,
+    signedImageUrl: signedImageCandidates[0] ?? null,
+    images,
+    signedImageUrls,
+  };
+};
+
 export const rewardRouter = createTRPCRouter({
   // Get all rewards for a trip
   getByTrip: protectedProcedure
@@ -91,8 +152,8 @@ export const rewardRouter = createTRPCRouter({
 
       const rewardsWithSignedImages = await Promise.all(
         rewards.map(async (reward) => {
-          const signedImageUrl = await resolveRewardImage(ctx.supabase, reward.image);
-          return { ...reward, signedImageUrl };
+          const imageData = await resolveRewardImageData(ctx.supabase, reward.image);
+          return { ...reward, ...imageData };
         }),
       );
 
@@ -154,8 +215,8 @@ export const rewardRouter = createTRPCRouter({
 
       const rewardsWithSignedImages = await Promise.all(
         rewards.map(async (reward) => {
-          const signedImageUrl = await resolveRewardImage(ctx.supabase, reward.image);
-          return { ...reward, signedImageUrl };
+          const imageData = await resolveRewardImageData(ctx.supabase, reward.image);
+          return { ...reward, ...imageData };
         }),
       );
 
@@ -220,9 +281,9 @@ export const rewardRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
       }
 
-      const signedImageUrl = await resolveRewardImage(ctx.supabase, reward.image);
+      const imageData = await resolveRewardImageData(ctx.supabase, reward.image);
 
-      return { ...reward, signedImageUrl };
+      return { ...reward, ...imageData };
     }),
 
   // Create new reward (admin/moderator only)
@@ -233,18 +294,27 @@ export const rewardRouter = createTRPCRouter({
         description: z.string().min(1),
         availableQuantity: z.number().min(0),
         image: z.string().optional(),
+        images: z.array(z.string()).optional(),
         coinCost: z.number().min(1),
         isHidden: z.boolean().optional(),
         tripId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const normalizedImages = normalizeRewardImagesInput(
+        input.images && input.images.length > 0
+          ? input.images
+          : input.image
+            ? [input.image]
+            : [],
+      );
+
       return await ctx.db.reward.create({
         data: {
           name: input.name,
           description: input.description,
           availableQuantity: input.availableQuantity,
-          image: input.image,
+          image: serializeRewardImages(normalizedImages),
           coinCost: input.coinCost,
           isHidden: input.isHidden ?? false,
           tripId: input.tripId,
@@ -271,21 +341,36 @@ export const rewardRouter = createTRPCRouter({
         description: z.string().min(1).optional(),
         availableQuantity: z.number().min(0).optional(),
         image: z.string().nullable().optional(),
+        images: z.array(z.string()).optional(),
         coinCost: z.number().min(1).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
-      const { image, ...restUpdate } = updateData;
+      const { image, images, ...restUpdate } = updateData;
+      const hasImagesProp = Object.prototype.hasOwnProperty.call(
+        updateData,
+        "images",
+      );
+      const hasImageProp = Object.prototype.hasOwnProperty.call(
+        updateData,
+        "image",
+      );
 
       const reward = await ctx.db.reward.update({
         where: { id },
         data: {
           ...restUpdate,
-          ...(Object.prototype.hasOwnProperty.call(updateData, "image")
-            ? { image: image ?? null }
-            : {}),
+          ...(hasImagesProp
+            ? {
+                image: serializeRewardImages(
+                  normalizeRewardImagesInput(images),
+                ),
+              }
+            : hasImageProp
+              ? { image: image ?? null }
+              : {}),
           updatedAt: new Date(),
         },
         include: {

@@ -4,6 +4,8 @@ export interface Reward {
   description: string;
   availableQuantity: number;
   image?: string;
+  images?: string[];
+  signedImageUrls?: string[];
   coinCost: number;
   createdBy: string;
   createdAt: Date;
@@ -16,6 +18,7 @@ export interface CreateRewardInput {
   description: string;
   availableQuantity: number;
   image?: string;
+  images?: string[];
   coinCost: number;
   isHidden?: boolean;
   tripId: string;
@@ -26,6 +29,7 @@ export interface UpdateRewardInput {
   description?: string;
   availableQuantity?: number;
   image?: string;
+  images?: string[];
   coinCost?: number;
 }
 
@@ -59,6 +63,8 @@ export interface RewardListItem {
   availableQuantity: number;
   image: string | null;
   signedImageUrl?: string | null;
+  images?: string[];
+  signedImageUrls?: string[];
   coinCost: number;
   createdBy: {
     id: string;

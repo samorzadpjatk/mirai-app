@@ -35,6 +35,7 @@ import { ChallengeTimeLeftCard } from "~/components/trips/challenges/ChallengeTi
 import { ChallengeUploadProgressCard } from "~/components/trips/challenges/ChallengeUploadProgressCard";
 import { ExistingSubmissionCard } from "~/components/trips/challenges/ExistingSubmissionCard";
 import { ChallengeCommunitySubmissionsCard } from "~/components/trips/challenges/ChallengeCommunitySubmissionsCard";
+import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
 
@@ -69,7 +70,9 @@ export default function ChallengeDetailScreen() {
     isLoading: cameraLoading,
     capturedImage,
     setCapturedImage,
-    handleOpenCamera,
+    submitAsset,
+    submitCapturedPhoto,
+    pickImageFromGallery,
     uploadStatus,
     uploadProgress,
   } = useChallengeCapture({ tripId, challengeId });
@@ -109,6 +112,8 @@ export default function ChallengeDetailScreen() {
   });
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
+  const [isPhotoCameraOpen, setIsPhotoCameraOpen] = useState(false);
+  const [isUsingCapturedPhoto, setIsUsingCapturedPhoto] = useState(false);
   const [hasScannedQrThisSession, setHasScannedQrThisSession] = useState(false);
   const [isTextInputOpen, setIsTextInputOpen] = useState(false);
   const [textInputValue, setTextInputValue] = useState("");
@@ -273,6 +278,62 @@ export default function ChallengeDetailScreen() {
       const message =
         error instanceof Error ? error.message : "Failed to submit";
       Alert.alert("Incorrect", message);
+    }
+  };
+
+  const handleOpenChallengeCamera = () => {
+    void (async () => {
+      const permission = cameraPermission?.granted
+        ? cameraPermission
+        : await requestCameraPermission();
+      if (!permission?.granted) {
+        Alert.alert(
+          "Permission required",
+          "Camera permission is needed to complete this challenge.",
+        );
+        return;
+      }
+      setIsPhotoCameraOpen(true);
+    })();
+  };
+
+  const handleImageChallengeAction = () => {
+    const challengeName = challenge.name;
+    const challengePoints = challenge.basePoints ?? 0;
+
+    Alert.alert(
+      `${challengeName}`,
+      `Complete this challenge to earn ${challengePoints} points!`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Choose from Gallery",
+          onPress: () =>
+            void pickImageFromGallery((asset) =>
+              submitAsset(asset, challengeName, challengePoints),
+            ),
+        },
+        {
+          text: "Take Photo",
+          onPress: handleOpenChallengeCamera,
+        },
+      ],
+    );
+  };
+
+  const handleUseChallengePhoto = async (photo: {
+    uri: string;
+    mimeType: "image/jpeg" | "image/png";
+  }) => {
+    try {
+      setIsUsingCapturedPhoto(true);
+      await submitCapturedPhoto(photo, challenge.name, challenge.basePoints ?? 0);
+      setIsPhotoCameraOpen(false);
+    } finally {
+      setIsUsingCapturedPhoto(false);
     }
   };
 
@@ -494,10 +555,7 @@ export default function ChallengeDetailScreen() {
                   setIsTextInputOpen(true);
                   return;
                 }
-                void handleOpenCamera(
-                  challenge?.name,
-                  challenge?.basePoints ?? 0,
-                );
+                void handleImageChallengeAction();
               }}
             />
           )}
@@ -570,6 +628,16 @@ export default function ChallengeDetailScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <PhotoCaptureModal
+        visible={isPhotoCameraOpen}
+        title={challenge.name}
+        facing="back"
+        mirror={false}
+        isUsingPhoto={isUsingCapturedPhoto}
+        onClose={() => setIsPhotoCameraOpen(false)}
+        onUsePhoto={handleUseChallengePhoto}
+      />
 
       <Modal
         visible={isQrScannerOpen}

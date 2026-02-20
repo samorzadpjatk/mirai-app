@@ -27,7 +27,7 @@ interface NewRewardState {
   description: string;
   availableQuantity: string;
   coinCost: string;
-  image: string;
+  images: string[];
   isHidden: boolean;
 }
 
@@ -62,17 +62,28 @@ const getImageContentType = (extension: string) => {
   }
 };
 
+const buildUniqueRewardImageName = (asset: ImagePicker.ImagePickerAsset, index: number) => {
+  const extension = getImageExtension(asset);
+  const baseName = (asset.fileName?.split(".").slice(0, -1).join(".") ?? "reward-image")
+    .replace(/[^a-zA-Z0-9_-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const safeBaseName = baseName.length > 0 ? baseName : "reward-image";
+  const suffix = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${safeBaseName}-${suffix}.${extension}`;
+};
+
 export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
   const createReward = useCreateReward();
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [imagePreviewUris, setImagePreviewUris] = useState<string[]>([]);
 
   const [newReward, setNewReward] = useState<NewRewardState>({
     name: "",
     description: "",
     availableQuantity: "",
     coinCost: "",
-    image: "",
+    images: [],
     isHidden: false,
   });
 
@@ -101,7 +112,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
         description: newReward.description,
         availableQuantity: parseInt(newReward.availableQuantity, 10),
         coinCost: parseInt(newReward.coinCost, 10),
-        image: newReward.image || undefined,
+        images: newReward.images,
         isHidden: newReward.isHidden,
         tripId: tripIdToUse,
       });
@@ -111,10 +122,10 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
         description: "",
         availableQuantity: "",
         coinCost: "",
-        image: "",
+        images: [],
         isHidden: false,
       });
-      setImagePreviewUri(null);
+      setImagePreviewUris([]);
       Alert.alert("Success", "Reward has been created");
       onClose();
     } catch {
@@ -126,36 +137,53 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: "images",
-        allowsEditing: true,
-        aspect: [1, 1],
+        allowsEditing: false,
+        allowsMultipleSelection: true,
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        const extension = getImageExtension(asset);
-        const fileName =
-          asset.fileName?.trim() ??
-          `reward-image-${Date.now()}.${extension}`;
-        
+      if (result.canceled || result.assets.length === 0) return;
+
+      const nextStoragePaths: string[] = [];
+      const nextPreviewUris: string[] = [];
+
+      for (const [index, asset] of result.assets.entries()) {
+        const fileName = buildUniqueRewardImageName(asset, index);
         const storagePath = `rewards/${fileName}`;
-        const contentType = getImageContentType(extension);
+        const contentType = getImageContentType(getImageExtension(asset));
 
         await upload({
           storagePath,
           fileUri: asset.uri,
           fileName,
           contentType,
+          upsert: true,
         });
 
-        setNewReward((prev) => ({ ...prev, image: storagePath }));
-        setImagePreviewUri(asset.uri);
+        nextStoragePaths.push(storagePath);
+        nextPreviewUris.push(asset.uri);
       }
+
+      setNewReward((prev) => ({
+        ...prev,
+        images: [...prev.images, ...nextStoragePaths],
+      }));
+      setImagePreviewUris((prev) => [...prev, ...nextPreviewUris]);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to upload image";
       Alert.alert("Upload error", message);
     }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setNewReward((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, imageIndex) => imageIndex !== index),
+    }));
+    setImagePreviewUris((prev) =>
+      prev.filter((_, imageIndex) => imageIndex !== index),
+    );
   };
 
   return (
@@ -310,36 +338,63 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
 
           <View style={{ marginBottom: 20 }}>
             <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-              Reward image (optional)
+              Reward images (optional)
             </Text>
             
-            {newReward.image ? (
-              <View style={{ position: "relative" }}>
-                <Image
-                  source={{ uri: imagePreviewUri ?? newReward.image }}
-                  style={{
-                    width: "100%",
-                    height: 120,
-                    borderRadius: 12,
-                    backgroundColor: "#0f2323",
-                  }}
-                  resizeMode="cover"
-                />
+            {newReward.images.length > 0 ? (
+              <View style={{ gap: 10 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                  {newReward.images.map((imagePath, index) => (
+                    <View key={`${imagePath}-${index}`} style={{ position: "relative" }}>
+                      <Image
+                        source={{ uri: imagePreviewUris[index] ?? imagePath }}
+                        style={{
+                          width: 110,
+                          height: 110,
+                          borderRadius: 12,
+                          backgroundColor: "#0f2323",
+                        }}
+                        resizeMode="cover"
+                      />
+                      <TouchableOpacity
+                        onPress={() => handleRemoveImage(index)}
+                        style={{
+                          position: "absolute",
+                          top: 6,
+                          right: 6,
+                          backgroundColor: "rgba(0,0,0,0.75)",
+                          borderRadius: 16,
+                          padding: 4,
+                        }}
+                      >
+                        <Ionicons name="close" size={14} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
                 <TouchableOpacity
-                  onPress={() => {
-                    setNewReward({ ...newReward, image: "" });
-                    setImagePreviewUri(null);
-                  }}
+                  onPress={handlePickImage}
+                  disabled={isUploadingImage}
                   style={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    backgroundColor: "rgba(0,0,0,0.7)",
-                    borderRadius: 16,
-                    padding: 4,
+                    backgroundColor: "#0f2323",
+                    borderWidth: 1,
+                    borderColor: "#273a3a",
+                    borderRadius: 12,
+                    paddingVertical: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  <Ionicons name="close" size={16} color="#fff" />
+                  {isUploadingImage ? (
+                    <View style={{ alignItems: "center" }}>
+                      <ActivityIndicator size="small" color="#00ced1" />
+                      <Text style={{ color: "#9ca3af", marginTop: 8, fontSize: 12 }}>
+                        Uploading{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={{ color: "#9ca3af" }}>Add more images</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             ) : (
@@ -367,7 +422,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                   <View style={{ alignItems: "center" }}>
                     <Ionicons name="image" size={24} color="#6b7280" />
                     <Text style={{ color: "#6b7280", marginTop: 8 }}>
-                      Add image
+                      Add images
                     </Text>
                   </View>
                 )}

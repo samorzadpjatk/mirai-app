@@ -10,6 +10,11 @@ interface ChallengeCaptureOptions {
   tripId: string | undefined;
   challengeId: string | undefined;
 }
+interface ChallengeUploadAsset {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+}
 
 export function useChallengeCapture({
   tripId,
@@ -36,7 +41,7 @@ export function useChallengeCapture({
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
 
-  const resolveExtension = useCallback((asset: ImagePicker.ImagePickerAsset) => {
+  const resolveExtension = useCallback((asset: ChallengeUploadAsset) => {
     if (asset.fileName) {
       const parts = asset.fileName.split(".");
       if (parts.length > 1) {
@@ -66,7 +71,7 @@ export function useChallengeCapture({
   }, []);
 
   const resolveFileName = useCallback(
-    (asset: ImagePicker.ImagePickerAsset, extension: string) => {
+    (asset: ChallengeUploadAsset, extension: string) => {
       if (asset.fileName && asset.fileName.trim().length > 0) {
         return asset.fileName;
       }
@@ -142,7 +147,7 @@ export function useChallengeCapture({
 
   const submitAsset = useCallback(
     async (
-      asset: ImagePicker.ImagePickerAsset,
+      asset: ChallengeUploadAsset,
       challengeName?: string,
       points?: number,
     ) => {
@@ -209,6 +214,7 @@ export function useChallengeCapture({
     },
     [
       challengeId,
+      deleteSubmissionMutation,
       resolveExtension,
       resolveFileName,
       resolveMimeType,
@@ -220,27 +226,8 @@ export function useChallengeCapture({
     ],
   );
 
-  const takePhoto = async (
-    onSuccess?: (asset: ImagePicker.ImagePickerAsset) => Promise<void>,
-  ) => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: "images",
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        await onSuccess?.(result.assets[0]);
-      }
-    } catch {
-      Alert.alert("Error", "Failed to take photo");
-    }
-  };
-
   const pickImageFromGallery = async (
-    onSuccess?: (asset: ImagePicker.ImagePickerAsset) => Promise<void>,
+    onSuccess?: (asset: ChallengeUploadAsset) => Promise<void>,
   ) => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -258,58 +245,25 @@ export function useChallengeCapture({
     }
   };
 
-  const handleOpenCamera = async (
-    challengeName?: string,
-    points?: number,
-  ) => {
-    if (isLoading || submissionMutation.isPending || currentUserLoading) return;
-    if (!userTrip) {
-      Alert.alert("Error", "User is not part of the trip.");
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-
-      if (status !== ImagePicker.PermissionStatus.GRANTED) {
-        Alert.alert(
-          "Permission Required",
-          "Camera permission is needed to complete this challenge.",
-          [{ text: "OK" }],
-        );
-        return;
-      }
-
-      Alert.alert(
-        `${challengeName ?? "Challenge"}`,
-        `Complete this challenge to earn ${points ?? 0} points!`,
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Choose from Gallery",
-            onPress: () =>
-              void pickImageFromGallery((asset) =>
-                submitAsset(asset, challengeName, points),
-              ),
-          },
-          {
-            text: "Take Photo",
-            onPress: () =>
-              void takePhoto((asset) =>
-                submitAsset(asset, challengeName, points),
-              ),
-          },
-        ],
+  const submitCapturedPhoto = useCallback(
+    async (
+      photo: { uri: string; mimeType: "image/jpeg" | "image/png" },
+      challengeName?: string,
+      points?: number,
+    ) => {
+      const extension = photo.mimeType === "image/png" ? "png" : "jpg";
+      await submitAsset(
+        {
+          uri: photo.uri,
+          fileName: `challenge-${Date.now()}.${extension}`,
+          mimeType: photo.mimeType,
+        },
+        challengeName,
+        points,
       );
-    } catch {
-      Alert.alert("Error", "Failed to access camera");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [submitAsset],
+  );
 
   const resetCapture = useCallback(() => {
     abortUpload();
@@ -342,8 +296,8 @@ export function useChallengeCapture({
     setCapturedImage,
     resetCapture,
     handleRetake,
-    handleOpenCamera,
-    takePhoto,
+    submitAsset,
+    submitCapturedPhoto,
     pickImageFromGallery,
     showSuccessAlert,
     uploadStatus,

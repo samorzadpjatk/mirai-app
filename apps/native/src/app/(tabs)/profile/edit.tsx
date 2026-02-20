@@ -11,15 +11,22 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { useFileDownload, useFileUpload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 const sanitizeNameInput = (value: string) => value.replace(/\d+/g, "");
+interface UploadAsset {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+}
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -32,6 +39,11 @@ export default function EditProfileScreen() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [isPicking, setIsPicking] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [localAvatarPreviewUri, setLocalAvatarPreviewUri] = useState<
+    string | null
+  >(null);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   const {
     upload,
@@ -110,70 +122,28 @@ export default function EditProfileScreen() {
 
   const isUploading = uploadStatus === "uploading";
   const isDownloading = avatarStatus === "loading";
-  const isBusy = isUploading || isDownloading || isPicking;
-  const avatarUri = avatarFile?.uri
+  const isBusy = isUploading || isDownloading || isPicking || isCameraOpen;
+  const remoteAvatarUri = avatarFile?.uri
     ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt ?? "")}`
     : null;
+  const avatarUri = localAvatarPreviewUri ?? remoteAvatarUri;
 
-  const pickAvatar = useCallback(
-    async (source: "camera" | "library") => {
+  const uploadAvatarAsset = useCallback(
+    async (asset: UploadAsset) => {
       if (!currentUser?.id || !avatarStoragePath) return;
 
-      try {
-        setIsPicking(true);
-        const permissionResult =
-          source === "camera"
-            ? await ImagePicker.requestCameraPermissionsAsync()
-            : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      resetUpload();
+      setLocalAvatarPreviewUri(asset.uri);
+      await upload({
+        storagePath: avatarStoragePath,
+        fileUri: asset.uri,
+        fileName: asset.fileName ?? `avatar-${currentUser.id}.jpg`,
+        contentType: asset.mimeType ?? "image/jpeg",
+        upsert: true,
+      });
 
-        if (
-          permissionResult.status !== ImagePicker.PermissionStatus.GRANTED
-        ) {
-          Alert.alert(
-            "Permission Required",
-            source === "camera"
-              ? "Camera access is required to take a profile photo."
-              : "Photo library access is required to pick a profile photo.",
-          );
-          return;
-        }
-
-        const result =
-          source === "camera"
-            ? await ImagePicker.launchCameraAsync({
-                mediaTypes: "images",
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 0.85,
-              })
-            : await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: "images",
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 0.85,
-              });
-
-        if (result.canceled || !result.assets[0]) return;
-        const asset = result.assets[0];
-
-        resetUpload();
-        await upload({
-          storagePath: avatarStoragePath,
-          fileUri: asset.uri,
-          fileName: asset.fileName ?? `avatar-${currentUser.id}.jpg`,
-          contentType: asset.mimeType ?? "image/jpeg",
-          upsert: true,
-        });
-
-        await updateAvatarMutation.mutateAsync({ hasAvatar: true });
-        await refreshAvatar(true);
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to update avatar";
-        Alert.alert("Upload Failed", message);
-      } finally {
-        setIsPicking(false);
-      }
+      await updateAvatarMutation.mutateAsync({ hasAvatar: true });
+      await refreshAvatar(true);
     },
     [
       avatarStoragePath,
@@ -185,14 +155,92 @@ export default function EditProfileScreen() {
     ],
   );
 
+  const pickAvatarFromLibrary = useCallback(async () => {
+    if (!currentUser?.id || !avatarStoragePath) return;
+
+    try {
+      setIsPicking(true);
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (permissionResult.status !== ImagePicker.PermissionStatus.GRANTED) {
+        Alert.alert(
+          "Permission Required",
+          "Photo library access is required to pick a profile photo.",
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "images",
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+
+      if (result.canceled || !result.assets[0]) return;
+      await uploadAvatarAsset(result.assets[0]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update avatar";
+      Alert.alert("Upload Failed", message);
+    } finally {
+      setIsPicking(false);
+    }
+  }, [avatarStoragePath, currentUser?.id, uploadAvatarAsset]);
+
+  const openCamera = useCallback(async () => {
+    if (!currentUser?.id || !avatarStoragePath) return;
+    if (!cameraPermission?.granted) {
+      const granted = await requestCameraPermission();
+      if (!granted.granted) {
+        Alert.alert(
+          "Permission Required",
+          "Camera access is required to take a profile photo.",
+        );
+        return;
+      }
+    }
+
+    setIsCameraOpen(true);
+  }, [
+    avatarStoragePath,
+    cameraPermission,
+    currentUser?.id,
+    requestCameraPermission,
+  ]);
+
+  const handleUseCapturedPhoto = useCallback(
+    async (photo: { uri: string; mimeType: "image/jpeg" | "image/png" }) => {
+      if (!currentUser?.id) return;
+
+      try {
+        setIsPicking(true);
+        await uploadAvatarAsset({
+          uri: photo.uri,
+          fileName: `avatar-${currentUser.id}.jpg`,
+          mimeType: photo.mimeType,
+        });
+        setIsCameraOpen(false);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to update avatar";
+        Alert.alert("Upload Failed", message);
+      } finally {
+        setIsPicking(false);
+      }
+    },
+    [currentUser?.id, uploadAvatarAsset],
+  );
+
   const handleChangePhoto = useCallback(() => {
     if (isBusy) return;
     Alert.alert("Update Photo", "Choose a source", [
       { text: "Cancel", style: "cancel" },
-      { text: "Choose Photo", onPress: () => void pickAvatar("library") },
-      { text: "Take Photo", onPress: () => void pickAvatar("camera") },
+      { text: "Choose Photo", onPress: () => void pickAvatarFromLibrary() },
+      { text: "Take Photo", onPress: () => void openCamera() },
     ]);
-  }, [isBusy, pickAvatar]);
+  }, [isBusy, openCamera, pickAvatarFromLibrary]);
 
   const handleSave = useCallback(async () => {
     const trimmedFirstName = firstName.trim();
@@ -342,6 +390,16 @@ export default function EditProfileScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+      <PhotoCaptureModal
+        visible={isCameraOpen}
+        title="Take Profile Photo"
+        facing="front"
+        mirror={false}
+        forceHorizontalFlip
+        isUsingPhoto={isPicking}
+        onClose={() => setIsCameraOpen(false)}
+        onUsePhoto={handleUseCapturedPhoto}
+      />
     </View>
   );
 }
