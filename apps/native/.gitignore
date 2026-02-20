@@ -39,6 +39,8 @@ yarn-error.*
 
 # generated native folders
 /ios
+!/ios/ci_scripts/
+!/ios/ci_scripts/**
 /android
 
 .tamagui
