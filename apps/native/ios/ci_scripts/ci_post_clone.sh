@@ -8,11 +8,20 @@ cd $CI_PRIMARY_REPOSITORY_PATH
 
 echo "Working dir: $(pwd)"
 
-# Zainstaluj node i cocoapods (Xcode Cloud nie ma ich domyślnie)
+# Zainstaluj Node i CocoaPods przez Homebrew
+export HOMEBREW_NO_INSTALL_CLEANUP=TRUE
 brew install node cocoapods
 
-# Zainstaluj node_modules (z root monorepo)
-npm install
+# Zainstaluj Bun (obsługuje workspace:*)
+curl -fsSL https://bun.sh/install | bash
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Sprawdź czy bun jest dostępny
+bun --version
+
+# Zainstaluj dependencies przez Bun (nie npm!)
+bun install
 # lub: yarn install / pnpm install
 
 # Wygeneruj zmienne środowiskowe (opcjonalnie)
