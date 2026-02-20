@@ -22,6 +22,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 
+const MAP_PDF_URL =
+  "https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf";
+const MAP_PDF_FILE_NAME = "Verbier-Piste-Ski-Map-2024-25.pdf";
+const INFOPACK_PDF_URL =
+  "https://supabase.sspj.online/storage/v1/object/public/files-public/infopack/wintegral-infopack-20022026.pdf";
+const INFOPACK_PDF_FILE_NAME = "wintegral-infopack-20022026.pdf";
+
 export default function TripInfoScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -30,7 +37,9 @@ export default function TripInfoScreen() {
   const [isPdfModalVisible, setIsPdfModalVisible] = useState(false);
   const [isInsuranceModalVisible, setIsInsuranceModalVisible] = useState(false);
   const [pdfUri, setPdfUri] = useState<string | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [pdfModalTitle, setPdfModalTitle] = useState("Ski Map PDF");
+  const [isMapDownloading, setIsMapDownloading] = useState(false);
+  const [isInfopackDownloading, setIsInfopackDownloading] = useState(false);
   const [isPdfDownloaded, setIsPdfDownloaded] = useState(false);
   const [isInfopackDownloaded, setIsInfopackDownloaded] = useState(false);
   const insets = useAppSafeAreaInsets();
@@ -42,11 +51,11 @@ export default function TripInfoScreen() {
         const pdfDir = new Directory(Paths.document, "pdfs");
 
         // Check PDF Map
-        const pdfFile = new File(pdfDir, "Verbier-Piste-Ski-Map-2024-25.pdf");
+        const pdfFile = new File(pdfDir, MAP_PDF_FILE_NAME);
         setIsPdfDownloaded(pdfFile.exists);
 
         // Check Infopack
-        const infopackFile = new File(pdfDir, "Infopack.pdf");
+        const infopackFile = new File(pdfDir, INFOPACK_PDF_FILE_NAME);
         setIsInfopackDownloaded(infopackFile.exists);
 
         console.log("PDF downloaded:", pdfFile.exists);
@@ -67,9 +76,58 @@ export default function TripInfoScreen() {
     });
   };
 
-  const handleInfopakPress = () => {
-    // Open PDF or document
-    console.log("Open Infopack");
+  const handleInfopakPress = async () => {
+    try {
+      setIsInfopackDownloading(true);
+
+      const pdfDir = new Directory(Paths.document, "pdfs");
+      if (!pdfDir.exists) {
+        void pdfDir.create();
+      }
+
+      const file = new File(pdfDir, INFOPACK_PDF_FILE_NAME);
+
+      if (file.exists) {
+        setPdfModalTitle("Infopack PDF");
+        setPdfUri(file.uri);
+        setIsPdfModalVisible(true);
+        setIsInfopackDownloading(false);
+        return;
+      }
+
+      try {
+        const downloadedFile = await File.downloadFileAsync(
+          INFOPACK_PDF_URL,
+          pdfDir,
+        );
+        setPdfModalTitle("Infopack PDF");
+        setPdfUri(downloadedFile.uri);
+        setIsPdfModalVisible(true);
+        setIsInfopackDownloaded(true);
+      } catch (downloadError) {
+        const maybeDownloadError = downloadError as
+          | { code?: string }
+          | undefined;
+        if (maybeDownloadError?.code === "ERR_DESTINATION_ALREADY_EXISTS") {
+          const existingFile = new File(pdfDir, INFOPACK_PDF_FILE_NAME);
+          setPdfModalTitle("Infopack PDF");
+          setPdfUri(existingFile.uri);
+          setIsPdfModalVisible(true);
+          setIsInfopackDownloaded(true);
+          return;
+        }
+
+        throw downloadError;
+      }
+    } catch (error) {
+      console.error("Error handling Infopack PDF:", error);
+      Alert.alert(
+        "Error",
+        "Could not open the infopack. Please try again later.",
+      );
+    } finally {
+      setIsInfopackDownloading(false);
+    }
   };
 
   const handleSosPress = () => {
@@ -82,11 +140,7 @@ export default function TripInfoScreen() {
 
   const handlePdfMapPress = async () => {
     try {
-      setIsDownloading(true);
-
-      // URL of the PDF map
-      const url =
-        "https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf";
+      setIsMapDownloading(true);
 
       // Create a folder inside internal storage
       const pdfDir = new Directory(Paths.document, "pdfs");
@@ -96,9 +150,7 @@ export default function TripInfoScreen() {
         void pdfDir.create();
       }
 
-      // The downloaded file will have the name from URL
-      const downloadedFileName = "Verbier-Piste-Ski-Map-2024-25.pdf";
-      const file = new File(pdfDir, downloadedFileName);
+      const file = new File(pdfDir, MAP_PDF_FILE_NAME);
 
       console.log("Checking if file exists:", file.uri);
       console.log("File exists:", file.exists);
@@ -107,21 +159,23 @@ export default function TripInfoScreen() {
       if (file.exists) {
         // File already downloaded, just open it
         console.log("PDF already exists, opening:", file.uri);
+        setPdfModalTitle("Ski Map PDF");
         setPdfUri(file.uri);
         setIsPdfModalVisible(true);
-        setIsDownloading(false);
+        setIsMapDownloading(false);
         return;
       }
 
       // Download the file using static method
-      console.log("Downloading PDF from:", url);
+      console.log("Downloading PDF from:", MAP_PDF_URL);
 
       try {
-        const downloadedFile = await File.downloadFileAsync(url, pdfDir);
+        const downloadedFile = await File.downloadFileAsync(MAP_PDF_URL, pdfDir);
         console.log("PDF downloaded, file path:", downloadedFile.uri);
         console.log("Downloaded file uri:", downloadedFile.uri);
 
         // Open the downloaded PDF immediately
+        setPdfModalTitle("Ski Map PDF");
         setPdfUri(downloadedFile.uri);
         setIsPdfModalVisible(true);
         setIsPdfDownloaded(true); // Update download status
@@ -135,7 +189,8 @@ export default function TripInfoScreen() {
         if (maybeDownloadError?.code === "ERR_DESTINATION_ALREADY_EXISTS") {
           console.log("File already exists, opening existing file");
           // Try to find the actual downloaded file
-          const existingFile = new File(pdfDir, downloadedFileName);
+          const existingFile = new File(pdfDir, MAP_PDF_FILE_NAME);
+          setPdfModalTitle("Ski Map PDF");
           setPdfUri(existingFile.uri);
           setIsPdfModalVisible(true);
           setIsPdfDownloaded(true); // Update download status
@@ -148,7 +203,7 @@ export default function TripInfoScreen() {
       console.error("Error handling PDF:", error);
       Alert.alert("Error", "Could not open the map. Please try again later.");
     } finally {
-      setIsDownloading(false);
+      setIsMapDownloading(false);
     }
   };
 
@@ -243,7 +298,7 @@ export default function TripInfoScreen() {
                 style={styles.mapTile}
                 onPress={() => void handlePdfMapPress()}
                 activeOpacity={0.8}
-                disabled={isDownloading}
+                disabled={isMapDownloading}
               >
                 <View style={styles.pdfMapContent}>
                   <View style={styles.pdfMapIconWrapper}>
@@ -271,7 +326,7 @@ export default function TripInfoScreen() {
                       )}
                     </View>
                     <Text style={styles.pdfMapSubtitle}>
-                      {isDownloading
+                      {isMapDownloading
                         ? "Downloading..."
                         : isPdfDownloaded
                           ? "Downloaded"
@@ -287,8 +342,9 @@ export default function TripInfoScreen() {
               {/* Infopak Tile */}
               <TouchableOpacity
                 style={styles.bentoTile}
-                onPress={handleInfopakPress}
+                onPress={() => void handleInfopakPress()}
                 activeOpacity={0.8}
+                disabled={isInfopackDownloading}
               >
                 <View style={styles.bentoIconWrapper}>
                   <Ionicons
@@ -315,7 +371,11 @@ export default function TripInfoScreen() {
                     )}
                   </View>
                   <Text style={styles.bentoSubtitle}>
-                    {isInfopackDownloaded ? "Downloaded" : "Tap to Download"}
+                    {isInfopackDownloading
+                      ? "Downloading..."
+                      : isInfopackDownloaded
+                        ? "Downloaded"
+                        : "Tap to Download"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -421,7 +481,7 @@ export default function TripInfoScreen() {
             <SafeAreaTop style={styles.modalSafeArea}>
               {/* Modal Header */}
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Ski Map PDF</Text>
+                <Text style={styles.modalTitle}>{pdfModalTitle}</Text>
                 <Pressable
                   onPress={() => setIsPdfModalVisible(false)}
                   style={styles.closeButton}
