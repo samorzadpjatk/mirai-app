@@ -38,7 +38,7 @@ export function validateScheduleTime(
   minute: number,
 ): void {
   const scheduleDateTime = new Date(startDate);
-  scheduleDateTime.setHours(hour, minute, 0, 0);
+  scheduleDateTime.setUTCHours(hour, minute, 0, 0);
 
   const now = new Date();
   const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
