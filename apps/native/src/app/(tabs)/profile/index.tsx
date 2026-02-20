@@ -5,9 +5,25 @@ import { AccountInfoSection } from "~/components/profile/AccountInfoSection";
 import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
 import { ProfileActionsSection } from "~/components/profile/ProfileActionsSection";
 import { ProfileHeader } from "~/components/profile/ProfileHeader";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 
 export default function ProfileScreen() {
   const insets = useAppSafeAreaInsets();
+  const router = useRouter();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const userMyQueryOptions = trpc.user.getMy.queryOptions();
+
+  useFocusEffect(
+    useCallback(() => {
+      void queryClient.invalidateQueries({
+        queryKey: userMyQueryOptions.queryKey,
+      });
+    }, [queryClient, userMyQueryOptions.queryKey]),
+  );
 
   return (
     <View style={styles.container}>
@@ -29,7 +45,7 @@ export default function ProfileScreen() {
         <AccountInfoSection />
 
         {/* Actions */}
-        <ProfileActionsSection />
+        <ProfileActionsSection onEditProfile={() => router.push("/profile/edit")} />
 
         {/* App Info */}
         <AppInfoFooter

@@ -13,6 +13,12 @@ import {
   resolveAuthEmail,
 } from "../../utils/authEmails";
 const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
+const nameSchema = z
+  .string()
+  .trim()
+  .min(2, "Must be at least 2 characters")
+  .max(100, "Must be at most 100 characters")
+  .refine((value) => !/\d/.test(value), "Cannot contain digits");
 
 interface PublicUser {
   id: string;
@@ -300,6 +306,27 @@ export const userRouter = createTRPCRouter({
       });
 
       return updatedUser;
+    }),
+  updateMyProfile: protectedProcedure
+    .input(
+      z.object({
+        firstName: nameSchema,
+        lastName: nameSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.user.update({
+        where: { id: ctx.dbUser.id },
+        data: {
+          firstName: input.firstName,
+          lastName: input.lastName,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      });
     }),
   getAll: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
