@@ -25,15 +25,11 @@ export default function PartnerDetailScreen() {
         <Text style={styles.name}>{partner.name}</Text>
 
         <View style={styles.descriptionCard}>
-          <Text style={styles.description}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat. Duis aute irure dolor in
-            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
-          </Text>
+          {partner.description.split("\n\n").map((paragraph) => (
+            <Text key={paragraph} style={styles.description}>
+              {paragraph}
+            </Text>
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -47,6 +43,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
+    paddingBottom: spacing.xxxl * 4,
     alignItems: "center",
     gap: spacing.xxl,
   },
@@ -75,11 +72,14 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryOpacity10,
     padding: spacing.lg,
     width: "100%",
+    gap: spacing.md,
+    marginBottom: spacing.xxxl,
   },
   description: {
-    fontSize: typography.base,
-    color: colors.textSecondary,
-    lineHeight: typography.base * typography.relaxed,
+    fontSize: typography.lg,
+    color: colors.white,
+    textAlign: "center",
+    lineHeight: typography.lg * typography.relaxed,
   },
   notFound: {
     fontSize: typography.lg,
