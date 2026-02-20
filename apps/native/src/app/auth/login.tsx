@@ -181,7 +181,7 @@ export default function LoginScreen() {
         {/* Logo & Title */}
         <View style={styles.logoContainer}>
           <View style={styles.logoWrapper}>
-            <Logo size={96} />
+            <Logo size={188} />
           </View>
           <Text style={styles.title}>
             PJApp
@@ -387,7 +387,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoWrapper: {
-    marginBottom: 24,
+    width: 188,
+    height: 188,
+    marginBottom: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     color: "white",

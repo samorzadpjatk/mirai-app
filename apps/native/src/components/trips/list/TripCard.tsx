@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Image } from "expo-image";
+import miraiLogo from "../../../../assets/mirai_logo.png";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { TripListItem } from "./types";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
@@ -84,6 +86,13 @@ export function TripCard({ trip, onPress }: TripCardProps) {
         imageStyle={styles.tripImage}
       >
         <View style={styles.tripOverlay} />
+        <View style={styles.tripLogoBadge}>
+          <Image
+            source={miraiLogo}
+            style={styles.tripLogo}
+            contentFit="contain"
+          />
+        </View>
         <View style={styles.tripContent}>
           <View style={styles.badgeRow}>
             <View style={styles.tripBadge}>
@@ -132,6 +141,24 @@ const styles = StyleSheet.create({
   tripOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(23, 24, 28, 0.7)",
+  },
+  tripLogoBadge: {
+    position: "absolute",
+    top: spacing.md,
+    left: spacing.md,
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.full,
+    backgroundColor: "rgba(0,0,0,0.28)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  tripLogo: {
+    width: 28,
+    height: 28,
   },
   tripContent: {
     padding: spacing.xl,
