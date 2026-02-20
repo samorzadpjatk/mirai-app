@@ -55,7 +55,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
     ...trpc.activityFeed.getByTrip.queryOptions({
       tripId,
       page: 1,
-      pageSize: 100,
+      pageSize: 30,
     }),
     enabled: Boolean(tripId),
   });

@@ -23,8 +23,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@integral-2025-app/auth/client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useTRPC, useTRPCClient } from "@integral-2025-app/trpc/client";
 import Logo from "../../components/Logo";
 import LoadingScreen from "../../components/LoadingScreen";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
@@ -113,14 +119,22 @@ type CommunityFeedActivity = {
   } | null;
 };
 
-type FeedQueryData = {
+type FeedCursor = {
+  id: string;
+  createdAt: Date | string;
+  isPinned: boolean;
+} | null;
+
+type FeedPageData = {
   activities: CommunityFeedActivity[];
   pagination: {
-    total: number;
-    page: number;
+    total: number | null;
+    page: number | null;
     pageSize: number;
-    totalPages: number;
+    totalPages: number | null;
+    hasMore?: boolean;
   };
+  nextCursor?: FeedCursor;
 };
 
 const emptyReactionSummary = () => ({
@@ -645,6 +659,7 @@ export default function CommunityScreen() {
     focusActivityId?: string | string[];
   }>();
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const insets = useAppSafeAreaInsets();
   const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } =
     useSelectedTrip();
@@ -706,13 +721,41 @@ export default function CommunityScreen() {
     [router],
   );
 
-  const feedQuery = useQuery({
-    ...trpc.activityFeed.getByTrip.queryOptions({
-      tripId: selectedTrip?.id ?? "",
-      page: 1,
-      pageSize: 100,
-    }),
-    enabled: Boolean(selectedTrip?.id),
+  const feedQueryKey = useMemo(
+    () =>
+      selectedTrip?.id
+        ? (["community-feed", selectedTrip.id, 30] as const)
+        : null,
+    [selectedTrip?.id],
+  );
+
+  const feedQuery = useInfiniteQuery({
+    queryKey: feedQueryKey ?? ["community-feed-disabled"],
+    enabled: Boolean(selectedTrip?.id && feedQueryKey),
+    initialPageParam: null as FeedCursor,
+    queryFn: async ({ pageParam }) => {
+      if (!selectedTrip?.id) {
+        return {
+          activities: [],
+          pagination: {
+            total: null,
+            page: null,
+            pageSize: 30,
+            totalPages: null,
+            hasMore: false,
+          },
+          nextCursor: null,
+        } satisfies FeedPageData;
+      }
+
+      return (await trpcClient.activityFeed.getByTrip.query({
+        tripId: selectedTrip.id,
+        page: 1,
+        pageSize: 30,
+        cursor: pageParam ?? undefined,
+      })) as FeedPageData;
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 
   const applyReactionSummaryToFeed = (
@@ -724,51 +767,45 @@ export default function CommunityScreen() {
         ) => CommunityFeedActivity["reactionsSummary"]),
     queryKeyOverride?: readonly unknown[],
   ) => {
-    const queryKey =
-      queryKeyOverride ??
-      (selectedTrip?.id
-        ? trpc.activityFeed.getByTrip.queryOptions({
-            tripId: selectedTrip.id,
-            page: 1,
-            pageSize: 100,
-          }).queryKey
-        : null);
+    const queryKey = queryKeyOverride ?? feedQueryKey;
     if (!queryKey) return;
 
-    queryClient.setQueryData(queryKey, (oldData: FeedQueryData | undefined) => {
-      if (!oldData?.activities) return oldData;
-      return {
-        ...oldData,
-        activities: oldData.activities.map((activity) => {
-          if (activity.id !== activityId) return activity;
-          const nextSummary =
-            typeof updater === "function"
-              ? updater(activity.reactionsSummary)
-              : updater;
-          return {
-            ...activity,
-            reactionsSummary: nextSummary,
-          };
-        }),
-      };
-    });
+    queryClient.setQueryData(
+      queryKey,
+      (oldData: InfiniteData<FeedPageData> | undefined) => {
+        if (!oldData?.pages) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            activities: page.activities.map((activity) => {
+              if (activity.id !== activityId) return activity;
+              const nextSummary =
+                typeof updater === "function"
+                  ? updater(activity.reactionsSummary)
+                  : updater;
+              return {
+                ...activity,
+                reactionsSummary: nextSummary,
+              };
+            }),
+          })),
+        };
+      },
+    );
   };
 
   const toggleHeartMutation = useMutation(
     trpc.activityFeed.toggleReaction.mutationOptions({
       onMutate: async ({ activityId }) => {
-        if (!selectedTrip?.id) {
+        const queryKey = feedQueryKey;
+        if (!selectedTrip?.id || !queryKey) {
           return undefined;
         }
 
-        const queryKey = trpc.activityFeed.getByTrip.queryOptions({
-          tripId: selectedTrip.id,
-          page: 1,
-          pageSize: 100,
-        }).queryKey;
-
         await queryClient.cancelQueries({ queryKey });
-        const previousData = queryClient.getQueryData<FeedQueryData>(queryKey);
+        const previousData =
+          queryClient.getQueryData<InfiniteData<FeedPageData>>(queryKey);
         applyReactionSummaryToFeed(
           activityId,
           toggleHeartSummaryLocally,
@@ -801,8 +838,11 @@ export default function CommunityScreen() {
   );
 
   const activities = useMemo(
-    () => (feedQuery.data?.activities ?? []) as CommunityFeedActivity[],
-    [feedQuery.data?.activities],
+    () =>
+      (feedQuery.data?.pages ?? []).flatMap(
+        (page) => page.activities ?? [],
+      ) as CommunityFeedActivity[],
+    [feedQuery.data?.pages],
   );
 
   const filteredActivities = useMemo(() => {
@@ -822,7 +862,9 @@ export default function CommunityScreen() {
     return [focused, ...rest];
   }, [activities, focusActivityId, selectedFilter]);
 
-  const isRefreshing = tripsQuery.isRefetching || feedQuery.isRefetching;
+  const isRefreshing =
+    tripsQuery.isRefetching ||
+    (feedQuery.isRefetching && !feedQuery.isFetchingNextPage);
 
   const handleRefresh = useCallback(() => {
     const requests: Promise<unknown>[] = [tripsQuery.refetch()];
@@ -831,6 +873,16 @@ export default function CommunityScreen() {
     }
     void Promise.all(requests);
   }, [feedQuery, selectedTrip?.id, tripsQuery]);
+
+  const handleFeedEndReached = useCallback(() => {
+    if (!selectedTrip?.id) return;
+    if (feedQuery.isLoading || feedQuery.isFetchingNextPage) return;
+    if (!feedQuery.hasNextPage) return;
+    void feedQuery.fetchNextPage();
+  }, [
+    feedQuery,
+    selectedTrip?.id,
+  ]);
 
   const handleOpenTripPicker = useCallback(() => {
     setHasDismissedAutoPicker(false);
@@ -954,6 +1006,8 @@ export default function CommunityScreen() {
         style={styles.feedList}
         data={filteredActivities}
         keyExtractor={(item) => item.id}
+        onEndReached={handleFeedEndReached}
+        onEndReachedThreshold={0.35}
         renderItem={({ item }) => {
           const challengeId =
             item.activityType === "challenge_event"
@@ -1035,6 +1089,14 @@ export default function CommunityScreen() {
             </View>
           ) : null
         }
+        ListFooterComponent={
+          feedQuery.isFetchingNextPage ? (
+            <View style={styles.listFooterLoading}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.listFooterLoadingText}>Loading more...</Text>
+            </View>
+          ) : null
+        }
       />
 
       <Modal
@@ -1092,6 +1154,17 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.lg,
     gap: spacing.lg,
+  },
+  listFooterLoading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  listFooterLoadingText: {
+    color: colors.textSecondary,
+    fontSize: typography.sm,
   },
   headerWrap: {
     gap: spacing.xs,

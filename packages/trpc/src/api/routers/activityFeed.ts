@@ -17,6 +17,12 @@ const CHALLENGE_EVENT_TYPES = [
   "completed",
 ] as const;
 
+const activityCursorSchema = z.object({
+  id: z.string(),
+  createdAt: z.coerce.date(),
+  isPinned: z.boolean(),
+});
+
 const ACTIVITY_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
 
 const imageReferenceSchema = z
@@ -496,18 +502,127 @@ const getActivitiesPage = async (params: {
   const activities = await params.ctx.db.activityFeed.findMany({
     where,
     select: activitySelect,
-    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }, { id: "desc" }],
     take: params.pageSize,
     skip: (params.page - 1) * params.pageSize,
   });
 
   return {
     activities: await enrichActivities(params.ctx, activities),
+    nextCursor: null,
     pagination: {
       total: count,
       page: params.page,
       pageSize: params.pageSize,
       totalPages,
+      hasMore: params.page < totalPages,
+    },
+  };
+};
+
+const getActivitiesCursorPage = async (params: {
+  ctx: {
+    db: Prisma.TransactionClient;
+    supabase: {
+      storage: {
+        from: (bucket: string) => {
+          createSignedUrl: (
+            path: string,
+            expiresIn: number,
+          ) => Promise<{
+            data: { signedUrl?: string | null } | null;
+            error: unknown;
+          }>;
+        };
+      };
+    };
+    dbUser: { id: string };
+  };
+  tripId: string;
+  pageSize: number;
+  includeHidden: boolean;
+  cursor?: {
+    id: string;
+    createdAt: Date;
+    isPinned: boolean;
+  } | null;
+}) => {
+  const baseWhere: Prisma.ActivityFeedWhereInput = {
+    tripId: params.tripId,
+    ...(params.includeHidden ? {} : { isHidden: false }),
+  };
+
+  const cursorWhere: Prisma.ActivityFeedWhereInput | undefined = params.cursor
+    ? params.cursor.isPinned
+      ? {
+          OR: [
+            {
+              isPinned: true,
+              OR: [
+                {
+                  createdAt: { lt: params.cursor.createdAt },
+                },
+                {
+                  createdAt: params.cursor.createdAt,
+                  id: { lt: params.cursor.id },
+                },
+              ],
+            },
+            {
+              isPinned: false,
+            },
+          ],
+        }
+      : {
+          isPinned: false,
+          OR: [
+            {
+              createdAt: { lt: params.cursor.createdAt },
+            },
+            {
+              createdAt: params.cursor.createdAt,
+              id: { lt: params.cursor.id },
+            },
+          ],
+        }
+    : undefined;
+
+  const where: Prisma.ActivityFeedWhereInput = cursorWhere
+    ? {
+        ...baseWhere,
+        ...cursorWhere,
+      }
+    : baseWhere;
+
+  const activities = await params.ctx.db.activityFeed.findMany({
+    where,
+    select: activitySelect,
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+    take: params.pageSize + 1,
+  });
+
+  const hasMore = activities.length > params.pageSize;
+  const currentPageActivities = hasMore
+    ? activities.slice(0, params.pageSize)
+    : activities;
+  const lastActivity = currentPageActivities[currentPageActivities.length - 1];
+
+  return {
+    activities: await enrichActivities(params.ctx, currentPageActivities),
+    nextCursor:
+      hasMore && lastActivity
+        ? {
+            id: lastActivity.id,
+            createdAt: lastActivity.createdAt,
+            isPinned: lastActivity.isPinned,
+          }
+        : null,
+    pagination: {
+      total: null,
+      page: null,
+      pageSize: params.pageSize,
+      totalPages: null,
+      hasMore,
     },
   };
 };
@@ -555,18 +670,30 @@ export const activityFeedRouter = createTRPCRouter({
       z.object({
         tripId: z.string(),
         page: z.number().int().min(1).default(1),
-        pageSize: z.number().int().min(1).max(100).default(20),
+        pageSize: z.number().int().min(1).max(100).default(30),
+        cursor: activityCursorSchema.optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       await ensureTripParticipant(ctx, input.tripId);
 
-      return getActivitiesPage({
+      // Backward-compat for old callers that still page with page > 1.
+      if (!input.cursor && input.page > 1) {
+        return getActivitiesPage({
+          ctx,
+          tripId: input.tripId,
+          page: input.page,
+          pageSize: input.pageSize,
+          includeHidden: false,
+        });
+      }
+
+      return getActivitiesCursorPage({
         ctx,
         tripId: input.tripId,
-        page: input.page,
         pageSize: input.pageSize,
         includeHidden: false,
+        cursor: input.cursor ?? null,
       });
     }),
 
