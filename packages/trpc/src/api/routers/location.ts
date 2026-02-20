@@ -151,6 +151,112 @@ async function toLocationWithUser(
   };
 }
 
+async function getShareableUserIdsForCurrentUser({
+  db,
+  currentUserId,
+  tripId,
+}: {
+  db: PrismaClient;
+  currentUserId: string;
+  tripId?: string;
+}): Promise<Set<string>> {
+  let scopedTripIds: string[] = [];
+
+  if (tripId) {
+    const isMember = await db.tripParticipant.findFirst({
+      where: {
+        tripId,
+        userId: currentUserId,
+      },
+      select: { id: true },
+    });
+
+    if (!isMember) {
+      return new Set();
+    }
+
+    scopedTripIds = [tripId];
+  } else {
+    const memberships = await db.tripParticipant.findMany({
+      where: { userId: currentUserId },
+      select: { tripId: true },
+    });
+    scopedTripIds = memberships.map((membership) => membership.tripId);
+  }
+
+  if (scopedTripIds.length === 0) {
+    return new Set();
+  }
+
+  const participants = await db.tripParticipant.findMany({
+    where: {
+      tripId: { in: scopedTripIds },
+      userId: { not: currentUserId },
+    },
+    select: { userId: true },
+    distinct: ["userId"],
+  });
+
+  return new Set(participants.map((participant) => participant.userId));
+}
+
+async function assertShareableTargets({
+  db,
+  currentUserId,
+  targetUserIds,
+  tripId,
+  allowAlreadyShared = false,
+}: {
+  db: PrismaClient;
+  currentUserId: string;
+  targetUserIds: string[];
+  tripId?: string;
+  allowAlreadyShared?: boolean;
+}): Promise<void> {
+  const uniqueTargetUserIds = [...new Set(targetUserIds)];
+  if (uniqueTargetUserIds.length === 0) return;
+
+  if (uniqueTargetUserIds.some((targetId) => targetId === currentUserId)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "You cannot share location settings with yourself",
+    });
+  }
+
+  const allowedIds = await getShareableUserIdsForCurrentUser({
+    db,
+    currentUserId,
+    tripId,
+  });
+
+  if (allowAlreadyShared) {
+    const location = await db.location.findUnique({
+      where: { userId: currentUserId },
+      select: {
+        usersToShareWith: {
+          select: { id: true },
+        },
+      },
+    });
+
+    for (const user of location?.usersToShareWith ?? []) {
+      allowedIds.add(user.id);
+    }
+  }
+
+  const invalidTargetIds = uniqueTargetUserIds.filter(
+    (targetId) => !allowedIds.has(targetId),
+  );
+
+  if (invalidTargetIds.length > 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message:
+        "One or more selected users are outside your allowed sharing scope",
+    });
+  }
+}
+
 export const locationRouter = createTRPCRouter({
   /**
    * WebSocket subscription for updating current user's location
@@ -195,10 +301,21 @@ export const locationRouter = createTRPCRouter({
       z.object({
         isSharingLocation: z.boolean(),
         userIdsToShareWith: z.array(z.string()).optional(),
+        tripId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { isSharingLocation, userIdsToShareWith } = input;
+      const { isSharingLocation, userIdsToShareWith, tripId } = input;
+
+      if ((userIdsToShareWith?.length ?? 0) > 0) {
+        await assertShareableTargets({
+          db: ctx.db,
+          currentUserId: ctx.dbUser.id,
+          targetUserIds: userIdsToShareWith ?? [],
+          tripId,
+          allowAlreadyShared: true,
+        });
+      }
 
       // Upsert location for user
       const updatedLocation = await ctx.db.location.upsert({
@@ -315,17 +432,15 @@ export const locationRouter = createTRPCRouter({
       }
 
       const friendIds = locations.map((l) => l.userId);
+      const allowedFriendIds = new Set(friendIds);
 
       console.log(
         `[Location Stream] Setting up subscription for user ${ctx.dbUser.id}, watching ${friendIds.length} friends`,
       );
-      console.log(`[Location Stream] Friend IDs: [${friendIds.join(", ")}]`);
 
       if (friendIds.length > 0) {
         // Subskrybuj zmiany tylko dla lokalizacji znajomych (jeden kanał, filtr in)
         const filter = `userId=in.(${friendIds.join(",")})`;
-        console.log(`[Location Stream] Filter: ${filter}`);
-        console.log(`[Location Stream] Testing WITHOUT filter first...`);
 
         channel = supabase
           .channel(`friends_locations_${ctx.dbUser.id}`)
@@ -335,16 +450,16 @@ export const locationRouter = createTRPCRouter({
               event: "*",
               schema: "public",
               table: "Location",
-              // TEMPORARILY REMOVED FILTER FOR TESTING
-              // filter,
+              filter,
             },
             (payload) => {
               switch (payload.eventType) {
                 case "DELETE": {
-                  const userId = payload.old.userId!;
-                  console.log(
-                    `[Location Stream] DELETE event for userId: ${userId}`,
-                  );
+                  const userId = payload.old.userId;
+                  if (!userId || !allowedFriendIds.has(userId)) {
+                    return;
+                  }
+
                   if (radiusKm !== undefined) {
                     if (inRadius.has(userId)) {
                       inRadius.delete(userId);
@@ -357,20 +472,16 @@ export const locationRouter = createTRPCRouter({
                 }
                 default: {
                   const newLocation = payload.new;
-                  console.log(
-                    `[Location Stream] ${payload.eventType} event for userId: ${newLocation.userId}, coords: [${newLocation.latitude?.toString()}, ${newLocation.longitude?.toString()}]`,
-                  );
 
                   const userIdFromEvent = newLocation.userId;
-                  if (!userIdFromEvent) {
-                    console.error(`[Location Stream] No userId in payload`);
+                  if (
+                    !userIdFromEvent ||
+                    !allowedFriendIds.has(userIdFromEvent)
+                  ) {
                     return;
                   }
 
                   if (!newLocation.userId || !newLocation.timestamp) {
-                    console.log(
-                      `[Location Stream] payload.new is incomplete, fetching from DB for userId: ${userIdFromEvent}`,
-                    );
                     void ctx.db.location
                       .findUnique({
                         where: { userId: userIdFromEvent },
@@ -387,9 +498,10 @@ export const locationRouter = createTRPCRouter({
                       })
                       .then(async (dbLocation) => {
                         if (!dbLocation) {
-                          console.error(
-                            `[Location Stream] Location not found in DB for userId: ${userIdFromEvent}`,
-                          );
+                          return;
+                        }
+
+                        if (!allowedFriendIds.has(dbLocation.userId)) {
                           return;
                         }
 
@@ -521,17 +633,6 @@ export const locationRouter = createTRPCRouter({
               console.error(`[Location Stream] Subscription error:`, err);
             }
           });
-
-        console.log(`[Location Stream] Waiting for channel to join...`);
-        console.log(
-          `[Location Stream] Channel state after subscribe: ${channel?.state}`,
-        );
-
-        // Wait a bit for subscription to establish
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        console.log(
-          `[Location Stream] Channel state after 1s: ${channel?.state}`,
-        );
       }
 
       try {
@@ -670,30 +771,48 @@ export const locationRouter = createTRPCRouter({
   ),
 
   /**
-   * Get all users (for sharing selection) - moderator only
+   * Get users available for sharing selection
    */
-  getAllUsersForSharing: protectedProcedure.query(async ({ ctx }) => {
-    const users = await ctx.db.user.findMany({
-      where: {
-        id: { not: ctx.dbUser.id }, // Exclude current user
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        hasAvatar: true,
-      },
-      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
-    });
+  getAllUsersForSharing: protectedProcedure
+    .input(
+      z
+        .object({
+          tripId: z.string().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const shareableUserIds = await getShareableUserIdsForCurrentUser({
+        db: ctx.db,
+        currentUserId: ctx.dbUser.id,
+        tripId: input?.tripId,
+      });
 
-    const safeUsers = Array.isArray(users) ? users : [];
+      if (shareableUserIds.size === 0) {
+        return [];
+      }
 
-    const usersWithAvatars = await Promise.all(
-      safeUsers.map((user) => mapUserWithAvatar(ctx.supabase, user)),
-    );
+      const users = await ctx.db.user.findMany({
+        where: {
+          id: { in: [...shareableUserIds] },
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          hasAvatar: true,
+        },
+        orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+      });
 
-    return usersWithAvatars.filter(Boolean) as SharingUser[];
-  }),
+      const safeUsers = Array.isArray(users) ? users : [];
+
+      const usersWithAvatars = await Promise.all(
+        safeUsers.map((user) => mapUserWithAvatar(ctx.supabase, user)),
+      );
+
+      return usersWithAvatars.filter(Boolean) as SharingUser[];
+    }),
 
   /**
    * Add a user to sharing list
@@ -701,6 +820,12 @@ export const locationRouter = createTRPCRouter({
   addUserToSharing: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await assertShareableTargets({
+        db: ctx.db,
+        currentUserId: ctx.dbUser.id,
+        targetUserIds: [input.userId],
+      });
+
       const location = await ctx.db.location.upsert({
         where: { userId: ctx.dbUser.id },
         update: {
@@ -785,6 +910,12 @@ export const locationRouter = createTRPCRouter({
           message: "You cannot send a request to yourself",
         });
       }
+
+      await assertShareableTargets({
+        db: ctx.db,
+        currentUserId: ctx.dbUser.id,
+        targetUserIds: [input.receiverId],
+      });
 
       const existingRequest = await ctx.db.locationSharingRequest.findFirst({
         where: {

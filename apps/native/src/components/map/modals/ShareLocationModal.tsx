@@ -25,14 +25,16 @@ export function ShareLocationModal() {
   } = shareModal;
 
   const users = allAvailableUsers;
-  const filteredUsers = users?.filter((user) => {
-    // Require minimum 3 characters before filtering
-    if (!searchQuery || searchQuery.length < 3) return true;
-    const query = searchQuery.toLowerCase();
-    const fullName =
-      `${user.firstName ?? ""} ${user.lastName ?? ""}`.toLowerCase();
-    return fullName.includes(query);
-  });
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const minimumQueryLength = 2;
+  const shouldShowSearchResults = normalizedQuery.length >= minimumQueryLength;
+  const filteredUsers = shouldShowSearchResults
+    ? users?.filter((user) => {
+        const fullName =
+          `${user.firstName ?? ""} ${user.lastName ?? ""}`.toLowerCase();
+        return fullName.includes(normalizedQuery);
+      })
+    : [];
 
   return (
     <Modal
@@ -56,7 +58,7 @@ export function ShareLocationModal() {
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Type at least 3 characters to search..."
+              placeholder="Type at least 2 characters to search..."
               placeholderTextColor="rgba(226,232,240,0.4)"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -77,7 +79,20 @@ export function ShareLocationModal() {
           )}
 
           <ScrollView style={styles.modalUsersList}>
-            {filteredUsers?.map((user) => {
+            {!shouldShowSearchResults ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  Type at least 2 characters to search for a person.
+                </Text>
+              </View>
+            ) : filteredUsers?.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  No matching users found.
+                </Text>
+              </View>
+            ) : (
+              filteredUsers?.map((user) => {
               const isAlreadySharing = sharingUserIds.includes(user.id);
               const isSelected = selectedUsers.has(user.id);
               const fullName =
@@ -120,7 +135,8 @@ export function ShareLocationModal() {
                   )}
                 </Pressable>
               );
-            })}
+              })
+            )}
           </ScrollView>
 
           {selectedUsers.size > 0 && (
@@ -216,6 +232,15 @@ const styles = StyleSheet.create({
   modalUsersList: {
     padding: 16,
     paddingTop: 8,
+  },
+  emptyState: {
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: "rgba(226,232,240,0.6)",
+    textAlign: "center",
   },
   modalUserItem: {
     flexDirection: "row",
