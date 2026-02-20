@@ -70,6 +70,28 @@ function getTemplateScheduleDates(template: ScheduledNotificationTemplate): {
   return { startDate, endDate };
 }
 
+function normalizeScheduleWindow(params: {
+  startDate: Date;
+  endDate: Date;
+  hour: number;
+  minute: number;
+}) {
+  const normalizedStartDate = new Date(params.startDate);
+  normalizedStartDate.setUTCHours(params.hour, params.minute, 0, 0);
+
+  const durationMs = params.endDate.getTime() - params.startDate.getTime();
+  const normalizedEndDate = new Date(
+    normalizedStartDate.getTime() + durationMs,
+  );
+
+  return {
+    startDate: normalizedStartDate,
+    endDate: normalizedEndDate,
+    hour: normalizedStartDate.getUTCHours(),
+    minute: normalizedStartDate.getUTCMinutes(),
+  };
+}
+
 export const notificationScheduleRouter = createTRPCRouter({
   getAll: moderatorProcedure
     .input(
@@ -303,6 +325,13 @@ export const notificationScheduleRouter = createTRPCRouter({
   create: adminProcedure
     .input(notificationScheduleCreateSchema)
     .mutation(async ({ ctx, input }) => {
+      const normalized = normalizeScheduleWindow({
+        startDate: input.startDate,
+        endDate: input.endDate,
+        hour: input.hour,
+        minute: input.minute,
+      });
+
       validateNotificationContent(
         input.notificationType,
         input.notificationTitle,
@@ -310,15 +339,19 @@ export const notificationScheduleRouter = createTRPCRouter({
         input.notificationUrl,
       );
 
-      validateDateRange(input.startDate, input.endDate);
+      validateDateRange(normalized.startDate, normalized.endDate);
 
-      validateFutureDates(input.startDate, input.endDate);
+      validateFutureDates(normalized.startDate, normalized.endDate);
 
-      validateReasonableDateRange(input.startDate, input.endDate);
+      validateReasonableDateRange(normalized.startDate, normalized.endDate);
 
-      validateMinimumDuration(input.startDate, input.endDate);
+      validateMinimumDuration(normalized.startDate, normalized.endDate);
 
-      validateScheduleTime(input.startDate, input.hour, input.minute);
+      validateScheduleTime(
+        normalized.startDate,
+        normalized.hour,
+        normalized.minute,
+      );
 
       const schedule = await ctx.db.notificationSchedule.create({
         data: {
@@ -328,10 +361,10 @@ export const notificationScheduleRouter = createTRPCRouter({
           notificationTitle: input.notificationTitle,
           notificationBody: input.notificationBody,
           notificationUrl: input.notificationUrl,
-          startDate: input.startDate,
-          endDate: input.endDate,
-          hour: input.hour,
-          minute: input.minute,
+          startDate: normalized.startDate,
+          endDate: normalized.endDate,
+          hour: normalized.hour,
+          minute: normalized.minute,
           isActive: input.isActive,
           createdById: ctx.dbUser.id,
         },
@@ -382,6 +415,12 @@ export const notificationScheduleRouter = createTRPCRouter({
 
       const template = getDailyRankingScheduleTemplate(input.templateKey);
       const { startDate, endDate } = getTemplateScheduleDates(template);
+      const normalized = normalizeScheduleWindow({
+        startDate,
+        endDate,
+        hour: template.hour,
+        minute: template.minute,
+      });
 
       validateNotificationContent(
         template.notificationType,
@@ -389,11 +428,15 @@ export const notificationScheduleRouter = createTRPCRouter({
         template.notificationBody,
         template.notificationUrl,
       );
-      validateDateRange(startDate, endDate);
-      validateFutureDates(startDate, endDate);
-      validateReasonableDateRange(startDate, endDate);
-      validateMinimumDuration(startDate, endDate);
-      validateScheduleTime(startDate, template.hour, template.minute);
+      validateDateRange(normalized.startDate, normalized.endDate);
+      validateFutureDates(normalized.startDate, normalized.endDate);
+      validateReasonableDateRange(normalized.startDate, normalized.endDate);
+      validateMinimumDuration(normalized.startDate, normalized.endDate);
+      validateScheduleTime(
+        normalized.startDate,
+        normalized.hour,
+        normalized.minute,
+      );
 
       const existingSchedule = await ctx.db.notificationSchedule.findFirst({
         where: {
@@ -410,10 +453,10 @@ export const notificationScheduleRouter = createTRPCRouter({
               notificationTitle: template.notificationTitle,
               notificationBody: template.notificationBody,
               notificationUrl: template.notificationUrl,
-              hour: template.hour,
-              minute: template.minute,
-              startDate,
-              endDate,
+              hour: normalized.hour,
+              minute: normalized.minute,
+              startDate: normalized.startDate,
+              endDate: normalized.endDate,
               isActive: true,
             },
             include: {
@@ -441,10 +484,10 @@ export const notificationScheduleRouter = createTRPCRouter({
               notificationTitle: template.notificationTitle,
               notificationBody: template.notificationBody,
               notificationUrl: template.notificationUrl,
-              startDate,
-              endDate,
-              hour: template.hour,
-              minute: template.minute,
+              startDate: normalized.startDate,
+              endDate: normalized.endDate,
+              hour: normalized.hour,
+              minute: normalized.minute,
               isActive: true,
               createdById: ctx.dbUser.id,
             },
@@ -492,10 +535,33 @@ export const notificationScheduleRouter = createTRPCRouter({
         });
       }
 
-      const finalStartDate = updateData.startDate ?? existingSchedule.startDate;
-      const finalEndDate = updateData.endDate ?? existingSchedule.endDate;
+      const shouldNormalize =
+        updateData.startDate !== undefined ||
+        updateData.endDate !== undefined ||
+        updateData.hour !== undefined ||
+        updateData.minute !== undefined;
 
-      if (updateData.startDate || updateData.endDate) {
+      const baseStartDate =
+        updateData.startDate ?? existingSchedule.startDate;
+      const baseEndDate = updateData.endDate ?? existingSchedule.endDate;
+      const baseHour = updateData.hour ?? existingSchedule.hour;
+      const baseMinute = updateData.minute ?? existingSchedule.minute;
+
+      const normalized = shouldNormalize
+        ? normalizeScheduleWindow({
+            startDate: baseStartDate,
+            endDate: baseEndDate,
+            hour: baseHour,
+            minute: baseMinute,
+          })
+        : null;
+
+      const finalStartDate = normalized?.startDate ?? baseStartDate;
+      const finalEndDate = normalized?.endDate ?? baseEndDate;
+      const finalHour = normalized?.hour ?? baseHour;
+      const finalMinute = normalized?.minute ?? baseMinute;
+
+      if (updateData.startDate || updateData.endDate || shouldNormalize) {
         validateDateRange(finalStartDate, finalEndDate);
 
         validateFutureDates(finalStartDate, finalEndDate, true);
@@ -504,17 +570,8 @@ export const notificationScheduleRouter = createTRPCRouter({
         validateMinimumDuration(finalStartDate, finalEndDate);
       }
 
-      if (
-        updateData.startDate ||
-        updateData.hour !== undefined ||
-        updateData.minute !== undefined
-      ) {
-        const finalHour = updateData.hour ?? existingSchedule.hour;
-        const finalMinute = updateData.minute ?? existingSchedule.minute;
-
-        if (finalStartDate > new Date()) {
-          validateScheduleTime(finalStartDate, finalHour, finalMinute);
-        }
+      if (shouldNormalize && finalStartDate > new Date()) {
+        validateScheduleTime(finalStartDate, finalHour, finalMinute);
       }
 
       if (
@@ -544,7 +601,15 @@ export const notificationScheduleRouter = createTRPCRouter({
 
       const schedule = await ctx.db.notificationSchedule.update({
         where: { id },
-        data: updateData,
+        data: shouldNormalize
+          ? {
+              ...updateData,
+              startDate: finalStartDate,
+              endDate: finalEndDate,
+              hour: finalHour,
+              minute: finalMinute,
+            }
+          : updateData,
         include: {
           createdBy: {
             select: {
@@ -646,14 +711,21 @@ export const notificationScheduleRouter = createTRPCRouter({
       const newEndDate =
         input.endDate ?? new Date(newStartDate.getTime() + durationMs);
 
-      validateDateRange(newStartDate, newEndDate);
-      validateFutureDates(newStartDate, newEndDate);
-      validateReasonableDateRange(newStartDate, newEndDate);
-      validateMinimumDuration(newStartDate, newEndDate);
+      const normalized = normalizeScheduleWindow({
+        startDate: newStartDate,
+        endDate: newEndDate,
+        hour: originalSchedule.hour,
+        minute: originalSchedule.minute,
+      });
+
+      validateDateRange(normalized.startDate, normalized.endDate);
+      validateFutureDates(normalized.startDate, normalized.endDate);
+      validateReasonableDateRange(normalized.startDate, normalized.endDate);
+      validateMinimumDuration(normalized.startDate, normalized.endDate);
       validateScheduleTime(
-        newStartDate,
-        originalSchedule.hour,
-        originalSchedule.minute,
+        normalized.startDate,
+        normalized.hour,
+        normalized.minute,
       );
 
       const newSchedule = await ctx.db.notificationSchedule.create({
@@ -666,10 +738,10 @@ export const notificationScheduleRouter = createTRPCRouter({
           ),
           notificationBody: toOptionalString(originalSchedule.notificationBody),
           notificationUrl: toOptionalString(originalSchedule.notificationUrl),
-          startDate: newStartDate,
-          endDate: newEndDate,
-          hour: originalSchedule.hour,
-          minute: originalSchedule.minute,
+          startDate: normalized.startDate,
+          endDate: normalized.endDate,
+          hour: normalized.hour,
+          minute: normalized.minute,
           isActive: false,
           createdById: ctx.dbUser.id,
         },
