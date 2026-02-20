@@ -41,10 +41,11 @@ const isUnauthorizedError = (error: unknown) => {
 const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: string; children: React.ReactNode }) => {
     const session = useSession();
     const isAuthLoading = useAuthLoading();
-    const { signOut } = useAuth();
+    const { signOut, refreshSession } = useAuth();
     const authToken = session?.access_token;
     const queryClient = getQueryClient();
     const cleanupRef = useRef<(() => Promise<void>) | null>(null);
+    const isRefreshingRef = useRef(false);
 
     // Recreate tRPC client when authToken changes to update WebSocket connectionParams
     // Use useMemo unconditionally (always call hooks in same order)
@@ -64,9 +65,34 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
         const queryCache = queryClient.getQueryCache();
         const mutationCache = queryClient.getMutationCache();
 
+        const handleUnauthorized = async () => {
+            // If there is no token (guest) don't sign out – just ignore
+            if (!authToken) {
+                return;
+            }
+
+            // Avoid multiple simultaneous refresh attempts
+            if (isRefreshingRef.current) {
+                return;
+            }
+
+            isRefreshingRef.current = true;
+            try {
+                await refreshSession();
+            } catch (error) {
+                console.warn(
+                    "[APIProvider] Refresh session failed after unauthorized, signing out",
+                    error,
+                );
+                await signOut();
+            } finally {
+                isRefreshingRef.current = false;
+            }
+        };
+
         const handleError = (error: unknown) => {
             if (isUnauthorizedError(error)) {
-                void signOut();
+                void handleUnauthorized();
             }
         };
 
@@ -122,7 +148,7 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
                 });
             }
         };
-    }, [trpcClientWrapper, queryClient, signOut]);
+    }, [trpcClientWrapper, queryClient, signOut, refreshSession, authToken]);
 
     // Only render TRPCProvider when we have a valid client
     if (isAuthLoading || !trpcClientWrapper) {
