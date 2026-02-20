@@ -1,7 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   Modal,
   RefreshControl,
   ScrollView,
@@ -16,7 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@integral-2025-app/auth/client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import Logo from "../../components/Logo";
 import LoadingScreen from "../../components/LoadingScreen";
@@ -46,6 +53,13 @@ type CommunityFeedActivity = {
   createdAt: Date | string;
   reactionsSummary?: {
     total: number;
+    counts?: {
+      heart: number;
+      fire: number;
+      clap: number;
+      star: number;
+    };
+    myReactions?: string[];
   };
   admin?: {
     id: string;
@@ -99,6 +113,51 @@ type CommunityFeedActivity = {
   } | null;
 };
 
+type FeedQueryData = {
+  activities: CommunityFeedActivity[];
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
+};
+
+const emptyReactionSummary = () => ({
+  total: 0,
+  counts: {
+    heart: 0,
+    fire: 0,
+    clap: 0,
+    star: 0,
+  },
+  myReactions: [] as string[],
+});
+
+const toggleHeartSummaryLocally = (
+  summary: CommunityFeedActivity["reactionsSummary"] | undefined,
+) => {
+  const normalized = summary ?? emptyReactionSummary();
+  const myReactions = new Set(normalized.myReactions ?? []);
+  const hadHeart = myReactions.has("heart");
+
+  if (hadHeart) {
+    myReactions.delete("heart");
+  } else {
+    myReactions.add("heart");
+  }
+
+  return {
+    ...normalized,
+    total: Math.max(0, normalized.total + (hadHeart ? -1 : 1)),
+    counts: {
+      ...(normalized.counts ?? emptyReactionSummary().counts),
+      heart: Math.max(0, (normalized.counts?.heart ?? 0) + (hadHeart ? -1 : 1)),
+    },
+    myReactions: Array.from(myReactions),
+  };
+};
+
 type OwnerMeta = {
   name: string;
   subtitle: string;
@@ -108,10 +167,10 @@ type OwnerMeta = {
 
 const ACTIVITY_FILTERS: Array<{ key: ActivityFilter; label: string }> = [
   { key: "all", label: "All" },
-  { key: "submission", label: "Submissions" },
+  { key: "custom", label: "News" },
+  { key: "submission", label: "Photos" },
   { key: "challenge_event", label: "Challenge" },
   { key: "rank_change", label: "Ranking" },
-  { key: "custom", label: "News" },
   { key: "user_post", label: "Posts" },
 ];
 
@@ -317,14 +376,20 @@ function CommunityActivityCard({
   activity,
   onPress,
   onPressOwner,
+  onToggleHeart,
   isFocused = false,
 }: {
   activity: CommunityFeedActivity;
   onPress?: () => void;
   onPressOwner?: () => void;
+  onToggleHeart?: (activityId: string) => void;
   isFocused?: boolean;
 }) {
   const trpc = useTRPC();
+  const lastMediaTapAtRef = useRef(0);
+  const mediaSingleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const owner = useMemo(() => resolveOwnerMeta(activity), [activity]);
   const cardImage = useMemo(() => resolveCardImage(activity), [activity]);
@@ -426,10 +491,50 @@ function CommunityActivityCard({
         ? activity.challengeActivity?.challenge?.description?.trim() ||
           activity.description
         : activity.description;
+  const isHeartActive = Boolean(
+    activity.reactionsSummary?.myReactions?.includes("heart"),
+  );
+  const handleMediaPress = useCallback(
+    (event: { stopPropagation: () => void }) => {
+      event.stopPropagation();
+      const now = Date.now();
+
+      if (now - lastMediaTapAtRef.current < 250) {
+        if (mediaSingleTapTimeoutRef.current) {
+          clearTimeout(mediaSingleTapTimeoutRef.current);
+          mediaSingleTapTimeoutRef.current = null;
+        }
+        lastMediaTapAtRef.current = 0;
+        onToggleHeart?.(activity.id);
+        return;
+      }
+
+      lastMediaTapAtRef.current = now;
+      if (onPress) {
+        mediaSingleTapTimeoutRef.current = setTimeout(() => {
+          onPress();
+          mediaSingleTapTimeoutRef.current = null;
+        }, 250);
+      }
+    },
+    [activity.id, onPress, onToggleHeart],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (mediaSingleTapTimeoutRef.current) {
+        clearTimeout(mediaSingleTapTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <TouchableOpacity
-      style={[styles.card, isFocused && styles.cardFocused]}
+      style={[
+        styles.card,
+        isFocused && styles.cardFocused,
+        activity.activityType === "custom" && styles.cardNews,
+      ]}
       onPress={onPress}
       disabled={!onPress}
       activeOpacity={onPress ? 0.9 : 1}
@@ -486,13 +591,13 @@ function CommunityActivityCard({
           </View>
         </View>
       ) : cardImage ? (
-        <View style={styles.mediaWrap}>
+        <Pressable style={styles.mediaWrap} onPress={handleMediaPress}>
           <Image
             source={{ uri: cardImage }}
             style={styles.mediaImage}
             contentFit="cover"
           />
-        </View>
+        </Pressable>
       ) : null}
 
       <View style={styles.cardBody}>
@@ -508,16 +613,23 @@ function CommunityActivityCard({
             </Text>
           </View>
 
-          <View style={styles.reactionRow}>
+          <TouchableOpacity
+            style={styles.reactionRow}
+            activeOpacity={0.8}
+            onPress={(event) => {
+              event.stopPropagation();
+              onToggleHeart?.(activity.id);
+            }}
+          >
             <Ionicons
-              name="heart-outline"
+              name={isHeartActive ? "heart" : "heart-outline"}
               size={16}
-              color={colors.textSecondary}
+              color={isHeartActive ? "#ff5a6c" : colors.textSecondary}
             />
             <Text style={styles.reactionCount}>
               {activity.reactionsSummary?.total ?? 0}
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -527,6 +639,7 @@ function CommunityActivityCard({
 export default function CommunityScreen() {
   const { session, isLoading: isLoadingSession } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{
     filter?: string | string[];
     focusActivityId?: string | string[];
@@ -602,6 +715,91 @@ export default function CommunityScreen() {
     enabled: Boolean(selectedTrip?.id),
   });
 
+  const applyReactionSummaryToFeed = (
+    activityId: string,
+    updater:
+      | CommunityFeedActivity["reactionsSummary"]
+      | ((
+          current: CommunityFeedActivity["reactionsSummary"] | undefined,
+        ) => CommunityFeedActivity["reactionsSummary"]),
+    queryKeyOverride?: readonly unknown[],
+  ) => {
+    const queryKey =
+      queryKeyOverride ??
+      (selectedTrip?.id
+        ? trpc.activityFeed.getByTrip.queryOptions({
+            tripId: selectedTrip.id,
+            page: 1,
+            pageSize: 100,
+          }).queryKey
+        : null);
+    if (!queryKey) return;
+
+    queryClient.setQueryData(queryKey, (oldData: FeedQueryData | undefined) => {
+      if (!oldData?.activities) return oldData;
+      return {
+        ...oldData,
+        activities: oldData.activities.map((activity) => {
+          if (activity.id !== activityId) return activity;
+          const nextSummary =
+            typeof updater === "function"
+              ? updater(activity.reactionsSummary)
+              : updater;
+          return {
+            ...activity,
+            reactionsSummary: nextSummary,
+          };
+        }),
+      };
+    });
+  };
+
+  const toggleHeartMutation = useMutation(
+    trpc.activityFeed.toggleReaction.mutationOptions({
+      onMutate: async ({ activityId }) => {
+        if (!selectedTrip?.id) {
+          return undefined;
+        }
+
+        const queryKey = trpc.activityFeed.getByTrip.queryOptions({
+          tripId: selectedTrip.id,
+          page: 1,
+          pageSize: 100,
+        }).queryKey;
+
+        await queryClient.cancelQueries({ queryKey });
+        const previousData = queryClient.getQueryData<FeedQueryData>(queryKey);
+        applyReactionSummaryToFeed(
+          activityId,
+          toggleHeartSummaryLocally,
+          queryKey,
+        );
+        return { queryKey, previousData };
+      },
+      onError: (_error, _variables, context) => {
+        if (!context?.queryKey || !context.previousData) return;
+        queryClient.setQueryData(context.queryKey, context.previousData);
+      },
+      onSuccess: (result, _variables, context) => {
+        applyReactionSummaryToFeed(
+          result.activityId,
+          result.reactionsSummary as CommunityFeedActivity["reactionsSummary"],
+          context?.queryKey,
+        );
+      },
+    }),
+  );
+
+  const handleToggleHeart = useCallback(
+    (activityId: string) => {
+      void toggleHeartMutation.mutateAsync({
+        activityId,
+        reactionType: "heart",
+      });
+    },
+    [toggleHeartMutation],
+  );
+
   const activities = useMemo(
     () => (feedQuery.data?.activities ?? []) as CommunityFeedActivity[],
     [feedQuery.data?.activities],
@@ -672,7 +870,88 @@ export default function CommunityScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
+      <View
+        style={[
+          styles.headerWrap,
+          { paddingTop: Math.max(insets.top - spacing.md, 0) },
+        ]}
+      >
+        <View style={styles.headerTopRow}>
+          <View style={styles.brandRow}>
+            <View style={styles.logoWrap}>
+              <Logo size={96} />
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.tripTile}
+            onPress={handleOpenTripPicker}
+            activeOpacity={0.8}
+          >
+            {tripImageUrl ? (
+              <Image
+                source={{ uri: tripImageUrl }}
+                style={styles.tripTileImage}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={styles.tripTileImagePlaceholder} />
+            )}
+            <View style={styles.tripTileOverlay}>
+              <Text style={styles.tripTileName} numberOfLines={1}>
+                {selectedTrip?.name ?? "Select trip"}
+              </Text>
+              <Ionicons
+                name="swap-horizontal"
+                size={12}
+                color="rgba(255,255,255,0.7)"
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {selectedTrip ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            {ACTIVITY_FILTERS.map((filter) => {
+              const isActive = selectedFilter === filter.key;
+              return (
+                <TouchableOpacity
+                  key={filter.key}
+                  style={[
+                    styles.filterChip,
+                    isActive && styles.filterChipActive,
+                  ]}
+                  onPress={() => handleSelectFilter(filter.key)}
+                  activeOpacity={0.85}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {filter.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        ) : null}
+
+        {selectedTrip && feedQuery.isLoading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.loadingStateText}>Loading feed...</Text>
+          </View>
+        ) : null}
+      </View>
+
       <FlatList
+        style={styles.feedList}
         data={filteredActivities}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
@@ -692,6 +971,7 @@ export default function CommunityScreen() {
             <CommunityActivityCard
               activity={item}
               isFocused={item.id === focusActivityId}
+              onToggleHeart={handleToggleHeart}
               onPress={
                 challengeId
                   ? () =>
@@ -717,7 +997,7 @@ export default function CommunityScreen() {
         contentContainerStyle={[
           styles.listContent,
           {
-            paddingTop: insets.top + spacing.lg,
+            paddingTop: spacing.sm,
             paddingBottom: insets.bottom + 120,
           },
         ]}
@@ -727,82 +1007,6 @@ export default function CommunityScreen() {
             onRefresh={handleRefresh}
             tintColor={colors.primary}
           />
-        }
-        ListHeaderComponent={
-          <View style={styles.headerWrap}>
-            <View style={styles.headerTopRow}>
-              <View style={styles.brandRow}>
-                <View style={styles.logoWrap}>
-                  <Logo size={40} />
-                </View>
-                <View style={styles.brandTextWrap}>
-                  <Text style={styles.brandTitle}>MIRAI</Text>
-                  <Text style={styles.brandSubtitle}>Feed</Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={styles.tripTile}
-                onPress={handleOpenTripPicker}
-                activeOpacity={0.8}
-              >
-                {tripImageUrl ? (
-                  <Image
-                    source={{ uri: tripImageUrl }}
-                    style={styles.tripTileImage}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <View style={styles.tripTileImagePlaceholder} />
-                )}
-                <View style={styles.tripTileOverlay}>
-                  <Text style={styles.tripTileName} numberOfLines={1}>
-                    {selectedTrip?.name ?? "Select trip"}
-                  </Text>
-                  <Ionicons
-                    name="swap-horizontal"
-                    size={12}
-                    color="rgba(255,255,255,0.7)"
-                  />
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            {selectedTrip ? (
-              <View style={styles.filterRow}>
-                {ACTIVITY_FILTERS.map((filter) => {
-                  const isActive = selectedFilter === filter.key;
-                  return (
-                    <TouchableOpacity
-                      key={filter.key}
-                      style={[
-                        styles.filterChip,
-                        isActive && styles.filterChipActive,
-                      ]}
-                      onPress={() => handleSelectFilter(filter.key)}
-                      activeOpacity={0.85}
-                    >
-                      <Text
-                        style={[
-                          styles.filterChipText,
-                          isActive && styles.filterChipTextActive,
-                        ]}
-                      >
-                        {filter.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ) : null}
-
-            {selectedTrip && feedQuery.isLoading ? (
-              <View style={styles.loadingState}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={styles.loadingStateText}>Loading feed...</Text>
-              </View>
-            ) : null}
-          </View>
         }
         ListEmptyComponent={
           !selectedTrip ? (
@@ -882,13 +1086,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundDark,
   },
+  feedList: {
+    flex: 1,
+  },
   listContent: {
     paddingHorizontal: spacing.lg,
     gap: spacing.lg,
   },
   headerWrap: {
-    gap: spacing.md,
-    marginBottom: spacing.sm,
+    gap: spacing.xs,
+    marginBottom: 0,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
   },
   headerTopRow: {
     flexDirection: "row",
@@ -903,25 +1112,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   logoWrap: {
-    width: 40,
-    height: 40,
+    width: 96,
+    height: 96,
     alignItems: "center",
     justifyContent: "center",
-  },
-  brandTextWrap: {
-    gap: 0,
-  },
-  brandTitle: {
-    color: colors.white,
-    fontSize: typography.xxl,
-    fontWeight: typography.bold,
-    letterSpacing: 0.3,
-  },
-  brandSubtitle: {
-    color: colors.primary,
-    fontSize: typography.base,
-    fontWeight: typography.semibold,
-    marginTop: -2,
   },
   tripTile: {
     width: 130,
@@ -955,12 +1149,13 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+    gap: spacing.xs,
+    paddingVertical: 2,
+    paddingRight: spacing.sm,
   },
   filterChip: {
     paddingHorizontal: spacing.md,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.borderWhite10,
@@ -1003,6 +1198,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
+  },
+  cardNews: {
+    borderColor: "rgba(239, 68, 68, 0.72)",
   },
   cardHeader: {
     flexDirection: "row",

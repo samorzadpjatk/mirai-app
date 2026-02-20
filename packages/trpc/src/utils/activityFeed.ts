@@ -59,6 +59,20 @@ const loadChallengeForFeed = async (
   return challenge;
 };
 
+const formatSubmissionDeadline = (value: Date | null) => {
+  if (!value) {
+    return "zakończenia etapu zgłoszeń";
+  }
+
+  return new Intl.DateTimeFormat("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(value);
+};
+
 const createChallengeEventActivity = async (params: {
   tx: Prisma.TransactionClient;
   challenge: ChallengeForFeed;
@@ -71,7 +85,7 @@ const createChallengeEventActivity = async (params: {
 
   const title =
     params.eventType === "challenge_started"
-      ? `Nowe wyzwanie: ${params.challenge.name}`
+      ? `Czas start! Już teraz weź udział w wyzwaniu ${params.challenge.name}.`
       : params.eventType === "voting_started"
         ? `Voting started: ${params.challenge.name}`
         : `Challenge completed: ${params.challenge.name}`;
@@ -84,7 +98,7 @@ const createChallengeEventActivity = async (params: {
   const description =
     challengeDescription ??
     (params.eventType === "challenge_started"
-      ? `Wyzwanie już gotowe na wysyłanie Waszych zdjęć!`
+      ? `Nie czekajcie za długo. Macie czas tylko do ${formatSubmissionDeadline(params.challenge.endTime)} na wysłanie Waszego zdjęcia grupy.`
       : params.eventType === "voting_started"
         ? "Challenge entered voting phase"
         : "Voting has ended");
@@ -560,7 +574,7 @@ export const createRankChangeActivities = async (params: {
     data: {
       tripId: params.tripId,
       activityType: "rank_change",
-      title: `Zmiany w rankingu: ${anchor.group.name} teraz #${anchor.newRank}`,
+      title: "Zmiany w tabeli",
       description,
       imageUrl: anchor.group.image,
       createdByAdmin: params.createdByAdmin ?? null,
