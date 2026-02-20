@@ -1,5 +1,12 @@
 import React from "react";
-import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Text } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  Text,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,26 +35,37 @@ export default function GroupDetailsScreen() {
     enabled: !!groupId,
   });
   const isCurrentUserMemberInViewedGroup = Boolean(
-    group?.participants.some((participant) => participant.user.id === currentUser?.id),
+    group?.participants.some(
+      (participant) => participant.user.id === currentUser?.id,
+    ),
   );
   const isCurrentUserOrganizerOfViewedGroup = Boolean(
     currentUser?.id && group?.organizer?.id === currentUser.id,
   );
 
-  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } = useQuery({
-    ...trpc.user.getMyWithGroup.queryOptions({ tripId: group?.trip?.id ?? "" }),
-    enabled: !!group?.trip?.id,
-  });
-  const currentUserGroupId = currentUserWithGroup?.trips?.[0]?.group?.id ?? null;
+  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
+    useQuery({
+      ...trpc.user.getMyWithGroup.queryOptions({
+        tripId: group?.trip?.id ?? "",
+      }),
+      enabled: !!group?.trip?.id,
+    });
+  const currentUserGroupId =
+    currentUserWithGroup?.trips?.[0]?.group?.id ?? null;
   const hasGroupInCurrentTrip = Boolean(currentUserGroupId);
 
   const { data: myJoinRequest } = useQuery({
-    ...trpc.group.getMyJoinRequestForGroup.queryOptions({ groupId: groupId ?? "" }),
-    enabled: !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
+    ...trpc.group.getMyJoinRequestForGroup.queryOptions({
+      groupId: groupId ?? "",
+    }),
+    enabled:
+      !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
   });
 
   const { data: pendingJoinRequests } = useQuery({
-    ...trpc.group.getPendingJoinRequests.queryOptions({ groupId: groupId ?? "" }),
+    ...trpc.group.getPendingJoinRequests.queryOptions({
+      groupId: groupId ?? "",
+    }),
     enabled: !!groupId && isCurrentUserOrganizerOfViewedGroup,
   });
 
@@ -67,16 +85,23 @@ export default function GroupDetailsScreen() {
     trpc.group.leaveMyGroup.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" }).queryKey,
+          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
+            .queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+          queryKey: trpc.group.getAll.queryOptions({
+            tripId: group?.trip?.id ?? "",
+          }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.ranking.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+          queryKey: trpc.group.ranking.queryOptions({
+            tripId: group?.trip?.id ?? "",
+          }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.user.getMyWithGroup.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+          queryKey: trpc.user.getMyWithGroup.queryOptions({
+            tripId: group?.trip?.id ?? "",
+          }).queryKey,
         });
       },
     }),
@@ -101,7 +126,8 @@ export default function GroupDetailsScreen() {
     trpc.group.respondToJoinRequest.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" }).queryKey,
+          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
+            .queryKey,
         });
         await queryClient.invalidateQueries({
           queryKey: trpc.group.getPendingJoinRequests.queryOptions({
@@ -109,25 +135,14 @@ export default function GroupDetailsScreen() {
           }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+          queryKey: trpc.group.getAll.queryOptions({
+            tripId: group?.trip?.id ?? "",
+          }).queryKey,
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.ranking.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
-        });
-      },
-    }),
-  );
-  const deleteGroupMutation = useMutation(
-    trpc.group.deleteMyGroup.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.ranking.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.user.getMyWithGroup.queryOptions({ tripId: group?.trip?.id ?? "" }).queryKey,
+          queryKey: trpc.group.ranking.queryOptions({
+            tripId: group?.trip?.id ?? "",
+          }).queryKey,
         });
       },
     }),
@@ -159,10 +174,15 @@ export default function GroupDetailsScreen() {
   const canRequestToJoin =
     !isLoadingCurrentUserGroup && !isGroupMember && !hasGroupInCurrentTrip;
   const hasPendingRequestToThisGroup = Boolean(myJoinRequest);
-  const sortedParticipants = [...group.participants].sort(
-    (a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  );
+  const sortedParticipants = [...group.participants].sort((a, b) => {
+    const aIsLeader = a.user.id === organizerId;
+    const bIsLeader = b.user.id === organizerId;
+
+    if (aIsLeader && !bIsLeader) return -1;
+    if (!aIsLeader && bIsLeader) return 1;
+
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
   const memberList = sortedParticipants.map((p) => ({
     id: p.user.id,
     name: `${p.user.firstName ?? ""} ${p.user.lastName ?? ""}`.trim(),
@@ -171,33 +191,31 @@ export default function GroupDetailsScreen() {
     isLeader: p.user.id === organizerId,
   }));
   const rankingPosition = (() => {
-    const index = rankingData?.data.findIndex((rankingGroup) => rankingGroup.id === group.id);
+    const index = rankingData?.data.findIndex(
+      (rankingGroup) => rankingGroup.id === group.id,
+    );
     return typeof index === "number" && index >= 0 ? index + 1 : null;
   })();
 
   const handleLeaveGroup = () => {
-    Alert.alert(
-      "Leave Group",
-      "Do you want to leave this group?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                await leaveGroupMutation.mutateAsync({ groupId: group.id });
-                router.replace(`/trips/groups?tripId=${group.trip.id}`);
-              } catch (error) {
-                console.error("Failed to leave group:", error);
-                Alert.alert("Error", "Failed to leave group");
-              }
-            })();
-          },
+    Alert.alert("Leave Group", "Do you want to leave this group?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Leave",
+        style: "destructive",
+        onPress: () => {
+          void (async () => {
+            try {
+              await leaveGroupMutation.mutateAsync({ groupId: group.id });
+              router.replace(`/trips/groups?tripId=${group.trip.id}`);
+            } catch (error) {
+              console.error("Failed to leave group:", error);
+              Alert.alert("Error", "Failed to leave group");
+            }
+          })();
         },
-      ],
-    );
+      },
+    ]);
   };
   const handleRequestToJoin = () => {
     if (!groupId) return;
@@ -207,7 +225,9 @@ export default function GroupDetailsScreen() {
         Alert.alert("Success", "Join request sent");
       } catch (error: unknown) {
         const message =
-          error instanceof Error ? error.message : "Failed to send join request";
+          error instanceof Error
+            ? error.message
+            : "Failed to send join request";
         Alert.alert("Error", message);
       }
     })();
@@ -222,35 +242,12 @@ export default function GroupDetailsScreen() {
         await respondToJoinRequestMutation.mutateAsync({ requestId, decision });
       } catch (error: unknown) {
         const message =
-          error instanceof Error ? error.message : "Failed to update join request";
+          error instanceof Error
+            ? error.message
+            : "Failed to update join request";
         Alert.alert("Error", message);
       }
     })();
-  };
-  const handleDeleteGroup = () => {
-    Alert.alert(
-      "Delete Group",
-      "This will archive the group and remove all members. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                await deleteGroupMutation.mutateAsync({ groupId: group.id });
-                router.replace(`/trips/groups?tripId=${group.trip.id}`);
-              } catch (error: unknown) {
-                const message =
-                  error instanceof Error ? error.message : "Failed to delete group";
-                Alert.alert("Error", message);
-              }
-            })();
-          },
-        },
-      ],
-    );
   };
   const formatJoinRequestTime = (date: Date | string) => {
     const parsed = date instanceof Date ? date : new Date(date);
@@ -266,7 +263,9 @@ export default function GroupDetailsScreen() {
     <View style={styles.container}>
       {canManageGroup && (
         <View style={styles.editButtonContainer}>
-          <EditGroupButton onPress={() => router.push(`/trips/groups/edit/${groupId}`)} />
+          <EditGroupButton
+            onPress={() => router.push(`/trips/groups/edit/${groupId}`)}
+          />
         </View>
       )}
 
@@ -282,10 +281,7 @@ export default function GroupDetailsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Card */}
-        <GroupDetailsHero
-          name={group.name}
-          imageUrl={group.image}
-        />
+        <GroupDetailsHero name={group.name} imageUrl={group.image} />
 
         {canRequestToJoin && !hasPendingRequestToThisGroup ? (
           <TouchableOpacity
@@ -304,13 +300,21 @@ export default function GroupDetailsScreen() {
         {canRequestToJoin && hasPendingRequestToThisGroup ? (
           <View style={styles.pendingRequestBadge}>
             <Ionicons name="time-outline" size={16} color={colors.primary} />
-            <Text style={styles.pendingRequestText}>Join request pending approval</Text>
+            <Text style={styles.pendingRequestText}>
+              Join request pending approval
+            </Text>
           </View>
         ) : null}
 
-        {!isLoadingCurrentUserGroup && !isGroupMember && hasGroupInCurrentTrip ? (
+        {!isLoadingCurrentUserGroup &&
+        !isGroupMember &&
+        hasGroupInCurrentTrip ? (
           <View style={styles.groupLockedBadge}>
-            <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
+            <Ionicons
+              name="lock-closed-outline"
+              size={16}
+              color={colors.textMuted}
+            />
             <Text style={styles.groupLockedText}>
               Leave your current group first to join this one
             </Text>
@@ -332,20 +336,6 @@ export default function GroupDetailsScreen() {
         ) : null}
 
         {canManageGroup ? (
-          <TouchableOpacity
-            style={styles.deleteButton}
-            activeOpacity={0.8}
-            onPress={handleDeleteGroup}
-            disabled={deleteGroupMutation.isPending}
-          >
-            <Ionicons name="trash-outline" size={18} color={colors.white} />
-            <Text style={styles.deleteButtonText}>
-              {deleteGroupMutation.isPending ? "Deleting..." : "Delete Group"}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {canManageGroup ? (
           <View style={styles.joinRequestsCard}>
             <Text style={styles.joinRequestsTitle}>Pending join requests</Text>
             {(pendingJoinRequests ?? []).length === 0 ? (
@@ -356,7 +346,8 @@ export default function GroupDetailsScreen() {
                   <View style={styles.joinRequestTop}>
                     <View style={styles.joinRequestAvatar}>
                       <Text style={styles.joinRequestAvatarText}>
-                        {`${request.user.firstName?.[0] ?? ""}${request.user.lastName?.[0] ?? ""}`.toUpperCase() || "?"}
+                        {`${request.user.firstName?.[0] ?? ""}${request.user.lastName?.[0] ?? ""}`.toUpperCase() ||
+                          "?"}
                       </Text>
                     </View>
                     <Text style={styles.joinRequestDate}>
@@ -375,19 +366,33 @@ export default function GroupDetailsScreen() {
                   </View>
                   <View style={styles.joinRequestActions}>
                     <TouchableOpacity
-                      style={[styles.joinRequestButton, styles.joinRequestRejectButton]}
-                      onPress={() => handleRespondToJoinRequest(request.id, "REJECT")}
+                      style={[
+                        styles.joinRequestButton,
+                        styles.joinRequestRejectButton,
+                      ]}
+                      onPress={() =>
+                        handleRespondToJoinRequest(request.id, "REJECT")
+                      }
                       disabled={respondToJoinRequestMutation.isPending}
                     >
                       <Ionicons name="close" size={14} color={colors.white} />
                       <Text style={styles.joinRequestButtonText}>Reject</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.joinRequestButton, styles.joinRequestAcceptButton]}
-                      onPress={() => handleRespondToJoinRequest(request.id, "ACCEPT")}
+                      style={[
+                        styles.joinRequestButton,
+                        styles.joinRequestAcceptButton,
+                      ]}
+                      onPress={() =>
+                        handleRespondToJoinRequest(request.id, "ACCEPT")
+                      }
                       disabled={respondToJoinRequestMutation.isPending}
                     >
-                      <Ionicons name="checkmark" size={14} color={colors.white} />
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color={colors.white}
+                      />
                       <Text style={styles.joinRequestButtonText}>Accept</Text>
                     </TouchableOpacity>
                   </View>
@@ -408,7 +413,9 @@ export default function GroupDetailsScreen() {
         <GroupMemberList members={memberList} />
 
         {/* Transaction History */}
-        <TransactionHistory transactions={transactions ?? []} />
+        <View style={styles.transactionHistorySection}>
+          <TransactionHistory transactions={transactions ?? []} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -425,6 +432,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,
+  },
+  transactionHistorySection: {
+    marginBottom: spacing.xxl,
   },
   editButtonContainer: {
     position: "absolute",
@@ -500,26 +510,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   leaveButtonText: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  deleteButton: {
-    marginBottom: spacing.lg,
-    backgroundColor: "rgba(220, 38, 38, 0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(220, 38, 38, 0.55)",
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  deleteButtonText: {
     color: colors.white,
     fontSize: typography.sm,
     fontWeight: typography.bold,

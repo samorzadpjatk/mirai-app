@@ -32,16 +32,16 @@ const batchEmailLookup = async (
   groups: {
     organizer?: { authUserId?: string | null } | null;
     participants: { user: { authUserId?: string | null } }[];
-  }[]
+  }[],
 ) => {
   // Collect all unique authUserIds
   const allAuthUserIds = new Set<string>();
-  
-  groups.forEach(group => {
+
+  groups.forEach((group) => {
     if (group.organizer?.authUserId) {
       allAuthUserIds.add(group.organizer.authUserId);
     }
-    group.participants.forEach(participant => {
+    group.participants.forEach((participant) => {
       if (participant.user.authUserId) {
         allAuthUserIds.add(participant.user.authUserId);
       }
@@ -166,13 +166,10 @@ export const groupRouter = createTRPCRouter({
 
       if (!group || group.isDeleted) return null;
 
-      const emailByAuthUserId = await buildAuthEmailLookup(
-        ctx.supabase,
-        [
-          group.organizer?.authUserId,
-          ...group.participants.map((participant) => participant.user.authUserId),
-        ],
-      );
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        group.organizer?.authUserId,
+        ...group.participants.map((participant) => participant.user.authUserId),
+      ]);
 
       return {
         ...group,
@@ -317,13 +314,10 @@ export const groupRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       }
 
-      const emailByAuthUserId = await buildAuthEmailLookup(
-        ctx.supabase,
-        [
-          group.organizer?.authUserId,
-          ...group.participants.map((participant) => participant.user.authUserId),
-        ],
-      );
+      const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
+        group.organizer?.authUserId,
+        ...group.participants.map((participant) => participant.user.authUserId),
+      ]);
 
       return {
         ...group,
@@ -390,7 +384,11 @@ export const groupRouter = createTRPCRouter({
             });
           } catch (error: unknown) {
             let prismaCode = "";
-            if (typeof error === "object" && error !== null && "code" in error) {
+            if (
+              typeof error === "object" &&
+              error !== null &&
+              "code" in error
+            ) {
               const code = (error as { code?: unknown }).code;
               if (typeof code === "string") {
                 prismaCode = code;
@@ -447,7 +445,7 @@ export const groupRouter = createTRPCRouter({
     }),
 
   // Update group information
-  update: adminProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -464,10 +462,33 @@ export const groupRouter = createTRPCRouter({
       if (group?.tripId !== tripId || group.isDeleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
       }
+
+      const isAdmin = ctx.dbUser.role === "ADMIN";
+      const isOrganizer = group.organizerId === ctx.dbUser.id;
+
+      if (!isAdmin && !isOrganizer) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only group organizer or admin can update this group",
+        });
+      }
+
+      if (
+        !isAdmin &&
+        updateData.organizerId &&
+        updateData.organizerId !== group.organizerId
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admin can change group organizer",
+        });
+      }
+
       const updatedGroup = await ctx.db.group.update({
         where: { id },
         data: {
           ...updateData,
+          organizerId: isAdmin ? updateData.organizerId : undefined,
           image: normalizeGroupImageInput(input.image),
         },
         include: {
@@ -564,7 +585,11 @@ export const groupRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const group = await ctx.db.group.findUnique({
         where: { id: input.id },
-        include: { participants: { select: { id: true, userId: true, tripId: true, groupId: true } } },
+        include: {
+          participants: {
+            select: { id: true, userId: true, tripId: true, groupId: true },
+          },
+        },
       });
       if (!group)
         throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
@@ -752,7 +777,12 @@ export const groupRouter = createTRPCRouter({
           where: { id: input.requestId },
           include: {
             group: {
-              select: { id: true, tripId: true, organizerId: true, isDeleted: true },
+              select: {
+                id: true,
+                tripId: true,
+                organizerId: true,
+                isDeleted: true,
+              },
             },
           },
         });
@@ -958,7 +988,7 @@ export const groupRouter = createTRPCRouter({
     }),
 
   // Remove user from a group
-  removeUserFromGroup: adminProcedure
+  removeUserFromGroup: protectedProcedure
     .input(
       z.object({
         userId: z.string(),
@@ -971,11 +1001,55 @@ export const groupRouter = createTRPCRouter({
           where: {
             userId_tripId: { userId: input.userId, tripId: input.tripId },
           },
-          select: { id: true, groupId: true },
+          select: { id: true, groupId: true, userId: true },
         });
 
         if (!participant) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Participant not found" });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Participant not found",
+          });
+        }
+
+        const group = participant.groupId
+          ? await tx.group.findUnique({
+              where: { id: participant.groupId },
+              select: {
+                id: true,
+                tripId: true,
+                organizerId: true,
+                isDeleted: true,
+              },
+            })
+          : null;
+
+        if (
+          participant.groupId &&
+          (!group || group.tripId !== input.tripId || group.isDeleted)
+        ) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
+        }
+
+        const isAdmin = ctx.dbUser.role === "ADMIN";
+        const isOrganizer = Boolean(
+          group && group.organizerId === ctx.dbUser.id,
+        );
+
+        if (!isAdmin && !isOrganizer) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Only group organizer or admin can remove members",
+          });
+        }
+
+        if (!isAdmin && participant.userId === group?.organizerId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Group leader cannot be removed by organizer",
+          });
         }
 
         const updated = await tx.tripParticipant.update({
@@ -997,6 +1071,19 @@ export const groupRouter = createTRPCRouter({
               where: { id: participant.groupId },
               data: { isDeleted: true },
             });
+          } else if (group && participant.userId === group.organizerId) {
+            const nextOrganizer = await tx.tripParticipant.findFirst({
+              where: { tripId: input.tripId, groupId: participant.groupId },
+              orderBy: { createdAt: "asc" },
+              select: { userId: true },
+            });
+
+            if (nextOrganizer) {
+              await tx.group.update({
+                where: { id: participant.groupId },
+                data: { organizerId: nextOrganizer.userId },
+              });
+            }
           }
         }
 
@@ -1062,10 +1149,18 @@ export const groupRouter = createTRPCRouter({
               where: { id: group.id },
               data: { isDeleted: true },
             });
-            return { left: true, reassignedOrganizerId: null, groupDeleted: true };
+            return {
+              left: true,
+              reassignedOrganizerId: null,
+              groupDeleted: true,
+            };
           }
 
-          return { left: true, reassignedOrganizerId: null, groupDeleted: false };
+          return {
+            left: true,
+            reassignedOrganizerId: null,
+            groupDeleted: false,
+          };
         });
       }
 
@@ -1129,7 +1224,10 @@ export const groupRouter = createTRPCRouter({
           where: { id: input.groupId },
         });
         if (group?.tripId !== input.tripId || group?.isDeleted) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Group not found",
+          });
         }
         // Update group coins
         await tx.group.update({

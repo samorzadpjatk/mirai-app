@@ -7,30 +7,27 @@ interface GroupDetailsHeroProps {
   imageUrl?: string | null;
 }
 
-export function GroupDetailsHero({
-  name,
-  imageUrl,
-}: GroupDetailsHeroProps) {
+export function GroupDetailsHero({ name, imageUrl }: GroupDetailsHeroProps) {
   return (
     <View style={[styles.heroCard, shadows.primaryGlow]}>
-      <View style={styles.heroImageContainer}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.heroImage} resizeMode="cover" />
-        ) : (
-          <View style={styles.heroImagePlaceholder}>
-            <Ionicons name="images-outline" size={40} color={colors.primary} />
-            <Text style={styles.placeholderText}>No group image</Text>
-          </View>
-        )}
-        <View style={styles.heroGradient} />
-      </View>
+      {imageUrl ? (
+        <>
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+          <View style={styles.heroGradient} />
+        </>
+      ) : (
+        <View style={styles.heroImagePlaceholder}>
+          <Ionicons name="images-outline" size={40} color={colors.primary} />
+          <Text style={styles.placeholderText}>No group image</Text>
+        </View>
+      )}
 
       <View style={styles.heroContent}>
-        <View style={styles.heroHeader}>
-          <View style={styles.heroTextSection}>
-            <Text style={styles.groupName}>{name}</Text>
-          </View>
-        </View>
+        <Text style={styles.groupName}>{name}</Text>
       </View>
     </View>
   );
@@ -38,16 +35,14 @@ export function GroupDetailsHero({
 
 const styles = StyleSheet.create({
   heroCard: {
+    position: "relative",
+    height: 192,
     borderRadius: borderRadius.xl,
     backgroundColor: colors.cardDark,
     borderWidth: 1,
     borderColor: "rgba(0, 206, 209, 0.2)",
     overflow: "hidden",
     marginBottom: spacing.lg,
-  },
-  heroImageContainer: {
-    height: 192,
-    position: "relative",
   },
   heroImage: {
     width: "100%",
@@ -70,32 +65,21 @@ const styles = StyleSheet.create({
   },
   heroGradient: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "50%",
-    backgroundColor: "rgba(23, 24, 28, 0)",
+    inset: 0,
+    backgroundColor: "rgba(23, 24, 28, 0.45)",
   },
   heroContent: {
-    padding: spacing.xl,
-    marginTop: -48,
-    position: "relative",
-  },
-  heroHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginBottom: spacing.lg,
-  },
-  heroTextSection: {
-    flex: 1,
+    position: "absolute",
+    left: spacing.xl,
+    right: spacing.xl,
+    bottom: spacing.lg,
+    zIndex: 5,
   },
   groupName: {
     fontSize: 28,
     fontWeight: typography.bold,
     color: colors.white,
-    textTransform: "uppercase",
-    letterSpacing: -1,
-    lineHeight: 28,
+    letterSpacing: -0.4,
+    lineHeight: 30,
   },
 });

@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useGroupEditor } from "~/hooks/groups";
@@ -39,7 +39,8 @@ const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
   const contentType = asset.mimeType ?? "";
   if (contentType === "image/png") return "png";
   if (contentType === "image/webp") return "webp";
-  if (contentType === "image/heic" || contentType === "image/heif") return "heic";
+  if (contentType === "image/heic" || contentType === "image/heif")
+    return "heic";
   return "jpg";
 };
 
@@ -77,11 +78,15 @@ export default function EditGroupScreen() {
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
-  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<string | null>(
-    null,
-  );
+  const [groupImagePreviewUri, setGroupImagePreviewUri] = useState<
+    string | null
+  >(null);
   const [currentMembers, setCurrentMembers] = useState<Set<string>>(new Set());
-  const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
+  const {
+    upload,
+    status: uploadStatus,
+    progress: uploadProgress,
+  } = useFileUpload();
 
   useEffect(() => {
     if (!group) return;
@@ -96,6 +101,9 @@ export default function EditGroupScreen() {
   }, [group]);
 
   const { updateGroup, removeUser, isUpdating } = useGroupEditor(groupId);
+  const deleteGroupMutation = useMutation(
+    trpc.group.deleteMyGroup.mutationOptions(),
+  );
 
   const handleSave = async () => {
     if (!groupName.trim()) {
@@ -126,8 +134,11 @@ export default function EditGroupScreen() {
       }
 
       router.back();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Save error:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to save group changes";
+      Alert.alert("Error", message);
     }
   };
 
@@ -181,12 +192,45 @@ export default function EditGroupScreen() {
     });
   };
 
+  const handleDeleteGroup = () => {
+    if (!group) return;
+    Alert.alert(
+      "Delete Group",
+      "This will archive the group and remove all members. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              try {
+                await deleteGroupMutation.mutateAsync({ groupId: group.id });
+                router.replace(`/trips/groups?tripId=${group.trip.id}`);
+              } catch (error: unknown) {
+                const message =
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to delete group";
+                Alert.alert("Error", message);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   const visibleMembers = useMemo(() => {
     const members = group?.participants ?? [];
     return members
       .filter((participant) => currentMembers.has(participant.user.id))
       .sort((a, b) =>
-        a.user.id === group?.organizer?.id ? -1 : b.user.id === group?.organizer?.id ? 1 : 0,
+        a.user.id === group?.organizer?.id
+          ? -1
+          : b.user.id === group?.organizer?.id
+            ? 1
+            : 0,
       );
   }, [currentMembers, group?.organizer?.id, group?.participants]);
 
@@ -247,7 +291,9 @@ export default function EditGroupScreen() {
           <View style={styles.memberListContainer}>
             {visibleMembers.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No members left in this group</Text>
+                <Text style={styles.emptyStateText}>
+                  No members left in this group
+                </Text>
               </View>
             ) : (
               visibleMembers.map((participant) => {
@@ -258,7 +304,10 @@ export default function EditGroupScreen() {
                   <View key={userId} style={styles.memberItem}>
                     <View style={styles.memberAvatar}>
                       <Text style={styles.memberAvatarText}>
-                        {getInitials(participant.user.firstName, participant.user.lastName)}
+                        {getInitials(
+                          participant.user.firstName,
+                          participant.user.lastName,
+                        )}
                       </Text>
                     </View>
 
@@ -275,7 +324,12 @@ export default function EditGroupScreen() {
                     </View>
 
                     {isLeader ? (
-                      <View style={[styles.removeButton, styles.removeButtonDisabled]}>
+                      <View
+                        style={[
+                          styles.removeButton,
+                          styles.removeButtonDisabled,
+                        ]}
+                      >
                         <Text style={styles.removeButtonText}>Leader</Text>
                       </View>
                     ) : (
@@ -298,6 +352,17 @@ export default function EditGroupScreen() {
           isSubmitting={isUpdating}
           onPress={() => void handleSave()}
         />
+
+        <TouchableOpacity
+          style={styles.deleteButton}
+          activeOpacity={0.8}
+          onPress={handleDeleteGroup}
+          disabled={deleteGroupMutation.isPending}
+        >
+          <Text style={styles.deleteButtonText}>
+            {deleteGroupMutation.isPending ? "Deleting..." : "Delete Group"}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -397,5 +462,23 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: typography.base,
     color: colors.textMuted,
+  },
+  deleteButton: {
+    marginTop: spacing.lg,
+    backgroundColor: "rgba(220, 38, 38, 0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(220, 38, 38, 0.55)",
+    borderRadius: radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteButtonText: {
+    color: colors.white,
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
 });
