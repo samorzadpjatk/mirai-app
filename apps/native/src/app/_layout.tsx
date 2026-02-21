@@ -8,6 +8,8 @@ import {
 import { SafeAreaInsetsProvider } from "~/contexts/SafeAreaInsetsContext";
 import { LocationProvider } from "~/contexts/location";
 import * as Notifications from "expo-notifications";
+import { UpdatePopup } from "~/components/updates/UpdatePopup";
+import { useExpoUpdates } from "~/hooks/useExpoUpdates";
 
 // Global handler for notifications (module-level)
 Notifications.setNotificationHandler({
@@ -73,6 +75,13 @@ function AutoPushSubscriptionBootstrap() {
 function RootLayoutContent() {
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
+  const {
+    showUpdatePopup,
+    startUpdate,
+    skipUpdate,
+    isDownloading,
+    downloadProgress,
+  } = useExpoUpdates();
   
   // Move safe area hook to root layout and provide it to children
   const insets = useSafeAreaInsets();
@@ -146,6 +155,15 @@ function RootLayoutContent() {
           </LocationProvider>
         </SafeAreaInsetsProvider>
       )}
+      
+      {/* Update Popup */}
+      <UpdatePopup
+        visible={showUpdatePopup}
+        onUpdate={startUpdate}
+        onSkip={skipUpdate}
+        isDownloading={isDownloading}
+        downloadProgress={downloadProgress}
+      />
     </View>
   );
 }
