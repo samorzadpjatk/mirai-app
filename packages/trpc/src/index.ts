@@ -7,6 +7,7 @@ export {
   protectedProcedure,
   moderatorProcedure,
   adminProcedure,
+  mobileAppProcedure,
 } from "./api/trpc";
 
 // Export business logic router (DB operations)
