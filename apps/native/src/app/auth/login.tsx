@@ -1,4 +1,5 @@
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, Modal } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, Modal, Pressable, Alert, Dimensions } from "react-native";
+import { SafeAreaTop } from "~/components/SafeAreaWrapper";
 import { useLoginForm } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -10,6 +11,10 @@ import { useState } from "react";
 import { useSupabaseClient } from "@integral-2025-app/supabase/react";
 import { getTRPCClient } from "@integral-2025-app/trpc/client";
 import { TRPC_HTTP_URL, TRPC_WS_URL } from "~/lib/runtimeEnv";
+import { Asset } from "expo-asset";
+import Pdf from "react-native-pdf";
+
+const PRIVACY_POLICY_PDF_ASSET = require("../../../assets/privacy-policy.pdf");
 
 export default function LoginScreen() {
   const { formState, setEmail, handleSubmit, clearSent, clearError } = useLoginForm();
@@ -25,6 +30,12 @@ export default function LoginScreen() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [precheckError, setPrecheckError] = useState<string | null>(null);
+  const [hasAcceptedPrivacyPolicy, setHasAcceptedPrivacyPolicy] = useState(false);
+  const [privacyPolicyError, setPrivacyPolicyError] = useState<string | null>(null);
+  const [isPolicyModalVisible, setIsPolicyModalVisible] = useState(false);
+  const [policyPdfUri, setPolicyPdfUri] = useState<string | null>(null);
+  const [isPolicyLoading, setIsPolicyLoading] = useState(false);
+  const [hasViewedPrivacyPolicy, setHasViewedPrivacyPolicy] = useState(false);
 
   const { email, isLoading, isSent, error } = formState;
   const ghostEmail = (process.env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL as string | undefined)?.toLowerCase() ?? "";
@@ -69,6 +80,18 @@ export default function LoginScreen() {
   };
 
   const onSubmit = async () => {
+    if (!hasViewedPrivacyPolicy) {
+      setPrivacyPolicyError("Najpierw otworz i przeczytaj polityke prywatnosci.");
+      return;
+    }
+
+    if (!hasAcceptedPrivacyPolicy) {
+      setPrivacyPolicyError("Aby się zalogować, musisz zaakceptować politykę prywatności.");
+      return;
+    }
+
+    setPrivacyPolicyError(null);
+
     if (isGhostLogin) {
       if (!password) {
         setPasswordError("Please enter the verification password");
@@ -134,6 +157,7 @@ export default function LoginScreen() {
     clearSent();
     setPrecheckError(null);
     setPasswordError(null);
+    setPrivacyPolicyError(null);
     setPassword("");
     setEmail(value);
   };
@@ -166,6 +190,36 @@ export default function LoginScreen() {
     setOtp("");
     setVerifyError(null);
     clearSent();
+  };
+
+  const openPrivacyPolicy = async () => {
+    setIsPolicyModalVisible(true);
+
+    if (policyPdfUri || isPolicyLoading) {
+      return;
+    }
+
+    setIsPolicyLoading(true);
+
+    try {
+      const asset = Asset.fromModule(PRIVACY_POLICY_PDF_ASSET);
+      await asset.downloadAsync();
+      setPolicyPdfUri(asset.localUri ?? asset.uri);
+    } catch (err) {
+      setIsPolicyModalVisible(false);
+      Alert.alert("Błąd", "Nie udało się otworzyć polityki prywatności.");
+      console.error("[PrivacyPolicy] asset error:", err);
+    } finally {
+      setIsPolicyLoading(false);
+    }
+  };
+
+  const closePrivacyPolicy = () => {
+    setIsPolicyModalVisible(false);
+    if (!isPolicyLoading && policyPdfUri) {
+      setHasViewedPrivacyPolicy(true);
+      setPrivacyPolicyError(null);
+    }
   };
 
   return (
@@ -224,6 +278,40 @@ export default function LoginScreen() {
                   editable={!isBusy}
                 />
               </View>
+            </View>
+
+            {/* Privacy Policy */}
+            <View style={[styles.inputSection, styles.inputSectionBorder]}>
+              <TouchableOpacity
+                style={[
+                  styles.policyCheckboxRow,
+                  !hasViewedPrivacyPolicy && { opacity: 0.55 },
+                ]}
+                onPress={() => {
+                  if (!hasViewedPrivacyPolicy) {
+                    setPrivacyPolicyError("Najpierw otworz i przeczytaj polityke prywatnosci.");
+                    return;
+                  }
+                  setHasAcceptedPrivacyPolicy((prev) => !prev);
+                  setPrivacyPolicyError(null);
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={hasAcceptedPrivacyPolicy ? "checkbox" : "square-outline"}
+                  size={22}
+                  color={hasAcceptedPrivacyPolicy ? "#00ced1" : "#9ca3af"}
+                />
+                <Text style={styles.policyCheckboxText}>
+                  Akceptuj{" "}
+                  <Text style={styles.policyLink} onPress={() => void openPrivacyPolicy()}>
+                    politykę prywatności
+                  </Text>
+                </Text>
+              </TouchableOpacity>
+              {privacyPolicyError && (
+                <Text style={[styles.policyErrorText, { marginTop: 6 }]}>{privacyPolicyError}</Text>
+              )}
             </View>
 
             {isGhostLogin ? (
@@ -367,6 +455,43 @@ export default function LoginScreen() {
         </View>
 
       </ScrollView>
+
+      <Modal
+        visible={isPolicyModalVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={closePrivacyPolicy}
+      >
+        <View style={styles.policyModalContainer}>
+          <SafeAreaTop style={styles.policyModalSafeArea}>
+            <View style={styles.policyModalHeader}>
+              <Text style={styles.policyModalTitle}>Polityka prywatności</Text>
+              <Pressable onPress={closePrivacyPolicy} style={styles.policyModalCloseButton}>
+                <Ionicons name="close" size={24} color="white" />
+              </Pressable>
+            </View>
+          </SafeAreaTop>
+
+          {isPolicyLoading ? (
+            <View style={styles.policyModalLoading}>
+              <ActivityIndicator color="#00ced1" size="large" />
+              <Text style={[styles.policyText, { marginTop: 12, color: "#9ca3af" }]}>Pobieranie...</Text>
+            </View>
+          ) : policyPdfUri ? (
+            <Pdf
+              source={{ uri: policyPdfUri }}
+              style={styles.policyPdf}
+              trustAllCerts={false}
+              minScale={1}
+              maxScale={8}
+              onError={(err) => {
+                console.error("[PrivacyPolicy] PDF error:", err);
+                Alert.alert("Błąd", "Nie udało się otworzyć PDF.");
+              }}
+            />
+          ) : null}
+        </View>
+      </Modal>
     </>
   );
 }
@@ -580,5 +705,75 @@ const styles = StyleSheet.create({
     color: "#17181c",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  policyCheckboxRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  policyCheckboxText: {
+    color: "#d1d5db",
+    fontSize: 14,
+    lineHeight: 20,
+    flex: 1,
+  },
+  policyErrorText: {
+    color: "#f87171",
+    fontSize: 13,
+  },
+  policyHintText: {
+    color: "#9ca3af",
+    fontSize: 12,
+  },
+  policyLink: {
+    color: "#00ced1",
+    textDecorationLine: "underline",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  policyText: {
+    color: "#e5e7eb",
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  policyModalContainer: {
+    flex: 1,
+    backgroundColor: "#17181c",
+  },
+  policyModalSafeArea: {
+    backgroundColor: "rgba(39, 41, 53, 0.9)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 206, 209, 0.1)",
+  },
+  policyModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  policyModalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+  },
+  policyModalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0, 206, 209, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  policyModalLoading: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  policyPdf: {
+    flex: 1,
+    width: Dimensions.get("window").width,
+    backgroundColor: "#17181c",
   },
 });
