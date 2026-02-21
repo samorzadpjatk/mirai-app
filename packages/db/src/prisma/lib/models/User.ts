@@ -31,6 +31,7 @@ export type UserMinAggregateOutputType = {
   lastName: string | null
   hasAvatar: boolean | null
   role: $Enums.Role | null
+  lastSeenOn: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -42,6 +43,7 @@ export type UserMaxAggregateOutputType = {
   lastName: string | null
   hasAvatar: boolean | null
   role: $Enums.Role | null
+  lastSeenOn: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -53,6 +55,7 @@ export type UserCountAggregateOutputType = {
   lastName: number
   hasAvatar: number
   role: number
+  lastSeenOn: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -66,6 +69,7 @@ export type UserMinAggregateInputType = {
   lastName?: true
   hasAvatar?: true
   role?: true
+  lastSeenOn?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -77,6 +81,7 @@ export type UserMaxAggregateInputType = {
   lastName?: true
   hasAvatar?: true
   role?: true
+  lastSeenOn?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -88,6 +93,7 @@ export type UserCountAggregateInputType = {
   lastName?: true
   hasAvatar?: true
   role?: true
+  lastSeenOn?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -172,6 +178,7 @@ export type UserGroupByOutputType = {
   lastName: string
   hasAvatar: boolean
   role: $Enums.Role
+  lastSeenOn: Date | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -204,6 +211,7 @@ export type UserWhereInput = {
   lastName?: Prisma.StringFilter<"User"> | string
   hasAvatar?: Prisma.BoolFilter<"User"> | boolean
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
+  lastSeenOn?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   organizerGroup?: Prisma.GroupListRelationFilter
@@ -236,6 +244,7 @@ export type UserOrderByWithRelationInput = {
   lastName?: Prisma.SortOrder
   hasAvatar?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  lastSeenOn?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   organizerGroup?: Prisma.GroupOrderByRelationAggregateInput
@@ -271,6 +280,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   lastName?: Prisma.StringFilter<"User"> | string
   hasAvatar?: Prisma.BoolFilter<"User"> | boolean
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
+  lastSeenOn?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   organizerGroup?: Prisma.GroupListRelationFilter
@@ -303,6 +313,7 @@ export type UserOrderByWithAggregationInput = {
   lastName?: Prisma.SortOrder
   hasAvatar?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  lastSeenOn?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -320,6 +331,7 @@ export type UserScalarWhereWithAggregatesInput = {
   lastName?: Prisma.StringWithAggregatesFilter<"User"> | string
   hasAvatar?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   role?: Prisma.EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
+  lastSeenOn?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -331,6 +343,7 @@ export type UserCreateInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -363,6 +376,7 @@ export type UserUncheckedCreateInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -395,6 +409,7 @@ export type UserUpdateInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -427,6 +442,7 @@ export type UserUncheckedUpdateInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -459,6 +475,7 @@ export type UserCreateManyInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -470,6 +487,7 @@ export type UserUpdateManyMutationInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -481,6 +499,7 @@ export type UserUncheckedUpdateManyInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -492,6 +511,7 @@ export type UserCountOrderByAggregateInput = {
   lastName?: Prisma.SortOrder
   hasAvatar?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  lastSeenOn?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -503,6 +523,7 @@ export type UserMaxOrderByAggregateInput = {
   lastName?: Prisma.SortOrder
   hasAvatar?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  lastSeenOn?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -514,6 +535,7 @@ export type UserMinOrderByAggregateInput = {
   lastName?: Prisma.SortOrder
   hasAvatar?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  lastSeenOn?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -548,6 +570,10 @@ export type BoolFieldUpdateOperationsInput = {
 
 export type EnumRoleFieldUpdateOperationsInput = {
   set?: $Enums.Role
+}
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -887,6 +913,7 @@ export type UserCreateWithoutTripsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -918,6 +945,7 @@ export type UserUncheckedCreateWithoutTripsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -965,6 +993,7 @@ export type UserUpdateWithoutTripsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -996,6 +1025,7 @@ export type UserUncheckedUpdateWithoutTripsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -1027,6 +1057,7 @@ export type UserCreateWithoutCreatedEventsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -1058,6 +1089,7 @@ export type UserUncheckedCreateWithoutCreatedEventsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -1105,6 +1137,7 @@ export type UserUpdateWithoutCreatedEventsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -1136,6 +1169,7 @@ export type UserUncheckedUpdateWithoutCreatedEventsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -1167,6 +1201,7 @@ export type UserCreateWithoutUserEventsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -1198,6 +1233,7 @@ export type UserUncheckedCreateWithoutUserEventsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -1245,6 +1281,7 @@ export type UserUpdateWithoutUserEventsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -1276,6 +1313,7 @@ export type UserUncheckedUpdateWithoutUserEventsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -1307,6 +1345,7 @@ export type UserCreateWithoutOrganizerGroupInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   coinTransactionsAdmin?: Prisma.CoinTransactionCreateNestedManyWithoutAdminInput
@@ -1338,6 +1377,7 @@ export type UserUncheckedCreateWithoutOrganizerGroupInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedCreateNestedManyWithoutAdminInput
@@ -1385,6 +1425,7 @@ export type UserUpdateWithoutOrganizerGroupInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   coinTransactionsAdmin?: Prisma.CoinTransactionUpdateManyWithoutAdminNestedInput
@@ -1416,6 +1457,7 @@ export type UserUncheckedUpdateWithoutOrganizerGroupInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   coinTransactionsAdmin?: Prisma.CoinTransactionUncheckedUpdateManyWithoutAdminNestedInput
@@ -1447,6 +1489,7 @@ export type UserCreateWithoutGroupJoinRequestsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -1478,6 +1521,7 @@ export type UserUncheckedCreateWithoutGroupJoinRequestsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -1525,6 +1569,7 @@ export type UserUpdateWithoutGroupJoinRequestsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -1556,6 +1601,7 @@ export type UserUncheckedUpdateWithoutGroupJoinRequestsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -1587,6 +1633,7 @@ export type UserCreateWithoutChallengeSubmissionsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -1618,6 +1665,7 @@ export type UserUncheckedCreateWithoutChallengeSubmissionsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -1665,6 +1713,7 @@ export type UserUpdateWithoutChallengeSubmissionsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -1696,6 +1745,7 @@ export type UserUncheckedUpdateWithoutChallengeSubmissionsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -1727,6 +1777,7 @@ export type UserCreateWithoutActivityFeedHiddenInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -1758,6 +1809,7 @@ export type UserUncheckedCreateWithoutActivityFeedHiddenInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -1794,6 +1846,7 @@ export type UserCreateWithoutActivityFeedAdminInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -1825,6 +1878,7 @@ export type UserUncheckedCreateWithoutActivityFeedAdminInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -1872,6 +1926,7 @@ export type UserUpdateWithoutActivityFeedHiddenInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -1903,6 +1958,7 @@ export type UserUncheckedUpdateWithoutActivityFeedHiddenInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -1945,6 +2001,7 @@ export type UserUpdateWithoutActivityFeedAdminInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -1976,6 +2033,7 @@ export type UserUncheckedUpdateWithoutActivityFeedAdminInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -2007,6 +2065,7 @@ export type UserCreateWithoutActivityReactionsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -2038,6 +2097,7 @@ export type UserUncheckedCreateWithoutActivityReactionsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -2085,6 +2145,7 @@ export type UserUpdateWithoutActivityReactionsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -2116,6 +2177,7 @@ export type UserUncheckedUpdateWithoutActivityReactionsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -2147,6 +2209,7 @@ export type UserCreateWithoutCoinTransactionsAdminInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -2178,6 +2241,7 @@ export type UserUncheckedCreateWithoutCoinTransactionsAdminInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -2225,6 +2289,7 @@ export type UserUpdateWithoutCoinTransactionsAdminInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -2256,6 +2321,7 @@ export type UserUncheckedUpdateWithoutCoinTransactionsAdminInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -2287,6 +2353,7 @@ export type UserCreateWithoutNotificationSchedulesInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -2318,6 +2385,7 @@ export type UserUncheckedCreateWithoutNotificationSchedulesInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -2365,6 +2433,7 @@ export type UserUpdateWithoutNotificationSchedulesInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -2396,6 +2465,7 @@ export type UserUncheckedUpdateWithoutNotificationSchedulesInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -2427,6 +2497,7 @@ export type UserCreateWithoutSentPushNotificationsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -2458,6 +2529,7 @@ export type UserUncheckedCreateWithoutSentPushNotificationsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -2505,6 +2577,7 @@ export type UserUpdateWithoutSentPushNotificationsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -2536,6 +2609,7 @@ export type UserUncheckedUpdateWithoutSentPushNotificationsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -2567,6 +2641,7 @@ export type UserCreateWithoutReceivedPushNotificationsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -2598,6 +2673,7 @@ export type UserUncheckedCreateWithoutReceivedPushNotificationsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -2645,6 +2721,7 @@ export type UserUpdateWithoutReceivedPushNotificationsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -2676,6 +2753,7 @@ export type UserUncheckedUpdateWithoutReceivedPushNotificationsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -2707,6 +2785,7 @@ export type UserCreateWithoutPushSubscriptionsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -2738,6 +2817,7 @@ export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -2785,6 +2865,7 @@ export type UserUpdateWithoutPushSubscriptionsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -2816,6 +2897,7 @@ export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -2847,6 +2929,7 @@ export type UserCreateWithoutLocationInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -2878,6 +2961,7 @@ export type UserUncheckedCreateWithoutLocationInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -2914,6 +2998,7 @@ export type UserCreateWithoutLocationsSharedWithMeInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -2945,6 +3030,7 @@ export type UserUncheckedCreateWithoutLocationsSharedWithMeInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -2992,6 +3078,7 @@ export type UserUpdateWithoutLocationInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -3023,6 +3110,7 @@ export type UserUncheckedUpdateWithoutLocationInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -3073,6 +3161,7 @@ export type UserScalarWhereInput = {
   lastName?: Prisma.StringFilter<"User"> | string
   hasAvatar?: Prisma.BoolFilter<"User"> | boolean
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
+  lastSeenOn?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
 }
@@ -3084,6 +3173,7 @@ export type UserCreateWithoutSentLocationRequestsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -3115,6 +3205,7 @@ export type UserUncheckedCreateWithoutSentLocationRequestsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -3151,6 +3242,7 @@ export type UserCreateWithoutReceivedLocationRequestsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -3182,6 +3274,7 @@ export type UserUncheckedCreateWithoutReceivedLocationRequestsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -3229,6 +3322,7 @@ export type UserUpdateWithoutSentLocationRequestsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -3260,6 +3354,7 @@ export type UserUncheckedUpdateWithoutSentLocationRequestsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -3302,6 +3397,7 @@ export type UserUpdateWithoutReceivedLocationRequestsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -3333,6 +3429,7 @@ export type UserUncheckedUpdateWithoutReceivedLocationRequestsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -3364,6 +3461,7 @@ export type UserCreateWithoutCreatedRewardsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -3395,6 +3493,7 @@ export type UserUncheckedCreateWithoutCreatedRewardsInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -3442,6 +3541,7 @@ export type UserUpdateWithoutCreatedRewardsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -3473,6 +3573,7 @@ export type UserUncheckedUpdateWithoutCreatedRewardsInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -3504,6 +3605,7 @@ export type UserCreateWithoutRewardPurchasesInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -3535,6 +3637,7 @@ export type UserUncheckedCreateWithoutRewardPurchasesInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -3571,6 +3674,7 @@ export type UserCreateWithoutRewardPurchaseStatusUpdatesInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupCreateNestedManyWithoutOrganizerInput
@@ -3602,6 +3706,7 @@ export type UserUncheckedCreateWithoutRewardPurchaseStatusUpdatesInput = {
   lastName: string
   hasAvatar?: boolean
   role?: $Enums.Role
+  lastSeenOn?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   organizerGroup?: Prisma.GroupUncheckedCreateNestedManyWithoutOrganizerInput
@@ -3649,6 +3754,7 @@ export type UserUpdateWithoutRewardPurchasesInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -3680,6 +3786,7 @@ export type UserUncheckedUpdateWithoutRewardPurchasesInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -3722,6 +3829,7 @@ export type UserUpdateWithoutRewardPurchaseStatusUpdatesInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -3753,6 +3861,7 @@ export type UserUncheckedUpdateWithoutRewardPurchaseStatusUpdatesInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -3784,6 +3893,7 @@ export type UserUpdateWithoutLocationsSharedWithMeInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUpdateManyWithoutOrganizerNestedInput
@@ -3815,6 +3925,7 @@ export type UserUncheckedUpdateWithoutLocationsSharedWithMeInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organizerGroup?: Prisma.GroupUncheckedUpdateManyWithoutOrganizerNestedInput
@@ -3846,6 +3957,7 @@ export type UserUncheckedUpdateManyWithoutLocationsSharedWithMeInput = {
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
   hasAvatar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  lastSeenOn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -4059,6 +4171,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   lastName?: boolean
   hasAvatar?: boolean
   role?: boolean
+  lastSeenOn?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   organizerGroup?: boolean | Prisma.User$organizerGroupArgs<ExtArgs>
@@ -4092,6 +4205,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   lastName?: boolean
   hasAvatar?: boolean
   role?: boolean
+  lastSeenOn?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -4103,6 +4217,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   lastName?: boolean
   hasAvatar?: boolean
   role?: boolean
+  lastSeenOn?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -4114,11 +4229,12 @@ export type UserSelectScalar = {
   lastName?: boolean
   hasAvatar?: boolean
   role?: boolean
+  lastSeenOn?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "authUserId" | "firstName" | "lastName" | "hasAvatar" | "role" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "authUserId" | "firstName" | "lastName" | "hasAvatar" | "role" | "lastSeenOn" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organizerGroup?: boolean | Prisma.User$organizerGroupArgs<ExtArgs>
   coinTransactionsAdmin?: boolean | Prisma.User$coinTransactionsAdminArgs<ExtArgs>
@@ -4178,6 +4294,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     lastName: string
     hasAvatar: boolean
     role: $Enums.Role
+    lastSeenOn: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -4630,6 +4747,7 @@ export interface UserFieldRefs {
   readonly lastName: Prisma.FieldRef<"User", 'String'>
   readonly hasAvatar: Prisma.FieldRef<"User", 'Boolean'>
   readonly role: Prisma.FieldRef<"User", 'Role'>
+  readonly lastSeenOn: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

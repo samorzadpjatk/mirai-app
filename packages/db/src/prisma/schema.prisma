@@ -74,6 +74,7 @@ model User {
   activityFeedAdmin         ActivityFeed[]           @relation("ActivityFeedAdmin")
   activityFeedHidden        ActivityFeed[]           @relation("ActivityFeedHiddenBy")
   activityReactions         ActivityReaction[]       @relation("ActivityReactionUser")
+  lastSeenOn                DateTime?                @map("last_seen_on")
   createdAt                 DateTime                 @default(now())
   updatedAt                 DateTime                 @updatedAt
 

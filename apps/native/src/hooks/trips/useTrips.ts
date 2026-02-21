@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import type { TripListItem } from "~/components/trips/list/types";
-import { getCachedTrips, setCachedTrips } from "~/lib/tripCacheStorage";
+import { getCachedTrips, setCachedTrips } from "~/lib/selectedTripStorage";
 
 export function useTrips() {
   const trpc = useTRPC();
