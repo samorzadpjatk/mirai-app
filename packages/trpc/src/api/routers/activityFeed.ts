@@ -101,6 +101,17 @@ const ensureTripExists = async (
   return trip;
 };
 
+const updateUserLastSeenOn = async (ctx: {
+  db: Prisma.TransactionClient;
+  dbUser: { id: string };
+}) => {
+  await ctx.db.$executeRaw`
+    UPDATE "User"
+    SET "last_seen_on" = NOW()
+    WHERE "id" = ${ctx.dbUser.id}
+  `;
+};
+
 const activitySelect = {
   id: true,
   tripId: true,
@@ -677,24 +688,30 @@ export const activityFeedRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       await ensureTripParticipant(ctx, input.tripId);
 
-      // Backward-compat for old callers that still page with page > 1.
-      if (!input.cursor && input.page > 1) {
-        return getActivitiesPage({
-          ctx,
-          tripId: input.tripId,
-          page: input.page,
-          pageSize: input.pageSize,
-          includeHidden: false,
-        });
-      }
+      const activitiesPromise =
+        // Backward-compat for old callers that still page with page > 1.
+        !input.cursor && input.page > 1
+          ? getActivitiesPage({
+              ctx,
+              tripId: input.tripId,
+              page: input.page,
+              pageSize: input.pageSize,
+              includeHidden: false,
+            })
+          : getActivitiesCursorPage({
+              ctx,
+              tripId: input.tripId,
+              pageSize: input.pageSize,
+              includeHidden: false,
+              cursor: input.cursor ?? null,
+            });
 
-      return getActivitiesCursorPage({
-        ctx,
-        tripId: input.tripId,
-        pageSize: input.pageSize,
-        includeHidden: false,
-        cursor: input.cursor ?? null,
-      });
+      const [activities] = await Promise.all([
+        activitiesPromise,
+        updateUserLastSeenOn(ctx),
+      ]);
+
+      return activities;
     }),
 
   getByTripModeration: moderatorProcedure
