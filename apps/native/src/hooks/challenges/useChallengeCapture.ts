@@ -9,14 +9,11 @@ import { useFileUpload } from "~/hooks/files";
 interface ChallengeCaptureOptions {
   tripId: string | undefined;
   challengeId: string | undefined;
-  challengeCreatedAt?: string | Date | null;
 }
 interface ChallengeUploadAsset {
   uri: string;
   fileName?: string | null;
   mimeType?: string | null;
-  creationTime?: number | null;
-  exif?: ImagePicker.ImagePickerAsset["exif"];
 }
 
 interface SubmissionLocation {
@@ -24,81 +21,9 @@ interface SubmissionLocation {
   longitude: number;
 }
 
-const MAX_GALLERY_IMAGE_AGE_BEFORE_CHALLENGE_MS = 4 * 60 * 60 * 1000;
-
-const normalizeTimestampToMs = (value: number) => {
-  // Some devices return seconds, others milliseconds.
-  return value < 1_000_000_000_000 ? value * 1000 : value;
-};
-
-const parseExifDateToMs = (value: unknown): number | null => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return normalizeTimestampToMs(value);
-  }
-
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  const exifDateMatch =
-    /^(\d{4})[:\-](\d{2})[:\-](\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(
-      trimmed,
-    );
-  if (exifDateMatch) {
-    const [, year, month, day, hour, minute, second] = exifDateMatch;
-    const parsed = new Date(
-      Number(year),
-      Number(month) - 1,
-      Number(day),
-      Number(hour),
-      Number(minute),
-      Number(second),
-    ).getTime();
-    return Number.isNaN(parsed) ? null : parsed;
-  }
-
-  const normalized = trimmed.replace(
-    /^(\d{4}):(\d{2}):(\d{2})/,
-    "$1-$2-$3",
-  );
-  const parsed = new Date(normalized).getTime();
-  return Number.isNaN(parsed) ? null : parsed;
-};
-
-const resolveAssetCapturedAtMs = (
-  asset: Pick<ChallengeUploadAsset, "creationTime" | "exif">,
-) => {
-  if (
-    typeof asset.creationTime === "number" &&
-    Number.isFinite(asset.creationTime)
-  ) {
-    return normalizeTimestampToMs(asset.creationTime);
-  }
-
-  if (!asset.exif || typeof asset.exif !== "object") return null;
-
-  const exif = asset.exif as Record<string, unknown>;
-  const candidateKeys = [
-    "DateTimeOriginal",
-    "DateTimeDigitized",
-    "DateTime",
-    "CreationDate",
-    "DateCreated",
-    "creation_time",
-  ];
-
-  for (const key of candidateKeys) {
-    const parsed = parseExifDateToMs(exif[key]);
-    if (parsed != null) return parsed;
-  }
-
-  return null;
-};
-
 export function useChallengeCapture({
   tripId,
   challengeId,
-  challengeCreatedAt,
 }: ChallengeCaptureOptions) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -177,38 +102,6 @@ export function useChallengeCapture({
       return `challenge-${Date.now()}.${extension}`;
     },
     [],
-  );
-
-  const validateGalleryAssetAge = useCallback(
-    (asset: ChallengeUploadAsset) => {
-      if (!challengeCreatedAt) return true;
-
-      const challengeCreatedAtMs = new Date(challengeCreatedAt).getTime();
-      if (Number.isNaN(challengeCreatedAtMs)) return true;
-
-      const capturedAtMs = resolveAssetCapturedAtMs(asset);
-      if (capturedAtMs == null) {
-        Alert.alert(
-          "Nie można zweryfikować zdjęcia",
-          "Nie udało się odczytać daty wykonania zdjęcia. Wybierz inne zdjęcie z galerii.",
-        );
-        return false;
-      }
-
-      const oldestAllowedMs =
-        challengeCreatedAtMs - MAX_GALLERY_IMAGE_AGE_BEFORE_CHALLENGE_MS;
-
-      if (capturedAtMs < oldestAllowedMs) {
-        Alert.alert(
-          "Zdjęcie jest za stare",
-          "Możesz dodać tylko zdjęcie wykonane maksymalnie 4 godziny przed utworzeniem wyzwania.",
-        );
-        return false;
-      }
-
-      return true;
-    },
-    [challengeCreatedAt],
   );
 
   const submissionMutation = useMutation(
@@ -380,9 +273,6 @@ export function useChallengeCapture({
 
       if (!result.canceled && result.assets[0]) {
         const selectedAsset = result.assets[0];
-        if (!validateGalleryAssetAge(selectedAsset)) {
-          return;
-        }
         await onSuccess?.(selectedAsset);
       }
     } catch {

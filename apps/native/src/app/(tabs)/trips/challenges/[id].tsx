@@ -105,7 +105,6 @@ export default function ChallengeDetailScreen() {
   } = useChallengeCapture({
     tripId,
     challengeId,
-    challengeCreatedAt: challenge?.createdAt,
   });
   const isUploading = uploadStatus === "uploading";
   const uploadPercent =
