@@ -98,6 +98,18 @@ const getAccessToken = (
   return null;
 };
 
+const isValidUserAgent = (userAgent: string | null): boolean => {
+  if (!userAgent) return false;
+  
+  // iOS User Agent pattern: MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0
+  const iosPattern = /^MIRAI\/\d+ CFNetwork\/[\d.]+ Darwin\/[\d.]+$/;
+  
+  // Android User Agent pattern: okhttp/4.12.0
+  const androidPattern = /^okhttp\/[\d.]+$/;
+  
+  return iosPattern.test(userAgent) || androidPattern.test(userAgent);
+};
+
 export interface TRPCContext {
   db: PrismaClient;
   supabase: SupabaseClient;
@@ -177,6 +189,22 @@ const t = initTRPC.context<TRPCContext>().create({
   },
 });
 
+// Global middleware for mobile app validation
+const mobileAppMiddleware = t.middleware(async ({ ctx, next }) => {
+  const userAgent = ctx.headers.get("user-agent") ?? ctx.headers.get("User-Agent");
+
+  if (!isValidUserAgent(userAgent)) {
+    console.log("[Security] Invalid User-Agent:", userAgent);
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Access denied. Only mobile apps are allowed.",
+    });
+  }
+
+  console.log("[Security] Valid User-Agent:", userAgent);
+  return next();
+});
+
 /**
  * Create a server-side caller.
  *
@@ -199,13 +227,19 @@ export const createCallerFactory = t.createCallerFactory;
 export const createTRPCRouter = t.router;
 
 /**
+ * Base procedure (mobile apps only)
+ * All procedures are gated by mobile User-Agent validation.
+ */
+const baseProcedure = t.procedure.use(mobileAppMiddleware);
+
+/**
  * Public (unauthenticated) procedure
  *
  * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure;
+export const publicProcedure = baseProcedure;
 
 /**
  * Protected (authenticated) procedure
@@ -215,7 +249,7 @@ export const publicProcedure = t.procedure;
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
   try {
     console.log("[Auth] Protected procedure called, checking auth...");
     console.log("[Auth] Access token present:", ctx.accessToken ? "YES" : "NO");
@@ -251,7 +285,7 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
  *
  * @see https://trpc.io/docs/procedures
  */
-export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
+export const moderatorProcedure = baseProcedure.use(async ({ ctx, next }) => {
   try {
     const dbUser = await requireModerator(
       ctx.db,
@@ -274,7 +308,9 @@ export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
   }
 });
 
-export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
+export const mobileAppProcedure = t.procedure.use(mobileAppMiddleware);
+
+export const adminProcedure = baseProcedure.use(async ({ ctx, next }) => {
   try {
     const dbUser = await requireAdmin(
       ctx.db,

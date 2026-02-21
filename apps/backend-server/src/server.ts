@@ -5,8 +5,7 @@ import {
   type FastifyTRPCPluginOptions,
 } from "@trpc/server/adapters/fastify";
 import fastify, { type FastifyRequest } from "fastify";
-import { type AppRouter, appRouter } from "@integral-2025-app/trpc";
-import { createTRPCContext } from "@integral-2025-app/trpc";
+import { type AppRouter, appRouter, createTRPCContext } from "@integral-2025-app/trpc";
 import { fastifyHeadersToFetchHeaders } from "./utils/headers";
 
 export interface ServerOptions {
@@ -44,6 +43,7 @@ export function createServer(opts: ServerOptions) {
         connectionParams?: unknown;
       }) => {
         const { req, connectionParams } = opts;
+
         const supabaseUrl = process.env.SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         const databaseUrl = process.env.DATABASE_URL;
