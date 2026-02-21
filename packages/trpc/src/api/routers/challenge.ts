@@ -578,6 +578,16 @@ export const challengeRouter = createTRPCRouter({
       });
 
       if (
+        input.submissionType === "IMAGE_LOCATION" &&
+        input.autoApprove
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Image + Location challenges cannot use auto-approve",
+        });
+      }
+
+      if (
         input.submissionType === "TEXT" &&
         input.autoApprove &&
         !input.textExpectedPhrase?.trim()
@@ -594,7 +604,7 @@ export const challengeRouter = createTRPCRouter({
         !input.isRecurring &&
         requestedStatus === "VISIBLE" &&
         Boolean(input.startTime) &&
-        (input.startTime as Date) <= now &&
+        input.startTime! <= now &&
         (!input.endTime || input.endTime > now);
       const initialStatus = shouldActivateImmediately
         ? "ACTIVE"
@@ -630,9 +640,10 @@ export const challengeRouter = createTRPCRouter({
                 : null,
           autoApprove:
             input.submissionType === "QR_CODE" ||
-            input.submissionType === "LOCATION" ||
-            input.submissionType === "IMAGE_LOCATION"
+            input.submissionType === "LOCATION"
               ? true
+              : input.submissionType === "IMAGE_LOCATION"
+                ? false
               : input.autoApprove,
         },
         select: challengeSelect,
@@ -812,10 +823,18 @@ export const challengeRouter = createTRPCRouter({
             : null;
       const effectiveAutoApprove =
         effectiveSubmissionType === "QR_CODE" ||
-        effectiveSubmissionType === "LOCATION" ||
-        effectiveSubmissionType === "IMAGE_LOCATION"
+        effectiveSubmissionType === "LOCATION"
           ? true
+          : effectiveSubmissionType === "IMAGE_LOCATION"
+            ? false
           : input.autoApprove ?? existing.autoApprove;
+
+      if (effectiveSubmissionType === "IMAGE_LOCATION" && input.autoApprove) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Image + Location challenges cannot use auto-approve",
+        });
+      }
 
       if (
         effectiveSubmissionType === "TEXT" &&
@@ -857,9 +876,10 @@ export const challengeRouter = createTRPCRouter({
           expectedValue: effectiveExpectedValue,
           autoApprove:
             effectiveSubmissionType === "QR_CODE" ||
-            effectiveSubmissionType === "LOCATION" ||
-            effectiveSubmissionType === "IMAGE_LOCATION"
+            effectiveSubmissionType === "LOCATION"
               ? true
+              : effectiveSubmissionType === "IMAGE_LOCATION"
+                ? false
               : input.autoApprove,
         },
         select: challengeSelect,
