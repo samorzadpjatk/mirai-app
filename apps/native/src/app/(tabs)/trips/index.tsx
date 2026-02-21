@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "@integral-2025-app/auth/client";
@@ -16,18 +16,13 @@ export default function TripsScreen() {
   const { trips, isLoading: tripsLoading } = useTrips();
   const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } = useSelectedTrip();
 
-  const hasSelectedTrip = useMemo(() => {
-    if (!selectedTripId) return false;
-    return trips.some((trip) => trip.id === selectedTripId);
-  }, [selectedTripId, trips]);
-
   useEffect(() => {
     if (!isLoading && !session) {
       router.replace("/auth/login");
     }
   }, [isLoading, session, router]);
 
-  if (isLoading || tripsLoading || isLoadingSelectedTrip) {
+  if (isLoading || isLoadingSelectedTrip || (!selectedTripId && tripsLoading)) {
     return <LoadingScreen message="Loading trip..." />;
   }
 
@@ -35,7 +30,7 @@ export default function TripsScreen() {
     return null;
   }
 
-  if (hasSelectedTrip && selectedTripId) {
+  if (selectedTripId) {
     return <TripDetailsScreen />;
   }
 
