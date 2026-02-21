@@ -185,7 +185,42 @@ const ensureChallengeInTrip = async (
   return challenge;
 };
 
-const LOCATION_AUTO_APPROVE_RADIUS_METERS = 50;
+const LOCATION_SUBMISSION_RADIUS_METERS = 200;
+
+const assertSubmissionWithinTargetLocation = (params: {
+  challenge: {
+    targetLatitude: number | null;
+    targetLongitude: number | null;
+  };
+  latitude?: number | null;
+  longitude?: number | null;
+}) => {
+  if (
+    typeof params.latitude !== "number" ||
+    typeof params.longitude !== "number" ||
+    typeof params.challenge.targetLatitude !== "number" ||
+    typeof params.challenge.targetLongitude !== "number"
+  ) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Location challenge is missing required coordinates",
+    });
+  }
+
+  const distanceKm = calculateDistance(
+    params.latitude,
+    params.longitude,
+    params.challenge.targetLatitude,
+    params.challenge.targetLongitude,
+  );
+
+  if (distanceKm * 1000 > LOCATION_SUBMISSION_RADIUS_METERS) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "You are too far from target location",
+    });
+  }
+};
 
 const shouldAutoApproveSubmission = (params: {
   challenge: {
@@ -218,33 +253,13 @@ const shouldAutoApproveSubmission = (params: {
   }
 
   if (params.challenge.submissionType === "LOCATION") {
-    if (
-      typeof params.latitude !== "number" ||
-      typeof params.longitude !== "number" ||
-      typeof params.challenge.targetLatitude !== "number" ||
-      typeof params.challenge.targetLongitude !== "number"
-    ) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Location challenge is missing required coordinates",
-      });
-    }
-
-    const distanceKm = calculateDistance(
-      params.latitude,
-      params.longitude,
-      params.challenge.targetLatitude,
-      params.challenge.targetLongitude,
-    );
-
-    if (distanceKm * 1000 > LOCATION_AUTO_APPROVE_RADIUS_METERS) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "You are too far from target location",
-      });
-    }
-
+    assertSubmissionWithinTargetLocation(params);
     return true;
+  }
+
+  if (params.challenge.submissionType === "IMAGE_LOCATION") {
+    assertSubmissionWithinTargetLocation(params);
+    return false;
   }
 
   if (params.challenge.submissionType === "TEXT") {

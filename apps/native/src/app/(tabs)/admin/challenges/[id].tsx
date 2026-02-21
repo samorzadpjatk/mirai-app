@@ -295,10 +295,11 @@ export default function EditChallengeScreen() {
   const showPodiumPoints = form.scoringCategory !== "UNLIMITED";
   const isAutoApproveForced =
     form.submissionType === "QR_CODE" ||
-    form.submissionType === "LOCATION" ||
-    form.submissionType === "IMAGE_LOCATION";
+    form.submissionType === "LOCATION";
   const isAutoApproveDisabled =
-    form.submissionType === "IMAGE" || form.submissionType === "VIDEO";
+    form.submissionType === "IMAGE" ||
+    form.submissionType === "VIDEO" ||
+    form.submissionType === "IMAGE_LOCATION";
   const needsLocation =
     form.submissionType === "LOCATION" ||
     form.submissionType === "IMAGE_LOCATION";
@@ -1097,13 +1098,12 @@ export default function EditChallengeScreen() {
           </View>
           {isAutoApproveForced ? (
             <Text style={styles.hint}>
-              Auto-approve is always enabled for QR code, Location and Image +
-              Location
-              challenges.
+              Auto-approve is always enabled for QR code and Location challenges.
             </Text>
           ) : isAutoApproveDisabled ? (
             <Text style={styles.hint}>
-              Auto-approve is not available for Image and Video challenges.
+              Auto-approve is not available for Image, Video and Image +
+              Location challenges.
             </Text>
           ) : null}
         </View>
