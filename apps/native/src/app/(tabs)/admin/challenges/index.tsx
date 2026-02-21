@@ -11,7 +11,12 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -22,6 +27,7 @@ interface ChallengeItem {
   title: string;
   basePoints: number;
   status: string;
+  endTime: Date | string | null;
   tripId: string;
   submissionType:
     | "IMAGE"
@@ -34,6 +40,7 @@ interface ChallengeItem {
   scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
   participantGroupsCount: number;
   pendingSubmissionsCount: number;
+  autoApprove: boolean;
 }
 
 const statusFilters = [
@@ -167,11 +174,13 @@ export default function AdminChallengesScreen() {
       title: challenge.name,
       basePoints: challenge.basePoints ?? 0,
       status: challenge.status ?? "HIDDEN",
+      endTime: challenge.endTime ?? null,
       tripId: challenge.tripId,
       submissionType: challenge.submissionType ?? "IMAGE",
       scoringCategory: challenge.scoringCategory ?? "JUDGED_STAFF",
       participantGroupsCount: challenge.participantGroupsCount ?? 0,
       pendingSubmissionsCount: challenge.pendingSubmissionsCount ?? 0,
+      autoApprove: Boolean(challenge.autoApprove),
     }));
   }, [challengesData]);
 
@@ -250,10 +259,15 @@ export default function AdminChallengesScreen() {
     let list = challenges;
 
     if (selectedStatusFilter === "ALL") {
-      list = list.filter(
-        (challenge) =>
-          challenge.status === "ACTIVE" || challenge.status === "COMPLETED",
-      );
+      const allowedStatuses = new Set([
+        "HIDDEN",
+        "VISIBLE",
+        "ACTIVE",
+        "VOTING_PHASE",
+        "COMPLETED",
+        "CANCELLED",
+      ]);
+      list = list.filter((challenge) => allowedStatuses.has(challenge.status));
     } else {
       list = list.filter(
         (challenge) => challenge.status === selectedStatusFilter,
@@ -282,7 +296,11 @@ export default function AdminChallengesScreen() {
 
     const statusPriority: Record<string, number> = {
       ACTIVE: 0,
-      COMPLETED: 1,
+      VISIBLE: 1,
+      VOTING_PHASE: 2,
+      HIDDEN: 3,
+      COMPLETED: 4,
+      CANCELLED: 5,
     };
 
     return [...list].sort((a, b) => {
@@ -296,6 +314,49 @@ export default function AdminChallengesScreen() {
       return a.title.localeCompare(b.title);
     });
   }, [challenges, selectedStatusFilter, selectedTypeFilter, nameFilter]);
+
+  const judgedStaffChallengesForProgress = useMemo(
+    () =>
+      filteredChallenges.filter(
+        (challenge) => challenge.scoringCategory === "JUDGED_STAFF",
+      ),
+    [filteredChallenges],
+  );
+
+  const judgedStaffProgressQueries = useQueries({
+    queries: judgedStaffChallengesForProgress.map((challenge) => ({
+      ...trpc.challengeVote.getJudgedStaffProgress.queryOptions({
+        challengeId: challenge.id,
+        tripId,
+      }),
+      enabled: Boolean(tripId),
+      refetchInterval: 15_000,
+    })),
+  });
+
+  const judgedStaffProgressByChallengeId = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        votedAdmins: number;
+        totalAdmins: number;
+        pendingAdmins: number;
+      }
+    >();
+
+    judgedStaffChallengesForProgress.forEach((challenge, index) => {
+      const data = judgedStaffProgressQueries[index]?.data;
+      if (!data) return;
+
+      map.set(challenge.id, {
+        votedAdmins: data.votedAdmins,
+        totalAdmins: data.totalAdmins,
+        pendingAdmins: data.pendingAdmins,
+      });
+    });
+
+    return map;
+  }, [judgedStaffChallengesForProgress, judgedStaffProgressQueries]);
 
   if (isLoading) {
     return (
@@ -567,10 +628,22 @@ export default function AdminChallengesScreen() {
             const statusColor = statusColors[challenge.status] ?? "#9ca3af";
             const hasPendingSubmissions = challenge.pendingSubmissionsCount > 0;
             const pendingColor = hasPendingSubmissions ? "#ef4444" : "#64748b";
+            const submissionEndTimestamp = challenge.endTime
+              ? new Date(challenge.endTime).getTime()
+              : null;
+            const isStaffVotingAvailable =
+              challenge.scoringCategory !== "JUDGED_STAFF" ||
+              (submissionEndTimestamp !== null &&
+                Number.isFinite(submissionEndTimestamp) &&
+                submissionEndTimestamp <= Date.now());
             const submissionTypeMeta = getSubmissionTypeMeta(
               challenge.submissionType,
             );
             const scoringMeta = getScoringMeta(challenge.scoringCategory);
+            const judgedStaffProgress =
+              challenge.scoringCategory === "JUDGED_STAFF"
+                ? judgedStaffProgressByChallengeId.get(challenge.id)
+                : null;
             return (
               <View
                 key={challenge.id}
@@ -754,67 +827,136 @@ export default function AdminChallengesScreen() {
                     paddingVertical: 2,
                   }}
                 >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 4,
-                      borderRadius: 999,
-                      borderWidth: 1,
-                      borderColor: hasPendingSubmissions
-                        ? "rgba(239,68,68,0.45)"
-                        : "rgba(100,116,139,0.45)",
-                      backgroundColor: hasPendingSubmissions
-                        ? "rgba(239,68,68,0.18)"
-                        : "rgba(100,116,139,0.14)",
-                      paddingHorizontal: 8,
-                      paddingVertical: 3,
-                    }}
-                  >
-                    <Ionicons name="time-outline" size={12} color={pendingColor} />
-                    <Text
+                  <View style={{ gap: 6, alignItems: "flex-end" }}>
+                    {challenge.scoringCategory === "JUDGED_STAFF" ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                          borderRadius: 999,
+                          borderWidth: 1,
+                          borderColor: "rgba(14,165,233,0.45)",
+                          backgroundColor: "rgba(14,165,233,0.16)",
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                        }}
+                      >
+                        <Ionicons
+                          name="shield-checkmark-outline"
+                          size={12}
+                          color="#38bdf8"
+                        />
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            fontWeight: "700",
+                            color: "#38bdf8",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          {judgedStaffProgress
+                            ? `${judgedStaffProgress.votedAdmins}/${judgedStaffProgress.totalAdmins}`
+                            : "..."}
+                        </Text>
+                      </View>
+                    ) : null}
+
+                    <View
                       style={{
-                        fontSize: 10,
-                        fontWeight: "700",
-                        color: pendingColor,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        borderRadius: 999,
+                        borderWidth: 1,
+                        borderColor: hasPendingSubmissions
+                          ? "rgba(239,68,68,0.45)"
+                          : "rgba(100,116,139,0.45)",
+                        backgroundColor: hasPendingSubmissions
+                          ? "rgba(239,68,68,0.18)"
+                          : "rgba(100,116,139,0.14)",
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
                       }}
                     >
-                      {challenge.pendingSubmissionsCount}
-                    </Text>
+                      <Ionicons name="time-outline" size={12} color={pendingColor} />
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: "700",
+                          color: pendingColor,
+                        }}
+                      >
+                        {challenge.pendingSubmissionsCount}
+                      </Text>
+                    </View>
                   </View>
 
                   <View style={{ flexDirection: "row", gap: 4 }}>
-                    <TouchableOpacity
-                      style={{ padding: 8 }}
-                      onPress={() => {
-                        router.push({
-                          pathname: "/admin/challenges/submissions",
-                          params: { tripId, challengeId: challenge.id },
-                        });
-                      }}
-                    >
-                      <Ionicons
-                        name="images"
-                        size={20}
-                        color="#9ca3af"
-                      />
-                    </TouchableOpacity>
+                    {challenge.scoringCategory === "JUDGED_STAFF" ? (
+                      <TouchableOpacity
+                        style={{
+                          padding: 8,
+                          opacity: isStaffVotingAvailable ? 1 : 0.45,
+                        }}
+                        disabled={!isStaffVotingAvailable}
+                        onPress={() => {
+                          router.push({
+                            pathname: "/admin/challenges/staff-vote",
+                            params: { tripId, challengeId: challenge.id },
+                          });
+                        }}
+                      >
+                        <Ionicons
+                          name="git-compare"
+                          size={20}
+                          color={
+                            isStaffVotingAvailable ? colors.primary : colors.gray400
+                          }
+                        />
+                      </TouchableOpacity>
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          style={{ padding: 8 }}
+                          onPress={() => {
+                            router.push({
+                              pathname: "/admin/challenges/submissions",
+                              params: { tripId, challengeId: challenge.id },
+                            });
+                          }}
+                        >
+                          <Ionicons
+                            name="images"
+                            size={20}
+                            color="#9ca3af"
+                          />
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={{ padding: 8 }}
-                      onPress={() => {
-                        router.push({
-                          pathname: "/admin/challenges/judgement",
-                          params: { tripId, challengeId: challenge.id },
-                        });
-                      }}
-                    >
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color={colors.primary}
-                      />
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                          style={{ padding: 8 }}
+                          onPress={() => {
+                            const shouldUseSubmissionsScreen =
+                              challenge.submissionType === "TEXT" &&
+                              !challenge.autoApprove;
+
+                            router.push({
+                              pathname: shouldUseSubmissionsScreen
+                                ? "/admin/challenges/submissions"
+                                : "/admin/challenges/judgement",
+                              params: { tripId, challengeId: challenge.id },
+                            });
+                          }}
+                        >
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color={colors.primary}
+                          />
+                        </TouchableOpacity>
+                      </>
+                    )}
 
                     <TouchableOpacity
                       style={{ padding: 8 }}

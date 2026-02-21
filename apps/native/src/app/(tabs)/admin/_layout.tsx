@@ -102,6 +102,13 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="challenges/staff-vote"
+          options={{
+            title: "Staff voting",
+            headerBackTitle: "Back",
+          }}
+        />
+        <Stack.Screen
           name="activity/index"
           options={{
             title: "Activity",

@@ -19,7 +19,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useFileDownload } from "~/hooks/files";
@@ -33,6 +33,7 @@ type StatusFilter = "ALL" | SubmissionStatus;
 interface SubmissionItem {
   id: string;
   status: SubmissionStatus;
+  ranking?: number | null;
   imageIds: string[];
   videoId: string | null;
   textContent: string | null;
@@ -98,6 +99,8 @@ const SubmissionCard = ({
   onReject: (submission: SubmissionItem) => void;
 }) => {
   const hasImage = submission.imageIds.length > 0;
+  const textContent = submission.textContent?.trim() ?? "";
+  const hasText = textContent.length > 0;
   const statusMeta = getStatusMeta(submission.status);
   const reviewerName = formatPersonName(submission.reviewedBy);
   const {
@@ -147,12 +150,17 @@ const SubmissionCard = ({
           <Text style={[styles.statusText, { color: statusMeta.color }]}>
             {submission.status}
           </Text>
+          {typeof submission.ranking === "number" ? (
+            <Text style={[styles.statusText, { color: colors.primary }]}>
+              #{submission.ranking}
+            </Text>
+          ) : null}
         </View>
       </View>
 
-      <View style={styles.mediaWrap}>
-        {hasImage ? (
-          imageStatus === "loading" ? (
+      {hasImage ? (
+        <View style={styles.mediaWrap}>
+          {imageStatus === "loading" ? (
             <View style={styles.mediaFallback}>
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
@@ -163,23 +171,37 @@ const SubmissionCard = ({
               <Ionicons name="image-outline" size={20} color={colors.textMuted} />
               <Text style={styles.mediaFallbackText}>Image unavailable</Text>
             </View>
-          )
-        ) : submission.videoId ? (
-          <View style={styles.mediaFallback}>
-            <Ionicons name="videocam-outline" size={24} color={colors.textMuted} />
-            <Text style={styles.mediaFallbackText}>Video submission</Text>
-          </View>
-        ) : (
-          <View style={styles.mediaFallback}>
-            <Ionicons
-              name="document-text-outline"
-              size={22}
-              color={colors.textMuted}
-            />
-            <Text style={styles.mediaFallbackText}>No image asset</Text>
-          </View>
-        )}
-      </View>
+          )}
+        </View>
+      ) : null}
+
+      {!hasImage && submission.videoId ? (
+        <View style={styles.assetFallbackBox}>
+          <Ionicons name="videocam-outline" size={24} color={colors.textMuted} />
+          <Text style={styles.mediaFallbackText}>Video submission</Text>
+        </View>
+      ) : null}
+
+      {hasText ? (
+        <View style={styles.textBox}>
+          <Text style={styles.textBoxLabel}>Submitted text</Text>
+          <Text selectable style={styles.textBoxValue}>
+            {textContent}
+          </Text>
+          <Text style={styles.textBoxHint}>Press and hold text to copy</Text>
+        </View>
+      ) : null}
+
+      {!hasImage && !submission.videoId && !hasText ? (
+        <View style={styles.assetFallbackBox}>
+          <Ionicons
+            name="document-text-outline"
+            size={22}
+            color={colors.textMuted}
+          />
+          <Text style={styles.mediaFallbackText}>No content asset</Text>
+        </View>
+      ) : null}
 
       {submission.status === "REJECTED" && submission.rejectionReason ? (
         <View style={styles.reasonBox}>
@@ -217,6 +239,7 @@ const SubmissionCard = ({
 
 export default function ChallengeSubmissionsScreen() {
   const trpc = useTRPC();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useAppSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -296,13 +319,20 @@ export default function ChallengeSubmissionsScreen() {
 
   const isRefreshing =
     submissionsQuery.isRefetching || challengeQuery.isRefetching;
-
   const handleRefresh = useCallback(() => {
     void Promise.all([submissionsQuery.refetch(), challengeQuery.refetch()]);
   }, [challengeQuery, submissionsQuery]);
 
   const handleApprove = useCallback(
     (submission: SubmissionItem) => {
+      const approveWithRanking = (ranking?: 1 | 2 | 3) => {
+        void reviewMutation.mutateAsync({
+          id: submission.id,
+          status: "APPROVED",
+          ranking,
+        });
+      };
+
       Alert.alert(
         "Set approved",
         `Approve submission from ${submission.group.name}?`,
@@ -311,10 +341,7 @@ export default function ChallengeSubmissionsScreen() {
           {
             text: "Approve",
             onPress: () => {
-              void reviewMutation.mutateAsync({
-                id: submission.id,
-                status: "APPROVED",
-              });
+              approveWithRanking();
             },
           },
         ],
@@ -365,6 +392,40 @@ export default function ChallengeSubmissionsScreen() {
     return (
       <View style={styles.centeredScreen}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (challengeQuery.data?.scoringCategory === "JUDGED_STAFF") {
+    return (
+      <View style={styles.centeredScreen}>
+        <Stack.Screen
+          options={{
+            title: "Challenge submissions",
+          }}
+        />
+        <View style={styles.blockedCard}>
+          <Text style={styles.blockedTitle}>Use staff voting</Text>
+          <Text style={styles.blockedText}>
+            For judged staff challenges use the dedicated staff voting flow.
+          </Text>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.approveButton]}
+            onPress={() =>
+              router.replace({
+                pathname: "/admin/challenges/staff-vote",
+                params: { tripId, challengeId },
+              })
+            }
+          >
+            <Ionicons
+              name="git-compare-outline"
+              size={16}
+              color={colors.backgroundDark}
+            />
+            <Text style={styles.approveButtonText}>Open staff voting</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -607,6 +668,42 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.xs,
   },
+  assetFallbackBox: {
+    width: "100%",
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surfaceDark,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+  },
+  textBox: {
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.35)",
+    backgroundColor: "rgba(15,23,42,0.45)",
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  textBoxLabel: {
+    color: "#cbd5e1",
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  textBoxValue: {
+    color: colors.white,
+    fontSize: typography.sm,
+    lineHeight: 20,
+  },
+  textBoxHint: {
+    color: colors.textSecondary,
+    fontSize: typography.xs,
+  },
   reasonBox: {
     borderWidth: 1,
     borderColor: "rgba(239,68,68,0.35)",
@@ -671,6 +768,27 @@ const styles = StyleSheet.create({
   mutedText: {
     color: colors.textSecondary,
     fontSize: typography.sm,
+  },
+  blockedCard: {
+    width: "90%",
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(14,165,233,0.35)",
+    backgroundColor: "rgba(14,165,233,0.14)",
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  blockedTitle: {
+    color: "#38bdf8",
+    fontSize: typography.lg,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  blockedText: {
+    color: colors.white,
+    fontSize: typography.sm,
+    lineHeight: 20,
   },
   modalBackdrop: {
     flex: 1,

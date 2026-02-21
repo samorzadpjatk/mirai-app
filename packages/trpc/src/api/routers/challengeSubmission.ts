@@ -13,8 +13,10 @@ import {
   captureTripRankingSnapshot,
   createChallengeStatusActivityById,
   createRankChangeActivities,
+  promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
   promoteVisibleChallengesToActiveWithFeed,
 } from "../../utils/activityFeed";
+import { resolveRecurringChallengeIdForTrip } from "../../utils/recurringChallenges";
 
 const submissionBaseSelect: Prisma.ChallengeSubmissionSelect = {
   id: true,
@@ -115,12 +117,15 @@ const ensureChallengeInTrip = async (
   challengeId: string,
   tripId: string,
 ) => {
+  const now = new Date();
+
   await ctx.db.challenge.updateMany({
     where: {
       id: challengeId,
       tripId,
       status: "VISIBLE",
-      endTime: { lte: new Date() },
+      scoringCategory: { notIn: ["PEER_VOTING", "JUDGED_STAFF"] },
+      endTime: { lte: now },
     },
     data: {
       status: "COMPLETED",
@@ -133,12 +138,19 @@ const ensureChallengeInTrip = async (
     createdByAdmin: null,
   });
 
+  await promoteActivePeerVotingChallengesToVotingPhaseWithFeed({
+    tx: ctx.db,
+    where: { id: challengeId, tripId },
+    createdByAdmin: null,
+  });
+
   await ctx.db.challenge.updateMany({
     where: {
       id: challengeId,
       tripId,
       status: "ACTIVE",
-      endTime: { lte: new Date() },
+      scoringCategory: { notIn: ["PEER_VOTING", "JUDGED_STAFF"] },
+      endTime: { lte: now },
     },
     data: {
       status: "COMPLETED",
@@ -151,6 +163,10 @@ const ensureChallengeInTrip = async (
       id: true,
       name: true,
       status: true,
+      scoringCategory: true,
+      startTime: true,
+      endTime: true,
+      votingStartTime: true,
       submissionType: true,
       description: true,
       expectedValue: true,
@@ -430,15 +446,130 @@ const rebalanceSpeedRankings = async (params: {
   }
 };
 
+const rebalanceJudgedStaffRankings = async (params: {
+  tx: Prisma.TransactionClient;
+  challenge: {
+    id: string;
+    name: string;
+    basePoints: number;
+    firstPlacePoints: number | null;
+    secondPlacePoints: number | null;
+    thirdPlacePoints: number | null;
+  };
+  adminId: string;
+  prioritizedSubmissionId?: string;
+  prioritizedRanking?: number;
+}) => {
+  const approved = await params.tx.challengeSubmission.findMany({
+    where: {
+      challengeId: params.challenge.id,
+      status: "APPROVED",
+    },
+    select: {
+      id: true,
+      groupId: true,
+      ranking: true,
+      awardedPoints: true,
+      bonusPoints: true,
+      createdAt: true,
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  });
+
+  const rankingBySubmissionId = new Map<string, number | null>();
+  const rankingOwnerByPlace = new Map<number, string>();
+
+  for (const submission of approved) {
+    const ranking = submission.ranking;
+    if (ranking == null || ranking < 1 || ranking > 3) {
+      rankingBySubmissionId.set(submission.id, null);
+      continue;
+    }
+
+    if (rankingOwnerByPlace.has(ranking)) {
+      rankingBySubmissionId.set(submission.id, null);
+      continue;
+    }
+
+    rankingOwnerByPlace.set(ranking, submission.id);
+    rankingBySubmissionId.set(submission.id, ranking);
+  }
+
+  if (
+    params.prioritizedSubmissionId &&
+    typeof params.prioritizedRanking === "number" &&
+    params.prioritizedRanking >= 1 &&
+    params.prioritizedRanking <= 3 &&
+    approved.some((submission) => submission.id === params.prioritizedSubmissionId)
+  ) {
+    const previousOwner = rankingOwnerByPlace.get(params.prioritizedRanking);
+    if (previousOwner && previousOwner !== params.prioritizedSubmissionId) {
+      rankingBySubmissionId.set(previousOwner, null);
+    }
+    rankingBySubmissionId.set(
+      params.prioritizedSubmissionId,
+      params.prioritizedRanking,
+    );
+  }
+
+  for (const submission of approved) {
+    const nextRanking = rankingBySubmissionId.get(submission.id) ?? null;
+    const nextAwardedPoints = resolveAwardedPoints(params.challenge, {
+      ranking: nextRanking ?? undefined,
+    });
+    const currentAwardedPoints = submission.awardedPoints ?? 0;
+    const currentBonusPoints = submission.bonusPoints ?? 0;
+    const previousTotal = currentAwardedPoints + currentBonusPoints;
+    const nextTotal = nextAwardedPoints + currentBonusPoints;
+    const delta = nextTotal - previousTotal;
+
+    const rankingChanged = submission.ranking !== nextRanking;
+    const pointsChanged = currentAwardedPoints !== nextAwardedPoints;
+    if (!rankingChanged && !pointsChanged && delta === 0) {
+      continue;
+    }
+
+    await params.tx.challengeSubmission.update({
+      where: { id: submission.id },
+      data: {
+        ranking: nextRanking,
+        awardedPoints: nextAwardedPoints,
+      },
+    });
+
+    if (delta !== 0) {
+      await params.tx.group.update({
+        where: { id: submission.groupId },
+        data: { coins: { increment: delta } },
+      });
+      await params.tx.coinTransaction.create({
+        data: {
+          groupId: submission.groupId,
+          amount: delta,
+          reason: `Judged ranking update: ${params.challenge.name}${
+            nextRanking ? ` (#${nextRanking})` : ""
+          }`,
+          adminId: params.adminId,
+        },
+      });
+    }
+  }
+};
+
 export const challengeSubmissionRouter = createTRPCRouter({
-  getByChallenge: protectedProcedure
+  getByChallengeForAdmin: moderatorProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
-      await ensureTripParticipant(ctx, input.tripId);
-      await ensureChallengeInTrip(ctx, input.challengeId, input.tripId);
+      const resolvedChallengeId =
+        (await resolveRecurringChallengeIdForTrip({
+          tx: ctx.db,
+          challengeId: input.challengeId,
+          tripId: input.tripId,
+        })) ?? input.challengeId;
+      await ensureChallengeInTrip(ctx, resolvedChallengeId, input.tripId);
 
       const submissions = await ctx.db.challengeSubmission.findMany({
-        where: { challengeId: input.challengeId },
+        where: { challengeId: resolvedChallengeId },
         select: submissionSelect,
         orderBy: [{ voteScore: "desc" }, { createdAt: "asc" }],
       });
@@ -449,6 +580,57 @@ export const challengeSubmissionRouter = createTRPCRouter({
       );
 
       return submissions.map((submission) => ({
+        ...submission,
+        reviewedBy: attachReviewerEmail(
+          submission.reviewedBy,
+          emailByAuthUserId,
+        ),
+      }));
+    }),
+
+  getByChallenge: protectedProcedure
+    .input(z.object({ challengeId: z.string(), tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await ensureTripParticipant(ctx, input.tripId);
+      const resolvedChallengeId =
+        (await resolveRecurringChallengeIdForTrip({
+          tx: ctx.db,
+          challengeId: input.challengeId,
+          tripId: input.tripId,
+        })) ?? input.challengeId;
+      const challenge = await ensureChallengeInTrip(
+        ctx,
+        resolvedChallengeId,
+        input.tripId,
+      );
+
+      const submissions = await ctx.db.challengeSubmission.findMany({
+        where: { challengeId: resolvedChallengeId },
+        select: submissionSelect,
+        orderBy: [{ voteScore: "desc" }, { createdAt: "asc" }],
+      });
+
+      const emailByAuthUserId = await buildAuthEmailLookup(
+        ctx.supabase,
+        submissions.map((submission) => submission.reviewedBy?.authUserId),
+      );
+
+      const shouldHideUnapprovedMedia =
+        ctx.dbUser.role !== "ADMIN" && ctx.dbUser.role !== "MODERATOR";
+
+      const sanitizedSubmissions = shouldHideUnapprovedMedia
+        ? submissions.map((submission) =>
+            submission.status === "APPROVED"
+              ? submission
+              : {
+                  ...submission,
+                  imageIds: [],
+                  videoId: null,
+                },
+          )
+        : submissions;
+
+      return sanitizedSubmissions.map((submission) => ({
         ...submission,
         reviewedBy: attachReviewerEmail(
           submission.reviewedBy,
@@ -492,12 +674,18 @@ export const challengeSubmissionRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const participant = await ensureTripParticipant(ctx, input.tripId);
       if (!participant.groupId) return null;
+      const resolvedChallengeId =
+        (await resolveRecurringChallengeIdForTrip({
+          tx: ctx.db,
+          challengeId: input.challengeId,
+          tripId: input.tripId,
+        })) ?? input.challengeId;
 
       return ctx.db.challengeSubmission
         .findUnique({
           where: {
             challengeId_groupId: {
-              challengeId: input.challengeId,
+              challengeId: resolvedChallengeId,
               groupId: participant.groupId,
             },
           },
@@ -541,10 +729,16 @@ export const challengeSubmissionRouter = createTRPCRouter({
         });
       }
       const participantGroupId = participant.groupId;
+      const resolvedChallengeId =
+        (await resolveRecurringChallengeIdForTrip({
+          tx: ctx.db,
+          challengeId: input.challengeId,
+          tripId: input.tripId,
+        })) ?? input.challengeId;
 
       const challenge = await ensureChallengeInTrip(
         ctx,
-        input.challengeId,
+        resolvedChallengeId,
         input.tripId,
       );
 
@@ -555,10 +749,17 @@ export const challengeSubmissionRouter = createTRPCRouter({
         });
       }
 
+      if (challenge.endTime && challenge.endTime <= new Date()) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Submission window has ended",
+        });
+      }
+
       const existing = await ctx.db.challengeSubmission.findUnique({
         where: {
           challengeId_groupId: {
-            challengeId: input.challengeId,
+            challengeId: resolvedChallengeId,
             groupId: participantGroupId,
           },
         },
@@ -601,7 +802,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
 
         const createdSubmission = await tx.challengeSubmission.create({
           data: {
-            challengeId: input.challengeId,
+            challengeId: resolvedChallengeId,
             groupId: participantGroupId,
             imageIds: input.imageIds ?? [],
             videoId: input.videoId,
@@ -705,8 +906,10 @@ export const challengeSubmissionRouter = createTRPCRouter({
             select: {
               id: true,
               status: true,
+              scoringCategory: true,
               startTime: true,
               endTime: true,
+              votingStartTime: true,
               submissionType: true,
               description: true,
               targetLatitude: true,
@@ -732,21 +935,12 @@ export const challengeSubmissionRouter = createTRPCRouter({
         });
       }
 
+      const currentTime = new Date();
+
       if (
-        (submission.challenge.status === "VISIBLE" ||
-          submission.challenge.status === "ACTIVE") &&
-        submission.challenge.endTime &&
-        submission.challenge.endTime <= new Date()
-      ) {
-        await ctx.db.challenge.update({
-          where: { id: submission.challenge.id },
-          data: { status: "COMPLETED" },
-        });
-        submission.challenge.status = "COMPLETED";
-      } else if (
         submission.challenge.status === "VISIBLE" &&
         submission.challenge.startTime &&
-        submission.challenge.startTime <= new Date()
+        submission.challenge.startTime <= currentTime
       ) {
         const activation = await ctx.db.challenge.updateMany({
           where: {
@@ -767,10 +961,60 @@ export const challengeSubmissionRouter = createTRPCRouter({
         submission.challenge.status = "ACTIVE";
       }
 
+      if (
+        submission.challenge.status === "ACTIVE" &&
+        submission.challenge.scoringCategory === "PEER_VOTING" &&
+        submission.challenge.votingStartTime &&
+        submission.challenge.votingStartTime <= currentTime
+      ) {
+        const movedToVoting = await ctx.db.challenge.updateMany({
+          where: {
+            id: submission.challenge.id,
+            status: "ACTIVE",
+            scoringCategory: "PEER_VOTING",
+            votingStartTime: { lte: currentTime },
+          },
+          data: { status: "VOTING_PHASE" },
+        });
+
+        if (movedToVoting.count > 0) {
+          await createChallengeStatusActivityById({
+            tx: ctx.db,
+            challengeId: submission.challenge.id,
+            eventType: "voting_started",
+            createdByAdmin: null,
+          });
+        }
+        submission.challenge.status = "VOTING_PHASE";
+      } else if (
+        (submission.challenge.status === "VISIBLE" ||
+          submission.challenge.status === "ACTIVE") &&
+        submission.challenge.scoringCategory !== "PEER_VOTING" &&
+        submission.challenge.scoringCategory !== "JUDGED_STAFF" &&
+        submission.challenge.endTime &&
+        submission.challenge.endTime <= currentTime
+      ) {
+        await ctx.db.challenge.update({
+          where: { id: submission.challenge.id },
+          data: { status: "COMPLETED" },
+        });
+        submission.challenge.status = "COMPLETED";
+      }
+
       if (submission.challenge.status !== "ACTIVE") {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Submission is allowed only for active challenges",
+        });
+      }
+
+      if (
+        submission.challenge.endTime &&
+        submission.challenge.endTime <= currentTime
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Submission window has ended",
         });
       }
 
@@ -872,7 +1116,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
         rejectionReason: z.string().optional(),
         awardedPoints: z.number().int().min(0).optional(),
         bonusPoints: z.number().int().min(0).optional(),
-        ranking: z.number().int().min(1).optional(),
+        ranking: z.number().int().min(1).max(3).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -889,11 +1133,15 @@ export const challengeSubmissionRouter = createTRPCRouter({
           id: true,
           status: true,
           groupId: true,
+          awardedPoints: true,
+          bonusPoints: true,
+          ranking: true,
           challenge: {
             select: {
               id: true,
               tripId: true,
               name: true,
+              submissionType: true,
               scoringCategory: true,
               basePoints: true,
               firstPlacePoints: true,
@@ -911,8 +1159,20 @@ export const challengeSubmissionRouter = createTRPCRouter({
         });
       }
 
+      if (submission.challenge.scoringCategory === "JUDGED_STAFF") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "For judged staff challenges use staff voting flow instead of manual approve/reject",
+        });
+      }
+
+      const isSpeed = submission.challenge.scoringCategory === "SPEED";
+
       const shouldCreateApprovalActivity =
-        input.status === "APPROVED" && submission.status !== "APPROVED";
+        input.status === "APPROVED" &&
+        submission.status !== "APPROVED" &&
+        submission.challenge.submissionType !== "TEXT";
       const shouldAwardCoins = shouldCreateApprovalActivity;
       const awardPoints = shouldAwardCoins
         ? resolveAwardedPoints(submission.challenge, {
@@ -924,11 +1184,11 @@ export const challengeSubmissionRouter = createTRPCRouter({
       const totalAwardPoints = awardPoints + bonusPoints;
 
       const updatedSubmission = await ctx.db.$transaction(async (tx) => {
-        const previousRankingSnapshot = shouldCreateApprovalActivity
+        const shouldCaptureRankingSnapshot = shouldCreateApprovalActivity;
+        const previousRankingSnapshot = shouldCaptureRankingSnapshot
           ? await captureTripRankingSnapshot(tx, submission.challenge.tripId)
           : null;
 
-        const isSpeed = submission.challenge.scoringCategory === "SPEED";
         await tx.challengeSubmission.update({
           where: { id: input.id },
           data: {
@@ -961,6 +1221,14 @@ export const challengeSubmissionRouter = createTRPCRouter({
               reason: `Challenge approved: ${submission.challenge.name}`,
               adminId: ctx.dbUser.id,
             },
+          });
+        }
+
+        if (submission.challenge.scoringCategory === "PEER_VOTING") {
+          await promoteActivePeerVotingChallengesToVotingPhaseWithFeed({
+            tx,
+            where: { id: submission.challenge.id },
+            createdByAdmin: ctx.dbUser.id,
           });
         }
 

@@ -3,13 +3,13 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface GroupStatsGridProps {
   membersCount: number;
-  points: number;
+  coins: number;
   rankingPosition?: number | null;
 }
 
 export function GroupStatsGrid({
   membersCount,
-  points,
+  coins,
   rankingPosition,
 }: GroupStatsGridProps) {
   return (
@@ -20,9 +20,9 @@ export function GroupStatsGrid({
       </View>
 
       <View style={styles.statCard}>
-        <Text style={styles.statLabel}>Points</Text>
+        <Text style={styles.statLabel}>Coins</Text>
         <Text style={[styles.statValue, { color: colors.primary }]}>
-          {points.toLocaleString()}
+          {coins.toLocaleString()}
         </Text>
       </View>
 

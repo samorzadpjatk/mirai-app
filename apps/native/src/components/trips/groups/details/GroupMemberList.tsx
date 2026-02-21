@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image } from "expo-image";
+import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@integral-2025-app/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface GroupMember {
@@ -8,10 +11,36 @@ interface GroupMember {
   initials: string;
   role: string;
   isLeader: boolean;
+  avatarStoragePath?: string | null;
 }
 
 interface GroupMemberListProps {
   members: GroupMember[];
+}
+
+function MemberAvatar({ member }: { member: GroupMember }) {
+  const trpc = useTRPC();
+  const avatarQuery = useQuery({
+    ...trpc.storage.createDownloadUrl.queryOptions({
+      storagePath: member.avatarStoragePath ?? "",
+      expiresInSeconds: 60 * 60,
+    }),
+    enabled: Boolean(member.avatarStoragePath),
+    staleTime: 15 * 60 * 1000,
+    retry: false,
+  });
+
+  if (avatarQuery.data?.signedUrl) {
+    return (
+      <Image
+        source={{ uri: avatarQuery.data.signedUrl }}
+        style={styles.avatarImage}
+        contentFit="cover"
+      />
+    );
+  }
+
+  return <Text style={styles.avatarText}>{member.initials}</Text>;
 }
 
 export function GroupMemberList({ members }: GroupMemberListProps) {
@@ -45,7 +74,7 @@ export function GroupMemberList({ members }: GroupMemberListProps) {
               <View
                 style={[styles.avatar, member.isLeader && styles.avatarLeader]}
               >
-                <Text style={styles.avatarText}>{member.initials}</Text>
+                <MemberAvatar member={member} />
               </View>
               <View style={styles.memberDetails}>
                 <Text style={styles.memberName}>{member.name}</Text>
@@ -108,11 +137,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.full,
+    overflow: "hidden",
     backgroundColor: colors.textMuted,
     borderWidth: 2,
     borderColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: borderRadius.full,
   },
   avatarLeader: {
     borderColor: colors.primary,

@@ -25,6 +25,8 @@ export function ChallengesGridItem({
   const cardStatusStyle =
     challenge.status === "to_solve"
       ? styles.cardToSolve
+      : challenge.status === "visible"
+        ? styles.cardVisible
       : challenge.status === "submitted"
         ? styles.cardSubmitted
         : challenge.status === "solved"
@@ -181,9 +183,22 @@ const getStatusMeta = (status: ChallengeListItem["status"]) => {
         backgroundColor: "rgba(15,23,42,0.78)",
       };
     case "to_solve":
+      return {
+        label: "Active",
+        textColor: colors.primary,
+        borderColor: "rgba(0,206,209,0.45)",
+        backgroundColor: "rgba(0,206,209,0.2)",
+      };
+    case "visible":
+      return {
+        label: "Visible",
+        textColor: "#60a5fa",
+        borderColor: "rgba(96,165,250,0.45)",
+        backgroundColor: "rgba(96,165,250,0.2)",
+      };
     default:
       return {
-        label: "To solve",
+        label: "Active",
         textColor: colors.primary,
         borderColor: "rgba(0,206,209,0.45)",
         backgroundColor: "rgba(0,206,209,0.2)",
@@ -254,6 +269,12 @@ const styles = StyleSheet.create({
   cardSubmitted: {
     borderColor: "#f59e0b",
     shadowColor: "#f59e0b",
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+  },
+  cardVisible: {
+    borderColor: "#60a5fa",
+    shadowColor: "#60a5fa",
     shadowOpacity: 0.2,
     shadowRadius: 15,
   },

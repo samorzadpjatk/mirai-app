@@ -13,7 +13,7 @@ export function CapturedImageCard({ imageUri, onRetake, onDone }: CapturedImageC
     <View style={styles.container}>
       <Text style={styles.title}>Submission sent - pending review</Text>
 
-      <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+      <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
 
       <View style={styles.actionsRow}>
         <TouchableOpacity onPress={onRetake} style={styles.retakeButton}>

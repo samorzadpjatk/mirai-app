@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
+  adminProcedure,
   createTRPCRouter,
   protectedProcedure,
   moderatorProcedure,
 } from "../../api/trpc";
 import { type Prisma, type PrismaClient } from "@integral-2025-app/db";
+import { createChallengeCompletionWithWinnersById } from "../../utils/activityFeed";
 
 const voteSelect: Prisma.ChallengeVoteSelect = {
   id: true,
@@ -17,6 +19,27 @@ const voteSelect: Prisma.ChallengeVoteSelect = {
   normalizedWeight: true,
   votedAt: true,
 } as const;
+
+const challengeVotingSelect = {
+  id: true,
+  tripId: true,
+  status: true,
+  scoringCategory: true,
+  endTime: true,
+} as const satisfies Prisma.ChallengeSelect;
+
+type ChallengeForVoting = Prisma.ChallengeGetPayload<{
+  select: typeof challengeVotingSelect;
+}>;
+
+interface JudgedStaffVotingProgress {
+  requiredPositions: number;
+  eligibleSubmissionsCount: number;
+  totalAdmins: number;
+  votedAdmins: number;
+  pendingAdmins: number;
+  allAdminsVoted: boolean;
+}
 
 const ensureTripParticipant = async (
   ctx: { db: PrismaClient; dbUser: { id: string } },
@@ -31,25 +54,80 @@ const ensureTripParticipant = async (
   return participant;
 };
 
-const ensureChallengeVoting = async (
+const getChallengeInTrip = async (
   ctx: { db: PrismaClient },
   challengeId: string,
   tripId: string,
 ) => {
   const challenge = await ctx.db.challenge.findFirst({
     where: { id: challengeId, tripId },
-    select: { id: true, status: true },
+    select: challengeVotingSelect,
   });
+
   if (!challenge) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Challenge not found" });
   }
-  if (challenge.status !== "VOTING_PHASE") {
+
+  return challenge;
+};
+
+const ensureChallengeVoting = (params: {
+  challenge: ChallengeForVoting;
+  actorRole: string;
+}) => {
+  const { challenge, actorRole } = params;
+
+  if (challenge.scoringCategory === "PEER_VOTING") {
+    if (challenge.status !== "VOTING_PHASE") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Glosowanie nie jest aktywne",
+      });
+    }
+    return;
+  }
+
+  if (challenge.scoringCategory !== "JUDGED_STAFF") {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "Glosowanie nie jest aktywne",
+      message: "Voting is available only for peer voting and judged staff challenges",
     });
   }
-  return challenge;
+
+  if (actorRole !== "ADMIN") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Only admins can vote in judged staff challenges",
+    });
+  }
+
+  if (challenge.status === "CANCELLED" || challenge.status === "COMPLETED") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Glosowanie zostalo zakonczone",
+    });
+  }
+
+  if (challenge.status !== "ACTIVE" && challenge.status !== "VOTING_PHASE") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Challenge nie jest gotowy do glosowania",
+    });
+  }
+
+  if (!challenge.endTime) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Staff voting requires submission end time",
+    });
+  }
+
+  if (challenge.endTime.getTime() > Date.now()) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Staff voting starts after submission phase ends",
+    });
+  }
 };
 
 const recomputeSubmissionVotes = async (
@@ -85,6 +163,195 @@ const recomputeSubmissionVotes = async (
   );
 };
 
+const resolveRequiredVotePositions = async (
+  ctx: { db: PrismaClient },
+  challengeId: string,
+) => {
+  const eligibleSubmissionsCount = await ctx.db.challengeSubmission.count({
+    where: {
+      challengeId,
+      status: { not: "REJECTED" },
+    },
+  });
+
+  const requiredPositions =
+    eligibleSubmissionsCount >= 2 ? Math.min(3, eligibleSubmissionsCount) : 0;
+
+  return {
+    requiredPositions,
+    eligibleSubmissionsCount,
+  };
+};
+
+const getTripAdminParticipantIds = async (
+  ctx: { db: PrismaClient },
+  tripId: string,
+) => {
+  const admins = await ctx.db.tripParticipant.findMany({
+    where: {
+      tripId,
+      user: {
+        role: "ADMIN",
+      },
+    },
+    select: { id: true },
+  });
+
+  return admins.map((admin) => admin.id);
+};
+
+const hasAllRequiredPositions = (
+  positions: Set<number>,
+  requiredPositions: number,
+) => {
+  if (requiredPositions <= 0) return false;
+
+  for (let position = 1; position <= requiredPositions; position += 1) {
+    if (!positions.has(position)) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const getJudgedStaffVotingProgress = async (
+  ctx: { db: PrismaClient },
+  params: { challengeId: string; tripId: string },
+): Promise<JudgedStaffVotingProgress> => {
+  const [{ requiredPositions, eligibleSubmissionsCount }, adminParticipantIds] =
+    await Promise.all([
+      resolveRequiredVotePositions(ctx, params.challengeId),
+      getTripAdminParticipantIds(ctx, params.tripId),
+    ]);
+
+  if (adminParticipantIds.length === 0) {
+    return {
+      requiredPositions,
+      eligibleSubmissionsCount,
+      totalAdmins: 0,
+      votedAdmins: 0,
+      pendingAdmins: 0,
+      allAdminsVoted: false,
+    };
+  }
+
+  const votes = await ctx.db.challengeVote.findMany({
+    where: {
+      challengeId: params.challengeId,
+      voterId: { in: adminParticipantIds },
+    },
+    select: {
+      voterId: true,
+      votePosition: true,
+    },
+  });
+
+  const positionsByVoter = new Map<string, Set<number>>();
+  for (const vote of votes) {
+    const positions = positionsByVoter.get(vote.voterId) ?? new Set<number>();
+    positions.add(vote.votePosition);
+    positionsByVoter.set(vote.voterId, positions);
+  }
+
+  const votedAdmins = adminParticipantIds.filter((participantId) => {
+    const positions = positionsByVoter.get(participantId) ?? new Set<number>();
+    return hasAllRequiredPositions(positions, requiredPositions);
+  }).length;
+
+  const totalAdmins = adminParticipantIds.length;
+  const pendingAdmins = Math.max(totalAdmins - votedAdmins, 0);
+
+  return {
+    requiredPositions,
+    eligibleSubmissionsCount,
+    totalAdmins,
+    votedAdmins,
+    pendingAdmins,
+    allAdminsVoted: requiredPositions > 0 && totalAdmins > 0 && votedAdmins >= totalAdmins,
+  };
+};
+
+const maybeFinalizeJudgedStaffVoting = async (
+  ctx: { db: PrismaClient },
+  params: {
+    challenge: ChallengeForVoting;
+    createdByAdminId: string;
+  },
+) => {
+  if (params.challenge.scoringCategory !== "JUDGED_STAFF") {
+    return { finalized: false, progress: null as JudgedStaffVotingProgress | null };
+  }
+
+  const progress = await getJudgedStaffVotingProgress(ctx, {
+    challengeId: params.challenge.id,
+    tripId: params.challenge.tripId,
+  });
+
+  if (!progress.allAdminsVoted) {
+    return { finalized: false, progress };
+  }
+
+  const result = await ctx.db.challenge.updateMany({
+    where: {
+      id: params.challenge.id,
+      tripId: params.challenge.tripId,
+      scoringCategory: "JUDGED_STAFF",
+      status: { in: ["ACTIVE", "VOTING_PHASE"] },
+    },
+    data: {
+      status: "COMPLETED",
+    },
+  });
+
+  if (result.count > 0) {
+    await createChallengeCompletionWithWinnersById({
+      tx: ctx.db,
+      challengeId: params.challenge.id,
+      createdByAdmin: params.createdByAdminId,
+    });
+  }
+
+  return { finalized: result.count > 0, progress };
+};
+
+const validateJudgedStaffVotePayload = async (
+  ctx: { db: PrismaClient },
+  params: {
+    challengeId: string;
+    votePositions: number[];
+    requireExactCount: boolean;
+  },
+) => {
+  const { requiredPositions } = await resolveRequiredVotePositions(
+    ctx,
+    params.challengeId,
+  );
+
+  if (requiredPositions <= 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "At least 2 eligible submissions are required for staff voting",
+    });
+  }
+
+  if (params.votePositions.some((position) => position > requiredPositions)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Staff voting accepts only positions 1-${requiredPositions}`,
+    });
+  }
+
+  if (params.requireExactCount && params.votePositions.length !== requiredPositions) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Staff voting requires exactly ${requiredPositions} votes`,
+    });
+  }
+
+  return { requiredPositions };
+};
+
 export const challengeVoteRouter = createTRPCRouter({
   getMyByChallenge: protectedProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))
@@ -108,6 +375,95 @@ export const challengeVoteRouter = createTRPCRouter({
       });
     }),
 
+  getJudgedStaffProgress: adminProcedure
+    .input(z.object({ challengeId: z.string(), tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const challenge = await getChallengeInTrip(ctx, input.challengeId, input.tripId);
+
+      if (challenge.scoringCategory !== "JUDGED_STAFF") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Progress is available only for judged staff challenges",
+        });
+      }
+
+      const progress = await getJudgedStaffVotingProgress(ctx, {
+        challengeId: input.challengeId,
+        tripId: input.tripId,
+      });
+
+      return {
+        challengeStatus: challenge.status,
+        ...progress,
+      };
+    }),
+
+  forceEndJudgedStaffVoting: adminProcedure
+    .input(z.object({ challengeId: z.string(), tripId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const challenge = await getChallengeInTrip(ctx, input.challengeId, input.tripId);
+
+      if (challenge.scoringCategory !== "JUDGED_STAFF") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Force end is available only for judged staff challenges",
+        });
+      }
+
+      if (challenge.status === "CANCELLED") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cancelled challenge cannot be finalized",
+        });
+      }
+
+      if (!challenge.endTime) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Staff voting requires submission end time",
+        });
+      }
+
+      if (challenge.endTime.getTime() > Date.now()) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You can force end staff voting only after submission phase ends",
+        });
+      }
+
+      await recomputeSubmissionVotes(ctx, input.challengeId);
+
+      await ctx.db.challenge.updateMany({
+        where: {
+          id: challenge.id,
+          tripId: challenge.tripId,
+          scoringCategory: "JUDGED_STAFF",
+          status: { in: ["HIDDEN", "VISIBLE", "ACTIVE", "VOTING_PHASE"] },
+        },
+        data: {
+          status: "COMPLETED",
+        },
+      });
+
+      await createChallengeCompletionWithWinnersById({
+        tx: ctx.db,
+        challengeId: challenge.id,
+        createdByAdmin: ctx.dbUser.id,
+      });
+
+      const progress = await getJudgedStaffVotingProgress(ctx, {
+        challengeId: challenge.id,
+        tripId: challenge.tripId,
+      });
+
+      return {
+        success: true,
+        finalized: true,
+        challengeStatus: "COMPLETED" as const,
+        ...progress,
+      };
+    }),
+
   submitVotes: protectedProcedure
     .input(
       z.object({
@@ -127,7 +483,18 @@ export const challengeVoteRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const participant = await ensureTripParticipant(ctx, input.tripId);
-      await ensureChallengeVoting(ctx, input.challengeId, input.tripId);
+      const challenge = await getChallengeInTrip(ctx, input.challengeId, input.tripId);
+      ensureChallengeVoting({ challenge, actorRole: ctx.dbUser.role });
+
+      let judgedStaffRequiredPositions: number | null = null;
+      if (challenge.scoringCategory === "JUDGED_STAFF") {
+        const { requiredPositions } = await validateJudgedStaffVotePayload(ctx, {
+          challengeId: input.challengeId,
+          votePositions: input.votes.map((vote) => vote.votePosition),
+          requireExactCount: true,
+        });
+        judgedStaffRequiredPositions = requiredPositions;
+      }
 
       const uniqueSubmissionIds = new Set(input.votes.map((vote) => vote.submissionId));
       if (uniqueSubmissionIds.size !== input.votes.length) {
@@ -169,11 +536,36 @@ export const challengeVoteRouter = createTRPCRouter({
         }
       }
 
-      await ctx.db.$transaction([
-        ctx.db.challengeVote.deleteMany({
-          where: { challengeId: input.challengeId, voterId: participant.id },
-        }),
-        ctx.db.challengeVote.createMany({
+      if (
+        challenge.scoringCategory === "JUDGED_STAFF" &&
+        judgedStaffRequiredPositions !== null
+      ) {
+        const existingVotes = await ctx.db.challengeVote.findMany({
+          where: {
+            challengeId: input.challengeId,
+            voterId: participant.id,
+          },
+          select: { votePosition: true },
+        });
+
+        if (existingVotes.length > 0) {
+          const existingPositions = new Set(
+            existingVotes.map((vote) => vote.votePosition),
+          );
+          const alreadySubmittedAllRequiredPositions = hasAllRequiredPositions(
+            existingPositions,
+            judgedStaffRequiredPositions,
+          );
+
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: alreadySubmittedAllRequiredPositions
+              ? "Oddales juz glos w staff voting"
+              : "Masz juz zapisane glosy staff voting. To glosowanie mozna wyslac tylko raz.",
+          });
+        }
+
+        await ctx.db.challengeVote.createMany({
           data: input.votes.map((vote) => ({
             challengeId: input.challengeId,
             submissionId: vote.submissionId,
@@ -182,10 +574,33 @@ export const challengeVoteRouter = createTRPCRouter({
             votePoints: vote.votePoints,
             normalizedWeight: vote.normalizedWeight ?? 1.0,
           })),
-        }),
-      ]);
+        });
+      } else {
+        await ctx.db.$transaction([
+          ctx.db.challengeVote.deleteMany({
+            where: { challengeId: input.challengeId, voterId: participant.id },
+          }),
+          ctx.db.challengeVote.createMany({
+            data: input.votes.map((vote) => ({
+              challengeId: input.challengeId,
+              submissionId: vote.submissionId,
+              voterId: participant.id,
+              votePosition: vote.votePosition,
+              votePoints: vote.votePoints,
+              normalizedWeight: vote.normalizedWeight ?? 1.0,
+            })),
+          }),
+        ]);
+      }
 
       await recomputeSubmissionVotes(ctx, input.challengeId);
+
+      if (challenge.scoringCategory === "JUDGED_STAFF") {
+        await maybeFinalizeJudgedStaffVoting(ctx, {
+          challenge,
+          createdByAdminId: ctx.dbUser.id,
+        });
+      }
 
       return ctx.db.challengeVote.findMany({
         where: { challengeId: input.challengeId, voterId: participant.id },
@@ -206,7 +621,16 @@ export const challengeVoteRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const participant = await ensureTripParticipant(ctx, input.tripId);
-      await ensureChallengeVoting(ctx, input.challengeId, input.tripId);
+      const challenge = await getChallengeInTrip(ctx, input.challengeId, input.tripId);
+      ensureChallengeVoting({ challenge, actorRole: ctx.dbUser.role });
+
+      if (challenge.scoringCategory === "JUDGED_STAFF") {
+        await validateJudgedStaffVotePayload(ctx, {
+          challengeId: input.challengeId,
+          votePositions: [input.votePosition],
+          requireExactCount: false,
+        });
+      }
 
       const submission = await ctx.db.challengeSubmission.findFirst({
         where: {
@@ -266,6 +690,13 @@ export const challengeVoteRouter = createTRPCRouter({
         });
 
         await recomputeSubmissionVotes(ctx, input.challengeId);
+
+        if (challenge.scoringCategory === "JUDGED_STAFF") {
+          await maybeFinalizeJudgedStaffVoting(ctx, {
+            challenge,
+            createdByAdminId: ctx.dbUser.id,
+          });
+        }
 
         return createdVote;
       } catch (error: unknown) {

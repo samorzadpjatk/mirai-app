@@ -14,6 +14,8 @@ export function useChallengeDetails(
       tripId: tripId ?? "",
     }),
     enabled: !!challengeId && !!tripId,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());

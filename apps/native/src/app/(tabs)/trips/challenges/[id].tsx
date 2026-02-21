@@ -255,10 +255,25 @@ export default function ChallengeDetailScreen() {
     challenge.submissionType === "QR_CODE" ||
     challenge.submissionType === "TEXT" ||
     challenge.submissionType === "LOCATION";
-  const solvedGroupsCount =
+  const isImageBasedChallenge =
+    challenge.submissionType === "IMAGE" ||
+    challenge.submissionType === "MULTI_IMAGE" ||
+    challenge.submissionType === "IMAGE_LOCATION";
+  const approvedGroupsCount =
     challengeSubmissions?.filter(
       (submission) => submission.status === "APPROVED",
     ).length ?? 0;
+  const submittedGroupsCount = challengeSubmissions?.length ?? 0;
+  const pendingReviewGroupsCount =
+    challengeSubmissions?.filter((submission) => submission.status === "PENDING")
+      .length ?? 0;
+  const isAwaitingStaffReview = pendingReviewGroupsCount > 0;
+  const shouldHideStaffSubmissionsGallery =
+    challenge.scoringCategory === "JUDGED_STAFF" &&
+    challenge.status !== "COMPLETED";
+  const shouldShowPendingReviewCounter =
+    isAwaitingStaffReview &&
+    (isImageBasedChallenge || shouldShowSolvedCounterOnly);
   const totalGroupsCount = trip?.groups?.length ?? 0;
 
   const validateImageLocationSubmission = () => {
@@ -456,6 +471,9 @@ export default function ChallengeDetailScreen() {
     challenge.scoringCategory === "PEER_VOTING" &&
     (isVotingPhase || isWithinVotingWindow);
   const shouldShowSubmissionTime = !shouldShowVotingTime;
+  const isSubmissionWindowOpen =
+    !challenge.endTime || isOnOrBeforeNow(challenge.endTime);
+  const canSubmitNow = challenge.status === "ACTIVE" && isSubmissionWindowOpen;
   const heroStatus =
     challenge.status !== "CANCELLED" && isWithinVotingWindow
       ? "VOTING_PHASE"
@@ -490,10 +508,102 @@ export default function ChallengeDetailScreen() {
         {/* Description */}
         <ChallengeDescriptionCard description={challenge.description} />
 
+        {isPeerVotingChallengeInVotingPhase && (
+          <ChallengeActionButton
+            isLoading={false}
+            label="Vote"
+            iconName="checkmark-circle"
+            onPress={() =>
+              router.push(
+                `/trips/challenges/vote/${challenge.id}?tripId=${tripId}`,
+              )
+            }
+          />
+        )}
+
+        {/* Primary action */}
+        {!isPeerVotingChallengeInVotingPhase &&
+          !mySubmission &&
+          challenge.status !== "COMPLETED" && (
+            <ChallengeActionButton
+              isLoading={
+                cameraLoading ||
+                qrSubmitMutation.isPending ||
+                locationSubmitMutation.isPending ||
+                textSubmitMutation.isPending
+              }
+              disabled={!canSubmitNow}
+              label={
+                isQrChallenge
+                  ? qrSubmitMutation.isPending
+                    ? "Checking QR..."
+                    : "Scan QR code"
+                  : isVideoChallenge
+                    ? (uploadLabel ?? "Take Challenge Video")
+                    : isLocationChallenge
+                      ? locationSubmitMutation.isPending
+                        ? "Sending location..."
+                        : "Send current location"
+                      : isTextChallenge
+                        ? textSubmitMutation.isPending
+                          ? "Submitting..."
+                          : "Enter answer"
+                        : uploadLabel
+              }
+              iconName={
+                isVideoChallenge
+                  ? "videocam"
+                  : isLocationChallenge
+                    ? "location"
+                    : isTextChallenge
+                      ? "document-text"
+                      : isQrChallenge
+                        ? "qr-code"
+                        : "camera"
+              }
+              onPress={async () => {
+                if (!canSubmitNow) {
+                  return;
+                }
+                if (isQrChallenge) {
+                  const permission = cameraPermission?.granted
+                    ? cameraPermission
+                    : await requestCameraPermission();
+                  if (!permission?.granted) {
+                    Alert.alert(
+                      "Permission required",
+                      "Camera permission is needed to scan QR code.",
+                    );
+                    return;
+                  }
+                  qrScanLockRef.current = false;
+                  setHasScannedQrThisSession(false);
+                  setIsQrScannerOpen(true);
+                  return;
+                }
+                if (isLocationChallenge) {
+                  await handleSendCurrentLocation();
+                  return;
+                }
+                if (isTextChallenge) {
+                  setTextInputValue("");
+                  setIsTextInputOpen(true);
+                  return;
+                }
+                if (isVideoChallenge) {
+                  handleVideoChallengeAction();
+                  return;
+                }
+                void handleImageChallengeAction();
+              }}
+            />
+          )}
+
         {shouldShowSubmissionTime ? (
           <ChallengeTimeLeftCard
             phaseLabel="Submission"
             isRecurring={challenge.isRecurring}
+            status={challenge.status}
             startTime={challenge.startTime}
             endTime={challenge.endTime}
             dailyStartTime={challenge.dailyStartTime}
@@ -570,11 +680,33 @@ export default function ChallengeDetailScreen() {
           </View>
         ) : null}
 
-        {shouldShowSolvedCounterOnly ? (
+        {shouldShowPendingReviewCounter && !shouldHideStaffSubmissionsGallery ? (
+          <View style={styles.solvedCounterCard}>
+            <Text style={styles.solvedCounterLabel}>Groups submitted</Text>
+            <Text style={styles.solvedCounterValue}>
+              {submittedGroupsCount}/{totalGroupsCount}
+            </Text>
+            <Text style={styles.solvedCounterHint}>
+              Waiting for staff review: {pendingReviewGroupsCount}
+            </Text>
+          </View>
+        ) : null}
+
+        {shouldHideStaffSubmissionsGallery ? (
+          <View style={styles.solvedCounterCard}>
+            <Text style={styles.solvedCounterLabel}>Groups submissions</Text>
+            <Text style={styles.solvedCounterValue}>
+              {submittedGroupsCount}/{totalGroupsCount}
+            </Text>
+            <Text style={styles.solvedCounterHint}>
+              Photos will be visible after staff voting ends.
+            </Text>
+          </View>
+        ) : shouldShowSolvedCounterOnly ? (
           <View style={styles.solvedCounterCard}>
             <Text style={styles.solvedCounterLabel}>Solved groups</Text>
             <Text style={styles.solvedCounterValue}>
-              {solvedGroupsCount}/{totalGroupsCount}
+              {approvedGroupsCount}/{totalGroupsCount}
             </Text>
           </View>
         ) : (
@@ -582,7 +714,8 @@ export default function ChallengeDetailScreen() {
             submissions={challengeSubmissions ?? []}
             showPodium={
               challenge.scoringCategory === "SPEED" ||
-              challenge.scoringCategory === "PEER_VOTING"
+              challenge.scoringCategory === "PEER_VOTING" ||
+              challenge.scoringCategory === "JUDGED_STAFF"
             }
           />
         )}
@@ -599,93 +732,6 @@ export default function ChallengeDetailScreen() {
             onWithdraw={handleWithdraw}
           />
         )}
-
-        {isPeerVotingChallengeInVotingPhase && (
-          <ChallengeActionButton
-            isLoading={false}
-            label="Vote"
-            iconName="checkmark-circle"
-            onPress={() =>
-              router.push(
-                `/trips/challenges/vote/${challenge.id}?tripId=${tripId}`,
-              )
-            }
-          />
-        )}
-
-        {/* Camera Button */}
-        {!isPeerVotingChallengeInVotingPhase &&
-          !mySubmission &&
-          challenge.status !== "COMPLETED" && (
-            <ChallengeActionButton
-              isLoading={
-                cameraLoading ||
-                qrSubmitMutation.isPending ||
-                locationSubmitMutation.isPending ||
-                textSubmitMutation.isPending
-              }
-              label={
-                isQrChallenge
-                  ? qrSubmitMutation.isPending
-                    ? "Checking QR..."
-                    : "Scan QR code"
-                  : isVideoChallenge
-                    ? (uploadLabel ?? "Take Challenge Video")
-                    : isLocationChallenge
-                      ? locationSubmitMutation.isPending
-                        ? "Sending location..."
-                        : "Send current location"
-                      : isTextChallenge
-                        ? textSubmitMutation.isPending
-                          ? "Submitting..."
-                          : "Enter answer"
-                        : uploadLabel
-              }
-              iconName={
-                isVideoChallenge
-                  ? "videocam"
-                  : isLocationChallenge
-                    ? "location"
-                    : isTextChallenge
-                      ? "document-text"
-                      : isQrChallenge
-                        ? "qr-code"
-                        : "camera"
-              }
-              onPress={async () => {
-                if (isQrChallenge) {
-                  const permission = cameraPermission?.granted
-                    ? cameraPermission
-                    : await requestCameraPermission();
-                  if (!permission?.granted) {
-                    Alert.alert(
-                      "Permission required",
-                      "Camera permission is needed to scan QR code.",
-                    );
-                    return;
-                  }
-                  qrScanLockRef.current = false;
-                  setHasScannedQrThisSession(false);
-                  setIsQrScannerOpen(true);
-                  return;
-                }
-                if (isLocationChallenge) {
-                  await handleSendCurrentLocation();
-                  return;
-                }
-                if (isTextChallenge) {
-                  setTextInputValue("");
-                  setIsTextInputOpen(true);
-                  return;
-                }
-                if (isVideoChallenge) {
-                  handleVideoChallengeAction();
-                  return;
-                }
-                void handleImageChallengeAction();
-              }}
-            />
-          )}
       </ScrollView>
 
       <Modal
@@ -760,7 +806,6 @@ export default function ChallengeDetailScreen() {
         visible={isPhotoCameraOpen}
         title={challenge.name}
         facing="back"
-        mirror={false}
         isUsingPhoto={isUsingCapturedPhoto}
         onClose={() => {
           setIsPhotoCameraOpen(false);
@@ -880,6 +925,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 28,
     fontWeight: "800",
+  },
+  solvedCounterHint: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: spacing.xs,
   },
   targetLocationCard: {
     backgroundColor: colors.cardDark,

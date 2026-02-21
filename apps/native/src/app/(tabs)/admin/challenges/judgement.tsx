@@ -1,7 +1,15 @@
-import React from 'react';
-import { View, Text, StatusBar } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { spacing } from '~/styles';
+import React from "react";
+import {
+  ActivityIndicator,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { useTRPC } from "@integral-2025-app/trpc/client";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
 import { JudgementProvider } from '~/contexts/JudgementContext';
 import { JudgementContent } from '~/components/judgement/JudgementContent';
@@ -9,15 +17,67 @@ import { viewStyles, textStyles } from '~/styles/judgement';
 
 export default function ChallengeJudgementScreen() {
   const insets = useAppSafeAreaInsets();
+  const router = useRouter();
+  const trpc = useTRPC();
   const params = useLocalSearchParams();
   const tripId = typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0] ?? '';
   const challengeId =
     typeof params.challengeId === 'string' ? params.challengeId : params.challengeId?.[0] ?? '';
 
+  const challengeQuery = useQuery({
+    ...trpc.challenge.getById.queryOptions({
+      id: challengeId,
+      tripId,
+    }),
+    enabled: Boolean(tripId) && Boolean(challengeId),
+  });
+
   if (!tripId || !challengeId) {
     return (
       <View style={[viewStyles.container, viewStyles.centered]}>
         <Text style={textStyles.emptyText}>Missing challenge context.</Text>
+      </View>
+    );
+  }
+
+  if (challengeQuery.isLoading) {
+    return (
+      <View style={[viewStyles.container, viewStyles.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (challengeQuery.data?.scoringCategory === "JUDGED_STAFF") {
+    return (
+      <View style={[viewStyles.container, viewStyles.centered, { padding: spacing.lg }]}>
+        <Text style={[textStyles.emptyText, { textAlign: "center", marginBottom: spacing.md }]}>
+          Judged Staff challenge uses the staff voting view.
+        </Text>
+        <TouchableOpacity
+          onPress={() =>
+            router.replace({
+              pathname: "/admin/challenges/staff-vote",
+              params: { tripId, challengeId },
+            })
+          }
+          style={{
+            borderRadius: borderRadius.md,
+            backgroundColor: colors.primary,
+            paddingHorizontal: spacing.lg,
+            paddingVertical: spacing.sm,
+          }}
+        >
+          <Text
+            style={{
+              color: colors.backgroundDark,
+              fontWeight: typography.bold,
+              textTransform: "uppercase",
+            }}
+          >
+            Open Staff Voting
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
