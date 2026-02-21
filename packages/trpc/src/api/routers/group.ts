@@ -284,6 +284,7 @@ export const groupRouter = createTRPCRouter({
                   id: true,
                   firstName: true,
                   lastName: true,
+                  hasAvatar: true,
                   authUserId: true,
                   role: true,
                 },
@@ -307,6 +308,24 @@ export const groupRouter = createTRPCRouter({
           _count: {
             select: { participants: true },
           },
+          challengeSubmissions: {
+            where: {
+              status: "APPROVED",
+            },
+            select: {
+              id: true,
+              imageIds: true,
+              createdAt: true,
+              reviewedAt: true,
+              challenge: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+            orderBy: [{ reviewedAt: "desc" }, { createdAt: "desc" }],
+          },
         },
       });
 
@@ -319,6 +338,16 @@ export const groupRouter = createTRPCRouter({
         ...group.participants.map((participant) => participant.user.authUserId),
       ]);
 
+      const approvedSubmissions = group.challengeSubmissions
+        .filter((submission) => Boolean(submission.imageIds[0]))
+        .map((submission) => ({
+          submissionId: submission.id,
+          challengeId: submission.challenge.id,
+          challengeTitle: submission.challenge.name,
+          imageStoragePath: submission.imageIds[0] ?? "",
+          approvedAt: submission.reviewedAt ?? submission.createdAt,
+        }));
+
       return {
         ...group,
         image: await resolveGroupImage(ctx.supabase, group.image),
@@ -329,6 +358,7 @@ export const groupRouter = createTRPCRouter({
           ...participant,
           user: toUserWithEmail(participant.user, emailByAuthUserId),
         })),
+        approvedSubmissions,
       };
     }),
   getByIdWithOrganizer: moderatorProcedure

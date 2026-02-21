@@ -1,5 +1,6 @@
 export type ChallengeStatus =
   | "to_solve"
+  | "visible"
   | "submitted"
   | "solved"
   | "rejected"

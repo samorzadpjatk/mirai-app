@@ -25,13 +25,23 @@ interface JudgementContextValue {
   tripId: string;
   challengeId: string;
   challengeName: string;
+  challengeScoringCategory:
+    | "SPEED"
+    | "UNLIMITED"
+    | "JUDGED_STAFF"
+    | "PEER_VOTING"
+    | null;
   isLoading: boolean;
   isReviewing: boolean;
   pendingCount: number;
   stats: { approved: number; rejected: number };
   currentSubmission: Submission | null;
   nextSubmission: Submission | null;
-  reviewCurrent: (status: ReviewStatus, rejectionReason?: string) => void;
+  reviewCurrent: (
+    status: ReviewStatus,
+    rejectionReason?: string,
+    ranking?: 1 | 2 | 3,
+  ) => void;
 }
 
 const JudgementContext = React.createContext<JudgementContextValue | null>(null);
@@ -121,7 +131,7 @@ const JudgementProvider = ({
   );
 
   const reviewCurrent = useCallback(
-    (status: ReviewStatus, rejectionReason?: string) => {
+    (status: ReviewStatus, rejectionReason?: string, ranking?: 1 | 2 | 3) => {
       if (!currentSubmission || reviewMutation.isPending) return;
       const normalizedRejectionReason = rejectionReason?.trim();
       if (status === "REJECTED" && !normalizedRejectionReason) return;
@@ -135,6 +145,7 @@ const JudgementProvider = ({
         status,
         rejectionReason:
           status === "REJECTED" ? normalizedRejectionReason : undefined,
+        ranking: status === "APPROVED" ? ranking : undefined,
       });
     },
     [currentSubmission, reviewMutation],
@@ -144,6 +155,7 @@ const JudgementProvider = ({
     tripId,
     challengeId,
     challengeName: challenge?.name ?? "Challenge Review",
+    challengeScoringCategory: challenge?.scoringCategory ?? null,
     isLoading: submissionsLoading || challengeLoading,
     isReviewing: reviewMutation.isPending,
     pendingCount: pendingSubmissions.length,

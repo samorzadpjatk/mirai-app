@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import {
+  Alert,
+  Modal,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import {
   Extrapolation,
   interpolate,
@@ -19,12 +27,19 @@ import { EmptyStateCard } from '~/components/judgement/EmptyStateCard';
 import { ActionBar } from '~/components/judgement/ActionBar';
 
 const CardStack = () => {
-  const { currentSubmission, nextSubmission, reviewCurrent, isReviewing } = useJudgement();
+  const {
+    currentSubmission,
+    nextSubmission,
+    reviewCurrent,
+    isReviewing,
+    challengeScoringCategory,
+  } = useJudgement();
   const { width, height } = useWindowDimensions();
   const swipeThreshold = width * 0.25;
   const maxCardHeight = Math.min(560, height * 0.64);
   const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+  const isJudgedStaff = challengeScoringCategory === 'JUDGED_STAFF';
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -48,19 +63,40 @@ const CardStack = () => {
   }, [isReviewing]);
 
   const animateDecision = useCallback(
-    (status: ReviewStatus, customRejectionReason?: string) => {
+    (
+      status: ReviewStatus,
+      customRejectionReason?: string,
+      ranking?: 1 | 2 | 3,
+    ) => {
       if (!currentSubmission || isReviewing) return;
       const normalizedRejectionReason = customRejectionReason?.trim();
       if (status === 'REJECTED' && !normalizedRejectionReason) return;
       const toValue = status === 'APPROVED' ? width * 1.2 : -width * 1.2;
       translateX.value = withTiming(toValue, { duration: 220 }, () => {
-        scheduleOnRN(reviewCurrent, status, normalizedRejectionReason);
+        scheduleOnRN(reviewCurrent, status, normalizedRejectionReason, ranking);
         translateX.value = 0;
         translateY.value = 0;
       });
     },
     [currentSubmission, isReviewing, reviewCurrent, translateX, translateY, width],
   );
+
+  const openApproveSelection = useCallback(() => {
+    if (!currentSubmission || isReviewing) return;
+
+    if (!isJudgedStaff) {
+      animateDecision('APPROVED');
+      return;
+    }
+
+    Alert.alert('Approve submission', 'Select podium place', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Without place', onPress: () => animateDecision('APPROVED') },
+      { text: '3rd place', onPress: () => animateDecision('APPROVED', undefined, 3) },
+      { text: '2nd place', onPress: () => animateDecision('APPROVED', undefined, 2) },
+      { text: '1st place', onPress: () => animateDecision('APPROVED', undefined, 1) },
+    ]);
+  }, [animateDecision, currentSubmission, isJudgedStaff, isReviewing]);
 
   const canSubmitReject = useMemo(
     () => rejectionReason.trim().length > 0 && !isReviewing,
@@ -87,6 +123,13 @@ const CardStack = () => {
       const shouldReject = translateX.value < -swipeThreshold;
 
       if (shouldApprove) {
+        if (isJudgedStaff) {
+          translateX.value = withSpring(0);
+          translateY.value = withSpring(0);
+          scheduleOnRN(openApproveSelection);
+          return;
+        }
+
         translateX.value = withTiming(width * 1.2, { duration: 220 }, () => {
           scheduleOnRN(reviewCurrent, 'APPROVED');
           translateX.value = 0;
@@ -160,7 +203,7 @@ const CardStack = () => {
       <ActionBar
         disabled={!currentSubmission || isReviewing || isRejectModalVisible}
         onReject={openRejectModal}
-        onApprove={() => animateDecision('APPROVED')}
+        onApprove={openApproveSelection}
       />
 
       <Modal

@@ -10,11 +10,7 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView } from "expo-camera";
-import {
-  FlipType,
-  SaveFormat,
-  manipulateAsync,
-} from "expo-image-manipulator";
+import { Directory, File, Paths } from "expo-file-system";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
@@ -30,8 +26,6 @@ interface PhotoCaptureModalProps {
   onUsePhoto: (photo: CapturedPhoto) => Promise<void> | void;
   isUsingPhoto?: boolean;
   facing?: "front" | "back";
-  mirror?: boolean;
-  forceHorizontalFlip?: boolean;
   quality?: number;
 }
 
@@ -86,8 +80,6 @@ export function PhotoCaptureModal({
   onUsePhoto,
   isUsingPhoto = false,
   facing = "front",
-  mirror = false,
-  forceHorizontalFlip = false,
   quality = 0.85,
 }: PhotoCaptureModalProps) {
   const insets = useAppSafeAreaInsets();
@@ -119,6 +111,32 @@ export function PhotoCaptureModal({
 
   const closeDisabled = isCapturingPhoto || isUsingPhoto;
 
+  const persistCapturedPhoto = useCallback(async (sourceUri: string) => {
+    const destinationDir = new Directory(Paths.document, "captured-photos");
+    const fileNameSuffix = Math.random().toString(36).slice(2, 8);
+    const extension =
+      sourceUri.split("?")[0]?.split(".").pop()?.toLowerCase() ?? "jpg";
+    const safeExtension = extension.length > 0 ? extension : "jpg";
+    const targetFile = new File(
+      destinationDir,
+      `capture-${Date.now()}-${fileNameSuffix}.${safeExtension}`,
+    );
+
+    try {
+      if (!destinationDir.exists) {
+        destinationDir.create({ intermediates: true, idempotent: true });
+      }
+      const sourceFile = new File(sourceUri);
+      if (targetFile.exists) {
+        targetFile.delete();
+      }
+      sourceFile.copy(targetFile);
+      return targetFile.uri;
+    } catch {
+      return sourceUri;
+    }
+  }, []);
+
   const handleCapture = useCallback(async () => {
     if (!cameraRef.current || isCapturingPhoto) return;
 
@@ -127,40 +145,27 @@ export function PhotoCaptureModal({
       const picture = await cameraRef.current.takePictureAsync({
         quality,
         exif: true,
-        mirror,
+        mirror: false,
+        skipProcessing: false,
       });
 
       if (!picture?.uri) return;
-
-      const saveFormat = picture.format === "png" ? SaveFormat.PNG : SaveFormat.JPEG;
       const mimeType: CapturedPhoto["mimeType"] =
         picture.format === "png" ? "image/png" : "image/jpeg";
-
-      if (forceHorizontalFlip && activeFacing === "front") {
-        const flipped = await manipulateAsync(
-          picture.uri,
-          [{ flip: FlipType.Horizontal }],
-          {
-            compress: 0.9,
-            format: saveFormat,
-          },
-        ).catch(() => null);
-
-        setCapturedPhoto({
-          uri: flipped?.uri ?? picture.uri,
-          mimeType,
-        });
-        return;
-      }
+      const persistedUri = await persistCapturedPhoto(picture.uri);
 
       setCapturedPhoto({
-        uri: picture.uri,
+        uri: persistedUri,
         mimeType,
       });
     } finally {
       setIsCapturingPhoto(false);
     }
-  }, [activeFacing, forceHorizontalFlip, isCapturingPhoto, mirror, quality]);
+  }, [
+    isCapturingPhoto,
+    persistCapturedPhoto,
+    quality,
+  ]);
 
   const handleUsePhoto = useCallback(() => {
     if (!capturedPhoto || isUsingPhoto) return;
@@ -192,19 +197,6 @@ export function PhotoCaptureModal({
         >
           <Text style={styles.title}>{title}</Text>
           <View style={styles.headerActions}>
-            {!capturedPhoto ? (
-              <TouchableOpacity
-                onPress={handleToggleFacing}
-                style={styles.iconActionButton}
-                disabled={closeDisabled}
-              >
-                <Ionicons
-                  name="camera-reverse-outline"
-                  size={20}
-                  color={colors.white}
-                />
-              </TouchableOpacity>
-            ) : null}
             <TouchableOpacity
               onPress={() => {
                 if (closeDisabled) return;
@@ -223,7 +215,7 @@ export function PhotoCaptureModal({
             <Image
               source={{ uri: capturedPhoto.uri }}
               style={styles.preview}
-              contentFit="cover"
+              contentFit="contain"
               cachePolicy="none"
             />
           ) : (
@@ -231,9 +223,10 @@ export function PhotoCaptureModal({
               ref={cameraRef}
               style={styles.preview}
               facing={activeFacing}
-              mirror={mirror}
+              mirror={false}
               mode="picture"
               autofocus="on"
+              responsiveOrientationWhenOrientationLocked
               selectedLens={selectedLens}
               onAvailableLensesChanged={(event) => {
                 const lenses = event?.lenses ?? [];
@@ -306,21 +299,35 @@ export function PhotoCaptureModal({
               </TouchableOpacity>
             </>
           ) : (
-            <TouchableOpacity
-              style={[
-                styles.captureButton,
-                isCapturingPhoto && styles.captureButtonDisabled,
-              ]}
-              onPress={() => void handleCapture()}
-              disabled={isCapturingPhoto}
-              activeOpacity={0.85}
-            >
-              {isCapturingPhoto ? (
-                <ActivityIndicator size="small" color={colors.white} />
-              ) : (
-                <Ionicons name="camera" size={22} color={colors.white} />
-              )}
-            </TouchableOpacity>
+            <View style={styles.captureControlsRow}>
+              <View style={styles.captureSideSpacer} />
+              <TouchableOpacity
+                style={[
+                  styles.captureButton,
+                  isCapturingPhoto && styles.captureButtonDisabled,
+                ]}
+                onPress={() => void handleCapture()}
+                disabled={isCapturingPhoto}
+                activeOpacity={0.85}
+              >
+                {isCapturingPhoto ? (
+                  <ActivityIndicator size="small" color={colors.white} />
+                ) : (
+                  <Ionicons name="camera" size={22} color={colors.white} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleToggleFacing}
+                style={styles.captureSideButton}
+                disabled={isCapturingPhoto || isUsingPhoto}
+              >
+                <Ionicons
+                  name="camera-reverse-outline"
+                  size={20}
+                  color={colors.white}
+                />
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>
@@ -364,16 +371,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-  },
-  iconActionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    backgroundColor: "rgba(255,255,255,0.04)",
   },
   previewContainer: {
     flex: 1,
@@ -463,5 +460,24 @@ const styles = StyleSheet.create({
   },
   captureButtonDisabled: {
     opacity: 0.75,
+  },
+  captureControlsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  captureSideSpacer: {
+    width: 44,
+    height: 44,
+  },
+  captureSideButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
 });

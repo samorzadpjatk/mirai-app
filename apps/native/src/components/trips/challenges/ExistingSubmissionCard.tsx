@@ -127,9 +127,17 @@ export function ExistingSubmissionCard({
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : file?.uri ? (
-            <Image source={{ uri: file.uri }} style={styles.image} />
+            <Image
+              source={{ uri: file.uri }}
+              style={styles.image}
+              resizeMode="contain"
+            />
           ) : localPreviewUri ? (
-            <Image source={{ uri: localPreviewUri }} style={styles.image} />
+            <Image
+              source={{ uri: localPreviewUri }}
+              style={styles.image}
+              resizeMode="contain"
+            />
           ) : (
             <View style={styles.imageLoading}>
               <Ionicons name="image-outline" size={24} color={colors.textSecondary} />

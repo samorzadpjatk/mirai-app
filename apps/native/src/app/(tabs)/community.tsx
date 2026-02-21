@@ -1059,7 +1059,9 @@ export default function CommunityScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.primary}
+            tintColor={colors.white}
+            colors={[colors.white]}
+            progressBackgroundColor={colors.cardDarkOpacity70}
           />
         }
         ListEmptyComponent={

@@ -61,7 +61,7 @@ export function ChallengeCommunitySubmissionsCard({
     () =>
       submissions.filter(
         (submission) =>
-          submission.status !== "REJECTED" && Boolean(submission.imageIds[0]),
+          submission.status === "APPROVED" && Boolean(submission.imageIds[0]),
       ),
     [submissions],
   );

@@ -7,6 +7,7 @@ interface ChallengeActionButtonProps {
   onPress: () => void;
   label?: string;
   iconName?: keyof typeof Ionicons.glyphMap;
+  disabled?: boolean;
 }
 
 export function ChallengeActionButton({
@@ -14,17 +15,25 @@ export function ChallengeActionButton({
   onPress,
   label,
   iconName = "camera",
+  disabled = false,
 }: ChallengeActionButtonProps) {
   const buttonLabel =
     label ?? (isLoading ? "Loading..." : "Take Challenge Photo");
+  const isDisabled = isLoading || disabled;
+  const iconColor = isDisabled ? colors.textMuted : colors.backgroundDark;
+  const textColor = isDisabled ? colors.textMuted : colors.backgroundDark;
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={isLoading}
-      style={[styles.button, isLoading && styles.buttonLoading]}
+      disabled={isDisabled}
+      style={[
+        styles.button,
+        isLoading && styles.buttonLoading,
+        disabled && styles.buttonDisabled,
+      ]}
     >
-      <Ionicons name={iconName} size={24} color={colors.backgroundDark} />
-      <Text style={styles.buttonText}>{buttonLabel}</Text>
+      <Ionicons name={iconName} size={24} color={iconColor} />
+      <Text style={[styles.buttonText, { color: textColor }]}>{buttonLabel}</Text>
     </TouchableOpacity>
   );
 }
@@ -34,6 +43,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
+    marginBottom: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -46,6 +56,11 @@ const styles = StyleSheet.create({
   },
   buttonLoading: {
     opacity: 0.7,
+  },
+  buttonDisabled: {
+    backgroundColor: colors.surfaceDark,
+    shadowOpacity: 0,
+    opacity: 0.75,
   },
   buttonText: {
     fontSize: typography.lg,

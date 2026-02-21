@@ -6,6 +6,7 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 interface ChallengeTimeLeftCardProps {
   phaseLabel: "Submission" | "Voting";
   isRecurring?: boolean;
+  status?: string | null;
   startTime?: Date | string | null;
   endTime?: Date | string | null;
   dailyStartTime?: string | null;
@@ -92,6 +93,7 @@ const formatDeadlineDate = (date: Date) => {
 export function ChallengeTimeLeftCard({
   phaseLabel,
   isRecurring = false,
+  status,
   startTime,
   endTime,
   dailyStartTime,
@@ -115,17 +117,58 @@ export function ChallengeTimeLeftCard({
     new Date(now),
   );
   const deadline = isRecurring ? recurringDeadline : end;
+  const showScheduleOnly =
+    (phaseLabel === "Submission" && status === "VISIBLE") ||
+    (start ? now < start.getTime() : false);
+  const activeDeadline = showScheduleOnly ? null : deadline;
 
-  if (!deadline) {
+  if (!activeDeadline && !showScheduleOnly) {
     return null;
   }
 
-  const countdownText = formatCountdown(deadline.getTime() - now);
-  const countdownSubtext = isRecurring
-    ? `Daily reset at ${dailyEndTime ?? "--:--"}`
-    : `Ends ${formatDeadlineDate(deadline)}`;
+  const countdownText = showScheduleOnly
+    ? ""
+    : formatCountdown((activeDeadline as Date).getTime() - now);
+  const countdownSubtext = showScheduleOnly
+    ? ""
+    : isRecurring
+      ? `Daily reset at ${dailyEndTime ?? "--:--"}`
+      : `Ends ${formatDeadlineDate(activeDeadline as Date)}`;
+
+  const scheduleRows = [
+    isRecurring
+      ? {
+          icon: "repeat-outline" as const,
+          label: "Daily window",
+          value: `${dailyStartTime ?? "--:--"} - ${dailyEndTime ?? "--:--"}`,
+        }
+      : null,
+    start
+      ? {
+          icon: "play-circle-outline" as const,
+          label: "Starts",
+          value: formatDeadlineDate(start),
+        }
+      : null,
+    end
+      ? {
+          icon: "flag-outline" as const,
+          label: "Ends",
+          value: formatDeadlineDate(end),
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    value: string;
+  }>;
+
+  const statusTitle = showScheduleOnly ? "Schedule" : "Time left";
 
   const progressRatio = (() => {
+    if (showScheduleOnly) {
+      return 0;
+    }
     if (isRecurring) {
       const startMinutes = parseClockToMinutes(dailyStartTime);
       const endMinutes = parseClockToMinutes(dailyEndTime);
@@ -139,13 +182,13 @@ export function ChallengeTimeLeftCard({
         cycleMs = Math.max(dailyMinutes * 60 * 1000, 60 * 1000);
       }
 
-      return clamp((deadline.getTime() - now) / cycleMs, 0, 1);
+      return clamp(((activeDeadline as Date).getTime() - now) / cycleMs, 0, 1);
     }
 
     if (!start || !end) return 0;
     const totalMs = end.getTime() - start.getTime();
     if (totalMs <= 0) return 0;
-    return clamp((deadline.getTime() - now) / totalMs, 0, 1);
+    return clamp(((activeDeadline as Date).getTime() - now) / totalMs, 0, 1);
   })();
 
   const progressColor =
@@ -158,31 +201,55 @@ export function ChallengeTimeLeftCard({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Time left</Text>
+        <Text style={styles.title}>{statusTitle}</Text>
         <Text style={styles.phase}>{phaseLabel}</Text>
       </View>
 
-      <View style={styles.countdownCard}>
-        <View style={styles.countdownIconWrap}>
-          <Ionicons name="time-outline" size={20} color={colors.primary} />
+      {showScheduleOnly ? (
+        <View style={styles.scheduleCard}>
+          <View style={styles.scheduleBadge}>
+            <Ionicons
+              name="calendar-outline"
+              size={14}
+              color={colors.primary}
+            />
+            <Text style={styles.scheduleBadgeText}>Not active yet</Text>
+          </View>
+          {scheduleRows.map((row) => (
+            <View key={row.label} style={styles.scheduleRow}>
+              <View style={styles.scheduleRowLeft}>
+                <Ionicons name={row.icon} size={14} color={colors.textMuted} />
+                <Text style={styles.scheduleLabel}>{row.label}</Text>
+              </View>
+              <Text style={styles.scheduleValue}>{row.value}</Text>
+            </View>
+          ))}
         </View>
-        <View style={styles.countdownTextWrap}>
-          <Text style={styles.countdownValue}>{countdownText}</Text>
-          <Text style={styles.countdownSubtext}>{countdownSubtext}</Text>
-        </View>
-      </View>
+      ) : (
+        <>
+          <View style={styles.countdownCard}>
+            <View style={styles.countdownIconWrap}>
+              <Ionicons name="time-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.countdownTextWrap}>
+              <Text style={styles.countdownValue}>{countdownText}</Text>
+              <Text style={styles.countdownSubtext}>{countdownSubtext}</Text>
+            </View>
+          </View>
 
-      <View style={styles.progressTrack}>
-        <View
-          style={[
-            styles.progressFill,
-            {
-              width: `${clamp(progressRatio * 100, 0, 100)}%`,
-              backgroundColor: progressColor,
-            },
-          ]}
-        />
-      </View>
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${clamp(progressRatio * 100, 0, 100)}%`,
+                  backgroundColor: progressColor,
+                },
+              ]}
+            />
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -262,5 +329,54 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     borderRadius: 999,
+  },
+  scheduleCard: {
+    backgroundColor: colors.primaryOpacity10,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity30,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  scheduleBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.primaryOpacity30,
+    backgroundColor: colors.backgroundDarkOpacity50,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  scheduleBadgeText: {
+    color: colors.primary,
+    fontSize: typography.xs,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  scheduleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  scheduleRowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  scheduleLabel: {
+    color: colors.textSecondary,
+    fontSize: typography.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  scheduleValue: {
+    color: colors.white,
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
   },
 });

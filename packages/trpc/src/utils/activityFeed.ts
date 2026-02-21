@@ -16,6 +16,7 @@ interface ChallengeForFeed {
     | "IMAGE_LOCATION"
     | "LOCATION"
     | "QR_CODE";
+  scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
   basePoints: number;
   firstPlacePoints: number | null;
   secondPlacePoints: number | null;
@@ -47,6 +48,7 @@ const loadChallengeForFeed = async (
       description: true,
       image: true,
       submissionType: true,
+      scoringCategory: true,
       basePoints: true,
       firstPlacePoints: true,
       secondPlacePoints: true,
@@ -159,7 +161,37 @@ const resolvePodiumPoints = (
   }
 };
 
-const createChallengeCompletionWithWinnersById = async (params: {
+const resolveCoinTransactionActorId = async (params: {
+  tx: Prisma.TransactionClient;
+  createdByAdmin?: string | null;
+}) => {
+  if (params.createdByAdmin) {
+    return params.createdByAdmin;
+  }
+
+  const privileged = await params.tx.user.findFirst({
+    where: {
+      role: {
+        in: ["SERVICE", "ADMIN", "MODERATOR"],
+      },
+    },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (privileged?.id) {
+    return privileged.id;
+  }
+
+  const fallback = await params.tx.user.findFirst({
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return fallback?.id ?? null;
+};
+
+export const createChallengeCompletionWithWinnersById = async (params: {
   tx: Prisma.TransactionClient;
   challengeId: string;
   createdByAdmin?: string | null;
@@ -184,15 +216,17 @@ const createChallengeCompletionWithWinnersById = async (params: {
     });
   }
 
-  const topSubmissions = await params.tx.challengeSubmission.findMany({
-    where: { challengeId: challenge.id },
+  const sortedSubmissions = await params.tx.challengeSubmission.findMany({
+    where: {
+      challengeId: challenge.id,
+      status: { not: "REJECTED" },
+    },
     orderBy: [
       { voteScore: "desc" },
       { voteCount: "desc" },
       { createdAt: "asc" },
       { id: "asc" },
     ],
-    take: 3,
     select: {
       id: true,
       challengeId: true,
@@ -201,6 +235,8 @@ const createChallengeCompletionWithWinnersById = async (params: {
       videoId: true,
       status: true,
       ranking: true,
+      awardedPoints: true,
+      bonusPoints: true,
       voteCount: true,
       voteScore: true,
       group: {
@@ -211,19 +247,50 @@ const createChallengeCompletionWithWinnersById = async (params: {
     },
   });
 
-  if (topSubmissions.length === 0) {
+  if (sortedSubmissions.length === 0) {
     return;
   }
 
+  const topSubmissions = sortedSubmissions.slice(0, 3);
+  const hasPotentialCoinChange = sortedSubmissions.some((submission, index) => {
+    const nextRanking = index < 3 ? index + 1 : null;
+    const nextAwardedPoints =
+      nextRanking != null ? resolvePodiumPoints(challenge, nextRanking) : 0;
+    return (
+      submission.ranking !== nextRanking ||
+      (submission.awardedPoints ?? 0) !== nextAwardedPoints
+    );
+  });
+
+  const previousRankingSnapshot = hasPotentialCoinChange
+    ? await captureTripRankingSnapshot(params.tx, challenge.tripId)
+    : null;
+  const coinTransactionActorId = hasPotentialCoinChange
+    ? await resolveCoinTransactionActorId({
+        tx: params.tx,
+        createdByAdmin: params.createdByAdmin,
+      })
+    : null;
+  let hasCoinChanges = false;
+
   const completedAt = new Date();
-  for (let index = 0; index < topSubmissions.length; index += 1) {
-    const submission = topSubmissions[index];
+  for (let index = 0; index < sortedSubmissions.length; index += 1) {
+    const submission = sortedSubmissions[index];
     if (!submission) continue;
 
-    const nextRanking = index + 1;
-    const shouldApprove = submission.status !== "APPROVED";
+    const nextRanking = index < 3 ? index + 1 : null;
+    const nextAwardedPoints =
+      nextRanking != null ? resolvePodiumPoints(challenge, nextRanking) : 0;
+    const currentAwardedPoints = submission.awardedPoints ?? 0;
+    const pointsDelta = nextAwardedPoints - currentAwardedPoints;
+    const shouldApprove =
+      submission.status !== "APPROVED" &&
+      submission.status !== "REJECTED" &&
+      (challenge.scoringCategory === "JUDGED_STAFF" || nextRanking != null);
     const shouldUpdateRanking = submission.ranking !== nextRanking;
-    if (!shouldApprove && !shouldUpdateRanking) {
+    const shouldUpdatePoints = currentAwardedPoints !== nextAwardedPoints;
+
+    if (!shouldApprove && !shouldUpdateRanking && !shouldUpdatePoints) {
       continue;
     }
 
@@ -231,6 +298,7 @@ const createChallengeCompletionWithWinnersById = async (params: {
       where: { id: submission.id },
       data: {
         ranking: nextRanking,
+        awardedPoints: nextAwardedPoints,
         ...(shouldApprove
           ? {
               status: "APPROVED",
@@ -240,6 +308,36 @@ const createChallengeCompletionWithWinnersById = async (params: {
             }
           : {}),
       },
+    });
+
+    if (pointsDelta !== 0) {
+      hasCoinChanges = true;
+      await params.tx.group.update({
+        where: { id: submission.groupId },
+        data: { coins: { increment: pointsDelta } },
+      });
+
+      if (coinTransactionActorId) {
+        await params.tx.coinTransaction.create({
+          data: {
+            groupId: submission.groupId,
+            amount: pointsDelta,
+            reason: `Peer voting result: ${challenge.name}${
+              nextRanking ? ` (#${nextRanking})` : ""
+            }`,
+            adminId: coinTransactionActorId,
+          },
+        });
+      }
+    }
+  }
+
+  if (hasCoinChanges && previousRankingSnapshot) {
+    await createRankChangeActivities({
+      tx: params.tx,
+      tripId: challenge.tripId,
+      previousSnapshot: previousRankingSnapshot,
+      createdByAdmin: params.createdByAdmin ?? coinTransactionActorId ?? null,
     });
   }
 
@@ -413,6 +511,65 @@ export const promoteVisibleChallengesToActiveWithFeed = async (params: {
   }
 
   return activatedIds;
+};
+
+export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed = async (
+  params: {
+    tx: Prisma.TransactionClient;
+    where?: Prisma.ChallengeWhereInput;
+    createdByAdmin?: string | null;
+  },
+) => {
+  const now = new Date();
+  const toVoting = await params.tx.challenge.findMany({
+    where: {
+      AND: [
+        params.where ?? {},
+        {
+          status: "ACTIVE",
+          scoringCategory: "PEER_VOTING",
+          votingStartTime: { lte: now },
+          submissions: {
+            some: {},
+            every: { status: "APPROVED" },
+          },
+        },
+      ],
+    },
+    select: { id: true },
+  });
+
+  const votingIds: string[] = [];
+
+  for (const challenge of toVoting) {
+    const result = await params.tx.challenge.updateMany({
+      where: {
+        id: challenge.id,
+        status: "ACTIVE",
+        scoringCategory: "PEER_VOTING",
+        votingStartTime: { lte: now },
+        submissions: {
+          some: {},
+          every: { status: "APPROVED" },
+        },
+      },
+      data: {
+        status: "VOTING_PHASE",
+      },
+    });
+
+    if (result.count > 0) {
+      votingIds.push(challenge.id);
+      await createChallengeStatusActivityById({
+        tx: params.tx,
+        challengeId: challenge.id,
+        eventType: "voting_started",
+        createdByAdmin: params.createdByAdmin,
+      });
+    }
+  }
+
+  return votingIds;
 };
 
 export const finalizeVotingChallengesToCompletedWithFeed = async (params: {

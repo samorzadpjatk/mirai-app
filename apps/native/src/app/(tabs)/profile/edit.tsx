@@ -394,8 +394,6 @@ export default function EditProfileScreen() {
         visible={isCameraOpen}
         title="Take Profile Photo"
         facing="front"
-        mirror={false}
-        forceHorizontalFlip
         isUsingPhoto={isPicking}
         onClose={() => setIsCameraOpen(false)}
         onUsePhoto={handleUseCapturedPhoto}

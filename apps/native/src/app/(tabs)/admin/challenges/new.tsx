@@ -127,6 +127,7 @@ export default function NewChallengeScreen() {
     isRecurring: false,
     dailyStartTime: null as Date | null,
     dailyEndTime: null as Date | null,
+    recurringDays: "",
     basePoints: "",
     firstPlacePoints: "",
     secondPlacePoints: "",
@@ -184,7 +185,9 @@ export default function NewChallengeScreen() {
     form.submissionType === "IMAGE" || form.submissionType === "VIDEO";
   const showPodiumPoints = form.scoringCategory !== "UNLIMITED";
   const isAutoApproveForced =
-    form.submissionType === "QR_CODE" || form.submissionType === "LOCATION";
+    form.submissionType === "QR_CODE" ||
+    form.submissionType === "LOCATION" ||
+    form.submissionType === "IMAGE_LOCATION";
   const isAutoApproveDisabled =
     form.submissionType === "IMAGE" || form.submissionType === "VIDEO";
   const needsLocation =
@@ -393,14 +396,26 @@ export default function NewChallengeScreen() {
       return false;
     }
 
-    if (form.submissionType === "TEXT" && !form.textExpectedPhrase.trim()) {
-      Alert.alert("Error", "Provide the expected phrase for text challenges.");
+    if (
+      form.submissionType === "TEXT" &&
+      form.autoApprove &&
+      !form.textExpectedPhrase.trim()
+    ) {
+      Alert.alert(
+        "Error",
+        "For text auto-approve, provide an expected phrase or disable auto-approve.",
+      );
       return false;
     }
 
     if (form.isRecurring) {
       if (!form.dailyStartTime || !form.dailyEndTime) {
         Alert.alert("Error", "Provide daily start and end time");
+        return false;
+      }
+      const recurringDays = toOptionalInt(form.recurringDays);
+      if (!recurringDays || recurringDays < 1 || recurringDays > 30) {
+        Alert.alert("Error", "Recurring days must be between 1 and 30");
         return false;
       }
     } else {
@@ -500,6 +515,9 @@ export default function NewChallengeScreen() {
           : undefined,
         dailyEndTime: form.isRecurring
           ? formatTime(form.dailyEndTime) || undefined
+          : undefined,
+        recurringDays: form.isRecurring
+          ? toOptionalInt(form.recurringDays)
           : undefined,
         basePoints: toOptionalInt(form.basePoints),
         firstPlacePoints: showPodiumPoints
@@ -827,6 +845,15 @@ export default function NewChallengeScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
+              <Text style={styles.label}>Recurring Days</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. 7"
+                placeholderTextColor={colors.textTertiary}
+                value={form.recurringDays}
+                onChangeText={(value) => updateForm("recurringDays", value)}
+                keyboardType="numeric"
+              />
             </>
           ) : (
             <>
@@ -920,7 +947,8 @@ export default function NewChallengeScreen() {
           </View>
           {isAutoApproveForced ? (
             <Text style={styles.hint}>
-              Auto-approve is always enabled for QR code and Location
+              Auto-approve is always enabled for QR code, Location and Image +
+              Location
               challenges.
             </Text>
           ) : isAutoApproveDisabled ? (

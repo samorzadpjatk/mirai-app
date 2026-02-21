@@ -22,7 +22,7 @@ import type {
 
 const statusFilters = [
   { label: "All", value: "ALL" },
-  { label: "To solve", value: "to_solve" },
+  { label: "Active", value: "to_solve" },
   { label: "Locked", value: "HIDDEN" },
   { label: "Visible", value: "VISIBLE" },
   { label: "Voting", value: "VOTING_PHASE" },
@@ -114,13 +114,15 @@ export default function ChallengesScreen() {
   const filteredChallenges = useMemo(() => {
     const statusFiltered =
       selectedStatusFilter === "ALL"
-        ? [...challenges].sort((a, b) => {
+        ? challenges
+            .filter((challenge) => challenge.lifecycleStatus !== "COMPLETED")
+            .sort((a, b) => {
             const getAllBucket = (challenge: ChallengeListItem) => {
               if (
                 challenge.status === "to_solve" &&
                 challenge.lifecycleStatus !== "VISIBLE"
               ) {
-                return 0; // to solve
+                return 0; // active
               }
               if (challenge.status === "submitted") {
                 return 1; // submitted
@@ -179,7 +181,9 @@ export default function ChallengesScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor={colors.primary}
+            tintColor={colors.white}
+            colors={[colors.white]}
+            progressBackgroundColor={colors.cardDarkOpacity70}
           />
         }
       >

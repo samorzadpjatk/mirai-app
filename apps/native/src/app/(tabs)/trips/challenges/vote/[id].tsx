@@ -34,6 +34,7 @@ interface VotingSubmission {
 const ELO_BASE_RATING = 1500;
 const ELO_K = 32;
 const TOP3_STABILITY_REQUIRED = 3;
+const MIN_SUBMISSIONS_TO_VOTE = 2;
 
 const toPairKey = (leftId: string, rightId: string) =>
   leftId < rightId ? `${leftId}|${rightId}` : `${rightId}|${leftId}`;
@@ -266,6 +267,15 @@ export default function ChallengePeerVotingScreen() {
 
   const currentLeft = currentPair ? submissionById.get(currentPair[0]) : null;
   const currentRight = currentPair ? submissionById.get(currentPair[1]) : null;
+  const navigateBackToChallenge = useCallback(() => {
+    router.replace({
+      pathname: "/trips/challenges/[id]",
+      params: {
+        id: challengeId ?? "",
+        tripId: tripId ?? "",
+      },
+    });
+  }, [challengeId, router, tripId]);
   const shouldRedirectToChallengeDetails = Boolean(
     challengeId &&
     tripId &&
@@ -275,7 +285,7 @@ export default function ChallengePeerVotingScreen() {
   );
 
   const startComparing = useCallback(() => {
-    if (votingSubmissions.length < 3) return;
+    if (votingSubmissions.length < MIN_SUBMISSIONS_TO_VOTE) return;
     const initialRatings = Object.fromEntries(
       votingSubmissions.map((submission) => [submission.id, ELO_BASE_RATING]),
     );
@@ -299,18 +309,11 @@ export default function ChallengePeerVotingScreen() {
 
   useEffect(() => {
     if (!shouldRedirectToChallengeDetails) return;
-    router.replace({
-      pathname: "/(tabs)/trips/challenges/[id]",
-      params: {
-        id: challengeId ?? "",
-        tripId: tripId ?? "",
-      },
-    });
-  }, [challengeId, router, shouldRedirectToChallengeDetails, tripId]);
+    navigateBackToChallenge();
+  }, [navigateBackToChallenge, shouldRedirectToChallengeDetails]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (bootstrapped) return;
     if (!challengeId || !tripId) return;
     if (
       isLoadingChallenge ||
@@ -331,29 +334,37 @@ export default function ChallengePeerVotingScreen() {
     }
 
     if ((myVotes?.length ?? 0) > 0) {
-      setPhase("done");
+      navigateBackToChallenge();
       setBootstrapped(true);
       return;
     }
 
-    if (votingSubmissions.length < 3) {
-      setPhase("blocked");
-      setBlockedReason("At least 3 submissions are required to start voting.");
+    if (votingSubmissions.length < MIN_SUBMISSIONS_TO_VOTE) {
+      if (phase !== "blocked") {
+        setPhase("blocked");
+      }
+      setBlockedReason(
+        `At least ${MIN_SUBMISSIONS_TO_VOTE} submissions are required to start voting. Eligible now: ${votingSubmissions.length}.`,
+      );
       setBootstrapped(true);
       return;
     }
 
-    startComparing();
-    setBootstrapped(true);
+    if (!bootstrapped || phase === "blocked") {
+      startComparing();
+      setBootstrapped(true);
+    }
   }, [
     bootstrapped,
     challenge,
     challengeId,
+    phase,
     isLoadingChallenge,
     isLoadingMeWithGroup,
     isLoadingSubmissions,
     isLoadingVotes,
     myVotes?.length,
+    navigateBackToChallenge,
     shouldRedirectToChallengeDetails,
     startComparing,
     tripId,
@@ -414,7 +425,9 @@ export default function ChallengePeerVotingScreen() {
   };
 
   const handleSubmitPodium = async () => {
-    if (!tripId || !challengeId || finalTopThree.length < 3) return;
+    if (!tripId || !challengeId || finalTopThree.length < MIN_SUBMISSIONS_TO_VOTE) {
+      return;
+    }
 
     const votesPayload = [
       {
@@ -458,7 +471,7 @@ export default function ChallengePeerVotingScreen() {
       await queryClient.invalidateQueries({
         queryKey: submissionsQuery.queryKey,
       });
-      setPhase("done");
+      navigateBackToChallenge();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to submit votes";
@@ -588,32 +601,6 @@ export default function ChallengePeerVotingScreen() {
           </>
         ) : null}
 
-        {phase === "done" ? (
-          <View style={styles.doneCard}>
-            <Text style={styles.doneTitle}>Vote submitted</Text>
-            <Text style={styles.doneText}>
-              Your podium vote was saved. You can go back to challenges.
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.actionPrimary,
-                styles.doneButton,
-              ]}
-              onPress={() =>
-                router.replace({
-                  pathname: "/(tabs)/trips/challenges/index",
-                  params: {
-                    tripId: tripId ?? "",
-                  },
-                })
-              }
-            >
-              <Text style={styles.actionPrimaryText}>Back To Challenges</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
         {phase === "blocked" ? (
           <View style={styles.blockedCard}>
             <Text style={styles.blockedTitle}>Voting unavailable</Text>
@@ -626,16 +613,9 @@ export default function ChallengePeerVotingScreen() {
                 styles.actionPrimary,
                 styles.doneButton,
               ]}
-              onPress={() =>
-                router.replace({
-                  pathname: "/(tabs)/trips/challenges/index",
-                  params: {
-                    tripId: tripId ?? "",
-                  },
-                })
-              }
+              onPress={navigateBackToChallenge}
             >
-              <Text style={styles.actionPrimaryText}>Back To Challenges</Text>
+              <Text style={styles.actionPrimaryText}>Back To Challenge</Text>
             </TouchableOpacity>
           </View>
         ) : null}

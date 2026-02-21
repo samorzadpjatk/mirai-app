@@ -11,8 +11,14 @@ import {
   createChallengeStatusActivityById,
   createChallengeStatusActivityFromTransition,
   finalizeVotingChallengesToCompletedWithFeed,
+  promoteActivePeerVotingChallengesToVotingPhaseWithFeed,
   promoteVisibleChallengesToActiveWithFeed,
 } from "../../utils/activityFeed";
+import {
+  ensureRecurringInstancesForTrip,
+  precreateRecurringInstancesForTemplate,
+  resolveRecurringChallengeIdForTrip,
+} from "../../utils/recurringChallenges";
 
 const challengeBaseSelect: Prisma.ChallengeSelect = {
   id: true,
@@ -47,6 +53,8 @@ const challengeSelect: Prisma.ChallengeSelect = {
 } as const;
 
 const CHALLENGE_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
+const MAX_RECURRING_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const challengeImageSchema = z
   .string()
@@ -143,6 +151,100 @@ const validatePeerVotingTimeline = (input: {
   }
 };
 
+const validateRecurringTimeline = (input: {
+  isRecurring?: boolean | null;
+  dailyStartTime?: string | null;
+  dailyEndTime?: string | null;
+  recurringDays?: number | null;
+  scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
+}) => {
+  if (!input.isRecurring) return;
+
+  if (!input.dailyStartTime || !input.dailyEndTime) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Recurring challenge requires daily start and end time",
+    });
+  }
+
+  if (!input.recurringDays || input.recurringDays < 1) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Recurring challenge requires number of days",
+    });
+  }
+
+  if (input.scoringCategory === "PEER_VOTING") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Recurring peer voting challenges are not supported",
+    });
+  }
+};
+
+const startOfDay = (date: Date) => {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+  return value;
+};
+
+const endOfDay = (date: Date) => {
+  const value = new Date(date);
+  value.setHours(23, 59, 59, 999);
+  return value;
+};
+
+const addDays = (date: Date, days: number) => {
+  const value = new Date(date);
+  value.setDate(value.getDate() + days);
+  return value;
+};
+
+const inferRecurringDaysFromWindow = (
+  startTime?: Date | null,
+  endTime?: Date | null,
+) => {
+  if (!startTime || !endTime) return null;
+  const start = startOfDay(startTime);
+  const end = startOfDay(endTime);
+  if (end.getTime() < start.getTime()) return null;
+  return Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+};
+
+const resolveRecurringDays = (params: {
+  isRecurring?: boolean | null;
+  recurringDays?: number | null;
+  fallbackDays?: number | null;
+}) => {
+  if (!params.isRecurring) return null;
+  const value = params.recurringDays ?? params.fallbackDays;
+  if (!value || value < 1) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Recurring challenge requires number of days",
+    });
+  }
+  if (!Number.isInteger(value) || value > MAX_RECURRING_DAYS) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Recurring days must be an integer between 1 and ${MAX_RECURRING_DAYS}`,
+    });
+  }
+  return value;
+};
+
+const resolveRecurringTemplateWindow = (params: {
+  anchorDate: Date;
+  recurringDays: number;
+}) => {
+  const anchorDay = startOfDay(params.anchorDate);
+  const endDay = addDays(anchorDay, params.recurringDays - 1);
+  return {
+    startTime: anchorDay,
+    endTime: endOfDay(endDay),
+  };
+};
+
 const resolveChallengeImage = async (
   supabase: {
     storage: {
@@ -204,10 +306,13 @@ const activateVisibleChallenges = async (
   db: Prisma.TransactionClient,
   where?: Prisma.ChallengeWhereInput,
 ) => {
+  const now = new Date();
+
   await db.challenge.updateMany({
     where: {
       status: "VISIBLE",
-      endTime: { lte: new Date() },
+      scoringCategory: { notIn: ["PEER_VOTING", "JUDGED_STAFF"] },
+      endTime: { lte: now },
       ...where,
     },
     data: {
@@ -221,10 +326,17 @@ const activateVisibleChallenges = async (
     createdByAdmin: null,
   });
 
+  await promoteActivePeerVotingChallengesToVotingPhaseWithFeed({
+    tx: db,
+    where,
+    createdByAdmin: null,
+  });
+
   await db.challenge.updateMany({
     where: {
       status: "ACTIVE",
-      endTime: { lte: new Date() },
+      scoringCategory: { notIn: ["PEER_VOTING", "JUDGED_STAFF"] },
+      endTime: { lte: now },
       ...where,
     },
     data: {
@@ -245,6 +357,7 @@ export const challengeRouter = createTRPCRouter({
     await activateVisibleChallenges(ctx.db);
 
     const challenges = await ctx.db.challenge.findMany({
+      where: { isRecurring: false },
       select: challengeSelect,
       orderBy: { createdAt: "desc" },
     });
@@ -255,10 +368,17 @@ export const challengeRouter = createTRPCRouter({
   getAllByTrip: protectedProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      await ensureRecurringInstancesForTrip({
+        tx: ctx.db,
+        tripId: input.tripId,
+      });
       await activateVisibleChallenges(ctx.db, { tripId: input.tripId });
 
       const challenges = await ctx.db.challenge.findMany({
-        where: { tripId: input.tripId },
+        where: {
+          tripId: input.tripId,
+          isRecurring: false,
+        },
         select: challengeSelect,
         orderBy: { createdAt: "desc" },
       });
@@ -347,13 +467,28 @@ export const challengeRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      await ensureRecurringInstancesForTrip({
+        tx: ctx.db,
+        tripId: input.tripId,
+      });
+
+      const isAdminOrModerator =
+        ctx.dbUser.role === "ADMIN" || ctx.dbUser.role === "MODERATOR";
+      const resolvedChallengeId = isAdminOrModerator
+        ? input.id
+        : ((await resolveRecurringChallengeIdForTrip({
+            tx: ctx.db,
+            challengeId: input.id,
+            tripId: input.tripId,
+          })) ?? input.id);
+
       await activateVisibleChallenges(ctx.db, {
-        id: input.id,
+        id: resolvedChallengeId,
         tripId: input.tripId,
       });
 
       const challenge = await ctx.db.challenge.findFirst({
-        where: { id: input.id, tripId: input.tripId },
+        where: { id: resolvedChallengeId, tripId: input.tripId },
         select: {
           ...challengeBaseSelect,
         },
@@ -396,6 +531,7 @@ export const challengeRouter = createTRPCRouter({
           "PEER_VOTING",
         ]),
         isRecurring: z.boolean().optional(),
+        recurringDays: z.number().int().min(1).max(MAX_RECURRING_DAYS).optional(),
         dailyStartTime: z.string().optional(),
         dailyEndTime: z.string().optional(),
         basePoints: z.number().int().min(0).optional(),
@@ -413,16 +549,49 @@ export const challengeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const now = new Date();
+      const recurringDays = resolveRecurringDays({
+        isRecurring: input.isRecurring,
+        recurringDays: input.recurringDays,
+      });
+      const recurringWindow =
+        input.isRecurring && recurringDays
+          ? resolveRecurringTemplateWindow({
+              anchorDate: input.startTime ?? now,
+              recurringDays,
+            })
+          : null;
+
       validatePeerVotingTimeline({
         submissionType: input.submissionType,
         scoringCategory: input.scoringCategory,
-        endTime: input.endTime,
+        endTime: recurringWindow?.endTime ?? input.endTime,
         votingStartTime: input.votingStartTime,
         votingEndTime: input.votingEndTime,
       });
-      const now = new Date();
+      validateRecurringTimeline({
+        isRecurring: input.isRecurring,
+        dailyStartTime: input.dailyStartTime,
+        dailyEndTime: input.dailyEndTime,
+        recurringDays,
+        scoringCategory: input.scoringCategory,
+      });
+
+      if (
+        input.submissionType === "TEXT" &&
+        input.autoApprove &&
+        !input.textExpectedPhrase?.trim()
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Text auto-approve requires an expected phrase, or disable auto-approve",
+        });
+      }
+
       const requestedStatus = input.status ?? "HIDDEN";
       const shouldActivateImmediately =
+        !input.isRecurring &&
         requestedStatus === "VISIBLE" &&
         Boolean(input.startTime) &&
         (input.startTime as Date) <= now &&
@@ -447,8 +616,8 @@ export const challengeRouter = createTRPCRouter({
           secondPlacePoints: input.secondPlacePoints,
           thirdPlacePoints: input.thirdPlacePoints,
           status: initialStatus,
-          startTime: input.startTime,
-          endTime: input.endTime,
+          startTime: recurringWindow?.startTime ?? input.startTime,
+          endTime: recurringWindow?.endTime ?? input.endTime,
           votingStartTime: input.votingStartTime,
           votingEndTime: input.votingEndTime,
           targetLatitude: input.targetLatitude,
@@ -461,12 +630,20 @@ export const challengeRouter = createTRPCRouter({
                 : null,
           autoApprove:
             input.submissionType === "QR_CODE" ||
-            input.submissionType === "LOCATION"
+            input.submissionType === "LOCATION" ||
+            input.submissionType === "IMAGE_LOCATION"
               ? true
               : input.autoApprove,
         },
         select: challengeSelect,
       });
+
+      if (challenge.isRecurring) {
+        await precreateRecurringInstancesForTemplate({
+          tx: ctx.db,
+          template: challenge,
+        });
+      }
 
       if (challenge.status === "ACTIVE") {
         await createChallengeStatusActivityById({
@@ -507,6 +684,7 @@ export const challengeRouter = createTRPCRouter({
           .enum(["SPEED", "UNLIMITED", "JUDGED_STAFF", "PEER_VOTING"])
           .optional(),
         isRecurring: z.boolean().optional(),
+        recurringDays: z.number().int().min(1).max(MAX_RECURRING_DAYS).optional(),
         dailyStartTime: z.string().optional(),
         dailyEndTime: z.string().optional(),
         basePoints: z.number().int().min(0).optional(),
@@ -540,8 +718,13 @@ export const challengeRouter = createTRPCRouter({
           status: true,
           description: true,
           submissionType: true,
+          autoApprove: true,
+          isRecurring: true,
+          dailyStartTime: true,
+          dailyEndTime: true,
           scoringCategory: true,
           expectedValue: true,
+          startTime: true,
           endTime: true,
           votingStartTime: true,
           votingEndTime: true,
@@ -562,6 +745,89 @@ export const challengeRouter = createTRPCRouter({
         votingStartTime: input.votingStartTime ?? existing.votingStartTime,
         votingEndTime: input.votingEndTime ?? existing.votingEndTime,
       });
+      const nextIsRecurring = input.isRecurring ?? existing.isRecurring;
+      const inferredRecurringDays = inferRecurringDaysFromWindow(
+        existing.startTime,
+        existing.endTime,
+      );
+      const recurringDays = resolveRecurringDays({
+        isRecurring: nextIsRecurring,
+        recurringDays: input.recurringDays,
+        fallbackDays: inferredRecurringDays,
+      });
+      validateRecurringTimeline({
+        isRecurring: nextIsRecurring,
+        dailyStartTime: input.dailyStartTime ?? existing.dailyStartTime,
+        dailyEndTime: input.dailyEndTime ?? existing.dailyEndTime,
+        recurringDays,
+        scoringCategory: input.scoringCategory ?? existing.scoringCategory,
+      });
+      const recurringWindow =
+        nextIsRecurring && recurringDays
+          ? resolveRecurringTemplateWindow({
+              anchorDate: input.startTime ?? existing.startTime ?? new Date(),
+              recurringDays,
+            })
+          : null;
+
+      const nextScoringCategory =
+        input.scoringCategory ?? existing.scoringCategory;
+      const nextStatus = input.status ?? existing.status;
+
+      const isTransitioningToVotingPhase =
+        existing.status !== "VOTING_PHASE" && nextStatus === "VOTING_PHASE";
+
+      if (
+        nextScoringCategory === "PEER_VOTING" &&
+        isTransitioningToVotingPhase
+      ) {
+        const [totalSubmissions, notApprovedSubmissions] = await Promise.all([
+          ctx.db.challengeSubmission.count({
+            where: { challengeId: existing.id },
+          }),
+          ctx.db.challengeSubmission.count({
+            where: {
+              challengeId: existing.id,
+              status: { not: "APPROVED" },
+            },
+          }),
+        ]);
+
+        if (totalSubmissions === 0 || notApprovedSubmissions > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Peer voting can start only after staff approves all submitted photos",
+          });
+        }
+      }
+
+      const effectiveSubmissionType =
+        input.submissionType ?? existing.submissionType;
+      const effectiveExpectedValue =
+        effectiveSubmissionType === "QR_CODE"
+          ? input.qrCodeValue ?? existing.expectedValue ?? null
+          : effectiveSubmissionType === "TEXT"
+            ? input.textExpectedPhrase ?? existing.expectedValue ?? null
+            : null;
+      const effectiveAutoApprove =
+        effectiveSubmissionType === "QR_CODE" ||
+        effectiveSubmissionType === "LOCATION" ||
+        effectiveSubmissionType === "IMAGE_LOCATION"
+          ? true
+          : input.autoApprove ?? existing.autoApprove;
+
+      if (
+        effectiveSubmissionType === "TEXT" &&
+        effectiveAutoApprove &&
+        !effectiveExpectedValue?.trim()
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Text auto-approve requires an expected phrase, or disable auto-approve",
+        });
+      }
 
       const challenge = await ctx.db.challenge.update({
         where: { id: input.id },
@@ -582,31 +848,29 @@ export const challengeRouter = createTRPCRouter({
           secondPlacePoints: input.secondPlacePoints,
           thirdPlacePoints: input.thirdPlacePoints,
           status: input.status,
-          startTime: input.startTime,
-          endTime: input.endTime,
+          startTime: recurringWindow?.startTime ?? input.startTime,
+          endTime: recurringWindow?.endTime ?? input.endTime,
           votingStartTime: input.votingStartTime,
           votingEndTime: input.votingEndTime,
           targetLatitude: input.targetLatitude,
           targetLongitude: input.targetLongitude,
-          expectedValue: (() => {
-            const effectiveType =
-              input.submissionType ?? existing.submissionType;
-            if (effectiveType === "QR_CODE") {
-              return input.qrCodeValue ?? existing.expectedValue ?? null;
-            }
-            if (effectiveType === "TEXT") {
-              return input.textExpectedPhrase ?? existing.expectedValue ?? null;
-            }
-            return null;
-          })(),
+          expectedValue: effectiveExpectedValue,
           autoApprove:
-            (input.submissionType ?? existing.submissionType) === "QR_CODE" ||
-            (input.submissionType ?? existing.submissionType) === "LOCATION"
+            effectiveSubmissionType === "QR_CODE" ||
+            effectiveSubmissionType === "LOCATION" ||
+            effectiveSubmissionType === "IMAGE_LOCATION"
               ? true
               : input.autoApprove,
         },
         select: challengeSelect,
       });
+
+      if (challenge.isRecurring) {
+        await precreateRecurringInstancesForTemplate({
+          tx: ctx.db,
+          template: challenge,
+        });
+      }
 
       await createChallengeStatusActivityFromTransition({
         tx: ctx.db,

@@ -117,6 +117,8 @@ export function useChallenges(tripId?: string | null) {
                   ? "locked"
                   : rawStatus === "COMPLETED"
                     ? "completed"
+                    : rawStatus === "VISIBLE"
+                      ? "visible"
                     : "to_solve";
 
       const basePoints = dbChallenge.basePoints ?? 0;

@@ -18,6 +18,7 @@ import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetails
 import { GroupDetailsLoadingState } from "~/components/trips/groups/details/GroupDetailsLoadingState";
 import { GroupMemberList } from "~/components/trips/groups/details/GroupMemberList";
 import { GroupNotFoundState } from "~/components/trips/groups/details/GroupNotFoundState";
+import { GroupApprovedChallenges } from "~/components/trips/groups/details/GroupApprovedChallenges";
 import { GroupStatsGrid } from "~/components/trips/groups/details/GroupStatsGrid";
 import { TransactionHistory } from "~/components/trips/groups/details/TransactionHistory";
 
@@ -189,6 +190,7 @@ export default function GroupDetailsScreen() {
     initials: getInitials(p.user.firstName, p.user.lastName),
     role: p.user.id === organizerId ? "Group Leader" : "Member",
     isLeader: p.user.id === organizerId,
+    avatarStoragePath: p.user.hasAvatar ? `avatar/${p.user.id}.jpg` : null,
   }));
   const rankingPosition = (() => {
     const index = rankingData?.data.findIndex(
@@ -405,7 +407,7 @@ export default function GroupDetailsScreen() {
         {/* Stats Grid */}
         <GroupStatsGrid
           membersCount={group._count.participants}
-          points={group.coins}
+          coins={group.coins}
           rankingPosition={rankingPosition}
         />
 
@@ -416,6 +418,8 @@ export default function GroupDetailsScreen() {
         <View style={styles.transactionHistorySection}>
           <TransactionHistory transactions={transactions ?? []} />
         </View>
+
+        <GroupApprovedChallenges submissions={group.approvedSubmissions ?? []} />
       </ScrollView>
     </View>
   );
