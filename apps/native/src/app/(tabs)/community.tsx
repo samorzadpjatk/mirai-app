@@ -34,7 +34,7 @@ import { useTRPC, useTRPCClient } from "@integral-2025-app/trpc/client";
 import Logo from "../../components/Logo";
 import LoadingScreen from "../../components/LoadingScreen";
 import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
-import { useSelectedTrip } from "~/hooks/trips";
+import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
@@ -661,6 +661,12 @@ export default function CommunityScreen() {
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const insets = useAppSafeAreaInsets();
+  const {
+    trips,
+    isLoading: isTripsLoading,
+    isRefetching: isTripsRefetching,
+    refetch: refetchTrips,
+  } = useTrips();
   const { selectedTripId, isLoadingSelectedTrip, setSelectedTripId } =
     useSelectedTrip();
 
@@ -673,9 +679,6 @@ export default function CommunityScreen() {
       router.replace("/auth/login");
     }
   }, [isLoadingSession, session, router]);
-
-  const tripsQuery = useQuery(trpc.trip.getAll.queryOptions());
-  const trips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data]);
 
   const selectedTrip = useMemo(() => {
     if (!selectedTripId) return null;
@@ -863,16 +866,16 @@ export default function CommunityScreen() {
   }, [activities, focusActivityId, selectedFilter]);
 
   const isRefreshing =
-    tripsQuery.isRefetching ||
+    isTripsRefetching ||
     (feedQuery.isRefetching && !feedQuery.isFetchingNextPage);
 
   const handleRefresh = useCallback(() => {
-    const requests: Promise<unknown>[] = [tripsQuery.refetch()];
+    const requests: Promise<unknown>[] = [refetchTrips()];
     if (selectedTrip?.id) {
       requests.push(feedQuery.refetch());
     }
     void Promise.all(requests);
-  }, [feedQuery, selectedTrip?.id, tripsQuery]);
+  }, [feedQuery, selectedTrip?.id, refetchTrips]);
 
   const handleFeedEndReached = useCallback(() => {
     if (!selectedTrip?.id) return;
@@ -903,7 +906,7 @@ export default function CommunityScreen() {
     setHasDismissedAutoPicker(true);
   }, []);
 
-  if (isLoadingSession || tripsQuery.isLoading || isLoadingSelectedTrip) {
+  if (isLoadingSession || isTripsLoading || isLoadingSelectedTrip) {
     return <LoadingScreen message="Loading community..." />;
   }
 
