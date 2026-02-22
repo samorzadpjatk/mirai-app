@@ -615,7 +615,7 @@ export default function ChallengePeerVotingScreen() {
               ]}
               onPress={navigateBackToChallenge}
             >
-              <Text style={styles.actionPrimaryText}>Back To Challenge</Text>
+              <Text style={styles.actionPrimaryText}>Back</Text>
             </TouchableOpacity>
           </View>
         ) : null}

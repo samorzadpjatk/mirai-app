@@ -26,6 +26,7 @@ export default function AdminLayout() {
         headerTitleStyle: {
           fontWeight: "600",
         },
+        headerBackButtonDisplayMode: "minimal",
         contentStyle: { backgroundColor },
       }}
     >

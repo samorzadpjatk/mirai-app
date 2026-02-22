@@ -758,7 +758,7 @@ export default function AdminChallengeStaffVotingScreen() {
               ]}
               onPress={navigateBackToChallenges}
             >
-              <Text style={styles.actionPrimaryText}>Back To Challenges</Text>
+              <Text style={styles.actionPrimaryText}>Back</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -777,7 +777,7 @@ export default function AdminChallengeStaffVotingScreen() {
               ]}
               onPress={navigateBackToChallenges}
             >
-              <Text style={styles.actionPrimaryText}>Back To Challenges</Text>
+              <Text style={styles.actionPrimaryText}>Back</Text>
             </TouchableOpacity>
           </View>
         ) : null}
