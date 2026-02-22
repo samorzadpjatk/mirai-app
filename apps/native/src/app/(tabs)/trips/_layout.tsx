@@ -14,6 +14,7 @@ export default function TripsLayout() {
           fontFamily: "IBMPlexSans_600SemiBold",
           color: "#ffffff",
         },
+        headerBackButtonDisplayMode: "minimal",
         contentStyle: { backgroundColor },
         
       }}

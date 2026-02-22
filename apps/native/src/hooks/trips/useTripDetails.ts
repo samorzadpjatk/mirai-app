@@ -5,7 +5,7 @@ import {
   getCachedTripById,
   setCachedTripById,
   upsertCachedTripListItem,
-} from "~/lib/tripCacheStorage";
+} from "~/lib/selectedTripStorage";
 import type { TripListItem } from "~/components/trips/list/types";
 
 export function useTripDetails(tripId?: string | null) {
