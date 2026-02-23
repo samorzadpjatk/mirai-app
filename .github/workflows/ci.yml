@@ -3,8 +3,36 @@ name: Linting check
 on:
   push:
     branches: ["main"]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "*.js"
+      - "*.ts"
+      - "*.json"
+      - "*.yml"
+      - "*.yaml"
+      - ".github/**"
+      - "!.env*"
+      - "!docs/**"
+      - "!environment/**"
+      - "!Dockerfile*"
+      - "!*.md"
   pull_request:
     branches: ["main"]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "*.js"
+      - "*.ts"
+      - "*.json"
+      - "*.yml"
+      - "*.yaml"
+      - ".github/**"
+      - "!.env*"
+      - "!docs/**"
+      - "!environment/**"
+      - "!Dockerfile*"
+      - "!*.md"
 
 jobs:
   build_test:
