@@ -9,7 +9,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors, spacing, borderRadius, typography } from '../../../../styles';
+import { colors, spacing, typography } from '../../../../styles';
 import { useAppSafeAreaInsets } from '../../../../contexts/SafeAreaInsetsContext';
 import { useAdminTransactions } from '~/hooks/admin/useAdminTransactions';
 import { AdminHeader } from '~/components/admin/AdminHeader';
