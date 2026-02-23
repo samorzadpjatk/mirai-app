@@ -36,7 +36,7 @@ export default function GroupsListScreen() {
       (trip) => trip.tripId === tripId,
     );
     return match?.group?.id ?? null;
-  }, [currentUserWithGroup?.trips, tripId]);
+}, [currentUserWithGroup.trips, tripId]);
 
   const orderedGroups = useMemo(() => {
     if (!myGroupId) return filteredGroups;

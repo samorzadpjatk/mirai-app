@@ -132,7 +132,7 @@ export function applyRankingTemplate(
 }
 
 export function containsRankingTemplate(input: string): boolean {
-  return (Object.values(PLACEHOLDER_ALIASES) as string[][]).some((aliases) =>
+  return Object.values(PLACEHOLDER_ALIASES).some((aliases) =>
     aliases.some((placeholder) => input.includes(placeholder)),
   );
 }

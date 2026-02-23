@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -286,7 +286,7 @@ export default function AdminChallengeStaffVotingScreen() {
   const isSubmissionPhaseEnded =
     submissionEndTimestamp !== null &&
     Number.isFinite(submissionEndTimestamp) &&
-    submissionEndTimestamp <= Date.now();
+    submissionEndTimestamp <= new Date().getTime();
   const canForceEnd =
     challenge?.status !== "COMPLETED" &&
     challenge?.status !== "CANCELLED" &&
@@ -325,7 +325,7 @@ export default function AdminChallengeStaffVotingScreen() {
     setPhase("comparing");
   }, [votingSubmissions]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
   useEffect(() => {
     if (!challengeId || !tripId) return;
     if (isLoadingChallenge || isLoadingSubmissions || isLoadingVotes) {
@@ -336,35 +336,33 @@ export default function AdminChallengeStaffVotingScreen() {
       return;
     }
 
-    if (challenge.scoringCategory !== "JUDGED_STAFF") {
+    const setBlockedState = (reason: string) => {
       setPhase("blocked");
-      setBlockedReason("This screen is available only for Judged Staff challenges.");
+      setBlockedReason(reason);
       setBootstrapped(true);
+    };
+
+    if (challenge.scoringCategory !== "JUDGED_STAFF") {
+      setBlockedState("This screen is available only for Judged Staff challenges.");
       return;
     }
 
     if (!challenge.endTime) {
-      setPhase("blocked");
-      setBlockedReason(
+      setBlockedState(
         "Staff voting will be available after submission phase ends. Set submission end time first.",
       );
-      setBootstrapped(true);
       return;
     }
 
     if (!isSubmissionPhaseEnded) {
-      setPhase("blocked");
-      setBlockedReason(
+      setBlockedState(
         "Staff voting will be available only after submission phase ends.",
       );
-      setBootstrapped(true);
       return;
     }
 
     if (challenge.status === "CANCELLED") {
-      setPhase("blocked");
-      setBlockedReason("Challenge is cancelled.");
-      setBootstrapped(true);
+      setBlockedState("Challenge is cancelled.");
       return;
     }
 
@@ -373,9 +371,7 @@ export default function AdminChallengeStaffVotingScreen() {
         myVotesError instanceof Error
           ? myVotesError.message
           : "Voting unavailable for your account";
-      setPhase("blocked");
-      setBlockedReason(message);
-      setBootstrapped(true);
+      setBlockedState(message);
       return;
     }
 
@@ -384,34 +380,32 @@ export default function AdminChallengeStaffVotingScreen() {
         judgedStaffProgressError instanceof Error
           ? judgedStaffProgressError.message
           : "Unable to load staff voting progress";
-      setPhase("blocked");
-      setBlockedReason(message);
-      setBootstrapped(true);
+      setBlockedState(message);
       return;
     }
 
     if (challenge.status === "COMPLETED" || hasMyCompleteVote) {
       if (phase !== "done") {
-        setPhase("done");
+        setTimeout(() => setPhase("done"), 0);
       }
-      setBootstrapped(true);
+      setTimeout(() => setBootstrapped(true), 0);
       return;
     }
 
     if (requiredVotePositions < MIN_SUBMISSIONS_TO_VOTE) {
       if (phase !== "blocked") {
-        setPhase("blocked");
+        setTimeout(() => setPhase("blocked"), 0);
       }
-      setBlockedReason(
+      setTimeout(() => setBlockedReason(
         `At least ${MIN_SUBMISSIONS_TO_VOTE} eligible submissions are required to start staff voting. Eligible now: ${judgedStaffProgress?.eligibleSubmissionsCount ?? votingSubmissions.length}.`,
-      );
-      setBootstrapped(true);
+      ), 0);
+      setTimeout(() => setBootstrapped(true), 0);
       return;
     }
 
     if (!bootstrapped || phase === "blocked") {
-      startComparing();
-      setBootstrapped(true);
+      setTimeout(() => startComparing(), 0);
+      setTimeout(() => setBootstrapped(true), 0);
     }
   }, [
     bootstrapped,
@@ -432,7 +426,7 @@ export default function AdminChallengeStaffVotingScreen() {
     judgedStaffProgress?.eligibleSubmissionsCount,
     votingSubmissions.length,
   ]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   const handlePickWinner = (winnerId: string) => {
     if (phase !== "comparing") return;

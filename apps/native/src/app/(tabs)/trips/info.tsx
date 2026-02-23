@@ -14,7 +14,6 @@ import {
 import { SafeAreaTop } from "~/components/SafeAreaWrapper";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { useRouter, useLocalSearchParams } from "expo-router";
 import { WebView } from "react-native-webview";
 import Pdf from "react-native-pdf";
 import { Directory, File, Paths } from "expo-file-system/next";
@@ -30,9 +29,6 @@ const INFOPACK_PDF_URL =
 const INFOPACK_PDF_FILE_NAME = "wintegral-infopack-20022026.pdf";
 
 export default function TripInfoScreen() {
-  const router = useRouter();
-  const params = useLocalSearchParams();
-  const tripId = typeof params.id === "string" ? params.id : params.id?.[0];
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPdfModalVisible, setIsPdfModalVisible] = useState(false);
   const [isInsuranceModalVisible, setIsInsuranceModalVisible] = useState(false);

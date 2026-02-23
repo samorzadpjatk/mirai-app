@@ -1,6 +1,11 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+    QueryClient,
+    QueryClientProvider,
+    type QueryCacheNotifyEvent,
+    type MutationCacheNotifyEvent,
+} from "@tanstack/react-query";
 import { TRPCProvider } from "./react";
 import { getTRPCClient } from "./vanilia";
 import React, { useEffect, useMemo, useRef } from "react";
@@ -98,15 +103,15 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
             }
         };
 
-        const unsubscribeQuery = queryCache.subscribe((event) => {
-            const error = event?.query?.state?.error;
+        const unsubscribeQuery = queryCache.subscribe((event: QueryCacheNotifyEvent | undefined) => {
+            const error: unknown = event?.query?.state?.error;
             if (error) {
                 handleError(error);
             }
         });
 
-        const unsubscribeMutation = mutationCache.subscribe((event) => {
-            const error = event?.mutation?.state?.error;
+        const unsubscribeMutation = mutationCache.subscribe((event: MutationCacheNotifyEvent | undefined) => {
+            const error: unknown = event?.mutation?.state?.error;
             if (error) {
                 handleError(error);
             }

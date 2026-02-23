@@ -108,7 +108,8 @@ export default function AdminSchedulesScreen() {
       });
       setShowCreateModal(false);
     } catch (error) {
-      Alert.alert('Error', 'Failed to create schedule');
+      const message = error instanceof Error ? error.message : 'Failed to create schedule';
+      Alert.alert('Error', message);
     }
   };
 
@@ -127,7 +128,8 @@ export default function AdminSchedulesScreen() {
       setShowEditModal(false);
       setSelectedSchedule(null);
     } catch (error) {
-      Alert.alert('Error', 'Failed to update schedule');
+      const message = error instanceof Error ? error.message : 'Failed to update schedule';
+      Alert.alert('Error', message);
     }
   };
 
@@ -137,7 +139,8 @@ export default function AdminSchedulesScreen() {
       setShowDeleteModal(false);
       setSelectedSchedule(null);
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete schedule');
+      const message = error instanceof Error ? error.message : 'Failed to delete schedule';
+      Alert.alert('Error', message);
     }
   };
 
@@ -145,7 +148,8 @@ export default function AdminSchedulesScreen() {
     try {
       await toggleSchedule(schedule.id);
     } catch (error) {
-      Alert.alert('Error', 'Failed to toggle schedule');
+      const message = error instanceof Error ? error.message : 'Failed to toggle schedule';
+      Alert.alert('Error', message);
     }
   };
 

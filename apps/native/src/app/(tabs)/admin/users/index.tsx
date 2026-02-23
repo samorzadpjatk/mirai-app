@@ -27,7 +27,7 @@ export default function AdminUsersScreen() {
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(1);
   const [selectedField, setSelectedField] = useState<'firstName' | 'lastName' | 'email' | 'wristNumber' | 'houseNumber' | 'groupName'>('firstName');
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
@@ -116,15 +116,17 @@ export default function AdminUsersScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteUser({ userId, tripId });
-            setShowEditUserModal(false);
-            Alert.alert('Deleted', 'User has been deleted.');
-          } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete user';
-            Alert.alert('Error', message);
-          }
+        onPress: () => {
+          void (async () => {
+            try {
+              await deleteUser({ userId, tripId });
+              setShowEditUserModal(false);
+              Alert.alert('Deleted', 'User has been deleted.');
+            } catch (error) {
+              const message = error instanceof Error ? error.message : 'Failed to delete user';
+              Alert.alert('Error', message);
+            }
+          })();
         },
       },
     ]);
@@ -136,15 +138,17 @@ export default function AdminUsersScreen() {
       {
         text: 'Ban',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            await banUserUntil({ userId, bannedUntilMs, reason });
-            setShowEditUserModal(false);
-            Alert.alert('Banned', 'User has been banned.');
-          } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to ban user';
-            Alert.alert('Error', message);
-          }
+        onPress: () => {
+          void (async () => {
+            try {
+              await banUserUntil({ userId, bannedUntilMs, reason });
+              setShowEditUserModal(false);
+              Alert.alert('Banned', 'User has been banned.');
+            } catch (error) {
+              const message = error instanceof Error ? error.message : 'Failed to ban user';
+              Alert.alert('Error', message);
+            }
+          })();
         },
       },
     ]);

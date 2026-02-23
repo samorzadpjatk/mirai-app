@@ -52,7 +52,7 @@ interface SubmissionItem {
   };
 }
 
-const statusFilters: Array<{ label: string; value: StatusFilter }> = [
+const statusFilters: { label: string; value: StatusFilter }[] = [
   { label: "All", value: "ALL" },
   { label: "Pending", value: "PENDING" },
   { label: "Approved", value: "APPROVED" },

@@ -9,6 +9,8 @@ interface MinimalBuffer {
   ): { toString(encoding: "utf-8"): string };
 }
 
+type AdminUserWithBan = SupabaseUser & { banned_until?: string | null };
+
 const getGlobalBuffer = () =>
   (globalThis as typeof globalThis & { Buffer?: MinimalBuffer }).Buffer;
 
@@ -273,9 +275,10 @@ export async function requireAuth(
       `[Auth] Failed to check ban status for ${session.authUserId}: ${adminLookup.error.message}`,
     );
   } else {
-    const bannedUntilRaw = (adminLookup.data.user as any)?.banned_until;
+    const adminUser = adminLookup.data.user as AdminUserWithBan | null;
+    const bannedUntilRaw = adminUser?.banned_until ?? null;
     if (bannedUntilRaw) {
-      const bannedUntil = new Date(bannedUntilRaw as string);
+      const bannedUntil = new Date(bannedUntilRaw);
       if (!Number.isNaN(bannedUntil.getTime()) && bannedUntil.getTime() > Date.now()) {
         throw new AuthenticationError("User is banned");
       }

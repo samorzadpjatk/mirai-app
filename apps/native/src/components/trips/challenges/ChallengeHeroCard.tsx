@@ -65,7 +65,7 @@ export function ChallengeHeroCard({
   submissionType,
   scoringCategory,
   status,
-  endTime,
+  endTime: _endTime,
   isRecurring,
   firstPlacePoints,
   secondPlacePoints,

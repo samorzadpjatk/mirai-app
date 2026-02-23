@@ -50,7 +50,7 @@ interface AdminPurchaseListItem {
   } | null;
 }
 
-const statusOptions: Array<{ value: PurchaseStatusFilter; label: string }> = [
+const statusOptions: { value: PurchaseStatusFilter; label: string }[] = [
   { value: "BOUGHT", label: "Pending" },
   { value: "ALL", label: "All" },
   { value: "ACCEPTED", label: "Accepted" },
@@ -138,7 +138,7 @@ export default function AdminRewardsPage() {
     }
   };
 
-  const handleCancelPurchase = async (purchaseId: string) => {
+  const handleCancelPurchase = (purchaseId: string) => {
     Alert.alert(
       "Cancel purchase",
       "This will cancel the purchase and refund coins to the group. Continue?",
@@ -147,17 +147,19 @@ export default function AdminRewardsPage() {
         {
           text: "Yes, cancel",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await updatePurchaseStatus.mutateAsync({
-                purchaseId,
-                status: "CANCELLED",
-              });
-              Alert.alert("Saved", "Purchase has been cancelled and refunded.");
-            } catch (error) {
-              const message = error instanceof Error ? error.message : "Failed to cancel purchase";
-              Alert.alert("Error", message);
-            }
+          onPress: () => {
+            void (async () => {
+              try {
+                await updatePurchaseStatus.mutateAsync({
+                  purchaseId,
+                  status: "CANCELLED",
+                });
+                Alert.alert("Saved", "Purchase has been cancelled and refunded.");
+              } catch (error) {
+                const message = error instanceof Error ? error.message : "Failed to cancel purchase";
+                Alert.alert("Error", message);
+              }
+            })();
           },
         },
       ],
