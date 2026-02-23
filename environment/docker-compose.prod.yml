@@ -588,7 +588,6 @@ services:
       WATCHTOWER_ROLLING_RESTART: "true"
       WATCHTOWER_LABEL_ENABLE: "true"
       WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_POLL_INTERVAL: "3600"  # Check every hour as fallback
     command: --scope db-migrations --label-enable --cleanup --rolling-restart
     depends_on:
       - db-migrations
@@ -606,7 +605,6 @@ services:
       WATCHTOWER_ROLLING_RESTART: "true"
       WATCHTOWER_LABEL_ENABLE: "true"
       WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_POLL_INTERVAL: "3600"  # Check every hour as fallback
       WATCHTOWER_TIMEOUT: "60s"  # Allow more time for graceful shutdown
     command: --scope backend-services --label-enable --cleanup --rolling-restart --stop-timeout 60s
     depends_on:
