@@ -60,11 +60,56 @@ const statusOptions = [
 type DateField =
   | "startTime"
   | "endTime"
-  | "votingStartTime"
-  | "votingEndTime"
   | "dailyStartTime"
   | "dailyEndTime"
   | null;
+
+type VotingDurationUnit = "HOURS" | "DAYS";
+
+const toVotingDurationHours = (value: string, unit: VotingDurationUnit) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return undefined;
+  }
+
+  return unit === "DAYS" ? parsed * 24 : parsed;
+};
+
+const toVotingDurationDraft = (
+  votingStartTime?: string | Date | null,
+  votingEndTime?: string | Date | null,
+) => {
+  if (!votingStartTime || !votingEndTime) {
+    return {
+      value: "",
+      unit: "HOURS" as VotingDurationUnit,
+    };
+  }
+
+  const start = new Date(votingStartTime);
+  const end = new Date(votingEndTime);
+  const durationMs = end.getTime() - start.getTime();
+
+  if (durationMs <= 0) {
+    return {
+      value: "",
+      unit: "HOURS" as VotingDurationUnit,
+    };
+  }
+
+  const totalHours = Math.max(1, Math.ceil(durationMs / (60 * 60 * 1000)));
+  if (totalHours % 24 === 0) {
+    return {
+      value: String(totalHours / 24),
+      unit: "DAYS" as VotingDurationUnit,
+    };
+  }
+
+  return {
+    value: String(totalHours),
+    unit: "HOURS" as VotingDurationUnit,
+  };
+};
 
 const formatTime = (date: Date | null) => {
   if (!date) return "";
@@ -156,8 +201,8 @@ export default function EditChallengeScreen() {
     status: "HIDDEN",
     startTime: null as Date | null,
     endTime: null as Date | null,
-    votingStartTime: null as Date | null,
-    votingEndTime: null as Date | null,
+    votingDurationValue: "" as string,
+    votingDurationUnit: "HOURS" as VotingDurationUnit,
     targetLocation: null as LocationCoordinate | null,
     qrCodeValue: "",
     textExpectedPhrase: "",
@@ -204,6 +249,10 @@ export default function EditChallengeScreen() {
 
     const expectedValue = challenge.qrCodeValue ?? "";
     const nextImage = challenge.image ?? "";
+    const votingDurationDraft = toVotingDurationDraft(
+      challenge.votingStartTime,
+      challenge.votingEndTime,
+    );
 
     setForm({
       title: challenge.name ?? "",
@@ -238,12 +287,8 @@ export default function EditChallengeScreen() {
       status: challenge.status ?? "HIDDEN",
       startTime: challenge.startTime ? new Date(challenge.startTime) : null,
       endTime: challenge.endTime ? new Date(challenge.endTime) : null,
-      votingStartTime: challenge.votingStartTime
-        ? new Date(challenge.votingStartTime)
-        : null,
-      votingEndTime: challenge.votingEndTime
-        ? new Date(challenge.votingEndTime)
-        : null,
+      votingDurationValue: votingDurationDraft.value,
+      votingDurationUnit: votingDurationDraft.unit,
       targetLocation:
         challenge.targetLatitude != null && challenge.targetLongitude != null
           ? {
@@ -371,8 +416,8 @@ export default function EditChallengeScreen() {
         : {}),
       ...(value !== "PEER_VOTING"
         ? {
-            votingStartTime: null,
-            votingEndTime: null,
+            votingDurationValue: "",
+            votingDurationUnit: "HOURS",
           }
         : {}),
     }));
@@ -401,8 +446,8 @@ export default function EditChallengeScreen() {
         ...(shouldResetPeerVoting
           ? {
               scoringCategory: "SPEED",
-              votingStartTime: null,
-              votingEndTime: null,
+              votingDurationValue: "",
+              votingDurationUnit: "HOURS",
             }
           : {}),
       };
@@ -543,19 +588,15 @@ export default function EditChallengeScreen() {
     }
 
     if (isPeerVoting) {
-      if (
-        (form.votingStartTime && !form.votingEndTime) ||
-        (!form.votingStartTime && form.votingEndTime)
-      ) {
-        Alert.alert("Error", "Provide both voting start and end time");
-        return false;
-      }
-      if (
-        form.votingStartTime &&
-        form.votingEndTime &&
-        form.votingStartTime >= form.votingEndTime
-      ) {
-        Alert.alert("Error", "Voting start must be before voting end");
+      const votingDurationHours = toVotingDurationHours(
+        form.votingDurationValue,
+        form.votingDurationUnit,
+      );
+      if (!votingDurationHours) {
+        Alert.alert(
+          "Error",
+          "Provide peer voting duration in hours or days (minimum 1).",
+        );
         return false;
       }
       if (!form.endTime) {
@@ -563,10 +604,6 @@ export default function EditChallengeScreen() {
           "Error",
           "Peer voting challenge requires submission end time",
         );
-        return false;
-      }
-      if (form.votingStartTime && form.votingStartTime <= form.endTime) {
-        Alert.alert("Error", "Voting must start after submission end time");
         return false;
       }
     }
@@ -663,11 +700,11 @@ export default function EditChallengeScreen() {
         endTime: !form.isRecurring
           ? formatIso(form.endTime) || undefined
           : undefined,
-        votingStartTime: isPeerVoting
-          ? formatIso(form.votingStartTime) || undefined
-          : undefined,
-        votingEndTime: isPeerVoting
-          ? formatIso(form.votingEndTime) || undefined
+        votingDurationHours: isPeerVoting
+          ? toVotingDurationHours(
+              form.votingDurationValue,
+              form.votingDurationUnit,
+            )
           : undefined,
         targetLatitude: normalizedTargetLatitude,
         targetLongitude: normalizedTargetLongitude,
@@ -1032,29 +1069,42 @@ export default function EditChallengeScreen() {
 
           {isPeerVoting && (
             <>
-              <Text style={styles.label}>Voting Window</Text>
-              <View style={styles.inlineButtons}>
+              <Text style={styles.label}>Voting Duration</Text>
+              <View style={styles.inlineInputs}>
+                <TextInput
+                  style={[styles.input, styles.inlineInput]}
+                  placeholder="e.g. 24"
+                  placeholderTextColor={colors.textTertiary}
+                  value={form.votingDurationValue}
+                  onChangeText={(value) =>
+                    updateForm("votingDurationValue", value)
+                  }
+                  keyboardType="numeric"
+                />
                 <TouchableOpacity
-                  onPress={() => openDatePicker("votingStartTime")}
-                  style={styles.dateButton}
+                  onPress={() => updateForm("votingDurationUnit", "HOURS")}
+                  style={[
+                    styles.dateButton,
+                    form.votingDurationUnit === "HOURS" &&
+                      styles.selectOptionActive,
+                  ]}
                 >
-                  <Text style={styles.dateText}>
-                    {form.votingStartTime
-                      ? form.votingStartTime.toLocaleString()
-                      : "Voting start"}
-                  </Text>
+                  <Text style={styles.dateText}>Hours</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => openDatePicker("votingEndTime")}
-                  style={styles.dateButton}
+                  onPress={() => updateForm("votingDurationUnit", "DAYS")}
+                  style={[
+                    styles.dateButton,
+                    form.votingDurationUnit === "DAYS" &&
+                      styles.selectOptionActive,
+                  ]}
                 >
-                  <Text style={styles.dateText}>
-                    {form.votingEndTime
-                      ? form.votingEndTime.toLocaleString()
-                      : "Voting end"}
-                  </Text>
+                  <Text style={styles.dateText}>Days</Text>
                 </TouchableOpacity>
               </View>
+              <Text style={styles.hint}>
+                Voting starts automatically after all submissions are reviewed.
+              </Text>
             </>
           )}
         </View>
@@ -1436,6 +1486,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
+  },
+  selectOptionActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryOpacity20,
   },
   dateText: {
     color: colors.white,

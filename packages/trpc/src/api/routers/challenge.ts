@@ -55,6 +55,8 @@ const challengeSelect: Prisma.ChallengeSelect = {
 const CHALLENGE_IMAGE_SIGNED_URL_SECONDS = 60 * 60 * 24;
 const MAX_RECURRING_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const MAX_PEER_VOTING_DURATION_HOURS = 24 * 30;
 
 const challengeImageSchema = z
   .string()
@@ -106,6 +108,7 @@ const validatePeerVotingTimeline = (input: {
     | "QR_CODE";
   scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
   endTime?: Date | null;
+  votingDurationHours?: number | null;
   votingStartTime?: Date | null;
   votingEndTime?: Date | null;
 }) => {
@@ -129,26 +132,82 @@ const validatePeerVotingTimeline = (input: {
     });
   }
 
-  if (!input.votingStartTime || !input.votingEndTime) {
+  const hasDuration =
+    input.votingDurationHours != null &&
+    Number.isInteger(input.votingDurationHours) &&
+    input.votingDurationHours > 0;
+  const hasWindow = Boolean(input.votingStartTime) && Boolean(input.votingEndTime);
+
+  if (!hasDuration && !hasWindow) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "Peer voting challenge requires voting start and end time",
+      message: "Peer voting challenge requires voting duration in hours or days",
     });
   }
 
-  if (input.votingStartTime >= input.votingEndTime) {
+  if (
+    input.votingDurationHours != null &&
+    (!Number.isInteger(input.votingDurationHours) ||
+      input.votingDurationHours < 1 ||
+      input.votingDurationHours > MAX_PEER_VOTING_DURATION_HOURS)
+  ) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Voting duration must be between 1 and ${MAX_PEER_VOTING_DURATION_HOURS} hours`,
+    });
+  }
+
+  if (
+    input.votingStartTime &&
+    input.votingEndTime &&
+    input.votingStartTime >= input.votingEndTime
+  ) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Voting start time must be before voting end time",
     });
   }
+};
 
-  if (input.votingStartTime <= input.endTime) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Voting must start after submission end time",
-    });
+const inferPeerVotingDurationHours = (input: {
+  votingDurationHours?: number | null;
+  votingStartTime?: Date | null;
+  votingEndTime?: Date | null;
+  fallbackVotingStartTime?: Date | null;
+  fallbackVotingEndTime?: Date | null;
+}) => {
+  if (input.votingDurationHours != null) {
+    return input.votingDurationHours;
   }
+
+  const start = input.votingStartTime ?? input.fallbackVotingStartTime;
+  const end = input.votingEndTime ?? input.fallbackVotingEndTime;
+
+  if (!start || !end) {
+    return null;
+  }
+
+  const durationMs = end.getTime() - start.getTime();
+  if (durationMs <= 0) {
+    return null;
+  }
+
+  return Math.max(1, Math.ceil(durationMs / HOUR_MS));
+};
+
+const resolvePeerVotingTemplateWindow = (params: {
+  submissionEndTime: Date;
+  votingDurationHours: number;
+}) => {
+  const votingStartTime = new Date(params.submissionEndTime);
+  const votingEndTime = new Date(
+    votingStartTime.getTime() + params.votingDurationHours * HOUR_MS,
+  );
+
+  return {
+    votingStartTime,
+    votingEndTime,
+  };
 };
 
 const validateRecurringTimeline = (input: {
@@ -541,6 +600,12 @@ export const challengeRouter = createTRPCRouter({
         status: z.enum(["HIDDEN", "VISIBLE"]).optional(),
         startTime: z.coerce.date().optional(),
         endTime: z.coerce.date().optional(),
+        votingDurationHours: z
+          .number()
+          .int()
+          .min(1)
+          .max(MAX_PEER_VOTING_DURATION_HOURS)
+          .optional(),
         votingStartTime: z.coerce.date().optional(),
         votingEndTime: z.coerce.date().optional(),
         targetLatitude: z.number().optional(),
@@ -562,13 +627,30 @@ export const challengeRouter = createTRPCRouter({
             })
           : null;
 
+      const peerVotingDurationHours = inferPeerVotingDurationHours({
+        votingDurationHours: input.votingDurationHours,
+        votingStartTime: input.votingStartTime,
+        votingEndTime: input.votingEndTime,
+      });
+
       validatePeerVotingTimeline({
         submissionType: input.submissionType,
         scoringCategory: input.scoringCategory,
         endTime: recurringWindow?.endTime ?? input.endTime,
+        votingDurationHours: peerVotingDurationHours,
         votingStartTime: input.votingStartTime,
         votingEndTime: input.votingEndTime,
       });
+
+      const peerVotingTemplateWindow =
+        input.scoringCategory === "PEER_VOTING" &&
+        (recurringWindow?.endTime ?? input.endTime) &&
+        peerVotingDurationHours
+          ? resolvePeerVotingTemplateWindow({
+              submissionEndTime: recurringWindow?.endTime ?? input.endTime!,
+              votingDurationHours: peerVotingDurationHours,
+            })
+          : null;
       validateRecurringTimeline({
         isRecurring: input.isRecurring,
         dailyStartTime: input.dailyStartTime,
@@ -628,8 +710,14 @@ export const challengeRouter = createTRPCRouter({
           status: initialStatus,
           startTime: recurringWindow?.startTime ?? input.startTime,
           endTime: recurringWindow?.endTime ?? input.endTime,
-          votingStartTime: input.votingStartTime,
-          votingEndTime: input.votingEndTime,
+          votingStartTime:
+            input.scoringCategory === "PEER_VOTING"
+              ? (peerVotingTemplateWindow?.votingStartTime ?? null)
+              : null,
+          votingEndTime:
+            input.scoringCategory === "PEER_VOTING"
+              ? (peerVotingTemplateWindow?.votingEndTime ?? null)
+              : null,
           targetLatitude: input.targetLatitude,
           targetLongitude: input.targetLongitude,
           expectedValue:
@@ -714,6 +802,12 @@ export const challengeRouter = createTRPCRouter({
           .optional(),
         startTime: z.coerce.date().optional(),
         endTime: z.coerce.date().optional(),
+        votingDurationHours: z
+          .number()
+          .int()
+          .min(1)
+          .max(MAX_PEER_VOTING_DURATION_HOURS)
+          .optional(),
         votingStartTime: z.coerce.date().optional(),
         votingEndTime: z.coerce.date().optional(),
         targetLatitude: z.number().optional(),
@@ -749,10 +843,19 @@ export const challengeRouter = createTRPCRouter({
         });
       }
 
+      const peerVotingDurationHours = inferPeerVotingDurationHours({
+        votingDurationHours: input.votingDurationHours,
+        votingStartTime: input.votingStartTime,
+        votingEndTime: input.votingEndTime,
+        fallbackVotingStartTime: existing.votingStartTime,
+        fallbackVotingEndTime: existing.votingEndTime,
+      });
+
       validatePeerVotingTimeline({
         submissionType: input.submissionType ?? existing.submissionType,
         scoringCategory: input.scoringCategory ?? existing.scoringCategory,
         endTime: input.endTime ?? existing.endTime,
+        votingDurationHours: peerVotingDurationHours,
         votingStartTime: input.votingStartTime ?? existing.votingStartTime,
         votingEndTime: input.votingEndTime ?? existing.votingEndTime,
       });
@@ -785,6 +888,17 @@ export const challengeRouter = createTRPCRouter({
         input.scoringCategory ?? existing.scoringCategory;
       const nextStatus = input.status ?? existing.status;
 
+      const peerVotingTemplateWindow =
+        nextScoringCategory === "PEER_VOTING" &&
+        (recurringWindow?.endTime ?? input.endTime ?? existing.endTime) &&
+        peerVotingDurationHours
+          ? resolvePeerVotingTemplateWindow({
+              submissionEndTime:
+                recurringWindow?.endTime ?? input.endTime ?? existing.endTime!,
+              votingDurationHours: peerVotingDurationHours,
+            })
+          : null;
+
       const isTransitioningToVotingPhase =
         existing.status !== "VOTING_PHASE" && nextStatus === "VOTING_PHASE";
 
@@ -792,23 +906,23 @@ export const challengeRouter = createTRPCRouter({
         nextScoringCategory === "PEER_VOTING" &&
         isTransitioningToVotingPhase
       ) {
-        const [totalSubmissions, notApprovedSubmissions] = await Promise.all([
+        const [totalSubmissions, pendingSubmissions] = await Promise.all([
           ctx.db.challengeSubmission.count({
             where: { challengeId: existing.id },
           }),
           ctx.db.challengeSubmission.count({
             where: {
               challengeId: existing.id,
-              status: { not: "APPROVED" },
+              status: "PENDING",
             },
           }),
         ]);
 
-        if (totalSubmissions === 0 || notApprovedSubmissions > 0) {
+        if (totalSubmissions === 0 || pendingSubmissions > 0) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message:
-              "Peer voting can start only after staff approves all submitted photos",
+              "Peer voting can start only after staff reviews all submitted photos",
           });
         }
       }
@@ -869,8 +983,18 @@ export const challengeRouter = createTRPCRouter({
           status: input.status,
           startTime: recurringWindow?.startTime ?? input.startTime,
           endTime: recurringWindow?.endTime ?? input.endTime,
-          votingStartTime: input.votingStartTime,
-          votingEndTime: input.votingEndTime,
+          votingStartTime:
+            nextScoringCategory !== "PEER_VOTING"
+              ? null
+              : nextStatus === "VOTING_PHASE" || nextStatus === "COMPLETED"
+                ? input.votingStartTime
+                : peerVotingTemplateWindow?.votingStartTime,
+          votingEndTime:
+            nextScoringCategory !== "PEER_VOTING"
+              ? null
+              : nextStatus === "VOTING_PHASE" || nextStatus === "COMPLETED"
+                ? input.votingEndTime
+                : peerVotingTemplateWindow?.votingEndTime,
           targetLatitude: input.targetLatitude,
           targetLongitude: input.targetLongitude,
           expectedValue: effectiveExpectedValue,
