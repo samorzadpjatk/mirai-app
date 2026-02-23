@@ -750,6 +750,38 @@ export const groupRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
     }),
+  cancelMyJoinRequest: protectedProcedure
+    .input(z.object({ groupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const group = await ctx.db.group.findUnique({
+        where: { id: input.groupId },
+        select: { id: true, tripId: true, isDeleted: true },
+      });
+
+      if (!group || group.isDeleted) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Group not found" });
+      }
+
+      const existingRequest = await ctx.db.groupJoinRequest.findFirst({
+        where: {
+          groupId: group.id,
+          tripId: group.tripId,
+          userId: ctx.dbUser.id,
+        },
+        select: { id: true },
+      });
+
+      if (!existingRequest) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Join request not found",
+        });
+      }
+
+      await ctx.db.groupJoinRequest.delete({ where: { id: existingRequest.id } });
+
+      return { success: true };
+    }),
   getPendingJoinRequests: protectedProcedure
     .input(z.object({ groupId: z.string() }))
     .query(async ({ ctx, input }) => {

@@ -123,6 +123,22 @@ export default function GroupDetailsScreen() {
       },
     }),
   );
+  const cancelJoinRequestMutation = useMutation(
+    trpc.group.cancelMyJoinRequest.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.getMyJoinRequestForGroup.queryOptions({
+            groupId: groupId ?? "",
+          }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
+            groupId: groupId ?? "",
+          }).queryKey,
+        });
+      },
+    }),
+  );
   const respondToJoinRequestMutation = useMutation(
     trpc.group.respondToJoinRequest.mutationOptions({
       onSuccess: async () => {
@@ -251,6 +267,23 @@ export default function GroupDetailsScreen() {
       }
     })();
   };
+
+  const handleCancelJoinRequest = () => {
+    if (!groupId) return;
+    void (async () => {
+      try {
+        await cancelJoinRequestMutation.mutateAsync({ groupId });
+        Alert.alert("Success", "Join request canceled");
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to cancel join request";
+        Alert.alert("Error", message);
+      }
+    })();
+  };
+
   const formatJoinRequestTime = (date: Date | string) => {
     const parsed = date instanceof Date ? date : new Date(date);
     return new Intl.DateTimeFormat("pl-PL", {
@@ -300,11 +333,26 @@ export default function GroupDetailsScreen() {
         ) : null}
 
         {canRequestToJoin && hasPendingRequestToThisGroup ? (
-          <View style={styles.pendingRequestBadge}>
-            <Ionicons name="time-outline" size={16} color={colors.primary} />
-            <Text style={styles.pendingRequestText}>
-              Join request pending approval
-            </Text>
+          <View style={styles.pendingRequestContainer}>
+            <View style={styles.pendingRequestBadge}>
+              <Ionicons name="time-outline" size={16} color={colors.primary} />
+              <Text style={styles.pendingRequestText}>
+                Join request pending approval
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.cancelRequestButton}
+              activeOpacity={0.8}
+              onPress={handleCancelJoinRequest}
+              disabled={cancelJoinRequestMutation.isPending}
+            >
+              <Ionicons name="close-circle-outline" size={16} color={colors.white} />
+              <Text style={styles.cancelRequestButtonText}>
+                {cancelJoinRequestMutation.isPending
+                  ? "Canceling..."
+                  : "Cancel request"}
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -465,7 +513,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   pendingRequestBadge: {
-    marginBottom: spacing.lg,
     backgroundColor: "rgba(0, 206, 209, 0.12)",
     borderWidth: 1,
     borderColor: "rgba(0, 206, 209, 0.35)",
@@ -481,6 +528,29 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: typography.sm,
     fontWeight: typography.semibold,
+  },
+  pendingRequestContainer: {
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  cancelRequestButton: {
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.45)",
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  cancelRequestButtonText: {
+    color: colors.white,
+    fontSize: typography.sm,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   groupLockedBadge: {
     marginBottom: spacing.lg,
