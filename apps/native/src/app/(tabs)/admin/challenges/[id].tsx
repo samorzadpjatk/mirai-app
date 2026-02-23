@@ -334,6 +334,26 @@ export default function EditChallengeScreen() {
     }),
   );
 
+  const forceCloseVotingMutation = useMutation(
+    trpc.challenge.forceCloseVoting.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: trpc.challenge.getById.queryOptions({
+            id: challengeId,
+            tripId,
+          }).queryKey,
+        });
+        Alert.alert("Success", "Voting phase has been force closed.");
+      },
+      onError: (error) => {
+        Alert.alert("Error", `Failed to force close voting: ${error.message}`);
+      },
+    }),
+  );
+
   const isPeerVoting = form.scoringCategory === "PEER_VOTING";
   const canUsePeerVoting =
     form.submissionType === "IMAGE" || form.submissionType === "VIDEO";
@@ -1167,6 +1187,34 @@ export default function EditChallengeScreen() {
             {updateChallengeMutation.isPending ? "Saving..." : "Save Changes"}
           </Text>
         </TouchableOpacity>
+
+        {challenge.scoringCategory === "PEER_VOTING" && challenge.status === "VOTING_PHASE" && (
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert(
+                "Force Close Voting",
+                "Are you sure you want to force close the voting phase? This will immediately end voting and finalize the challenge results.",
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Force Close",
+                    style: "destructive",
+                    onPress: () => forceCloseVotingMutation.mutate({ id: challengeId, tripId }),
+                  },
+                ]
+              );
+            }}
+            style={styles.forceCloseButton}
+            disabled={forceCloseVotingMutation.isPending}
+          >
+            <Text style={styles.forceCloseButtonText}>
+              {forceCloseVotingMutation.isPending ? "Closing..." : "Force Close Voting"}
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {activePicker && Platform.OS === "android" && (
@@ -1670,5 +1718,21 @@ const styles = StyleSheet.create({
   locationFooterText: {
     color: colors.textPrimary,
     fontSize: typography.sm,
+  },
+  forceCloseButton: {
+    marginTop: spacing.sm,
+    backgroundColor: "#dc2626",
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.lg,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#991b1b",
+  },
+  forceCloseButtonText: {
+    color: colors.white,
+    fontSize: typography.lg,
+    fontWeight: typography.bold,
+    textTransform: "uppercase",
+    letterSpacing: 1.3,
   },
 });

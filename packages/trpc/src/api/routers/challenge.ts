@@ -1049,4 +1049,60 @@ export const challengeRouter = createTRPCRouter({
 
       return { success: true };
     }),
+
+  forceCloseVoting: adminProcedure
+    .input(z.object({ id: z.string(), tripId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.challenge.findFirst({
+        where: { id: input.id, tripId: input.tripId },
+        select: {
+          id: true,
+          status: true,
+          scoringCategory: true,
+        },
+      });
+
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Challenge not found",
+        });
+      }
+
+      if (existing.scoringCategory !== "PEER_VOTING") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Force close voting is only available for peer voting challenges",
+        });
+      }
+
+      if (existing.status !== "VOTING_PHASE") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Challenge is not in voting phase",
+        });
+      }
+
+      const challenge = await ctx.db.challenge.update({
+        where: { id: input.id },
+        data: {
+          status: "COMPLETED",
+          votingEndTime: new Date(),
+        },
+        select: challengeSelect,
+      });
+
+      await createChallengeStatusActivityFromTransition({
+        tx: ctx.db,
+        challengeId: challenge.id,
+        previousStatus: existing.status,
+        nextStatus: challenge.status,
+        createdByAdmin: ctx.dbUser.id,
+      });
+
+      return {
+        ...toClientChallenge(challenge),
+        image: await resolveChallengeImage(ctx.supabase, challenge.image),
+      };
+    }),
 });
