@@ -2,8 +2,42 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, moderatorProcedure, protectedProcedure } from "../../api/trpc";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
+import { type PrismaClient } from "@integral-2025-app/db";
 
 const REWARD_IMAGE_SIGNED_URL_SECONDS = 60 * 10;
+
+// Function to calculate total available points for a trip
+const calculateTotalAvailablePoints = async (db: PrismaClient, tripId: string) => {
+  const challenges = await db.challenge.findMany({
+    where: { tripId },
+    select: {
+      basePoints: true,
+      firstPlacePoints: true,
+      secondPlacePoints: true,
+      thirdPlacePoints: true,
+      scoringCategory: true,
+    },
+  });
+
+  let totalPoints = 0;
+  
+  for (const challenge of challenges) {
+    const basePoints = challenge.basePoints ?? 0;
+    
+    if (challenge.scoringCategory === "UNLIMITED") {
+      // For unlimited category, only base points are available
+      totalPoints += basePoints;
+    } else {
+      // For other categories, include podium points if they exist
+      totalPoints += basePoints;
+      totalPoints += challenge.firstPlacePoints ?? 0;
+      totalPoints += challenge.secondPlacePoints ?? 0;
+      totalPoints += challenge.thirdPlacePoints ?? 0;
+    }
+  }
+  
+  return totalPoints;
+};
 const rewardPurchaseStatusSchema = z.enum([
   "BOUGHT",
   "ACCEPTED",
@@ -157,6 +191,11 @@ export const rewardRouter = createTRPCRouter({
         }),
       );
 
+      // Calculate total available points for dynamic pricing
+      const totalAvailablePoints = isAllTrips 
+        ? 0 // Cannot calculate for all trips
+        : await calculateTotalAvailablePoints(ctx.db, input.tripId);
+
       // Get user's group to check if they can afford rewards
       const userGroup = isAllTrips
         ? null
@@ -179,13 +218,29 @@ export const rewardRouter = createTRPCRouter({
       const groupCoins = userGroup?.group?.coins ?? 0;
       const isGroupLeader = userGroup?.group?.organizerId === ctx.dbUser.id;
 
-      return rewardsWithSignedImages.map((reward) => ({
-        ...reward,
-        canAfford: groupCoins >= reward.coinCost,
-        isEligibleToBuy: isGroupLeader,
-        isOutOfStock: reward.availableQuantity <= 0,
-        purchasedCount: reward._count.purchases,
-      }));
+      return rewardsWithSignedImages.map((reward) => {
+        // Calculate dynamic coin cost based on percentage of total available points
+        let dynamicCoinCost = reward.coinCost; // Default to static cost
+        
+        if (!isAllTrips && totalAvailablePoints > 0) {
+          // Convert percentage to coin cost: coinCost represents percentage of total points
+          const percentageOfTotal = reward.coinCost / 100; // coinCost as percentage
+          dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
+          
+          // Ensure minimum cost of 1 coin
+          dynamicCoinCost = Math.max(1, dynamicCoinCost);
+        }
+
+        return {
+          ...reward,
+          coinCost: dynamicCoinCost, // Use dynamic cost
+          originalCoinCost: reward.coinCost, // Keep original for reference
+          canAfford: groupCoins >= dynamicCoinCost,
+          isEligibleToBuy: isGroupLeader,
+          isOutOfStock: reward.availableQuantity <= 0,
+          purchasedCount: reward._count.purchases,
+        };
+      });
     }),
 
   // Get all rewards for a trip (admin version - no participation required)
@@ -220,14 +275,34 @@ export const rewardRouter = createTRPCRouter({
         }),
       );
 
-      // For admin view, we don't need to check affordability
-      return rewardsWithSignedImages.map((reward) => ({
-        ...reward,
-        canAfford: false, // Not relevant for admin
-        isEligibleToBuy: false, // Not relevant for admin
-        isOutOfStock: reward.availableQuantity <= 0,
-        purchasedCount: reward._count.purchases,
-      }));
+      // Calculate total available points for dynamic pricing (only for specific trips)
+      const totalAvailablePoints = isAllTrips 
+        ? 0 // Cannot calculate for all trips
+        : await calculateTotalAvailablePoints(ctx.db, input.tripId);
+
+      // For admin view, calculate dynamic pricing but don't check affordability
+      return rewardsWithSignedImages.map((reward) => {
+        let dynamicCoinCost = reward.coinCost; // Default to static cost
+        
+        if (!isAllTrips && totalAvailablePoints > 0) {
+          // Convert percentage to coin cost: coinCost represents percentage of total points
+          const percentageOfTotal = reward.coinCost / 100; // coinCost as percentage
+          dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
+          
+          // Ensure minimum cost of 1 coin
+          dynamicCoinCost = Math.max(1, dynamicCoinCost);
+        }
+
+        return {
+          ...reward,
+          coinCost: dynamicCoinCost, // Use dynamic cost
+          originalCoinCost: reward.coinCost, // Keep original for reference
+          canAfford: false, // Not relevant for admin
+          isEligibleToBuy: false, // Not relevant for admin
+          isOutOfStock: reward.availableQuantity <= 0,
+          purchasedCount: reward._count.purchases,
+        };
+      });
     }),
 
   // Get single reward by ID
@@ -502,7 +577,20 @@ export const rewardRouter = createTRPCRouter({
           });
         }
 
-        const totalCost = reward.coinCost * input.quantity;
+        // Calculate dynamic coin cost at time of purchase
+        const totalAvailablePoints = await calculateTotalAvailablePoints(tx, reward.tripId);
+        let dynamicCoinCost = reward.coinCost; // Default to static cost
+        
+        if (totalAvailablePoints > 0) {
+          // Convert percentage to coin cost: coinCost represents percentage of total points
+          const percentageOfTotal = reward.coinCost / 100; // coinCost as percentage
+          dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
+          
+          // Ensure minimum cost of 1 coin
+          dynamicCoinCost = Math.max(1, dynamicCoinCost);
+        }
+
+        const totalCost = dynamicCoinCost * input.quantity;
 
         if (userParticipant.group.coins < totalCost) {
           throw new TRPCError({

@@ -66,6 +66,7 @@ export interface RewardListItem {
   images?: string[];
   signedImageUrls?: string[];
   coinCost: number;
+  originalCoinCost?: number; // Original percentage value for reference
   createdBy: {
     id: string;
     firstName: string;

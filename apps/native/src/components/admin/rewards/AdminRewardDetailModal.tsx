@@ -52,7 +52,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
     name: "",
     description: "",
     availableQuantity: "",
-    coinCost: "",
+    coinCost: "", // Now represents percentage
     images: [] as string[],
   });
   const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<Record<string, string>>({});
@@ -63,7 +63,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
       name: reward.name,
       description: reward.description,
       availableQuantity: String(reward.availableQuantity),
-      coinCost: String(reward.coinCost),
+      coinCost: String(reward.originalCoinCost || reward.coinCost), // Show original percentage
       images:
         reward.images && reward.images.length > 0
           ? reward.images
@@ -91,13 +91,19 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
       return;
     }
 
+    const coinCostPercentage = parseInt(form.coinCost, 10);
+    if (isNaN(coinCostPercentage) || coinCostPercentage < 1 || coinCostPercentage > 100) {
+      Alert.alert("Error", "Cost must be between 1% and 100%");
+      return;
+    }
+
     try {
       await updateReward.mutateAsync({
         id: rewardId,
         name: form.name,
         description: form.description,
         availableQuantity: parseInt(form.availableQuantity, 10),
-        coinCost: parseInt(form.coinCost, 10),
+        coinCost: coinCostPercentage, // Store as percentage
         images: form.images,
       });
       Alert.alert("Saved", "Reward has been updated");
@@ -410,7 +416,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[commonStyles.label, { marginBottom: 8 }]}>Cost (coins)</Text>
+                <Text style={[commonStyles.label, { marginBottom: 8 }]}>Cost (% of total points)</Text>
                 <TextInput
                   keyboardType="numeric"
                   style={{
@@ -424,6 +430,9 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                   value={form.coinCost}
                   onChangeText={(text) => setForm((prev) => ({ ...prev, coinCost: text }))}
                 />
+                <Text style={[commonStyles.textSecondary, { fontSize: 11, marginTop: 4, color: "#9ca3af" }]}>
+                  Percentage of total available points
+                </Text>
               </View>
             </View>
 
