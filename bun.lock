@@ -49,6 +49,7 @@
         "@react-native-community/datetimepicker": "8.4.4",
         "@react-native-picker/picker": "2.11.1",
         "@tanstack/react-query": "^5.90.19",
+        "exifr": "^7.1.3",
         "expo": "~54.0.33",
         "expo-asset": "^12.0.12",
         "expo-camera": "^17.0.10",
@@ -1381,6 +1382,8 @@
     "exec-async": ["exec-async@2.2.0", "", {}, "sha512-87OpwcEiMia/DeiKFzaQNBNFeN3XkkpYIh9FyOqq5mS2oKv3CBE67PXoEKcr6nodWdXNogTiQ0jE2NGuoffXPw=="],
 
     "execa": ["execa@5.1.1", "", { "dependencies": { "cross-spawn": "^7.0.3", "get-stream": "^6.0.0", "human-signals": "^2.1.0", "is-stream": "^2.0.0", "merge-stream": "^2.0.0", "npm-run-path": "^4.0.1", "onetime": "^5.1.2", "signal-exit": "^3.0.3", "strip-final-newline": "^2.0.0" } }, "sha512-8uSpZZocAZRBAPIEINJj3Lo9HyGitllczc27Eh5YYojjMFMn8yHMDMaUHE2Jqfq05D/wucwI4JGURyXt1vchyg=="],
+
+    "exifr": ["exifr@7.1.3", "", {}, "sha512-g/aje2noHivrRSLbAUtBPWFbxKdKhgj/xr1vATDdUXPOFYJlQ62Ft0oy+72V6XLIpDJfHs6gXLbBLAolqOXYRw=="],
 
     "exit": ["exit@0.1.2", "", {}, "sha512-Zk/eNKV2zbjpKzrsQ+n1G6poVbErQxJ0LBOJXaKZ1EViLzH+hrLu9cdXI4zw9dBQJslwBEpbQ2P1oS7nDxs6jQ=="],
 
