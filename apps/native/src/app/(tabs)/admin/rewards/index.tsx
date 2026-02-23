@@ -597,9 +597,16 @@ export default function AdminRewardsPage() {
                         >
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                             <Ionicons name="cash" size={16} color="#fbbf24" />
-                            <Text style={[commonStyles.label, { color: "#fbbf24" }]}>
-                              {reward.coinCost} coins
-                            </Text>
+                            <View style={{ alignItems: "flex-start" }}>
+                              <Text style={[commonStyles.label, { color: "#fbbf24", fontSize: 12, lineHeight: 14 }]}>
+                                {reward.coinCost} coins
+                              </Text>
+                              {reward.originalCoinCost && (
+                                <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 10, lineHeight: 12 }]}>
+                                  {reward.originalCoinCost}% of total points
+                                </Text>
+                              )}
+                            </View>
                           </View>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                             <Ionicons name="cube-outline" size={16} color="#10b981" />

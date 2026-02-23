@@ -10,11 +10,13 @@ import {
   TextInput,
   ActivityIndicator,
   useWindowDimensions,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useRewards, usePurchaseReward } from "~/hooks/rewards";
 import { useMyGroup } from "~/hooks/groups";
+import { useQueryClient } from "@tanstack/react-query";
 import type { RewardListItem } from "./types";
 import { commonStyles } from "~/styles/commonStyles";
 
@@ -24,7 +26,8 @@ interface Props {
 
 export default function RewardsView({ tripId }: Props) {
   const router = useRouter();
-  const { data: rewards, isLoading, error } = useRewards(tripId);
+  const queryClient = useQueryClient();
+  const { data: rewards, isLoading, error, refetch } = useRewards(tripId);
   const { group: currentUserGroup } = useMyGroup(tripId);
   const purchaseReward = usePurchaseReward();
   const { width: viewportWidth } = useWindowDimensions();
@@ -34,6 +37,9 @@ export default function RewardsView({ tripId }: Props) {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showRewardDetailsModal, setShowRewardDetailsModal] = useState(false);
   const [previewImageIndex, setPreviewImageIndex] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
+  const [justRefreshed, setJustRefreshed] = useState(false);
 
   const safeRewards: RewardListItem[] = useMemo(() => {
     const data = rewards as
@@ -48,6 +54,37 @@ export default function RewardsView({ tripId }: Props) {
 
   const groupCoins = currentUserGroup?.coins ?? 0;
   const previewCarouselWidth = Math.max(260, viewportWidth - 48);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Refresh rewards data to get updated dynamic pricing
+      await refetch();
+      
+      // Also refresh group data to get updated coin balance
+      await queryClient.invalidateQueries({ queryKey: [["group"]] });
+      
+      // Invalidate any reward-related queries to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: [["reward"]] });
+      
+      // Update last refresh time and trigger animation
+      setLastRefreshTime(new Date());
+      setJustRefreshed(true);
+      
+      // Remove the animation indicator after 2 seconds
+      setTimeout(() => setJustRefreshed(false), 2000);
+      
+      // Show subtle success message
+      Alert.alert("Updated", "Reward pricing has been refreshed", [
+        { text: "OK", style: "default" }
+      ]);
+    } catch (error) {
+      console.error('Failed to refresh rewards:', error);
+      Alert.alert("Error", "Failed to refresh rewards");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const getRewardImages = (reward: RewardListItem): string[] => {
     if (reward.signedImageUrls && reward.signedImageUrls.length > 0) {
@@ -153,7 +190,20 @@ export default function RewardsView({ tripId }: Props) {
         padding: 16,
       }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <Text style={[commonStyles.h3]}>Rewards</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={[commonStyles.h3]}>Rewards</Text>
+            {refreshing && (
+              <ActivityIndicator size="small" color="#00ced1" />
+            )}
+            {lastRefreshTime && !refreshing && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Ionicons name="refresh" size={14} color="#10b981" />
+                <Text style={[commonStyles.textSecondary, { color: "#10b981", fontSize: 11 }]}>
+                  Updated {lastRefreshTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </Text>
+              </View>
+            )}
+          </View>
           <TouchableOpacity
             onPress={() => router.push({ pathname: "/trips/rewards/history", params: { tripId } })}
             style={{
@@ -190,7 +240,17 @@ export default function RewardsView({ tripId }: Props) {
         )}
       </View>
 
-      <ScrollView style={{ flex: 1, padding: 16 }}>
+      <ScrollView 
+        style={{ flex: 1, padding: 16 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00ced1"
+            colors={["#00ced1"]}
+          />
+        }
+      >
         <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 16 }}>
           {safeRewards.map((reward) => {
             const rewardImages = getRewardImages(reward);
@@ -202,10 +262,14 @@ export default function RewardsView({ tripId }: Props) {
                 style={{
                   width: "48%",
                   backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: reward.isOutOfStock ? "#ef4444" : "#273a3a",
+                  borderWidth: 2,
+                  borderColor: justRefreshed && !reward.isOutOfStock ? "#10b981" : reward.isOutOfStock ? "#ef4444" : "#273a3a",
                   borderRadius: 12,
                   padding: 16,
+                  shadowColor: justRefreshed ? "#10b981" : "transparent",
+                  shadowOffset: justRefreshed ? { width: 0, height: 0 } : undefined,
+                  shadowOpacity: justRefreshed ? 0.3 : 0,
+                  shadowRadius: justRefreshed ? 4 : 0,
                 }}
               >
               <TouchableOpacity
@@ -261,9 +325,16 @@ export default function RewardsView({ tripId }: Props) {
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                       <Ionicons name="cash" size={16} color="#fbbf24" />
-                      <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
-                        {reward.coinCost} coins
-                      </Text>
+                      <View style={{ alignItems: "flex-start" }}>
+                        <Text style={[commonStyles.textPrimary, { color: "#fbbf24", fontSize: 12, lineHeight: 14 }]}>
+                          {reward.coinCost} coins
+                        </Text>
+                        {reward.originalCoinCost && (
+                          <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 10, lineHeight: 12 }]}>
+                            {reward.originalCoinCost}% of total points
+                          </Text>
+                        )}
+                      </View>
                     </View>
 
                     <Text style={[commonStyles.textPrimary, {
@@ -337,9 +408,16 @@ export default function RewardsView({ tripId }: Props) {
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                       <Ionicons name="cash" size={16} color="#fbbf24" />
-                      <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
-                        {selectedReward.coinCost} coins / item
-                      </Text>
+                      <View style={{ alignItems: "flex-start" }}>
+                        <Text style={[commonStyles.textPrimary, { color: "#fbbf24", fontSize: 14, lineHeight: 16 }]}>
+                          {selectedReward.coinCost} coins / item
+                        </Text>
+                        {selectedReward.originalCoinCost && (
+                          <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 11, lineHeight: 13 }]}>
+                            {selectedReward.originalCoinCost}% of total points
+                          </Text>
+                        )}
+                      </View>
                     </View>
                     
                     <Text style={[commonStyles.textPrimary, { color: "#10b981" }]}>
@@ -484,9 +562,16 @@ export default function RewardsView({ tripId }: Props) {
                 }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <Text style={commonStyles.textSecondary}>Price</Text>
-                    <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
-                      {previewReward.coinCost} coins
-                    </Text>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={[commonStyles.textPrimary, { color: "#fbbf24" }]}>
+                        {previewReward.coinCost} coins
+                      </Text>
+                      {previewReward.originalCoinCost && (
+                        <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 11 }]}>
+                          {previewReward.originalCoinCost}% of total points
+                        </Text>
+                      )}
+                    </View>
                   </View>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <Text style={commonStyles.textSecondary}>Availability</Text>

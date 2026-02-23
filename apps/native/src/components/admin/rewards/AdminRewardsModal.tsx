@@ -26,7 +26,7 @@ interface NewRewardState {
   name: string;
   description: string;
   availableQuantity: string;
-  coinCost: string;
+  coinCost: string; // Now represents percentage
   images: string[];
   isHidden: boolean;
 }
@@ -106,12 +106,18 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
       return;
     }
 
+    const coinCostPercentage = parseInt(newReward.coinCost, 10);
+    if (isNaN(coinCostPercentage) || coinCostPercentage < 1 || coinCostPercentage > 100) {
+      Alert.alert("Error", "Cost must be between 1% and 100%");
+      return;
+    }
+
     try {
       await createReward.mutateAsync({
         name: newReward.name,
         description: newReward.description,
         availableQuantity: parseInt(newReward.availableQuantity, 10),
-        coinCost: parseInt(newReward.coinCost, 10),
+        coinCost: coinCostPercentage, // Store as percentage
         images: newReward.images,
         isHidden: newReward.isHidden,
         tripId: tripIdToUse,
@@ -276,7 +282,7 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
 
             <View style={{ flex: 1 }}>
               <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Cost in coins
+                Cost (% of total points)
               </Text>
               <TextInput
                 style={{
@@ -287,12 +293,15 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                   padding: 12,
                   color: "#fff",
                 }}
-                placeholder="0"
+                placeholder="5"
                 placeholderTextColor="#6b7280"
                 value={newReward.coinCost}
                 onChangeText={(text) => setNewReward({ ...newReward, coinCost: text })}
                 keyboardType="numeric"
               />
+              <Text style={[commonStyles.textSecondary, { fontSize: 11, marginTop: 4, color: "#9ca3af" }]}>
+                Percentage of total available points
+              </Text>
             </View>
           </View>
 
