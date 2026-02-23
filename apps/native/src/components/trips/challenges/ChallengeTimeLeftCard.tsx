@@ -128,14 +128,14 @@ export function ChallengeTimeLeftCard({
 
   const countdownText = showScheduleOnly
     ? ""
-    : formatCountdown((activeDeadline as Date).getTime() - now);
+    : formatCountdown((activeDeadline!).getTime() - now);
   const countdownSubtext = showScheduleOnly
     ? ""
     : isRecurring
       ? `Daily reset at ${dailyEndTime ?? "--:--"}`
       : phaseLabel === "Voting"
-        ? `Duration-based voting • ends ${formatDeadlineDate(activeDeadline as Date)} • started after moderation`
-        : `Ends ${formatDeadlineDate(activeDeadline as Date)}`;
+        ? `Duration-based voting • ends ${formatDeadlineDate(activeDeadline!)} • started after moderation`
+        : `Ends ${formatDeadlineDate(activeDeadline!)}`;
 
   const scheduleRows = [
     isRecurring
@@ -159,11 +159,11 @@ export function ChallengeTimeLeftCard({
           value: formatDeadlineDate(end),
         }
       : null,
-  ].filter(Boolean) as Array<{
+  ].filter(Boolean) as {
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
     value: string;
-  }>;
+  }[];
 
   const statusTitle = showScheduleOnly ? "Schedule" : "Time left";
 
@@ -184,13 +184,13 @@ export function ChallengeTimeLeftCard({
         cycleMs = Math.max(dailyMinutes * 60 * 1000, 60 * 1000);
       }
 
-      return clamp(((activeDeadline as Date).getTime() - now) / cycleMs, 0, 1);
+      return clamp(((activeDeadline!).getTime() - now) / cycleMs, 0, 1);
     }
 
     if (!start || !end) return 0;
     const totalMs = end.getTime() - start.getTime();
     if (totalMs <= 0) return 0;
-    return clamp(((activeDeadline as Date).getTime() - now) / totalMs, 0, 1);
+    return clamp(((activeDeadline!).getTime() - now) / totalMs, 0, 1);
   })();
 
   const progressColor =

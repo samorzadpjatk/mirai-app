@@ -37,10 +37,6 @@ export function GroupApprovedChallenges({
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  if (submissions.length === 0) {
-    return null;
-  }
-
   const openFullscreen = useCallback(
     (index: number) => {
       setActiveIndex(index);
@@ -57,11 +53,12 @@ export function GroupApprovedChallenges({
     if (!isFullscreenOpen) return;
     const boundedIndex = Math.max(0, Math.min(activeIndex, submissions.length - 1));
     const timeout = setTimeout(() => {
-      listRef.current?.scrollToIndex({ index: boundedIndex, animated: false });
-    }, 30);
+      listRef.current?.scrollToIndex({ index: boundedIndex, animated: true });
+    }, 100);
     return () => clearTimeout(timeout);
-  }, [activeIndex, isFullscreenOpen, submissions.length]);
+  }, [isFullscreenOpen, activeIndex, submissions.length]);
 
+  
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetX = event.nativeEvent.contentOffset.x;

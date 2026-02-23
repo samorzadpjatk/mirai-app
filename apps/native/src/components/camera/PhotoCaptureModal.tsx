@@ -111,7 +111,7 @@ export function PhotoCaptureModal({
 
   const closeDisabled = isCapturingPhoto || isUsingPhoto;
 
-  const persistCapturedPhoto = useCallback(async (sourceUri: string) => {
+  const persistCapturedPhoto = useCallback((sourceUri: string) => {
     const destinationDir = new Directory(Paths.document, "captured-photos");
     const fileNameSuffix = Math.random().toString(36).slice(2, 8);
     const extension =
@@ -152,7 +152,7 @@ export function PhotoCaptureModal({
       if (!picture?.uri) return;
       const mimeType: CapturedPhoto["mimeType"] =
         picture.format === "png" ? "image/png" : "image/jpeg";
-      const persistedUri = await persistCapturedPhoto(picture.uri);
+      const persistedUri = persistCapturedPhoto(picture.uri);
 
       setCapturedPhoto({
         uri: persistedUri,

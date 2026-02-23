@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, Pressable } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { colors, spacing, borderRadius, typography } from '~/styles';
@@ -34,26 +34,14 @@ export function EditUserModal({
   isDeleting,
   isBanning,
 }: EditUserModalProps) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [wristNumber, setWristNumber] = useState('');
-  const [houseNumber, setHouseNumber] = useState('');
+  const [firstName, setFirstName] = useState(user?.firstName ?? '');
+  const [lastName, setLastName] = useState(user?.lastName ?? '');
+  const [wristNumber, setWristNumber] = useState(user?.wristNumber?.toString() ?? '');
+  const [houseNumber, setHouseNumber] = useState(user?.houseNumber?.toString() ?? '');
   const [banUntil, setBanUntil] = useState<Date | null>(null);
   const [banReason, setBanReason] = useState('');
   const [isBanPickerOpen, setIsBanPickerOpen] = useState(false);
   const [pickerDraftDate, setPickerDraftDate] = useState<Date>(new Date());
-
-  useEffect(() => {
-    if (!visible || !user) return;
-    setFirstName(user.firstName ?? '');
-    setLastName(user.lastName ?? '');
-    setWristNumber(user.wristNumber?.toString() ?? '');
-    setHouseNumber(user.houseNumber?.toString() ?? '');
-    setBanUntil(null);
-    setBanReason('');
-    setIsBanPickerOpen(false);
-    setPickerDraftDate(new Date());
-  }, [visible, user]);
 
   const handleSave = () => {
     if (!user) return;
@@ -71,7 +59,7 @@ export function EditUserModal({
     onBan(user.id, banUntil.getTime(), banReason.trim());
   };
 
-  const isBanReady = Boolean(banUntil) && (banUntil?.getTime() ?? 0) > Date.now();
+  const isBanReady = banUntil != null && banUntil > new Date();
   const isNameValid = firstName.trim().length > 0 && lastName.trim().length > 0;
   const banLabel = banUntil
     ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
