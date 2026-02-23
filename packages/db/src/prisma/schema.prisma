@@ -634,3 +634,17 @@ model RewardPurchase {
   @@index([status])
   @@index([statusUpdatedById])
 }
+
+model UserAgent {
+  id        String   @id @default(cuid())
+  userAgent  String
+  platform  String   // "ios" or "android" based on user agent pattern
+  userId    String?  // Optional: track which user made the request
+  endpoint  String?  // Optional: track which API endpoint was called
+  timestamp DateTime @default(now())
+  
+  @@index([timestamp])
+  @@index([platform])
+  @@index([userId])
+  @@index([userAgent])
+}

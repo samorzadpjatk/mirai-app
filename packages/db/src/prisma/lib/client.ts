@@ -179,3 +179,8 @@ export type Reward = Prisma.RewardModel
  * 
  */
 export type RewardPurchase = Prisma.RewardPurchaseModel
+/**
+ * Model UserAgent
+ * 
+ */
+export type UserAgent = Prisma.UserAgentModel

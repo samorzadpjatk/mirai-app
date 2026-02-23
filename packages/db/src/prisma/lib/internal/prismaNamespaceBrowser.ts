@@ -78,7 +78,8 @@ export const ModelName = {
   Location: 'Location',
   LocationSharingRequest: 'LocationSharingRequest',
   Reward: 'Reward',
-  RewardPurchase: 'RewardPurchase'
+  RewardPurchase: 'RewardPurchase',
+  UserAgent: 'UserAgent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -519,6 +520,18 @@ export const RewardPurchaseScalarFieldEnum = {
 } as const
 
 export type RewardPurchaseScalarFieldEnum = (typeof RewardPurchaseScalarFieldEnum)[keyof typeof RewardPurchaseScalarFieldEnum]
+
+
+export const UserAgentScalarFieldEnum = {
+  id: 'id',
+  userAgent: 'userAgent',
+  platform: 'platform',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  timestamp: 'timestamp'
+} as const
+
+export type UserAgentScalarFieldEnum = (typeof UserAgentScalarFieldEnum)[keyof typeof UserAgentScalarFieldEnum]
 
 
 export const SortOrder = {

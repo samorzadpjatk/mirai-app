@@ -110,6 +110,20 @@ const isValidUserAgent = (userAgent: string | null): boolean => {
   return iosPattern.test(userAgent) || androidPattern.test(userAgent);
 };
 
+const getPlatformFromUserAgent = (userAgent: string | null): "ios" | "android" | null => {
+  if (!userAgent) return null;
+  
+  // iOS User Agent pattern: MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0
+  const iosPattern = /^MIRAI\/\d+ CFNetwork\/[\d.]+ Darwin\/[\d.]+$/;
+  
+  // Android User Agent pattern: okhttp/4.12.0
+  const androidPattern = /^okhttp\/[\d.]+$/;
+  
+  if (iosPattern.test(userAgent)) return "ios";
+  if (androidPattern.test(userAgent)) return "android";
+  return null;
+};
+
 export interface TRPCContext {
   db: PrismaClient;
   supabase: SupabaseClient;
@@ -190,7 +204,7 @@ const t = initTRPC.context<TRPCContext>().create({
 });
 
 // Global middleware for mobile app validation
-const mobileAppMiddleware = t.middleware(async ({ ctx, next }) => {
+const mobileAppMiddleware = t.middleware(async ({ ctx, next, path }) => {
   const userAgent = ctx.headers.get("user-agent") ?? ctx.headers.get("User-Agent");
 
   if (!isValidUserAgent(userAgent)) {
@@ -201,7 +215,41 @@ const mobileAppMiddleware = t.middleware(async ({ ctx, next }) => {
     });
   }
 
-  console.log("[Security] Valid User-Agent:", userAgent);
+  const platform = getPlatformFromUserAgent(userAgent);
+  console.log("[Security] Valid User-Agent:", userAgent, "Platform:", platform);
+
+  // Log user agent for update rollout analysis
+  try {
+    // Try to extract user ID from auth token for better tracking
+    let userId = null;
+    if (ctx.accessToken) {
+      try {
+        // This is a lightweight way to get user ID without full validation
+        // since we're just logging, not authenticating here
+        const { data } = await ctx.supabase.auth.getUser(ctx.accessToken);
+        userId = data.user?.id ?? null;
+      } catch (error) {
+        // Ignore auth errors for logging purposes
+        console.log("[UserAgent Logging] Could not extract user ID:", error);
+      }
+    }
+
+    // Log to database asynchronously (fire and forget)
+    void ctx.db.userAgent.create({
+      data: {
+        userAgent: userAgent!,
+        platform: platform!,
+        userId,
+        endpoint: path,
+      },
+    }).catch((error: unknown) => {
+      // Log errors but don't block the request
+      console.error("[UserAgent Logging] Failed to log user agent:", error);
+    });
+  } catch (error) {
+    console.error("[UserAgent Logging] Unexpected error:", error);
+  }
+
   return next();
 });
 

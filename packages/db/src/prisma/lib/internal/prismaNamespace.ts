@@ -411,7 +411,8 @@ export const ModelName = {
   Location: 'Location',
   LocationSharingRequest: 'LocationSharingRequest',
   Reward: 'Reward',
-  RewardPurchase: 'RewardPurchase'
+  RewardPurchase: 'RewardPurchase',
+  UserAgent: 'UserAgent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -427,7 +428,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "groupJoinRequest" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "activityFeed" | "activityReaction" | "submissionActivity" | "challengeActivity" | "rankChangeActivity" | "userPost" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase"
+    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "groupJoinRequest" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "activityFeed" | "activityReaction" | "submissionActivity" | "challengeActivity" | "rankChangeActivity" | "userPost" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase" | "userAgent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2503,6 +2504,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    UserAgent: {
+      payload: Prisma.$UserAgentPayload<ExtArgs>
+      fields: Prisma.UserAgentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserAgentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserAgentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>
+        }
+        findFirst: {
+          args: Prisma.UserAgentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserAgentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>
+        }
+        findMany: {
+          args: Prisma.UserAgentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>[]
+        }
+        create: {
+          args: Prisma.UserAgentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>
+        }
+        createMany: {
+          args: Prisma.UserAgentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserAgentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>[]
+        }
+        delete: {
+          args: Prisma.UserAgentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>
+        }
+        update: {
+          args: Prisma.UserAgentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserAgentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserAgentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserAgentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserAgentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserAgentPayload>
+        }
+        aggregate: {
+          args: Prisma.UserAgentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserAgent>
+        }
+        groupBy: {
+          args: Prisma.UserAgentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserAgentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserAgentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserAgentCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2966,6 +3041,18 @@ export const RewardPurchaseScalarFieldEnum = {
 export type RewardPurchaseScalarFieldEnum = (typeof RewardPurchaseScalarFieldEnum)[keyof typeof RewardPurchaseScalarFieldEnum]
 
 
+export const UserAgentScalarFieldEnum = {
+  id: 'id',
+  userAgent: 'userAgent',
+  platform: 'platform',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  timestamp: 'timestamp'
+} as const
+
+export type UserAgentScalarFieldEnum = (typeof UserAgentScalarFieldEnum)[keyof typeof UserAgentScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -3279,6 +3366,7 @@ export type GlobalOmitConfig = {
   locationSharingRequest?: Prisma.LocationSharingRequestOmit
   reward?: Prisma.RewardOmit
   rewardPurchase?: Prisma.RewardPurchaseOmit
+  userAgent?: Prisma.UserAgentOmit
 }
 
 /* Types for Logging */
