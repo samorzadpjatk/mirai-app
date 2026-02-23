@@ -133,7 +133,9 @@ export function ChallengeTimeLeftCard({
     ? ""
     : isRecurring
       ? `Daily reset at ${dailyEndTime ?? "--:--"}`
-      : `Ends ${formatDeadlineDate(activeDeadline as Date)}`;
+      : phaseLabel === "Voting"
+        ? `Duration-based voting • ends ${formatDeadlineDate(activeDeadline as Date)} • started after moderation`
+        : `Ends ${formatDeadlineDate(activeDeadline as Date)}`;
 
   const scheduleRows = [
     isRecurring

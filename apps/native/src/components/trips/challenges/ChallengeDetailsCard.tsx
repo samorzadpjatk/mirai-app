@@ -27,6 +27,21 @@ const toDate = (value?: Date | string | null) => {
   return value instanceof Date ? value : new Date(value);
 };
 
+const formatVotingDuration = (start: Date, end: Date) => {
+  const durationMs = end.getTime() - start.getTime();
+  if (durationMs <= 0) {
+    return "Duration set by organizer";
+  }
+
+  const totalHours = Math.max(1, Math.ceil(durationMs / (60 * 60 * 1000)));
+  if (totalHours % 24 === 0) {
+    const days = totalHours / 24;
+    return `Duration: ${days} day${days === 1 ? "" : "s"}`;
+  }
+
+  return `Duration: ${totalHours} hour${totalHours === 1 ? "" : "s"}`;
+};
+
 export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
   const start = toDate(challenge.startTime);
   const end = toDate(challenge.endTime);
@@ -43,8 +58,8 @@ export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
 
   const votingWindowText =
     votingStart && votingEnd
-      ? `${votingStart.toLocaleString()} - ${votingEnd.toLocaleString()}`
-      : "Voting window not set";
+      ? `${formatVotingDuration(votingStart, votingEnd)}\nStarts automatically after moderation.`
+      : "Duration set by organizer. Starts automatically after moderation.";
 
   return (
     <View style={styles.container}>
@@ -59,7 +74,7 @@ export function ChallengeDetailsCard({ challenge }: ChallengeDetailsCardProps) {
 
       {challenge.scoringCategory === "PEER_VOTING" && (
         <View style={styles.row}>
-          <Text style={styles.label}>Voting window</Text>
+          <Text style={styles.label}>Voting</Text>
           <Text style={styles.value}>{votingWindowText}</Text>
         </View>
       )}

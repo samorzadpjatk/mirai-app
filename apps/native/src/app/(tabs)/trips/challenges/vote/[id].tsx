@@ -344,7 +344,7 @@ export default function ChallengePeerVotingScreen() {
         setPhase("blocked");
       }
       setBlockedReason(
-        `At least ${MIN_SUBMISSIONS_TO_VOTE} submissions are required to start voting. Eligible now: ${votingSubmissions.length}.`,
+        `At least ${MIN_SUBMISSIONS_TO_VOTE} approved submissions are required. Voting starts automatically after moderation and after submissions end. Eligible now: ${votingSubmissions.length}.`,
       );
       setBootstrapped(true);
       return;
@@ -605,7 +605,8 @@ export default function ChallengePeerVotingScreen() {
           <View style={styles.blockedCard}>
             <Text style={styles.blockedTitle}>Voting unavailable</Text>
             <Text style={styles.blockedText}>
-              {blockedReason ?? "Voting is not available right now."}
+              {blockedReason ??
+                "Voting is not available right now. It starts automatically after moderation and after the submission phase ends."}
             </Text>
             <TouchableOpacity
               style={[
