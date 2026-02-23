@@ -16,6 +16,7 @@ export function UserCard({
   onEdit,
 }: UserCardProps) {
   const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') ?? user.email ?? 'Unknown User';
+  const groupName = user.group?.name ?? 'Not selected';
   const isAdmin = user.role === 'ADMIN';
   const bannedUntilLabel = user.bannedUntil
     ? new Date(user.bannedUntil).toLocaleString()
@@ -30,9 +31,7 @@ export function UserCard({
           {user.isBanned && bannedUntilLabel ? (
             <Text style={styles.userBanned}>Banned until {bannedUntilLabel}</Text>
           ) : null}
-          {user.group && (
-            <Text style={styles.userGroup}>Group: {user.group.name}</Text>
-          )}
+          <Text style={styles.userGroup}>Group: {groupName}</Text>
         </View>
         <View style={styles.userBadges}>
           {isAdmin && (
