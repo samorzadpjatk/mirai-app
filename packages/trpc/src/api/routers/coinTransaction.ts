@@ -218,7 +218,7 @@ export const coinTransactionRouter = createTRPCRouter({
           select: { id: true, tripId: true, isDeleted: true },
         });
 
-        if (!group || group.tripId !== input.tripId || group.isDeleted) {
+        if (!group?.tripId || group.tripId !== input.tripId || group.isDeleted) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Group not found",

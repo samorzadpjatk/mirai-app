@@ -151,7 +151,7 @@ export const notificationSenderRouter = createTRPCRouter({
         );
       }
     }),
-  checkInactiveUsers: publicProcedure.mutation(async () => {
+  checkInactiveUsers: publicProcedure.mutation(() => {
     // Inactivity nudge notifications are disabled.
     return {
       checked: 0,

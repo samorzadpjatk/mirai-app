@@ -59,7 +59,7 @@ const resolveInstanceStatus = (now: Date, start: Date, end: Date) => {
   return "ACTIVE";
 };
 
-type RecurringTemplate = {
+interface RecurringTemplate {
   id: string;
   tripId: string;
   name: string;
@@ -89,7 +89,7 @@ type RecurringTemplate = {
   autoApprove: boolean;
   createdAt: Date;
   isRecurring: boolean;
-};
+}
 
 const recurringTemplateSelect: Prisma.ChallengeSelect = {
   id: true,
@@ -224,7 +224,7 @@ export const precreateRecurringInstancesForTemplate = async (params: {
   const daysCount =
     Math.floor((endDay.getTime() - anchorDay.getTime()) / DAY_MS) + 1;
   const now = params.now ?? new Date();
-  const results: Array<{ id: string; status: string; created: boolean }> = [];
+  const results: { id: string; status: string; created: boolean }[] = [];
 
   for (let offset = 0; offset < daysCount; offset += 1) {
     const targetDay = addDays(anchorDay, offset);
@@ -302,7 +302,7 @@ export const ensureRecurringInstancesForTrip = async (params: {
     select: recurringTemplateSelect,
   });
 
-  const results: Array<{ id: string; status: string; created: boolean }> = [];
+  const results: { id: string; status: string; created: boolean }[] = [];
   for (const template of templates) {
     const ensured = await precreateRecurringInstancesForTemplate({
       tx: params.tx,

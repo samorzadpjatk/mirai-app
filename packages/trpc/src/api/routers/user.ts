@@ -12,6 +12,7 @@ import {
   buildAuthUserSummaryLookup,
   resolveAuthEmail,
 } from "../../utils/authEmails";
+import type { SupabaseUser } from "@integral-2025-app/supabase";
 const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
 const nameSchema = z
   .string()
@@ -53,6 +54,17 @@ const formatUserFullName = (user?: {
   if (user?.lastName) return user.lastName;
   return user?.email ?? "Unknown user";
 };
+
+interface SupabaseAdminMetadata {
+  ban_reason?: string | null;
+  role?: string | null;
+  [key: string]: unknown;
+}
+
+interface SupabaseAdminUser extends SupabaseUser {
+  banned_until?: string;
+  app_metadata: SupabaseUser["app_metadata"] & SupabaseAdminMetadata;
+}
 
 const toPublicUser = (
   user: {
@@ -118,14 +130,9 @@ export const userRouter = createTRPCRouter({
       return { banned: false, bannedUntil: null, reason: null };
     }
 
-    const bannedUntilRaw = (adminLookup.data.user as any)?.banned_until as
-      | string
-      | null
-      | undefined;
-    const reasonRaw = (adminLookup.data.user as any)?.app_metadata?.ban_reason as
-      | string
-      | null
-      | undefined;
+    const adminUser = adminLookup.data.user as SupabaseAdminUser | null;
+    const bannedUntilRaw = adminUser?.banned_until ?? null;
+    const reasonRaw = adminUser?.app_metadata?.ban_reason ?? null;
 
     if (!bannedUntilRaw) {
       return { banned: false, bannedUntil: null, reason: null };
@@ -195,14 +202,9 @@ export const userRouter = createTRPCRouter({
         });
       }
 
-      const bannedUntilRaw = (lookup.data.user as any)?.banned_until as
-        | string
-        | null
-        | undefined;
-      const reasonRaw = (lookup.data.user as any)?.app_metadata?.ban_reason as
-        | string
-        | null
-        | undefined;
+      const adminUser = lookup.data.user as SupabaseAdminUser | null;
+      const bannedUntilRaw = adminUser?.banned_until ?? null;
+      const reasonRaw = adminUser?.app_metadata?.ban_reason ?? null;
 
       if (!bannedUntilRaw) {
         return { exists: true, banned: false, bannedUntil: null, reason: null };
@@ -556,7 +558,8 @@ export const userRouter = createTRPCRouter({
         });
       }
 
-      const existingMetadata = (adminUser.data.user as any)?.app_metadata ?? {};
+      const existingMetadata =
+        (adminUser.data.user as SupabaseAdminUser | null)?.app_metadata ?? {};
       const reason = input.reason?.trim();
       const nextMetadata = {
         ...existingMetadata,
@@ -565,7 +568,7 @@ export const userRouter = createTRPCRouter({
 
       const { error } = await ctx.supabase.auth.admin.updateUserById(
         user.authUserId,
-        { ban_duration: banDuration, app_metadata: nextMetadata } as any,
+        { ban_duration: banDuration, app_metadata: nextMetadata },
       );
 
       if (error) {
