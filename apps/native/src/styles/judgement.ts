@@ -134,22 +134,6 @@ const viewStyles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 1,
   },
-  exifBlock: {
-    backgroundColor: colors.backgroundDarkOpacity50,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    gap: spacing.xs,
-  },
-  exifLoading: {
-    paddingVertical: spacing.xs,
-  },
-  exifRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
   textBlock: {
     backgroundColor: colors.backgroundDarkOpacity50,
     borderRadius: borderRadius.md,
@@ -302,27 +286,6 @@ const textStyles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.sm,
     marginTop: spacing.sm,
-  },
-  exifTitle: {
-    color: colors.white,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    marginBottom: spacing.xs,
-  },
-  exifLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    flex: 1,
-  },
-  exifValue: {
-    color: colors.white,
-    fontSize: typography.sm,
-    flexShrink: 1,
-    textAlign: "right",
-  },
-  exifEmpty: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
   },
   textContent: {
     color: colors.white,
