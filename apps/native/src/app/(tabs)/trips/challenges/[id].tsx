@@ -65,10 +65,6 @@ const calculateDistanceMeters = (
   return earthRadiusKm * centralAngle * 1000;
 };
 
-const isOnOrAfterNow = (value?: string | Date | null) => {
-  if (!value) return false;
-  return new Date(value).getTime() <= Date.now();
-};
 const isOnOrBeforeNow = (value?: string | Date | null) => {
   if (!value) return false;
   return Date.now() <= new Date(value).getTime();
@@ -459,13 +455,8 @@ export default function ChallengeDetailScreen() {
   };
 
   const isVotingPhase = challenge.status === "VOTING_PHASE";
-  const hasVotingWindow =
-    Boolean(challenge.votingStartTime) && Boolean(challenge.votingEndTime);
   const isWithinVotingWindow =
-    challenge.scoringCategory === "PEER_VOTING" &&
-    hasVotingWindow &&
-    isOnOrAfterNow(challenge.votingStartTime) &&
-    isOnOrBeforeNow(challenge.votingEndTime);
+    challenge.scoringCategory === "PEER_VOTING" && isVotingPhase;
   const shouldShowVotingTime =
     challenge.scoringCategory === "PEER_VOTING" &&
     (isVotingPhase || isWithinVotingWindow);

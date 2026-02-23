@@ -1,5 +1,24 @@
 import { type Prisma } from "@integral-2025-app/db";
 
+const HOUR_MS = 60 * 60 * 1000;
+const DEFAULT_PEER_VOTING_DURATION_HOURS = 24;
+
+const resolvePeerVotingDurationHours = (
+  votingStartTime?: Date | null,
+  votingEndTime?: Date | null,
+) => {
+  if (!votingStartTime || !votingEndTime) {
+    return DEFAULT_PEER_VOTING_DURATION_HOURS;
+  }
+
+  const durationMs = votingEndTime.getTime() - votingStartTime.getTime();
+  if (durationMs <= 0) {
+    return DEFAULT_PEER_VOTING_DURATION_HOURS;
+  }
+
+  return Math.max(1, Math.ceil(durationMs / HOUR_MS));
+};
+
 type ChallengeEventType = "challenge_started" | "voting_started" | "completed";
 
 interface ChallengeForFeed {
@@ -528,33 +547,44 @@ export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed = async (
         {
           status: "ACTIVE",
           scoringCategory: "PEER_VOTING",
-          votingStartTime: { lte: now },
+          endTime: { lte: now },
           submissions: {
             some: {},
-            every: { status: "APPROVED" },
+            every: { status: { in: ["APPROVED", "REJECTED"] } },
           },
         },
       ],
     },
-    select: { id: true },
+    select: { id: true, votingStartTime: true, votingEndTime: true },
   });
 
   const votingIds: string[] = [];
 
   for (const challenge of toVoting) {
+    const votingDurationHours = resolvePeerVotingDurationHours(
+      challenge.votingStartTime,
+      challenge.votingEndTime,
+    );
+    const votingStartTime = new Date();
+    const votingEndTime = new Date(
+      votingStartTime.getTime() + votingDurationHours * HOUR_MS,
+    );
+
     const result = await params.tx.challenge.updateMany({
       where: {
         id: challenge.id,
         status: "ACTIVE",
         scoringCategory: "PEER_VOTING",
-        votingStartTime: { lte: now },
+        endTime: { lte: now },
         submissions: {
           some: {},
-          every: { status: "APPROVED" },
+          every: { status: { in: ["APPROVED", "REJECTED"] } },
         },
       },
       data: {
         status: "VOTING_PHASE",
+        votingStartTime,
+        votingEndTime,
       },
     });
 
