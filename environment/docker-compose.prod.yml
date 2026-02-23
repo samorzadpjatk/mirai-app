@@ -27,6 +27,11 @@ services:
 
   backend-server:
     image: ghcr.io/samorzadpjatk/pjapp-backend-server:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=backend-services"
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update=/bin/sh -c 'echo Starting backend server update && sleep 10'"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update=/bin/sh -c 'echo Backend server updated'"
     ports:
       - "2022:2022"
     environment:
@@ -50,6 +55,11 @@ services:
 
   notification-sender:
     image: ghcr.io/samorzadpjatk/pjapp-notification-sender:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=backend-services"
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update=/bin/sh -c 'echo Starting notification sender update && sleep 5'"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update=/bin/sh -c 'echo Notification sender updated'"
     ports:
       - "3011:3011"
     environment:
@@ -69,6 +79,11 @@ services:
 
   db-migrations:
     image: ghcr.io/samorzadpjatk/pjapp-db-migrations:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=db-migrations"
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update=/bin/sh -c 'echo Starting database migration update'"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update=/bin/sh -c 'echo Database migration completed'"
     environment:
       DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}"
       PRISMA_MIGRATE_SKIP_SEED: "1"
@@ -555,6 +570,47 @@ services:
         "-c",
         "log_min_messages=fatal", # prevents Realtime polling queries from appearing in logs
       ]
+
+# ===========================================================================
+  # WATCHTOWER - Auto-update service
+  # ===========================================================================
+
+  # Watchtower instance for database migrations - runs first
+  watchtower-db:
+    image: containrrr/watchtower:latest
+    container_name: watchtower-db
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_SCOPE: "db-migrations"
+      WATCHTOWER_SCHEDULE: "0 2 * * *"  # Run daily at 2 AM
+      WATCHTOWER_ROLLING_RESTART: "true"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_POLL_INTERVAL: "3600"  # Check every hour as fallback
+    command: --scope db-migrations --label-enable --cleanup --rolling-restart
+    depends_on:
+      - db-migrations
+
+  # Watchtower instance for backend services - runs after db migrations
+  watchtower-backend:
+    image: containrrr/watchtower:latest
+    container_name: watchtower-backend
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_SCOPE: "backend-services"
+      WATCHTOWER_SCHEDULE: "0 3 * * *"  # Run daily at 3 AM (after db migrations)
+      WATCHTOWER_ROLLING_RESTART: "true"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_POLL_INTERVAL: "3600"  # Check every hour as fallback
+      WATCHTOWER_TIMEOUT: "60s"  # Allow more time for graceful shutdown
+    command: --scope backend-services --label-enable --cleanup --rolling-restart --stop-timeout 60s
+    depends_on:
+      - watchtower-db
 
 volumes:
   db-config:
