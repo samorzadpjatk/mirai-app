@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
+import { colors, spacing, typography } from '~/styles';
 
 interface AdminHeaderProps {
   title: string;

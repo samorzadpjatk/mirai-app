@@ -1087,7 +1087,7 @@ export const groupRouter = createTRPCRouter({
 
         if (
           participant.groupId &&
-          (!group || group.tripId !== input.tripId || group.isDeleted)
+          (!group?.tripId || group.tripId !== input.tripId || group.isDeleted)
         ) {
           throw new TRPCError({
             code: "NOT_FOUND",
@@ -1097,7 +1097,7 @@ export const groupRouter = createTRPCRouter({
 
         const isAdmin = ctx.dbUser.role === "ADMIN";
         const isOrganizer = Boolean(
-          group && group.organizerId === ctx.dbUser.id,
+          group?.organizerId && group.organizerId === ctx.dbUser.id,
         );
 
         if (!isAdmin && !isOrganizer) {
@@ -1133,7 +1133,7 @@ export const groupRouter = createTRPCRouter({
               where: { id: participant.groupId },
               data: { isDeleted: true },
             });
-          } else if (group && participant.userId === group.organizerId) {
+          } else if (group?.organizerId && participant.userId === group.organizerId) {
             const nextOrganizer = await tx.tripParticipant.findFirst({
               where: { tripId: input.tripId, groupId: participant.groupId },
               orderBy: { createdAt: "asc" },

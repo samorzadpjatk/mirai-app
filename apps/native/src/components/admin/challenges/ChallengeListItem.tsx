@@ -13,7 +13,7 @@ interface ChallengeListItemProps {
 
 export function ChallengeListItem({
   challenge,
-  onDelete,
+  onDelete: _onDelete,
   onDeletePress,
 }: ChallengeListItemProps) {
   const router = useRouter();

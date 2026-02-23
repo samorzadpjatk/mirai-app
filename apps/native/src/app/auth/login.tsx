@@ -14,7 +14,7 @@ import { TRPC_HTTP_URL, TRPC_WS_URL } from "~/lib/runtimeEnv";
 import { Asset } from "expo-asset";
 import Pdf from "react-native-pdf";
 
-const PRIVACY_POLICY_PDF_ASSET = require("../../../assets/privacy-policy.pdf");
+import PRIVACY_POLICY_PDF_ASSET from "../../../assets/privacy-policy.pdf";
 
 export default function LoginScreen() {
   const { formState, setEmail, handleSubmit, clearSent, clearError } = useLoginForm();
@@ -127,7 +127,7 @@ export default function LoginScreen() {
 
     try {
       const status = await checkBanStatusByEmail();
-      if (status && status.exists === false) {
+      if (status?.exists === false) {
         clearSent();
         setPrecheckError("This email is not in database. Use your email that you provided on Taksidi site.");
         return;
@@ -202,7 +202,7 @@ export default function LoginScreen() {
     setIsPolicyLoading(true);
 
     try {
-      const asset = Asset.fromModule(PRIVACY_POLICY_PDF_ASSET);
+      const asset = Asset.fromModule(PRIVACY_POLICY_PDF_ASSET as number);
       await asset.downloadAsync();
       setPolicyPdfUri(asset.localUri ?? asset.uri);
     } catch (err) {
@@ -248,7 +248,7 @@ export default function LoginScreen() {
         {/* Form Container */}
         <View style={styles.formContainer}>
           {/* Error Message */}
-          {(error || precheckError) && (
+          {(error ?? precheckError) && (
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle" size={20} color="#ef4444" />
               <Text style={styles.errorText}>{precheckError ?? error}</Text>

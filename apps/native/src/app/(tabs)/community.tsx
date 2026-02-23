@@ -49,7 +49,7 @@ type ActivityType =
 
 type ActivityFilter = "all" | ActivityType;
 
-type CommunityFeedActivity = {
+interface CommunityFeedActivity {
   id: string;
   tripId: string;
   activityType: ActivityType;
@@ -105,7 +105,7 @@ type CommunityFeedActivity = {
     } | null;
   } | null;
   userPost?: {
-    additionalImages: Array<string | null>;
+    additionalImages: (string | null)[];
     author?: {
       user?: {
         id: string;
@@ -117,7 +117,7 @@ type CommunityFeedActivity = {
       } | null;
     } | null;
   } | null;
-};
+}
 
 type FeedCursor = {
   id: string;
@@ -125,7 +125,7 @@ type FeedCursor = {
   isPinned: boolean;
 } | null;
 
-type FeedPageData = {
+interface FeedPageData {
   activities: CommunityFeedActivity[];
   pagination: {
     total: number | null;
@@ -135,7 +135,7 @@ type FeedPageData = {
     hasMore?: boolean;
   };
   nextCursor?: FeedCursor;
-};
+}
 
 const emptyReactionSummary = () => ({
   total: 0,
@@ -172,14 +172,14 @@ const toggleHeartSummaryLocally = (
   };
 };
 
-type OwnerMeta = {
+interface OwnerMeta {
   name: string;
   subtitle: string;
   avatarImage: string | null;
   avatarUserId: string | null;
-};
+}
 
-const ACTIVITY_FILTERS: Array<{ key: ActivityFilter; label: string }> = [
+const ACTIVITY_FILTERS: { key: ActivityFilter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "custom", label: "News" },
   { key: "submission", label: "Photos" },
@@ -233,12 +233,12 @@ const getChallengeEventLabel = (eventType?: string | null) => {
   return "Challenge update";
 };
 
-type RankMovement = {
+interface RankMovement {
   direction: "up" | "down";
   team: string;
   previousRank: number;
   newRank: number;
-};
+}
 
 const parseRankChangeDetails = (description?: string | null) => {
   const text = description?.trim() ?? "";
@@ -268,7 +268,7 @@ const parseRankChangeDetails = (description?: string | null) => {
     match = movementRegex.exec(text);
   }
 
-  const podiumChunk = text.match(/Podium:\s*([^|]+)/)?.[1] ?? "";
+  const podiumChunk = (/Podium:\s*([^|]+)/.exec(text))?.[1] ?? "";
   const podium = podiumChunk
     .split("•")
     .map((part) => part.replace(/[🥇🥈🥉]/g, "").trim())
@@ -411,17 +411,6 @@ function CommunityActivityCard({
     () => parseRankChangeDetails(activity.description),
     [activity.description],
   );
-  const anchorMovement = useMemo(() => {
-    if (activity.activityType !== "rank_change") return null;
-    const groupName = activity.rankChangeActivity?.group?.name;
-    if (groupName) {
-      const exactMatch = rankChangeDetails.movements.find(
-        (movement) => movement.team === groupName,
-      );
-      if (exactMatch) return exactMatch;
-    }
-    return rankChangeDetails.movements[0] ?? null;
-  }, [activity, rankChangeDetails.movements]);
   const { data: rankingData } = useQuery({
     ...trpc.group.ranking.queryOptions({
       tripId: activity.tripId,
@@ -502,7 +491,7 @@ function CommunityActivityCard({
     activity.activityType === "rank_change"
       ? rankChangeMessage
       : activity.activityType === "challenge_event"
-        ? activity.challengeActivity?.challenge?.description?.trim() ||
+        ? activity.challengeActivity?.challenge?.description?.trim() ??
           activity.description
         : activity.description;
   const isHeartActive = Boolean(
@@ -729,7 +718,7 @@ export default function CommunityScreen() {
       selectedTrip?.id
         ? (["community-feed", selectedTrip.id, 30] as const)
         : null,
-    [selectedTrip?.id],
+    [selectedTrip],
   );
 
   const feedQuery = useInfiniteQuery({
@@ -844,7 +833,7 @@ export default function CommunityScreen() {
     () =>
       (feedQuery.data?.pages ?? []).flatMap(
         (page) => page.activities ?? [],
-      ) as CommunityFeedActivity[],
+      ),
     [feedQuery.data?.pages],
   );
 

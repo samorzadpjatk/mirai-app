@@ -68,7 +68,7 @@ export default function EditProfileScreen() {
     if (!currentUser) return;
     setFirstName(currentUser.firstName ?? "");
     setLastName(currentUser.lastName ?? "");
-  }, [currentUser?.firstName, currentUser?.lastName, currentUser?.id]);
+  }, [currentUser]);
 
   const refreshAvatar = useCallback(
     async (skipCache = false) => {

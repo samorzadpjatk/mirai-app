@@ -33,7 +33,7 @@ type ActivityType =
   | "custom"
   | "user_post";
 
-type AdminActivity = {
+interface AdminActivity {
   id: string;
   tripId: string;
   activityType: ActivityType;
@@ -55,9 +55,9 @@ type AdminActivity = {
       group?: { name?: string | null } | null;
     } | null;
   } | null;
-};
+}
 
-const activityTypeFilters: Array<{ label: string; value: "all" | ActivityType }> = [
+const activityTypeFilters: { label: string; value: "all" | ActivityType }[] = [
   { label: "All", value: "all" },
   { label: "Submission", value: "submission" },
   { label: "Challenge", value: "challenge_event" },
@@ -81,9 +81,9 @@ const formatRelativeTime = (value: Date | string) => {
 };
 
 const getActivityGroupName = (activity: AdminActivity) =>
-  activity.submissionActivity?.group?.name?.trim() ||
-  activity.rankChangeActivity?.group?.name?.trim() ||
-  activity.userPost?.author?.group?.name?.trim() ||
+  activity.submissionActivity?.group?.name?.trim() ??
+  activity.rankChangeActivity?.group?.name?.trim() ??
+  activity.userPost?.author?.group?.name?.trim() ??
   "";
 
 const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
@@ -209,9 +209,8 @@ export default function AdminActivityScreen() {
     }),
   );
 
-  const allActivities = (data?.activities ?? []) as AdminActivity[];
-
   const filteredActivities = useMemo(() => {
+    const allActivities = (data?.activities ?? []) as AdminActivity[];
     const query = searchTerm.trim().toLowerCase();
     return allActivities.filter((activity) => {
       if (selectedType !== "all" && activity.activityType !== selectedType) {
@@ -225,7 +224,7 @@ export default function AdminActivityScreen() {
         activity.title.toLowerCase().includes(query) || groupName.includes(query)
       );
     });
-  }, [allActivities, searchTerm, selectedType]);
+  }, [data?.activities, searchTerm, selectedType]);
 
   const isBusy =
     createCustomMutation.isPending ||

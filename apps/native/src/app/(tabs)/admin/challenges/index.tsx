@@ -635,7 +635,7 @@ export default function AdminChallengesScreen() {
               challenge.scoringCategory !== "JUDGED_STAFF" ||
               (submissionEndTimestamp !== null &&
                 Number.isFinite(submissionEndTimestamp) &&
-                submissionEndTimestamp <= Date.now());
+                submissionEndTimestamp <= new Date().getTime());
             const submissionTypeMeta = getSubmissionTypeMeta(
               challenge.submissionType,
             );

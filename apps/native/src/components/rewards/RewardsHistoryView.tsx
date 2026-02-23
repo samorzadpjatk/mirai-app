@@ -94,20 +94,21 @@ export default function RewardsHistoryView({ tripId }: Props) {
                     {
                       text: "Yes, cancel",
                       style: "destructive",
-                      onPress: async () => {
-                        try {
-                          await updateMyPurchaseStatus.mutateAsync({
-                            purchaseId: purchase.id,
-                            status: "CANCELLED",
+                      onPress: () => {
+                        updateMyPurchaseStatus.mutateAsync({
+                          purchaseId: purchase.id,
+                          status: "CANCELLED",
+                        })
+                          .then(() => {
+                            Alert.alert("Saved", "Claim cancelled and coins refunded.");
+                          })
+                          .catch((mutationError) => {
+                            const message =
+                              mutationError instanceof Error
+                                ? mutationError.message
+                                : "Failed to cancel claim";
+                            Alert.alert("Error", message);
                           });
-                          Alert.alert("Saved", "Claim cancelled and coins refunded.");
-                        } catch (mutationError) {
-                          const message =
-                            mutationError instanceof Error
-                              ? mutationError.message
-                              : "Failed to cancel claim";
-                          Alert.alert("Error", message);
-                        }
                       },
                     },
                   ],

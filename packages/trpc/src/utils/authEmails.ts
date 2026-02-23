@@ -1,4 +1,14 @@
-import type { SupabaseClient } from "@integral-2025-app/supabase";
+import type { SupabaseClient, SupabaseUser } from "@integral-2025-app/supabase";
+
+interface SupabaseAdminMetadata {
+  ban_reason?: string | null;
+  [key: string]: unknown;
+}
+
+interface SupabaseAdminUser extends SupabaseUser {
+  banned_until?: string;
+  app_metadata: SupabaseUser["app_metadata"] & SupabaseAdminMetadata;
+}
 
 export const buildAuthEmailLookup = async (
   supabase: SupabaseClient,
@@ -68,11 +78,8 @@ export const buildAuthUserSummaryLookup = async (
         ] as const;
       }
 
-      const user = data.user;
-      const bannedUntilRaw = (user as any)?.banned_until as
-        | string
-        | null
-        | undefined;
+      const user = data.user as SupabaseAdminUser | null;
+      const bannedUntilRaw = user?.banned_until ?? null;
       const bannedUntil =
         bannedUntilRaw && bannedUntilRaw.length > 0 ? bannedUntilRaw : null;
       const bannedUntilDate = bannedUntil ? new Date(bannedUntil) : null;
@@ -80,8 +87,7 @@ export const buildAuthUserSummaryLookup = async (
         !!bannedUntilDate &&
         !Number.isNaN(bannedUntilDate.getTime()) &&
         bannedUntilDate.getTime() > now;
-      const banReason =
-        ((user as any)?.app_metadata?.ban_reason as string | undefined) ?? null;
+      const banReason = user?.app_metadata?.ban_reason ?? null;
 
       return [
         authUserId,
