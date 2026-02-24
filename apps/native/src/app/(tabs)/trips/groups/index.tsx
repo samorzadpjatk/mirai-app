@@ -32,16 +32,16 @@ export default function GroupsListScreen() {
   );
   const myGroupId = useMemo(() => {
     if (!currentUserWithGroup?.trips?.length) return null;
-    const match = currentUserWithGroup.trips.find(
+    const match = currentUserWithGroup?.trips.find(
       (trip) => trip.tripId === tripId,
     );
     return match?.group?.id ?? null;
-}, [currentUserWithGroup.trips, tripId]);
+  }, [currentUserWithGroup, tripId]);
 
   const orderedGroups = useMemo(() => {
     if (!myGroupId) return filteredGroups;
     const index = filteredGroups.findIndex((group) => group.id === myGroupId);
-    if (index <= 0) return filteredGroups;
+    if (index === -1 || index <= 0) return filteredGroups;
     const mine = filteredGroups[index];
     return [
       mine,
