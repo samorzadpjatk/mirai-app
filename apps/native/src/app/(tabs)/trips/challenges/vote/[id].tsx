@@ -581,12 +581,6 @@ export default function ChallengePeerVotingScreen() {
             </View>
             <View style={styles.actions}>
               <TouchableOpacity
-                style={[styles.actionButton, styles.actionGhost]}
-                onPress={startComparing}
-              >
-                <Text style={styles.actionGhostText}>Vote Again</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
                 style={[styles.actionButton, styles.actionPrimary]}
                 onPress={() => void handleSubmitPodium()}
                 disabled={submitVoteMutation.isPending}
