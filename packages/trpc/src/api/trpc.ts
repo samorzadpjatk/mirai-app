@@ -97,18 +97,6 @@ const getAccessToken = (
   return null;
 };
 
-const isValidUserAgent = (userAgent: string | null): boolean => {
-  if (!userAgent) return false;
-  
-  // iOS User Agent pattern: MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0
-  const iosPattern = /^MIRAI\/\d+ CFNetwork\/[\d.]+ Darwin\/[\d.]+$/;
-  
-  // Android User Agent pattern: okhttp/4.12.0
-  const androidPattern = /^okhttp\/[\d.]+$/;
-  
-  return iosPattern.test(userAgent) || androidPattern.test(userAgent);
-};
-
 const getPlatformFromUserAgent = (userAgent: string | null): "ios" | "android" | null => {
   if (!userAgent) return null;
   
@@ -208,20 +196,12 @@ const t = initTRPC.context<TRPCContext>().create({
   },
 });
 
-// Global middleware for mobile app validation
+// Global middleware for request telemetry
 const mobileAppMiddleware = t.middleware(async ({ ctx, next, path }) => {
   const userAgent = ctx.headers.get("user-agent") ?? ctx.headers.get("User-Agent");
 
-  if (!isValidUserAgent(userAgent)) {
-    console.log("[Security] Invalid User-Agent:", userAgent);
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Access denied. Only mobile apps are allowed.",
-    });
-  }
-
   const platform = getPlatformFromUserAgent(userAgent);
-  console.log("[Security] Valid User-Agent:", userAgent, "Platform:", platform);
+  console.log("[Telemetry] User-Agent:", userAgent, "Platform:", platform);
 
   // Log user agent for update rollout analysis
   try {
@@ -239,18 +219,20 @@ const mobileAppMiddleware = t.middleware(async ({ ctx, next, path }) => {
       }
     }
 
-    // Log to database asynchronously (fire and forget)
-    void ctx.db.userAgent.create({
-      data: {
-        userAgent: userAgent!,
-        platform: platform!,
-        userId,
-        endpoint: path,
-      },
-    }).catch((error: unknown) => {
-      // Log errors but don't block the request
-      console.error("[UserAgent Logging] Failed to log user agent:", error);
-    });
+    if (userAgent && platform) {
+      // Log to database asynchronously (fire and forget)
+      void ctx.db.userAgent.create({
+        data: {
+          userAgent,
+          platform,
+          userId,
+          endpoint: path,
+        },
+      }).catch((error: unknown) => {
+        // Log errors but don't block the request
+        console.error("[UserAgent Logging] Failed to log user agent:", error);
+      });
+    }
   } catch (error) {
     console.error("[UserAgent Logging] Unexpected error:", error);
   }
@@ -280,8 +262,8 @@ export const createCallerFactory = t.createCallerFactory;
 export const createTRPCRouter = t.router;
 
 /**
- * Base procedure (mobile apps only)
- * All procedures are gated by mobile User-Agent validation.
+ * Base procedure
+ * All procedures pass through shared telemetry middleware.
  */
 const baseProcedure = t.procedure.use(mobileAppMiddleware);
 
