@@ -3,6 +3,7 @@ import { NativeTabs, Label, Icon, VectorIcon } from 'expo-router/unstable-native
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTRPC } from '@integral-2025-app/trpc/client';
 import { useQuery } from '@tanstack/react-query';
+import { ThemeProvider, DarkTheme, DefaultTheme } from '@react-navigation/native';
 
 const colors = {
   backgroundDark: "#17181c",
@@ -27,15 +28,18 @@ export default function TabsLayout() {
   const inactiveColor = isDark ? colors.inactiveColorDark : colors.inactiveColorLight;
 
   return (
-    <NativeTabs
-      backgroundColor={backgroundColor}
-      tintColor={activeColor}
-      iconColor={inactiveColor}
-      labelStyle={{
-        default: { color: inactiveColor },
-        selected: { color: activeColor },
-      }}
-    >
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <NativeTabs
+        backgroundColor={backgroundColor}
+        tintColor={activeColor}
+        iconColor={inactiveColor}
+        disableTransparentOnScrollEdge
+        labelStyle={{
+          default: { color: inactiveColor },
+          selected: { color: activeColor },
+        }}
+        minimizeBehavior="onScrollDown"
+      >
       <NativeTabs.Trigger name="community">
         <Icon src={<VectorIcon family={Ionicons} name="people" />} />
         <Label>Community</Label>
@@ -58,6 +62,7 @@ export default function TabsLayout() {
           <Label>Admin</Label>
         </NativeTabs.Trigger>
       )}
-    </NativeTabs>
+      </NativeTabs>
+    </ThemeProvider>
   );
 }
