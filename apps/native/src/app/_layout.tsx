@@ -52,7 +52,6 @@ import {
 import { useAutoPushSubscription } from "~/hooks/notifications";
 import "../../global.css";
 import "~/tasks/backgroundLocationTask";
-import Constants from "expo-constants";
 
 // Theme colors
 const colors = {
@@ -193,7 +192,7 @@ export default function RootLayout() {
             supabaseKey={SUPABASE_ANON_KEY}
             supabaseClient={supabaseClient}
           >
-            <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL} getUserAgent={Constants.getWebViewUserAgentAsync}>
+            <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
               <RootLayoutContent />
             </APIProvider>
           </AuthProvider>

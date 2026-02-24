@@ -9,7 +9,7 @@ import {
 import SuperJSON from "superjson";
 import { type AppRouter } from "../api/root";
 
-const createWsClient = (wsUrl: string, getUserAgent: () => Promise<string | null>, authorizationToken?: string) => {
+const createWsClient = (wsUrl: string, authorizationToken?: string) => {
   console.log(
     "[WS Client] Creating WebSocket client with token:",
     authorizationToken ? "YES" : "NO",
@@ -29,10 +29,9 @@ const createWsClient = (wsUrl: string, getUserAgent: () => Promise<string | null
 
   return createWSClient({
     url: wsUrlWithAuth,
-    connectionParams: () => getUserAgent().then((userAgent) => ({
+    connectionParams: () => ({
       authorization: authorizationToken ?? undefined,
-      "user-agent": userAgent ?? "",
-    })),
+    }),
     lazy: { enabled: true, closeMs: 60_000 },
   });
 };
@@ -40,10 +39,9 @@ const createWsClient = (wsUrl: string, getUserAgent: () => Promise<string | null
 const getTRPCClient = (
   httpUrl: string,
   wsUrl: string,
-  getUserAgent: () => Promise<string | null>,
   authorizationToken?: string,
 ) => {
-  const ws = createWsClient(wsUrl, getUserAgent, authorizationToken);
+  const ws = createWsClient(wsUrl, authorizationToken);
 
   const client = createTRPCClient<AppRouter>({
     links: [
@@ -77,11 +75,6 @@ const getTRPCClient = (
             if (authorizationToken) {
               headers.Authorization = `Bearer ${authorizationToken}`;
             }
-            getUserAgent().then((userAgent) => {
-              headers['User-Agent'] = userAgent ?? "";
-            }).catch((error) => {
-              console.error("[WS Client] Failed to get User-Agent:", error);
-            });
             return headers;
           },
           transformer: SuperJSON,
