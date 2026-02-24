@@ -45,7 +45,7 @@ const isUnauthorizedError = (error: unknown) => {
     return code === "UNAUTHORIZED";
 };
 
-const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: string; children: React.ReactNode }) => {
+const APIProvider = ({ httpUrl, wsUrl, getUserAgent, children }: { httpUrl: string; wsUrl: string; getUserAgent: () => Promise<string | null>; children: React.ReactNode }) => {
     const session = useSession();
     const isAuthLoading = useAuthLoading();
     const { signOut, refreshSession } = useAuth();
@@ -62,7 +62,7 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
             if (isAuthLoading) {
                 return null;
             }
-            return getTRPCClient(httpUrl, wsUrl, authToken);
+            return getTRPCClient(httpUrl, wsUrl, getUserAgent, authToken);
         },
         [authToken, httpUrl, wsUrl, isAuthLoading]
     );

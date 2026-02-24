@@ -9,7 +9,7 @@ import {
 import SuperJSON from "superjson";
 import { type AppRouter } from "../api/root";
 
-const createWsClient = (wsUrl: string, authorizationToken?: string) => {
+const createWsClient = (wsUrl: string, getUserAgent: () => Promise<string | null>, authorizationToken?: string) => {
   console.log(
     "[WS Client] Creating WebSocket client with token:",
     authorizationToken ? "YES" : "NO",
@@ -29,9 +29,10 @@ const createWsClient = (wsUrl: string, authorizationToken?: string) => {
 
   return createWSClient({
     url: wsUrlWithAuth,
-    connectionParams: () => ({
-      authToken: authorizationToken ?? undefined,
-    }),
+    connectionParams: () => getUserAgent().then((userAgent) => ({
+      authorization: authorizationToken ?? undefined,
+      "user-agent": userAgent ?? "",
+    })),
     lazy: { enabled: true, closeMs: 60_000 },
   });
 };
@@ -39,9 +40,10 @@ const createWsClient = (wsUrl: string, authorizationToken?: string) => {
 const getTRPCClient = (
   httpUrl: string,
   wsUrl: string,
+  getUserAgent: () => Promise<string | null>,
   authorizationToken?: string,
 ) => {
-  const ws = createWsClient(wsUrl, authorizationToken);
+  const ws = createWsClient(wsUrl, getUserAgent, authorizationToken);
 
   const client = createTRPCClient<AppRouter>({
     links: [
@@ -71,12 +73,16 @@ const getTRPCClient = (
         false: httpLink({
           url: httpUrl,
           headers() {
-            if (!authorizationToken) {
-              return {};
+            const headers: Record<string, string> = {};
+            if (authorizationToken) {
+              headers.Authorization = `Bearer ${authorizationToken}`;
             }
-            return {
-              Authorization: `Bearer ${authorizationToken}`,
-            };
+            getUserAgent().then((userAgent) => {
+              headers['User-Agent'] = userAgent ?? "";
+            }).catch((error) => {
+              console.error("[WS Client] Failed to get User-Agent:", error);
+            });
+            return headers;
           },
           transformer: SuperJSON,
         }),

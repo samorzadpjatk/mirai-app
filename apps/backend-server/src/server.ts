@@ -40,7 +40,7 @@ export function createServer(opts: ServerOptions) {
       // coming from the client-side `createWSClient`.
       createContext: (opts: {
         req: FastifyRequest;
-        connectionParams?: unknown;
+        connectionParams?: Record<string, string>;
       }) => {
         const { req, connectionParams } = opts;
 

@@ -52,6 +52,7 @@ import {
 import { useAutoPushSubscription } from "~/hooks/notifications";
 import "../../global.css";
 import "~/tasks/backgroundLocationTask";
+import Constants from "expo-constants";
 
 // Theme colors
 const colors = {
@@ -82,7 +83,7 @@ function RootLayoutContent() {
     isDownloading,
     downloadProgress,
   } = useExpoUpdates();
-  
+
   // Move safe area hook to root layout and provide it to children
   const insets = useSafeAreaInsets();
 
@@ -127,7 +128,7 @@ function RootLayoutContent() {
                   options={{
                     title: "Alerts",
                     headerShown: false,
-                    
+
                   }}
                 />
                 <Stack.Screen
@@ -135,7 +136,7 @@ function RootLayoutContent() {
                   options={{
                     title: "Admin Challenges",
                     headerShown: false,
-                    
+
                   }}
                 />
               </Stack.Protected>
@@ -155,7 +156,7 @@ function RootLayoutContent() {
           </LocationProvider>
         </SafeAreaInsetsProvider>
       )}
-      
+
       {/* Update Popup */}
       <UpdatePopup
         visible={showUpdatePopup}
@@ -192,7 +193,7 @@ export default function RootLayout() {
             supabaseKey={SUPABASE_ANON_KEY}
             supabaseClient={supabaseClient}
           >
-            <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+            <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL} getUserAgent={Constants.getWebViewUserAgentAsync}>
               <RootLayoutContent />
             </APIProvider>
           </AuthProvider>

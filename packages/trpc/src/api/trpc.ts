@@ -39,7 +39,7 @@ const getAccessTokenFromHeaders = (headers: Headers): string | null => {
 
 const getAccessToken = (
   headers: Headers,
-  connectionParams?: unknown,
+  connectionParams?: Record<string, string>,
 ): string | null => {
   // First try to get token from Authorization header
   const headerToken = getAccessTokenFromHeaders(headers);
@@ -52,14 +52,13 @@ const getAccessToken = (
 
   // Try connectionParams (sent as first WebSocket message)
   if (
-    connectionParams &&
-    typeof connectionParams === "object" &&
-    "authToken" in connectionParams
+   connectionParams &&    
+    "authorization" in connectionParams
   ) {
-    const token = (connectionParams as { authToken?: unknown }).authToken;
-    console.log("[Auth] authToken in connectionParams:", token ? "EXISTS" : "MISSING");
+    const token = connectionParams.authorization;
+    console.log("[Auth] authorization in connectionParams:", token ? "EXISTS" : "MISSING");
 
-    if (typeof token === "string" && token.trim().length > 0) {
+    if (token && token.trim().length > 0) {
       console.log("[Auth] Token found in connectionParams");
       return token.trim();
     }
@@ -152,7 +151,7 @@ export const createTRPCContext = (opts: {
   databaseUrl: string;
   supabaseUrl: string;
   supabaseKey: string;
-  connectionParams?: unknown;
+  connectionParams?: Record<string, string>;
 }): TRPCContext => {
   if (!supabase) {
     supabase = createSupabaseClient(
@@ -166,7 +165,13 @@ export const createTRPCContext = (opts: {
     console.log("[Supabase] Reusing server singleton Supabase client");
   }
 
-  const accessToken = getAccessToken(opts.headers, opts.connectionParams);
+  // Extract User-Agent from connection params for WebSocket connections
+  const headers = new Headers(opts.headers);
+  for (const [key, value] of Object.entries(opts.connectionParams ?? {})) {
+    headers.set(key, value);
+  }
+
+  const accessToken = getAccessToken(headers, opts.connectionParams);
   console.log(
     "Creating tRPC context with access token:",
     accessToken ? "YES" : "NO",
@@ -177,7 +182,7 @@ export const createTRPCContext = (opts: {
   return {
     db,
     supabase,
-    headers: opts.headers,
+    headers,
     accessToken,
   };
 };
