@@ -486,16 +486,6 @@ export const challengeVoteRouter = createTRPCRouter({
       const challenge = await getChallengeInTrip(ctx, input.challengeId, input.tripId);
       ensureChallengeVoting({ challenge, actorRole: ctx.dbUser.role });
 
-      let judgedStaffRequiredPositions: number | null = null;
-      if (challenge.scoringCategory === "JUDGED_STAFF") {
-        const { requiredPositions } = await validateJudgedStaffVotePayload(ctx, {
-          challengeId: input.challengeId,
-          votePositions: input.votes.map((vote) => vote.votePosition),
-          requireExactCount: true,
-        });
-        judgedStaffRequiredPositions = requiredPositions;
-      }
-
       const uniqueSubmissionIds = new Set(input.votes.map((vote) => vote.submissionId));
       if (uniqueSubmissionIds.size !== input.votes.length) {
         throw new TRPCError({
@@ -536,62 +526,33 @@ export const challengeVoteRouter = createTRPCRouter({
         }
       }
 
-      if (
-        challenge.scoringCategory === "JUDGED_STAFF" &&
-        judgedStaffRequiredPositions !== null
-      ) {
-        const existingVotes = await ctx.db.challengeVote.findMany({
-          where: {
-            challengeId: input.challengeId,
-            voterId: participant.id,
-          },
-          select: { votePosition: true },
+      // Check for existing votes to prevent updates (both peer voting and judged staff)
+      const existingVotes = await ctx.db.challengeVote.findMany({
+        where: {
+          challengeId: input.challengeId,
+          voterId: participant.id,
+        },
+        select: { votePosition: true },
+      });
+
+      if (existingVotes.length > 0) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu.",
         });
-
-        if (existingVotes.length > 0) {
-          const existingPositions = new Set(
-            existingVotes.map((vote) => vote.votePosition),
-          );
-          const alreadySubmittedAllRequiredPositions = hasAllRequiredPositions(
-            existingPositions,
-            judgedStaffRequiredPositions,
-          );
-
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: alreadySubmittedAllRequiredPositions
-              ? "Oddales juz glos w staff voting"
-              : "Masz juz zapisane glosy staff voting. To glosowanie mozna wyslac tylko raz.",
-          });
-        }
-
-        await ctx.db.challengeVote.createMany({
-          data: input.votes.map((vote) => ({
-            challengeId: input.challengeId,
-            submissionId: vote.submissionId,
-            voterId: participant.id,
-            votePosition: vote.votePosition,
-            votePoints: vote.votePoints,
-            normalizedWeight: vote.normalizedWeight ?? 1.0,
-          })),
-        });
-      } else {
-        await ctx.db.$transaction([
-          ctx.db.challengeVote.deleteMany({
-            where: { challengeId: input.challengeId, voterId: participant.id },
-          }),
-          ctx.db.challengeVote.createMany({
-            data: input.votes.map((vote) => ({
-              challengeId: input.challengeId,
-              submissionId: vote.submissionId,
-              voterId: participant.id,
-              votePosition: vote.votePosition,
-              votePoints: vote.votePoints,
-              normalizedWeight: vote.normalizedWeight ?? 1.0,
-            })),
-          }),
-        ]);
       }
+
+      // Create new votes (no deletion allowed for any voting type)
+      await ctx.db.challengeVote.createMany({
+        data: input.votes.map((vote) => ({
+          challengeId: input.challengeId,
+          submissionId: vote.submissionId,
+          voterId: participant.id,
+          votePosition: vote.votePosition,
+          votePoints: vote.votePoints,
+          normalizedWeight: vote.normalizedWeight ?? 1.0,
+        })),
+      });
 
       await recomputeSubmissionVotes(ctx, input.challengeId);
 
@@ -654,26 +615,41 @@ export const challengeVoteRouter = createTRPCRouter({
         });
       }
 
-      const existingByPosition = await ctx.db.challengeVote.findFirst({
+      // Check for any existing votes to prevent updates (for all voting types)
+      const existingVotes = await ctx.db.challengeVote.findMany({
         where: {
           challengeId: input.challengeId,
           voterId: participant.id,
-          votePosition: input.votePosition,
         },
-        select: { id: true, submissionId: true },
+        select: { id: true, votePosition: true, submissionId: true },
       });
 
-      if (existingByPosition) {
-        if (existingByPosition.submissionId === input.submissionId) {
+      if (existingVotes.length > 0) {
+        // For peer voting, any existing vote should prevent new votes
+        if (challenge.scoringCategory === "PEER_VOTING") {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "Glos juz istnieje",
+            message: "Oddales juz glos w tym wyzwaniu. Glosy nie mozna zmienic po oddaniu.",
           });
         }
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Pozycja glosu jest juz zajeta",
-        });
+        
+        // For judged staff voting, check if position is already taken
+        const existingByPosition = existingVotes.find(
+          (vote) => vote.votePosition === input.votePosition,
+        );
+        
+        if (existingByPosition) {
+          if (existingByPosition.submissionId === input.submissionId) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Glos juz istnieje",
+            });
+          }
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Pozycja glosu jest juz zajeta",
+          });
+        }
       }
 
       try {
