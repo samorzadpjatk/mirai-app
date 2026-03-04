@@ -341,6 +341,37 @@ export const tripRouter = createTRPCRouter({
         data,
       });
     }),
+  getResources: protectedProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // verify participant access
+      const isParticipant = await ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: {
+            userId: ctx.dbUser.id,
+            tripId: input.tripId,
+          },
+        },
+        select: { userId: true },
+      });
+
+      if (!isParticipant) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a participant of this trip",
+        });
+      }
+
+      const resources = await ctx.db.tripResource.findMany({
+        where: { tripId: input.tripId },
+        orderBy: { sortOrder: "asc" },
+      });
+      const insurance = await ctx.db.tripInsurance.findUnique({
+        where: { tripId: input.tripId },
+        include: { steps: { orderBy: { stepNumber: "asc" } } },
+      });
+      return { resources, insurance };
+    }),
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
