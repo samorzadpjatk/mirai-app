@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -9,7 +9,6 @@ import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput, DateTimePickerModal } from "~/components/common/ui";
-import type { User as AssignableUser } from "~/hooks/admin/useAdminUsers";
 
 export default function AdminEditUserScreen() {
   const router = useRouter();
@@ -27,8 +26,8 @@ export default function AdminEditUserScreen() {
   );
 
   const { data: participant } = useQuery(
-    trpc.user.getTripParticipant.queryOptions(
-      { userId, tripId },
+    trpc.user.getByIdWithGroup.queryOptions(
+      { id: userId, tripId },
       {
         enabled: Boolean(userId && tripId),
       }
@@ -38,40 +37,20 @@ export default function AdminEditUserScreen() {
   const { data: groupsResponse, error: groupsError } = useQuery(
     trpc.group.getAll.queryOptions({ tripId, pagination: { limit: 100, offset: 0 } }, {
       enabled: Boolean(tripId),
-      onError: (err) => console.error('groups query error', err),
-      select: (data) => {
-        console.debug('groups query raw data', data);
-        return data;
-      },
     })
   );
   const groups = groupsResponse?.groups ?? [];
   console.debug('EditUser groups debug', { tripId, groupsResponse, groups, groupsError });
 
-  const assignmentUser = useMemo<AssignableUser | null>(() => {
-    if (!user) return null;
-
-    return {
-      id: user.id,
-      firstName: user.firstName ?? null,
-      lastName: user.lastName ?? null,
-      email: user.email ?? null,
-      role: user.role ?? "USER",
-      wristNumber: participant?.wristNumber ?? null,
-      houseNumber: participant?.houseNumber ?? null,
-      group: participant?.group ?? null,
-      tripId,
-      bannedUntil: user.bannedUntil ?? null,
-      banReason: user.banReason ?? null,
-      isBanned: user.isBanned ?? false,
-    } as AssignableUser;
-  }, [participant?.group, participant?.houseNumber, participant?.wristNumber, tripId, user]);
 
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
-  const [wristNumber, setWristNumber] = useState(participant?.wristNumber ?? "");
-  const [houseNumber, setHouseNumber] = useState(participant?.houseNumber ?? "");
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(participant?.group?.id ?? null);
+  const [wristNumber, setWristNumber] = useState(participant?.trips?.[0]?.wristNumber ?? "");
+  const [houseNumber, setHouseNumber] = useState(participant?.trips?.[0]?.houseNumber ?? "");
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(() => {
+    const participantTrip = participant?.trips?.[0];
+    return participantTrip?.group?.id ?? null;
+  });
   const [banUntil, setBanUntil] = useState<Date | null>(null);
   const [banReason, setBanReason] = useState("");
   const [isBanPickerOpen, setIsBanPickerOpen] = useState(false);
@@ -182,10 +161,7 @@ export default function AdminEditUserScreen() {
     })
   );
 
-  useEffect(() => {
-    setSelectedGroupId(participant?.group?.id ?? null);
-  }, [participant?.group?.id]);
-
+  
   const handleSave = async () => {
     if (!user || !userId) return;
 
@@ -210,7 +186,7 @@ export default function AdminEditUserScreen() {
         houseNumber.trim()
           ? updateHouseNumberMutation.mutateAsync({ userId, tripId, houseNumber })
           : Promise.resolve(),
-        selectedGroupId && selectedGroupId !== participant?.group?.id
+        selectedGroupId && selectedGroupId !== (participant?.trips?.[0]?.group?.id ?? null)
           ? assignToGroupMutation.mutateAsync({ userId, groupId: selectedGroupId, tripId })
           : Promise.resolve(),
       ]);

@@ -36,6 +36,7 @@ import { ChallengeCommunitySubmissionsCard } from "~/components/trips/challenges
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
+import { useTripDetails } from "~/hooks/trips";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/fiord";
 const IMAGE_LOCATION_RADIUS_METERS = 50;
@@ -84,6 +85,8 @@ export default function ChallengeDetailScreen() {
     isLoading: challengeLoading,
     isAssignedToUser,
   } = useChallengeDetails(challengeId, tripId);
+
+  const { isTripPast } = useTripDetails(tripId);
 
   const {
     isLoading: cameraLoading,
@@ -485,10 +488,6 @@ export default function ChallengeDetailScreen() {
           scoringCategory={challenge.scoringCategory}
           status={heroStatus}
           endTime={challenge.endTime}
-          isRecurring={challenge.isRecurring}
-          firstPlacePoints={challenge.firstPlacePoints}
-          secondPlacePoints={challenge.secondPlacePoints}
-          thirdPlacePoints={challenge.thirdPlacePoints}
         />
 
         {/* Description */}
@@ -510,7 +509,8 @@ export default function ChallengeDetailScreen() {
         {/* Primary action */}
         {!isPeerVotingChallengeInVotingPhase &&
           !mySubmission &&
-          challenge.status !== "COMPLETED" && (
+          challenge.status !== "COMPLETED" &&
+          !isTripPast && (
             <ChallengeActionButton
               isLoading={
                 cameraLoading ||
@@ -698,7 +698,7 @@ export default function ChallengeDetailScreen() {
           <ChallengeUploadProgressCard progress={uploadProgress.percent} />
         )}
 
-        {mySubmission && (
+        {mySubmission && !isTripPast && (
           <ExistingSubmissionCard
             submission={mySubmission}
             isWithdrawing={withdrawMutation.isPending}

@@ -12,6 +12,8 @@ import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
 import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessGrid";
 import { PartnersSection } from "~/components/trips/details/PartnersSection";
+import { TripBanner } from "~/components/trips/TripBanner";
+import { useTripSync } from "~/stores/tripStore";
 
 export default function TripDetailsScreen() {
   const { session, isLoading } = useAuth();
@@ -22,7 +24,10 @@ export default function TripDetailsScreen() {
   const { selectedTripId, isLoadingSelectedTrip } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
 
-  const { isLoadingUser, trip, isLoadingTrip } = useTripDetails(tripId);
+  const { isLoadingUser, trip, isLoadingTrip, isTripPast } = useTripDetails(tripId);
+
+  // Keep trip store in sync with current trip state
+  useTripSync();
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -70,11 +75,15 @@ export default function TripDetailsScreen() {
             backgroundImagePath={trip.backgroundImagePath}
           />
 
+          {/* Trip Banner */}
+          <TripBanner />
+
           {/* Partners */}
-          <PartnersSection />
+          <PartnersSection sponsors={trip.tripSponsors?.map(ts => ts.sponsor).filter(Boolean)} />
 
           {/* Quick Access Grid */}
           <TripQuickAccessGrid
+            isTripPast={isTripPast}
             onOpenGroups={() => router.push(`/trips/groups?tripId=${trip.id}`)}
             onOpenMap={() => router.push("/trips/map")}
             onOpenChallenges={() =>

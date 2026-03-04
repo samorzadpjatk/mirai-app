@@ -18,6 +18,7 @@ import {
   typography,
 } from "../../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTripDetails } from "~/hooks/trips";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
 
@@ -206,6 +207,20 @@ export default function ChallengePeerVotingScreen() {
     ...trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }),
     enabled: !!tripId,
   });
+
+  const { isTripPast } = useTripDetails(tripId);
+
+  useEffect(() => {
+    if (isTripPast && challengeId && tripId) {
+      router.replace({
+        pathname: "/trips/challenges/[id]",
+        params: {
+          id: challengeId,
+          tripId: tripId,
+        },
+      });
+    }
+  }, [isTripPast, challengeId, tripId, router]);
 
   const submitVoteMutation = useMutation(
     trpc.challengeVote.submitVote.mutationOptions(),

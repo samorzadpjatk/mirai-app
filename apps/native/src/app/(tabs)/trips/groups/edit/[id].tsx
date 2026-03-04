@@ -12,6 +12,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useGroupEditor } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
 import {
   borderRadius as radius,
   colors,
@@ -46,6 +47,13 @@ export default function EditGroupScreen() {
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
   const { group, isLoading: groupLoading } = useGroupEditor(groupId);
+  const { isTripPast } = useTripDetails(group?.trip?.id);
+
+  useEffect(() => {
+    if (isTripPast && group?.trip?.id) {
+      router.replace(`/trips/groups/${groupId}`);
+    }
+  }, [isTripPast, group?.trip?.id, groupId, router]);
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();

@@ -13,6 +13,7 @@ import { useMapActions } from "~/hooks/map";
 import { useFileDownload } from "~/hooks/files";
 import { useLocationContext } from "~/stores/location";
 import { useSelectedTrip } from "~/hooks/trips";
+import { useTripDetails } from "~/hooks/trips";
 
 function MapScreenContent({
   onLocationUpdate,
@@ -56,6 +57,7 @@ export default function MapScreen() {
   const { session } = useAuth();
   const trpc = useTRPC();
   const { selectedTripId } = useSelectedTrip();
+  const { isTripPast } = useTripDetails(selectedTripId);
   const userMyQueryOptions = trpc.user.getMy.queryOptions();
   const { data: currentUser } = useQuery(userMyQueryOptions);
   const mapTheme = "dark";
@@ -66,7 +68,7 @@ export default function MapScreen() {
 
   // Map hooks
   const { locationsByUserId, usersData } = useMapLocationStream(
-    !!session?.access_token && canShareOwnLocation && canViewOthersLocations && !isLocationLoading,
+    !!session?.access_token && canShareOwnLocation && canViewOthersLocations && !isLocationLoading && !isTripPast,
   );
   const {
     sharingUserIds,
@@ -146,8 +148,8 @@ export default function MapScreen() {
     <MapScreenContent
       onLocationUpdate={({ latitude, longitude }) => {
         setCurrentCoordinate([longitude, latitude]);
-        // Only send location if sharing is enabled
-        if (canShareOwnLocation) {
+        // Only send location if sharing is enabled and trip is not past
+        if (canShareOwnLocation && !isTripPast) {
           void sendLocation({ latitude, longitude });
         }
       }}

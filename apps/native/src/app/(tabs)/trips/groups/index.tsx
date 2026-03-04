@@ -1,4 +1,5 @@
 import { useGroups } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
 import {
   View,
   ScrollView,
@@ -26,6 +27,7 @@ export default function GroupsListScreen() {
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const trpc = useTRPC();
 
+  const { isTripPast } = useTripDetails(tripId);
   const {
     filteredGroups,
     isLoading,
@@ -110,6 +112,7 @@ export default function GroupsListScreen() {
         {/* Search Bar */}
         <GroupsSearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
+        
         {/* Header */}
         <GroupsListHeader title="Groups" count={orderedGroups.length} />
 
@@ -132,7 +135,7 @@ export default function GroupsListScreen() {
         ) : null}
       </ScrollView>
 
-      {!isLoadingCurrentUserGroup && !hasGroupInCurrentTrip ? (
+      {!isLoadingCurrentUserGroup && !hasGroupInCurrentTrip && !isTripPast ? (
         <FloatingActionButton
           onPress={() => router.push(`/trips/groups/create?tripId=${tripId}`)}
           iconName="add"

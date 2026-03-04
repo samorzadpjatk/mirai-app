@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useRewards, usePurchaseReward } from "~/hooks/rewards";
 import { useMyGroup } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RewardListItem } from "./types";
 import { commonStyles } from "~/styles/commonStyles";
@@ -29,6 +30,7 @@ export default function RewardsView({ tripId }: Props) {
   const queryClient = useQueryClient();
   const { data: rewards, isLoading, error, refetch } = useRewards(tripId);
   const { group: currentUserGroup } = useMyGroup(tripId);
+  const { isTripPast } = useTripDetails(tripId);
   const purchaseReward = usePurchaseReward();
   const { width: viewportWidth } = useWindowDimensions();
   const [selectedReward, setSelectedReward] = useState<RewardListItem | null>(null);
@@ -210,17 +212,16 @@ export default function RewardsView({ tripId }: Props) {
               borderWidth: 1,
               borderColor: "#273a3a",
               borderRadius: 999,
-              paddingHorizontal: 14,
-              paddingVertical: 9,
-              backgroundColor: "#102424",
+              paddingHorizontal: 12,
+              paddingVertical: 6,
             }}
           >
-            <Ionicons name="time-outline" size={16} color="#00ced1" />
-            <Text style={[commonStyles.label, { color: "#00ced1", letterSpacing: 0.8, fontSize: 12 }]}>
-              My rewards
-            </Text>
+            <Ionicons name="time-outline" size={14} color="#9ca3af" />
+            <Text style={[commonStyles.textSecondary, { fontSize: 12 }]}>History</Text>
           </TouchableOpacity>
         </View>
+
+        
         {currentUserGroup && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Ionicons name="people" size={16} color="#00ced1" />
@@ -347,17 +348,18 @@ export default function RewardsView({ tripId }: Props) {
               {/* Purchase Button */}
               <TouchableOpacity
                 onPress={() => openPurchaseModal(reward)}
-                disabled={!reward.canAfford || !reward.isEligibleToBuy || reward.isOutOfStock}
+                disabled={!reward.canAfford || !reward.isEligibleToBuy || reward.isOutOfStock || isTripPast}
                 style={[
                   commonStyles.button,
                   {
-                    backgroundColor: reward.canAfford && reward.isEligibleToBuy && !reward.isOutOfStock ? "#00ced1" : "#374151",
-                    opacity: reward.canAfford && reward.isEligibleToBuy && !reward.isOutOfStock ? 1 : 0.5,
+                    backgroundColor: reward.canAfford && reward.isEligibleToBuy && !reward.isOutOfStock && !isTripPast ? "#00ced1" : "#374151",
+                    opacity: reward.canAfford && reward.isEligibleToBuy && !reward.isOutOfStock && !isTripPast ? 1 : 0.5,
                   }
                 ]}
               >
                 <Text style={commonStyles.buttonText}>
-                  {reward.isOutOfStock ? "Sold out" : 
+                  {isTripPast ? "Trip ended" :
+                   reward.isOutOfStock ? "Sold out" : 
                    !reward.isEligibleToBuy ? "Only group leader" : 
                    !reward.canAfford ? "Not enough coins" : 
                    "Claim reward"}
@@ -587,20 +589,22 @@ export default function RewardsView({ tripId }: Props) {
                     setShowRewardDetailsModal(false);
                     openPurchaseModal(previewReward);
                   }}
-                  disabled={!previewReward.canAfford || !previewReward.isEligibleToBuy || previewReward.isOutOfStock}
+                  disabled={!previewReward.canAfford || !previewReward.isEligibleToBuy || previewReward.isOutOfStock || isTripPast}
                   style={[
                     commonStyles.button,
                     {
                       backgroundColor:
                         previewReward.canAfford &&
                         previewReward.isEligibleToBuy &&
-                        !previewReward.isOutOfStock
+                        !previewReward.isOutOfStock &&
+                        !isTripPast
                           ? "#00ced1"
                           : "#374151",
                       opacity:
                         previewReward.canAfford &&
                         previewReward.isEligibleToBuy &&
-                        !previewReward.isOutOfStock
+                        !previewReward.isOutOfStock &&
+                        !isTripPast
                           ? 1
                           : 0.5,
                       marginBottom: 24,
@@ -608,13 +612,14 @@ export default function RewardsView({ tripId }: Props) {
                   ]}
                 >
                   <Text style={commonStyles.buttonText}>
-                    {previewReward.isOutOfStock
-                      ? "Sold out"
-                      : !previewReward.isEligibleToBuy
-                        ? "Only group leader"
-                        : !previewReward.canAfford
-                          ? "Not enough coins"
-                          : "Claim reward"}
+                    {isTripPast ? "Trip ended" :
+                      previewReward.isOutOfStock
+                        ? "Sold out"
+                        : !previewReward.isEligibleToBuy
+                          ? "Only group leader"
+                          : !previewReward.canAfford
+                            ? "Not enough coins"
+                            : "Claim reward"}
                   </Text>
                 </TouchableOpacity>
               </>

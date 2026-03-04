@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -70,6 +69,20 @@ export default function AdminEditRewardScreen() {
             onPress: () => router.back(),
           },
         ]);
+      },
+      onError: (error) => Alert.alert("Error", error.message),
+    }),
+  );
+
+  const setHiddenMutation = useMutation(
+    trpc.reward.setHidden.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: [["reward", "getAll"], { input: { tripId } }],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: [["reward", "getById"], { input: { id: rewardId } }],
+        });
       },
       onError: (error) => Alert.alert("Error", error.message),
     }),
@@ -158,6 +171,7 @@ export default function AdminEditRewardScreen() {
     }
 
     try {
+      // Update reward details
       await updateRewardMutation.mutateAsync({
         id: rewardId,
         name: trimmedName,
@@ -165,9 +179,16 @@ export default function AdminEditRewardScreen() {
         coinCost: parsedCoinCost,
         availableQuantity: parsedQuantity,
         image: imagePath || undefined,
-        isHidden,
       });
-    } catch (error) {
+
+      // Update hidden status if changed
+      if (reward.isHidden !== isHidden) {
+        await setHiddenMutation.mutateAsync({
+          id: rewardId,
+          isHidden,
+        });
+      }
+    } catch {
       // Error handling is done in the mutation's onError
     }
   };
@@ -183,12 +204,8 @@ export default function AdminEditRewardScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteRewardMutation.mutateAsync({ id: rewardId });
-            } catch (error) {
-              // Error handling is done in the mutation
-            }
+          onPress: () => {
+            void deleteRewardMutation.mutateAsync({ id: rewardId });
           },
         },
       ]

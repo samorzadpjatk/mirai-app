@@ -57,7 +57,7 @@ export default function AdminCreateGroupScreen() {
         name: trimmedGroupName,
         tripId,
       });
-    } catch (error) {
+    } catch {
       // Error handling is done in the mutation's onError
     }
   };

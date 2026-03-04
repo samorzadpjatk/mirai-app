@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTripDetails } from "~/hooks/trips";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";
 import { GroupDetailsLoadingState } from "~/components/trips/groups/details/GroupDetailsLoadingState";
@@ -30,6 +31,8 @@ export default function GroupDetailsScreen() {
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+
+  const { isTripPast } = useTripDetails(group?.trip?.id);
 
   const { data: group, isLoading: groupLoading } = useQuery({
     ...trpc.group.getById.queryOptions({ id: groupId ?? "" }),
@@ -296,7 +299,7 @@ export default function GroupDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      {canManageGroup && (
+      {canManageGroup && !isTripPast && (
         <View style={styles.editButtonContainer}>
           <EditGroupButton
             onPress={() => router.push(`/trips/groups/edit/${groupId}`)}
@@ -318,7 +321,7 @@ export default function GroupDetailsScreen() {
         {/* Hero Card */}
         <GroupDetailsHero name={group.name} imageUrl={group.image} />
 
-        {canRequestToJoin && !hasPendingRequestToThisGroup ? (
+        {canRequestToJoin && !hasPendingRequestToThisGroup && !isTripPast ? (
           <TouchableOpacity
             style={styles.joinButton}
             activeOpacity={0.8}
@@ -332,7 +335,7 @@ export default function GroupDetailsScreen() {
           </TouchableOpacity>
         ) : null}
 
-        {canRequestToJoin && hasPendingRequestToThisGroup ? (
+        {canRequestToJoin && hasPendingRequestToThisGroup && !isTripPast ? (
           <View style={styles.pendingRequestContainer}>
             <View style={styles.pendingRequestBadge}>
               <Ionicons name="time-outline" size={16} color={colors.primary} />
@@ -371,7 +374,7 @@ export default function GroupDetailsScreen() {
           </View>
         ) : null}
 
-        {isGroupMember ? (
+        {isGroupMember && !isTripPast ? (
           <TouchableOpacity
             style={styles.leaveButton}
             activeOpacity={0.8}
@@ -385,7 +388,7 @@ export default function GroupDetailsScreen() {
           </TouchableOpacity>
         ) : null}
 
-        {canManageGroup ? (
+        {canManageGroup && !isTripPast ? (
           <View style={styles.joinRequestsCard}>
             <Text style={styles.joinRequestsTitle}>Pending join requests</Text>
             {(pendingJoinRequests ?? []).length === 0 ? (

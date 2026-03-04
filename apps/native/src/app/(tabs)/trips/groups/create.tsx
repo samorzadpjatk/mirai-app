@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useCreateGroup } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileUpload } from "~/hooks/files";
@@ -27,6 +28,13 @@ export default function CreateGroupScreen() {
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
   const { createGroup, isCreating } = useCreateGroup(tripId);
+  const { isTripPast } = useTripDetails(tripId);
+
+  useEffect(() => {
+    if (isTripPast && tripId) {
+      router.replace(`/trips/groups?tripId=${tripId}`);
+    }
+  }, [isTripPast, tripId, router]);
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {

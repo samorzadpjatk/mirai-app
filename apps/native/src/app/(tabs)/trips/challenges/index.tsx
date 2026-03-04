@@ -16,6 +16,7 @@ import { ChallengesLoadingState } from "~/components/trips/challenges/Challenges
 import { GroupInfoCard } from "~/components/trips/challenges/GroupInfoCard";
 import { TripNotFoundState } from "~/components/trips/challenges/TripNotFoundState";
 import { useChallenges } from "~/hooks/challenges";
+import { useTripDetails } from "~/hooks/trips";
 import type {
   ChallengeListItem,
   ChallengeSubmissionType,
@@ -79,6 +80,8 @@ export default function ChallengesScreen() {
     userGroup,
     leaderboardInfo,
   } = useChallenges(tripId);
+  const { isTripPast } = useTripDetails(tripId);
+
   const [selectedStatusFilter, setSelectedStatusFilter] =
     useState<StatusFilter>("ALL");
   const [selectedTypeFilter, setSelectedTypeFilter] =
@@ -238,6 +241,7 @@ export default function ChallengesScreen() {
           />
         )}
 
+        
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}

@@ -41,12 +41,17 @@ const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
 export function TripCard({ trip, onPress }: TripCardProps) {
   const status = getTripStatus(trip.startDate, trip.endDate);
   const { imageUrl } = useTripBackgroundImageDownload(trip.backgroundImagePath);
+  const isPast = status === "Past";
 
   // Don't render the image background if no URL is available
   if (!imageUrl) {
     return (
       <TouchableOpacity
-        style={[styles.tripCard, styles.tripCardNoImage]}
+        style={[
+          styles.tripCard, 
+          styles.tripCardNoImage,
+          isPast && styles.pastTripCard
+        ]}
         onPress={onPress}
         activeOpacity={0.7}
       >
@@ -76,7 +81,10 @@ export function TripCard({ trip, onPress }: TripCardProps) {
 
   return (
     <TouchableOpacity
-      style={styles.tripCard}
+      style={[
+        styles.tripCard,
+        isPast && styles.pastTripCard
+      ]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -124,6 +132,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primaryOpacity10,
     overflow: "hidden",
+  },
+  pastTripCard: {
+    opacity: 0.6,
   },
   tripCardNoImage: {
     borderRadius: borderRadius.md,

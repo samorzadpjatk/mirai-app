@@ -50,9 +50,19 @@ export function GroupApprovedChallenges({
     setIsFullscreenOpen(false);
   }, []);
 
+  const handleScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetX = event.nativeEvent.contentOffset.x;
+      const nextIndex = Math.round(offsetX / Math.max(width, 1));
+      const boundedIndex = Math.max(0, Math.min(nextIndex, submissions.length - 1));
+      setActiveIndex(boundedIndex);
+    },
+    [submissions.length, width],
+  );
+
   useEffect(() => {
     if (submissions.length === 0) {
-      setIsFullscreenOpen(false);
+      setTimeout(() => setIsFullscreenOpen(false), 0);
       return;
     }
     if (!isFullscreenOpen) return;
@@ -66,16 +76,6 @@ export function GroupApprovedChallenges({
   if (submissions.length === 0) {
     return null;
   }
-
-  const handleScrollEnd = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offsetX = event.nativeEvent.contentOffset.x;
-      const nextIndex = Math.round(offsetX / Math.max(width, 1));
-      const boundedIndex = Math.max(0, Math.min(nextIndex, submissions.length - 1));
-      setActiveIndex(boundedIndex);
-    },
-    [submissions.length, width],
-  );
 
   return (
     <View style={styles.section}>

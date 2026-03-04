@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -129,7 +128,7 @@ export default function AdminCreateActivityScreen() {
         imageUrl: imagePath || undefined,
         isPinned,
       });
-    } catch (error) {
+    } catch {
       // Error handling is done in the mutation's onError
     }
   };

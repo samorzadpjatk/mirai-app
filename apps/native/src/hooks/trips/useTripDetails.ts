@@ -7,6 +7,7 @@ import {
   upsertCachedTripListItem,
 } from "~/services/storage/selectedTripStorage";
 import type { TripListItem } from "~/components/trips/list/types";
+import { isTripPast } from "~/utils/trip";
 
 export function useTripDetails(tripId?: string | null) {
   const trpc = useTRPC();
@@ -70,6 +71,8 @@ export function useTripDetails(tripId?: string | null) {
     !trip &&
     (tripQuery.isLoading || !isCacheHydrated);
 
+  const isTripPastValue = trip ? isTripPast(trip.endDate) : false;
+
   return {
     currentUser,
     isLoadingUser,
@@ -78,5 +81,6 @@ export function useTripDetails(tripId?: string | null) {
     refetchTrip: tripQuery.refetch,
     isErrorTrip: tripQuery.isError,
     tripError: tripQuery.error,
+    isTripPast: isTripPastValue,
   };
 }

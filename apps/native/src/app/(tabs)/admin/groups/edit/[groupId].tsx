@@ -107,7 +107,7 @@ export default function AdminEditGroupScreen() {
       ]);
 
       Alert.alert("Success", "Group updated successfully.");
-    } catch (error) {
+    } catch {
       // Error handling is done in the individual mutations
     }
   };
@@ -127,7 +127,7 @@ export default function AdminEditGroupScreen() {
           onPress: () => {
             try {
               deleteGroupMutation.mutate({ id: groupId });
-            } catch (error) {
+            } catch {
               // Error handling is done in the mutation
             }
           },
