@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   RefreshControl,
   View,
   ScrollView,
@@ -19,6 +20,16 @@ import type {
   ChallengeListItem,
   ChallengeSubmissionType,
 } from "~/components/trips/challenges/types";
+
+const statusColors: Record<string, string> = {
+  HIDDEN: colors.statusHidden,
+  VISIBLE: colors.statusVisible,
+  ACTIVE: colors.statusActive,
+  VOTING_PHASE: colors.statusVotingPhase,
+  COMPLETED: colors.statusCompleted,
+  to_solve: colors.statusActive,
+  solved: colors.statusCompleted,
+};
 
 const statusFilters = [
   { label: "All", value: "ALL" },
@@ -61,6 +72,9 @@ export default function ChallengesScreen() {
     completedChallengesCount,
     isLoading,
     isRefreshing,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
     refresh,
     userGroup,
     leaderboardInfo,
@@ -163,6 +177,27 @@ export default function ChallengesScreen() {
     void refresh();
   }, [refresh]);
 
+  const handleLoadMore = useCallback(
+    (event: {
+      nativeEvent: {
+        contentOffset: { y: number };
+        contentSize: { height: number };
+        layoutMeasurement: { height: number };
+      };
+    }) => {
+      if (!hasNextPage || isFetchingNextPage || isLoading) return;
+
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const nearBottom =
+        contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
+
+      if (nearBottom) {
+        void fetchNextPage();
+      }
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading],
+  );
+
   if (!tripId || isLoading) {
     return <ChallengesLoadingState />;
   }
@@ -177,6 +212,8 @@ export default function ChallengesScreen() {
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleLoadMore}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -261,17 +298,27 @@ export default function ChallengesScreen() {
           contentContainerStyle={styles.filtersRow}
         >
           {statusFilters.map((filter) => {
+            const isAll = filter.value === "ALL";
+            const color = isAll
+              ? colors.primary
+              : statusColors[filter.value] ?? colors.primary;
             const selected = selectedStatusFilter === filter.value;
+            
             return (
               <TouchableOpacity
                 key={filter.value}
                 onPress={() => setSelectedStatusFilter(filter.value)}
-                style={[styles.filterChip, selected && styles.filterChipActive]}
+                style={[
+                  styles.filterChip, 
+                  selected && styles.filterChipActive,
+                  selected && { borderColor: color, backgroundColor: `${color}20` }
+                ]}
               >
                 <Text
                   style={[
                     styles.filterChipText,
                     selected && styles.filterChipTextActive,
+                    selected && { color: color }
                   ]}
                 >
                   {filter.label}
@@ -286,6 +333,13 @@ export default function ChallengesScreen() {
           challenges={filteredChallenges}
           onSelectChallenge={handleChallengePress}
         />
+
+        {isFetchingNextPage ? (
+          <View style={styles.loadingMoreWrap}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.loadingMoreText}>Loading more challenges...</Text>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -304,6 +358,17 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg, // Space for BackNavbar
     paddingBottom: spacing.xxxl,
   },
+  loadingMoreWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  loadingMoreText: {
+    color: colors.textMuted,
+    fontSize: 12,
+  },
   filtersRow: {
     gap: spacing.sm,
     marginBottom: spacing.lg,
@@ -319,8 +384,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-    backgroundColor: "rgba(255,255,255,0.04)",
+    borderColor: colors.whiteOpacity12,
+    backgroundColor: colors.whiteOpacity4,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -332,21 +397,21 @@ const styles = StyleSheet.create({
   },
   typeChipActive: {
     borderColor: colors.primary,
-    backgroundColor: "rgba(0,206,209,0.2)",
+    backgroundColor: colors.primaryOpacity20,
   },
   typeChipCount: {
     minWidth: 20,
     paddingHorizontal: 5,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    backgroundColor: "rgba(10,11,13,0.55)",
+    borderColor: colors.whiteOpacity8,
+    backgroundColor: colors.backgroundDarkOpacity55,
     alignItems: "center",
     justifyContent: "center",
   },
   typeChipCountActive: {
-    borderColor: "rgba(0,206,209,0.45)",
-    backgroundColor: "rgba(0,206,209,0.16)",
+    borderColor: colors.primaryOpacity30,
+    backgroundColor: colors.primaryOpacity20,
   },
   typeChipCountText: {
     color: colors.white,
@@ -361,12 +426,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-    backgroundColor: "rgba(255,255,255,0.04)",
+    borderColor: colors.whiteOpacity12,
+    backgroundColor: colors.whiteOpacity4,
   },
   filterChipActive: {
     borderColor: colors.primary,
-    backgroundColor: "rgba(0,206,209,0.2)",
+    backgroundColor: colors.primaryOpacity20,
   },
   filterChipText: {
     color: colors.textMuted,
@@ -379,3 +444,5 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
 });
+
+// ...

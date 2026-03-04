@@ -42,13 +42,10 @@ export default function RewardsView({ tripId }: Props) {
   const [justRefreshed, setJustRefreshed] = useState(false);
 
   const safeRewards: RewardListItem[] = useMemo(() => {
-    const data = rewards as
-      | RewardListItem[]
-      | { data?: RewardListItem[] }
-      | undefined;
+    // The useRewards hook returns data directly, not wrapped in an object
+    const data = rewards as RewardListItem[] | undefined;
 
     if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.data)) return data.data;
     return [];
   }, [rewards]);
 

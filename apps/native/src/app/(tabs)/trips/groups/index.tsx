@@ -1,11 +1,18 @@
 import { useGroups } from "~/hooks/groups";
-import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Text,
+  RefreshControl,
+} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { colors, spacing } from "../../../../styles";
+import { FloatingActionButton } from "~/components/common/FloatingActionButton";
 import { GroupsSearchBar } from "~/components/trips/groups/GroupsSearchBar";
 import { GroupsListHeader } from "~/components/trips/groups/GroupsListHeader";
 import { GroupsList } from "~/components/trips/groups/GroupsList";
@@ -19,8 +26,17 @@ export default function GroupsListScreen() {
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const trpc = useTRPC();
 
-  const { filteredGroups, isLoading, searchQuery, setSearchQuery } =
-    useGroups(tripId);
+  const {
+    filteredGroups,
+    isLoading,
+    isRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch,
+    searchQuery,
+    setSearchQuery,
+  } = useGroups(tripId);
   const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
     useQuery({
       ...trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }),
@@ -43,6 +59,7 @@ export default function GroupsListScreen() {
     const index = filteredGroups.findIndex((group) => group.id === myGroupId);
     if (index === -1 || index <= 0) return filteredGroups;
     const mine = filteredGroups[index];
+    if (!mine) return filteredGroups;
     return [
       mine,
       ...filteredGroups.slice(0, index),
@@ -54,12 +71,41 @@ export default function GroupsListScreen() {
     return <GroupsNoTripState onGoBack={() => router.back()} />;
   }
 
+  const handleScrollLoadMore = (event: {
+    nativeEvent: {
+      contentOffset: { y: number };
+      contentSize: { height: number };
+      layoutMeasurement: { height: number };
+    };
+  }) => {
+    if (!hasNextPage || isFetchingNextPage || isLoading) return;
+
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const nearBottom =
+      contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
+
+    if (nearBottom) {
+      void fetchNextPage();
+    }
+  };
+
   return (
     <View style={[styles.container]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScrollLoadMore}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching && !isFetchingNextPage}
+            onRefresh={() => {
+              void refetch();
+            }}
+            tintColor={colors.primary}
+          />
+        }
       >
         {/* Search Bar */}
         <GroupsSearchBar value={searchQuery} onChangeText={setSearchQuery} />
@@ -77,17 +123,24 @@ export default function GroupsListScreen() {
             onSelectGroup={(group) => router.push(`/trips/groups/${group.id}`)}
           />
         )}
+
+        {isFetchingNextPage ? (
+          <View style={styles.listFooter}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.listFooterText}>Loading more groups...</Text>
+          </View>
+        ) : null}
       </ScrollView>
 
       {!isLoadingCurrentUserGroup && !hasGroupInCurrentTrip ? (
-        <TouchableOpacity
+        <FloatingActionButton
           onPress={() => router.push(`/trips/groups/create?tripId=${tripId}`)}
-          style={styles.fab}
-          accessibilityRole="button"
+          iconName="add"
+          iconSize={32}
+          activeOpacity={0.7}
           accessibilityLabel="Add group"
-        >
-          <Ionicons name="add" size={32} color={colors.backgroundDark} />
-        </TouchableOpacity>
+          style={styles.fab}
+        />
       ) : null}
     </View>
   );
@@ -105,20 +158,20 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     paddingBottom: spacing.xxxl,
   },
+  listFooter: {
+    marginTop: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  listFooterText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
   fab: {
     position: "absolute",
     right: 20,
     bottom: 96,
-    width: 58,
-    height: 58,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
   },
 });

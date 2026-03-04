@@ -6,20 +6,18 @@ import {
   TouchableOpacity,
   ImageBackground,
   Linking,
-  Modal,
-  Pressable,
   Alert,
   Dimensions,
 } from "react-native";
-import { SafeAreaTop } from "~/components/SafeAreaWrapper";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { WebView } from "react-native-webview";
 import Pdf from "react-native-pdf";
-import { Directory, File, Paths } from "expo-file-system/next";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FullScreenModal } from "~/components/common/ui";
+import { usePdfDownload } from "~/hooks/files";
 
 const MAP_PDF_URL =
   "https://piste-maps.co.uk/Piste-Maps/Switzerland/Verbier-Piste-Ski-Map-2024-25.pdf";
@@ -32,37 +30,47 @@ export default function TripInfoScreen() {
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [isPdfModalVisible, setIsPdfModalVisible] = useState(false);
   const [isInsuranceModalVisible, setIsInsuranceModalVisible] = useState(false);
-  const [pdfUri, setPdfUri] = useState<string | null>(null);
   const [pdfModalTitle, setPdfModalTitle] = useState("Ski Map PDF");
-  const [isMapDownloading, setIsMapDownloading] = useState(false);
-  const [isInfopackDownloading, setIsInfopackDownloading] = useState(false);
-  const [isPdfDownloaded, setIsPdfDownloaded] = useState(false);
-  const [isInfopackDownloaded, setIsInfopackDownloaded] = useState(false);
-  const insets = useAppSafeAreaInsets();
+  const [pdfModalUri, setPdfModalUri] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+
+  // PDF download hooks
+  const mapPdfDownload = usePdfDownload({
+    onSuccess: (result) => {
+      setPdfModalTitle("Ski Map PDF");
+      setPdfModalUri(result.uri);
+      setIsPdfModalVisible(true);
+    },
+    onError: () => {
+      Alert.alert("Error", "Could not open the map. Please try again later.");
+    },
+  });
+
+  const infopackDownload = usePdfDownload({
+    onSuccess: (result) => {
+      setPdfModalTitle("Infopack PDF");
+      setPdfModalUri(result.uri);
+      setIsPdfModalVisible(true);
+    },
+    onError: () => {
+      Alert.alert("Error", "Could not open the infopack. Please try again later.");
+    },
+  });
 
   // Check if files are downloaded on component mount
   useEffect(() => {
     const checkDownloadedFiles = () => {
-      try {
-        const pdfDir = new Directory(Paths.document, "pdfs");
+      // Check PDF Map
+      const mapPdfResult = mapPdfDownload.checkIfFileExists(MAP_PDF_FILE_NAME);
+      console.log("PDF downloaded:", mapPdfResult?.exists ?? false);
 
-        // Check PDF Map
-        const pdfFile = new File(pdfDir, MAP_PDF_FILE_NAME);
-        setIsPdfDownloaded(pdfFile.exists);
-
-        // Check Infopack
-        const infopackFile = new File(pdfDir, INFOPACK_PDF_FILE_NAME);
-        setIsInfopackDownloaded(infopackFile.exists);
-
-        console.log("PDF downloaded:", pdfFile.exists);
-        console.log("Infopack downloaded:", infopackFile.exists);
-      } catch (error) {
-        console.error("Error checking downloaded files:", error);
-      }
+      // Check Infopack
+      const infopackResult = infopackDownload.checkIfFileExists(INFOPACK_PDF_FILE_NAME);
+      console.log("Infopack downloaded:", infopackResult?.exists ?? false);
     };
 
     checkDownloadedFiles();
-  }, []);
+  }, [mapPdfDownload, infopackDownload]);
 
   const handleWhatsAppPress = () => {
     // Open WhatsApp group link
@@ -74,55 +82,9 @@ export default function TripInfoScreen() {
 
   const handleInfopakPress = async () => {
     try {
-      setIsInfopackDownloading(true);
-
-      const pdfDir = new Directory(Paths.document, "pdfs");
-      if (!pdfDir.exists) {
-        void pdfDir.create();
-      }
-
-      const file = new File(pdfDir, INFOPACK_PDF_FILE_NAME);
-
-      if (file.exists) {
-        setPdfModalTitle("Infopack PDF");
-        setPdfUri(file.uri);
-        setIsPdfModalVisible(true);
-        setIsInfopackDownloading(false);
-        return;
-      }
-
-      try {
-        const downloadedFile = await File.downloadFileAsync(
-          INFOPACK_PDF_URL,
-          pdfDir,
-        );
-        setPdfModalTitle("Infopack PDF");
-        setPdfUri(downloadedFile.uri);
-        setIsPdfModalVisible(true);
-        setIsInfopackDownloaded(true);
-      } catch (downloadError) {
-        const maybeDownloadError = downloadError as
-          | { code?: string }
-          | undefined;
-        if (maybeDownloadError?.code === "ERR_DESTINATION_ALREADY_EXISTS") {
-          const existingFile = new File(pdfDir, INFOPACK_PDF_FILE_NAME);
-          setPdfModalTitle("Infopack PDF");
-          setPdfUri(existingFile.uri);
-          setIsPdfModalVisible(true);
-          setIsInfopackDownloaded(true);
-          return;
-        }
-
-        throw downloadError;
-      }
+      await infopackDownload.getOrDownloadPdf(INFOPACK_PDF_URL, INFOPACK_PDF_FILE_NAME);
     } catch (error) {
       console.error("Error handling Infopack PDF:", error);
-      Alert.alert(
-        "Error",
-        "Could not open the infopack. Please try again later.",
-      );
-    } finally {
-      setIsInfopackDownloading(false);
     }
   };
 
@@ -136,70 +98,9 @@ export default function TripInfoScreen() {
 
   const handlePdfMapPress = async () => {
     try {
-      setIsMapDownloading(true);
-
-      // Create a folder inside internal storage
-      const pdfDir = new Directory(Paths.document, "pdfs");
-
-      // Check if directory exists, if not create it
-      if (!pdfDir.exists) {
-        void pdfDir.create();
-      }
-
-      const file = new File(pdfDir, MAP_PDF_FILE_NAME);
-
-      console.log("Checking if file exists:", file.uri);
-      console.log("File exists:", file.exists);
-
-      // Check if file already exists
-      if (file.exists) {
-        // File already downloaded, just open it
-        console.log("PDF already exists, opening:", file.uri);
-        setPdfModalTitle("Ski Map PDF");
-        setPdfUri(file.uri);
-        setIsPdfModalVisible(true);
-        setIsMapDownloading(false);
-        return;
-      }
-
-      // Download the file using static method
-      console.log("Downloading PDF from:", MAP_PDF_URL);
-
-      try {
-        const downloadedFile = await File.downloadFileAsync(MAP_PDF_URL, pdfDir);
-        console.log("PDF downloaded, file path:", downloadedFile.uri);
-        console.log("Downloaded file uri:", downloadedFile.uri);
-
-        // Open the downloaded PDF immediately
-        setPdfModalTitle("Ski Map PDF");
-        setPdfUri(downloadedFile.uri);
-        setIsPdfModalVisible(true);
-        setIsPdfDownloaded(true); // Update download status
-      } catch (downloadError) {
-        console.error("Download error:", downloadError);
-
-        // If error is about file already existing, just open it
-        const maybeDownloadError = downloadError as
-          | { code?: string }
-          | undefined;
-        if (maybeDownloadError?.code === "ERR_DESTINATION_ALREADY_EXISTS") {
-          console.log("File already exists, opening existing file");
-          // Try to find the actual downloaded file
-          const existingFile = new File(pdfDir, MAP_PDF_FILE_NAME);
-          setPdfModalTitle("Ski Map PDF");
-          setPdfUri(existingFile.uri);
-          setIsPdfModalVisible(true);
-          setIsPdfDownloaded(true); // Update download status
-          return;
-        }
-
-        throw downloadError;
-      }
+      await mapPdfDownload.getOrDownloadPdf(MAP_PDF_URL, MAP_PDF_FILE_NAME);
     } catch (error) {
       console.error("Error handling PDF:", error);
-      Alert.alert("Error", "Could not open the map. Please try again later.");
-    } finally {
-      setIsMapDownloading(false);
     }
   };
 
@@ -294,7 +195,7 @@ export default function TripInfoScreen() {
                 style={styles.mapTile}
                 onPress={() => void handlePdfMapPress()}
                 activeOpacity={0.8}
-                disabled={isMapDownloading}
+                disabled={mapPdfDownload.status === "loading"}
               >
                 <View style={styles.pdfMapContent}>
                   <View style={styles.pdfMapIconWrapper}>
@@ -307,7 +208,7 @@ export default function TripInfoScreen() {
                   <View style={styles.pdfMapTextContainer}>
                     <View style={styles.pdfMapTitleRow}>
                       <Text style={styles.mapTitle}>PDF Map</Text>
-                      {isPdfDownloaded ? (
+                      {mapPdfDownload.result?.exists ? (
                         <Ionicons
                           name="checkmark-circle"
                           size={14}
@@ -322,9 +223,9 @@ export default function TripInfoScreen() {
                       )}
                     </View>
                     <Text style={styles.pdfMapSubtitle}>
-                      {isMapDownloading
+                      {mapPdfDownload.status === "loading"
                         ? "Downloading..."
-                        : isPdfDownloaded
+                        : mapPdfDownload.result?.exists
                           ? "Downloaded"
                           : "Tap to Download"}
                     </Text>
@@ -340,7 +241,7 @@ export default function TripInfoScreen() {
                 style={styles.bentoTile}
                 onPress={() => void handleInfopakPress()}
                 activeOpacity={0.8}
-                disabled={isInfopackDownloading}
+                disabled={infopackDownload.status === "loading"}
               >
                 <View style={styles.bentoIconWrapper}>
                   <Ionicons
@@ -352,7 +253,7 @@ export default function TripInfoScreen() {
                 <View style={styles.bentoContent}>
                   <View style={styles.bentoTitleRow}>
                     <Text style={styles.bentoTitle}>Infopack</Text>
-                    {isInfopackDownloaded ? (
+                    {infopackDownload.result?.exists ? (
                       <Ionicons
                         name="checkmark-circle"
                         size={14}
@@ -367,9 +268,9 @@ export default function TripInfoScreen() {
                     )}
                   </View>
                   <Text style={styles.bentoSubtitle}>
-                    {isInfopackDownloading
+                    {infopackDownload.status === "loading"
                       ? "Downloading..."
-                      : isInfopackDownloaded
+                      : infopackDownload.result?.exists
                         ? "Downloaded"
                         : "Tap to Download"}
                   </Text>
@@ -432,191 +333,147 @@ export default function TripInfoScreen() {
         </ScrollView>
 
         {/* Map Modal with WebView */}
-        <Modal
+        <FullScreenModal
           visible={isMapModalVisible}
-          animationType="slide"
-          presentationStyle="fullScreen"
-          onRequestClose={() => setIsMapModalVisible(false)}
+          title="Interactive Ski Map"
+          onClose={() => setIsMapModalVisible(false)}
         >
-          <View style={styles.modalContainer}>
-            <SafeAreaTop style={styles.modalSafeArea}>
-              {/* Modal Header */}
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Interactive Ski Map</Text>
-                <Pressable
-                  onPress={() => setIsMapModalVisible(false)}
-                  style={styles.closeButton}
-                >
-                  <Ionicons name="close" size={24} color={colors.white} />
-                </Pressable>
-              </View>
-            </SafeAreaTop>
-
-            {/* WebView */}
-            <WebView
-              source={{
-                uri: "https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv=",
-              }}
-              style={styles.webView}
-              startInLoadingState={true}
-              scalesPageToFit={true}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-            />
-          </View>
-        </Modal>
+          <WebView
+            source={{
+              uri: "https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv=",
+            }}
+            style={styles.webView}
+            startInLoadingState={true}
+            scalesPageToFit={true}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+          />
+        </FullScreenModal>
 
         {/* PDF Modal */}
-        <Modal
+        <FullScreenModal
           visible={isPdfModalVisible}
-          animationType="slide"
-          presentationStyle="fullScreen"
-          onRequestClose={() => setIsPdfModalVisible(false)}
+          title={pdfModalTitle}
+          onClose={() => {
+            setIsPdfModalVisible(false);
+            setPdfModalUri(null);
+          }}
         >
-          <View style={styles.modalContainer}>
-            <SafeAreaTop style={styles.modalSafeArea}>
-              {/* Modal Header */}
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{pdfModalTitle}</Text>
-                <Pressable
-                  onPress={() => setIsPdfModalVisible(false)}
-                  style={styles.closeButton}
-                >
-                  <Ionicons name="close" size={24} color={colors.white} />
-                </Pressable>
-              </View>
-            </SafeAreaTop>
-
-            {/* PDF Viewer */}
-            {pdfUri && (
-              <Pdf
-                source={{ uri: pdfUri }}
-                style={styles.pdf}
-                trustAllCerts={false}
-                minScale={1}
-                maxScale={8}
-                onLoadComplete={(numberOfPages) => {
-                  console.log(`PDF loaded with ${numberOfPages} pages`);
-                }}
-                onError={(error) => {
-                  console.error("PDF Error:", error);
-                  Alert.alert("Error", "Could not load PDF");
-                }}
-                enablePaging={false}
-              />
-            )}
-          </View>
-        </Modal>
+          {/* PDF Viewer */}
+          {isPdfModalVisible && pdfModalUri && (
+            <Pdf
+              key={pdfModalUri}
+              source={{ uri: pdfModalUri }}
+              style={styles.pdf}
+              trustAllCerts={false}
+              minScale={1}
+              maxScale={8}
+              onLoadComplete={(numberOfPages) => {
+                console.log(`PDF loaded with ${numberOfPages} pages`);
+              }}
+              onError={(error) => {
+                console.error("PDF Error:", error);
+                Alert.alert("Error", "Could not load PDF");
+              }}
+              enablePaging={false}
+            />
+          )}
+        </FullScreenModal>
 
         {/* Insurance Modal */}
-        <Modal
+        <FullScreenModal
           visible={isInsuranceModalVisible}
-          animationType="slide"
-          presentationStyle="fullScreen"
-          onRequestClose={() => setIsInsuranceModalVisible(false)}
+          title="Ubezpieczenie / Kontakt"
+          onClose={() => setIsInsuranceModalVisible(false)}
         >
-          <View style={styles.modalContainer}>
-            <SafeAreaTop style={styles.modalSafeArea}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Ubezpieczenie / Kontakt</Text>
-                <Pressable
-                  onPress={() => setIsInsuranceModalVisible(false)}
-                  style={styles.closeButton}
-                >
-                  <Ionicons name="close" size={24} color={colors.white} />
-                </Pressable>
-              </View>
-            </SafeAreaTop>
+          <ScrollView
+            style={styles.insuranceScroll}
+            contentContainerStyle={styles.insuranceContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.insuranceActions}>
+              <TouchableOpacity
+                style={styles.insuranceActionButton}
+                onPress={handleInsuranceCallPress}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="call"
+                  size={18}
+                  color={colors.backgroundDark}
+                />
+                <Text style={styles.insuranceActionText}>Zadzwoń</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.insuranceActionSecondary}
+                onPress={handleInsuranceCopyPress}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="copy-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+                <Text style={styles.insuranceActionSecondaryText}>
+                  Kopiuj numer
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-            <ScrollView
-              style={styles.insuranceScroll}
-              contentContainerStyle={styles.insuranceContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.insuranceActions}>
-                <TouchableOpacity
-                  style={styles.insuranceActionButton}
-                  onPress={handleInsuranceCallPress}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons
-                    name="call"
-                    size={18}
-                    color={colors.backgroundDark}
-                  />
-                  <Text style={styles.insuranceActionText}>Zadzwoń</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.insuranceActionSecondary}
-                  onPress={handleInsuranceCopyPress}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons
-                    name="copy-outline"
-                    size={18}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.insuranceActionSecondaryText}>
-                    Kopiuj numer
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.insuranceCard}>
+              <Text style={styles.insuranceCardTitle}>Krok 1</Text>
+              <Text style={styles.insuranceText}>
+                Poproście o pomoc osobę z obsługi stoku lub innego narciarza i
+                poinformujcie ich o zdarzeniu.
+              </Text>
+            </View>
 
-              <View style={styles.insuranceCard}>
-                <Text style={styles.insuranceCardTitle}>Krok 1</Text>
-                <Text style={styles.insuranceText}>
-                  Poproście o pomoc osobę z obsługi stoku lub innego narciarza i
-                  poinformujcie ich o zdarzeniu.
-                </Text>
-              </View>
+            <View style={styles.insuranceCard}>
+              <Text style={styles.insuranceCardTitle}>Krok 2</Text>
+              <Text style={styles.insuranceText}>
+                Skontaktujcie się z ubezpieczycielem WIENER dzwoniąc pod numer
+                alarmowy: +48 22 564 06 25
+              </Text>
+              <Text style={styles.insuranceLabel}>
+                Podczas rozmowy konieczne będzie podanie:
+              </Text>
+              <Text style={styles.insuranceListItem}>
+                - imienia i nazwiska,
+              </Text>
+              <Text style={styles.insuranceListItem}>- daty urodzenia,</Text>
+              <Text style={styles.insuranceListItem}>
+                - numeru polisy: COR700416,
+              </Text>
+              <Text style={styles.insuranceListItem}>
+                - numeru umowy generalnej: 500008713.
+              </Text>
+              <Text style={styles.insuranceLabel}>
+                Następnie krótko opiszcie sytuację, np.:
+              </Text>
+              <Text style={styles.insuranceQuote}>
+                "Jestem na wyjeździe w Verbier, doznałem kontuzji, ratownicy
+                zwożą mnie na dół."
+              </Text>
+              <Text style={styles.insuranceText}>
+                Operator udzieli instrukcji, wskaże odpowiednią placówkę
+                medyczną lub przyjmie zgłoszenie zdarzenia.
+              </Text>
+            </View>
 
-              <View style={styles.insuranceCard}>
-                <Text style={styles.insuranceCardTitle}>Krok 2</Text>
-                <Text style={styles.insuranceText}>
-                  Skontaktujcie się z ubezpieczycielem WIENER dzwoniąc pod numer
-                  alarmowy: +48 22 564 06 25
-                </Text>
-                <Text style={styles.insuranceLabel}>
-                  Podczas rozmowy konieczne będzie podanie:
-                </Text>
-                <Text style={styles.insuranceListItem}>
-                  - imienia i nazwiska,
-                </Text>
-                <Text style={styles.insuranceListItem}>- daty urodzenia,</Text>
-                <Text style={styles.insuranceListItem}>
-                  - numeru polisy: COR700416,
-                </Text>
-                <Text style={styles.insuranceListItem}>
-                  - numeru umowy generalnej: 500008713.
-                </Text>
-                <Text style={styles.insuranceLabel}>
-                  Następnie krótko opiszcie sytuację, np.:
-                </Text>
-                <Text style={styles.insuranceQuote}>
-                  "Jestem na wyjeździe w Verbier, doznałem kontuzji, ratownicy
-                  zwożą mnie na dół."
-                </Text>
-                <Text style={styles.insuranceText}>
-                  Operator udzieli instrukcji, wskaże odpowiednią placówkę
-                  medyczną lub przyjmie zgłoszenie zdarzenia.
-                </Text>
-              </View>
-
-              <View style={styles.insuranceCard}>
-                <Text style={styles.insuranceCardTitle}>Krok 3</Text>
-                <Text style={styles.insuranceText}>
-                  Poinformujcie pilota lub członka naszej kadry (bezpośrednio
-                  lub przez znajomych), co się stało. Jesteśmy na miejscu, aby
-                  Was wspierać — zawsze możecie na nas liczyć!
-                </Text>
-                <Text style={styles.insuranceText}>
-                  Najbliższy szpital to Vigimed, znajduje się w Rue du Léman 18
-                  B, 1920 Martigny (ok. 30km od La Tzoumaz).
-                </Text>
-              </View>
-            </ScrollView>
-          </View>
-        </Modal>
+            <View style={styles.insuranceCard}>
+              <Text style={styles.insuranceCardTitle}>Krok 3</Text>
+              <Text style={styles.insuranceText}>
+                Poinformujcie pilota lub członka naszej kadry (bezpośrednio
+                lub przez znajomych), co się stało. Jesteśmy na miejscu, aby
+                Was wspierać — zawsze możecie na nas liczyć!
+              </Text>
+              <Text style={styles.insuranceText}>
+                Najbliższy szpital to Vigimed, znajduje się w Rue du Léman 18
+                B, 1920 Martigny (ok. 30km od La Tzoumaz).
+              </Text>
+            </View>
+          </ScrollView>
+        </FullScreenModal>
       </View>
     </>
   );
@@ -906,36 +763,6 @@ const styles = StyleSheet.create({
 
   // Branding
 
-  // Modal
-  modalContainer: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  modalSafeArea: {
-    backgroundColor: colors.cardDark,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.primaryOpacity10,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  modalTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primaryOpacity10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   webView: {
     flex: 1,
     backgroundColor: colors.backgroundDark,

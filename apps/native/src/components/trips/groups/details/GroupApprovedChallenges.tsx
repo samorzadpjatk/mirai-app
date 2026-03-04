@@ -13,7 +13,7 @@ import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface ApprovedSubmissionItem {
@@ -31,7 +31,7 @@ interface GroupApprovedChallengesProps {
 export function GroupApprovedChallenges({
   submissions,
 }: GroupApprovedChallengesProps) {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const listRef = useRef<FlatList<ApprovedSubmissionItem>>(null);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
@@ -39,10 +39,11 @@ export function GroupApprovedChallenges({
 
   const openFullscreen = useCallback(
     (index: number) => {
+      if (!submissions.length) return;
       setActiveIndex(index);
       setIsFullscreenOpen(true);
     },
-    [],
+    [submissions.length],
   );
 
   const closeFullscreen = useCallback(() => {
@@ -50,6 +51,10 @@ export function GroupApprovedChallenges({
   }, []);
 
   useEffect(() => {
+    if (submissions.length === 0) {
+      setIsFullscreenOpen(false);
+      return;
+    }
     if (!isFullscreenOpen) return;
     const boundedIndex = Math.max(0, Math.min(activeIndex, submissions.length - 1));
     const timeout = setTimeout(() => {
@@ -58,7 +63,10 @@ export function GroupApprovedChallenges({
     return () => clearTimeout(timeout);
   }, [isFullscreenOpen, activeIndex, submissions.length]);
 
-  
+  if (submissions.length === 0) {
+    return null;
+  }
+
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offsetX = event.nativeEvent.contentOffset.x;

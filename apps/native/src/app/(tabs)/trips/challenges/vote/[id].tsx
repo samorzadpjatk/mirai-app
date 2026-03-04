@@ -17,7 +17,7 @@ import {
   spacing,
   typography,
 } from "../../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
 
@@ -168,7 +168,7 @@ export default function ChallengePeerVotingScreen() {
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
   const trpc = useTRPC();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const challengeId =
     typeof params.id === "string" ? params.id : params.id?.[0];
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     height: 8,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.whiteOpacity10,
     overflow: "hidden",
   },
   progressFill: {
@@ -668,14 +668,14 @@ const styles = StyleSheet.create({
   voteCard: {
     backgroundColor: colors.cardDark,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.whiteOpacity8,
     borderRadius: borderRadius.xl,
     overflow: "hidden",
   },
   voteImageWrap: {
     width: "100%",
     aspectRatio: 16 / 10,
-    backgroundColor: "rgba(15,23,42,0.5)",
+    backgroundColor: colors.backgroundDarkOpacity45,
   },
   voteImage: {
     width: "100%",
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   successHint: {
-    color: "#22c55e",
+    color: colors.emerald500,
     fontSize: typography.xs,
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -748,8 +748,8 @@ const styles = StyleSheet.create({
   },
   actionGhost: {
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    backgroundColor: "rgba(255,255,255,0.04)",
+    borderColor: colors.whiteOpacity20,
+    backgroundColor: colors.whiteOpacity4,
   },
   actionPrimaryText: {
     color: colors.backgroundDark,
@@ -768,13 +768,13 @@ const styles = StyleSheet.create({
   doneCard: {
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: "rgba(34,197,94,0.35)",
-    backgroundColor: "rgba(34,197,94,0.12)",
+    borderColor: colors.successOpacity35,
+    backgroundColor: colors.successOpacity12,
     padding: spacing.lg,
     gap: spacing.sm,
   },
   doneTitle: {
-    color: "#22c55e",
+    color: colors.emerald500,
     fontSize: typography.lg,
     fontWeight: typography.bold,
     textTransform: "uppercase",
@@ -790,13 +790,13 @@ const styles = StyleSheet.create({
   blockedCard: {
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.35)",
-    backgroundColor: "rgba(239,68,68,0.12)",
+    borderColor: colors.dangerOpacity35,
+    backgroundColor: colors.dangerOpacity12,
     padding: spacing.lg,
     gap: spacing.sm,
   },
   blockedTitle: {
-    color: "#ef4444",
+    color: colors.danger,
     fontSize: typography.lg,
     fontWeight: typography.bold,
     textTransform: "uppercase",

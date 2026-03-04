@@ -2,10 +2,7 @@ import { useState, useEffect } from "react";
 import { View } from "react-native";
 import { UserMap } from "~/components/map/UserMap";
 import { useMapUsers } from "~/hooks/map";
-import {
-  MapOverlayProvider,
-  useMapOverlayContext,
-} from "~/contexts/map/MapOverlayContext";
+import { useMapOverlayStore, mapOverlayStore, setMapOverlayExternals } from "~/stores/map";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useTRPC } from "@integral-2025-app/trpc/client";
@@ -14,7 +11,7 @@ import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";
 import { useMapActions } from "~/hooks/map";
 import { useFileDownload } from "~/hooks/files";
-import { useLocationContext } from "~/contexts/location";
+import { useLocationContext } from "~/stores/location";
 import { useSelectedTrip } from "~/hooks/trips";
 
 function MapScreenContent({
@@ -34,7 +31,7 @@ function MapScreenContent({
     onMapPress,
     mapTheme,
     focusedCoordinate,
-  } = useMapOverlayContext();
+  } = useMapOverlayStore();
 
   return (
     <View style={{ flex: 1 }}>
@@ -61,7 +58,7 @@ export default function MapScreen() {
   const { selectedTripId } = useSelectedTrip();
   const userMyQueryOptions = trpc.user.getMy.queryOptions();
   const { data: currentUser } = useQuery(userMyQueryOptions);
-  const [mapTheme, setMapTheme] = useState<"dark" | "light">("dark");
+  const mapTheme = "dark";
   const [currentCoordinate, setCurrentCoordinate] = useState<
     [number, number] | null
   >(null);
@@ -122,38 +119,41 @@ export default function MapScreen() {
     currentCoordinate: null,
   });
 
+  // Initialize map overlay store with data and external functions
+  useEffect(() => {
+    mapOverlayStore.setState({
+      users,
+      currentUserId: session?.user?.id,
+      sharingUserIds,
+      allAvailableUsers,
+      sharingSettings,
+      isRemovingUser,
+      mapTheme,
+    });
+    
+    setMapOverlayExternals({
+      updateSharing,
+      removeUser,
+      currentCoordinate,
+    });
+  }, [users, session, sharingUserIds, allAvailableUsers, sharingSettings, isRemovingUser, mapTheme, updateSharing, removeUser, currentCoordinate]);
+
   if (!session?.access_token) {
     return null;
   }
 
   return (
-    <MapOverlayProvider
-      users={users}
-      session={session}
-      sharingUserIds={sharingUserIds}
-      updateSharing={updateSharing}
-      allAvailableUsers={allAvailableUsers}
-      sharingSettings={sharingSettings}
-      removeUser={removeUser}
-      isRemovingUser={isRemovingUser}
-      currentCoordinate={currentCoordinate}
-      mapTheme={mapTheme}
-      onToggleTheme={() =>
-        setMapTheme(mapTheme === "dark" ? "light" : "dark")
-      }
-    >
-      <MapScreenContent
-        onLocationUpdate={({ latitude, longitude }) => {
-          setCurrentCoordinate([longitude, latitude]);
-          // Only send location if sharing is enabled
-          if (canShareOwnLocation) {
-            void sendLocation({ latitude, longitude });
-          }
-        }}
-        currentUserId={currentUser?.id}
-        currentUserName={currentUserName.length > 0 ? currentUserName : undefined}
-        currentUserAvatarUrl={avatarFile?.uri ?? null}
-      />
-    </MapOverlayProvider>
+    <MapScreenContent
+      onLocationUpdate={({ latitude, longitude }) => {
+        setCurrentCoordinate([longitude, latitude]);
+        // Only send location if sharing is enabled
+        if (canShareOwnLocation) {
+          void sendLocation({ latitude, longitude });
+        }
+      }}
+      currentUserId={currentUser?.id}
+      currentUserName={currentUserName.length > 0 ? currentUserName : undefined}
+      currentUserAvatarUrl={avatarFile?.uri ?? null}
+    />
   );
 }

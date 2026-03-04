@@ -1,15 +1,15 @@
+import { AuthStoreProvider } from "@integral-2025-app/auth/client";
+import * as Notifications from "expo-notifications";
+import { Stack } from "expo-router";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Stack } from "expo-router";
 import {
   SafeAreaProvider,
-  useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { SafeAreaInsetsProvider } from "~/contexts/SafeAreaInsetsContext";
-import { LocationProvider } from "~/contexts/location";
-import * as Notifications from "expo-notifications";
 import { UpdatePopup } from "~/components/updates/UpdatePopup";
+import { useAutoPushSubscription } from "~/hooks/notifications";
 import { useExpoUpdates } from "~/hooks/useExpoUpdates";
+import { LocationStoreProvider } from "~/stores/location";
 
 // Global handler for notifications (module-level)
 Notifications.setNotificationHandler({
@@ -23,9 +23,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-import "../global.css";
 import {
-  useFonts,
   IBMPlexSans_100Thin,
   IBMPlexSans_200ExtraLight,
   IBMPlexSans_300Light,
@@ -33,25 +31,25 @@ import {
   IBMPlexSans_500Medium,
   IBMPlexSans_600SemiBold,
   IBMPlexSans_700Bold,
+  useFonts,
 } from "@expo-google-fonts/ibm-plex-sans";
 import {
-  AuthProvider,
-  useAuthLoading,
   useAuth,
+  useAuthLoading,
 } from "@integral-2025-app/auth/client";
-import { authStorage } from "~/lib/storage";
 import { createSupabaseClient } from "@integral-2025-app/supabase";
 import { SupabaseProvider } from "@integral-2025-app/supabase/react";
-import { APIProvider } from "@integral-2025-app/trpc/client";
+import { APIProvider, useTRPCClient } from "@integral-2025-app/trpc/client";
 import {
   SUPABASE_ANON_KEY,
   SUPABASE_URL,
   TRPC_HTTP_URL,
   TRPC_WS_URL,
-} from "~/lib/runtimeEnv";
-import { useAutoPushSubscription } from "~/hooks/notifications";
+} from "~/config/runtimeEnv";
+import "~/services/background/backgroundLocationTask";
+import { authStorage } from "~/services/storage/storage";
 import "../../global.css";
-import "~/tasks/backgroundLocationTask";
+import "../global.css";
 
 // Theme colors
 const colors = {
@@ -67,12 +65,12 @@ const supabaseClient = createSupabaseClient(
   authStorage,
 );
 
-function AutoPushSubscriptionBootstrap() {
+function AutoPushSubscription() {
   useAutoPushSubscription();
   return null;
 }
 
-function RootLayoutContent() {
+function App() {
   const isAuthLoading = useAuthLoading();
   const { session } = useAuth();
   const {
@@ -83,9 +81,6 @@ function RootLayoutContent() {
     downloadProgress,
   } = useExpoUpdates();
 
-  // Move safe area hook to root layout and provide it to children
-  const insets = useSafeAreaInsets();
-
   // Get theme colors for headers
   const headerBackgroundColor = colors.backgroundDark;
   const headerTintColor = colors.textDark;
@@ -94,66 +89,62 @@ function RootLayoutContent() {
 
   return (
     <View style={{ flex: 1, backgroundColor: headerBackgroundColor }}>
-      {!isAuthLoading && hasSession ? <AutoPushSubscriptionBootstrap /> : null}
+      {!isAuthLoading && hasSession ? <AutoPushSubscription /> : null}
       {!isAuthLoading && (
-        <SafeAreaInsetsProvider value={insets}>
-          <LocationProvider>
-            <Stack
-              screenOptions={{
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            gestureEnabled: true,
+            gestureDirection: "horizontal",
+            contentStyle: { backgroundColor: headerBackgroundColor },
+            headerStyle: {
+              backgroundColor: headerBackgroundColor,
+            },
+            headerTintColor: headerTintColor,
+            headerShadowVisible: true,
+            headerTitleStyle: {
+              fontWeight: "600",
+            },
+          }}
+        >
+          {/* Protected routes for authenticated users */}
+          <Stack.Protected guard={hasSession}>
+            <Stack.Screen
+              name="(tabs)"
+              options={{
                 headerShown: false,
-                gestureEnabled: true,
-                gestureDirection: "horizontal",
-                contentStyle: { backgroundColor: headerBackgroundColor },
-                headerStyle: {
-                  backgroundColor: headerBackgroundColor,
-                },
-                headerTintColor: headerTintColor,
-                headerShadowVisible: true,
-                headerTitleStyle: {
-                  fontWeight: "600",
-                },
               }}
-            >
-              {/* Protected routes for authenticated users */}
-              <Stack.Protected guard={hasSession}>
-                <Stack.Screen
-                  name="(tabs)"
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="alerts"
-                  options={{
-                    title: "Alerts",
-                    headerShown: false,
+            />
+            <Stack.Screen
+              name="alerts"
+              options={{
+                title: "Admin Challenges",
+                headerShown: false,
 
-                  }}
-                />
-                <Stack.Screen
-                  name="admin/challenges"
-                  options={{
-                    title: "Admin Challenges",
-                    headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="admin/challenges"
+              options={{
+                title: "Admin Challenges",
+                headerShown: false,
 
-                  }}
-                />
-              </Stack.Protected>
+              }}
+            />
+          </Stack.Protected>
 
-              {/* Protected routes for unauthenticated users */}
-              <Stack.Protected guard={!hasSession}>
-                <Stack.Screen
-                  name="auth/login"
-                  options={{
-                    title: "Sign In",
-                    headerShown: false,
-                  }}
-                />
-              </Stack.Protected>
+          {/* Protected routes for unauthenticated users */}
+          <Stack.Protected guard={!hasSession}>
+            <Stack.Screen
+              name="auth/login"
+              options={{
+                title: "Sign In",
+                headerShown: false,
+              }}
+            />
+          </Stack.Protected>
 
-            </Stack>
-          </LocationProvider>
-        </SafeAreaInsetsProvider>
+        </Stack>
       )}
 
       {/* Update Popup */}
@@ -165,6 +156,43 @@ function RootLayoutContent() {
         downloadProgress={downloadProgress}
       />
     </View>
+  );
+}
+
+function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
+  const trpcClient = useTRPCClient();
+  
+  const onUserFetch = async () => {
+    try {
+      const user = await trpcClient.user.getMy.query();
+      if (!user) return null;
+      
+      // Transform database user to AuthUser format
+      return {
+        id: user.id,
+        authUserId: user.authUserId,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.lastName || null,
+        emailVerified: null, // TODO: Add email verification logic when available
+        role: user.role,
+      };
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
+      return null;
+    }
+  };
+
+  return (
+    <AuthStoreProvider
+      supabaseUrl={SUPABASE_URL}
+      supabaseKey={SUPABASE_ANON_KEY}
+      supabaseClient={supabaseClient}
+      onUserFetch={onUserFetch}
+    >
+      {children}
+    </AuthStoreProvider>
   );
 }
 
@@ -187,15 +215,13 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SupabaseProvider client={supabaseClient}>
-          <AuthProvider
-            supabaseUrl={SUPABASE_URL}
-            supabaseKey={SUPABASE_ANON_KEY}
-            supabaseClient={supabaseClient}
-          >
-            <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
-              <RootLayoutContent />
-            </APIProvider>
-          </AuthProvider>
+          <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+            <AuthStoreProviderWrapper>
+              <LocationStoreProvider>
+                <App />
+              </LocationStoreProvider>
+            </AuthStoreProviderWrapper>
+          </APIProvider>
         </SupabaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

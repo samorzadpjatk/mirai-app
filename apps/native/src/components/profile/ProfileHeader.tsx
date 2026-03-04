@@ -85,7 +85,7 @@ export function ProfileHeader() {
   const roleBadgeStyle = getRoleBadgeStyle(roleValue);
   const isDownloading = avatarStatus === "loading";
   const avatarUri = avatarFile?.uri
-    ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt ?? "")}`
+    ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt?.toISOString() ?? "")}`
     : null;
 
   const refreshAvatar = useCallback(

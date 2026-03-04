@@ -17,7 +17,7 @@ import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileDownload, useFileUpload } from "~/hooks/files";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
@@ -30,7 +30,7 @@ interface UploadAsset {
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const userMyQueryOptions = trpc.user.getMy.queryOptions();
@@ -124,7 +124,7 @@ export default function EditProfileScreen() {
   const isDownloading = avatarStatus === "loading";
   const isBusy = isUploading || isDownloading || isPicking || isCameraOpen;
   const remoteAvatarUri = avatarFile?.uri
-    ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt ?? "")}`
+    ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt?.toISOString() ?? "")}`
     : null;
   const avatarUri = localAvatarPreviewUri ?? remoteAvatarUri;
 

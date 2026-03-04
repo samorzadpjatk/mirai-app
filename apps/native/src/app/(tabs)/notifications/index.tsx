@@ -41,7 +41,7 @@ export default function NotificationsScreen() {
     isError,
     error,
     refetch,
-    isFetching,
+    isRefetching,
   } = useQuery(trpc.notificationSchedule.getAll.queryOptions());
 
   const schedules = (schedulesData?.schedules ??
@@ -98,7 +98,7 @@ export default function NotificationsScreen() {
       <ScrollView
         refreshControl={
           <RefreshControl
-            refreshing={isFetching}
+            refreshing={isRefetching}
             onRefresh={() => void refetch()}
             tintColor="#00ced1"
           />

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { MapView, Camera, MarkerView, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from 'expo-location';
@@ -85,7 +85,7 @@ export const LocationPicker: React.FC<Props> = ({
   onClose,
   mapTheme = 'dark',
 }) => {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraRef>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationCoordinate | null>(null);
   // markerCoordinate always holds a valid coordinate so the MarkerView is never unmounted.

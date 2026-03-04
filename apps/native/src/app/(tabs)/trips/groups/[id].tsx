@@ -11,7 +11,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";
@@ -165,7 +165,7 @@ export default function GroupDetailsScreen() {
     }),
   );
 
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   if (!groupId || groupLoading) {
     return <GroupDetailsLoadingState />;
@@ -513,9 +513,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   pendingRequestBadge: {
-    backgroundColor: "rgba(0, 206, 209, 0.12)",
+    backgroundColor: colors.primaryOpacity12,
     borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.35)",
+    borderColor: colors.primaryOpacity30,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -534,9 +534,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cancelRequestButton: {
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    backgroundColor: colors.dangerOpacity12,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.45)",
+    borderColor: colors.dangerOpacity45,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -554,9 +554,9 @@ const styles = StyleSheet.create({
   },
   groupLockedBadge: {
     marginBottom: spacing.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: colors.whiteOpacity4,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: colors.whiteOpacity10,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -572,9 +572,9 @@ const styles = StyleSheet.create({
   },
   leaveButton: {
     marginBottom: spacing.lg,
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    backgroundColor: colors.dangerOpacity15,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.45)",
+    borderColor: colors.dangerOpacity45,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -592,9 +592,9 @@ const styles = StyleSheet.create({
   },
   joinRequestsCard: {
     marginBottom: spacing.lg,
-    backgroundColor: "rgba(39, 41, 53, 0.45)",
+    backgroundColor: colors.cardDarkOpacity45,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: colors.whiteOpacity8,
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
     gap: spacing.md,
@@ -615,8 +615,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
-    backgroundColor: "rgba(0, 0, 0, 0.12)",
+    borderColor: colors.whiteOpacity6,
+    backgroundColor: colors.blackOpacity12,
   },
   joinRequestTop: {
     flexDirection: "row",
@@ -627,9 +627,9 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: colors.whiteOpacity12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.18)",
+    borderColor: colors.whiteOpacity18,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -671,12 +671,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   joinRequestRejectButton: {
-    borderColor: "rgba(239, 68, 68, 0.5)",
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderColor: colors.dangerOpacity50,
+    backgroundColor: colors.dangerOpacity12,
   },
   joinRequestAcceptButton: {
-    borderColor: "rgba(16, 185, 129, 0.5)",
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    borderColor: colors.successOpacity50,
+    backgroundColor: colors.successOpacity12,
   },
   joinRequestButtonText: {
     color: colors.white,

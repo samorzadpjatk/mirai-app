@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryOpacity30,
   },
   myGroupBadgeText: {
-    fontSize: 10,
+    fontSize: typography.xs,
     fontWeight: typography.bold,
     color: colors.primary,
     textTransform: "uppercase",
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   groupCode: {
-    fontSize: 12,
+    fontSize: typography.sm,
     fontWeight: typography.medium,
     color: colors.textMuted,
   },
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   groupMemberLabel: {
-    fontSize: 9,
+    fontSize: typography.xs,
     fontWeight: typography.bold,
     color: colors.textMuted,
     textTransform: "uppercase",

@@ -6,7 +6,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
@@ -16,7 +16,7 @@ import { PartnersSection } from "~/components/trips/details/PartnersSection";
 export default function TripDetailsScreen() {
   const { session, isLoading } = useAuth();
   const router = useRouter();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const paramTripId = typeof params.id === "string" ? params.id : params.id?.[0];
   const { selectedTripId, isLoadingSelectedTrip } = useSelectedTrip();

@@ -7,8 +7,8 @@ import {
   Text,
   ActivityIndicator,
 } from "react-native";
-import { useLocationContext } from "~/contexts/location";
-import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
+import { useLocationContext } from "~/stores/location";
+import { useMapOverlayStore } from "~/stores/map";
 import { colors, spacing, typography } from "~/styles";
 
 export function MapActionButtons() {
@@ -21,7 +21,7 @@ export function MapActionButtons() {
     isUpdatingBackgroundLocation,
     toggleBackgroundLocationUpdates,
   } = useLocationContext();
-  const { mapTheme, onToggleTheme, onRecenter } = useMapOverlayContext();
+  const { mapTheme, onRecenter, toggleTheme } = useMapOverlayStore();
 
   const isBackgroundDisplayedOn =
     isLocationSharingEnabled && isBackgroundLocationEnabled;
@@ -105,7 +105,7 @@ export function MapActionButtons() {
             </>
           )}
         </TouchableOpacity>
-        <Pressable style={styles.themeToggleButton} onPress={onToggleTheme}>
+        <Pressable style={styles.themeToggleButton} onPress={toggleTheme}>
           <Ionicons
             name={mapTheme === "dark" ? "sunny" : "moon"}
             size={22}

@@ -4,7 +4,7 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { useNotifications } from "~/hooks/notifications";
-import { useLocationContext } from "~/contexts/location";
+import { useLocationContext } from "~/stores/location";
 
 interface ProfileActionsSectionProps {
   onEditProfile?: () => void;
