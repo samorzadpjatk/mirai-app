@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FullScreenModal } from "~/components/common/ui";
-import { usePdfDownload, useFileDownload } from "~/hooks/files";
+import { useFileDownload } from "~/hooks/files";
 import { useTripResources, useSelectedTrip } from "~/hooks/trips";
 import { useLocalSearchParams } from "expo-router";
 import LoadingScreen from "../../../components/LoadingScreen";
@@ -45,32 +45,11 @@ export default function TripInfoScreen() {
   
   const { getResource, insurance, isLoading, isError } = useTripResources(tripId);
   
-  // File download hooks for images
+  // File download hooks for images and PDFs
   const heroImageDownload = useFileDownload();
   const mapBgImageDownload = useFileDownload();
-  
-  // PDF download hooks
-  const mapPdfDownload = usePdfDownload({
-    onSuccess: (result) => {
-      setPdfModalTitle("PDF Map");
-      setPdfModalUri(result.uri);
-      setIsPdfModalVisible(true);
-    },
-    onError: () => {
-      Alert.alert("Error", "Could not open the map. Please try again later.");
-    },
-  });
-
-  const infopackDownload = usePdfDownload({
-    onSuccess: (result) => {
-      setPdfModalTitle("Infopack");
-      setPdfModalUri(result.uri);
-      setIsPdfModalVisible(true);
-    },
-    onError: () => {
-      Alert.alert("Error", "Could not open the infopack. Please try again later.");
-    },
-  });
+  const mapPdfDownload = useFileDownload();
+  const infopackDownload = useFileDownload();
   
   // Download images on component mount
   useEffect(() => {
@@ -129,11 +108,18 @@ export default function TripInfoScreen() {
 
   const handleInfopakPress = async () => {
     const infopackResource = getResource("INFOPACK");
-    if (infopackResource?.storagePath && infopackResource?.fileName) {
+    if (infopackResource?.storagePath) {
       try {
-        await infopackDownload.getOrDownloadPdf(infopackResource.storagePath, infopackResource.fileName);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const result = await infopackDownload.download({ 
+          storagePath: infopackResource.storagePath
+        });
+        setPdfModalTitle("Infopack");
+        setPdfModalUri(result.uri);
+        setIsPdfModalVisible(true);
       } catch (error) {
         console.error("Error handling Infopack PDF:", error);
+        Alert.alert("Error", "Could not open the infopack. Please try again later.");
       }
     }
   };
@@ -153,11 +139,18 @@ export default function TripInfoScreen() {
 
   const handlePdfMapPress = async () => {
     const pdfMapResource = getResource("PDF_MAP");
-    if (pdfMapResource?.storagePath && pdfMapResource?.fileName) {
+    if (pdfMapResource?.storagePath) {
       try {
-        await mapPdfDownload.getOrDownloadPdf(pdfMapResource.storagePath, pdfMapResource.fileName);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const result = await mapPdfDownload.download({ 
+          storagePath: pdfMapResource.storagePath
+        });
+        setPdfModalTitle("PDF Map");
+        setPdfModalUri(result.uri);
+        setIsPdfModalVisible(true);
       } catch (error) {
         console.error("Error handling PDF:", error);
+        Alert.alert("Error", "Could not open the map. Please try again later.");
       }
     }
   };
