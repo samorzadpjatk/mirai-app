@@ -1,4 +1,4 @@
-import { View, Text, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, ActivityIndicator, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -14,6 +14,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const hasVideo = Boolean(submission.videoId);
   const videoContainerRef = useRef<View>(null);
   const [isVideoFullyVisible, setIsVideoFullyVisible] = useState(false);
+  const [isFullscreenImageVisible, setIsFullscreenImageVisible] = useState(false);
   const {
     download: downloadImage,
     status: imageStatus,
@@ -49,6 +50,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   useEffect(() => {
     if (!hasImage) {
       resetImage();
+      setIsFullscreenImageVisible(false);
       return;
     }
 
@@ -65,6 +67,15 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
       abortImage();
     };
   }, [abortImage, downloadImage, hasImage, resetImage, submission.imageIds]);
+
+  const openFullscreenImage = useCallback(() => {
+    if (!imageFile?.uri) return;
+    setIsFullscreenImageVisible(true);
+  }, [imageFile?.uri]);
+
+  const closeFullscreenImage = useCallback(() => {
+    setIsFullscreenImageVisible(false);
+  }, []);
 
   useEffect(() => {
     if (!hasVideo) {
@@ -101,30 +112,59 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
 
   if (hasImage) {
     return (
-      <View style={viewStyles.mediaWrapper}>
-        {imageStatus === 'loading' ? (
-          <View style={viewStyles.mediaLoading}>
-            <ActivityIndicator size="small" color={colors.primary} />
+      <>
+        <View style={viewStyles.mediaWrapper}>
+          {imageStatus === 'loading' ? (
+            <View style={viewStyles.mediaLoading}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : imageFile?.uri ? (
+            <Pressable onPress={openFullscreenImage}>
+              <Image
+                source={{ uri: imageFile.uri }}
+                style={viewStyles.mediaImage}
+                contentFit="cover"
+              />
+            </Pressable>
+          ) : (
+            <View style={viewStyles.mediaLoading}>
+              <Ionicons name="image" size={36} color={colors.textSecondary} />
+              <Text style={textStyles.videoLabel}>Image unavailable</Text>
+            </View>
+          )}
+          {submission.imageIds.length > 1 && (
+            <View style={viewStyles.mediaBadge}>
+              <Ionicons name="images" size={14} color={colors.white} />
+              <Text style={textStyles.mediaBadgeText}>{submission.imageIds.length}</Text>
+            </View>
+          )}
+        </View>
+
+        <Modal
+          visible={isFullscreenImageVisible}
+          animationType="fade"
+          presentationStyle="fullScreen"
+          onRequestClose={closeFullscreenImage}
+        >
+          <View style={viewStyles.fullscreenImageContainer}>
+            <Pressable style={viewStyles.fullscreenImageClose} onPress={closeFullscreenImage}>
+              <Ionicons name="close" size={24} color={colors.white} />
+            </Pressable>
+            {imageFile?.uri ? (
+              <Image
+                source={{ uri: imageFile.uri }}
+                style={viewStyles.fullscreenImage}
+                contentFit="contain"
+              />
+            ) : (
+              <View style={viewStyles.mediaLoading}>
+                <Ionicons name="image" size={36} color={colors.textSecondary} />
+                <Text style={textStyles.videoLabel}>Image unavailable</Text>
+              </View>
+            )}
           </View>
-        ) : imageFile?.uri ? (
-          <Image
-            source={{ uri: imageFile.uri }}
-            style={viewStyles.mediaImage}
-            contentFit="cover"
-          />
-        ) : (
-          <View style={viewStyles.mediaLoading}>
-            <Ionicons name="image" size={36} color={colors.textSecondary} />
-            <Text style={textStyles.videoLabel}>Image unavailable</Text>
-          </View>
-        )}
-        {submission.imageIds.length > 1 && (
-          <View style={viewStyles.mediaBadge}>
-            <Ionicons name="images" size={14} color={colors.white} />
-            <Text style={textStyles.mediaBadgeText}>{submission.imageIds.length}</Text>
-          </View>
-        )}
-      </View>
+        </Modal>
+      </>
     );
   }
 
