@@ -11,6 +11,7 @@ export type TripConfig = {
   users: string;
   background?: string;
   rewards?: string;
+  sponsors?: string;
 };
 
 export type CsvUser = {
@@ -26,6 +27,16 @@ export type RewardConfig = {
   availableQuantity: number;
   coinCost: number;
   image?: string;
+};
+
+export type SponsorConfig = {
+  id: string;
+  name: string;
+  description: string;
+  logoPath: string;
+  height?: number;
+  offsetX?: number;
+  offsetY?: number;
 };
 
 export type AuthUserByEmail = Map<string, SupabaseUser>;

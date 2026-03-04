@@ -4,9 +4,11 @@ import { loadAuthUsers } from "./auth";
 import { loadTripConfigs } from "./tripConfigs";
 import { seedTrip } from "./trips";
 import { loadRewardConfigs, seedRewards } from "./rewards";
+import { loadSponsorConfigs, seedSponsors } from "./sponsors";
 import { dirExists } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import type { SeedEnv } from "./types";
+import { env } from "./config/env";
+import type { SeedEnv, SponsorConfig } from "./types";
 
 export const runSeed = async () => {
   const arg = process.argv.find((a) => a === "--dev" || a === "--prod");
@@ -31,6 +33,17 @@ export const runSeed = async () => {
     if (!seededTrip) {
       console.warn(`✗ Failed to seed trip: ${trip.key}`);
       continue;
+    }
+    
+    // Seed sponsors for the trip
+    try {
+      let sponsorConfigs: SponsorConfig[] = [];
+      if (trip.sponsors) {
+        sponsorConfigs = await loadSponsorConfigs(envRoot, trip.sponsors);
+      }
+      await seedSponsors(env.databaseUrl, seededTrip.id, seedEnv, sponsorConfigs);
+    } catch (error) {
+      console.warn(`✗ Failed to seed sponsors for trip ${trip.key}:`, error);
     }
     
     // Seed rewards if the trip has a rewards config
