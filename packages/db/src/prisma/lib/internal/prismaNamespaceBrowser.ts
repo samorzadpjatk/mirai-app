@@ -79,7 +79,9 @@ export const ModelName = {
   LocationSharingRequest: 'LocationSharingRequest',
   Reward: 'Reward',
   RewardPurchase: 'RewardPurchase',
-  UserAgent: 'UserAgent'
+  UserAgent: 'UserAgent',
+  Sponsor: 'Sponsor',
+  TripSponsor: 'TripSponsor'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -532,6 +534,32 @@ export const UserAgentScalarFieldEnum = {
 } as const
 
 export type UserAgentScalarFieldEnum = (typeof UserAgentScalarFieldEnum)[keyof typeof UserAgentScalarFieldEnum]
+
+
+export const SponsorScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  logoPath: 'logoPath',
+  height: 'height',
+  offsetX: 'offsetX',
+  offsetY: 'offsetY',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SponsorScalarFieldEnum = (typeof SponsorScalarFieldEnum)[keyof typeof SponsorScalarFieldEnum]
+
+
+export const TripSponsorScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  sponsorId: 'sponsorId',
+  createdAt: 'createdAt'
+} as const
+
+export type TripSponsorScalarFieldEnum = (typeof TripSponsorScalarFieldEnum)[keyof typeof TripSponsorScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -162,3 +162,13 @@ export type RewardPurchase = Prisma.RewardPurchaseModel
  * 
  */
 export type UserAgent = Prisma.UserAgentModel
+/**
+ * Model Sponsor
+ * 
+ */
+export type Sponsor = Prisma.SponsorModel
+/**
+ * Model TripSponsor
+ * 
+ */
+export type TripSponsor = Prisma.TripSponsorModel
