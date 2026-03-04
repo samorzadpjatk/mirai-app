@@ -1,0 +1,65 @@
+resources:
+  - type: hero_image
+    label: "Verbier-La Tzoumaz"
+    storagePath: "images/trips/wintegral-2026/hero-bg.jpg"
+    sortOrder: 0
+  - type: map_bg_image
+    label: "Ski Map Background"
+    storagePath: "images/trips/wintegral-2026/map-bg.jpg"
+    sortOrder: 1
+  - type: interactive_map
+    label: "Interactive Skimap"
+    url: "https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv="
+    iconName: "map"
+    sortOrder: 2
+  - type: pdf_map
+    label: "PDF Map"
+    storagePath: "files/trips/wintegral-2026/verbier-piste-map-2024-25.pdf"
+    fileName: "Verbier-Piste-Ski-Map-2024-25.pdf"
+    iconName: "document-text"
+    sortOrder: 3
+  - type: infopack
+    label: "Infopack"
+    storagePath: "files/trips/wintegral-2026/wintegral-infopack-2026-02-20.pdf"
+    fileName: "wintegral-infopack-20022026.pdf"
+    iconName: "document-text"
+    sortOrder: 4
+  - type: whatsapp
+    label: "WhatsApp"
+    url: "https://sspj.online/wintegral-whatsapp"
+    iconName: "chatbubble"
+    sortOrder: 5
+  - type: sos
+    label: "SOS"
+    description: "W razie nagłego wypadku zadzwoń na 112."
+    iconName: "alert-circle"
+    value: "112"
+    sortOrder: 6
+
+insurance:
+  label: "Ubezpieczenie / Kontakt"
+  phoneNumber: "+48225640625"
+  phoneDisplay: "+48 22 564 06 25"
+  policyNumber: "COR700416"
+  contractNumber: "500008713"
+  providerName: "WIENER"
+  hospitalName: "Vigimed"
+  hospitalAddress: "Rue du Léman 18 B, 1920 Martigny"
+  hospitalDistance: "ok. 30km od La Tzoumaz"
+  steps:
+    - stepNumber: 1
+      title: "Krok 1"
+      text: "Poproście o pomoc osobę z obsługi stoku..."
+    - stepNumber: 2
+      title: "Krok 2"
+      text: "Skontaktujcie się z ubezpieczycielem WIENER..."
+      requiredInfo:
+        - "imienia i nazwiska"
+        - "daty urodzenia"
+        - "numeru polisy: COR700416"
+        - "numeru umowy generalnej: 500008713"
+      exampleCall: "Jestem na wyjeździe w Verbier, doznałem kontuzji, ratownicy zwożą mnie na dół."
+    - stepNumber: 3
+      title: "Krok 3"
+      text: "Poinformujcie pilota lub członka naszej kadry..."
+      additionalText: "Najbliższy szpital to Vigimed, znajduje się w Rue du Léman 18 B, 1920 Martigny (ok. 30km od La Tzoumaz)."
