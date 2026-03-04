@@ -118,6 +118,7 @@ model TripResource {
   url         String?
   storagePath String?
   fileName    String?
+  publicUrl   String?
   iconName    String?
   value       String?
   sortOrder   Int      @default(0)
