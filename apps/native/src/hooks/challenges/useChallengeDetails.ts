@@ -7,18 +7,11 @@ export function useChallengeDetails(
   tripId?: string | null,
 ) {
   const trpc = useTRPC();
+  const challengeQuery = useQuery(trpc.challenge.getById.queryOptions({ id: challengeId ?? "", tripId: tripId ?? "" }, { enabled: !!challengeId && !!tripId }));
+  const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
 
-  const { data: challenge, isLoading: challengeLoading } = useQuery({
-    ...trpc.challenge.getById.queryOptions({
-      id: challengeId ?? "",
-      tripId: tripId ?? "",
-    }),
-    enabled: !!challengeId && !!tripId,
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
-  });
-
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  const { data: challenge, isLoading: challengeLoading } = challengeQuery;
+  const { data: currentUser } = currentUserQuery;
 
   const isAssignedToUser = useMemo(() => {
     if (!currentUser || !challenge) return false;

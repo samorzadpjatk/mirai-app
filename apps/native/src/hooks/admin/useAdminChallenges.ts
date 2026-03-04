@@ -13,6 +13,8 @@ export interface AdminChallengeUI {
   submissionType: "IMAGE" | "MULTI_IMAGE" | "VIDEO" | "TEXT" | "IMAGE_LOCATION" | "LOCATION" | "QR_CODE";
   scoringCategory: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
   tripId?: string;
+  targetLatitude?: number | null;
+  targetLongitude?: number | null;
 }
 
 export function useAdminChallenges() {
@@ -87,12 +89,18 @@ export function useAdminChallenges() {
   const createChallenge = async (
     payload: { tripId: string } & Partial<AdminChallengeUI>,
   ) => {
+    const submissionType = payload.submissionType === 'MULTI_IMAGE'
+      ? 'IMAGE'
+      : (payload.submissionType ?? 'IMAGE');
+
     return createMutation.mutateAsync({
       tripId: payload.tripId,
       name: payload.title ?? '',
       description: payload.description ?? '',
-      submissionType: payload.submissionType ?? 'IMAGE',
+      submissionType,
       scoringCategory: payload.scoringCategory ?? 'JUDGED_STAFF',
+      targetLatitude: payload.targetLatitude ?? undefined,
+      targetLongitude: payload.targetLongitude ?? undefined,
     } as const);
   };
 

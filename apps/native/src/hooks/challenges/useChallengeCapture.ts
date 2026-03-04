@@ -2,8 +2,9 @@ import { useCallback, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { invalidateChallengeQueries } from "@integral-2025-app/trpc/client/query";
 import { useFileUpload } from "~/hooks/files";
 
 interface ChallengeCaptureOptions {
@@ -26,13 +27,19 @@ export function useChallengeCapture({
   challengeId,
 }: ChallengeCaptureOptions) {
   const router = useRouter();
+  
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { data: currentUser, isLoading: currentUserLoading } = useQuery({
-    ...trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }),
-    enabled: !!tripId,
-  });
-  const userTrip = currentUser?.trips?.[0];
+  const userQuery = useQuery(trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }, { enabled: !!tripId }));
+  const createSubmissionMutation = useMutation(trpc.challengeSubmission.create.mutationOptions({
+    onSuccess: async () => { await invalidateChallengeQueries(queryClient); },
+  }));
+  const deleteSubmissionMutation = useMutation(trpc.challengeSubmission.deleteMine.mutationOptions({
+    onSuccess: async () => { await invalidateChallengeQueries(queryClient); },
+  }));
+
+  const userTrip = userQuery.data;
+  const currentUserLoading = userQuery.isLoading;
 
   const {
     upload,
@@ -104,46 +111,6 @@ export function useChallengeCapture({
     [],
   );
 
-  const submissionMutation = useMutation(
-    trpc.challengeSubmission.create.mutationOptions({
-      onSuccess: async () => {
-        if (!tripId || !challengeId) return;
-        const submissionQuery =
-          trpc.challengeSubmission.getByChallenge.queryOptions({
-            tripId,
-            challengeId,
-          });
-        const mySubmissionQuery =
-          trpc.challengeSubmission.getMyForChallenge.queryOptions({
-            tripId,
-            challengeId,
-          });
-        await queryClient.invalidateQueries({
-          queryKey: submissionQuery.queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: mySubmissionQuery.queryKey,
-        });
-      },
-    }),
-  );
-
-  const deleteSubmissionMutation = useMutation(
-    trpc.challengeSubmission.deleteMine.mutationOptions({
-      onSuccess: async () => {
-        if (!tripId || !challengeId) return;
-        const submissionQuery =
-          trpc.challengeSubmission.getByChallenge.queryOptions({
-            tripId,
-            challengeId,
-          });
-        await queryClient.invalidateQueries({
-          queryKey: submissionQuery.queryKey,
-        });
-      },
-    }),
-  );
-
   const showSuccessAlert = useCallback(
     (
       challengeName?: string,
@@ -192,7 +159,8 @@ export function useChallengeCapture({
         return;
       }
 
-      const groupId = userTrip.group?.id;
+      const userTripForCurrentTrip = userTrip?.trips?.find(t => t.tripId === tripId);
+      const groupId = userTripForCurrentTrip?.group?.id;
 
       if (!groupId) {
         Alert.alert("Error", "Missing group information.");
@@ -204,7 +172,7 @@ export function useChallengeCapture({
       try {
         const extension = resolveExtension(asset);
         const storagePath = `challenge/${challengeId}/${groupId}-${Date.now()}.${extension}`;
-        const submission = await submissionMutation.mutateAsync({
+        const submission = await createSubmissionMutation.mutateAsync({
           tripId,
           challengeId,
           imageIds: [storagePath],
@@ -252,7 +220,7 @@ export function useChallengeCapture({
       resolveFileName,
       resolveMimeType,
       showSuccessAlert,
-      submissionMutation,
+      createSubmissionMutation,
       tripId,
       upload,
       userTrip,
@@ -314,7 +282,8 @@ export function useChallengeCapture({
         return;
       }
 
-      const groupId = userTrip.group?.id;
+      const userTripForCurrentTrip = userTrip?.trips?.find(t => t.tripId === tripId);
+      const groupId = userTripForCurrentTrip?.group?.id;
 
       if (!groupId) {
         Alert.alert("Error", "Missing group information.");
@@ -326,7 +295,7 @@ export function useChallengeCapture({
       try {
         const extension = resolveExtension(asset);
         const storagePath = `challenge/${challengeId}/${groupId}-${Date.now()}.${extension}`;
-        const submission = await submissionMutation.mutateAsync({
+        const submission = await createSubmissionMutation.mutateAsync({
           tripId,
           challengeId,
           videoId: storagePath,
@@ -372,7 +341,7 @@ export function useChallengeCapture({
       resolveFileName,
       resolveMimeType,
       showSuccessAlert,
-      submissionMutation,
+      createSubmissionMutation,
       tripId,
       upload,
       userTrip,

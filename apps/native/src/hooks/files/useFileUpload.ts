@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import { File } from "expo-file-system";
 import { useTRPCClient } from "@integral-2025-app/trpc/client";
-import { tusUrlStorage } from "~/lib/tusUrlStorage";
+import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
 import { useSupabaseClient } from "@integral-2025-app/supabase/react";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";

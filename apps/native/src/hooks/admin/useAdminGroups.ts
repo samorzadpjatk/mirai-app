@@ -1,5 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTRPC } from '@integral-2025-app/trpc/client';
+import { useMemo } from 'react';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTRPC, useTRPCClient } from '@integral-2025-app/trpc/client';
+import { invalidateGroupQueries } from '@integral-2025-app/trpc/client/query';
+
+const GROUPS_PER_PAGE = 30;
 
 export interface Group {
   id: string;
@@ -10,9 +14,9 @@ export interface Group {
   coins: number;
   organizer: {
     id: string;
-    firstName: string;
-    lastName: string;
-  };
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
   _count: { participants: number };
 }
 
@@ -30,48 +34,92 @@ export interface User {
 
 export function useAdminGroups(tripId: string) {
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
+
+  const {
+    data,
+    isLoading: groupsLoading,
+    isRefetching: groupsRefetching,
+    hasNextPage: groupsHasNextPage,
+    isFetchingNextPage: groupsFetchingNextPage,
+    fetchNextPage: fetchMoreGroups,
+    refetch: refetchGroups,
+  } = useInfiniteQuery({
+    queryKey: [
+      ...trpc.group.getAll.queryOptions({
+        tripId,
+        pagination: {
+          limit: GROUPS_PER_PAGE,
+          offset: 0,
+        },
+      }).queryKey,
+      'infinite',
+      GROUPS_PER_PAGE,
+    ],
+    enabled: Boolean(tripId),
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === 'number' ? pageParam : 0;
+
+      return trpcClient.group.getAll.query({
+        tripId,
+        pagination: {
+          limit: GROUPS_PER_PAGE,
+          offset,
+        },
+      });
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.pagination.hasMore) {
+        return undefined;
+      }
+
+      return lastPage.pagination.offset + lastPage.pagination.limit;
+    },
+  });
+
+  const groups = useMemo(
+    () =>
+      (data?.pages ?? []).flatMap((page) =>
+        (page.groups ?? []).map((group) => ({
+          ...group,
+          organizer: group.organizer
+            ? {
+                id: group.organizer.id,
+                firstName: group.organizer.firstName,
+                lastName: group.organizer.lastName,
+              }
+            : null,
+          _count: {
+            participants: group.participants.length,
+          },
+        })),
+      ),
+    [data?.pages],
+  );
+
+  const groupsPagination = useMemo(
+    () => data?.pages?.[data.pages.length - 1]?.pagination,
+    [data],
+  );
+
+  // Use direct tRPC + React Query for queries
   const queryClient = useQueryClient();
+  const { data: usersData, isLoading: usersLoading } = useQuery(trpc.user.getAll.queryOptions({ tripId }));
+  const users = (usersData ?? []) as User[];
 
-  const groupsQuery = useQuery(
-    trpc.group.getGroupList.queryOptions({ tripId })
-  );
+  // Use direct tRPC + React Query for mutations
+  const createGroupMutation = useMutation(trpc.group.create.mutationOptions({
+    onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
+  }));
 
-  const usersQuery = useQuery(
-    trpc.user.getAll.queryOptions({ tripId })
-  );
+  const updateGroupMutation = useMutation(trpc.group.update.mutationOptions({
+    onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
+  }));
 
-  const createGroupMutation = useMutation(
-    trpc.group.create.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: [['group', 'getGroupList']] });
-      },
-      onError: (error) => {
-        console.error('Failed to create group:', error);
-      },
-    })
-  );
-
-  const updateGroupMutation = useMutation(
-    trpc.group.update.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: [['group', 'getGroupList']] });
-      },
-      onError: (error) => {
-        console.error('Failed to update group:', error);
-      },
-    })
-  );
-
-  const deleteGroupMutation = useMutation(
-    trpc.group.delete.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: [['group', 'getGroupList']] });
-      },
-      onError: (error) => {
-        console.error('Failed to delete group:', error);
-      },
-    })
-  );
+  const deleteGroupMutation = useMutation(trpc.group.delete.mutationOptions({
+    onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
+  }));
 
   const createGroup = (name: string) => {
     return createGroupMutation.mutateAsync({
@@ -80,11 +128,11 @@ export function useAdminGroups(tripId: string) {
     });
   };
 
-  const updateGroup = (id: string, name: string, organizerId?: string) => {
+  const updateGroup = (id: string, name?: string, organizerId?: string) => {
     return updateGroupMutation.mutateAsync({
       id,
       tripId,
-      name,
+      ...(name !== undefined ? { name } : {}),
       organizerId,
     });
   };
@@ -96,10 +144,16 @@ export function useAdminGroups(tripId: string) {
   };
 
   return {
-    groups: groupsQuery.data ?? [],
-    groupsLoading: groupsQuery.isLoading,
-    users: usersQuery.data ?? [],
-    usersLoading: usersQuery.isLoading,
+    groups,
+    groupsLoading,
+    groupsPagination,
+    groupsRefetching,
+    groupsHasNextPage,
+    groupsFetchingNextPage,
+    fetchMoreGroups,
+    refetchGroups,
+    users,
+    usersLoading,
     createGroup,
     updateGroup,
     deleteGroup,

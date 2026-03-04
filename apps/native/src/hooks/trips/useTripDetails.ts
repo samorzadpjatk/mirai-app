@@ -5,20 +5,15 @@ import {
   getCachedTripById,
   setCachedTripById,
   upsertCachedTripListItem,
-} from "~/lib/selectedTripStorage";
+} from "~/services/storage/selectedTripStorage";
 import type { TripListItem } from "~/components/trips/list/types";
 
 export function useTripDetails(tripId?: string | null) {
   const trpc = useTRPC();
+  const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
+  const tripQuery = useQuery(trpc.trip.getById.queryOptions({ id: tripId ?? "" }, { enabled: !!tripId }));
 
-  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
-    trpc.user.getMy.queryOptions(),
-  );
-
-  const tripQuery = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
-    enabled: !!tripId,
-  });
+  const { data: currentUser, isLoading: isLoadingUser } = currentUserQuery;
 
   type TripData = Exclude<typeof tripQuery.data, undefined>;
   const [cachedTrip, setCachedTrip] = useState<TripData | null>(null);

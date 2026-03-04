@@ -2,8 +2,9 @@ import { useEffect, useState, useCallback } from "react";
 import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
-import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTRPC } from "@integral-2025-app/trpc/client";
+import { invalidateLocationQueries } from "@integral-2025-app/trpc/client/query";
 
 const LOCATION_SETTINGS_KEY = "location_sharing_enabled";
 
@@ -29,47 +30,18 @@ export interface UseLocationPermissionsReturn {
 export function useLocationPermissions(): UseLocationPermissionsReturn {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const updateSharingMutation = useMutation(trpc.location.updateSharingSettings.mutationOptions({
+    onSuccess: async () => { await invalidateLocationQueries(queryClient); },
+    onError: (error) => { console.error("Failed to update location sharing settings:", error); },
+  }));
   
-  // Get current sharing settings from server
-  const { data: sharingSettings, isLoading: isSettingsLoading } = useQuery(
-    trpc.location.getMySharingSettings.queryOptions()
-  );
+  const sharingSettingsQuery = useQuery(trpc.location.getMySharingSettings.queryOptions());
+  const sharingSettings = sharingSettingsQuery.data;
+  const isSettingsLoading = sharingSettingsQuery.isLoading;
 
   const [isLocationSharingEnabled, setIsLocationSharingEnabled] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<LocationPermissionStatus>("undetermined");
   const [isLoading, setIsLoading] = useState(true);
-
-  // Mutation to update sharing settings
-  const updateSharingMutation = useMutation(
-    trpc.location.updateSharingSettings.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ["location", "getMySharingSettings"],
-        });
-      },
-      onError: (error) => {
-        console.error("Failed to update location sharing settings:", error);
-        
-        // Provide more specific error messages based on error type
-        if (error?.data?.code === "UNAUTHORIZED") {
-          Alert.alert(
-            "Authentication Required", 
-            "Please sign in again to update location settings."
-          );
-        } else if (error?.data?.code === "FORBIDDEN") {
-          Alert.alert(
-            "Access Denied", 
-            "You don't have permission to update location settings."
-          );
-        } else {
-          Alert.alert(
-            "Connection Error", 
-            "Failed to update location sharing settings. Please check your internet connection and try again."
-          );
-        }
-      },
-    })
-  );
 
   // Load saved location sharing preference and sync with server
   useEffect(() => {
@@ -140,7 +112,7 @@ export function useLocationPermissions(): UseLocationPermissionsReturn {
         userIdsToShareWith: [], // Start with empty list, can be expanded later
       });
       
-      // Only update local state after server succeeds
+      // Only update local state after server succeeds (query will be invalidated automatically)
       setIsLocationSharingEnabled(enabled);
       await AsyncStorage.setItem(LOCATION_SETTINGS_KEY, enabled.toString());
       

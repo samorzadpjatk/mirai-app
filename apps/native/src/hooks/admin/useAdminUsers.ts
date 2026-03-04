@@ -1,5 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTRPC } from '@integral-2025-app/trpc/client';
+import { useMemo } from 'react';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTRPC, useTRPCClient } from '@integral-2025-app/trpc/client';
+import { invalidateUserQueries } from '@integral-2025-app/trpc/client/query';
+
+const USERS_PER_PAGE = 30;
 
 export interface User {
   id: string;
@@ -21,101 +25,130 @@ export interface Group {
   name: string;
 }
 
-export const USERS_PER_PAGE = 20;
+interface GroupAssignmentResult {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  tripId: string;
+  groupId: string | null;
+  userId: string;
+  wristNumber: string | null;
+  houseNumber: string | null;
+}
 
-export function useAdminUsers(tripId: string) {
+export type UserSearchField =
+  | 'firstName'
+  | 'lastName'
+  | 'email'
+  | 'wristNumber'
+  | 'houseNumber'
+  | 'groupName';
+
+export function useAdminUsers(tripId: string, searchTerm: string, field: UserSearchField) {
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
+
+  // Use direct tRPC + React Query for queries
   const queryClient = useQueryClient();
+  const { data: groupsData, isLoading: groupsLoading } = useQuery(trpc.group.getAll.queryOptions({ tripId }));
+  const groups = (groupsData ?? []) as Group[];
 
-  const usersQuery = useQuery(
-    trpc.user.searchWithPagination.queryOptions({
-      searchTerm: undefined,
-      page: 1,
-      limit: USERS_PER_PAGE,
-      field: 'firstName',
-      tripId,
-    })
+  const normalizedSearchTerm = searchTerm.trim();
+
+  const {
+    data,
+    isLoading,
+    isRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: [
+      ...trpc.user.searchWithPagination.queryOptions({
+        tripId,
+        field,
+        searchTerm: normalizedSearchTerm || undefined,
+        pagination: {
+          limit: USERS_PER_PAGE,
+          offset: 0,
+        },
+      }).queryKey,
+      'infinite',
+      USERS_PER_PAGE,
+    ],
+    enabled: Boolean(tripId),
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === 'number' ? pageParam : 0;
+
+      return trpcClient.user.searchWithPagination.query({
+        tripId,
+        field,
+        searchTerm: normalizedSearchTerm || undefined,
+        pagination: {
+          limit: USERS_PER_PAGE,
+          offset,
+        },
+      });
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.pagination.hasMore) {
+        return undefined;
+      }
+
+      return lastPage.pagination.offset + lastPage.pagination.limit;
+    },
+  });
+
+  const users = useMemo(
+    () => (data?.pages ?? []).flatMap((page) => page.users ?? []),
+    [data?.pages],
   );
 
-  const groupsQuery = useQuery(
-    trpc.group.getAllNames.queryOptions({ tripId })
+  const usersPagination = useMemo(
+    () => data?.pages?.[data.pages.length - 1]?.pagination,
+    [data],
   );
 
+  // Use direct tRPC + React Query for mutations
   const assignToGroupMutation = useMutation(trpc.group.assignUserToGroup.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-
   const removeFromGroupMutation = useMutation(trpc.group.removeUserFromGroup.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-
   const createUserMutation = useMutation(trpc.user.createUser.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
   const banUserMutation = useMutation(trpc.user.banUserUntil.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
   const deleteUserMutation = useMutation(trpc.user.deleteUser.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
   const updateNameMutation = useMutation(trpc.user.updateName.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-
   const updateWristNumberMutation = useMutation(trpc.user.updateWristNumber.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-
   const removeWristNumberMutation = useMutation(trpc.user.removeWristNumber.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-
   const updateHouseNumberMutation = useMutation(trpc.user.updateHouseNumber.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-
   const removeHouseNumberMutation = useMutation(trpc.user.removeHouseNumber.mutationOptions({
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['user', 'searchWithPagination'] });
-    },
+    onSuccess: async () => { await invalidateUserQueries(queryClient, true); },
   }));
-
-  const useSearchUsers = (searchTerm: string, page: number, field: 'firstName' | 'lastName' | 'email' | 'wristNumber' | 'houseNumber' | 'groupName') => {
-    return useQuery(
-      trpc.user.searchWithPagination.queryOptions({
-        searchTerm: searchTerm ?? undefined,
-        page,
-        limit: USERS_PER_PAGE,
-        field,
-        tripId,
-      })
-    );
-  };
 
   const assignToGroup = (userId: string, groupId: string) => {
     return assignToGroupMutation.mutateAsync({
       userId,
       tripId,
       groupId,
-    });
+    }) as Promise<GroupAssignmentResult>;
   };
 
   const removeFromGroup = (userId: string) => {
@@ -146,36 +179,36 @@ export function useAdminUsers(tripId: string) {
   };
 
   const updateWristNumber = (userId: string, wristNumber: string) => {
-    if (wristNumber.trim()) {
-      return updateWristNumberMutation.mutateAsync({ 
-        userId, 
+    return wristNumber.trim()
+      ? updateWristNumberMutation.mutateAsync({
+        userId,
         tripId,
-        wristNumber: wristNumber.trim() 
-      });
-    } else {
-      return removeWristNumberMutation.mutateAsync({ userId, tripId });
-    }
+        wristNumber: wristNumber.trim()
+      })
+      : removeWristNumberMutation.mutateAsync({ userId, tripId });
   };
 
   const updateHouseNumber = (userId: string, houseNumber: string) => {
-    if (houseNumber.trim()) {
-      return updateHouseNumberMutation.mutateAsync({ 
-        userId, 
+    return houseNumber.trim()
+      ? updateHouseNumberMutation.mutateAsync({
+        userId,
         tripId,
-        houseNumber: houseNumber.trim() 
-      });
-    } else {
-      return removeHouseNumberMutation.mutateAsync({ userId, tripId });
-    }
+        houseNumber: houseNumber.trim()
+      })
+      : removeHouseNumberMutation.mutateAsync({ userId, tripId });
   };
 
   return {
-    users: usersQuery.data?.users ?? [],
-    usersLoading: usersQuery.isLoading,
-    usersPagination: usersQuery.data?.pagination,
-    groups: groupsQuery.data ?? [],
-    groupsLoading: groupsQuery.isLoading,
-    useSearchUsers,
+    users,
+    usersLoading: isLoading,
+    usersPagination,
+    usersRefetching: isRefetching,
+    usersHasNextPage: hasNextPage,
+    usersFetchingNextPage: isFetchingNextPage,
+    fetchMoreUsers: fetchNextPage,
+    refetchUsers: refetch,
+    groups,
+    groupsLoading,
     assignToGroup,
     removeFromGroup,
     updateName,
