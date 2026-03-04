@@ -216,6 +216,8 @@ export type TripWhereInput = {
   activityFeed?: Prisma.ActivityFeedListRelationFilter
   groupJoinRequests?: Prisma.GroupJoinRequestListRelationFilter
   tripSponsors?: Prisma.TripSponsorListRelationFilter
+  tripResources?: Prisma.TripResourceListRelationFilter
+  tripInsurance?: Prisma.XOR<Prisma.TripInsuranceNullableScalarRelationFilter, Prisma.TripInsuranceWhereInput> | null
 }
 
 export type TripOrderByWithRelationInput = {
@@ -237,6 +239,8 @@ export type TripOrderByWithRelationInput = {
   activityFeed?: Prisma.ActivityFeedOrderByRelationAggregateInput
   groupJoinRequests?: Prisma.GroupJoinRequestOrderByRelationAggregateInput
   tripSponsors?: Prisma.TripSponsorOrderByRelationAggregateInput
+  tripResources?: Prisma.TripResourceOrderByRelationAggregateInput
+  tripInsurance?: Prisma.TripInsuranceOrderByWithRelationInput
 }
 
 export type TripWhereUniqueInput = Prisma.AtLeast<{
@@ -261,6 +265,8 @@ export type TripWhereUniqueInput = Prisma.AtLeast<{
   activityFeed?: Prisma.ActivityFeedListRelationFilter
   groupJoinRequests?: Prisma.GroupJoinRequestListRelationFilter
   tripSponsors?: Prisma.TripSponsorListRelationFilter
+  tripResources?: Prisma.TripResourceListRelationFilter
+  tripInsurance?: Prisma.XOR<Prisma.TripInsuranceNullableScalarRelationFilter, Prisma.TripInsuranceWhereInput> | null
 }, "id">
 
 export type TripOrderByWithAggregationInput = {
@@ -310,6 +316,8 @@ export type TripCreateInput = {
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateInput = {
@@ -331,6 +339,8 @@ export type TripUncheckedCreateInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripUpdateInput = {
@@ -352,6 +362,8 @@ export type TripUpdateInput = {
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateInput = {
@@ -373,6 +385,8 @@ export type TripUncheckedUpdateInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateManyInput = {
@@ -453,6 +467,34 @@ export type TripNullableScalarRelationFilter = {
 
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
+}
+
+export type TripCreateNestedOneWithoutTripResourcesInput = {
+  create?: Prisma.XOR<Prisma.TripCreateWithoutTripResourcesInput, Prisma.TripUncheckedCreateWithoutTripResourcesInput>
+  connectOrCreate?: Prisma.TripCreateOrConnectWithoutTripResourcesInput
+  connect?: Prisma.TripWhereUniqueInput
+}
+
+export type TripUpdateOneRequiredWithoutTripResourcesNestedInput = {
+  create?: Prisma.XOR<Prisma.TripCreateWithoutTripResourcesInput, Prisma.TripUncheckedCreateWithoutTripResourcesInput>
+  connectOrCreate?: Prisma.TripCreateOrConnectWithoutTripResourcesInput
+  upsert?: Prisma.TripUpsertWithoutTripResourcesInput
+  connect?: Prisma.TripWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TripUpdateToOneWithWhereWithoutTripResourcesInput, Prisma.TripUpdateWithoutTripResourcesInput>, Prisma.TripUncheckedUpdateWithoutTripResourcesInput>
+}
+
+export type TripCreateNestedOneWithoutTripInsuranceInput = {
+  create?: Prisma.XOR<Prisma.TripCreateWithoutTripInsuranceInput, Prisma.TripUncheckedCreateWithoutTripInsuranceInput>
+  connectOrCreate?: Prisma.TripCreateOrConnectWithoutTripInsuranceInput
+  connect?: Prisma.TripWhereUniqueInput
+}
+
+export type TripUpdateOneRequiredWithoutTripInsuranceNestedInput = {
+  create?: Prisma.XOR<Prisma.TripCreateWithoutTripInsuranceInput, Prisma.TripUncheckedCreateWithoutTripInsuranceInput>
+  connectOrCreate?: Prisma.TripCreateOrConnectWithoutTripInsuranceInput
+  upsert?: Prisma.TripUpsertWithoutTripInsuranceInput
+  connect?: Prisma.TripWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TripUpdateToOneWithWhereWithoutTripInsuranceInput, Prisma.TripUpdateWithoutTripInsuranceInput>, Prisma.TripUncheckedUpdateWithoutTripInsuranceInput>
 }
 
 export type TripCreateNestedOneWithoutParticipantsInput = {
@@ -601,6 +643,214 @@ export type TripUpdateOneRequiredWithoutTripSponsorsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TripUpdateToOneWithWhereWithoutTripSponsorsInput, Prisma.TripUpdateWithoutTripSponsorsInput>, Prisma.TripUncheckedUpdateWithoutTripSponsorsInput>
 }
 
+export type TripCreateWithoutTripResourcesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  startDate: Date | string
+  endDate: Date | string
+  backgroundImagePath?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  groups?: Prisma.GroupCreateNestedManyWithoutTripInput
+  participants?: Prisma.TripParticipantCreateNestedManyWithoutTripInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutTripInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutTripInput
+  notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
+  challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
+  rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
+  groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
+  tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
+}
+
+export type TripUncheckedCreateWithoutTripResourcesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  startDate: Date | string
+  endDate: Date | string
+  backgroundImagePath?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  groups?: Prisma.GroupUncheckedCreateNestedManyWithoutTripInput
+  participants?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutTripInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTripInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutTripInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
+  challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
+  rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
+  groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
+  tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
+}
+
+export type TripCreateOrConnectWithoutTripResourcesInput = {
+  where: Prisma.TripWhereUniqueInput
+  create: Prisma.XOR<Prisma.TripCreateWithoutTripResourcesInput, Prisma.TripUncheckedCreateWithoutTripResourcesInput>
+}
+
+export type TripUpsertWithoutTripResourcesInput = {
+  update: Prisma.XOR<Prisma.TripUpdateWithoutTripResourcesInput, Prisma.TripUncheckedUpdateWithoutTripResourcesInput>
+  create: Prisma.XOR<Prisma.TripCreateWithoutTripResourcesInput, Prisma.TripUncheckedCreateWithoutTripResourcesInput>
+  where?: Prisma.TripWhereInput
+}
+
+export type TripUpdateToOneWithWhereWithoutTripResourcesInput = {
+  where?: Prisma.TripWhereInput
+  data: Prisma.XOR<Prisma.TripUpdateWithoutTripResourcesInput, Prisma.TripUncheckedUpdateWithoutTripResourcesInput>
+}
+
+export type TripUpdateWithoutTripResourcesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  backgroundImagePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  groups?: Prisma.GroupUpdateManyWithoutTripNestedInput
+  participants?: Prisma.TripParticipantUpdateManyWithoutTripNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutTripNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutTripNestedInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
+  challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
+  rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
+  groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
+  tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
+}
+
+export type TripUncheckedUpdateWithoutTripResourcesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  backgroundImagePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  groups?: Prisma.GroupUncheckedUpdateManyWithoutTripNestedInput
+  participants?: Prisma.TripParticipantUncheckedUpdateManyWithoutTripNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTripNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutTripNestedInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
+  challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
+  rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
+  groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
+  tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
+}
+
+export type TripCreateWithoutTripInsuranceInput = {
+  id?: string
+  name: string
+  description?: string | null
+  startDate: Date | string
+  endDate: Date | string
+  backgroundImagePath?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  groups?: Prisma.GroupCreateNestedManyWithoutTripInput
+  participants?: Prisma.TripParticipantCreateNestedManyWithoutTripInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutTripInput
+  notificationSchedules?: Prisma.NotificationScheduleCreateNestedManyWithoutTripInput
+  notificationDeliveries?: Prisma.NotificationDeliveryCreateNestedManyWithoutTripInput
+  challenges?: Prisma.ChallengeCreateNestedManyWithoutTripInput
+  rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
+  groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
+  tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+}
+
+export type TripUncheckedCreateWithoutTripInsuranceInput = {
+  id?: string
+  name: string
+  description?: string | null
+  startDate: Date | string
+  endDate: Date | string
+  backgroundImagePath?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  groups?: Prisma.GroupUncheckedCreateNestedManyWithoutTripInput
+  participants?: Prisma.TripParticipantUncheckedCreateNestedManyWithoutTripInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutTripInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedCreateNestedManyWithoutTripInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUncheckedCreateNestedManyWithoutTripInput
+  challenges?: Prisma.ChallengeUncheckedCreateNestedManyWithoutTripInput
+  rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
+  activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
+  groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
+  tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+}
+
+export type TripCreateOrConnectWithoutTripInsuranceInput = {
+  where: Prisma.TripWhereUniqueInput
+  create: Prisma.XOR<Prisma.TripCreateWithoutTripInsuranceInput, Prisma.TripUncheckedCreateWithoutTripInsuranceInput>
+}
+
+export type TripUpsertWithoutTripInsuranceInput = {
+  update: Prisma.XOR<Prisma.TripUpdateWithoutTripInsuranceInput, Prisma.TripUncheckedUpdateWithoutTripInsuranceInput>
+  create: Prisma.XOR<Prisma.TripCreateWithoutTripInsuranceInput, Prisma.TripUncheckedCreateWithoutTripInsuranceInput>
+  where?: Prisma.TripWhereInput
+}
+
+export type TripUpdateToOneWithWhereWithoutTripInsuranceInput = {
+  where?: Prisma.TripWhereInput
+  data: Prisma.XOR<Prisma.TripUpdateWithoutTripInsuranceInput, Prisma.TripUncheckedUpdateWithoutTripInsuranceInput>
+}
+
+export type TripUpdateWithoutTripInsuranceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  backgroundImagePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  groups?: Prisma.GroupUpdateManyWithoutTripNestedInput
+  participants?: Prisma.TripParticipantUpdateManyWithoutTripNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutTripNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUpdateManyWithoutTripNestedInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUpdateManyWithoutTripNestedInput
+  challenges?: Prisma.ChallengeUpdateManyWithoutTripNestedInput
+  rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
+  groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
+  tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+}
+
+export type TripUncheckedUpdateWithoutTripInsuranceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  endDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  backgroundImagePath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  groups?: Prisma.GroupUncheckedUpdateManyWithoutTripNestedInput
+  participants?: Prisma.TripParticipantUncheckedUpdateManyWithoutTripNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutTripNestedInput
+  notificationSchedules?: Prisma.NotificationScheduleUncheckedUpdateManyWithoutTripNestedInput
+  notificationDeliveries?: Prisma.NotificationDeliveryUncheckedUpdateManyWithoutTripNestedInput
+  challenges?: Prisma.ChallengeUncheckedUpdateManyWithoutTripNestedInput
+  rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
+  activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
+  groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
+  tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+}
+
 export type TripCreateWithoutParticipantsInput = {
   id?: string
   name: string
@@ -619,6 +869,8 @@ export type TripCreateWithoutParticipantsInput = {
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutParticipantsInput = {
@@ -639,6 +891,8 @@ export type TripUncheckedCreateWithoutParticipantsInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutParticipantsInput = {
@@ -675,6 +929,8 @@ export type TripUpdateWithoutParticipantsInput = {
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutParticipantsInput = {
@@ -695,6 +951,8 @@ export type TripUncheckedUpdateWithoutParticipantsInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutGroupsInput = {
@@ -715,6 +973,8 @@ export type TripCreateWithoutGroupsInput = {
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutGroupsInput = {
@@ -735,6 +995,8 @@ export type TripUncheckedCreateWithoutGroupsInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutGroupsInput = {
@@ -771,6 +1033,8 @@ export type TripUpdateWithoutGroupsInput = {
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutGroupsInput = {
@@ -791,6 +1055,8 @@ export type TripUncheckedUpdateWithoutGroupsInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutGroupJoinRequestsInput = {
@@ -811,6 +1077,8 @@ export type TripCreateWithoutGroupJoinRequestsInput = {
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutGroupJoinRequestsInput = {
@@ -831,6 +1099,8 @@ export type TripUncheckedCreateWithoutGroupJoinRequestsInput = {
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutGroupJoinRequestsInput = {
@@ -867,6 +1137,8 @@ export type TripUpdateWithoutGroupJoinRequestsInput = {
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutGroupJoinRequestsInput = {
@@ -887,6 +1159,8 @@ export type TripUncheckedUpdateWithoutGroupJoinRequestsInput = {
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutChallengesInput = {
@@ -907,6 +1181,8 @@ export type TripCreateWithoutChallengesInput = {
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutChallengesInput = {
@@ -927,6 +1203,8 @@ export type TripUncheckedCreateWithoutChallengesInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutChallengesInput = {
@@ -963,6 +1241,8 @@ export type TripUpdateWithoutChallengesInput = {
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutChallengesInput = {
@@ -983,6 +1263,8 @@ export type TripUncheckedUpdateWithoutChallengesInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutActivityFeedInput = {
@@ -1003,6 +1285,8 @@ export type TripCreateWithoutActivityFeedInput = {
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutActivityFeedInput = {
@@ -1023,6 +1307,8 @@ export type TripUncheckedCreateWithoutActivityFeedInput = {
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutActivityFeedInput = {
@@ -1059,6 +1345,8 @@ export type TripUpdateWithoutActivityFeedInput = {
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutActivityFeedInput = {
@@ -1079,6 +1367,8 @@ export type TripUncheckedUpdateWithoutActivityFeedInput = {
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutNotificationSchedulesInput = {
@@ -1099,6 +1389,8 @@ export type TripCreateWithoutNotificationSchedulesInput = {
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutNotificationSchedulesInput = {
@@ -1119,6 +1411,8 @@ export type TripUncheckedCreateWithoutNotificationSchedulesInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutNotificationSchedulesInput = {
@@ -1155,6 +1449,8 @@ export type TripUpdateWithoutNotificationSchedulesInput = {
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutNotificationSchedulesInput = {
@@ -1175,6 +1471,8 @@ export type TripUncheckedUpdateWithoutNotificationSchedulesInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutNotificationsInput = {
@@ -1195,6 +1493,8 @@ export type TripCreateWithoutNotificationsInput = {
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutNotificationsInput = {
@@ -1215,6 +1515,8 @@ export type TripUncheckedCreateWithoutNotificationsInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutNotificationsInput = {
@@ -1251,6 +1553,8 @@ export type TripUpdateWithoutNotificationsInput = {
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutNotificationsInput = {
@@ -1271,6 +1575,8 @@ export type TripUncheckedUpdateWithoutNotificationsInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutNotificationDeliveriesInput = {
@@ -1291,6 +1597,8 @@ export type TripCreateWithoutNotificationDeliveriesInput = {
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutNotificationDeliveriesInput = {
@@ -1311,6 +1619,8 @@ export type TripUncheckedCreateWithoutNotificationDeliveriesInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutNotificationDeliveriesInput = {
@@ -1347,6 +1657,8 @@ export type TripUpdateWithoutNotificationDeliveriesInput = {
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutNotificationDeliveriesInput = {
@@ -1367,6 +1679,8 @@ export type TripUncheckedUpdateWithoutNotificationDeliveriesInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutRewardsInput = {
@@ -1387,6 +1701,8 @@ export type TripCreateWithoutRewardsInput = {
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutRewardsInput = {
@@ -1407,6 +1723,8 @@ export type TripUncheckedCreateWithoutRewardsInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
   tripSponsors?: Prisma.TripSponsorUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutRewardsInput = {
@@ -1443,6 +1761,8 @@ export type TripUpdateWithoutRewardsInput = {
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutRewardsInput = {
@@ -1463,6 +1783,8 @@ export type TripUncheckedUpdateWithoutRewardsInput = {
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
   tripSponsors?: Prisma.TripSponsorUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 export type TripCreateWithoutTripSponsorsInput = {
@@ -1483,6 +1805,8 @@ export type TripCreateWithoutTripSponsorsInput = {
   rewards?: Prisma.RewardCreateNestedManyWithoutTripInput
   activityFeed?: Prisma.ActivityFeedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceCreateNestedOneWithoutTripInput
 }
 
 export type TripUncheckedCreateWithoutTripSponsorsInput = {
@@ -1503,6 +1827,8 @@ export type TripUncheckedCreateWithoutTripSponsorsInput = {
   rewards?: Prisma.RewardUncheckedCreateNestedManyWithoutTripInput
   activityFeed?: Prisma.ActivityFeedUncheckedCreateNestedManyWithoutTripInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedCreateNestedManyWithoutTripInput
+  tripResources?: Prisma.TripResourceUncheckedCreateNestedManyWithoutTripInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedCreateNestedOneWithoutTripInput
 }
 
 export type TripCreateOrConnectWithoutTripSponsorsInput = {
@@ -1539,6 +1865,8 @@ export type TripUpdateWithoutTripSponsorsInput = {
   rewards?: Prisma.RewardUpdateManyWithoutTripNestedInput
   activityFeed?: Prisma.ActivityFeedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUpdateOneWithoutTripNestedInput
 }
 
 export type TripUncheckedUpdateWithoutTripSponsorsInput = {
@@ -1559,6 +1887,8 @@ export type TripUncheckedUpdateWithoutTripSponsorsInput = {
   rewards?: Prisma.RewardUncheckedUpdateManyWithoutTripNestedInput
   activityFeed?: Prisma.ActivityFeedUncheckedUpdateManyWithoutTripNestedInput
   groupJoinRequests?: Prisma.GroupJoinRequestUncheckedUpdateManyWithoutTripNestedInput
+  tripResources?: Prisma.TripResourceUncheckedUpdateManyWithoutTripNestedInput
+  tripInsurance?: Prisma.TripInsuranceUncheckedUpdateOneWithoutTripNestedInput
 }
 
 
@@ -1577,6 +1907,7 @@ export type TripCountOutputType = {
   activityFeed: number
   groupJoinRequests: number
   tripSponsors: number
+  tripResources: number
 }
 
 export type TripCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1590,6 +1921,7 @@ export type TripCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   activityFeed?: boolean | TripCountOutputTypeCountActivityFeedArgs
   groupJoinRequests?: boolean | TripCountOutputTypeCountGroupJoinRequestsArgs
   tripSponsors?: boolean | TripCountOutputTypeCountTripSponsorsArgs
+  tripResources?: boolean | TripCountOutputTypeCountTripResourcesArgs
 }
 
 /**
@@ -1672,6 +2004,13 @@ export type TripCountOutputTypeCountTripSponsorsArgs<ExtArgs extends runtime.Typ
   where?: Prisma.TripSponsorWhereInput
 }
 
+/**
+ * TripCountOutputType without action
+ */
+export type TripCountOutputTypeCountTripResourcesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TripResourceWhereInput
+}
+
 
 export type TripSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1692,6 +2031,8 @@ export type TripSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   activityFeed?: boolean | Prisma.Trip$activityFeedArgs<ExtArgs>
   groupJoinRequests?: boolean | Prisma.Trip$groupJoinRequestsArgs<ExtArgs>
   tripSponsors?: boolean | Prisma.Trip$tripSponsorsArgs<ExtArgs>
+  tripResources?: boolean | Prisma.Trip$tripResourcesArgs<ExtArgs>
+  tripInsurance?: boolean | Prisma.Trip$tripInsuranceArgs<ExtArgs>
   _count?: boolean | Prisma.TripCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["trip"]>
 
@@ -1740,6 +2081,8 @@ export type TripInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   activityFeed?: boolean | Prisma.Trip$activityFeedArgs<ExtArgs>
   groupJoinRequests?: boolean | Prisma.Trip$groupJoinRequestsArgs<ExtArgs>
   tripSponsors?: boolean | Prisma.Trip$tripSponsorsArgs<ExtArgs>
+  tripResources?: boolean | Prisma.Trip$tripResourcesArgs<ExtArgs>
+  tripInsurance?: boolean | Prisma.Trip$tripInsuranceArgs<ExtArgs>
   _count?: boolean | Prisma.TripCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TripIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1758,6 +2101,8 @@ export type $TripPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     activityFeed: Prisma.$ActivityFeedPayload<ExtArgs>[]
     groupJoinRequests: Prisma.$GroupJoinRequestPayload<ExtArgs>[]
     tripSponsors: Prisma.$TripSponsorPayload<ExtArgs>[]
+    tripResources: Prisma.$TripResourcePayload<ExtArgs>[]
+    tripInsurance: Prisma.$TripInsurancePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2172,6 +2517,8 @@ export interface Prisma__TripClient<T, Null = never, ExtArgs extends runtime.Typ
   activityFeed<T extends Prisma.Trip$activityFeedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$activityFeedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivityFeedPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   groupJoinRequests<T extends Prisma.Trip$groupJoinRequestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$groupJoinRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GroupJoinRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tripSponsors<T extends Prisma.Trip$tripSponsorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$tripSponsorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TripSponsorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tripResources<T extends Prisma.Trip$tripResourcesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$tripResourcesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TripResourcePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  tripInsurance<T extends Prisma.Trip$tripInsuranceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Trip$tripInsuranceArgs<ExtArgs>>): Prisma.Prisma__TripInsuranceClient<runtime.Types.Result.GetResult<Prisma.$TripInsurancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2834,6 +3181,49 @@ export type Trip$tripSponsorsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.TripSponsorScalarFieldEnum | Prisma.TripSponsorScalarFieldEnum[]
+}
+
+/**
+ * Trip.tripResources
+ */
+export type Trip$tripResourcesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TripResource
+   */
+  select?: Prisma.TripResourceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TripResource
+   */
+  omit?: Prisma.TripResourceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TripResourceInclude<ExtArgs> | null
+  where?: Prisma.TripResourceWhereInput
+  orderBy?: Prisma.TripResourceOrderByWithRelationInput | Prisma.TripResourceOrderByWithRelationInput[]
+  cursor?: Prisma.TripResourceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TripResourceScalarFieldEnum | Prisma.TripResourceScalarFieldEnum[]
+}
+
+/**
+ * Trip.tripInsurance
+ */
+export type Trip$tripInsuranceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TripInsurance
+   */
+  select?: Prisma.TripInsuranceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TripInsurance
+   */
+  omit?: Prisma.TripInsuranceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TripInsuranceInclude<ExtArgs> | null
+  where?: Prisma.TripInsuranceWhereInput
 }
 
 /**

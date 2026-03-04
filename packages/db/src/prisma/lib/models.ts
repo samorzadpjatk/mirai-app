@@ -10,6 +10,9 @@
  */
 export type * from './models/User.ts'
 export type * from './models/Trip.ts'
+export type * from './models/TripResource.ts'
+export type * from './models/TripInsurance.ts'
+export type * from './models/TripInsuranceStep.ts'
 export type * from './models/TripParticipant.ts'
 export type * from './models/Event.ts'
 export type * from './models/UserEvent.ts'
