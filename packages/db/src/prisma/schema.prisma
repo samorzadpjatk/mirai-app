@@ -104,6 +104,62 @@ model Trip {
   activityFeed           ActivityFeed[]
   groupJoinRequests      GroupJoinRequest[]
   tripSponsors           TripSponsor[]
+  tripResources          TripResource[]
+  tripInsurance          TripInsurance?
+}
+
+model TripResource {
+  id          String   @id @default(cuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  type        String
+  label       String
+  description String?
+  url         String?
+  storagePath String?
+  fileName    String?
+  iconName    String?
+  value       String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tripId, type])
+}
+
+model TripInsurance {
+  id               String   @id @default(cuid())
+  tripId           String   @unique
+  trip             Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  label            String
+  phoneNumber      String
+  phoneDisplay     String
+  policyNumber     String
+  contractNumber   String
+  providerName     String
+  hospitalName     String?
+  hospitalAddress  String?
+  hospitalDistance String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  steps TripInsuranceStep[]
+}
+
+model TripInsuranceStep {
+  id             String        @id @default(cuid())
+  insuranceId    String
+  insurance      TripInsurance @relation(fields: [insuranceId], references: [id], onDelete: Cascade)
+  stepNumber     Int
+  title          String
+  text           String
+  requiredInfo   String[]      @default([])
+  exampleCall    String?
+  additionalText String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([insuranceId, stepNumber])
 }
 
 model TripParticipant {
