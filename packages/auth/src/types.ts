@@ -1,4 +1,5 @@
 import type { SupabaseSession } from "@integral-2025-app/supabase";
+import type { AuthUser } from "@integral-2025-app/shared";
 
 export interface DatabaseUser {
   id: string;
@@ -14,20 +15,6 @@ export interface DatabaseUser {
 }
 
 export type Role = "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
-
-export interface AuthUser {
-  id: string;
-  authUserId: string;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  /**
-   * Convenience display name derived from first/last, kept for backward compatibility.
-   */
-  name: string | null;
-  emailVerified: Date | null;
-  role: "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
-}
 
 export interface AuthState {
   user: AuthUser | null;

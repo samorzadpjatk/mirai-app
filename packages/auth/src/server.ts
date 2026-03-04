@@ -1,10 +1,11 @@
 export type {
   DatabaseUser,
   Role,
-  AuthUser,
   AuthState,
   SignInWithOtpOptions
 } from "./types";
+
+export type { AuthUser } from "@integral-2025-app/shared";
 
 export {
   getAuthServerUser as getServerUser,

@@ -103,6 +103,7 @@ model Trip {
   rewards                Reward[]
   activityFeed           ActivityFeed[]
   groupJoinRequests      GroupJoinRequest[]
+  tripSponsors           TripSponsor[]
 }
 
 model TripParticipant {
@@ -647,4 +648,36 @@ model UserAgent {
   @@index([platform])
   @@index([userId])
   @@index([userAgent])
+}
+
+model Sponsor {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  logoPath    String   // Path to logo in Supabase Storage
+  height      Int?     // Logo height adjustment
+  offsetX     Int?     // Logo X offset adjustment
+  offsetY     Int?     // Logo Y offset adjustment
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Many-to-many relationship with trips
+  tripSponsors TripSponsor[]
+  
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model TripSponsor {
+  id        String   @id @default(cuid())
+  tripId    String
+  sponsorId String
+  trip      Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  sponsor   Sponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([tripId, sponsorId])
+  @@index([tripId])
+  @@index([sponsorId])
 }
