@@ -33,8 +33,12 @@
   },
   "dependencies": {
     "@integral-2025-app/db": "workspace:*",
+    "@integral-2025-app/shared": "workspace:*",
     "@integral-2025-app/supabase": "workspace:*",
-    "zod": "^4.3.4"
+    "jotai": "^2.18.0",
+    "jotai-zustand": "^0.6.0",
+    "zod": "^4.3.4",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@types/react": "~19.1.17",
