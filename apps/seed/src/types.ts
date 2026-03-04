@@ -47,6 +47,7 @@ export type TripResourceConfig = {
   url?: string;
   storagePath?: string;
   fileName?: string;
+  publicUrl?: string;
   iconName?: string;
   value?: string;
   sortOrder?: number;
