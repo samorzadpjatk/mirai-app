@@ -8,6 +8,7 @@ import {
 } from "../../api/trpc";
 import { type Prisma, type PrismaClient } from "@integral-2025-app/db";
 import { createChallengeCompletionWithWinnersById } from "../../utils/activityFeed";
+import { ensureTripNotEnded } from "../../utils/tripGuards";
 
 const voteSelect: Prisma.ChallengeVoteSelect = {
   id: true,
@@ -131,7 +132,7 @@ const ensureChallengeVoting = (params: {
 };
 
 const recomputeSubmissionVotes = async (
-  ctx: { db: PrismaClient },
+  ctx: { db: PrismaClient | Prisma.TransactionClient },
   challengeId: string,
 ) => {
   const submissions = await ctx.db.challengeSubmission.findMany({
@@ -152,19 +153,32 @@ const recomputeSubmissionVotes = async (
     tally.set(vote.submissionId, current);
   }
 
-  await ctx.db.$transaction(
-    submissions.map((submission) => {
+  // Handle both PrismaClient and TransactionClient
+  if ('$transaction' in ctx.db) {
+    // Regular PrismaClient - use its transaction method
+    await ctx.db.$transaction(
+      submissions.map((submission) => {
+        const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
+        return ctx.db.challengeSubmission.update({
+          where: { id: submission.id },
+          data: { voteCount: stats.count, voteScore: stats.score },
+        });
+      }),
+    );
+  } else {
+    // TransactionClient - execute updates sequentially within the existing transaction
+    for (const submission of submissions) {
       const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
-      return ctx.db.challengeSubmission.update({
+      await ctx.db.challengeSubmission.update({
         where: { id: submission.id },
         data: { voteCount: stats.count, voteScore: stats.score },
       });
-    }),
-  );
+    }
+  }
 };
 
 const resolveRequiredVotePositions = async (
-  ctx: { db: PrismaClient },
+  ctx: { db: PrismaClient | Prisma.TransactionClient },
   challengeId: string,
 ) => {
   const eligibleSubmissionsCount = await ctx.db.challengeSubmission.count({
@@ -184,7 +198,7 @@ const resolveRequiredVotePositions = async (
 };
 
 const getTripAdminParticipantIds = async (
-  ctx: { db: PrismaClient },
+  ctx: { db: PrismaClient | Prisma.TransactionClient },
   tripId: string,
 ) => {
   const admins = await ctx.db.tripParticipant.findMany({
@@ -216,7 +230,7 @@ const hasAllRequiredPositions = (
 };
 
 const getJudgedStaffVotingProgress = async (
-  ctx: { db: PrismaClient },
+  ctx: { db: PrismaClient | Prisma.TransactionClient },
   params: { challengeId: string; tripId: string },
 ): Promise<JudgedStaffVotingProgress> => {
   const [{ requiredPositions, eligibleSubmissionsCount }, adminParticipantIds] =
@@ -273,7 +287,7 @@ const getJudgedStaffVotingProgress = async (
 };
 
 const maybeFinalizeJudgedStaffVoting = async (
-  ctx: { db: PrismaClient },
+  ctx: { db: PrismaClient | Prisma.TransactionClient },
   params: {
     challenge: ChallengeForVoting;
     createdByAdminId: string;
@@ -316,7 +330,7 @@ const maybeFinalizeJudgedStaffVoting = async (
 };
 
 const validateJudgedStaffVotePayload = async (
-  ctx: { db: PrismaClient },
+  ctx: { db: PrismaClient | Prisma.TransactionClient },
   params: {
     challengeId: string;
     votePositions: number[];
@@ -431,24 +445,30 @@ export const challengeVoteRouter = createTRPCRouter({
         });
       }
 
-      await recomputeSubmissionVotes(ctx, input.challengeId);
+      const result = await ctx.db.$transaction(async (tx) => {
+        await recomputeSubmissionVotes({ db: tx }, input.challengeId);
 
-      await ctx.db.challenge.updateMany({
-        where: {
-          id: challenge.id,
-          tripId: challenge.tripId,
-          scoringCategory: "JUDGED_STAFF",
-          status: { in: ["HIDDEN", "VISIBLE", "ACTIVE", "VOTING_PHASE"] },
-        },
-        data: {
-          status: "COMPLETED",
-        },
-      });
+        const updateResult = await tx.challenge.updateMany({
+          where: {
+            id: challenge.id,
+            tripId: challenge.tripId,
+            scoringCategory: "JUDGED_STAFF",
+            status: { in: ["HIDDEN", "VISIBLE", "ACTIVE", "VOTING_PHASE"] },
+          },
+          data: {
+            status: "COMPLETED",
+          },
+        });
 
-      await createChallengeCompletionWithWinnersById({
-        tx: ctx.db,
-        challengeId: challenge.id,
-        createdByAdmin: ctx.dbUser.id,
+        if (updateResult.count > 0) {
+          await createChallengeCompletionWithWinnersById({
+            tx: tx,
+            challengeId: challenge.id,
+            createdByAdmin: ctx.dbUser.id,
+          });
+        }
+
+        return updateResult.count > 0;
       });
 
       const progress = await getJudgedStaffVotingProgress(ctx, {
@@ -458,7 +478,7 @@ export const challengeVoteRouter = createTRPCRouter({
 
       return {
         success: true,
-        finalized: true,
+        finalized: result,
         challengeStatus: "COMPLETED" as const,
         ...progress,
       };
@@ -482,6 +502,7 @@ export const challengeVoteRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const participant = await ensureTripParticipant(ctx, input.tripId);
       const challenge = await getChallengeInTrip(ctx, input.challengeId, input.tripId);
       ensureChallengeVoting({ challenge, actorRole: ctx.dbUser.role });
@@ -543,31 +564,35 @@ export const challengeVoteRouter = createTRPCRouter({
       }
 
       // Create new votes (no deletion allowed for any voting type)
-      await ctx.db.challengeVote.createMany({
-        data: input.votes.map((vote) => ({
-          challengeId: input.challengeId,
-          submissionId: vote.submissionId,
-          voterId: participant.id,
-          votePosition: vote.votePosition,
-          votePoints: vote.votePoints,
-          normalizedWeight: vote.normalizedWeight ?? 1.0,
-        })),
-      });
-
-      await recomputeSubmissionVotes(ctx, input.challengeId);
-
-      if (challenge.scoringCategory === "JUDGED_STAFF") {
-        await maybeFinalizeJudgedStaffVoting(ctx, {
-          challenge,
-          createdByAdminId: ctx.dbUser.id,
+      const result = await ctx.db.$transaction(async (tx) => {
+        await tx.challengeVote.createMany({
+          data: input.votes.map((vote) => ({
+            challengeId: input.challengeId,
+            submissionId: vote.submissionId,
+            voterId: participant.id,
+            votePosition: vote.votePosition,
+            votePoints: vote.votePoints,
+            normalizedWeight: vote.normalizedWeight ?? 1.0,
+          })),
         });
-      }
 
-      return ctx.db.challengeVote.findMany({
-        where: { challengeId: input.challengeId, voterId: participant.id },
-        select: voteSelect,
-        orderBy: { votePosition: "asc" },
+        await recomputeSubmissionVotes({ db: tx }, input.challengeId);
+
+        if (challenge.scoringCategory === "JUDGED_STAFF") {
+          await maybeFinalizeJudgedStaffVoting({ db: tx }, {
+            challenge,
+            createdByAdminId: ctx.dbUser.id,
+          });
+        }
+
+        return await tx.challengeVote.findMany({
+          where: { challengeId: input.challengeId, voterId: participant.id },
+          select: voteSelect,
+          orderBy: { votePosition: "asc" },
+        });
       });
+
+      return result;
     }),
   submitVote: protectedProcedure
     .input(
@@ -581,6 +606,7 @@ export const challengeVoteRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const participant = await ensureTripParticipant(ctx, input.tripId);
       const challenge = await getChallengeInTrip(ctx, input.challengeId, input.tripId);
       ensureChallengeVoting({ challenge, actorRole: ctx.dbUser.role });
@@ -653,28 +679,32 @@ export const challengeVoteRouter = createTRPCRouter({
       }
 
       try {
-        const createdVote = await ctx.db.challengeVote.create({
-          data: {
-            challengeId: input.challengeId,
-            submissionId: input.submissionId,
-            voterId: participant.id,
-            votePosition: input.votePosition,
-            votePoints: input.votePoints,
-            normalizedWeight: input.normalizedWeight ?? 1.0,
-          },
-          select: voteSelect,
+        const result = await ctx.db.$transaction(async (tx) => {
+          const createdVote = await tx.challengeVote.create({
+            data: {
+              challengeId: input.challengeId,
+              submissionId: input.submissionId,
+              voterId: participant.id,
+              votePosition: input.votePosition,
+              votePoints: input.votePoints,
+              normalizedWeight: input.normalizedWeight ?? 1.0,
+            },
+            select: voteSelect,
+          });
+
+          await recomputeSubmissionVotes({ db: tx }, input.challengeId);
+
+          if (challenge.scoringCategory === "JUDGED_STAFF") {
+            await maybeFinalizeJudgedStaffVoting({ db: tx }, {
+              challenge,
+              createdByAdminId: ctx.dbUser.id,
+            });
+          }
+
+          return createdVote;
         });
 
-        await recomputeSubmissionVotes(ctx, input.challengeId);
-
-        if (challenge.scoringCategory === "JUDGED_STAFF") {
-          await maybeFinalizeJudgedStaffVoting(ctx, {
-            challenge,
-            createdByAdminId: ctx.dbUser.id,
-          });
-        }
-
-        return createdVote;
+        return result;
       } catch (error: unknown) {
         const prismaCode =
           typeof error === "object" && error !== null && "code" in error

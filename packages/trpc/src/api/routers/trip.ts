@@ -73,6 +73,14 @@ export const tripRouter = createTRPCRouter({
               where: { isDeleted: false },
               select: { id: true, name: true },
             },
+            tripSponsors: {
+              where: {
+                sponsor: { isActive: true }
+              },
+              include: {
+                sponsor: true,
+              },
+            },
           },
           take: limit,
           skip: offset,
@@ -126,6 +134,14 @@ export const tripRouter = createTRPCRouter({
               }
             },
           },
+          tripSponsors: {
+            where: {
+              sponsor: { isActive: true }
+            },
+            include: {
+              sponsor: true,
+            },
+          },
           participants: {
             include: {
               user: {
@@ -164,6 +180,7 @@ export const tripRouter = createTRPCRouter({
 
       return {
         ...trip,
+        tripSponsors: trip.tripSponsors,
         groups: await Promise.all(
           trip.groups.map(async (group) => ({
             ...group,
@@ -207,6 +224,14 @@ export const tripRouter = createTRPCRouter({
               _count: {
                 select: { participants: true }
               }
+            },
+          },
+          tripSponsors: {
+            where: {
+              sponsor: { isActive: true }
+            },
+            include: {
+              sponsor: true,
             },
           },
           participants: {

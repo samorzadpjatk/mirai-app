@@ -728,66 +728,70 @@ export const challengeRouter = createTRPCRouter({
         ? "ACTIVE"
         : requestedStatus;
 
-      const challenge = await ctx.db.challenge.create({
-        data: {
-          tripId: input.tripId,
-          name: input.name,
-          description: input.description ?? null,
-          image: normalizeChallengeImageInput(input.image),
-          submissionType: input.submissionType,
-          scoringCategory: input.scoringCategory,
-          isRecurring: input.isRecurring,
-          dailyStartTime: input.dailyStartTime,
-          dailyEndTime: input.dailyEndTime,
-          basePoints: input.basePoints,
-          firstPlacePoints: input.firstPlacePoints,
-          secondPlacePoints: input.secondPlacePoints,
-          thirdPlacePoints: input.thirdPlacePoints,
-          status: initialStatus,
-          startTime: recurringWindow?.startTime ?? input.startTime,
-          endTime: recurringWindow?.endTime ?? input.endTime,
-          votingStartTime:
-            input.scoringCategory === "PEER_VOTING"
-              ? (peerVotingTemplateWindow?.votingStartTime ?? null)
-              : null,
-          votingEndTime:
-            input.scoringCategory === "PEER_VOTING"
-              ? (peerVotingTemplateWindow?.votingEndTime ?? null)
-              : null,
-          targetLatitude: input.targetLatitude,
-          targetLongitude: input.targetLongitude,
-          expectedValue:
-            input.submissionType === "QR_CODE"
-              ? (input.qrCodeValue ?? null)
-              : input.submissionType === "TEXT"
-                ? (input.textExpectedPhrase ?? null)
+      const challenge = await ctx.db.$transaction(async (tx) => {
+        const createdChallenge = await tx.challenge.create({
+          data: {
+            tripId: input.tripId,
+            name: input.name,
+            description: input.description ?? null,
+            image: normalizeChallengeImageInput(input.image),
+            submissionType: input.submissionType,
+            scoringCategory: input.scoringCategory,
+            isRecurring: input.isRecurring,
+            dailyStartTime: input.dailyStartTime,
+            dailyEndTime: input.dailyEndTime,
+            basePoints: input.basePoints,
+            firstPlacePoints: input.firstPlacePoints,
+            secondPlacePoints: input.secondPlacePoints,
+            thirdPlacePoints: input.thirdPlacePoints,
+            status: initialStatus,
+            startTime: recurringWindow?.startTime ?? input.startTime,
+            endTime: recurringWindow?.endTime ?? input.endTime,
+            votingStartTime:
+              input.scoringCategory === "PEER_VOTING"
+                ? (peerVotingTemplateWindow?.votingStartTime ?? null)
                 : null,
-          autoApprove:
-            input.submissionType === "QR_CODE" ||
-            input.submissionType === "LOCATION"
-              ? true
-              : input.submissionType === "IMAGE_LOCATION"
-                ? false
-              : input.autoApprove,
-        },
-        select: challengeSelect,
+            votingEndTime:
+              input.scoringCategory === "PEER_VOTING"
+                ? (peerVotingTemplateWindow?.votingEndTime ?? null)
+                : null,
+            targetLatitude: input.targetLatitude,
+            targetLongitude: input.targetLongitude,
+            expectedValue:
+              input.submissionType === "QR_CODE"
+                ? (input.qrCodeValue ?? null)
+                : input.submissionType === "TEXT"
+                  ? (input.textExpectedPhrase ?? null)
+                  : null,
+            autoApprove:
+              input.submissionType === "QR_CODE" ||
+              input.submissionType === "LOCATION"
+                ? true
+                : input.submissionType === "IMAGE_LOCATION"
+                  ? false
+                  : input.autoApprove,
+          },
+          select: challengeSelect,
+        });
+
+        if (createdChallenge.isRecurring) {
+          await precreateRecurringInstancesForTemplate({
+            tx,
+            template: createdChallenge,
+          });
+        }
+
+        if (createdChallenge.status === "ACTIVE") {
+          await createChallengeStatusActivityById({
+            tx,
+            challengeId: createdChallenge.id,
+            eventType: "challenge_started",
+            createdByAdmin: ctx.dbUser.id,
+          });
+        }
+
+        return createdChallenge;
       });
-
-      if (challenge.isRecurring) {
-        await precreateRecurringInstancesForTemplate({
-          tx: ctx.db,
-          template: challenge,
-        });
-      }
-
-      if (challenge.status === "ACTIVE") {
-        await createChallengeStatusActivityById({
-          tx: ctx.db,
-          challengeId: challenge.id,
-          eventType: "challenge_started",
-          createdByAdmin: ctx.dbUser.id,
-        });
-      }
 
       return {
         ...toClientChallenge(challenge),
@@ -998,66 +1002,70 @@ export const challengeRouter = createTRPCRouter({
         });
       }
 
-      const challenge = await ctx.db.challenge.update({
-        where: { id: input.id },
-        data: {
-          name: input.name,
-          description:
-            input.description !== undefined
-              ? (input.description ?? null)
-              : undefined,
-          image: normalizeChallengeImageInput(input.image),
-          submissionType: input.submissionType,
-          scoringCategory: input.scoringCategory,
-          isRecurring: input.isRecurring,
-          dailyStartTime: input.dailyStartTime,
-          dailyEndTime: input.dailyEndTime,
-          basePoints: input.basePoints,
-          firstPlacePoints: input.firstPlacePoints,
-          secondPlacePoints: input.secondPlacePoints,
-          thirdPlacePoints: input.thirdPlacePoints,
-          status: input.status,
-          startTime: recurringWindow?.startTime ?? input.startTime,
-          endTime: recurringWindow?.endTime ?? input.endTime,
-          votingStartTime:
-            nextScoringCategory !== "PEER_VOTING"
-              ? null
-              : nextStatus === "VOTING_PHASE" || nextStatus === "COMPLETED"
-                ? input.votingStartTime
-                : peerVotingTemplateWindow?.votingStartTime,
-          votingEndTime:
-            nextScoringCategory !== "PEER_VOTING"
-              ? null
-              : nextStatus === "VOTING_PHASE" || nextStatus === "COMPLETED"
-                ? input.votingEndTime
-                : peerVotingTemplateWindow?.votingEndTime,
-          targetLatitude: input.targetLatitude,
-          targetLongitude: input.targetLongitude,
-          expectedValue: effectiveExpectedValue,
-          autoApprove:
-            effectiveSubmissionType === "QR_CODE" ||
-            effectiveSubmissionType === "LOCATION"
-              ? true
-              : effectiveSubmissionType === "IMAGE_LOCATION"
-                ? false
-              : input.autoApprove,
-        },
-        select: challengeSelect,
-      });
-
-      if (challenge.isRecurring) {
-        await precreateRecurringInstancesForTemplate({
-          tx: ctx.db,
-          template: challenge,
+      const challenge = await ctx.db.$transaction(async (tx) => {
+        const updatedChallenge = await tx.challenge.update({
+          where: { id: input.id },
+          data: {
+            name: input.name,
+            description:
+              input.description !== undefined
+                ? (input.description ?? null)
+                : undefined,
+            image: normalizeChallengeImageInput(input.image),
+            submissionType: input.submissionType,
+            scoringCategory: input.scoringCategory,
+            isRecurring: input.isRecurring,
+            dailyStartTime: input.dailyStartTime,
+            dailyEndTime: input.dailyEndTime,
+            basePoints: input.basePoints,
+            firstPlacePoints: input.firstPlacePoints,
+            secondPlacePoints: input.secondPlacePoints,
+            thirdPlacePoints: input.thirdPlacePoints,
+            status: input.status,
+            startTime: recurringWindow?.startTime ?? input.startTime,
+            endTime: recurringWindow?.endTime ?? input.endTime,
+            votingStartTime:
+              nextScoringCategory !== "PEER_VOTING"
+                ? null
+                : nextStatus === "VOTING_PHASE" || nextStatus === "COMPLETED"
+                  ? input.votingStartTime
+                  : peerVotingTemplateWindow?.votingStartTime,
+            votingEndTime:
+              nextScoringCategory !== "PEER_VOTING"
+                ? null
+                : nextStatus === "VOTING_PHASE" || nextStatus === "COMPLETED"
+                  ? input.votingEndTime
+                  : peerVotingTemplateWindow?.votingEndTime,
+            targetLatitude: input.targetLatitude,
+            targetLongitude: input.targetLongitude,
+            expectedValue: effectiveExpectedValue,
+            autoApprove:
+              effectiveSubmissionType === "QR_CODE" ||
+              effectiveSubmissionType === "LOCATION"
+                ? true
+                : effectiveSubmissionType === "IMAGE_LOCATION"
+                  ? false
+                  : input.autoApprove,
+          },
+          select: challengeSelect,
         });
-      }
 
-      await createChallengeStatusActivityFromTransition({
-        tx: ctx.db,
-        challengeId: challenge.id,
-        previousStatus: existing.status,
-        nextStatus: challenge.status,
-        createdByAdmin: ctx.dbUser.id,
+        if (updatedChallenge.isRecurring) {
+          await precreateRecurringInstancesForTemplate({
+            tx,
+            template: updatedChallenge,
+          });
+        }
+
+        await createChallengeStatusActivityFromTransition({
+          tx,
+          challengeId: updatedChallenge.id,
+          previousStatus: existing.status,
+          nextStatus: updatedChallenge.status,
+          createdByAdmin: ctx.dbUser.id,
+        });
+
+        return updatedChallenge;
       });
 
       return {
@@ -1119,21 +1127,25 @@ export const challengeRouter = createTRPCRouter({
         });
       }
 
-      const challenge = await ctx.db.challenge.update({
-        where: { id: input.id },
-        data: {
-          status: "COMPLETED",
-          votingEndTime: new Date(),
-        },
-        select: challengeSelect,
-      });
+      const challenge = await ctx.db.$transaction(async (tx) => {
+        const updatedChallenge = await tx.challenge.update({
+          where: { id: input.id },
+          data: {
+            status: "COMPLETED",
+            votingEndTime: new Date(),
+          },
+          select: challengeSelect,
+        });
 
-      await createChallengeStatusActivityFromTransition({
-        tx: ctx.db,
-        challengeId: challenge.id,
-        previousStatus: existing.status,
-        nextStatus: challenge.status,
-        createdByAdmin: ctx.dbUser.id,
+        await createChallengeStatusActivityFromTransition({
+          tx,
+          challengeId: updatedChallenge.id,
+          previousStatus: existing.status,
+          nextStatus: updatedChallenge.status,
+          createdByAdmin: ctx.dbUser.id,
+        });
+
+        return updatedChallenge;
       });
 
       return {

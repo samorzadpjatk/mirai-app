@@ -448,41 +448,45 @@ export const userRouter = createTRPCRouter({
 
       const authUserId = data.user.id;
 
-      const existingUser = await ctx.db.user.findUnique({
-        where: { authUserId },
-        select: userWithAuthSelect,
-      });
-
-      const dbUser =
-        existingUser ??
-        (await ctx.db.user.create({
-          data: {
-            authUserId,
-            firstName,
-            lastName,
-            role: roleSchema.enum.USER,
-          },
+      const result = await ctx.db.$transaction(async (tx) => {
+        const existingUser = await tx.user.findUnique({
+          where: { authUserId },
           select: userWithAuthSelect,
-        }));
+        });
 
-      const participant = await ctx.db.tripParticipant.upsert({
-        where: {
-          userId_tripId: { userId: dbUser.id, tripId: input.tripId },
-        },
-        update: {},
-        create: {
-          userId: dbUser.id,
-          tripId: input.tripId,
-        },
-        select: {
-          user: {
+        const dbUser =
+          existingUser ??
+          (await tx.user.create({
+            data: {
+              authUserId,
+              firstName,
+              lastName,
+              role: roleSchema.enum.USER,
+            },
             select: userWithAuthSelect,
+          }));
+
+        const participant = await tx.tripParticipant.upsert({
+          where: {
+            userId_tripId: { userId: dbUser.id, tripId: input.tripId },
           },
-          wristNumber: true,
-          houseNumber: true,
-          group: { select: { id: true, name: true } },
-          tripId: true,
-        },
+          update: {},
+          create: {
+            userId: dbUser.id,
+            tripId: input.tripId,
+          },
+          select: {
+            user: {
+              select: userWithAuthSelect,
+            },
+            wristNumber: true,
+            houseNumber: true,
+            group: { select: { id: true, name: true } },
+            tripId: true,
+          },
+        });
+
+        return { participant, dbUser };
       });
 
       const emailByAuthUserId = new Map([
@@ -490,11 +494,11 @@ export const userRouter = createTRPCRouter({
       ]);
 
       return {
-        ...toPublicUser(participant.user, emailByAuthUserId),
-        wristNumber: participant.wristNumber,
-        houseNumber: participant.houseNumber,
-        group: participant.group,
-        tripId: participant.tripId,
+        ...toPublicUser(result.participant.user, emailByAuthUserId),
+        wristNumber: result.participant.wristNumber,
+        houseNumber: result.participant.houseNumber,
+        group: result.participant.group,
+        tripId: result.participant.tripId,
       };
     }),
   updateName: adminProcedure

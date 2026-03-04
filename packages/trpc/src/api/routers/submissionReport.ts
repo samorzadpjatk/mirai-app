@@ -7,6 +7,7 @@ import {
 } from "../../api/trpc";
 import { type Prisma } from "@integral-2025-app/db";
 import { buildAuthEmailLookup, resolveAuthEmail } from "../../utils/authEmails";
+import { ensureTripNotEnded } from "../../utils/tripGuards";
 
 const reportSelect = {
   id: true,
@@ -54,6 +55,7 @@ export const submissionReportRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const participant = await ensureTripParticipant(ctx, input.tripId);
 
       const submission = await ctx.db.challengeSubmission.findFirst({

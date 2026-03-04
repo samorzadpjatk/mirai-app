@@ -14,6 +14,7 @@ import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
 } from "../../utils/activityFeed";
+import { ensureTripNotEnded, ensureTripNotEndedByGroupId } from "../../utils/tripGuards";
 
 const toUserWithEmail = <T extends { authUserId?: string | null }>(
   user: T,
@@ -415,6 +416,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const group = await (async () => {
         for (let attempt = 0; attempt < 30; attempt += 1) {
           const code = generateFourDigitCode();
@@ -464,28 +466,30 @@ export const groupRouter = createTRPCRouter({
         });
       })();
 
-      // Add creator as a member of the group
-      await ctx.db.tripParticipant.upsert({
-        where: {
-          userId_tripId: {
+      // Add creator as a member of the group and clean up join requests atomically
+      await ctx.db.$transaction(async (tx) => {
+        await tx.tripParticipant.upsert({
+          where: {
+            userId_tripId: {
+              userId: ctx.dbUser.id,
+              tripId: input.tripId,
+            },
+          },
+          create: {
             userId: ctx.dbUser.id,
             tripId: input.tripId,
+            groupId: group.id,
           },
-        },
-        create: {
-          userId: ctx.dbUser.id,
-          tripId: input.tripId,
-          groupId: group.id,
-        },
-        update: {
-          groupId: group.id,
-        },
-      });
-      await ctx.db.groupJoinRequest.deleteMany({
-        where: {
-          tripId: input.tripId,
-          userId: ctx.dbUser.id,
-        },
+          update: {
+            groupId: group.id,
+          },
+        });
+        await tx.groupJoinRequest.deleteMany({
+          where: {
+            tripId: input.tripId,
+            userId: ctx.dbUser.id,
+          },
+        });
       });
 
       const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
@@ -514,6 +518,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const { id, tripId, ...updateData } = input;
       const group = await ctx.db.group.findUnique({ where: { id } });
       if (group?.tripId !== tripId || group.isDeleted) {
@@ -605,9 +610,11 @@ export const groupRouter = createTRPCRouter({
   deleteMyGroup: protectedProcedure
     .input(z.object({ groupId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEndedByGroupId(ctx.db, input.groupId);
+      
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
-        select: { id: true, organizerId: true, isDeleted: true },
+        select: { id: true, organizerId: true, isDeleted: true, tripId: true },
       });
 
       if (!group || group.isDeleted) {
@@ -670,28 +677,32 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      const participant = await ctx.db.tripParticipant.upsert({
-        where: {
-          userId_tripId: { userId: ctx.dbUser.id, tripId: input.tripId },
-        },
-        create: {
-          userId: ctx.dbUser.id,
-          tripId: input.tripId,
-          groupId: input.id,
-        },
-        update: { groupId: input.id },
-      });
-      await ctx.db.groupJoinRequest.deleteMany({
-        where: {
-          tripId: input.tripId,
-          userId: ctx.dbUser.id,
-        },
-      });
+      const [participant] = await ctx.db.$transaction([
+        ctx.db.tripParticipant.upsert({
+          where: {
+            userId_tripId: { userId: ctx.dbUser.id, tripId: input.tripId },
+          },
+          create: {
+            userId: ctx.dbUser.id,
+            tripId: input.tripId,
+            groupId: input.id,
+          },
+          update: { groupId: input.id },
+        }),
+        ctx.db.groupJoinRequest.deleteMany({
+          where: {
+            tripId: input.tripId,
+            userId: ctx.dbUser.id,
+          },
+        }),
+      ]);
       return participant;
     }),
   requestToJoin: protectedProcedure
     .input(z.object({ groupId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEndedByGroupId(ctx.db, input.groupId);
+      
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
         select: { id: true, tripId: true, organizerId: true, isDeleted: true },
@@ -780,6 +791,8 @@ export const groupRouter = createTRPCRouter({
   cancelMyJoinRequest: protectedProcedure
     .input(z.object({ groupId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEndedByGroupId(ctx.db, input.groupId);
+      
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
         select: { id: true, tripId: true, isDeleted: true },
@@ -883,6 +896,8 @@ export const groupRouter = createTRPCRouter({
           });
         }
 
+        await ensureTripNotEnded(ctx.db, request.tripId);
+
         if (request.group.organizerId !== ctx.dbUser.id) {
           throw new TRPCError({
             code: "FORBIDDEN",
@@ -950,6 +965,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
         include: { participants: true },
@@ -976,23 +992,25 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      const participant = await ctx.db.tripParticipant.upsert({
-        where: {
-          userId_tripId: { userId: input.userId, tripId: input.tripId },
-        },
-        create: {
-          userId: input.userId,
-          tripId: input.tripId,
-          groupId: input.groupId,
-        },
-        update: { groupId: input.groupId },
-      });
-      await ctx.db.groupJoinRequest.deleteMany({
-        where: {
-          tripId: input.tripId,
-          userId: input.userId,
-        },
-      });
+      const [participant] = await ctx.db.$transaction([
+        ctx.db.tripParticipant.upsert({
+          where: {
+            userId_tripId: { userId: input.userId, tripId: input.tripId },
+          },
+          create: {
+            userId: input.userId,
+            tripId: input.tripId,
+            groupId: input.groupId,
+          },
+          update: { groupId: input.groupId },
+        }),
+        ctx.db.groupJoinRequest.deleteMany({
+          where: {
+            tripId: input.tripId,
+            userId: input.userId,
+          },
+        }),
+      ]);
       return participant;
     }),
 
@@ -1005,6 +1023,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
         select: { organizerId: true, tripId: true, isDeleted: true },
@@ -1023,26 +1042,28 @@ export const groupRouter = createTRPCRouter({
 
       const uniqueUserIds = Array.from(new Set(input.userIds));
 
-      await ctx.db.$transaction(
-        uniqueUserIds.map((userId) =>
-          ctx.db.tripParticipant.upsert({
-            where: {
-              userId_tripId: { userId, tripId: input.tripId },
-            },
-            create: {
-              userId,
-              tripId: input.tripId,
-              groupId: input.groupId,
-            },
-            update: { groupId: input.groupId },
-          }),
-        ),
-      );
-      await ctx.db.groupJoinRequest.deleteMany({
-        where: {
-          tripId: input.tripId,
-          userId: { in: uniqueUserIds },
-        },
+      await ctx.db.$transaction(async (tx) => {
+        await Promise.all(
+          uniqueUserIds.map((userId) =>
+            tx.tripParticipant.upsert({
+              where: {
+                userId_tripId: { userId, tripId: input.tripId },
+              },
+              create: {
+                userId,
+                tripId: input.tripId,
+                groupId: input.groupId,
+              },
+              update: { groupId: input.groupId },
+            }),
+          ),
+        );
+        await tx.groupJoinRequest.deleteMany({
+          where: {
+            tripId: input.tripId,
+            userId: { in: uniqueUserIds },
+          },
+        });
       });
 
       const participants = await ctx.db.tripParticipant.findMany({
@@ -1085,6 +1106,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       return await ctx.db.$transaction(async (tx) => {
         const participant = await tx.tripParticipant.findUnique({
           where: {
@@ -1186,6 +1208,8 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEndedByGroupId(ctx.db, input.groupId);
+      
       const group = await ctx.db.group.findUnique({
         where: { id: input.groupId },
         select: { id: true, tripId: true, organizerId: true, isDeleted: true },

@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, moderatorProcedure, protectedProcedure } from "../../api/trpc";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 import { type PrismaClient, type Prisma } from "@integral-2025-app/db";
+import { ensureTripNotEnded } from "../../utils/tripGuards";
 
 const REWARD_IMAGE_SIGNED_URL_SECONDS = 60 * 10;
 
@@ -372,6 +373,11 @@ export const rewardRouter = createTRPCRouter({
             },
             orderBy: { purchasedAt: "desc" },
           },
+          _count: {
+            select: {
+              purchases: true,
+            },
+          },
         },
       });
 
@@ -406,6 +412,7 @@ export const rewardRouter = createTRPCRouter({
         ...imageData,
         coinCost: dynamicCoinCost, // Use dynamic cost
         originalCoinCost: reward.coinCost, // Keep original for reference
+        purchasedCount: reward._count.purchases,
       };
     }),
 
@@ -577,6 +584,8 @@ export const rewardRouter = createTRPCRouter({
         if (!reward) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
         }
+
+        await ensureTripNotEnded(ctx.db, reward.tripId);
 
         if (reward.isHidden) {
           throw new TRPCError({
