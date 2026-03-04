@@ -425,7 +425,17 @@ export const challengeRouter = createTRPCRouter({
     return resolved.map((challenge) => toClientChallenge(challenge));
   }),
   getAllByTrip: protectedProcedure
-    .input(z.object({ tripId: z.string() }))
+    .input(
+      z.object({
+        tripId: z.string(),
+        pagination: z
+          .object({
+            limit: z.number().int().min(1).max(100).default(30),
+            offset: z.number().int().min(0).default(0),
+          })
+          .optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       await ensureRecurringInstancesForTrip({
         tx: ctx.db,
@@ -433,16 +443,34 @@ export const challengeRouter = createTRPCRouter({
       });
       await activateVisibleChallenges(ctx.db, { tripId: input.tripId });
 
-      const challenges = await ctx.db.challenge.findMany({
-        where: {
-          tripId: input.tripId,
-          isRecurring: false,
-        },
-        select: challengeSelect,
-        orderBy: { createdAt: "desc" },
-      });
+      const limit = input.pagination?.limit ?? 30;
+      const offset = input.pagination?.offset ?? 0;
+      const where = {
+        tripId: input.tripId,
+        isRecurring: false,
+      } as const;
+
+      const [challenges, total] = await Promise.all([
+        ctx.db.challenge.findMany({
+          where,
+          select: challengeSelect,
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.challenge.count({ where }),
+      ]);
+
       if (challenges.length === 0) {
-        return [];
+        return {
+          challenges: [],
+          pagination: {
+            total,
+            limit,
+            offset,
+            hasMore: offset + limit < total,
+          },
+        };
       }
 
       const challengeIds = challenges.map((challenge) => challenge.id);
@@ -513,14 +541,22 @@ export const challengeRouter = createTRPCRouter({
         challenges,
       );
 
-      return withResolvedImages.map((challenge) => ({
-        ...toClientChallenge(challenge),
-        participantGroupsCount: countByChallengeId.get(challenge.id) ?? 0,
-        pendingSubmissionsCount:
-          pendingCountByChallengeId.get(challenge.id) ?? 0,
-        myGroupSubmissionStatus:
-          mySubmissionStatusByChallengeId.get(challenge.id) ?? null,
-      }));
+      return {
+        challenges: withResolvedImages.map((challenge) => ({
+          ...toClientChallenge(challenge),
+          participantGroupsCount: countByChallengeId.get(challenge.id) ?? 0,
+          pendingSubmissionsCount:
+            pendingCountByChallengeId.get(challenge.id) ?? 0,
+          myGroupSubmissionStatus:
+            mySubmissionStatusByChallengeId.get(challenge.id) ?? null,
+        })),
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
+        },
+      };
     }),
 
   getById: protectedProcedure

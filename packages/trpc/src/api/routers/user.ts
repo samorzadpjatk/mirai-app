@@ -240,6 +240,21 @@ export const userRouter = createTRPCRouter({
         email: resolveAuthEmail(emailByAuthUserId, dbUser.authUserId),
       };
     }),
+  getTripParticipant: moderatorProcedure
+    .input(z.object({ userId: z.string(), tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: { userId: input.userId, tripId: input.tripId },
+        },
+        select: {
+          userId: true,
+          tripId: true,
+          wristNumber: true,
+          houseNumber: true,
+        },
+      });
+    }),
   getByIdWithGroup: moderatorProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -833,13 +848,39 @@ export const userRouter = createTRPCRouter({
           "groupName",
         ]),
         searchTerm: z.string().optional(),
-        page: z.number().min(1).default(1),
-        limit: z.number().min(5).max(50).default(20),
+        pagination: z
+          .object({
+            limit: z.number().int().min(1).max(100).default(20),
+            offset: z.number().int().min(0).default(0),
+          })
+          .optional(),
+        page: z.number().int().min(1).optional(),
+        limit: z.number().int().min(1).max(100).optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { searchTerm, page, limit, field, tripId } = input;
-      const skip = (page - 1) * limit;
+      const { searchTerm, field, tripId } = input;
+      const fallbackLimit = input.limit ?? 20;
+      const limit = input.pagination?.limit ?? fallbackLimit;
+      const page = input.page ?? 1;
+      const offset = input.pagination?.offset ?? (page - 1) * limit;
+      const currentPage = Math.floor(offset / limit) + 1;
+
+      const toPagination = (total: number) => {
+        const totalPages = Math.ceil(total / limit);
+        const hasNextPage = offset + limit < total;
+        return {
+          total,
+          totalCount: total,
+          limit,
+          offset,
+          hasMore: hasNextPage,
+          hasNextPage,
+          currentPage,
+          totalPages,
+          hasPreviousPage: currentPage > 1,
+        };
+      };
 
       if (field === "email") {
         const participants = (await ctx.db.tripParticipant.findMany({
@@ -885,9 +926,8 @@ export const userRouter = createTRPCRouter({
           return (aUser.email ?? "").localeCompare(bUser.email ?? "");
         });
 
-        const paged = sorted.slice(skip, skip + limit);
-        const totalCount = filtered.length;
-        const totalPages = Math.ceil(totalCount / limit);
+        const paged = sorted.slice(offset, offset + limit);
+        const total = filtered.length;
 
         return {
           users: paged.map((participant) => ({
@@ -897,14 +937,7 @@ export const userRouter = createTRPCRouter({
             group: participant.group,
             tripId: participant.tripId,
           })),
-          pagination: {
-            currentPage: page,
-            totalPages,
-            totalCount,
-            hasNextPage: page < totalPages,
-            hasPreviousPage: page > 1,
-            limit,
-          },
+          pagination: toPagination(total),
         };
       }
 
@@ -945,7 +978,7 @@ export const userRouter = createTRPCRouter({
         ...(searchConditions ? { AND: searchConditions } : {}),
       } as const;
 
-      const totalCount = await ctx.db.tripParticipant.count({
+      const total = await ctx.db.tripParticipant.count({
         where,
       });
 
@@ -961,7 +994,7 @@ export const userRouter = createTRPCRouter({
           { user: { firstName: "asc" } },
           { user: { lastName: "asc" } },
         ],
-        skip,
+        skip: offset,
         take: limit,
       }));
 
@@ -969,8 +1002,6 @@ export const userRouter = createTRPCRouter({
         ctx.supabase,
         participants.map((participant) => participant.user.authUserId),
       );
-
-      const totalPages = Math.ceil(totalCount / limit);
 
       return {
         users: participants.map((participant) => ({
@@ -980,14 +1011,7 @@ export const userRouter = createTRPCRouter({
           group: participant.group,
           tripId: participant.tripId,
         })),
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalCount,
-          hasNextPage: page < totalPages,
-          hasPreviousPage: page > 1,
-          limit,
-        },
+        pagination: toPagination(total),
       };
     }),
 });

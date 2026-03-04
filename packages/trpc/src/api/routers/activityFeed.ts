@@ -734,6 +734,25 @@ export const activityFeedRouter = createTRPCRouter({
       });
     }),
 
+  getById: moderatorProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const activity = await ctx.db.activityFeed.findUnique({
+        where: { id: input.id },
+        select: activitySelect,
+      });
+
+      if (!activity) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Activity not found",
+        });
+      }
+
+      const [enriched] = await enrichActivities(ctx, [activity]);
+      return enriched;
+    }),
+
   createCustom: moderatorProcedure
     .input(
       z.object({

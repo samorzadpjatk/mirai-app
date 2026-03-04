@@ -42,22 +42,54 @@ const resolveGroupImage = async (
 };
 
 export const tripRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.trip.findMany({
-      where: {
+  getAll: protectedProcedure
+    .input(
+      z
+        .object({
+          pagination: z
+            .object({
+              limit: z.number().int().min(1).max(100).default(30),
+              offset: z.number().int().min(0).default(0),
+            })
+            .optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const limit = input?.pagination?.limit ?? 30;
+      const offset = input?.pagination?.offset ?? 0;
+      const where = {
         participants: {
           some: { userId: ctx.dbUser.id },
         },
-      },
-      orderBy: { startDate: "asc" },
-      include: {
-        groups: {
-          where: { isDeleted: false },
-          select: { id: true, name: true },
+      };
+
+      const [trips, total] = await Promise.all([
+        ctx.db.trip.findMany({
+          where,
+          orderBy: { startDate: "asc" },
+          include: {
+            groups: {
+              where: { isDeleted: false },
+              select: { id: true, name: true },
+            },
+          },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.trip.count({ where }),
+      ]);
+
+      return {
+        trips,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
         },
-      },
-    });
-  }),
+      };
+    }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {

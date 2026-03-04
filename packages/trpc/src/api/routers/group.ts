@@ -184,64 +184,91 @@ export const groupRouter = createTRPCRouter({
       };
     }),
   getAll: protectedProcedure
-    .input(z.object({ tripId: z.string() }))
+    .input(
+      z.object({
+        tripId: z.string(),
+        pagination: z
+          .object({
+            limit: z.number().int().min(1).max(100).default(30),
+            offset: z.number().int().min(0).default(0),
+          })
+          .optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      const groups = await ctx.db.group.findMany({
-        where: { tripId: input.tripId, isDeleted: false },
-        include: {
-          participants: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  authUserId: true,
+      const limit = input.pagination?.limit ?? 30;
+      const offset = input.pagination?.offset ?? 0;
+      const where = { tripId: input.tripId, isDeleted: false };
+
+      const [groups, total] = await Promise.all([
+        ctx.db.group.findMany({
+          where,
+          include: {
+            participants: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    authUserId: true,
+                  },
                 },
               },
             },
-          },
-          organizer: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              authUserId: true,
-            },
-          },
-          coinTransactions: {
-            include: {
-              admin: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                },
+            organizer: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                authUserId: true,
               },
             },
-            orderBy: { createdAt: "desc" },
-            take: 10, // Last 10 transactions
+            coinTransactions: {
+              include: {
+                admin: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+              },
+              orderBy: { createdAt: "desc" },
+              take: 10, // Last 10 transactions
+            },
           },
-        },
-        orderBy: { name: "asc" },
-      });
+          orderBy: { name: "asc" },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.group.count({ where }),
+      ]);
 
       // Use optimized batch email lookup
       const emailByAuthUserId = await batchEmailLookup(ctx.supabase, groups);
 
-      return await Promise.all(
-        groups.map(async (group) => ({
-          ...group,
-          image: await resolveGroupImage(ctx.supabase, group.image),
-          organizer: group.organizer
-            ? toUserWithEmail(group.organizer, emailByAuthUserId)
-            : group.organizer,
-          participants: group.participants.map((participant) => ({
-            ...participant,
-            user: toUserWithEmail(participant.user, emailByAuthUserId),
+      return {
+        groups: await Promise.all(
+          groups.map(async (group) => ({
+            ...group,
+            image: await resolveGroupImage(ctx.supabase, group.image),
+            organizer: group.organizer
+              ? toUserWithEmail(group.organizer, emailByAuthUserId)
+              : group.organizer,
+            participants: group.participants.map((participant) => ({
+              ...participant,
+              user: toUserWithEmail(participant.user, emailByAuthUserId),
+            })),
           })),
-        })),
-      );
+        ),
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
+        },
+      };
     }),
   getGroupList: moderatorProcedure
     .input(z.object({ tripId: z.string() }))

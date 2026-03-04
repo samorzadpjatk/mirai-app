@@ -1,14 +1,32 @@
 "use client";
 
-import { useSubscription, createTRPCContext } from "@trpc/tanstack-react-query";
+import { createContext, useContext } from "react";
+import { useSubscription } from "@trpc/tanstack-react-query";
+import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import type { TRPCClient } from "@trpc/client";
 import type { AppRouter } from "../api/root";
 
-const trpcContext = createTRPCContext<AppRouter>();
+interface TRPCContextValue {
+    trpcProxy: TRPCOptionsProxy<AppRouter>;
+    trpcVanillaClient: TRPCClient<AppRouter>;
+}
 
-export const TRPCProvider = trpcContext.TRPCProvider;
-export const useTRPC = trpcContext.useTRPC;
-export const useTRPCClient = trpcContext.useTRPCClient;
+export const TRPCContext = createContext<TRPCContextValue | null>(null);
+
+export function useTRPC(): TRPCOptionsProxy<AppRouter> {
+    const ctx = useContext(TRPCContext);
+    if (!ctx) {
+        throw new Error("useTRPC must be used within APIProvider");
+    }
+    return ctx.trpcProxy;
+}
+
+export function useTRPCClient(): TRPCClient<AppRouter> {
+    const ctx = useContext(TRPCContext);
+    if (!ctx) {
+        throw new Error("useTRPCClient must be used within APIProvider");
+    }
+    return ctx.trpcVanillaClient;
+}
 
 export { useSubscription };
-
-

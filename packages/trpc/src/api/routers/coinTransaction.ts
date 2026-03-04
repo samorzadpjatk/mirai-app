@@ -81,19 +81,49 @@ export const coinTransactionRouter = createTRPCRouter({
       });
     }),
   getAll: moderatorProcedure
-    .input(z.object({ tripId: z.string() }))
+    .input(
+      z.object({
+        tripId: z.string(),
+        pagination: z
+          .object({
+            limit: z.number().int().min(1).max(100).default(50),
+            offset: z.number().int().min(0).default(0),
+          })
+          .optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      return await ctx.db.coinTransaction.findMany({
-        where: { group: { tripId: input.tripId } },
-        select: {
-          id: true,
-          amount: true,
-          reason: true,
-          createdAt: true,
-          group: { select: { id: true, name: true } },
-          admin: { select: { id: true, firstName: true, lastName: true } },
+      const limit = input.pagination?.limit ?? 50;
+      const offset = input.pagination?.offset ?? 0;
+      const where = { group: { tripId: input.tripId } };
+
+      const [transactions, total] = await Promise.all([
+        ctx.db.coinTransaction.findMany({
+          where,
+          select: {
+            id: true,
+            amount: true,
+            reason: true,
+            createdAt: true,
+            group: { select: { id: true, name: true } },
+            admin: { select: { id: true, firstName: true, lastName: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.coinTransaction.count({ where }),
+      ]);
+
+      return {
+        transactions,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
         },
-      });
+      };
     }),
   getQuickStats: moderatorProcedure
     .input(z.object({ tripId: z.string() }))
