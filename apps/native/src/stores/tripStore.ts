@@ -8,7 +8,7 @@ interface TripState {
   isLoading: boolean;
 }
 
-export const useTripStore = create<TripState>((set) => ({
+export const useTripStore = create<TripState>((_set) => ({
   selectedTripId: null,
   isTripPast: undefined,
   isLoading: false,

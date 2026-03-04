@@ -21,7 +21,6 @@ import { useFileDownload } from "~/hooks/files";
 import { useTripResources, useSelectedTrip } from "~/hooks/trips";
 import { useLocalSearchParams } from "expo-router";
 import LoadingScreen from "../../../components/LoadingScreen";
-import { TRIP_RESOURCE_TYPES } from "@integral-2025-app/shared";
 
 // Type-safe icon name helper
 const getIconName = (iconName: string | null, fallback: keyof typeof Ionicons.glyphMap): keyof typeof Ionicons.glyphMap => {
@@ -73,17 +72,11 @@ export default function TripInfoScreen() {
       const pdfMapResource = getResource("PDF_MAP");
       const infopackResource = getResource("INFOPACK");
       
-      if (pdfMapResource?.fileName) {
-        const mapPdfResult = mapPdfDownload.checkIfFileExists(pdfMapResource.fileName);
-        console.log("PDF downloaded:", mapPdfResult?.exists ?? false);
-      }
-      
-      if (infopackResource?.fileName) {
-        const infopackResult = infopackDownload.checkIfFileExists(infopackResource.fileName);
-        console.log("Infopack downloaded:", infopackResult?.exists ?? false);
-      }
+      // Note: File existence checking will be handled by the download hook's cache mechanism
+      console.log("PDF Map resource:", pdfMapResource ? "available" : "not found");
+      console.log("Infopack resource:", infopackResource ? "available" : "not found");
     }
-  }, [isLoading, getResource, mapPdfDownload, infopackDownload]);
+  }, [isLoading, getResource]);
   
   if (isLoading) {
     return <LoadingScreen message="Loading trip info..." />;
@@ -110,7 +103,6 @@ export default function TripInfoScreen() {
     const infopackResource = getResource("INFOPACK");
     if (infopackResource?.storagePath) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const result = await infopackDownload.download({ 
           storagePath: infopackResource.storagePath
         });
@@ -141,7 +133,6 @@ export default function TripInfoScreen() {
     const pdfMapResource = getResource("PDF_MAP");
     if (pdfMapResource?.storagePath) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const result = await mapPdfDownload.download({ 
           storagePath: pdfMapResource.storagePath
         });
@@ -276,7 +267,7 @@ export default function TripInfoScreen() {
                         <Text style={styles.mapTitle}>
                           {getResource("PDF_MAP")?.label ?? "PDF Map"}
                         </Text>
-                        {mapPdfDownload.result?.exists ? (
+                        {mapPdfDownload.file ? (
                           <Ionicons
                             name="checkmark-circle"
                             size={14}
@@ -293,7 +284,7 @@ export default function TripInfoScreen() {
                       <Text style={styles.pdfMapSubtitle}>
                         {mapPdfDownload.status === "loading"
                           ? "Downloading..."
-                          : mapPdfDownload.result?.exists
+                          : mapPdfDownload.file
                             ? "Downloaded"
                             : "Tap to Download"}
                       </Text>
@@ -325,7 +316,7 @@ export default function TripInfoScreen() {
                       <Text style={styles.bentoTitle}>
                         {getResource("INFOPACK")?.label ?? "Infopack"}
                       </Text>
-                      {infopackDownload.result?.exists ? (
+                      {infopackDownload.file ? (
                         <Ionicons
                           name="checkmark-circle"
                           size={14}
@@ -342,7 +333,7 @@ export default function TripInfoScreen() {
                     <Text style={styles.bentoSubtitle}>
                       {infopackDownload.status === "loading"
                         ? "Downloading..."
-                        : infopackDownload.result?.exists
+                        : infopackDownload.file
                           ? "Downloaded"
                           : "Tap to Download"}
                     </Text>
