@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '~/styles';
 import { AdminModal, AdminModalButton } from '../AdminModal';
+import {
+  FormField,
+  ThemedTextInput,
+} from '~/components/common/ui';
 import type { Group, User } from '~/hooks/admin/useAdminGroups';
 
 interface CreateGroupModalProps {
@@ -43,16 +47,13 @@ export function CreateGroupModal({ visible, onClose, onCreateGroup, isCreating }
         </>
       }
     >
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Group Name</Text>
-        <TextInput
-          style={styles.textInput}
+      <FormField label="Group Name" required>
+        <ThemedTextInput
           value={groupName}
           onChangeText={setGroupName}
           placeholder="Enter group name..."
-          placeholderTextColor={colors.textSecondary}
         />
-      </View>
+      </FormField>
     </AdminModal>
   );
 }
@@ -103,16 +104,13 @@ export function EditGroupModal({ visible, onClose, group, onUpdateGroup, isUpdat
         </>
       }
     >
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Group Name</Text>
-        <TextInput
-          style={styles.textInput}
+      <FormField label="Group Name" required>
+        <ThemedTextInput
           value={groupName}
           onChangeText={setGroupName}
           placeholder="Enter group name..."
-          placeholderTextColor={colors.textSecondary}
         />
-      </View>
+      </FormField>
     </AdminModal>
   );
 }
@@ -217,10 +215,10 @@ export function AssignOrganizerModal({
     >
       {group && (
         <>
-          <View style={styles.modalUserInfo}>
-            <Text style={styles.modalGroupName}>{group.name}</Text>
+          <View style={{ marginBottom: spacing.md }}>
+            <Text style={{ fontSize: typography.base, color: colors.white, fontWeight: typography.medium, marginBottom: spacing.xs }}>{group.name}</Text>
             <Text style={styles.currentOrganizer}>
-              Current organizer: {group.organizer.firstName} {group.organizer.lastName}
+              Current organizer: {group.organizer?.firstName} {group.organizer?.lastName}
             </Text>
           </View>
 
@@ -256,24 +254,6 @@ export function AssignOrganizerModal({
 }
 
 const styles = StyleSheet.create({
-  inputContainer: {
-    paddingBottom: spacing.md,
-  },
-  inputLabel: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  textInput: {
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    fontSize: typography.base,
-    color: colors.white,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
   deleteContent: {
     paddingBottom: spacing.md,
   },
@@ -281,48 +261,38 @@ const styles = StyleSheet.create({
     fontSize: typography.base,
     color: colors.white,
     marginBottom: spacing.sm,
-    textAlign: 'center',
   },
   deleteSubWarning: {
     fontSize: typography.sm,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
+    marginBottom: spacing.md,
   },
   memberCount: {
     fontSize: typography.sm,
-    color: colors.warning,
-    textAlign: 'center',
+    color: colors.danger,
     fontWeight: typography.medium,
-  },
-  modalUserInfo: {
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderWhite5,
-  },
-  modalGroupName: {
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
   },
   currentOrganizer: {
     fontSize: typography.sm,
     color: colors.textSecondary,
+    marginBottom: spacing.md,
   },
   usersList: {
-    maxHeight: 300,
+    maxHeight: 200,
   },
   userOption: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderWhite5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundDark,
+    marginBottom: spacing.xs,
   },
   userOptionSelected: {
     backgroundColor: colors.primaryOpacity10,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   userOptionInfo: {
     flex: 1,
@@ -330,11 +300,10 @@ const styles = StyleSheet.create({
   userOptionName: {
     fontSize: typography.base,
     color: colors.white,
-    marginBottom: spacing.xs,
+    fontWeight: typography.medium,
   },
   userOptionNameSelected: {
     color: colors.primary,
-    fontWeight: typography.medium,
   },
   userOptionEmail: {
     fontSize: typography.sm,

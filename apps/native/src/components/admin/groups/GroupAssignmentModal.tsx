@@ -9,7 +9,7 @@ interface GroupAssignmentModalProps {
   visible: boolean;
   onClose: () => void;
   user: User | null;
-  groups: Group[];
+  groups: Group[] | undefined;
   onAssign: (userId: string, groupId: string) => Promise<{ id: string; createdAt: Date; updatedAt: Date; tripId: string; groupId: string | null; userId: string; wristNumber: string | null; houseNumber: string | null }>;
   loading?: boolean;
 }
@@ -64,7 +64,7 @@ export function GroupAssignmentModal({
     >
       {user && (
         <View style={{ marginBottom: spacing.md }}>
-          <Text style={{ fontSize: typography.base, fontWeight: 'bold', color: colors.white, marginBottom: spacing.xs }}>
+          <Text style={{ fontSize: typography.base, fontWeight: typography.semibold, color: colors.white, marginBottom: spacing.xs }}>
             {[user.firstName, user.lastName].filter(Boolean).join(' ') ?? user.email ?? 'Unknown User'}
           </Text>
           <Text style={{ fontSize: typography.sm, color: colors.textSecondary, marginBottom: spacing.sm }}>
@@ -79,7 +79,7 @@ export function GroupAssignmentModal({
       )}
 
       <ScrollView style={{ maxHeight: 300 }}>
-        {groups.map((group) => (
+        {Array.isArray(groups) && groups.map((group) => (
           <TouchableOpacity
             key={group.id}
             style={[
@@ -101,7 +101,7 @@ export function GroupAssignmentModal({
               { fontSize: typography.base, color: colors.white, flex: 1 },
               selectedGroup?.id === group.id && {
                 color: colors.primary,
-                fontWeight: typography.medium,
+                fontWeight: typography.semibold,
               },
             ]}>
               {group.name}

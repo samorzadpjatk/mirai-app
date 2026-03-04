@@ -2,18 +2,21 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  Modal,
-  TextInput,
   ScrollView,
   TouchableOpacity,
   Alert,
-  SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useTrips } from "~/hooks/trips";
 import { useAdminChallenges } from "~/hooks/admin";
 import type { AdminChallengeUI } from "~/hooks/admin";
-import { commonStyles } from "~/styles/commonStyles";
+import { colors, spacing } from "~/styles";
+import {
+  AppModalShell,
+  AppModalFooter,
+  FormField,
+  ThemedTextInput,
+} from "~/components/common/ui";
 
 interface Props {
   visible: boolean;
@@ -35,7 +38,7 @@ export default function EditChallengeModal({
   });
   const [tripId, setTripId] = useState<string>(challenge.tripId ?? "");
   const [isSaving, setIsSaving] = useState(false);
-  const { trips } = useTrips();
+  const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
   const { updateChallenge } = useAdminChallenges();
 
   const handleSave = async () => {
@@ -64,134 +67,102 @@ export default function EditChallengeModal({
     : [];
 
   return (
-    <Modal
+    <AppModalShell
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      title="Edit Challenge"
+      onClose={onClose}
+      variant="pageSheet"
     >
-      <View style={[commonStyles.container]}>
-        <SafeAreaView style={{ flex: 1 }}>
-          <View
-            style={{
-              padding: 24,
-              borderBottomWidth: 1,
-              borderBottomColor: "#273a3a",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={[commonStyles.h3]}>Edit Challenge</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#9ca3af" />
-            </TouchableOpacity>
-          </View>
+      <ScrollView style={{ padding: spacing.lg }}>
+          <FormField label="Challenge Title" required>
+            <ThemedTextInput
+              placeholder="e.g. Campus Marathon"
+              value={state.title}
+              onChangeText={(t) => setState({ ...state, title: t })}
+            />
+          </FormField>
 
-          <ScrollView style={{ padding: 24 }}>
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Challenge Title
-              </Text>
-              <TextInput
+          <FormField label="Trip ID" required>
+            <ThemedTextInput
+              placeholder="Trip ID or search"
+              value={tripId}
+              onChangeText={setTripId}
+            />
+
+            {(filtered.length > 0 || (q.length > 0 && hasNextPage)) && (
+              <View
                 style={{
-                  backgroundColor: "#0f2323",
+                  backgroundColor: colors.backgroundDark,
                   borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
+                  borderColor: colors.borderDark,
+                  marginTop: spacing.sm,
+                  borderRadius: spacing.sm,
+                  maxHeight: 160,
                 }}
-                placeholder="e.g. Campus Marathon"
-                placeholderTextColor="#6b7280"
-                value={state.title}
-                onChangeText={(t) => setState({ ...state, title: t })}
-              />
-            </View>
+              >
+                <ScrollView nestedScrollEnabled style={{ padding: 8 }}>
+                  {filtered.map((t) => (
+                    <TouchableOpacity
+                      key={t.id}
+                      onPress={() => setTripId(t.id)}
+                      style={{ paddingVertical: 8 }}
+                    >
+                      <Text style={{ color: colors.white }}>
+                        {t.name}{" "}
+                        <Text style={{ color: colors.textSecondary }}>({t.id})</Text>
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
 
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Trip ID
-              </Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                }}
-                placeholder="Trip ID or search"
-                placeholderTextColor="#6b7280"
-                value={tripId}
-                onChangeText={setTripId}
-              />
-
-              {filtered.length > 0 && (
-                <View
-                  style={{
-                    backgroundColor: "#0f2323",
-                    borderWidth: 1,
-                    borderColor: "#273a3a",
-                    marginTop: 8,
-                    borderRadius: 8,
-                    maxHeight: 160,
-                  }}
-                >
-                  <ScrollView nestedScrollEnabled style={{ padding: 8 }}>
-                    {filtered.map((t) => (
-                      <TouchableOpacity
-                        key={t.id}
-                        onPress={() => setTripId(t.id)}
-                        style={{ paddingVertical: 8 }}
-                      >
-                        <Text style={{ color: "#fff" }}>
-                          {t.name}{" "}
-                          <Text style={{ color: "#9ca3af" }}>({t.id})</Text>
+                  {hasNextPage && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        void fetchNextPage();
+                      }}
+                      disabled={isFetchingNextPage}
+                      style={{
+                        marginTop: spacing.sm,
+                        paddingVertical: spacing.sm,
+                        borderRadius: spacing.sm,
+                        borderWidth: 1,
+                        borderColor: colors.primary,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {isFetchingNextPage ? (
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      ) : (
+                        <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                          Load more trips
                         </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </ScrollView>
+              </View>
+            )}
+            </FormField>
 
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Description
-              </Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                  textAlignVertical: "top",
-                }}
-                placeholder="Describe the goal"
-                placeholderTextColor="#6b7280"
-                value={state.description}
-                onChangeText={(t) => setState({ ...state, description: t })}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
+          <FormField label="Description" required>
+            <ThemedTextInput
+              placeholder="Describe the goal"
+              value={state.description}
+              onChangeText={(t) => setState({ ...state, description: t })}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </FormField>
 
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={isSaving}
-              style={[commonStyles.button, { marginBottom: 24 }]}
-            >
-              <Text style={commonStyles.buttonText}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </SafeAreaView>
-      </View>
-    </Modal>
+      </ScrollView>
+      <AppModalFooter
+        primaryLabel={isSaving ? "Saving..." : "Save Changes"}
+        onPrimary={handleSave}
+        isPrimaryLoading={isSaving}
+        secondaryLabel="Cancel"
+        onSecondary={onClose}
+      />
+    </AppModalShell>
   );
 }

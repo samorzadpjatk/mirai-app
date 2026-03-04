@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '~/styles';
 import { AdminModal, AdminModalButton } from '../AdminModal';
+import {
+  FormField,
+  ThemedTextInput,
+} from '~/components/common/ui';
 
 interface CreateUserModalProps {
   visible: boolean;
@@ -61,62 +63,32 @@ export function CreateUserModal({
         </>
       }
     >
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>First name</Text>
-        <TextInput
-          style={styles.textInput}
+      <FormField label="First name" required>
+        <ThemedTextInput
           value={firstName}
           onChangeText={setFirstName}
           placeholder="Enter first name..."
-          placeholderTextColor={colors.textSecondary}
           autoCapitalize="words"
         />
-      </View>
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Last name</Text>
-        <TextInput
-          style={styles.textInput}
+      </FormField>
+      <FormField label="Last name" required>
+        <ThemedTextInput
           value={lastName}
           onChangeText={setLastName}
           placeholder="Enter last name..."
-          placeholderTextColor={colors.textSecondary}
           autoCapitalize="words"
         />
-      </View>
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Email</Text>
-        <TextInput
-          style={styles.textInput}
+      </FormField>
+      <FormField label="Email" required>
+        <ThemedTextInput
           value={email}
           onChangeText={setEmail}
           placeholder="Enter email..."
-          placeholderTextColor={colors.textSecondary}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
         />
-      </View>
+      </FormField>
     </AdminModal>
   );
 }
-
-const styles = StyleSheet.create({
-  inputContainer: {
-    marginBottom: spacing.md,
-  },
-  inputLabel: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  textInput: {
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    fontSize: typography.base,
-    color: colors.white,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-});

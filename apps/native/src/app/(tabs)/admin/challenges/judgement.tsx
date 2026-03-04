@@ -10,13 +10,12 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
-import { JudgementProvider } from '~/contexts/JudgementContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JudgementContent } from '~/components/judgement/JudgementContent';
 import { viewStyles, textStyles } from '~/styles/judgement';
 
 export default function ChallengeJudgementScreen() {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const trpc = useTRPC();
   const params = useLocalSearchParams();
@@ -94,9 +93,7 @@ export default function ChallengeJudgementScreen() {
     >
       <Stack.Screen options={{ title: 'Challenge Judgement' }} />
       <StatusBar barStyle="light-content" />
-      <JudgementProvider tripId={tripId} challengeId={challengeId}>
-        <JudgementContent />
-      </JudgementProvider>
+      <JudgementContent tripId={tripId} challengeId={challengeId} />
     </View>
   );
 }

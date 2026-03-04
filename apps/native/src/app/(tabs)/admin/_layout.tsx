@@ -47,6 +47,20 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="users/new"
+          options={{
+            title: "Create User",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="users/edit/[userId]"
+          options={{
+            title: "Edit User",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
           name="groups/index"
           options={{
             title: "Groups",
@@ -54,9 +68,37 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="groups/new"
+          options={{
+            title: "Create Group",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="groups/edit/[groupId]"
+          options={{
+            title: "Edit Group",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
           name="coins/index"
           options={{
             title: "Coins",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="coins/add"
+          options={{
+            title: "Add Coins",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="coins/remove"
+          options={{
+            title: "Remove Coins",
             headerBackTitle: "Back"
           }}
         />
@@ -117,6 +159,20 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen
+          name="activity/new"
+          options={{
+            title: "Create Activity",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="activity/edit/[activityId]"
+          options={{
+            title: "Edit Activity",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
           name="notifications/index"
           options={{
             title: "Notifications",
@@ -141,6 +197,20 @@ export default function AdminLayout() {
           name="rewards/index"
           options={{
             title: "Rewards",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="rewards/new"
+          options={{
+            title: "Create Reward",
+            headerBackTitle: "Back"
+          }}
+        />
+        <Stack.Screen
+          name="rewards/edit/[rewardId]"
+          options={{
+            title: "Edit Reward",
             headerBackTitle: "Back"
           }}
         />

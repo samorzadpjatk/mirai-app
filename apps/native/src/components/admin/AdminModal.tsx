@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, typography } from '~/styles';
+import {
+  AppModalShell,
+} from '~/components/common/ui';
 
 interface AdminModalProps {
   visible: boolean;
@@ -11,6 +13,14 @@ interface AdminModalProps {
   actions?: React.ReactNode;
   maxWidth?: number;
   maxHeight?: number;
+}
+
+interface AdminModalButtonProps {
+  title: string;
+  onPress: () => void;
+  variant?: 'primary' | 'cancel' | 'danger';
+  disabled?: boolean;
+  loading?: boolean;
 }
 
 export function AdminModal({
@@ -23,34 +33,28 @@ export function AdminModal({
   maxHeight = 400,
 }: AdminModalProps) {
   return (
-    <Modal
+    <AppModalShell
       visible={visible}
-      animationType="fade"
-      transparent
-      onRequestClose={onClose}
+      title={title}
+      onClose={onClose}
+      variant="card"
+      maxWidth={maxWidth}
     >
-      <View style={styles.modalBackdrop}>
-        <View style={[styles.modalCard, { maxWidth }]}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView 
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            style={{ maxHeight: maxHeight ? maxHeight - 120 : 280 }}
-            contentContainerStyle={styles.modalContentContainer}
-          >
-            {children}
-          </ScrollView>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        style={{ maxHeight: maxHeight ? maxHeight - 120 : 280 }}
+        contentContainerStyle={{ padding: spacing.lg }}
+      >
+        {children}
+      </ScrollView>
 
-          {actions && <View style={styles.modalActions}>{actions}</View>}
+      {actions && (
+        <View style={{ padding: spacing.lg, paddingTop: 0 }}>
+          {actions}
         </View>
-      </View>
-    </Modal>
+      )}
+    </AppModalShell>
   );
 }
 
@@ -107,43 +111,6 @@ export function AdminModalButton({
 }
 
 const styles = StyleSheet.create({
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity40,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  modalTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  modalContentContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderWhite5,
-  },
   modalButton: {
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,

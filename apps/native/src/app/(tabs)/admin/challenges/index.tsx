@@ -9,18 +9,21 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   useMutation,
+  useInfiniteQuery,
   useQueries,
-  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTRPC, useTRPCClient } from "@integral-2025-app/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
+import { FilterChip, FilterChipRow } from "~/components/common/ui";
+import { AdminChallengeListCard } from "~/components/admin/challenges/AdminChallengeListCard";
 
 interface ChallengeItem {
   id: string;
@@ -72,56 +75,119 @@ type TypeFilter = (typeof typeFilters)[number]["value"];
 type ChallengeTypeFilter = Exclude<TypeFilter, "ALL">;
 
 const statusColors: Record<string, string> = {
-  HIDDEN: "#64748b",
-  VISIBLE: "#0ea5e9",
-  ACTIVE: "#22c55e",
-  VOTING_PHASE: "#f59e0b",
-  COMPLETED: "#10b981",
+  HIDDEN: colors.statusHidden,
+  VISIBLE: colors.statusVisible,
+  ACTIVE: colors.statusActive,
+  VOTING_PHASE: colors.statusVotingPhase,
+  COMPLETED: colors.statusCompleted,
 };
 
-const getSubmissionTypeMeta = (
-  submissionType: ChallengeItem["submissionType"],
-) => {
-  switch (submissionType) {
-    case "MULTI_IMAGE":
-      return { label: "Multi", icon: "images-outline" as const };
-    case "VIDEO":
-      return { label: "Video", icon: "videocam-outline" as const };
-    case "TEXT":
-      return { label: "Text", icon: "document-text-outline" as const };
-    case "IMAGE_LOCATION":
-      return {
-        label: "Photo+GPS",
-        icon: "camera-outline" as const,
-        secondaryIcon: "location-outline" as const,
-      };
-    case "LOCATION":
-      return { label: "GPS", icon: "location-outline" as const };
-    case "QR_CODE":
-      return { label: "QR", icon: "qr-code-outline" as const };
-    case "IMAGE":
-    default:
-      return { label: "Photo", icon: "image-outline" as const };
-  }
-};
+const PAGE_SIZE = 30;
 
-const getScoringMeta = (scoringCategory: ChallengeItem["scoringCategory"]) => {
-  switch (scoringCategory) {
-    case "SPEED":
-      return { label: "Speed", icon: "flash-outline" as const };
-    case "UNLIMITED":
-      return { label: "Unlimited", icon: "infinite-outline" as const };
-    case "PEER_VOTING":
-      return { label: "Voting", icon: "people-outline" as const };
-    case "JUDGED_STAFF":
-    default:
-      return { label: "Staff", icon: "shield-checkmark-outline" as const };
-  }
-};
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundDark,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: colors.backgroundDark,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+  },
+  scrollContent: {
+    paddingTop: spacing.xl,
+    paddingBottom: 96,
+  },
+  statusFiltersRow: {
+    marginBottom: spacing.md,
+  },
+  headerContainer: {
+    marginBottom: spacing.md,
+  },
+  headerTitle: {
+    fontSize: typography.lg,
+    fontWeight: typography.bold,
+    color: colors.white,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xs,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  typeFiltersScroll: {},
+  typeFilterChip: {
+    minHeight: 34,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  typeFilterCount: {
+    minWidth: 20,
+    paddingHorizontal: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  typeFilterCountText: {
+    fontWeight: "700",
+    fontSize: 10,
+  },
+  searchInput: {
+    backgroundColor: colors.cardDark,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    color: colors.white,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  searchContainer: {
+    marginBottom: spacing.md,
+  },
+  challengesList: {
+    gap: 12,
+  },
+  emptyState: {
+    padding: 24,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+    backgroundColor: colors.cardDark,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    color: colors.gray400,
+  },
+  loadingMoreContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  loadingMoreText: {
+    color: colors.gray400,
+    fontSize: 12,
+  },
+});
+
 
 export default function AdminChallengesScreen() {
   const router = useRouter();
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
   const tripId =
@@ -135,29 +201,77 @@ export default function AdminChallengesScreen() {
     useState<TypeFilter>("ALL");
   const [nameFilter, setNameFilter] = useState("");
 
-  const challengeQueryOptions = trpc.challenge.getAllByTrip.queryOptions({
-    tripId,
-  });
   const {
-    data: challengesData,
+    data,
     isLoading,
     isRefetching,
-    refetch: refetchChallenges,
-  } = useQuery({
-    ...challengeQueryOptions,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: [
+      ...trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey,
+      "infinite",
+      PAGE_SIZE,
+    ],
     enabled: !!tripId,
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === "number" ? pageParam : 0;
+      return trpcClient.challenge.getAllByTrip.query({
+        tripId,
+        pagination: {
+          limit: PAGE_SIZE,
+          offset,
+        },
+      });
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.pagination.hasMore) {
+        return undefined;
+      }
+
+      return lastPage.pagination.offset + lastPage.pagination.limit;
+    },
   });
+
+  const challengesData = useMemo(
+    () => (data?.pages ?? []).flatMap((page) => page.challenges ?? []),
+    [data?.pages],
+  );
 
   const handleRefresh = useCallback(() => {
     if (!tripId) return;
-    void refetchChallenges();
-  }, [refetchChallenges, tripId]);
+    void refetch();
+  }, [refetch, tripId]);
+
+  const handleLoadMore = useCallback(
+    (event: {
+      nativeEvent: {
+        contentOffset: { y: number };
+        contentSize: { height: number };
+        layoutMeasurement: { height: number };
+      };
+    }) => {
+      if (!hasNextPage || isFetchingNextPage || isLoading) return;
+
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const nearBottom =
+        contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
+
+      if (nearBottom) {
+        void fetchNextPage();
+      }
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading],
+  );
 
   const deleteChallengeMutation = useMutation(
     trpc.challenge.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: challengeQueryOptions.queryKey,
+          queryKey: trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey,
         });
       },
       onError: (error) => {
@@ -360,130 +474,75 @@ export default function AdminChallengesScreen() {
 
   if (isLoading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: colors.backgroundDark,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.backgroundDark }}>
+    <View style={styles.container}>
       <StatusBar
         barStyle="light-content"
         backgroundColor={colors.backgroundDark}
       />
 
       <ScrollView
-        style={{ flex: 1, paddingHorizontal: spacing.md }}
-        contentContainerStyle={{ paddingTop: spacing.xl, paddingBottom: 96 }}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleLoadMore}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
+            refreshing={isRefetching && !isFetchingNextPage}
             onRefresh={handleRefresh}
             tintColor={colors.primary}
           />
         }
       >
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 8,
-            marginBottom: 16,
-          }}
-        >
-          <View
-            style={{
-              paddingHorizontal: 10,
-              paddingVertical: 8,
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: colors.primary,
-              backgroundColor: "rgba(0,206,209,0.12)",
-            }}
-          >
-            <Text
-              style={{
-                color: "#9ca3af",
-                fontSize: 10,
-                textTransform: "uppercase",
-                letterSpacing: 0.8,
-              }}
-            >
-              Total
-            </Text>
-            <Text
-              style={{ color: colors.primary, fontWeight: "800", fontSize: 16 }}
-            >
-              {totalChallenges}
-            </Text>
-          </View>
-
-          {statusFilters
-            .filter((filter) => filter.value !== "ALL")
-            .map((filter) => {
-              const color = statusColors[filter.value] ?? "#9ca3af";
-              return (
-                <View
-                  key={`stat-${filter.value}`}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 8,
-                    borderRadius: 999,
-                    borderWidth: 1,
-                    borderColor: color,
-                    backgroundColor: `${color}1A`,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "#9ca3af",
-                      fontSize: 10,
-                      textTransform: "uppercase",
-                      letterSpacing: 0.8,
-                    }}
-                  >
-                    {filter.label}
-                  </Text>
-                  <Text style={{ color, fontWeight: "800", fontSize: 16 }}>
-                    {statusCounts[filter.value] ?? 0}
-                  </Text>
-                </View>
-              );
-            })}
-        </View>
-
-        <View style={{ marginBottom: spacing.md }}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerTitle}>Existing Challenges</Text>
           <Text
-            style={{
-              fontSize: typography.lg,
-              fontWeight: typography.bold,
-              color: colors.white,
-              letterSpacing: -0.5,
-              marginBottom: spacing.xs,
-            }}
-          >
-            Existing Challenges
-          </Text>
-          <Text
-            style={{
-              color: "#9ca3af",
-              fontSize: 12,
-              textTransform: "uppercase",
-              letterSpacing: 0.8,
-            }}
+            style={[
+              styles.headerSubtitle,
+              { color: colors.gray400 },
+            ]}
           >
             {filteredChallenges.length}/{totalChallenges}
           </Text>
         </View>
+
+        <FilterChipRow style={styles.statusFiltersRow}>
+          {statusFilters.map((filter) => {
+            const isAll = filter.value === "ALL";
+            const color = isAll
+              ? colors.primary
+              : statusColors[filter.value] ?? colors.gray400;
+            const count = isAll
+              ? totalChallenges
+              : statusCounts[filter.value] ?? 0;
+            const selected = selectedStatusFilter === filter.value;
+
+            return (
+              <FilterChip
+                key={filter.value}
+                label={filter.label}
+                selected={selected}
+                onPress={() => setSelectedStatusFilter(filter.value)}
+                count={count}
+                countPillStyle={{
+                  borderColor: color,
+                  backgroundColor: selected ? `${color}26` : `${color}1A`,
+                }}
+                countTextStyle={{
+                  color: selected ? color : colors.white,
+                }}
+                accessibilityLabel={`Filter challenges by ${filter.label}`}
+              />
+            );
+          })}
+        </FilterChipRow>
 
         <ScrollView
           horizontal
@@ -501,56 +560,48 @@ export default function AdminChallengesScreen() {
               <TouchableOpacity
                 key={filter.value}
                 onPress={() => setSelectedTypeFilter(filter.value)}
-                style={{
-                  minHeight: 34,
-                  paddingHorizontal: 8,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: selected
-                    ? colors.primary
-                    : "rgba(255,255,255,0.15)",
-                  backgroundColor: selected
-                    ? "rgba(0,206,209,0.2)"
-                    : "rgba(255,255,255,0.04)",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                }}
+                style={[
+                  styles.typeFilterChip,
+                  {
+                    borderColor: selected
+                      ? colors.primary
+                      : colors.whiteOpacity15,
+                    backgroundColor: selected
+                      ? colors.primaryOpacity20
+                      : colors.whiteOpacity4,
+                  },
+                ]}
               >
                 <Ionicons
                   name={filter.icon}
                   size={14}
-                  color={selected ? colors.primary : "#9ca3af"}
+                  color={selected ? colors.primary : colors.gray400}
                 />
                 {"secondaryIcon" in filter && filter.secondaryIcon ? (
                   <Ionicons
                     name={filter.secondaryIcon}
                     size={14}
-                    color={selected ? colors.primary : "#9ca3af"}
+                    color={selected ? colors.primary : colors.gray400}
                   />
                 ) : null}
                 <View
-                  style={{
-                    minWidth: 20,
-                    paddingHorizontal: 5,
-                    borderRadius: 999,
-                    borderWidth: 1,
-                    borderColor: selected
-                      ? "rgba(0,206,209,0.45)"
-                      : "rgba(255,255,255,0.2)",
-                    backgroundColor: selected
-                      ? "rgba(0,206,209,0.16)"
-                      : "rgba(10,11,13,0.55)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
+                  style={[
+                    styles.typeFilterCount,
+                    {
+                      borderColor: selected
+                        ? colors.primaryOpacity30
+                        : colors.whiteOpacity20,
+                      backgroundColor: selected
+                        ? colors.primaryOpacity20
+                        : colors.backgroundDarkOpacity55,
+                    },
+                  ]}
                 >
                   <Text
-                    style={{
-                      color: selected ? colors.primary : "#fff",
-                      fontWeight: "700",
-                      fontSize: 10,
-                    }}
+                    style={[
+                      styles.typeFilterCountText,
+                      { color: selected ? colors.primary : colors.white },
+                    ]}
                   >
                     {count}
                   </Text>
@@ -560,440 +611,46 @@ export default function AdminChallengesScreen() {
           })}
         </ScrollView>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, marginBottom: 16, paddingRight: 16 }}
-        >
-          {statusFilters.map((filter) => {
-            const selected = selectedStatusFilter === filter.value;
-            const filterColor =
-              filter.value === "ALL"
-                ? colors.primary
-                : (statusColors[filter.value] ?? "#9ca3af");
-            return (
-              <TouchableOpacity
-                key={filter.value}
-                onPress={() => setSelectedStatusFilter(filter.value)}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: selected
-                    ? filterColor
-                    : "rgba(255,255,255,0.15)",
-                  backgroundColor: selected
-                    ? `${filterColor}29`
-                    : "rgba(255,255,255,0.04)",
-                }}
-              >
-                <Text
-                  style={{
-                    color: selected ? filterColor : "#9ca3af",
-                    fontWeight: "700",
-                    fontSize: 12,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.8,
-                  }}
-                >
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        <View style={{ marginBottom: 16 }}>
+        <View style={styles.searchContainer}>
           <TextInput
             value={nameFilter}
             onChangeText={setNameFilter}
             placeholder="Filter by challenge name..."
-            placeholderTextColor="#6b7280"
-            style={{
-              backgroundColor: colors.cardDark,
-              borderWidth: 1,
-              borderColor: colors.borderDark,
-              color: "#fff",
-              borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              fontSize: 14,
-            }}
+            placeholderTextColor={colors.gray500}
+            style={styles.searchInput}
           />
         </View>
 
-        <View style={{ gap: 12 }}>
+        <View style={styles.challengesList}>
           {filteredChallenges.map((challenge) => {
-            const statusColor = statusColors[challenge.status] ?? "#9ca3af";
-            const hasPendingSubmissions = challenge.pendingSubmissionsCount > 0;
-            const pendingColor = hasPendingSubmissions ? "#ef4444" : "#64748b";
-            const submissionEndTimestamp = challenge.endTime
-              ? new Date(challenge.endTime).getTime()
-              : null;
-            const isStaffVotingAvailable =
-              challenge.scoringCategory !== "JUDGED_STAFF" ||
-              (submissionEndTimestamp !== null &&
-                Number.isFinite(submissionEndTimestamp) &&
-                submissionEndTimestamp <= new Date().getTime());
-            const submissionTypeMeta = getSubmissionTypeMeta(
-              challenge.submissionType,
-            );
-            const scoringMeta = getScoringMeta(challenge.scoringCategory);
             const judgedStaffProgress =
               challenge.scoringCategory === "JUDGED_STAFF"
                 ? judgedStaffProgressByChallengeId.get(challenge.id)
                 : null;
+            
             return (
-              <View
+              <AdminChallengeListCard
                 key={challenge.id}
-                style={{
-                  backgroundColor: colors.cardDark,
-                  borderWidth: 1,
-                  borderColor: `${statusColor}99`,
-                  borderLeftWidth: 4,
-                  borderLeftColor: statusColor,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  borderRadius: borderRadius.lg,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 16,
-                }}
-              >
-                <View
-                  style={{
-                    width: 48,
-                    height: 48,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 8,
-                    backgroundColor: `${statusColor}1A`,
-                    borderWidth: 1,
-                    borderColor: `${statusColor}59`,
-                  }}
-                >
-                  <Ionicons name="trophy" size={24} color={statusColor} />
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "bold",
-                      color: "#fff",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {challenge.title}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: statusColor,
-                        fontSize: 14,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {challenge.basePoints} PTS
-                    </Text>
-                    <Text
-                      style={{
-                        color: statusColor,
-                        fontSize: 12,
-                        textTransform: "uppercase",
-                        fontWeight: "700",
-                      }}
-                    >
-                      {challenge.status.replace(/_/g, " ")}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      marginTop: 8,
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      gap: 6,
-                    }}
-                  >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        borderRadius: 999,
-                        borderWidth: 1,
-                        borderColor: "rgba(148,163,184,0.3)",
-                        backgroundColor: "rgba(15,23,42,0.5)",
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                      }}
-                    >
-                      <Ionicons
-                        name={submissionTypeMeta.icon}
-                        size={12}
-                        color="#cbd5e1"
-                      />
-                      {submissionTypeMeta.secondaryIcon ? (
-                        <Ionicons
-                          name={submissionTypeMeta.secondaryIcon}
-                          size={12}
-                          color="#cbd5e1"
-                        />
-                      ) : null}
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: "700",
-                          color: "#cbd5e1",
-                          textTransform: "uppercase",
-                          letterSpacing: 0.5,
-                        }}
-                      >
-                        {submissionTypeMeta.label}
-                      </Text>
-                    </View>
-
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        borderRadius: 999,
-                        borderWidth: 1,
-                        borderColor: "rgba(148,163,184,0.3)",
-                        backgroundColor: "rgba(15,23,42,0.5)",
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                      }}
-                    >
-                      <Ionicons
-                        name={scoringMeta.icon}
-                        size={12}
-                        color="#cbd5e1"
-                      />
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: "700",
-                          color: "#cbd5e1",
-                          textTransform: "uppercase",
-                          letterSpacing: 0.5,
-                        }}
-                      >
-                        {scoringMeta.label}
-                      </Text>
-                    </View>
-
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        borderRadius: 999,
-                        borderWidth: 1,
-                        borderColor: "rgba(34,197,94,0.35)",
-                        backgroundColor: "rgba(34,197,94,0.12)",
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                      }}
-                    >
-                      <Ionicons name="people" size={12} color="#22c55e" />
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: "700",
-                          color: "#22c55e",
-                        }}
-                      >
-                        {challenge.participantGroupsCount}
-                      </Text>
-                    </View>
-
-                  </View>
-                </View>
-
-                <View
-                  style={{
-                    alignSelf: "stretch",
-                    alignItems: "flex-end",
-                    justifyContent: "space-between",
-                    paddingVertical: 2,
-                  }}
-                >
-                  <View style={{ gap: 6, alignItems: "flex-end" }}>
-                    {challenge.scoringCategory === "JUDGED_STAFF" ? (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 4,
-                          borderRadius: 999,
-                          borderWidth: 1,
-                          borderColor: "rgba(14,165,233,0.45)",
-                          backgroundColor: "rgba(14,165,233,0.16)",
-                          paddingHorizontal: 8,
-                          paddingVertical: 3,
-                        }}
-                      >
-                        <Ionicons
-                          name="shield-checkmark-outline"
-                          size={12}
-                          color="#38bdf8"
-                        />
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            fontWeight: "700",
-                            color: "#38bdf8",
-                            textTransform: "uppercase",
-                            letterSpacing: 0.3,
-                          }}
-                        >
-                          {judgedStaffProgress
-                            ? `${judgedStaffProgress.votedAdmins}/${judgedStaffProgress.totalAdmins}`
-                            : "..."}
-                        </Text>
-                      </View>
-                    ) : null}
-
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        borderRadius: 999,
-                        borderWidth: 1,
-                        borderColor: hasPendingSubmissions
-                          ? "rgba(239,68,68,0.45)"
-                          : "rgba(100,116,139,0.45)",
-                        backgroundColor: hasPendingSubmissions
-                          ? "rgba(239,68,68,0.18)"
-                          : "rgba(100,116,139,0.14)",
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
-                      }}
-                    >
-                      <Ionicons name="time-outline" size={12} color={pendingColor} />
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: "700",
-                          color: pendingColor,
-                        }}
-                      >
-                        {challenge.pendingSubmissionsCount}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={{ flexDirection: "row", gap: 4 }}>
-                    {challenge.scoringCategory === "JUDGED_STAFF" ? (
-                      <TouchableOpacity
-                        style={{
-                          padding: 8,
-                          opacity: isStaffVotingAvailable ? 1 : 0.45,
-                        }}
-                        disabled={!isStaffVotingAvailable}
-                        onPress={() => {
-                          router.push({
-                            pathname: "/admin/challenges/staff-vote",
-                            params: { tripId, challengeId: challenge.id },
-                          });
-                        }}
-                      >
-                        <Ionicons
-                          name="git-compare"
-                          size={20}
-                          color={
-                            isStaffVotingAvailable ? colors.primary : colors.gray400
-                          }
-                        />
-                      </TouchableOpacity>
-                    ) : (
-                      <>
-                        <TouchableOpacity
-                          style={{ padding: 8 }}
-                          onPress={() => {
-                            router.push({
-                              pathname: "/admin/challenges/submissions",
-                              params: { tripId, challengeId: challenge.id },
-                            });
-                          }}
-                        >
-                          <Ionicons
-                            name="images"
-                            size={20}
-                            color="#9ca3af"
-                          />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          style={{ padding: 8 }}
-                          onPress={() => {
-                            const shouldUseSubmissionsScreen =
-                              challenge.submissionType === "TEXT" &&
-                              !challenge.autoApprove;
-
-                            router.push({
-                              pathname: shouldUseSubmissionsScreen
-                                ? "/admin/challenges/submissions"
-                                : "/admin/challenges/judgement",
-                              params: { tripId, challengeId: challenge.id },
-                            });
-                          }}
-                        >
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={20}
-                            color={colors.primary}
-                          />
-                        </TouchableOpacity>
-                      </>
-                    )}
-
-                    <TouchableOpacity
-                      style={{ padding: 8 }}
-                      onPress={() => {
-                        router.push({
-                          pathname: "/admin/challenges/[id]",
-                          params: { id: challenge.id, tripId },
-                        });
-                      }}
-                    >
-                      <Ionicons name="create" size={20} color="#9ca3af" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={{ padding: 8 }}
-                      onPress={() => handleDeleteChallenge(challenge.id)}
-                    >
-                      <Ionicons name="trash" size={20} color="#9ca3af" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
+                challenge={challenge}
+                judgedStaffProgress={judgedStaffProgress}
+                onDelete={handleDeleteChallenge}
+                tripId={tripId}
+              />
             );
           })}
 
           {filteredChallenges.length === 0 ? (
-            <View
-              style={{
-                padding: 24,
-                borderRadius: borderRadius.lg,
-                borderWidth: 1,
-                borderColor: colors.borderDark,
-                backgroundColor: colors.cardDark,
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: "#9ca3af" }}>No challenges found yet.</Text>
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>No challenges found yet.</Text>
+            </View>
+          ) : null}
+
+          {isFetchingNextPage ? (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.loadingMoreText}>
+                Loading more challenges...
+              </Text>
             </View>
           ) : null}
         </View>

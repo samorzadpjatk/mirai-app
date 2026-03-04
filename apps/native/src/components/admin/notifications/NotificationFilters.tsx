@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '~/styles';
+import { FilterChip, FilterChipRow } from '~/components/common/ui';
 import type { NotificationStatus } from '~/hooks/admin/useAdminNotifications';
 
 interface NotificationFiltersProps {
@@ -9,6 +10,9 @@ interface NotificationFiltersProps {
   onSearchChange: (text: string) => void;
   status: NotificationStatus;
   onStatusChange: (status: NotificationStatus) => void;
+  groups: { id: string; name: string }[];
+  selectedGroupId: string;
+  onGroupChange: (groupId: string) => void;
 }
 
 const statusOptions: { key: NotificationStatus; label: string }[] = [
@@ -23,6 +27,9 @@ export function NotificationFilters({
   onSearchChange,
   status,
   onStatusChange,
+  groups,
+  selectedGroupId,
+  onGroupChange,
 }: NotificationFiltersProps) {
   return (
     <View style={styles.container}>
@@ -39,41 +46,45 @@ export function NotificationFilters({
         </View>
       </View>
 
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
-        style={styles.statusSelector}
-        contentContainerStyle={styles.statusSelectorContent}
-      >
+      <FilterChipRow style={styles.statusSelector} horizontalSpacing={spacing.sm}>
         {statusOptions.map((option) => (
-          <TouchableOpacity
+          <FilterChip
             key={option.key}
-            style={[
-              styles.statusOption,
-              status === option.key && styles.statusOptionSelected,
-            ]}
+            label={option.label}
+            selected={status === option.key}
             onPress={() => onStatusChange(option.key)}
-          >
-            <Text style={[
-              styles.statusOptionText,
-              status === option.key && styles.statusOptionTextSelected,
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
+          />
         ))}
-      </ScrollView>
+      </FilterChipRow>
+
+      {groups.length ? (
+        <FilterChipRow style={styles.groupSelector} horizontalSpacing={spacing.sm}>
+          <FilterChip
+            label="All groups"
+            selected={selectedGroupId === "all"}
+            onPress={() => onGroupChange("all")}
+          />
+          {groups.map((group) => (
+            <FilterChip
+              key={group.id}
+              label={group.name}
+              selected={selectedGroupId === group.id}
+              onPress={() => onGroupChange(group.id)}
+            />
+          ))}
+        </FilterChipRow>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   searchSection: {
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   searchBar: {
     flexDirection: 'row' as const,
@@ -94,28 +105,8 @@ const styles = StyleSheet.create({
   statusSelector: {
     paddingHorizontal: spacing.lg,
   },
-  statusSelectorContent: {
-    paddingRight: spacing.lg,
-  },
-  statusOption: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.full,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  statusOptionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  statusOptionText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-  statusOptionTextSelected: {
-    color: colors.white,
+  groupSelector: {
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.sm,
   },
 });

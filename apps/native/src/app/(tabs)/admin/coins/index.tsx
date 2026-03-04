@@ -7,34 +7,27 @@ import {
   TextInput,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '~/styles';
-import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAdminCoins } from '~/hooks/admin/useAdminCoins';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { GroupCard } from '~/components/admin/groups/GroupCard';
-import { CoinOperationModal } from '~/components/admin/common/CoinOperationModal';
 import type { Group } from '~/hooks/admin/useAdminCoins';
 
 export default function AdminCoinsScreen() {
-  const insets = useAppSafeAreaInsets();
-  
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
-  
-  const [showOperationModal, setShowOperationModal] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [operation, setOperation] = useState<'add' | 'remove'>('add');
+
   const [searchTerm, setSearchTerm] = useState('');
 
   const {
     groups,
     groupsLoading,
-    addCoins,
-    removeCoins,
-    isAddingCoins,
-    isRemovingCoins,
   } = useAdminCoins(tripId ?? '');
 
   const filteredGroups = useMemo(() => {
@@ -63,35 +56,41 @@ export default function AdminCoinsScreen() {
     };
   }, [groups]);
 
-  const handleAddCoins = useCallback((group: Group) => {
-    setSelectedGroup(group);
-    setOperation('add');
-    setShowOperationModal(true);
-  }, []);
+  const navigateToAddCoins = useCallback((group: Group) => {
+    if (!tripId) return;
+    router.push({
+      pathname: '/admin/coins/add',
+      params: {
+        tripId,
+        groupId: group.id,
+        groupName: group.name,
+        groupCoins: String(group.coins),
+      },
+    });
+  }, [router, tripId]);
 
-  const handleRemoveCoins = useCallback((group: Group) => {
-    setSelectedGroup(group);
-    setOperation('remove');
-    setShowOperationModal(true);
-  }, []);
-
-  const handleCoinOperation = useCallback(async (groupId: string, amount: number, reason: string) => {
-    if (operation === 'add') {
-      await addCoins(groupId, amount, reason);
-    } else {
-      await removeCoins(groupId, amount, reason);
-    }
-  }, [operation, addCoins, removeCoins]);
+  const navigateToRemoveCoins = useCallback((group: Group) => {
+    if (!tripId) return;
+    router.push({
+      pathname: '/admin/coins/remove',
+      params: {
+        tripId,
+        groupId: group.id,
+        groupName: group.name,
+        groupCoins: String(group.coins),
+      },
+    });
+  }, [router, tripId]);
 
   const renderGroup = useCallback(({ item }: { item: Group }) => {
     return (
       <GroupCard
         group={item}
-        onAddCoins={handleAddCoins}
-        onRemoveCoins={handleRemoveCoins}
+        onAddCoins={navigateToAddCoins}
+        onRemoveCoins={navigateToRemoveCoins}
       />
     );
-  }, [handleAddCoins, handleRemoveCoins]);
+  }, [navigateToAddCoins, navigateToRemoveCoins]);
 
   if (!tripId) {
     return (
@@ -257,14 +256,6 @@ export default function AdminCoinsScreen() {
         />
       )}
 
-      <CoinOperationModal
-        visible={showOperationModal}
-        onClose={() => setShowOperationModal(false)}
-        group={selectedGroup}
-        operation={operation}
-        onOperation={handleCoinOperation}
-        loading={isAddingCoins || isRemovingCoins}
-      />
     </View>
   );
 }

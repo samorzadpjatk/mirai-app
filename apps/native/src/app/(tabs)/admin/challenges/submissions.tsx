@@ -1,20 +1,15 @@
 import React, {
   useCallback,
-  useEffect,
   useMemo,
   useState,
 } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
-  Modal,
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -22,35 +17,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
-import { useFileDownload } from "~/hooks/files";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FilterChip, FilterChipRow, EmptyState, AppModalShell, AppModalFooter, ThemedTextInput } from "~/components/common/ui";
+import { SubmissionReviewCard, type SubmissionItem } from "~/components/admin/challenges/SubmissionReviewCard";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type ReviewStatus = "APPROVED" | "REJECTED";
 type SubmissionStatus = ReviewStatus | "PENDING";
 type StatusFilter = "ALL" | SubmissionStatus;
-
-interface SubmissionItem {
-  id: string;
-  status: SubmissionStatus;
-  ranking?: number | null;
-  imageIds: string[];
-  videoId: string | null;
-  textContent: string | null;
-  createdAt: string | Date;
-  reviewedAt: string | Date | null;
-  rejectionReason: string | null;
-  reviewedBy?: {
-    firstName?: string | null;
-    lastName?: string | null;
-    email?: string | null;
-  } | null;
-  group: {
-    id: string;
-    name: string;
-    image: string | null;
-  };
-}
 
 const statusFilters: { label: string; value: StatusFilter }[] = [
   { label: "All", value: "ALL" },
@@ -59,189 +33,12 @@ const statusFilters: { label: string; value: StatusFilter }[] = [
   { label: "Rejected", value: "REJECTED" },
 ];
 
-const getStatusMeta = (status: SubmissionStatus) => {
-  if (status === "APPROVED") {
-    return { color: "#22c55e", bg: "rgba(34,197,94,0.15)" };
-  }
-  if (status === "REJECTED") {
-    return { color: "#ef4444", bg: "rgba(239,68,68,0.15)" };
-  }
-  return { color: "#f59e0b", bg: "rgba(245,158,11,0.15)" };
-};
-
-const formatDateTime = (value: string | Date | null | undefined) => {
-  if (!value) return "—";
-  const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString();
-};
-
-const formatPersonName = (person: {
-  firstName?: string | null;
-  lastName?: string | null;
-  email?: string | null;
-} | null | undefined) => {
-  if (!person) return "Unknown admin";
-  const fullName = `${person.firstName ?? ""} ${person.lastName ?? ""}`.trim();
-  if (fullName.length > 0) return fullName;
-  return person.email ?? "Unknown admin";
-};
-
-const SubmissionCard = ({
-  submission,
-  isReviewing,
-  onApprove,
-  onReject,
-}: {
-  submission: SubmissionItem;
-  isReviewing: boolean;
-  onApprove: (submission: SubmissionItem) => void;
-  onReject: (submission: SubmissionItem) => void;
-}) => {
-  const hasImage = submission.imageIds.length > 0;
-  const textContent = submission.textContent?.trim() ?? "";
-  const hasText = textContent.length > 0;
-  const statusMeta = getStatusMeta(submission.status);
-  const reviewerName = formatPersonName(submission.reviewedBy);
-  const {
-    download,
-    status: imageStatus,
-    file,
-    reset,
-    abort,
-  } = useFileDownload();
-
-  useEffect(() => {
-    if (!hasImage) {
-      reset();
-      return;
-    }
-
-    reset();
-    void download({ storagePath: submission.imageIds[0] ?? "" }).catch(
-      () => undefined,
-    );
-
-    return () => {
-      abort();
-    };
-  }, [abort, download, hasImage, reset, submission.imageIds]);
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.groupName}>{submission.group.name}</Text>
-          <Text style={styles.metaText}>
-            Submitted: {formatDateTime(submission.createdAt)}
-          </Text>
-          {submission.reviewedAt ? (
-            <Text style={styles.metaText}>
-              Reviewed: {formatDateTime(submission.reviewedAt)} • {reviewerName}
-            </Text>
-          ) : null}
-        </View>
-        <View
-          style={[
-            styles.statusPill,
-            { borderColor: statusMeta.color, backgroundColor: statusMeta.bg },
-          ]}
-        >
-          <Text style={[styles.statusText, { color: statusMeta.color }]}>
-            {submission.status}
-          </Text>
-          {typeof submission.ranking === "number" ? (
-            <Text style={[styles.statusText, { color: colors.primary }]}>
-              #{submission.ranking}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-
-      {hasImage ? (
-        <View style={styles.mediaWrap}>
-          {imageStatus === "loading" ? (
-            <View style={styles.mediaFallback}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : file?.uri ? (
-            <Image source={{ uri: file.uri }} style={styles.mediaImage} />
-          ) : (
-            <View style={styles.mediaFallback}>
-              <Ionicons name="image-outline" size={20} color={colors.textMuted} />
-              <Text style={styles.mediaFallbackText}>Image unavailable</Text>
-            </View>
-          )}
-        </View>
-      ) : null}
-
-      {!hasImage && submission.videoId ? (
-        <View style={styles.assetFallbackBox}>
-          <Ionicons name="videocam-outline" size={24} color={colors.textMuted} />
-          <Text style={styles.mediaFallbackText}>Video submission</Text>
-        </View>
-      ) : null}
-
-      {hasText ? (
-        <View style={styles.textBox}>
-          <Text style={styles.textBoxLabel}>Submitted text</Text>
-          <Text selectable style={styles.textBoxValue}>
-            {textContent}
-          </Text>
-          <Text style={styles.textBoxHint}>Press and hold text to copy</Text>
-        </View>
-      ) : null}
-
-      {!hasImage && !submission.videoId && !hasText ? (
-        <View style={styles.assetFallbackBox}>
-          <Ionicons
-            name="document-text-outline"
-            size={22}
-            color={colors.textMuted}
-          />
-          <Text style={styles.mediaFallbackText}>No content asset</Text>
-        </View>
-      ) : null}
-
-      {submission.status === "REJECTED" && submission.rejectionReason ? (
-        <View style={styles.reasonBox}>
-          <Text style={styles.reasonLabel}>Reason:</Text>
-          <Text style={styles.reasonText}>{submission.rejectionReason}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.actionsRow}>
-        {submission.status !== "APPROVED" ? (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.approveButton]}
-            onPress={() => onApprove(submission)}
-            disabled={isReviewing}
-          >
-            <Ionicons name="checkmark" size={16} color={colors.backgroundDark} />
-            <Text style={styles.approveButtonText}>Set approved</Text>
-          </TouchableOpacity>
-        ) : null}
-
-        {submission.status !== "REJECTED" ? (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.rejectButton]}
-            onPress={() => onReject(submission)}
-            disabled={isReviewing}
-          >
-            <Ionicons name="close" size={16} color={colors.white} />
-            <Text style={styles.rejectButtonText}>Set rejected</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-    </View>
-  );
-};
 
 export default function ChallengeSubmissionsScreen() {
   const trpc = useTRPC();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const tripId =
     typeof params.tripId === "string"
@@ -459,44 +256,27 @@ export default function ChallengeSubmissionsScreen() {
           />
         }
       >
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersRow}
-        >
-          {statusFilters.map((filter) => {
-            const selected = selectedStatusFilter === filter.value;
-            return (
-              <TouchableOpacity
-                key={filter.value}
-                style={[styles.filterChip, selected && styles.filterChipActive]}
-                onPress={() => setSelectedStatusFilter(filter.value)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    selected && styles.filterChipTextActive,
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <FilterChipRow>
+          {statusFilters.map((filter) => (
+            <FilterChip
+              key={filter.value}
+              label={filter.label}
+              selected={selectedStatusFilter === filter.value}
+              onPress={() => setSelectedStatusFilter(filter.value)}
+              accessibilityLabel={`Filter submissions by ${filter.label}`}
+            />
+          ))}
+        </FilterChipRow>
 
         {filteredSubmissions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons
-              name="images-outline"
-              size={24}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.mutedText}>No submissions in this filter.</Text>
-          </View>
+          <EmptyState
+            icon="images-outline"
+            iconSize={24}
+            title="No submissions in this filter."
+          />
         ) : (
           filteredSubmissions.map((submission) => (
-            <SubmissionCard
+            <SubmissionReviewCard
               key={submission.id}
               submission={submission}
               isReviewing={reviewMutation.isPending}
@@ -507,54 +287,33 @@ export default function ChallengeSubmissionsScreen() {
         )}
       </ScrollView>
 
-      <Modal
+      <AppModalShell
         visible={isRejectModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeRejectModal}
+        title="Set rejected"
+        onClose={closeRejectModal}
       >
-        <Pressable style={styles.modalBackdrop} onPress={closeRejectModal}>
-          <Pressable
-            style={styles.modalCard}
-            onPress={(event) => event.stopPropagation()}
-          >
-            <Text style={styles.modalTitle}>Set rejected</Text>
-            <Text style={styles.modalSubtitle}>
-              Provide reason for changing the decision.
-            </Text>
-            <TextInput
-              style={styles.modalInput}
-              value={rejectionReason}
-              onChangeText={setRejectionReason}
-              placeholder="Reason for rejection"
-              placeholderTextColor={colors.textTertiary}
-              multiline
-              numberOfLines={4}
-              editable={!reviewMutation.isPending}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalCancelButton]}
-                onPress={closeRejectModal}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  styles.modalRejectButton,
-                  (!rejectionReason.trim() || reviewMutation.isPending) &&
-                    styles.modalRejectButtonDisabled,
-                ]}
-                disabled={!rejectionReason.trim() || reviewMutation.isPending}
-                onPress={handleRejectConfirm}
-              >
-                <Text style={styles.modalRejectText}>Reject</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <Text style={styles.modalSubtitle}>
+          Provide reason for changing the decision.
+        </Text>
+        <ThemedTextInput
+          style={styles.modalInput}
+          value={rejectionReason}
+          onChangeText={setRejectionReason}
+          placeholder="Reason for rejection"
+          placeholderTextColor={colors.textTertiary}
+          multiline
+          numberOfLines={4}
+          editable={!reviewMutation.isPending}
+        />
+        <AppModalFooter
+          primaryLabel="Reject"
+          onPrimary={handleRejectConfirm}
+          isPrimaryLoading={reviewMutation.isPending}
+          isPrimaryDisabled={!rejectionReason.trim()}
+          secondaryLabel="Cancel"
+          onSecondary={closeRejectModal}
+        />
+      </AppModalShell>
     </View>
   );
 }
@@ -583,33 +342,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
     gap: spacing.md,
-  },
-  filtersRow: {
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-    paddingRight: spacing.md,
-  },
-  filterChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  filterChipActive: {
-    borderColor: colors.primary,
-    backgroundColor: "rgba(0,206,209,0.2)",
-  },
-  filterChipText: {
-    color: colors.textMuted,
-    fontWeight: "700",
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  filterChipTextActive: {
-    color: colors.primary,
   },
   card: {
     backgroundColor: colors.cardDark,
@@ -683,13 +415,13 @@ const styles = StyleSheet.create({
   textBox: {
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: "rgba(148,163,184,0.35)",
-    backgroundColor: "rgba(15,23,42,0.45)",
+    borderColor: colors.slateOpacity35,
+    backgroundColor: colors.backgroundDarkOpacity45,
     padding: spacing.md,
     gap: spacing.xs,
   },
   textBoxLabel: {
-    color: "#cbd5e1",
+    color: colors.slate300,
     fontSize: typography.xs,
     fontWeight: typography.bold,
     textTransform: "uppercase",
@@ -706,19 +438,19 @@ const styles = StyleSheet.create({
   },
   reasonBox: {
     borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.35)",
-    backgroundColor: "rgba(239,68,68,0.12)",
+    borderColor: colors.dangerOpacity35,
+    backgroundColor: colors.dangerOpacity12,
     borderRadius: borderRadius.md,
     padding: spacing.sm,
     gap: 2,
   },
   reasonLabel: {
-    color: "#fca5a5",
+    color: colors.red400,
     fontSize: typography.xs,
     fontWeight: typography.bold,
   },
   reasonText: {
-    color: "#fecaca",
+    color: colors.red300,
     fontSize: typography.sm,
   },
   actionsRow: {
@@ -737,8 +469,8 @@ const styles = StyleSheet.create({
   },
   approveButton: {
     borderWidth: 1,
-    borderColor: "rgba(34,197,94,0.45)",
-    backgroundColor: "rgba(34,197,94,0.9)",
+    borderColor: colors.successOpacity45,
+    backgroundColor: colors.successOpacity90,
   },
   approveButtonText: {
     color: colors.backgroundDark,
@@ -747,23 +479,13 @@ const styles = StyleSheet.create({
   },
   rejectButton: {
     borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.45)",
-    backgroundColor: "rgba(239,68,68,0.85)",
+    borderColor: colors.dangerOpacity45,
+    backgroundColor: colors.dangerOpacity85,
   },
   rejectButtonText: {
     color: colors.white,
     fontSize: typography.sm,
     fontWeight: typography.bold,
-  },
-  emptyState: {
-    paddingVertical: spacing.xl,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.cardDark,
   },
   mutedText: {
     color: colors.textSecondary,
@@ -773,13 +495,13 @@ const styles = StyleSheet.create({
     width: "90%",
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(14,165,233,0.35)",
-    backgroundColor: "rgba(14,165,233,0.14)",
+    borderColor: colors.skyOpacity35,
+    backgroundColor: colors.skyOpacity14,
     padding: spacing.lg,
     gap: spacing.md,
   },
   blockedTitle: {
-    color: "#38bdf8",
+    color: colors.sky400,
     fontSize: typography.lg,
     fontWeight: typography.bold,
     textTransform: "uppercase",
@@ -790,71 +512,15 @@ const styles = StyleSheet.create({
     fontSize: typography.sm,
     lineHeight: 20,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: colors.backgroundDarkOpacity80,
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  modalTitle: {
-    color: colors.white,
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-  },
   modalSubtitle: {
     color: colors.textSecondary,
     fontSize: typography.sm,
+    marginBottom: spacing.md,
   },
   modalInput: {
-    backgroundColor: colors.surfaceDark,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    color: colors.white,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     minHeight: 96,
     textAlignVertical: "top",
     fontSize: typography.base,
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: spacing.sm,
-  },
-  modalButton: {
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-  },
-  modalCancelButton: {
-    borderColor: colors.borderDark,
-    backgroundColor: colors.surfaceDark,
-  },
-  modalCancelText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-  modalRejectButton: {
-    borderColor: "rgba(239,68,68,0.45)",
-    backgroundColor: "#ef4444",
-  },
-  modalRejectButtonDisabled: {
-    opacity: 0.5,
-  },
-  modalRejectText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
+    marginBottom: spacing.lg,
   },
 });
