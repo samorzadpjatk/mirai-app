@@ -53,6 +53,9 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   User: 'User',
   Trip: 'Trip',
+  TripResource: 'TripResource',
+  TripInsurance: 'TripInsurance',
+  TripInsuranceStep: 'TripInsuranceStep',
   TripParticipant: 'TripParticipant',
   Event: 'Event',
   UserEvent: 'UserEvent',
@@ -127,6 +130,60 @@ export const TripScalarFieldEnum = {
 } as const
 
 export type TripScalarFieldEnum = (typeof TripScalarFieldEnum)[keyof typeof TripScalarFieldEnum]
+
+
+export const TripResourceScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  type: 'type',
+  label: 'label',
+  description: 'description',
+  url: 'url',
+  storagePath: 'storagePath',
+  fileName: 'fileName',
+  iconName: 'iconName',
+  value: 'value',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripResourceScalarFieldEnum = (typeof TripResourceScalarFieldEnum)[keyof typeof TripResourceScalarFieldEnum]
+
+
+export const TripInsuranceScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  label: 'label',
+  phoneNumber: 'phoneNumber',
+  phoneDisplay: 'phoneDisplay',
+  policyNumber: 'policyNumber',
+  contractNumber: 'contractNumber',
+  providerName: 'providerName',
+  hospitalName: 'hospitalName',
+  hospitalAddress: 'hospitalAddress',
+  hospitalDistance: 'hospitalDistance',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripInsuranceScalarFieldEnum = (typeof TripInsuranceScalarFieldEnum)[keyof typeof TripInsuranceScalarFieldEnum]
+
+
+export const TripInsuranceStepScalarFieldEnum = {
+  id: 'id',
+  insuranceId: 'insuranceId',
+  stepNumber: 'stepNumber',
+  title: 'title',
+  text: 'text',
+  requiredInfo: 'requiredInfo',
+  exampleCall: 'exampleCall',
+  additionalText: 'additionalText',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripInsuranceStepScalarFieldEnum = (typeof TripInsuranceStepScalarFieldEnum)[keyof typeof TripInsuranceStepScalarFieldEnum]
 
 
 export const TripParticipantScalarFieldEnum = {

@@ -80,12 +80,12 @@ export type PrismaVersion = {
 }
 
 /**
- * Prisma Client JS version: 7.3.0
- * Query Engine version: 9d6ad21cbbceab97458517b147a6a09ff43aa735
+ * Prisma Client JS version: 7.4.2
+ * Query Engine version: 94a226be1cf2967af2541cca5529f0f7ba866919
  */
 export const prismaVersion: PrismaVersion = {
-  client: "7.3.0",
-  engine: "9d6ad21cbbceab97458517b147a6a09ff43aa735"
+  client: "7.4.2",
+  engine: "94a226be1cf2967af2541cca5529f0f7ba866919"
 }
 
 /**
@@ -386,6 +386,9 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   User: 'User',
   Trip: 'Trip',
+  TripResource: 'TripResource',
+  TripInsurance: 'TripInsurance',
+  TripInsuranceStep: 'TripInsuranceStep',
   TripParticipant: 'TripParticipant',
   Event: 'Event',
   UserEvent: 'UserEvent',
@@ -430,7 +433,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trip" | "tripParticipant" | "event" | "userEvent" | "group" | "groupJoinRequest" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "activityFeed" | "activityReaction" | "submissionActivity" | "challengeActivity" | "rankChangeActivity" | "userPost" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase" | "userAgent" | "sponsor" | "tripSponsor"
+    modelProps: "user" | "trip" | "tripResource" | "tripInsurance" | "tripInsuranceStep" | "tripParticipant" | "event" | "userEvent" | "group" | "groupJoinRequest" | "challenge" | "challengeSubmission" | "challengeVote" | "submissionReport" | "activityFeed" | "activityReaction" | "submissionActivity" | "challengeActivity" | "rankChangeActivity" | "userPost" | "coinTransaction" | "notificationSchedule" | "notification" | "notificationScheduleExecution" | "notificationPush" | "notificationDelivery" | "pushSubscription" | "location" | "locationSharingRequest" | "reward" | "rewardPurchase" | "userAgent" | "sponsor" | "tripSponsor"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -579,6 +582,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.TripCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.TripCountAggregateOutputType> | number
+        }
+      }
+    }
+    TripResource: {
+      payload: Prisma.$TripResourcePayload<ExtArgs>
+      fields: Prisma.TripResourceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TripResourceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TripResourceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>
+        }
+        findFirst: {
+          args: Prisma.TripResourceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TripResourceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>
+        }
+        findMany: {
+          args: Prisma.TripResourceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>[]
+        }
+        create: {
+          args: Prisma.TripResourceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>
+        }
+        createMany: {
+          args: Prisma.TripResourceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TripResourceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>[]
+        }
+        delete: {
+          args: Prisma.TripResourceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>
+        }
+        update: {
+          args: Prisma.TripResourceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>
+        }
+        deleteMany: {
+          args: Prisma.TripResourceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TripResourceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TripResourceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>[]
+        }
+        upsert: {
+          args: Prisma.TripResourceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripResourcePayload>
+        }
+        aggregate: {
+          args: Prisma.TripResourceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTripResource>
+        }
+        groupBy: {
+          args: Prisma.TripResourceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TripResourceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TripResourceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TripResourceCountAggregateOutputType> | number
+        }
+      }
+    }
+    TripInsurance: {
+      payload: Prisma.$TripInsurancePayload<ExtArgs>
+      fields: Prisma.TripInsuranceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TripInsuranceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TripInsuranceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>
+        }
+        findFirst: {
+          args: Prisma.TripInsuranceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TripInsuranceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>
+        }
+        findMany: {
+          args: Prisma.TripInsuranceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>[]
+        }
+        create: {
+          args: Prisma.TripInsuranceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>
+        }
+        createMany: {
+          args: Prisma.TripInsuranceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TripInsuranceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>[]
+        }
+        delete: {
+          args: Prisma.TripInsuranceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>
+        }
+        update: {
+          args: Prisma.TripInsuranceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>
+        }
+        deleteMany: {
+          args: Prisma.TripInsuranceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TripInsuranceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TripInsuranceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>[]
+        }
+        upsert: {
+          args: Prisma.TripInsuranceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsurancePayload>
+        }
+        aggregate: {
+          args: Prisma.TripInsuranceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTripInsurance>
+        }
+        groupBy: {
+          args: Prisma.TripInsuranceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TripInsuranceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TripInsuranceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TripInsuranceCountAggregateOutputType> | number
+        }
+      }
+    }
+    TripInsuranceStep: {
+      payload: Prisma.$TripInsuranceStepPayload<ExtArgs>
+      fields: Prisma.TripInsuranceStepFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TripInsuranceStepFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TripInsuranceStepFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>
+        }
+        findFirst: {
+          args: Prisma.TripInsuranceStepFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TripInsuranceStepFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>
+        }
+        findMany: {
+          args: Prisma.TripInsuranceStepFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>[]
+        }
+        create: {
+          args: Prisma.TripInsuranceStepCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>
+        }
+        createMany: {
+          args: Prisma.TripInsuranceStepCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TripInsuranceStepCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>[]
+        }
+        delete: {
+          args: Prisma.TripInsuranceStepDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>
+        }
+        update: {
+          args: Prisma.TripInsuranceStepUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>
+        }
+        deleteMany: {
+          args: Prisma.TripInsuranceStepDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TripInsuranceStepUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TripInsuranceStepUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>[]
+        }
+        upsert: {
+          args: Prisma.TripInsuranceStepUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TripInsuranceStepPayload>
+        }
+        aggregate: {
+          args: Prisma.TripInsuranceStepAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTripInsuranceStep>
+        }
+        groupBy: {
+          args: Prisma.TripInsuranceStepGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TripInsuranceStepGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TripInsuranceStepCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TripInsuranceStepCountAggregateOutputType> | number
         }
       }
     }
@@ -2796,6 +3021,60 @@ export const TripScalarFieldEnum = {
 export type TripScalarFieldEnum = (typeof TripScalarFieldEnum)[keyof typeof TripScalarFieldEnum]
 
 
+export const TripResourceScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  type: 'type',
+  label: 'label',
+  description: 'description',
+  url: 'url',
+  storagePath: 'storagePath',
+  fileName: 'fileName',
+  iconName: 'iconName',
+  value: 'value',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripResourceScalarFieldEnum = (typeof TripResourceScalarFieldEnum)[keyof typeof TripResourceScalarFieldEnum]
+
+
+export const TripInsuranceScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  label: 'label',
+  phoneNumber: 'phoneNumber',
+  phoneDisplay: 'phoneDisplay',
+  policyNumber: 'policyNumber',
+  contractNumber: 'contractNumber',
+  providerName: 'providerName',
+  hospitalName: 'hospitalName',
+  hospitalAddress: 'hospitalAddress',
+  hospitalDistance: 'hospitalDistance',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripInsuranceScalarFieldEnum = (typeof TripInsuranceScalarFieldEnum)[keyof typeof TripInsuranceScalarFieldEnum]
+
+
+export const TripInsuranceStepScalarFieldEnum = {
+  id: 'id',
+  insuranceId: 'insuranceId',
+  stepNumber: 'stepNumber',
+  title: 'title',
+  text: 'text',
+  requiredInfo: 'requiredInfo',
+  exampleCall: 'exampleCall',
+  additionalText: 'additionalText',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripInsuranceStepScalarFieldEnum = (typeof TripInsuranceStepScalarFieldEnum)[keyof typeof TripInsuranceStepScalarFieldEnum]
+
+
 export const TripParticipantScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -3516,6 +3795,9 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   trip?: Prisma.TripOmit
+  tripResource?: Prisma.TripResourceOmit
+  tripInsurance?: Prisma.TripInsuranceOmit
+  tripInsuranceStep?: Prisma.TripInsuranceStepOmit
   tripParticipant?: Prisma.TripParticipantOmit
   event?: Prisma.EventOmit
   userEvent?: Prisma.UserEventOmit

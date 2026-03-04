@@ -28,6 +28,21 @@ export type User = Prisma.UserModel
  */
 export type Trip = Prisma.TripModel
 /**
+ * Model TripResource
+ * 
+ */
+export type TripResource = Prisma.TripResourceModel
+/**
+ * Model TripInsurance
+ * 
+ */
+export type TripInsurance = Prisma.TripInsuranceModel
+/**
+ * Model TripInsuranceStep
+ * 
+ */
+export type TripInsuranceStep = Prisma.TripInsuranceStepModel
+/**
  * Model TripParticipant
  * 
  */
