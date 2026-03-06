@@ -1,3 +1,14 @@
+- id: partner-1
+  name: Orange
+  description: |
+    Orange to jedna z największych sieci telekomunikacyjnych w Polsce, dostarczająca usługi mobilne, stacjonarne i internetowe dla milionów klientów. Firma od lat wspiera inicjatywy edukacyjne i społeczne, inwestując w rozwój technologii i cyfryzację kraju.
+
+    Orange wspiera Samorząd Przyszłości PJATK, dostarczając infrastrukturę telekomunikacyjną niezbędną do realizacji projektów oraz wspierając inicjatywy związane z technologiami mobilnymi i komunikacją cyfrową.
+
+    Dziękujemy Orange za wsparcie i wiarę w potencjał młodych twórców technologii!
+  logoPath: images/sponsors/orange.png
+  height: 18
+
 - id: partner-2
   name: AiSECLAB - AI-driven cybersecurity
   description: |
