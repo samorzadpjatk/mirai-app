@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";
 import { AlertsPagination } from "~/components/alerts/AlertsPagination";
@@ -18,7 +18,7 @@ import type { NotificationItem } from "~/types/notifications";
 
 export default function AlertsScreen() {
   const trpc = useTRPC();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const [page, setPage] = useState(1);
   const pageSize = 20;
 

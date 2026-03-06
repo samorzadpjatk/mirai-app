@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTRPC, useSubscription } from "@integral-2025-app/trpc/client";
 import * as Crypto from "expo-crypto";
-import { useLocationContext } from "~/contexts/location";
+import { useLocationContext } from "~/stores/location";
 
 export function useMapLocationStream(enabled: boolean) {
   const trpc = useTRPC();

@@ -2,18 +2,22 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  Modal,
-  TextInput,
   ScrollView,
   TouchableOpacity,
   Alert,
-  SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTrips } from "~/hooks/trips";
 import { useAdminChallenges } from "~/hooks/admin";
-import { commonStyles } from "~/styles/commonStyles";
+import { colors, spacing } from "~/styles";
 import { LocationPicker, type LocationCoordinate } from "../../map/LocationPicker";
+import {
+  AppModalShell,
+  AppModalFooter,
+  FormField,
+  ThemedTextInput,
+} from "~/components/common/ui";
 
 interface Props {
   visible: boolean;
@@ -40,7 +44,7 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
   const [tripId, setTripId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const { trips } = useTrips();
+  const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
   const { createChallenge } = useAdminChallenges();
 
   const handleAdd = async () => {
@@ -89,79 +93,38 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
     : [];
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View style={[commonStyles.container]}>
-        <SafeAreaView style={{ flex: 1 }}>
-          <View
-            style={{
-              padding: 24,
-              borderBottomWidth: 1,
-              borderBottomColor: "#273a3a",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={[commonStyles.h3]}>New Challenge</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#9ca3af" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={{ padding: 24 }}>
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Challenge Title
-              </Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                }}
+    <>
+      <AppModalShell
+        visible={visible}
+        title="New Challenge"
+        onClose={onClose}
+        variant="pageSheet"
+      >
+        <ScrollView style={{ padding: spacing.lg }}>
+            <FormField label="Challenge Title" required>
+              <ThemedTextInput
                 placeholder="e.g. Campus Marathon"
-                placeholderTextColor="#6b7280"
                 value={newChallenge.title}
                 onChangeText={(t) =>
                   setNewChallenge({ ...newChallenge, title: t })
                 }
               />
-            </View>
+            </FormField>
 
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Trip ID
-              </Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                }}
+            <FormField label="Trip ID" required>
+              <ThemedTextInput
                 placeholder="Trip ID or search"
-                placeholderTextColor="#6b7280"
                 value={tripId}
                 onChangeText={setTripId}
               />
-              {filtered.length > 0 && (
+              {(filtered.length > 0 || (q.length > 0 && hasNextPage)) && (
                 <View
                   style={{
-                    backgroundColor: "#0f2323",
+                    backgroundColor: colors.backgroundDark,
                     borderWidth: 1,
-                    borderColor: "#273a3a",
-                    marginTop: 8,
-                    borderRadius: 8,
+                    borderColor: colors.borderDark,
+                    marginTop: spacing.sm,
+                    borderRadius: spacing.sm,
                     maxHeight: 160,
                   }}
                 >
@@ -172,55 +135,65 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                         onPress={() => setTripId(t.id)}
                         style={{ paddingVertical: 8 }}
                       >
-                        <Text style={{ color: "#fff" }}>
+                        <Text style={{ color: colors.white }}>
                           {t.name}{" "}
-                          <Text style={{ color: "#9ca3af" }}>({t.id})</Text>
+                          <Text style={{ color: colors.textSecondary }}>({t.id})</Text>
                         </Text>
                       </TouchableOpacity>
                     ))}
+
+                    {hasNextPage && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          void fetchNextPage();
+                        }}
+                        disabled={isFetchingNextPage}
+                        style={{
+                          marginTop: spacing.sm,
+                          paddingVertical: spacing.sm,
+                          borderRadius: spacing.sm,
+                          borderWidth: 1,
+                          borderColor: colors.primary,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {isFetchingNextPage ? (
+                          <ActivityIndicator size="small" color={colors.primary} />
+                        ) : (
+                          <Text style={{ color: colors.primary, fontWeight: "600" }}>
+                            Load more trips
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
                   </ScrollView>
                 </View>
               )}
-            </View>
+            </FormField>
 
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Description
-              </Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                  textAlignVertical: "top",
-                }}
+            <FormField label="Description" required>
+              <ThemedTextInput
                 placeholder="Describe the goal"
-                placeholderTextColor="#6b7280"
                 value={newChallenge.description}
                 onChangeText={(t) =>
                   setNewChallenge({ ...newChallenge, description: t })
                 }
                 multiline
                 numberOfLines={3}
+                textAlignVertical="top"
               />
-            </View>
+            </FormField>
 
-            {/* Location Selection */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Location (Optional)
-              </Text>
+            <FormField label="Location (Optional)">
               <TouchableOpacity
                 onPress={() => setShowLocationPicker(true)}
                 style={{
-                  backgroundColor: "#0f2323",
+                  backgroundColor: colors.backgroundDark,
                   borderWidth: 1,
-                  borderColor: newChallenge.location ? "#00ced1" : "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
+                  borderColor: newChallenge.location ? colors.primary : colors.borderDark,
+                  borderRadius: spacing.sm,
+                  padding: spacing.md,
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "space-between",
@@ -230,11 +203,11 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                   <Ionicons 
                     name="location" 
                     size={20} 
-                    color={newChallenge.location ? "#00ced1" : "#6b7280"} 
+                    color={newChallenge.location ? colors.primary : colors.textSecondary} 
                   />
                   <Text 
                     style={{ 
-                      color: newChallenge.location ? "#00ced1" : "#6b7280",
+                      color: newChallenge.location ? colors.primary : colors.textSecondary,
                       flex: 1
                     }}
                   >
@@ -244,31 +217,28 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
                     }
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
               </TouchableOpacity>
               {newChallenge.location && (
                 <TouchableOpacity
                   onPress={() => setNewChallenge({ ...newChallenge, location: null })}
-                  style={{ marginTop: 8, flexDirection: "row", alignItems: "center", gap: 6 }}
+                  style={{ marginTop: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.xs }}
                 >
-                  <Ionicons name="close-circle" size={16} color="#ef4444" />
-                  <Text style={{ color: "#ef4444", fontSize: 12 }}>Clear location</Text>
+                  <Ionicons name="close-circle" size={16} color={colors.danger} />
+                  <Text style={{ color: colors.danger, fontSize: 12 }}>Clear location</Text>
                 </TouchableOpacity>
               )}
-            </View>
+            </FormField>
 
-            <TouchableOpacity
-              onPress={handleAdd}
-              disabled={isSubmitting}
-              style={[commonStyles.button, { marginBottom: 24 }]}
-            >
-              <Text style={commonStyles.buttonText}>
-                {isSubmitting ? "Saving..." : "Save Challenge"}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </SafeAreaView>
-      </View>
+        </ScrollView>
+        <AppModalFooter
+          primaryLabel={isSubmitting ? "Saving..." : "Save Challenge"}
+          onPrimary={handleAdd}
+          isPrimaryLoading={isSubmitting}
+          secondaryLabel="Cancel"
+          onSecondary={onClose}
+        />
+      </AppModalShell>
 
       {/* Location Picker Modal */}
       <LocationPicker
@@ -280,6 +250,6 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
         }}
         onClose={() => setShowLocationPicker(false)}
       />
-    </Modal>
+    </>
   );
 }

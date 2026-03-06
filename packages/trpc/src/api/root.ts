@@ -19,6 +19,7 @@ import { notificationSenderRouter } from "./routers/notificationSender";
 import { storageRouter } from "./routers/storage";
 import { rewardRouter } from "./routers/reward";
 import { activityFeedRouter } from "./routers/activityFeed";
+import { sponsorRouter } from "./routers/sponsor";
 
 /**
  * This is the primary router for your server.
@@ -43,6 +44,7 @@ export const appRouter = createTRPCRouter({
   storage: storageRouter,
   reward: rewardRouter,
   activityFeed: activityFeedRouter,
+  sponsor: sponsorRouter,
 });
 
 // export type definition of API

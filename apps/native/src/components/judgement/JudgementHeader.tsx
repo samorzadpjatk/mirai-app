@@ -1,9 +1,14 @@
 import { View, Text } from 'react-native';
-import { useJudgement } from '~/contexts/JudgementContext';
+import { useJudgement } from '~/stores/judgement';
 import { viewStyles, textStyles } from '~/styles/judgement';
 
-const JudgementHeader = () => {
-  const { challengeName, pendingCount, stats } = useJudgement();
+interface JudgementHeaderProps {
+  tripId: string;
+  challengeId: string;
+}
+
+const JudgementHeader = ({ tripId, challengeId }: JudgementHeaderProps) => {
+  const { challengeName, pendingCount, stats } = useJudgement(tripId, challengeId);
 
   return (
     <View style={viewStyles.header}>

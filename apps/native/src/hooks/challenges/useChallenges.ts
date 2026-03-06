@@ -1,25 +1,56 @@
 import { useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useTRPC, useTRPCClient } from "@integral-2025-app/trpc/client";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
+const PAGE_SIZE = 30;
+
 export function useChallenges(tripId?: string | null) {
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
 
   const tripQuery = useQuery({
     ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
-    enabled: !!tripId,
+    enabled: Boolean(tripId),
   });
+
+  const challengesQuery = useInfiniteQuery({
+    queryKey: [
+      ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId ?? "" }).queryKey,
+      "infinite",
+      PAGE_SIZE,
+    ],
+    enabled: Boolean(tripId),
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === "number" ? pageParam : 0;
+      return trpcClient.challenge.getAllByTrip.query({
+        tripId: tripId ?? "",
+        pagination: {
+          limit: PAGE_SIZE,
+          offset,
+        },
+      });
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.pagination.hasMore) {
+        return undefined;
+      }
+
+      return lastPage.pagination.offset + lastPage.pagination.limit;
+    },
+  });
+
+  const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
+
   const { data: trip, isLoading: tripLoading } = tripQuery;
-
-  const challengesQuery = useQuery({
-    ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId ?? "" }),
-    enabled: !!tripId,
-  });
-  const { data: challengesData, isLoading: challengesLoading } = challengesQuery;
-
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  const challengesData = useMemo(
+    () => (challengesQuery.data?.pages ?? []).flatMap((page) => page.challenges ?? []),
+    [challengesQuery.data?.pages],
+  );
+  const { isLoading: challengesLoading } = challengesQuery;
+  const { data: currentUser } = currentUserQuery;
 
   const userGroup = useMemo(() => {
     if (!currentUser || !trip?.participants) return null;
@@ -96,8 +127,6 @@ export function useChallenges(tripId?: string | null) {
   }
 
   const challenges: ChallengeListItem[] = useMemo(() => {
-    if (!Array.isArray(challengesData)) return [];
-
     const apiChallenges = (challengesData ?? []) as DBChallenge[];
 
     return apiChallenges.map((dbChallenge) => {
@@ -166,6 +195,9 @@ export function useChallenges(tripId?: string | null) {
     completedChallengesCount,
     isLoading: tripLoading || challengesLoading,
     isRefreshing,
+    hasNextPage: challengesQuery.hasNextPage,
+    isFetchingNextPage: challengesQuery.isFetchingNextPage,
+    fetchNextPage: challengesQuery.fetchNextPage,
     refresh,
     userGroup,
     leaderboardInfo,

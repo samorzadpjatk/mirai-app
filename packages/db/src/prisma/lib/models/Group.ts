@@ -677,14 +677,6 @@ export type GroupUpdateOneWithoutOrganizedEventsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.GroupUpdateToOneWithWhereWithoutOrganizedEventsInput, Prisma.GroupUpdateWithoutOrganizedEventsInput>, Prisma.GroupUncheckedUpdateWithoutOrganizedEventsInput>
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type GroupCreateNestedOneWithoutJoinRequestsInput = {
   create?: Prisma.XOR<Prisma.GroupCreateWithoutJoinRequestsInput, Prisma.GroupUncheckedCreateWithoutJoinRequestsInput>
   connectOrCreate?: Prisma.GroupCreateOrConnectWithoutJoinRequestsInput

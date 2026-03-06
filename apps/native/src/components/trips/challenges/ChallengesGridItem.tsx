@@ -150,58 +150,58 @@ const getStatusMeta = (status: ChallengeListItem["status"]) => {
     case "solved":
       return {
         label: "Solved",
-        textColor: "#22c55e",
-        borderColor: "rgba(34,197,94,0.45)",
-        backgroundColor: "rgba(34,197,94,0.2)",
+        textColor: colors.statusCompleted,
+        borderColor: `${colors.statusCompleted}73`,
+        backgroundColor: `${colors.statusCompleted}33`,
       };
     case "submitted":
       return {
         label: "Submitted",
-        textColor: "#f59e0b",
-        borderColor: "rgba(245,158,11,0.45)",
-        backgroundColor: "rgba(245,158,11,0.2)",
+        textColor: colors.statusVotingPhase,
+        borderColor: `${colors.statusVotingPhase}73`,
+        backgroundColor: `${colors.statusVotingPhase}33`,
       };
     case "rejected":
       return {
         label: "Rejected",
-        textColor: "#ef4444",
-        borderColor: "rgba(239,68,68,0.45)",
-        backgroundColor: "rgba(239,68,68,0.2)",
+        textColor: colors.danger,
+        borderColor: `${colors.danger}73`,
+        backgroundColor: `${colors.danger}33`,
       };
     case "completed":
       return {
         label: "Completed",
-        textColor: "#94a3b8",
-        borderColor: "rgba(148,163,184,0.45)",
-        backgroundColor: "rgba(15,23,42,0.78)",
+        textColor: colors.statusCompleted,
+        borderColor: `${colors.statusCompleted}73`,
+        backgroundColor: `${colors.statusCompleted}33`,
       };
     case "locked":
       return {
         label: "Locked",
-        textColor: "#f1f5f9",
-        borderColor: "rgba(241,245,249,0.45)",
-        backgroundColor: "rgba(15,23,42,0.78)",
+        textColor: colors.statusHidden,
+        borderColor: `${colors.statusHidden}73`,
+        backgroundColor: `${colors.statusHidden}33`,
       };
     case "to_solve":
       return {
         label: "Active",
-        textColor: colors.primary,
-        borderColor: "rgba(0,206,209,0.45)",
-        backgroundColor: "rgba(0,206,209,0.2)",
+        textColor: colors.statusActive,
+        borderColor: `${colors.statusActive}73`,
+        backgroundColor: `${colors.statusActive}33`,
       };
     case "visible":
       return {
         label: "Visible",
-        textColor: "#60a5fa",
-        borderColor: "rgba(96,165,250,0.45)",
-        backgroundColor: "rgba(96,165,250,0.2)",
+        textColor: colors.statusVisible,
+        borderColor: `${colors.statusVisible}73`,
+        backgroundColor: `${colors.statusVisible}33`,
       };
     default:
       return {
         label: "Active",
         textColor: colors.primary,
-        borderColor: "rgba(0,206,209,0.45)",
-        backgroundColor: "rgba(0,206,209,0.2)",
+        borderColor: `${colors.primary}73`,
+        backgroundColor: `${colors.primary}33`,
       };
   }
 };
@@ -261,26 +261,26 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   cardToSolve: {
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
+    borderColor: colors.statusActive,
+    shadowColor: colors.statusActive,
     shadowOpacity: 0.2,
     shadowRadius: 15,
   },
   cardSubmitted: {
-    borderColor: "#f59e0b",
-    shadowColor: "#f59e0b",
+    borderColor: colors.statusVotingPhase,
+    shadowColor: colors.statusVotingPhase,
     shadowOpacity: 0.2,
     shadowRadius: 15,
   },
   cardVisible: {
-    borderColor: "#60a5fa",
-    shadowColor: "#60a5fa",
+    borderColor: colors.statusVisible,
+    shadowColor: colors.statusVisible,
     shadowOpacity: 0.2,
     shadowRadius: 15,
   },
   cardSolved: {
-    borderColor: "#22c55e",
-    shadowColor: "#22c55e",
+    borderColor: colors.statusCompleted,
+    shadowColor: colors.statusCompleted,
     shadowOpacity: 0.2,
     shadowRadius: 15,
   },

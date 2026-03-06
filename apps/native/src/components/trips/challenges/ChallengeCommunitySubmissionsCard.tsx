@@ -13,7 +13,7 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFileDownload } from "~/hooks/files";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface CommunitySubmission {
@@ -51,7 +51,7 @@ export function ChallengeCommunitySubmissionsCard({
   submissions,
   showPodium,
 }: ChallengeCommunitySubmissionsCardProps) {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const galleryListRef = useRef<FlatList<CommunitySubmission>>(null);

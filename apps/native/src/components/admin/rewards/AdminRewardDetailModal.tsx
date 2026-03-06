@@ -3,15 +3,13 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
   ScrollView,
-  TextInput,
   Alert,
   ActivityIndicator,
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { commonStyles } from "~/styles/commonStyles";
+import { colors, spacing, typography, borderRadius } from "~/styles";
 import {
   useDeleteReward,
   useReward,
@@ -21,6 +19,12 @@ import {
 } from "~/hooks/rewards";
 import * as ImagePicker from "expo-image-picker";
 import { useFileUpload } from "~/hooks/files";
+import {
+  AppModalShell,
+  AppModalFooter,
+  FormField,
+  ThemedTextInput,
+} from "~/components/common/ui";
 
 interface Props {
   rewardId: string | null;
@@ -63,7 +67,7 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
       name: reward.name,
       description: reward.description,
       availableQuantity: String(reward.availableQuantity),
-      coinCost: String(reward.originalCoinCost || reward.coinCost), // Show original percentage
+      coinCost: String(reward.originalCoinCost ?? reward.coinCost), // Show original percentage
       images:
         reward.images && reward.images.length > 0
           ? reward.images
@@ -257,81 +261,69 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
   if (!rewardId) return null;
 
   return (
-    <Modal
+    <AppModalShell
       visible={!!rewardId}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      title="Reward Details"
+      onClose={onClose}
+      variant="pageSheet"
     >
-      <View style={commonStyles.container}>
-        <View style={{
-          padding: 24,
-          borderBottomWidth: 1,
-          borderBottomColor: "#273a3a",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}>
-          <View>
-            <Text style={[commonStyles.h3]}>Reward Details</Text>
-            {reward && (
-              <Text style={[commonStyles.textSecondary, { color: "#9ca3af", marginTop: 4 }]}>
-                Created: {new Date(reward.createdAt).toLocaleDateString()} | {reward.createdBy?.firstName} {reward.createdBy?.lastName}
-              </Text>
-            )}
+      <View style={{ padding: spacing.lg }}>
+        {reward && (
+          <View style={{ marginBottom: spacing.md }}>
+            <Text style={{ color: colors.textSecondary, fontSize: typography.sm }}>
+              Created: {new Date(reward.createdAt).toLocaleDateString()} | {reward.createdBy?.firstName} {reward.createdBy?.lastName}
+            </Text>
             {reward?.isHidden ? (
-              <Text style={[commonStyles.textSecondary, { color: "#fca5a5", marginTop: 4 }]}>
+              <Text style={{ color: colors.danger, fontSize: typography.sm, marginTop: spacing.xs }}>
                 Hidden from users
               </Text>
             ) : null}
           </View>
-          <TouchableOpacity onPress={onClose} disabled={isMutating}>
-            <Ionicons name="close" size={24} color="#9ca3af" />
-          </TouchableOpacity>
-        </View>
+        )}
 
         {isLoading || !reward ? (
           <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <ActivityIndicator size="large" color="#00ced1" />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : (
-          <ScrollView style={{ padding: 24 }}>
+          <View style={{ flex: 1 }}>
+            <ScrollView style={{ padding: 0 }}>
             {previewImage && (
-              <View style={{ marginBottom: 24 }}>
+              <View style={{ marginBottom: spacing.lg }}>
                 <Image
                   source={{ uri: previewImage }}
-                  style={{ width: "100%", aspectRatio: 1, borderRadius: 12, backgroundColor: "#0f2323" }}
+                  style={{ width: "100%", aspectRatio: 1, borderRadius: borderRadius.md, backgroundColor: colors.cardDark }}
                   resizeMode="cover"
                 />
-                <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
+                <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
                   <TouchableOpacity
                     onPress={handlePickImage}
                     disabled={isUploadingImage}
                     style={{
                       flex: 1,
-                      backgroundColor: "#00ced1",
-                      padding: 12,
-                      borderRadius: 12,
+                      backgroundColor: colors.primary,
+                      padding: spacing.sm,
+                      borderRadius: borderRadius.md,
                       alignItems: "center",
                     }}
                   >
                     {isUploadingImage ? (
-                      <ActivityIndicator color="#fff" />
+                      <ActivityIndicator color={colors.white} />
                     ) : (
-                      <Text style={commonStyles.buttonText}>Change image</Text>
+                      <Text style={{ color: colors.white, fontWeight: typography.semibold }}>Change image</Text>
                     )}
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={handleRemoveImage}
                     disabled={isMutating}
                     style={{
-                      backgroundColor: "#ef4444",
-                      padding: 12,
-                      borderRadius: 12,
+                      backgroundColor: colors.danger,
+                      padding: spacing.sm,
+                      borderRadius: borderRadius.md,
                       alignItems: "center",
                     }}
                   >
-                    <Text style={commonStyles.buttonText}>Remove image</Text>
+                    <Text style={{ color: colors.white, fontWeight: typography.semibold }}>Remove image</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -342,107 +334,71 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                 onPress={handlePickImage}
                 disabled={isUploadingImage}
                 style={{
-                  backgroundColor: "#0f2323",
+                  backgroundColor: colors.cardDark,
                   borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 14,
-                  marginBottom: 24,
+                  borderColor: colors.borderDark,
+                  borderRadius: borderRadius.md,
+                  padding: spacing.sm,
                   alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: spacing.lg,
                 }}
               >
                 {isUploadingImage ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={colors.primary} />
                 ) : (
-                  <Text style={commonStyles.buttonText}>Add image</Text>
+                  <View style={{ alignItems: "center" }}>
+                    <Ionicons name="image" size={24} color={colors.textSecondary} />
+                    <Text style={{ color: colors.textSecondary, marginTop: spacing.sm }}>Add image</Text>
+                  </View>
                 )}
               </TouchableOpacity>
             )}
 
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>Name</Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                }}
+            <FormField label="Name" required>
+              <ThemedTextInput
                 placeholder="Reward name"
-                placeholderTextColor="#6b7280"
                 value={form.name}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
               />
-            </View>
+            </FormField>
 
-            <View style={{ marginBottom: 20 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>Description</Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                  minHeight: 80,
-                  textAlignVertical: "top",
-                }}
+            <FormField label="Description" required>
+              <ThemedTextInput
                 placeholder="Reward description"
-                placeholderTextColor="#6b7280"
                 multiline
                 value={form.description}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, description: text }))}
               />
-            </View>
+            </FormField>
 
-            <View style={{ flexDirection: "row", gap: 12, marginBottom: 20 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={[commonStyles.label, { marginBottom: 8 }]}>Available quantity</Text>
-                <TextInput
+            <View style={{ flexDirection: "row", gap: spacing.md, marginBottom: spacing.lg }}>
+              <FormField label="Available quantity" required style={{ flex: 1 }}>
+                <ThemedTextInput
                   keyboardType="numeric"
-                  style={{
-                    backgroundColor: "#0f2323",
-                    borderWidth: 1,
-                    borderColor: "#273a3a",
-                    borderRadius: 12,
-                    padding: 12,
-                    color: "#fff",
-                  }}
                   value={form.availableQuantity}
                   onChangeText={(text) => setForm((prev) => ({ ...prev, availableQuantity: text }))}
                 />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[commonStyles.label, { marginBottom: 8 }]}>Cost (% of total points)</Text>
-                <TextInput
+              </FormField>
+              <FormField label="Cost (% of total points)" required style={{ flex: 1 }}>
+                <ThemedTextInput
                   keyboardType="numeric"
-                  style={{
-                    backgroundColor: "#0f2323",
-                    borderWidth: 1,
-                    borderColor: "#273a3a",
-                    borderRadius: 12,
-                    padding: 12,
-                    color: "#fff",
-                  }}
                   value={form.coinCost}
                   onChangeText={(text) => setForm((prev) => ({ ...prev, coinCost: text }))}
                 />
-                <Text style={[commonStyles.textSecondary, { fontSize: 11, marginTop: 4, color: "#9ca3af" }]}>
+                <Text style={{ fontSize: typography.xs, marginTop: spacing.xs, color: colors.textSecondary }}>
                   Percentage of total available points
                 </Text>
-              </View>
+              </FormField>
             </View>
 
-            <View style={{ marginBottom: 24, gap: 8 }}>
-              <Text style={[commonStyles.label]}>Purchases</Text>
-              <Text style={[commonStyles.textSecondary, { color: "#9ca3af" }]}>
+            <View style={{ marginBottom: spacing.lg, gap: spacing.sm }}>
+              <Text style={{ fontWeight: typography.semibold, color: colors.white, marginBottom: spacing.sm }}>Purchases</Text>
+              <Text style={{ color: colors.textSecondary }}>
                 {purchasedCount} purchased
               </Text>
               {reward.purchases.length > 0 ? (
-                <View style={{ gap: 10 }}>
+                <View style={{ gap: spacing.sm }}>
                   {reward.purchases.map((purchase) => {
                     const status = (purchase.status ?? "BOUGHT") as PurchaseStatus;
                     const statusInfo = purchaseStatusMeta[status] ?? purchaseStatusMeta.BOUGHT;
@@ -464,56 +420,46 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                         }}
                       >
                         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                          <Text style={[commonStyles.textPrimary]}>
+                          <Text style={{ color: colors.white, fontWeight: typography.medium }}>
                             {purchase.quantity} pcs. • {purchase.totalCost} coins
                           </Text>
                           <View
                             style={{
                               flexDirection: "row",
                               alignItems: "center",
-                              gap: 4,
+                              gap: spacing.xs,
                               borderWidth: 1,
                               borderColor: statusInfo.color,
                               borderRadius: 999,
-                              paddingHorizontal: 8,
-                              paddingVertical: 3,
+                              paddingHorizontal: spacing.sm,
+                              paddingVertical: spacing.xs,
                               backgroundColor: `${statusInfo.color}20`,
                             }}
                           >
                             <Ionicons name={statusInfo.icon} size={12} color={statusInfo.color} />
-                            <Text style={[commonStyles.label, { color: statusInfo.color, letterSpacing: 0.6 }]}>
+                            <Text style={{ color: statusInfo.color, letterSpacing: 0.6, fontSize: typography.xs, fontWeight: typography.semibold }}>
                               {statusInfo.label}
                             </Text>
                           </View>
                         </View>
 
-                        <Text style={[commonStyles.textSecondary]}>
+                        <Text style={{ color: colors.textSecondary }}>
                           Group: {purchase.group?.name ?? "Unknown"}
                         </Text>
                         {purchaserName ? (
-                          <Text style={[commonStyles.textSecondary]}>
+                          <Text style={{ color: colors.textSecondary }}>
                             Claimed by: {purchaserName}
                           </Text>
                         ) : null}
-                        <Text style={[commonStyles.textSecondary]}>
+                        <Text style={{ color: colors.textSecondary }}>
                           {new Date(purchase.purchasedAt).toLocaleString()}
                         </Text>
 
-                        <TextInput
-                          style={{
-                            backgroundColor: canEditCollectionMethod ? "#0b1a1a" : "#0a1414",
-                            borderWidth: 1,
-                            borderColor: canEditCollectionMethod ? "#273a3a" : "#1f2a2a",
-                            borderRadius: 10,
-                            paddingHorizontal: 10,
-                            paddingVertical: 8,
-                            color: canEditCollectionMethod ? "#fff" : "#9ca3af",
-                          }}
+                        <ThemedTextInput
                           placeholder="Collection method (e.g. pick up at HQ desk)"
-                          placeholderTextColor="#6b7280"
                           value={collectionMethodByPurchase[purchase.id] ?? ""}
                           editable={canEditCollectionMethod}
-                          onChangeText={(text) =>
+                          onChangeText={(text: string) =>
                             setCollectionMethodByPurchase((prev) => ({
                               ...prev,
                               [purchase.id]: text,
@@ -521,32 +467,32 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                           }
                         />
 
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
                           {status === "BOUGHT" ? (
                             <>
                               <TouchableOpacity
                                 onPress={() => handlePurchaseStatusChange(purchase.id, "ACCEPTED")}
                                 disabled={isMutating}
                                 style={{
-                                  backgroundColor: "#22c55e",
+                                  backgroundColor: colors.success,
                                   borderRadius: 999,
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 7,
+                                  paddingHorizontal: spacing.sm,
+                                  paddingVertical: spacing.xs,
                                 }}
                               >
-                                <Text style={[commonStyles.label, { color: "#062b06", letterSpacing: 0.6 }]}>Accept</Text>
+                                <Text style={{ color: colors.backgroundDark, letterSpacing: 0.6, fontSize: typography.xs, fontWeight: typography.semibold }}>Accept</Text>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 onPress={() => handlePurchaseStatusChange(purchase.id, "CANCELLED")}
                                 disabled={isMutating}
                                 style={{
-                                  backgroundColor: "#ef4444",
+                                  backgroundColor: colors.danger,
                                   borderRadius: 999,
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 7,
+                                  paddingHorizontal: spacing.sm,
+                                  paddingVertical: spacing.xs,
                                 }}
                               >
-                                <Text style={[commonStyles.label, { color: "#2f0606", letterSpacing: 0.6 }]}>Cancel + refund</Text>
+                                <Text style={{ color: colors.backgroundDark, letterSpacing: 0.6, fontSize: typography.xs, fontWeight: typography.semibold }}>Cancel + refund</Text>
                               </TouchableOpacity>
                             </>
                           ) : null}
@@ -557,25 +503,25 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                                 onPress={() => handlePurchaseStatusChange(purchase.id, "IN_DELIVERY")}
                                 disabled={isMutating}
                                 style={{
-                                  backgroundColor: "#38bdf8",
+                                  backgroundColor: colors.primary,
                                   borderRadius: 999,
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 7,
+                                  paddingHorizontal: spacing.sm,
+                                  paddingVertical: spacing.xs,
                                 }}
                               >
-                                <Text style={[commonStyles.label, { color: "#062134", letterSpacing: 0.6 }]}>Set in delivery</Text>
+                                <Text style={{ color: colors.backgroundDark, letterSpacing: 0.6, fontSize: typography.xs, fontWeight: typography.semibold }}>Set in delivery</Text>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 onPress={() => handlePurchaseStatusChange(purchase.id, "CANCELLED")}
                                 disabled={isMutating}
                                 style={{
-                                  backgroundColor: "#ef4444",
+                                  backgroundColor: colors.danger,
                                   borderRadius: 999,
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 7,
+                                  paddingHorizontal: spacing.sm,
+                                  paddingVertical: spacing.xs,
                                 }}
                               >
-                                <Text style={[commonStyles.label, { color: "#2f0606", letterSpacing: 0.6 }]}>Cancel + refund</Text>
+                                <Text style={{ color: colors.backgroundDark, letterSpacing: 0.6, fontSize: typography.xs, fontWeight: typography.semibold }}>Cancel + refund</Text>
                               </TouchableOpacity>
                             </>
                           ) : null}
@@ -586,25 +532,25 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
                                 onPress={() => handlePurchaseStatusChange(purchase.id, "DELIVERED")}
                                 disabled={isMutating}
                                 style={{
-                                  backgroundColor: "#10b981",
+                                  backgroundColor: colors.success,
                                   borderRadius: 999,
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 7,
+                                  paddingHorizontal: spacing.sm,
+                                  paddingVertical: spacing.xs,
                                 }}
                               >
-                                <Text style={[commonStyles.label, { color: "#03281d", letterSpacing: 0.6 }]}>Mark delivered</Text>
+                                <Text style={{ color: colors.backgroundDark, letterSpacing: 0.6, fontSize: typography.xs, fontWeight: typography.semibold }}>Mark delivered</Text>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 onPress={() => handlePurchaseStatusChange(purchase.id, "CANCELLED")}
                                 disabled={isMutating}
                                 style={{
-                                  backgroundColor: "#ef4444",
+                                  backgroundColor: colors.danger,
                                   borderRadius: 999,
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 7,
+                                  paddingHorizontal: spacing.sm,
+                                  paddingVertical: spacing.xs,
                                 }}
                               >
-                                <Text style={[commonStyles.label, { color: "#2f0606", letterSpacing: 0.6 }]}>Cancel + refund</Text>
+                                <Text style={{ color: colors.backgroundDark, letterSpacing: 0.6, fontSize: typography.xs, fontWeight: typography.semibold }}>Cancel + refund</Text>
                               </TouchableOpacity>
                             </>
                           ) : null}
@@ -620,62 +566,35 @@ export default function AdminRewardDetailModal({ rewardId, onClose }: Props) {
               onPress={handleToggleHidden}
               disabled={isMutating}
               style={{
-                backgroundColor: reward.isHidden ? "#0f4a4a" : "#7f1d1d",
-                padding: 14,
-                borderRadius: 12,
+                backgroundColor: reward.isHidden ? colors.primaryOpacity10 : colors.red900Opacity30,
+                padding: spacing.sm,
+                borderRadius: borderRadius.md,
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: 12,
+                marginBottom: spacing.sm,
               }}
             >
               {setRewardHidden.isPending ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={commonStyles.buttonText}>
+                <Text style={{ color: colors.white, fontWeight: typography.semibold }}>
                   {reward.isHidden ? "Unhide reward" : "Hide reward"}
                 </Text>
               )}
             </TouchableOpacity>
 
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <TouchableOpacity
-                onPress={handleSave}
-                disabled={isMutating}
-                style={{
-                  flex: 1,
-                  backgroundColor: isMutating ? "#0f4a4a" : "#00ced1",
-                  padding: 14,
-                  borderRadius: 12,
-                  alignItems: "center",
-                }}
-              >
-                {updateReward.isPending ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={commonStyles.buttonText}>Save changes</Text>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleDelete}
-                disabled={isMutating}
-                style={{
-                  backgroundColor: "#ef4444",
-                  padding: 14,
-                  borderRadius: 12,
-                  alignItems: "center",
-                }}
-              >
-                {deleteReward.isPending ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={commonStyles.buttonText}>Delete</Text>
-                )}
-              </TouchableOpacity>
-            </View>
           </ScrollView>
+          <AppModalFooter
+            primaryLabel={updateReward.isPending ? "Saving..." : "Save changes"}
+            onPrimary={handleSave}
+            isPrimaryLoading={updateReward.isPending}
+            isPrimaryDisabled={isMutating}
+            secondaryLabel="Delete"
+            onSecondary={handleDelete}
+          />
+          </View>
         )}
       </View>
-    </Modal>
+    </AppModalShell>
   );
 }

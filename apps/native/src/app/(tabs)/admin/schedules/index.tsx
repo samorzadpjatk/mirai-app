@@ -12,7 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
-import { useAppSafeAreaInsets } from '../../../../contexts/SafeAreaInsetsContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAdminSchedules } from '~/hooks/admin/useAdminSchedules';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { ScheduleCard } from '~/components/admin/schedules/ScheduleCard';
@@ -59,7 +59,7 @@ function getScheduleWindow(hour: number, minute: number): { startDate: Date; end
 }
 
 export default function AdminSchedulesScreen() {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId =
     typeof params.tripId === 'string' ? params.tripId : params.tripId?.[0] ?? '';

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,13 +25,14 @@ import {
   DeleteScheduleModal,
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAdminNotifications, type Notification } from "~/hooks/admin/useAdminNotifications";
 import {
   useAdminSchedules,
   type NotificationSchedule,
 } from "~/hooks/admin/useAdminSchedules";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { EmptyState } from "~/components/common/ui";
 
 type AdminNotificationsTab = "sent" | "planned";
 type PlannedSchedulesTab = "recurring" | "scheduled";
@@ -82,7 +84,7 @@ function parseNotificationAudience(url: string): {
 export default function AdminNotificationsScreen() {
   const router = useRouter();
   const trpc = useTRPC();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
@@ -99,6 +101,11 @@ export default function AdminNotificationsScreen() {
   const {
     notifications,
     isLoading: areNotificationsLoading,
+    isRefetching: areNotificationsRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch,
     status,
     setStatus,
     retryNotification,
@@ -272,6 +279,14 @@ export default function AdminNotificationsScreen() {
     />
   );
 
+  const handleLoadMoreNotifications = () => {
+    if (!hasNextPage || isFetchingNextPage || areNotificationsLoading) {
+      return;
+    }
+
+    void fetchNextPage();
+  };
+
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
       <StatusBar style="light" />
@@ -306,47 +321,10 @@ export default function AdminNotificationsScreen() {
             onSearchChange={setSearchTerm}
             status={status}
             onStatusChange={setStatus}
+            groups={groups}
+            selectedGroupId={selectedGroupFilterId}
+            onGroupChange={setSelectedGroupFilterId}
           />
-
-          <View style={styles.groupFilterContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <TouchableOpacity
-                style={[
-                  styles.groupFilterChip,
-                  selectedGroupFilterId === "all" && styles.groupFilterChipActive,
-                ]}
-                onPress={() => setSelectedGroupFilterId("all")}
-              >
-                <Text
-                  style={[
-                    styles.groupFilterText,
-                    selectedGroupFilterId === "all" && styles.groupFilterTextActive,
-                  ]}
-                >
-                  All groups
-                </Text>
-              </TouchableOpacity>
-              {groups.map((group) => (
-                <TouchableOpacity
-                  key={group.id}
-                  style={[
-                    styles.groupFilterChip,
-                    selectedGroupFilterId === group.id && styles.groupFilterChipActive,
-                  ]}
-                  onPress={() => setSelectedGroupFilterId(group.id)}
-                >
-                  <Text
-                    style={[
-                      styles.groupFilterText,
-                      selectedGroupFilterId === group.id && styles.groupFilterTextActive,
-                    ]}
-                  >
-                    {group.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
 
           {areNotificationsLoading ? (
             <View style={styles.loadingContainer}>
@@ -360,11 +338,30 @@ export default function AdminNotificationsScreen() {
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.notificationsList}
               showsVerticalScrollIndicator={false}
+              onEndReached={handleLoadMoreNotifications}
+              onEndReachedThreshold={0.35}
+              refreshControl={
+                <RefreshControl
+                  refreshing={areNotificationsRefetching && !isFetchingNextPage}
+                  onRefresh={() => {
+                    void refetch();
+                  }}
+                  tintColor={colors.primary}
+                />
+              }
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <View style={styles.listFooter}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={styles.inlineLoadingText}>Loading more notifications...</Text>
+                  </View>
+                ) : null
+              }
               ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="notifications-off" size={48} color={colors.textSecondary} />
-                  <Text style={styles.emptyText}>No sent notifications found.</Text>
-                </View>
+                <EmptyState
+                  icon="notifications-off"
+                  title="No sent notifications found."
+                />
               }
             />
           )}
@@ -552,31 +549,6 @@ const styles = StyleSheet.create({
     fontSize: typography.base,
     fontWeight: typography.medium,
   },
-  groupFilterContainer: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  groupFilterChip: {
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  groupFilterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  groupFilterText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  groupFilterTextActive: {
-    color: colors.white,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -591,14 +563,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
   },
-  emptyContainer: {
+  listFooter: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.xxl,
-  },
-  emptyText: {
-    marginTop: spacing.md,
-    fontSize: typography.base,
-    color: colors.textSecondary,
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
   },
   scroll: {
     flex: 1,

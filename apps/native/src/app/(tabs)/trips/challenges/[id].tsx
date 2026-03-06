@@ -1,22 +1,20 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   View,
   ScrollView,
   StyleSheet,
   Alert,
-  Modal,
   Text,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import { QrScannerModal } from "~/components/common";
+import { AppModalShell, AppModalFooter } from "~/components/common/ui";
+import { ThemedTextInput } from "~/components/common/ui";
+import { useCameraPermissions } from "expo-camera";
 import {
   MapView,
   Camera,
@@ -38,6 +36,7 @@ import { ChallengeCommunitySubmissionsCard } from "~/components/trips/challenges
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useChallengeDetails } from "~/hooks/challenges";
 import { useChallengeCapture } from "~/hooks/challenges";
+import { useTripDetails } from "~/hooks/trips";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/fiord";
 const IMAGE_LOCATION_RADIUS_METERS = 50;
@@ -79,13 +78,15 @@ export default function ChallengeDetailScreen() {
     typeof params.id === "string" ? params.id : params.id?.[0];
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const {
     challenge,
     isLoading: challengeLoading,
     isAssignedToUser,
   } = useChallengeDetails(challengeId, tripId);
+
+  const { isTripPast } = useTripDetails(tripId);
 
   const {
     isLoading: cameraLoading,
@@ -144,13 +145,11 @@ export default function ChallengeDetailScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [hasScannedQrThisSession, setHasScannedQrThisSession] = useState(false);
   const [isTextInputOpen, setIsTextInputOpen] = useState(false);
   const [textInputValue, setTextInputValue] = useState("");
   const [currentDeviceCoords, setCurrentDeviceCoords] = useState<
     [number, number] | null
   >(null);
-  const qrScanLockRef = useRef(false);
 
   const withdrawMutation = useMutation(
     trpc.challengeSubmission.deleteMine.mutationOptions({
@@ -489,10 +488,6 @@ export default function ChallengeDetailScreen() {
           scoringCategory={challenge.scoringCategory}
           status={heroStatus}
           endTime={challenge.endTime}
-          isRecurring={challenge.isRecurring}
-          firstPlacePoints={challenge.firstPlacePoints}
-          secondPlacePoints={challenge.secondPlacePoints}
-          thirdPlacePoints={challenge.thirdPlacePoints}
         />
 
         {/* Description */}
@@ -514,7 +509,8 @@ export default function ChallengeDetailScreen() {
         {/* Primary action */}
         {!isPeerVotingChallengeInVotingPhase &&
           !mySubmission &&
-          challenge.status !== "COMPLETED" && (
+          challenge.status !== "COMPLETED" &&
+          !isTripPast && (
             <ChallengeActionButton
               isLoading={
                 cameraLoading ||
@@ -556,18 +552,6 @@ export default function ChallengeDetailScreen() {
                   return;
                 }
                 if (isQrChallenge) {
-                  const permission = cameraPermission?.granted
-                    ? cameraPermission
-                    : await requestCameraPermission();
-                  if (!permission?.granted) {
-                    Alert.alert(
-                      "Permission required",
-                      "Camera permission is needed to scan QR code.",
-                    );
-                    return;
-                  }
-                  qrScanLockRef.current = false;
-                  setHasScannedQrThisSession(false);
                   setIsQrScannerOpen(true);
                   return;
                 }
@@ -714,7 +698,7 @@ export default function ChallengeDetailScreen() {
           <ChallengeUploadProgressCard progress={uploadProgress.percent} />
         )}
 
-        {mySubmission && (
+        {mySubmission && !isTripPast && (
           <ExistingSubmissionCard
             submission={mySubmission}
             isWithdrawing={withdrawMutation.isPending}
@@ -724,73 +708,39 @@ export default function ChallengeDetailScreen() {
         )}
       </ScrollView>
 
-      <Modal
+      <AppModalShell
         visible={isTextInputOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsTextInputOpen(false)}
+        title="Enter your answer"
+        onClose={() => {
+          setIsTextInputOpen(false);
+          setTextInputValue("");
+        }}
+        variant="pageSheet"
       >
-        <KeyboardAvoidingView
-          style={styles.textModalBackdrop}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          <TouchableOpacity
-            style={StyleSheet.absoluteFillObject}
-            activeOpacity={1}
-            onPress={() => {
-              setIsTextInputOpen(false);
-              setTextInputValue("");
-            }}
-          />
-          <View
-            style={[
-              styles.textModalCard,
-              { paddingBottom: insets.bottom + spacing.lg },
-            ]}
-          >
-            <Text style={styles.textModalTitle}>Enter your answer</Text>
-            <TextInput
-              style={styles.textModalInput}
-              placeholder="Type your answer here..."
-              placeholderTextColor={colors.textTertiary}
-              value={textInputValue}
-              onChangeText={setTextInputValue}
-              autoFocus
-              autoCapitalize="none"
-              autoCorrect={false}
-              multiline={false}
-              returnKeyType="send"
-              onSubmitEditing={() => handleSubmitText(textInputValue)}
-            />
-            <View style={styles.textModalActions}>
-              <TouchableOpacity
-                style={styles.textModalCancelButton}
-                onPress={() => {
-                  setIsTextInputOpen(false);
-                  setTextInputValue("");
-                }}
-              >
-                <Text style={styles.textModalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.textModalSubmitButton,
-                  (!textInputValue.trim() || textSubmitMutation.isPending) &&
-                    styles.textModalSubmitButtonDisabled,
-                ]}
-                onPress={() => handleSubmitText(textInputValue)}
-                disabled={
-                  !textInputValue.trim() || textSubmitMutation.isPending
-                }
-              >
-                <Text style={styles.textModalSubmitText}>
-                  {textSubmitMutation.isPending ? "Submitting..." : "Submit"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        <ThemedTextInput
+          placeholder="Type your answer here..."
+          value={textInputValue}
+          onChangeText={setTextInputValue}
+          autoFocus
+          autoCapitalize="none"
+          autoCorrect={false}
+          multiline={false}
+          returnKeyType="send"
+          onSubmitEditing={() => handleSubmitText(textInputValue)}
+          style={{ marginBottom: spacing.lg }}
+        />
+        <AppModalFooter
+          primaryLabel={textSubmitMutation.isPending ? "Submitting..." : "Submit"}
+          onPrimary={() => handleSubmitText(textInputValue)}
+          isPrimaryLoading={textSubmitMutation.isPending}
+          isPrimaryDisabled={!textInputValue.trim()}
+          secondaryLabel="Cancel"
+          onSecondary={() => {
+            setIsTextInputOpen(false);
+            setTextInputValue("");
+          }}
+        />
+      </AppModalShell>
 
       <PhotoCaptureModal
         visible={isPhotoCameraOpen}
@@ -804,81 +754,35 @@ export default function ChallengeDetailScreen() {
         onUsePhoto={handleUseChallengePhoto}
       />
 
-      <Modal
+      <QrScannerModal
         visible={isQrScannerOpen}
-        animationType="slide"
-        onRequestClose={() => setIsQrScannerOpen(false)}
-      >
-        <View style={styles.qrModalContainer}>
-          <View
-            style={[
-              styles.qrModalHeader,
-              { paddingTop: insets.top + spacing.md },
-            ]}
-          >
-            <Text style={styles.qrModalTitle}>Scan QR code</Text>
-            <TouchableOpacity
-              onPress={() => {
-                qrScanLockRef.current = false;
-                setHasScannedQrThisSession(false);
-                setIsQrScannerOpen(false);
-              }}
-              style={styles.qrModalCloseButton}
-            >
-              <Text style={styles.qrModalCloseText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.qrCameraContainer}>
-            <CameraView
-              style={styles.qrCamera}
-              facing="back"
-              barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-              onBarcodeScanned={
-                hasScannedQrThisSession
-                  ? undefined
-                  : async (event) => {
-                      if (
-                        qrScanLockRef.current ||
-                        hasScannedQrThisSession ||
-                        !tripId ||
-                        !challengeId
-                      ) {
-                        return;
-                      }
-                      qrScanLockRef.current = true;
-                      setHasScannedQrThisSession(true);
-                      try {
-                        const submission = await qrSubmitMutation.mutateAsync({
-                          tripId,
-                          challengeId,
-                          textContent: event.data ?? "",
-                        });
-                        setIsQrScannerOpen(false);
-                        Alert.alert(
-                          "Challenge completed",
-                          submission.status === "APPROVED"
-                            ? "QR code valid. Points granted."
-                            : "Submission sent.",
-                        );
-                      } catch (error) {
-                        setIsQrScannerOpen(false);
-                        const message =
-                          error instanceof Error
-                            ? error.message
-                            : "Invalid QR code";
-                        Alert.alert("Invalid QR code", message);
-                      }
-                    }
-              }
-            />
-          </View>
-          <View style={styles.qrFooter}>
-            <Text style={styles.qrFooterText}>
-              Point camera at QR code to verify challenge.
-            </Text>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setIsQrScannerOpen(false)}
+        title="Scan QR code"
+        instructionText="Point camera at QR code to verify challenge."
+        onScan={async (data) => {
+          if (!tripId || !challengeId) return;
+          
+          try {
+            const submission = await qrSubmitMutation.mutateAsync({
+              tripId,
+              challengeId,
+              textContent: data,
+            });
+            Alert.alert(
+              "Challenge completed",
+              submission.status === "APPROVED"
+                ? "QR code valid. Points granted."
+                : "Submission sent.",
+            );
+          } catch (error) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Invalid QR code";
+            throw new Error(message);
+          }
+        }}
+      />
     </View>
   );
 }
@@ -899,12 +803,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardDark,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.whiteOpacity8,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
   solvedCounterLabel: {
-    color: colors.textSecondary,
+    color: colors.emerald500,
     fontSize: 12,
     textTransform: "uppercase",
     marginBottom: 4,
@@ -912,12 +816,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   solvedCounterValue: {
-    color: colors.primary,
+    color: colors.emerald500,
     fontSize: 28,
     fontWeight: "800",
   },
   solvedCounterHint: {
-    color: colors.textSecondary,
+    color: colors.emerald500,
     fontSize: 12,
     marginTop: spacing.xs,
   },
@@ -925,12 +829,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardDark,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.whiteOpacity8,
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
   targetLocationLabel: {
-    color: colors.textSecondary,
+    color: colors.emerald500,
     fontSize: 12,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -942,7 +846,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: colors.whiteOpacity12,
   },
   targetLocationMap: {
     flex: 1,
@@ -951,12 +855,12 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.danger,
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.9)",
+    borderColor: colors.whiteOpacity90,
   },
   targetLocationCoords: {
-    color: colors.textSecondary,
+    color: colors.emerald500,
     marginTop: 8,
     fontSize: 12,
   },
@@ -973,7 +877,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   qrModalTitle: {
-    color: colors.white,
+    color: colors.emerald500,
     fontSize: 20,
     fontWeight: "700",
   },
@@ -982,7 +886,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   qrModalCloseText: {
-    color: colors.textSecondary,
+    color: colors.emerald500,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -992,7 +896,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: colors.whiteOpacity12,
   },
   qrCamera: {
     flex: 1,
@@ -1001,70 +905,8 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   qrFooterText: {
-    color: colors.textSecondary,
+    color: colors.emerald500,
     fontSize: 14,
     textAlign: "center",
-  },
-  textModalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "flex-end",
-  },
-  textModalCard: {
-    backgroundColor: colors.cardDark,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  textModalTitle: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: spacing.md,
-  },
-  textModalInput: {
-    backgroundColor: colors.backgroundDark,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    color: colors.white,
-    fontSize: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  textModalActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  textModalCancelButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    alignItems: "center",
-  },
-  textModalCancelText: {
-    color: colors.textSecondary,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  textModalSubmitButton: {
-    flex: 2,
-    paddingVertical: spacing.sm,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-  },
-  textModalSubmitButtonDisabled: {
-    opacity: 0.4,
-  },
-  textModalSubmitText: {
-    color: colors.white,
-    fontSize: 15,
-    fontWeight: "700",
   },
 });

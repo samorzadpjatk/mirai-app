@@ -3,11 +3,7 @@ import { useTRPC } from "@integral-2025-app/trpc/client";
 
 export function useMyGroup(tripId?: string | null) {
   const trpc = useTRPC();
-
-  const query = useQuery({
-    ...trpc.group.getMy.queryOptions({ tripId: tripId ?? "" }),
-    enabled: Boolean(tripId),
-  });
+  const query = useQuery(trpc.group.getMy.queryOptions({ tripId: tripId ?? "" }, { enabled: !!tripId }));
 
   return {
     group: query.data ?? null,

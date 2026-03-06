@@ -53,6 +53,9 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   User: 'User',
   Trip: 'Trip',
+  TripResource: 'TripResource',
+  TripInsurance: 'TripInsurance',
+  TripInsuranceStep: 'TripInsuranceStep',
   TripParticipant: 'TripParticipant',
   Event: 'Event',
   UserEvent: 'UserEvent',
@@ -79,7 +82,9 @@ export const ModelName = {
   LocationSharingRequest: 'LocationSharingRequest',
   Reward: 'Reward',
   RewardPurchase: 'RewardPurchase',
-  UserAgent: 'UserAgent'
+  UserAgent: 'UserAgent',
+  Sponsor: 'Sponsor',
+  TripSponsor: 'TripSponsor'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -125,6 +130,60 @@ export const TripScalarFieldEnum = {
 } as const
 
 export type TripScalarFieldEnum = (typeof TripScalarFieldEnum)[keyof typeof TripScalarFieldEnum]
+
+
+export const TripResourceScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  type: 'type',
+  label: 'label',
+  description: 'description',
+  url: 'url',
+  storagePath: 'storagePath',
+  fileName: 'fileName',
+  iconName: 'iconName',
+  value: 'value',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripResourceScalarFieldEnum = (typeof TripResourceScalarFieldEnum)[keyof typeof TripResourceScalarFieldEnum]
+
+
+export const TripInsuranceScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  label: 'label',
+  phoneNumber: 'phoneNumber',
+  phoneDisplay: 'phoneDisplay',
+  policyNumber: 'policyNumber',
+  contractNumber: 'contractNumber',
+  providerName: 'providerName',
+  hospitalName: 'hospitalName',
+  hospitalAddress: 'hospitalAddress',
+  hospitalDistance: 'hospitalDistance',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripInsuranceScalarFieldEnum = (typeof TripInsuranceScalarFieldEnum)[keyof typeof TripInsuranceScalarFieldEnum]
+
+
+export const TripInsuranceStepScalarFieldEnum = {
+  id: 'id',
+  insuranceId: 'insuranceId',
+  stepNumber: 'stepNumber',
+  title: 'title',
+  text: 'text',
+  requiredInfo: 'requiredInfo',
+  exampleCall: 'exampleCall',
+  additionalText: 'additionalText',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TripInsuranceStepScalarFieldEnum = (typeof TripInsuranceStepScalarFieldEnum)[keyof typeof TripInsuranceStepScalarFieldEnum]
 
 
 export const TripParticipantScalarFieldEnum = {
@@ -532,6 +591,32 @@ export const UserAgentScalarFieldEnum = {
 } as const
 
 export type UserAgentScalarFieldEnum = (typeof UserAgentScalarFieldEnum)[keyof typeof UserAgentScalarFieldEnum]
+
+
+export const SponsorScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  logoPath: 'logoPath',
+  height: 'height',
+  offsetX: 'offsetX',
+  offsetY: 'offsetY',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SponsorScalarFieldEnum = (typeof SponsorScalarFieldEnum)[keyof typeof SponsorScalarFieldEnum]
+
+
+export const TripSponsorScalarFieldEnum = {
+  id: 'id',
+  tripId: 'tripId',
+  sponsorId: 'sponsorId',
+  createdAt: 'createdAt'
+} as const
+
+export type TripSponsorScalarFieldEnum = (typeof TripSponsorScalarFieldEnum)[keyof typeof TripSponsorScalarFieldEnum]
 
 
 export const SortOrder = {

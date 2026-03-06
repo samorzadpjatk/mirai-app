@@ -7,12 +7,12 @@ import { ManageSharingModal } from "~/components/map/modals/ManageSharingModal";
 import { SelectedUserCard } from "~/components/map/ui/SelectedUserCard";
 import { ShareLocationModal } from "~/components/map/modals/ShareLocationModal";
 import { UsersListPanel } from "~/components/map/panels/UsersListPanel";
-import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
-import { useLocationContext } from "~/contexts/location";
+import { useMapOverlayStore } from "~/stores/map";
+import { useLocationContext } from "~/stores/location";
 
 export function MapScreenOverlay() {
   const { selectedUser, showUsersList, panelStyle, panGesture } =
-    useMapOverlayContext();
+    useMapOverlayStore();
   const { canViewOthersLocations } = useLocationContext();
 
   return (

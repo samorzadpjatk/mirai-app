@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import { useAuth } from "../authHooks";
+import { useAuth } from "../store/authHooks";
 
 export interface LoginFormData {
   email: string;

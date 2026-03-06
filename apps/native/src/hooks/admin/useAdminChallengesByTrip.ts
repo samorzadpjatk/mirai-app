@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTRPC } from '@integral-2025-app/trpc/client';
+import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useTRPC, useTRPCClient } from '@integral-2025-app/trpc/client';
 
 export interface ChallengeItem {
   id: string;
@@ -11,15 +11,49 @@ export interface ChallengeItem {
   tripId: string;
 }
 
+const PAGE_SIZE = 30;
+
 export function useAdminChallengesByTrip(tripId: string) {
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
-  const challengeQueryOptions = trpc.challenge.getAllByTrip.queryOptions({ tripId });
-  const { data: challengesData, isLoading } = useQuery({
-    ...challengeQueryOptions,
+  const challengeQueryKey = trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey;
+  const {
+    data,
+    isLoading,
+    isRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: [...challengeQueryKey, 'infinite', PAGE_SIZE],
     enabled: !!tripId,
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === 'number' ? pageParam : 0;
+      return trpcClient.challenge.getAllByTrip.query({
+        tripId,
+        pagination: {
+          limit: PAGE_SIZE,
+          offset,
+        },
+      });
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.pagination.hasMore) {
+        return undefined;
+      }
+
+      return lastPage.pagination.offset + lastPage.pagination.limit;
+    },
   });
+
+  const challengesData = useMemo(
+    () => (data?.pages ?? []).flatMap((page) => page.challenges ?? []),
+    [data?.pages],
+  );
 
   const challenges: ChallengeItem[] = useMemo(() => {
     if (!challengesData) return [];
@@ -37,7 +71,7 @@ export function useAdminChallengesByTrip(tripId: string) {
   const deleteChallengeMutation = useMutation(
     trpc.challenge.delete.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: challengeQueryOptions.queryKey });
+        await queryClient.invalidateQueries({ queryKey: challengeQueryKey });
       },
     }),
   );
@@ -53,6 +87,11 @@ export function useAdminChallengesByTrip(tripId: string) {
   return {
     challenges,
     isLoading,
+    isRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch,
     isDeleting: deleteChallengeMutation.isPending,
     deleteChallenge,
     stats,

@@ -88,7 +88,7 @@ const runManipulation = async (
     });
   } catch {
     const context = ImageManipulator.manipulate(uri);
-    for (const action of actions) {
+    for (const action of actions ?? []) {
       if ("resize" in action) {
         context.resize(action.resize);
       } else if ("rotate" in action) {

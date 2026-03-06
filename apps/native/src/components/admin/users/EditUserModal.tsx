@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Platform, Pressable } from 'react-native';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, borderRadius, typography } from '~/styles';
 import { AdminModal, AdminModalButton } from '../AdminModal';
+import {
+  FormField,
+  ThemedTextInput,
+  DateTimePickerModal,
+} from '~/components/common/ui';
 import type { User } from '~/hooks/admin/useAdminUsers';
 
 interface EditUserModalProps {
@@ -41,7 +45,6 @@ export function EditUserModal({
   const [banUntil, setBanUntil] = useState<Date | null>(null);
   const [banReason, setBanReason] = useState('');
   const [isBanPickerOpen, setIsBanPickerOpen] = useState(false);
-  const [pickerDraftDate, setPickerDraftDate] = useState<Date>(new Date());
 
   const handleSave = () => {
     if (!user) return;
@@ -66,27 +69,9 @@ export function EditUserModal({
     : 'Select date & time';
 
   const openBanPicker = () => {
-    setPickerDraftDate(banUntil ?? new Date());
     setIsBanPickerOpen(true);
   };
 
-  const handleBanDateChange = (event: DateTimePickerEvent, selected?: Date) => {
-    if (Platform.OS === 'android') {
-      if (event.type === 'dismissed') {
-        setIsBanPickerOpen(false);
-        return;
-      }
-      if (selected) {
-        setBanUntil(selected);
-      }
-      setIsBanPickerOpen(false);
-      return;
-    }
-
-    if (selected) {
-      setPickerDraftDate(selected);
-    }
-  };
 
   return (
     <AdminModal
@@ -107,60 +92,48 @@ export function EditUserModal({
     >
       {user ? (
         <>
-          <View style={styles.userMeta}>
-            <Text style={styles.userName}>
+          <View style={{ marginBottom: spacing.md }}>
+            <Text style={{ fontSize: typography.lg, fontWeight: typography.bold, color: colors.white, marginBottom: spacing.xs }}>
               {[firstName, lastName].filter(Boolean).join(' ') || 'Unknown user'}
             </Text>
-            <Text style={styles.userEmail}>{user.email ?? 'No email'}</Text>
+            <Text style={{ fontSize: typography.sm, color: colors.textSecondary }}>{user.email ?? 'No email'}</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>First name</Text>
-            <TextInput
-              style={styles.textInput}
+          <FormField label="First name" required>
+            <ThemedTextInput
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Enter first name..."
-              placeholderTextColor={colors.textSecondary}
               autoCapitalize="words"
             />
-          </View>
+          </FormField>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Last name</Text>
-            <TextInput
-              style={styles.textInput}
+          <FormField label="Last name" required>
+            <ThemedTextInput
               value={lastName}
               onChangeText={setLastName}
               placeholder="Enter last name..."
-              placeholderTextColor={colors.textSecondary}
               autoCapitalize="words"
             />
-          </View>
+          </FormField>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Wrist #</Text>
-            <TextInput
-              style={styles.textInput}
+          <FormField label="Wrist #">
+            <ThemedTextInput
               value={wristNumber}
               onChangeText={setWristNumber}
               placeholder="None"
-              placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
             />
-          </View>
+          </FormField>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>House #</Text>
-            <TextInput
-              style={styles.textInput}
+          <FormField label="House #">
+            <ThemedTextInput
               value={houseNumber}
               onChangeText={setHouseNumber}
               placeholder="None"
-              placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
             />
-          </View>
+          </FormField>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Temporary Ban</Text>
@@ -168,24 +141,24 @@ export function EditUserModal({
             <TouchableOpacity style={styles.banPickerButton} onPress={openBanPicker}>
               <Text style={styles.banPickerButtonText}>{banLabel}</Text>
             </TouchableOpacity>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Reason</Text>
-              <TextInput
-                style={[styles.textInput, styles.reasonInput]}
+            <FormField label="Reason">
+              <ThemedTextInput
                 value={banReason}
                 onChangeText={setBanReason}
                 placeholder="Optional reason for the ban"
-                placeholderTextColor={colors.textSecondary}
                 multiline
               />
-            </View>
-            {isBanPickerOpen && Platform.OS === 'android' ? (
-              <DateTimePicker
-                value={banUntil ?? new Date()}
-                mode="datetime"
-                onChange={handleBanDateChange}
-              />
-            ) : null}
+            </FormField>
+      <DateTimePickerModal
+        visible={isBanPickerOpen}
+        value={banUntil ?? new Date()}
+        mode="datetime"
+        onConfirm={(date) => {
+          setBanUntil(date);
+          setIsBanPickerOpen(false);
+        }}
+        onCancel={() => setIsBanPickerOpen(false)}
+      />
             <TouchableOpacity
               style={[
                 styles.banButton,
@@ -215,89 +188,18 @@ export function EditUserModal({
         </>
       ) : null}
 
-      <Modal
-        visible={isBanPickerOpen && Platform.OS === 'ios'}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsBanPickerOpen(false)}
-      >
-        <Pressable style={styles.pickerOverlay} onPress={() => setIsBanPickerOpen(false)}>
-          <Pressable style={styles.pickerCard} onPress={(event) => event.stopPropagation()}>
-            <DateTimePicker
-              value={pickerDraftDate}
-              mode="datetime"
-              display="spinner"
-              onChange={handleBanDateChange}
-            />
-            <View style={styles.pickerActions}>
-              <TouchableOpacity
-                style={styles.pickerActionButton}
-                onPress={() => setIsBanPickerOpen(false)}
-              >
-                <Text style={styles.pickerActionText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.pickerActionButton, styles.pickerActionButtonPrimary]}
-                onPress={() => {
-                  setBanUntil(pickerDraftDate);
-                  setIsBanPickerOpen(false);
-                }}
-              >
-                <Text style={[styles.pickerActionText, styles.pickerActionTextPrimary]}>
-                  Done
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </AdminModal>
   );
 }
 
 const styles = StyleSheet.create({
-  userMeta: {
-    marginBottom: spacing.md,
-  },
-  userName: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-    marginBottom: spacing.xs,
-  },
-  userEmail: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-  },
-  inputContainer: {
-    marginBottom: spacing.md,
-  },
-  inputLabel: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  textInput: {
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    fontSize: typography.base,
-    color: colors.white,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  reasonInput: {
-    minHeight: 64,
-    textAlignVertical: 'top',
-  },
   section: {
     marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
   sectionTitle: {
     fontSize: typography.base,
-    fontWeight: typography.bold,
+    fontWeight: typography.semibold,
     color: colors.white,
     marginBottom: spacing.xs,
   },
@@ -307,80 +209,44 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   banPickerButton: {
-    borderRadius: borderRadius.md,
+    backgroundColor: colors.backgroundDark,
     borderWidth: 1,
     borderColor: colors.borderDark,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: colors.backgroundDark,
-    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   banPickerButtonText: {
     fontSize: typography.base,
     color: colors.white,
   },
   banButton: {
+    backgroundColor: colors.danger,
     borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.warning,
-    paddingVertical: spacing.sm,
+    padding: spacing.sm,
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-  },
-  deleteButton: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
   },
   dangerButtonDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   banButtonText: {
-    fontSize: typography.sm,
-    color: colors.warning,
+    fontSize: typography.base,
+    color: colors.white,
     fontWeight: typography.medium,
+  },
+  deleteButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    alignItems: 'center',
+    marginTop: spacing.lg,
   },
   deleteButtonText: {
-    fontSize: typography.sm,
+    fontSize: typography.base,
     color: colors.danger,
     fontWeight: typography.medium,
-  },
-  pickerOverlay: {
-    flex: 1,
-    backgroundColor: colors.backgroundDarkOpacity80,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  pickerCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  pickerActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  pickerActionButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  pickerActionButtonPrimary: {
-    backgroundColor: colors.primaryOpacity20,
-    borderRadius: borderRadius.md,
-  },
-  pickerActionText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
-  },
-  pickerActionTextPrimary: {
-    color: colors.primary,
-    fontWeight: typography.bold,
   },
 });

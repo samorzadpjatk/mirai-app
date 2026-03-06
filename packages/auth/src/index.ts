@@ -1,9 +1,10 @@
 export type {
-  AuthUser,
   AuthState,
   AuthContextValue,
   SignInWithOtpOptions
 } from "./types";
+
+export type { AuthUser } from "@integral-2025-app/shared";
 
 export {
   getAuthServerUser as getServerUser,

@@ -5,8 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Modal,
-  TextInput,
   ActivityIndicator,
   Image,
 } from "react-native";
@@ -14,7 +12,14 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useCreateReward } from "~/hooks/rewards";
 import { useFileUpload } from "~/hooks/files";
-import { commonStyles } from "~/styles/commonStyles";
+import { getImageExtension, getImageContentType } from "~/utils/image";
+import { colors, spacing, typography, borderRadius } from "~/styles";
+import {
+  AppModalShell,
+  AppModalFooter,
+  FormField,
+  ThemedTextInput,
+} from "~/components/common/ui";
 
 interface Props {
   visible: boolean;
@@ -30,37 +35,6 @@ interface NewRewardState {
   images: string[];
   isHidden: boolean;
 }
-
-const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
-  if (asset.fileName) {
-    const parts = asset.fileName.split(".");
-    if (parts.length > 1) {
-      return parts[parts.length - 1]?.toLowerCase() ?? "jpg";
-    }
-  }
-
-  const contentType = asset.mimeType ?? "";
-  if (contentType === "image/png") return "png";
-  if (contentType === "image/webp") return "webp";
-  if (contentType === "image/heic" || contentType === "image/heif") {
-    return "heic";
-  }
-  return "jpg";
-};
-
-const getImageContentType = (extension: string) => {
-  switch (extension) {
-    case "png":
-      return "image/png";
-    case "webp":
-      return "image/webp";
-    case "heic":
-    case "heif":
-      return "image/heic";
-    default:
-      return "image/jpeg";
-  }
-};
 
 const buildUniqueRewardImageName = (asset: ImagePicker.ImagePickerAsset, index: number) => {
   const extension = getImageExtension(asset);
@@ -193,136 +167,66 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
   };
 
   return (
-    <Modal
+    <AppModalShell
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      title="New Reward"
+      onClose={onClose}
+      variant="pageSheet"
     >
-      <View style={commonStyles.container}>
-        <View style={{
-          padding: 24,
-          borderBottomWidth: 1,
-          borderBottomColor: "#273a3a",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}>
-          <Text style={[commonStyles.h3]}>New Reward</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color="#9ca3af" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={{ padding: 24 }}>
-          <View style={{ marginBottom: 20 }}>
-            <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-              Reward name
-            </Text>
-            <TextInput
-              style={{
-                backgroundColor: "#0f2323",
-                borderWidth: 1,
-                borderColor: "#273a3a",
-                borderRadius: 12,
-                padding: 12,
-                color: "#fff",
-              }}
+      <ScrollView style={{ padding: spacing.lg }}>
+          <FormField label="Reward name" required>
+            <ThemedTextInput
               placeholder="e.g. Branded T-shirt"
-              placeholderTextColor="#6b7280"
               value={newReward.name}
               onChangeText={(text) => setNewReward({ ...newReward, name: text })}
             />
-          </View>
+          </FormField>
 
-          <View style={{ marginBottom: 20 }}>
-            <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-              Description
-            </Text>
-            <TextInput
-              style={{
-                backgroundColor: "#0f2323",
-                borderWidth: 1,
-                borderColor: "#273a3a",
-                borderRadius: 12,
-                padding: 12,
-                color: "#fff",
-                textAlignVertical: "top",
-              }}
-              placeholder="Describe the reward"
-              placeholderTextColor="#6b7280"
+          <FormField label="Description" required>
+            <ThemedTextInput
               value={newReward.description}
               onChangeText={(text) => setNewReward({ ...newReward, description: text })}
               multiline
-              numberOfLines={3}
             />
-          </View>
+          </FormField>
 
-          <View style={{ flexDirection: "row", gap: 16, marginBottom: 20 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Available quantity
-              </Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                }}
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <FormField label="Available quantity" required style={{ flex: 1 }}>
+              <ThemedTextInput
                 placeholder="0"
-                placeholderTextColor="#6b7280"
                 value={newReward.availableQuantity}
                 onChangeText={(text) => setNewReward({ ...newReward, availableQuantity: text })}
                 keyboardType="numeric"
               />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-                Cost (% of total points)
-              </Text>
-              <TextInput
-                style={{
-                  backgroundColor: "#0f2323",
-                  borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 12,
-                  color: "#fff",
-                }}
+            </FormField>
+            <FormField label="Cost (% of total points)" required style={{ flex: 1 }}>
+              <ThemedTextInput
                 placeholder="5"
-                placeholderTextColor="#6b7280"
                 value={newReward.coinCost}
                 onChangeText={(text) => setNewReward({ ...newReward, coinCost: text })}
                 keyboardType="numeric"
               />
-              <Text style={[commonStyles.textSecondary, { fontSize: 11, marginTop: 4, color: "#9ca3af" }]}>
+              <Text style={{ fontSize: typography.xs, marginTop: spacing.xs, color: colors.textSecondary }}>
                 Percentage of total available points
               </Text>
-            </View>
+            </FormField>
           </View>
 
-          <View style={{ marginBottom: 20 }}>
-            <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-              Visibility
-            </Text>
-            <View style={{ flexDirection: "row", gap: 10 }}>
+          <FormField label="Visibility">
+            <View style={{ flexDirection: "row", gap: spacing.sm }}>
               <TouchableOpacity
                 onPress={() => setNewReward((prev) => ({ ...prev, isHidden: false }))}
                 style={{
                   flex: 1,
                   borderWidth: 1,
-                  borderColor: !newReward.isHidden ? "#22c55e" : "#273a3a",
-                  backgroundColor: !newReward.isHidden ? "rgba(34, 197, 94, 0.14)" : "#0f2323",
-                  borderRadius: 12,
-                  paddingVertical: 12,
+                  borderColor: !newReward.isHidden ? colors.success : colors.borderDark,
+                  backgroundColor: !newReward.isHidden ? colors.primaryOpacity10 : colors.cardDark,
+                  borderRadius: borderRadius.md,
+                  paddingVertical: spacing.sm,
                   alignItems: "center",
                 }}
               >
-                <Text style={[commonStyles.label, { color: !newReward.isHidden ? "#22c55e" : "#9ca3af", letterSpacing: 0.8 }]}>
+                <Text style={{ color: !newReward.isHidden ? colors.success : colors.textSecondary, letterSpacing: 0.8, fontWeight: typography.semibold }}>
                   Visible
                 </Text>
               </TouchableOpacity>
@@ -331,28 +235,24 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                 style={{
                   flex: 1,
                   borderWidth: 1,
-                  borderColor: newReward.isHidden ? "#ef4444" : "#273a3a",
-                  backgroundColor: newReward.isHidden ? "rgba(239, 68, 68, 0.14)" : "#0f2323",
-                  borderRadius: 12,
-                  paddingVertical: 12,
+                  borderColor: newReward.isHidden ? colors.danger : colors.borderDark,
+                  backgroundColor: newReward.isHidden ? colors.red900Opacity30 : colors.cardDark,
+                  borderRadius: borderRadius.md,
+                  paddingVertical: spacing.sm,
                   alignItems: "center",
                 }}
               >
-                <Text style={[commonStyles.label, { color: newReward.isHidden ? "#ef4444" : "#9ca3af", letterSpacing: 0.8 }]}>
+                <Text style={{ color: newReward.isHidden ? colors.danger : colors.textSecondary, letterSpacing: 0.8, fontWeight: typography.semibold }}>
                   Hidden
                 </Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </FormField>
 
-          <View style={{ marginBottom: 20 }}>
-            <Text style={[commonStyles.label, { marginBottom: 8 }]}>
-              Reward images (optional)
-            </Text>
-            
+          <FormField label="Reward images (optional)">
             {newReward.images.length > 0 ? (
-              <View style={{ gap: 10 }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+              <View style={{ gap: spacing.sm }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
                   {newReward.images.map((imagePath, index) => (
                     <View key={`${imagePath}-${index}`} style={{ position: "relative" }}>
                       <Image
@@ -360,8 +260,8 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                         style={{
                           width: 110,
                           height: 110,
-                          borderRadius: 12,
-                          backgroundColor: "#0f2323",
+                          borderRadius: borderRadius.md,
+                          backgroundColor: colors.cardDark,
                         }}
                         resizeMode="cover"
                       />
@@ -369,14 +269,14 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                         onPress={() => handleRemoveImage(index)}
                         style={{
                           position: "absolute",
-                          top: 6,
-                          right: 6,
+                          top: spacing.xs,
+                          right: spacing.xs,
                           backgroundColor: "rgba(0,0,0,0.75)",
                           borderRadius: 16,
-                          padding: 4,
+                          padding: spacing.xs,
                         }}
                       >
-                        <Ionicons name="close" size={14} color="#fff" />
+                        <Ionicons name="close" size={14} color={colors.white} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -385,24 +285,24 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                   onPress={handlePickImage}
                   disabled={isUploadingImage}
                   style={{
-                    backgroundColor: "#0f2323",
+                    backgroundColor: colors.cardDark,
                     borderWidth: 1,
-                    borderColor: "#273a3a",
-                    borderRadius: 12,
-                    paddingVertical: 12,
+                    borderColor: colors.borderDark,
+                    borderRadius: borderRadius.md,
+                    paddingVertical: spacing.sm,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
                   {isUploadingImage ? (
                     <View style={{ alignItems: "center" }}>
-                      <ActivityIndicator size="small" color="#00ced1" />
-                      <Text style={{ color: "#9ca3af", marginTop: 8, fontSize: 12 }}>
+                      <ActivityIndicator size="small" color={colors.primary} />
+                      <Text style={{ color: colors.textSecondary, marginTop: spacing.sm, fontSize: typography.xs }}>
                         Uploading{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
                       </Text>
                     </View>
                   ) : (
-                    <Text style={{ color: "#9ca3af" }}>Add more images</Text>
+                    <Text style={{ color: colors.textSecondary }}>Add more images</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -411,45 +311,42 @@ export default function AdminRewardsModal({ visible, onClose, tripId }: Props) {
                 onPress={handlePickImage}
                 disabled={isUploadingImage}
                 style={{
-                  backgroundColor: "#0f2323",
+                  backgroundColor: colors.cardDark,
                   borderWidth: 1,
-                  borderColor: "#273a3a",
-                  borderRadius: 12,
-                  padding: 24,
+                  borderColor: colors.borderDark,
+                  borderRadius: borderRadius.md,
+                  padding: spacing.xl,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 {isUploadingImage ? (
                   <View style={{ alignItems: "center" }}>
-                    <ActivityIndicator size="small" color="#00ced1" />
-                    <Text style={{ color: "#9ca3af", marginTop: 8, fontSize: 12 }}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={{ color: colors.textSecondary, marginTop: spacing.sm, fontSize: typography.xs }}>
                       Uploading{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
                     </Text>
                   </View>
                 ) : (
                   <View style={{ alignItems: "center" }}>
-                    <Ionicons name="image" size={24} color="#6b7280" />
-                    <Text style={{ color: "#6b7280", marginTop: 8 }}>
+                    <Ionicons name="image" size={24} color={colors.textSecondary} />
+                    <Text style={{ color: colors.textSecondary, marginTop: spacing.sm }}>
                       Add images
                     </Text>
                   </View>
                 )}
               </TouchableOpacity>
             )}
-          </View>
+          </FormField>
 
-          <TouchableOpacity
-            onPress={handleCreate}
-            disabled={createReward.isPending}
-            style={[commonStyles.button, { marginBottom: 24 }]}
-          >
-            <Text style={commonStyles.buttonText}>
-              {createReward.isPending ? "Creating..." : "Create reward"}
-            </Text>
-          </TouchableOpacity>
         </ScrollView>
-      </View>
-    </Modal>
+        <AppModalFooter
+          primaryLabel={createReward.isPending ? "Creating..." : "Create reward"}
+          onPrimary={handleCreate}
+          isPrimaryLoading={createReward.isPending}
+          secondaryLabel="Cancel"
+          onSecondary={onClose}
+        />
+      </AppModalShell>
   );
 }

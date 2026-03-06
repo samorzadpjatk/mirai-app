@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { UserAvatar } from "~/components/map/ui/UserAvatar";
-import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
+import { useMapOverlayStore } from "~/stores/map";
 import { formatRelativeTime } from "~/utils/format";
 
 export function SelectedUserCard() {
@@ -10,7 +10,7 @@ export function SelectedUserCard() {
     canStopSharing,
     onBackToList,
     onStopSharing,
-  } = useMapOverlayContext();
+  } = useMapOverlayStore();
 
   if (!selectedUser) return null;
 

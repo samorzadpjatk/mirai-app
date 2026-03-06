@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { UserAvatar } from "./ui/UserAvatar";
 import { MapView, Camera, UserLocation as MapLibreUserLocation, PointAnnotation, VectorSource, RasterSource, RasterLayer } from "@maplibre/maplibre-react-native";
 import type { CameraRef } from "@maplibre/maplibre-react-native";
-import { useLocationContext } from "~/contexts/location";
+import { useLocationContext } from "~/stores/location";
 
 export interface UserLocation {
   id: string;

@@ -17,6 +17,7 @@ import {
   promoteVisibleChallengesToActiveWithFeed,
 } from "../../utils/activityFeed";
 import { resolveRecurringChallengeIdForTrip } from "../../utils/recurringChallenges";
+import { ensureTripNotEnded } from "../../utils/tripGuards";
 
 const submissionBaseSelect: Prisma.ChallengeSubmissionSelect = {
   id: true,
@@ -461,115 +462,6 @@ const rebalanceSpeedRankings = async (params: {
   }
 };
 
-const rebalanceJudgedStaffRankings = async (params: {
-  tx: Prisma.TransactionClient;
-  challenge: {
-    id: string;
-    name: string;
-    basePoints: number;
-    firstPlacePoints: number | null;
-    secondPlacePoints: number | null;
-    thirdPlacePoints: number | null;
-  };
-  adminId: string;
-  prioritizedSubmissionId?: string;
-  prioritizedRanking?: number;
-}) => {
-  const approved = await params.tx.challengeSubmission.findMany({
-    where: {
-      challengeId: params.challenge.id,
-      status: "APPROVED",
-    },
-    select: {
-      id: true,
-      groupId: true,
-      ranking: true,
-      awardedPoints: true,
-      bonusPoints: true,
-      createdAt: true,
-    },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-  });
-
-  const rankingBySubmissionId = new Map<string, number | null>();
-  const rankingOwnerByPlace = new Map<number, string>();
-
-  for (const submission of approved) {
-    const ranking = submission.ranking;
-    if (ranking == null || ranking < 1 || ranking > 3) {
-      rankingBySubmissionId.set(submission.id, null);
-      continue;
-    }
-
-    if (rankingOwnerByPlace.has(ranking)) {
-      rankingBySubmissionId.set(submission.id, null);
-      continue;
-    }
-
-    rankingOwnerByPlace.set(ranking, submission.id);
-    rankingBySubmissionId.set(submission.id, ranking);
-  }
-
-  if (
-    params.prioritizedSubmissionId &&
-    typeof params.prioritizedRanking === "number" &&
-    params.prioritizedRanking >= 1 &&
-    params.prioritizedRanking <= 3 &&
-    approved.some((submission) => submission.id === params.prioritizedSubmissionId)
-  ) {
-    const previousOwner = rankingOwnerByPlace.get(params.prioritizedRanking);
-    if (previousOwner && previousOwner !== params.prioritizedSubmissionId) {
-      rankingBySubmissionId.set(previousOwner, null);
-    }
-    rankingBySubmissionId.set(
-      params.prioritizedSubmissionId,
-      params.prioritizedRanking,
-    );
-  }
-
-  for (const submission of approved) {
-    const nextRanking = rankingBySubmissionId.get(submission.id) ?? null;
-    const nextAwardedPoints = resolveAwardedPoints(params.challenge, {
-      ranking: nextRanking ?? undefined,
-    });
-    const currentAwardedPoints = submission.awardedPoints ?? 0;
-    const currentBonusPoints = submission.bonusPoints ?? 0;
-    const previousTotal = currentAwardedPoints + currentBonusPoints;
-    const nextTotal = nextAwardedPoints + currentBonusPoints;
-    const delta = nextTotal - previousTotal;
-
-    const rankingChanged = submission.ranking !== nextRanking;
-    const pointsChanged = currentAwardedPoints !== nextAwardedPoints;
-    if (!rankingChanged && !pointsChanged && delta === 0) {
-      continue;
-    }
-
-    await params.tx.challengeSubmission.update({
-      where: { id: submission.id },
-      data: {
-        ranking: nextRanking,
-        awardedPoints: nextAwardedPoints,
-      },
-    });
-
-    if (delta !== 0) {
-      await params.tx.group.update({
-        where: { id: submission.groupId },
-        data: { coins: { increment: delta } },
-      });
-      await params.tx.coinTransaction.create({
-        data: {
-          groupId: submission.groupId,
-          amount: delta,
-          reason: `Judged ranking update: ${params.challenge.name}${
-            nextRanking ? ` (#${nextRanking})` : ""
-          }`,
-          adminId: params.adminId,
-        },
-      });
-    }
-  }
-};
 
 export const challengeSubmissionRouter = createTRPCRouter({
   getByChallengeForAdmin: moderatorProcedure
@@ -613,11 +505,6 @@ export const challengeSubmissionRouter = createTRPCRouter({
           challengeId: input.challengeId,
           tripId: input.tripId,
         })) ?? input.challengeId;
-      const challenge = await ensureChallengeInTrip(
-        ctx,
-        resolvedChallengeId,
-        input.tripId,
-      );
 
       const submissions = await ctx.db.challengeSubmission.findMany({
         where: { challengeId: resolvedChallengeId },
@@ -736,6 +623,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const participant = await ensureTripParticipant(ctx, input.tripId);
       if (!participant.groupId) {
         throw new TRPCError({
@@ -895,6 +783,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const participant = await ensureTripParticipant(ctx, input.tripId);
       if (!participant.groupId) {
         throw new TRPCError({
@@ -952,124 +841,128 @@ export const challengeSubmissionRouter = createTRPCRouter({
 
       const currentTime = new Date();
 
-      if (
-        submission.challenge.status === "VISIBLE" &&
-        submission.challenge.startTime &&
-        submission.challenge.startTime <= currentTime
-      ) {
-        const activation = await ctx.db.challenge.updateMany({
-          where: {
-            id: submission.challenge.id,
-            status: "VISIBLE",
-          },
-          data: { status: "ACTIVE" },
-        });
+      const updatedSubmission = await ctx.db.$transaction(async (tx) => {
+        if (
+          submission.challenge.status === "VISIBLE" &&
+          submission.challenge.startTime &&
+          submission.challenge.startTime <= currentTime
+        ) {
+          const activation = await tx.challenge.updateMany({
+            where: {
+              id: submission.challenge.id,
+              status: "VISIBLE",
+            },
+            data: { status: "ACTIVE" },
+          });
 
-        if (activation.count > 0) {
-          await createChallengeStatusActivityById({
-            tx: ctx.db,
-            challengeId: submission.challenge.id,
-            eventType: "challenge_started",
-            createdByAdmin: null,
+          if (activation.count > 0) {
+            await createChallengeStatusActivityById({
+              tx,
+              challengeId: submission.challenge.id,
+              eventType: "challenge_started",
+              createdByAdmin: null,
+            });
+          }
+          submission.challenge.status = "ACTIVE";
+        }
+
+        if (
+          submission.challenge.status === "ACTIVE" &&
+          submission.challenge.scoringCategory === "PEER_VOTING" &&
+          submission.challenge.votingStartTime &&
+          submission.challenge.votingStartTime <= currentTime
+        ) {
+          const movedToVoting = await tx.challenge.updateMany({
+            where: {
+              id: submission.challenge.id,
+              status: "ACTIVE",
+              scoringCategory: "PEER_VOTING",
+              votingStartTime: { lte: currentTime },
+            },
+            data: { status: "VOTING_PHASE" },
+          });
+
+          if (movedToVoting.count > 0) {
+            await createChallengeStatusActivityById({
+              tx,
+              challengeId: submission.challenge.id,
+              eventType: "voting_started",
+              createdByAdmin: null,
+            });
+          }
+          submission.challenge.status = "VOTING_PHASE";
+        } else if (
+          (submission.challenge.status === "VISIBLE" ||
+            submission.challenge.status === "ACTIVE") &&
+          submission.challenge.scoringCategory !== "PEER_VOTING" &&
+          submission.challenge.scoringCategory !== "JUDGED_STAFF" &&
+          submission.challenge.endTime &&
+          submission.challenge.endTime <= currentTime
+        ) {
+          await tx.challenge.update({
+            where: { id: submission.challenge.id },
+            data: { status: "COMPLETED" },
+          });
+          submission.challenge.status = "COMPLETED";
+        }
+
+        if (submission.challenge.status !== "ACTIVE") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Submission is allowed only for active challenges",
           });
         }
-        submission.challenge.status = "ACTIVE";
-      }
 
-      if (
-        submission.challenge.status === "ACTIVE" &&
-        submission.challenge.scoringCategory === "PEER_VOTING" &&
-        submission.challenge.votingStartTime &&
-        submission.challenge.votingStartTime <= currentTime
-      ) {
-        const movedToVoting = await ctx.db.challenge.updateMany({
-          where: {
-            id: submission.challenge.id,
-            status: "ACTIVE",
-            scoringCategory: "PEER_VOTING",
-            votingStartTime: { lte: currentTime },
-          },
-          data: { status: "VOTING_PHASE" },
-        });
-
-        if (movedToVoting.count > 0) {
-          await createChallengeStatusActivityById({
-            tx: ctx.db,
-            challengeId: submission.challenge.id,
-            eventType: "voting_started",
-            createdByAdmin: null,
+        if (
+          submission.challenge.endTime &&
+          submission.challenge.endTime <= currentTime
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Submission window has ended",
           });
         }
-        submission.challenge.status = "VOTING_PHASE";
-      } else if (
-        (submission.challenge.status === "VISIBLE" ||
-          submission.challenge.status === "ACTIVE") &&
-        submission.challenge.scoringCategory !== "PEER_VOTING" &&
-        submission.challenge.scoringCategory !== "JUDGED_STAFF" &&
-        submission.challenge.endTime &&
-        submission.challenge.endTime <= currentTime
-      ) {
-        await ctx.db.challenge.update({
-          where: { id: submission.challenge.id },
-          data: { status: "COMPLETED" },
+
+        const nextImageIds = input.imageIds ?? submission.imageIds;
+        const nextVideoId = input.videoId ?? submission.videoId;
+        const nextTextContent = input.textContent ?? submission.textContent;
+        const nextLatitude = input.latitude ?? submission.latitude;
+        const nextLongitude = input.longitude ?? submission.longitude;
+
+        validateSubmissionPayload({
+          submissionType: submission.challenge.submissionType,
+          imageIds: nextImageIds,
+          videoId: nextVideoId,
+          textContent: nextTextContent,
+          latitude: nextLatitude ?? undefined,
+          longitude: nextLongitude ?? undefined,
         });
-        submission.challenge.status = "COMPLETED";
-      }
 
-      if (submission.challenge.status !== "ACTIVE") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Submission is allowed only for active challenges",
+        const autoApproved = shouldAutoApproveSubmission({
+          challenge: submission.challenge,
+          textContent: nextTextContent,
+          latitude: nextLatitude,
+          longitude: nextLongitude,
         });
-      }
+        const now = new Date();
 
-      if (
-        submission.challenge.endTime &&
-        submission.challenge.endTime <= currentTime
-      ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Submission window has ended",
+        const updated = await tx.challengeSubmission.update({
+          where: { id: input.id },
+          data: {
+            imageIds: input.imageIds,
+            videoId: input.videoId,
+            textContent: input.textContent,
+            latitude: input.latitude,
+            longitude: input.longitude,
+            status: autoApproved ? "APPROVED" : "PENDING",
+            reviewedAt: autoApproved ? now : null,
+            reviewedById: null,
+            rejectionReason: null,
+          },
+          select: submissionSelect,
         });
-      }
 
-      const nextImageIds = input.imageIds ?? submission.imageIds;
-      const nextVideoId = input.videoId ?? submission.videoId;
-      const nextTextContent = input.textContent ?? submission.textContent;
-      const nextLatitude = input.latitude ?? submission.latitude;
-      const nextLongitude = input.longitude ?? submission.longitude;
-
-      validateSubmissionPayload({
-        submissionType: submission.challenge.submissionType,
-        imageIds: nextImageIds,
-        videoId: nextVideoId,
-        textContent: nextTextContent,
-        latitude: nextLatitude ?? undefined,
-        longitude: nextLongitude ?? undefined,
-      });
-
-      const autoApproved = shouldAutoApproveSubmission({
-        challenge: submission.challenge,
-        textContent: nextTextContent,
-        latitude: nextLatitude,
-        longitude: nextLongitude,
-      });
-      const now = new Date();
-
-      const updatedSubmission = await ctx.db.challengeSubmission.update({
-        where: { id: input.id },
-        data: {
-          imageIds: input.imageIds,
-          videoId: input.videoId,
-          textContent: input.textContent,
-          latitude: input.latitude,
-          longitude: input.longitude,
-          status: autoApproved ? "APPROVED" : "PENDING",
-          reviewedAt: autoApproved ? now : null,
-          reviewedById: null,
-          rejectionReason: null,
-        },
-        select: submissionSelect,
+        return updated;
       });
 
       const emailByAuthUserId = await buildAuthEmailLookup(ctx.supabase, [
@@ -1088,6 +981,7 @@ export const challengeSubmissionRouter = createTRPCRouter({
   deleteMine: protectedProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureTripNotEnded(ctx.db, input.tripId);
       const participant = await ensureTripParticipant(ctx, input.tripId);
       if (!participant.groupId) {
         throw new TRPCError({

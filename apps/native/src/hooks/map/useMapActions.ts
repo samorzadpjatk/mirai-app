@@ -3,9 +3,7 @@ import { useTRPC } from "@integral-2025-app/trpc/client";
 
 export function useMapActions() {
   const trpc = useTRPC();
-  const updateLocationMutation = useMutation(
-    trpc.location.updateLocation.mutationOptions(),
-  );
+  const updateLocationMutation = useMutation(trpc.location.updateLocation.mutationOptions());
 
   const sendLocation = async (input: {
     latitude: number;

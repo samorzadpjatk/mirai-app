@@ -19,21 +19,26 @@ import {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors } from '~/styles';
-import { type ReviewStatus, useJudgement } from '~/contexts/JudgementContext';
+import { type ReviewStatus, useJudgement } from '~/stores/judgement';
 import { textStyles, viewStyles } from '~/styles/judgement';
 import { QueuedSubmissionCard } from '~/components/judgement/QueuedSubmissionCard';
 import { CurrentSubmissionCard } from '~/components/judgement/CurrentSubmissionCard';
 import { EmptyStateCard } from '~/components/judgement/EmptyStateCard';
 import { ActionBar } from '~/components/judgement/ActionBar';
 
-const CardStack = () => {
+interface CardStackProps {
+  tripId: string;
+  challengeId: string;
+}
+
+const CardStack = ({ tripId, challengeId }: CardStackProps) => {
   const {
     currentSubmission,
     nextSubmission,
     reviewCurrent,
     isReviewing,
     challengeScoringCategory,
-  } = useJudgement();
+  } = useJudgement(tripId, challengeId);
   const { width, height } = useWindowDimensions();
   const swipeThreshold = width * 0.25;
   const maxCardHeight = Math.min(560, height * 0.64);

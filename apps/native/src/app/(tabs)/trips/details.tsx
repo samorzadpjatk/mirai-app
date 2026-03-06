@@ -6,23 +6,28 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { colors, spacing } from "../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TripHeroCard } from "~/components/trips/details/TripHeroCard";
 import { TripNewsSection } from "~/components/trips/details/TripNewsSection";
 import { TripNotFoundState } from "~/components/trips/details/TripNotFoundState";
 import { TripQuickAccessGrid } from "~/components/trips/details/TripQuickAccessGrid";
 import { PartnersSection } from "~/components/trips/details/PartnersSection";
+import { TripBanner } from "~/components/trips/TripBanner";
+import { useTripSync } from "~/stores/tripStore";
 
 export default function TripDetailsScreen() {
   const { session, isLoading } = useAuth();
   const router = useRouter();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const paramTripId = typeof params.id === "string" ? params.id : params.id?.[0];
   const { selectedTripId, isLoadingSelectedTrip } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
 
-  const { isLoadingUser, trip, isLoadingTrip } = useTripDetails(tripId);
+  const { isLoadingUser, trip, isLoadingTrip, isTripPast } = useTripDetails(tripId);
+
+  // Keep trip store in sync with current trip state
+  useTripSync();
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -70,11 +75,15 @@ export default function TripDetailsScreen() {
             backgroundImagePath={trip.backgroundImagePath}
           />
 
+          {/* Trip Banner */}
+          <TripBanner />
+
           {/* Partners */}
-          <PartnersSection />
+          <PartnersSection sponsors={trip.tripSponsors?.map(ts => ts.sponsor).filter(Boolean)} />
 
           {/* Quick Access Grid */}
           <TripQuickAccessGrid
+            isTripPast={isTripPast}
             onOpenGroups={() => router.push(`/trips/groups?tripId=${trip.id}`)}
             onOpenMap={() => router.push("/trips/map")}
             onOpenChallenges={() =>
@@ -86,7 +95,7 @@ export default function TripDetailsScreen() {
             onOpenLeaderboard={() =>
               router.push(`/trips/leaderboard?tripId=${trip.id}`)
             }
-            onOpenInfo={() => router.push("/trips/info")}
+            onOpenInfo={() => router.push(`/trips/info?tripId=${trip.id}`)}
           />
 
           {/* Latest News Section */}

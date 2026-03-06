@@ -5,12 +5,13 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, spacing, typography } from '../../../../styles';
-import { useAppSafeAreaInsets } from '../../../../contexts/SafeAreaInsetsContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAdminTransactions } from '~/hooks/admin/useAdminTransactions';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { TransactionsFilters } from '~/components/admin/transactions/TransactionsFilters';
@@ -18,7 +19,7 @@ import TransactionCard from '~/components/admin/transactions/TransactionCard';
 import type { TransactionItem } from '~/hooks/admin/useAdminTransactions';
 
 export default function AdminTransactionsScreen() {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string>('all');
@@ -28,8 +29,21 @@ export default function AdminTransactionsScreen() {
     transactions,
     groups,
     isLoading,
+    isRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch,
     groupsLoading,
   } = useAdminTransactions(tripId ?? '');
+
+  const handleLoadMore = () => {
+    if (!hasNextPage || isFetchingNextPage || isLoading) {
+      return;
+    }
+
+    void fetchNextPage();
+  };
 
   // Memoized filtered transactions
   const filteredTransactions = useMemo<TransactionItem[]>(() => {
@@ -127,6 +141,25 @@ export default function AdminTransactionsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.transactionsList}
           showsVerticalScrollIndicator={false}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.35}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching && !isFetchingNextPage}
+              onRefresh={() => {
+                void refetch();
+              }}
+              tintColor={colors.primary}
+            />
+          }
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={styles.listFooter}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.loadingText}>Loading more transactions...</Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={renderEmptyState}
         />
       )}
@@ -169,6 +202,13 @@ const styles = StyleSheet.create({
   transactionsList: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
+  },
+  listFooter: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
   },
   emptyContainer: {
     alignItems: 'center' as const,

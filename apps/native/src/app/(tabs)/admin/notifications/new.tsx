@@ -2,28 +2,23 @@ import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Modal,
-  Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
-import { Ionicons } from "@expo/vector-icons";
+import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AdminHeader } from "~/components/admin/AdminHeader";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { DateTimePickerModal, FilterChip, FilterChipRow, FormField, ThemedTextInput } from "~/components/common/ui";
 
 type DeliveryType = "instant" | "scheduled_once" | "recurring_daily";
 type AudienceType = "all" | "group";
@@ -63,12 +58,6 @@ function formatDateTimeLabel(date: Date): string {
 function mergePickedDate(base: Date, picked: Date): Date {
   const next = new Date(base);
   next.setFullYear(picked.getFullYear(), picked.getMonth(), picked.getDate());
-  return next;
-}
-
-function mergePickedTime(base: Date, picked: Date): Date {
-  const next = new Date(base);
-  next.setHours(picked.getHours(), picked.getMinutes(), 0, 0);
   return next;
 }
 
@@ -114,7 +103,7 @@ export default function AdminCreateNotificationScreen() {
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
@@ -128,10 +117,6 @@ export default function AdminCreateNotificationScreen() {
     buildInitialScheduleDateTime,
   );
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
-  const [pickerDraftDate, setPickerDraftDate] = useState<Date>(
-    buildInitialScheduleDateTime,
-  );
-  const [isAndroidDateTimeFlow, setIsAndroidDateTimeFlow] = useState(false);
 
   const groupsQuery = useQuery({
     ...trpc.group.getAllNames.queryOptions({ tripId }),
@@ -180,63 +165,7 @@ export default function AdminCreateNotificationScreen() {
   };
 
   const openPicker = (mode: Exclude<ActivePicker, null>) => {
-    setPickerDraftDate(scheduleDateTime);
     setActivePicker(mode);
-  };
-
-  const openDateTimePicker = () => {
-    setPickerDraftDate(scheduleDateTime);
-    if (Platform.OS === "ios") {
-      setActivePicker("datetime");
-      return;
-    }
-    setIsAndroidDateTimeFlow(true);
-    setActivePicker("date");
-  };
-
-  const onPickerChange = (event: DateTimePickerEvent, selected?: Date) => {
-    if (!activePicker) return;
-
-    if (Platform.OS === "android") {
-      if (event.type === "dismissed") {
-        setActivePicker(null);
-        setIsAndroidDateTimeFlow(false);
-        return;
-      }
-
-      if (!selected) return;
-
-      if (activePicker === "date") {
-        const withDate = mergePickedDate(scheduleDateTime, selected);
-        if (isAndroidDateTimeFlow) {
-          setPickerDraftDate(withDate);
-          setActivePicker("time");
-          return;
-        }
-        setScheduleDateTime(withDate);
-        setActivePicker(null);
-        return;
-      }
-
-      const baseDate = isAndroidDateTimeFlow ? pickerDraftDate : scheduleDateTime;
-      const withTime = mergePickedTime(baseDate, selected);
-      setScheduleDateTime(withTime);
-      setActivePicker(null);
-      setIsAndroidDateTimeFlow(false);
-      return;
-    }
-
-    const nextValue =
-      selected &&
-      (activePicker === "datetime"
-        ? selected
-        : activePicker === "date"
-          ? mergePickedDate(scheduleDateTime, selected)
-          : mergePickedTime(scheduleDateTime, selected));
-
-    if (nextValue) {
-      setPickerDraftDate(nextValue);
-    }
   };
 
   const submit = async () => {
@@ -374,59 +303,37 @@ export default function AdminCreateNotificationScreen() {
       >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery type</Text>
-          <View style={styles.segmentRow}>
+          <FilterChipRow>
             {[
               { key: "instant", label: "Instant" },
               { key: "scheduled_once", label: "Scheduled (one-time)" },
               { key: "recurring_daily", label: "Recurring (daily)" },
             ].map((option) => (
-              <TouchableOpacity
+              <FilterChip
                 key={option.key}
-                style={[
-                  styles.segmentButton,
-                  deliveryType === option.key && styles.segmentButtonActive,
-                ]}
+                label={option.label}
+                selected={deliveryType === option.key}
                 onPress={() => setDeliveryType(option.key as DeliveryType)}
-              >
-                <Text
-                  style={[
-                    styles.segmentButtonText,
-                    deliveryType === option.key && styles.segmentButtonTextActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
-          </View>
+          </FilterChipRow>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Audience</Text>
-          <View style={styles.segmentRow}>
+          <FilterChipRow>
             {[
               { key: "all", label: "All users" },
               { key: "group", label: "Specific group" },
             ].map((option) => (
-              <TouchableOpacity
+              <FilterChip
                 key={option.key}
-                style={[
-                  styles.segmentButton,
-                  audienceType === option.key && styles.segmentButtonActive,
-                ]}
+                label={option.label}
+                selected={audienceType === option.key}
                 onPress={() => setAudienceType(option.key as AudienceType)}
-              >
-                <Text
-                  style={[
-                    styles.segmentButtonText,
-                    audienceType === option.key && styles.segmentButtonTextActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
-          </View>
+          </FilterChipRow>
 
           {audienceType === "group" ? (
             <View style={styles.groupList}>
@@ -467,22 +374,23 @@ export default function AdminCreateNotificationScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Message</Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Title"
-            placeholderTextColor={colors.textSecondary}
-          />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={body}
-            onChangeText={setBody}
-            placeholder="Description"
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            numberOfLines={4}
-          />
+          <FormField label="Title" required>
+            <ThemedTextInput
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Title"
+            />
+          </FormField>
+          <FormField label="Description" required>
+            <ThemedTextInput
+              value={body}
+              onChangeText={setBody}
+              placeholder="Description"
+              multiline
+              numberOfLines={4}
+              style={styles.textArea}
+            />
+          </FormField>
         </View>
 
         {deliveryType === "scheduled_once" ? (
@@ -490,7 +398,7 @@ export default function AdminCreateNotificationScreen() {
             <Text style={styles.sectionTitle}>One-time schedule</Text>
             <TouchableOpacity
               style={styles.pickerButton}
-              onPress={openDateTimePicker}
+              onPress={() => openPicker("datetime")}
             >
               <Text style={styles.pickerButtonText}>
                 Date & time: {formatDateTimeLabel(scheduleDateTime)}
@@ -534,80 +442,31 @@ export default function AdminCreateNotificationScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+        <PrimaryLoadingButton
+          label="Create / Send"
+          isLoading={isSubmitting}
           onPress={() => void submit()}
           disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color={colors.white} />
-          ) : (
-            <Text style={styles.submitButtonText}>Create / Send</Text>
-          )}
-        </TouchableOpacity>
+        />
       </ScrollView>
 
-      {activePicker && Platform.OS === "android" ? (
-        <DateTimePicker
-          value={activePicker === "time" ? pickerDraftDate : scheduleDateTime}
-          mode={activePicker === "datetime" ? "date" : activePicker}
-          display="default"
-          onChange={onPickerChange}
-        />
-      ) : null}
-
-      <Modal
-        visible={Boolean(activePicker) && Platform.OS === "ios"}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setActivePicker(null)}
-      >
-        <Pressable
-          style={styles.pickerOverlay}
-          onPress={() => setActivePicker(null)}
-        >
-          <Pressable
-            style={styles.pickerCard}
-            onPress={(event) => event.stopPropagation()}
-          >
-            {activePicker ? (
-              <DateTimePicker
-                value={pickerDraftDate}
-                mode={activePicker === "datetime" ? "datetime" : activePicker}
-                display="spinner"
-                onChange={onPickerChange}
-              />
-            ) : null}
-            <View style={styles.pickerActions}>
-              <TouchableOpacity
-                style={styles.pickerActionButton}
-                onPress={() => setActivePicker(null)}
-              >
-                <Text style={styles.pickerActionText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.pickerActionButton,
-                  styles.pickerActionButtonPrimary,
-                ]}
-                onPress={() => {
-                  setScheduleDateTime(pickerDraftDate);
-                  setActivePicker(null);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.pickerActionText,
-                    styles.pickerActionTextPrimary,
-                  ]}
-                >
-                  Done
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <DateTimePickerModal
+        visible={Boolean(activePicker)}
+        value={scheduleDateTime}
+        mode={activePicker === "datetime" ? "datetime" : activePicker ?? "date"}
+        onConfirm={(date) => {
+          if (activePicker === "datetime") {
+            setScheduleDateTime(date);
+          } else if (activePicker === "time") {
+            setScheduleDateTime(date);
+          } else if (activePicker === "date") {
+            const withDate = mergePickedDate(scheduleDateTime, date);
+            setScheduleDateTime(withDate);
+          }
+          setActivePicker(null);
+        }}
+        onCancel={() => setActivePicker(null)}
+      />
     </View>
   );
 }
@@ -638,48 +497,13 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
     color: colors.white,
   },
-  segmentRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  segmentButton: {
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  segmentButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  segmentButtonText: {
+    helperText: {
     color: colors.textSecondary,
     fontSize: typography.sm,
-    fontWeight: typography.medium,
-  },
-  segmentButtonTextActive: {
-    color: colors.white,
-  },
-  input: {
-    backgroundColor: colors.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.md,
-    color: colors.white,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: typography.base,
   },
   textArea: {
     minHeight: 110,
     textAlignVertical: "top",
-  },
-  helperText: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
   },
   pickerButton: {
     backgroundColor: colors.backgroundDark,
@@ -747,54 +571,6 @@ const styles = StyleSheet.create({
   legendDesc: {
     color: colors.textSecondary,
     fontSize: typography.sm,
-  },
-  submitButton: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    minHeight: 48,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.medium,
-  },
-  pickerOverlay: {
-    flex: 1,
-    backgroundColor: colors.backgroundDarkOpacity80,
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-  },
-  pickerCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  pickerActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  pickerActionButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  pickerActionButtonPrimary: {
-    backgroundColor: colors.primaryOpacity20,
-    borderRadius: borderRadius.md,
-  },
-  pickerActionText: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.medium,
   },
   pickerActionTextPrimary: {
     color: colors.primary,

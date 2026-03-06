@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { invalidateNotificationQueries } from "@integral-2025-app/trpc/client/query";
 import { useAuth } from "@integral-2025-app/auth/client";
 
 function resolveProjectId(): string | undefined {
@@ -44,36 +45,20 @@ function parseToken(value: unknown): string | null {
 
 export function useAutoPushSubscription() {
   const { session } = useAuth();
+  const attemptedForUserRef = useRef<string | null>(null);
+
+  // Use tRPC + React Query directly for server-state
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const attemptedForUserRef = useRef<string | null>(null);
+  const subscriptionQuery = useQuery(trpc.notifications.getSubscriptionStatus.queryOptions());
+  const subscribeMutation = useMutation(trpc.notifications.subscribe.mutationOptions({
+    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
+  }));
+
+  const { data: subscriptionStatus, isLoading: isStatusLoading } = subscriptionQuery;
 
   const hasSession = !!session?.access_token;
   const authUserId = session?.user?.id ?? null;
-
-  const subscriptionQueryOptions = useMemo(
-    () => trpc.notifications.getSubscriptionStatus.queryOptions(),
-    [trpc],
-  );
-
-  const { data: subscriptionStatus, isLoading: isStatusLoading } = useQuery({
-    ...subscriptionQueryOptions,
-    enabled: hasSession,
-  });
-
-  const subscribeMutation = useMutation(
-    trpc.notifications.subscribe.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: subscriptionQueryOptions.queryKey,
-        });
-      },
-      onError: (error) => {
-        console.warn("Automatic push subscription failed:", error);
-      },
-    }),
-  );
-
   const hasSubscription = subscriptionStatus?.isSubscribed ?? false;
 
   useEffect(() => {

@@ -42,22 +42,62 @@ const resolveGroupImage = async (
 };
 
 export const tripRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.trip.findMany({
-      where: {
+  getAll: protectedProcedure
+    .input(
+      z
+        .object({
+          pagination: z
+            .object({
+              limit: z.number().int().min(1).max(100).default(30),
+              offset: z.number().int().min(0).default(0),
+            })
+            .optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const limit = input?.pagination?.limit ?? 30;
+      const offset = input?.pagination?.offset ?? 0;
+      const where = {
         participants: {
           some: { userId: ctx.dbUser.id },
         },
-      },
-      orderBy: { startDate: "asc" },
-      include: {
-        groups: {
-          where: { isDeleted: false },
-          select: { id: true, name: true },
+      };
+
+      const [trips, total] = await Promise.all([
+        ctx.db.trip.findMany({
+          where,
+          orderBy: { startDate: "asc" },
+          include: {
+            groups: {
+              where: { isDeleted: false },
+              select: { id: true, name: true },
+            },
+            tripSponsors: {
+              where: {
+                sponsor: { isActive: true }
+              },
+              include: {
+                sponsor: true,
+              },
+            },
+          },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.trip.count({ where }),
+      ]);
+
+      return {
+        trips,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
         },
-      },
-    });
-  }),
+      };
+    }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -92,6 +132,14 @@ export const tripRouter = createTRPCRouter({
               _count: {
                 select: { participants: true }
               }
+            },
+          },
+          tripSponsors: {
+            where: {
+              sponsor: { isActive: true }
+            },
+            include: {
+              sponsor: true,
             },
           },
           participants: {
@@ -132,6 +180,7 @@ export const tripRouter = createTRPCRouter({
 
       return {
         ...trip,
+        tripSponsors: trip.tripSponsors,
         groups: await Promise.all(
           trip.groups.map(async (group) => ({
             ...group,
@@ -175,6 +224,14 @@ export const tripRouter = createTRPCRouter({
               _count: {
                 select: { participants: true }
               }
+            },
+          },
+          tripSponsors: {
+            where: {
+              sponsor: { isActive: true }
+            },
+            include: {
+              sponsor: true,
             },
           },
           participants: {
@@ -283,6 +340,37 @@ export const tripRouter = createTRPCRouter({
         where: { id },
         data,
       });
+    }),
+  getResources: protectedProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // verify participant access
+      const isParticipant = await ctx.db.tripParticipant.findUnique({
+        where: {
+          userId_tripId: {
+            userId: ctx.dbUser.id,
+            tripId: input.tripId,
+          },
+        },
+        select: { userId: true },
+      });
+
+      if (!isParticipant) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a participant of this trip",
+        });
+      }
+
+      const resources = await ctx.db.tripResource.findMany({
+        where: { tripId: input.tripId },
+        orderBy: { sortOrder: "asc" },
+      });
+      const insurance = await ctx.db.tripInsurance.findUnique({
+        where: { tripId: input.tripId },
+        include: { steps: { orderBy: { stepNumber: "asc" } } },
+      });
+      return { resources, insurance };
     }),
   delete: adminProcedure
     .input(z.object({ id: z.string() }))

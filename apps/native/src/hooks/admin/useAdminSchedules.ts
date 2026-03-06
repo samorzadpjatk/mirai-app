@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
+import { invalidateNotificationQueries } from '@integral-2025-app/trpc/client/query';
 
 export interface NotificationSchedule {
   id: string;
@@ -29,7 +30,6 @@ function toTriggerTime(hour: number, minute: number): string {
 
 export function useAdminSchedules(tripId?: string) {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
 
   const queryInput = useMemo(
     () => ({
@@ -46,45 +46,23 @@ export function useAdminSchedules(tripId?: string) {
 
   const { data: result, isLoading } = useQuery(queryOptions);
 
-  const createScheduleMutation = useMutation(
-    trpc.notificationSchedule.create.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: queryOptions.queryKey });
-      },
-    }),
-  );
-
-  const updateScheduleMutation = useMutation(
-    trpc.notificationSchedule.update.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: queryOptions.queryKey });
-      },
-    }),
-  );
-
-  const deleteScheduleMutation = useMutation(
-    trpc.notificationSchedule.delete.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: queryOptions.queryKey });
-      },
-    }),
-  );
-
-  const toggleScheduleMutation = useMutation(
-    trpc.notificationSchedule.toggleActive.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: queryOptions.queryKey });
-      },
-    }),
-  );
-
-  const upsertTemplateMutation = useMutation(
-    trpc.notificationSchedule.upsertTemplate.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: queryOptions.queryKey });
-      },
-    }),
-  );
+  // Use direct tRPC + React Query for mutations
+  const queryClient = useQueryClient();
+  const createScheduleMutation = useMutation(trpc.notificationSchedule.create.mutationOptions({
+    onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
+  }));
+  const updateScheduleMutation = useMutation(trpc.notificationSchedule.update.mutationOptions({
+    onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
+  }));
+  const deleteScheduleMutation = useMutation(trpc.notificationSchedule.delete.mutationOptions({
+    onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
+  }));
+  const toggleScheduleMutation = useMutation(trpc.notificationSchedule.toggleActive.mutationOptions({
+    onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
+  }));
+  const upsertTemplateMutation = useMutation(trpc.notificationSchedule.upsertTemplate.mutationOptions({
+    onSuccess: async () => { await invalidateNotificationQueries(queryClient, true); },
+  }));
 
   type CreateScheduleInput = Parameters<(typeof createScheduleMutation)['mutateAsync']>[0];
   type UpdateScheduleInput = Parameters<(typeof updateScheduleMutation)['mutateAsync']>[0];

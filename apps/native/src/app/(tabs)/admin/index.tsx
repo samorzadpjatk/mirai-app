@@ -1,12 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
-import { useTRPC } from '@integral-2025-app/trpc/client';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useTRPC, useTRPCClient } from '@integral-2025-app/trpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../styles';
-import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
+import { TripPickerModal } from '~/components/common/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { TripListItem } from '~/components/trips/list/types';
+
+const PAGE_SIZE = 20;
 
 interface TileType {
   key: string;
@@ -96,12 +100,57 @@ const tiles: TileType[] = [
 export default function AdminPanelScreen() {
   const router = useRouter();
   const trpc = useTRPC();
-  const insets = useAppSafeAreaInsets();
+  const trpcClient = useTRPCClient();
+  const insets = useSafeAreaInsets();
   const [isTripPickerOpen, setIsTripPickerOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
 
-  const { data: trips, isLoading: tripsLoading } = useQuery(
-    trpc.trip.getAll.queryOptions()
+  const {
+    data,
+    isLoading: tripsLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: [
+      ...trpc.trip.getAll.queryOptions().queryKey,
+      'infinite',
+      PAGE_SIZE,
+    ],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === 'number' ? pageParam : 0;
+      return trpcClient.trip.getAll.query({
+        pagination: {
+          limit: PAGE_SIZE,
+          offset,
+        },
+      });
+    },
+    getNextPageParam: (lastPage) => {
+      const pagination =
+        lastPage && typeof lastPage === 'object' && 'pagination' in lastPage
+          ? lastPage.pagination
+          : null;
+
+      if (!pagination?.hasMore) {
+        return undefined;
+      }
+
+      return pagination.offset + pagination.limit;
+    },
+  });
+
+  const trips = useMemo(
+    () =>
+      (data?.pages ?? []).flatMap((page): TripListItem[] => {
+        if (Array.isArray(page)) {
+          return page as TripListItem[];
+        }
+
+        return (page as { trips?: TripListItem[] })?.trips ?? [];
+      }),
+    [data?.pages],
   );
 
   const effectiveTripId = selectedTripId ?? trips?.[0]?.id ?? null;
@@ -110,6 +159,26 @@ export default function AdminPanelScreen() {
     if (!trips || !effectiveTripId) return null;
     return trips.find((trip) => trip.id === effectiveTripId) ?? null;
   }, [trips, effectiveTripId]);
+
+  const handleTripPickerLoadMore = (event: {
+    nativeEvent: {
+      contentOffset: { y: number };
+      contentSize: { height: number };
+      layoutMeasurement: { height: number };
+    };
+  }) => {
+    if (!hasNextPage || isFetchingNextPage || tripsLoading) {
+      return;
+    }
+
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const nearBottom =
+      contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
+
+    if (nearBottom) {
+      void fetchNextPage();
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
@@ -174,43 +243,18 @@ export default function AdminPanelScreen() {
         </View>
       </ScrollView>
 
-      <Modal
+      <TripPickerModal
         visible={isTripPickerOpen}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setIsTripPickerOpen(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select trip</Text>
-              <TouchableOpacity onPress={() => setIsTripPickerOpen(false)}>
-                <Ionicons name="close" size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView contentContainerStyle={styles.modalList}>
-              {(trips ?? []).map((trip) => (
-                <TouchableOpacity
-                  key={trip.id}
-                  style={styles.modalItem}
-                  onPress={() => {
-                    setSelectedTripId(trip.id);
-                    setIsTripPickerOpen(false);
-                  }}
-                >
-                  <Text style={styles.modalItemText}>{trip.name}</Text>
-                  {effectiveTripId === trip.id && (
-                    <Ionicons name="checkmark" size={18} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
-              {(trips ?? []).length === 0 && !tripsLoading && (
-                <Text style={styles.modalEmpty}>No trips available</Text>
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setIsTripPickerOpen(false)}
+        onSelectTrip={(tripId) => {
+          setSelectedTripId(tripId);
+        }}
+        trips={trips ?? []}
+        selectedTripId={effectiveTripId}
+        isLoading={tripsLoading}
+        isFetchingMore={isFetchingNextPage}
+        onLoadMore={handleTripPickerLoadMore}
+      />
     </View>
   );
 }
@@ -289,56 +333,5 @@ const styles = StyleSheet.create({
     fontSize: typography.sm,
     fontWeight: typography.medium,
     flexShrink: 1,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: colors.blackOpacity40,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: colors.cardDark,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    maxHeight: '70%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  modalTitle: {
-    fontSize: typography.lg,
-    fontWeight: typography.bold,
-    color: colors.white,
-  },
-  modalList: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    gap: spacing.md,
-  },
-  modalItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderWhite5,
-  },
-  modalItemText: {
-    color: colors.white,
-    fontSize: typography.base,
-    flex: 1,
-    paddingRight: spacing.sm,
-  },
-  modalEmpty: {
-    color: colors.textSecondary,
-    fontSize: typography.sm,
-    textAlign: 'center',
-    paddingVertical: spacing.md,
   },
 });
