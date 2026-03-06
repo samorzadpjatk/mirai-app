@@ -6,27 +6,21 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
 import { useAdminGroups } from '~/hooks/admin/useAdminGroups';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { GroupsSearchBar } from '~/components/admin/groups/GroupsSearchBar';
 import { GroupManagementCard } from '~/components/admin/groups/GroupManagementCard';
-import {
-  CreateGroupModal,
-  EditGroupModal,
-  DeleteGroupModal,
-  AssignOrganizerModal,
-} from '~/components/admin/groups/GroupModals';
-import type { Group, User } from '~/hooks/admin/useAdminGroups';
+import type { Group } from '~/hooks/admin/useAdminGroups';
 
 export default function AdminGroupsScreen() {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
   
@@ -34,29 +28,20 @@ export default function AdminGroupsScreen() {
   const {
     groups,
     groupsLoading,
-    users: rawUsers,
-    createGroup,
-    updateGroup,
-    deleteGroup,
-    isCreatingGroup,
-    isUpdatingGroup,
-    isDeletingGroup,
+    groupsRefetching,
+    groupsHasNextPage,
+    groupsFetchingNextPage,
+    fetchMoreGroups,
+    refetchGroups,
   } = useAdminGroups(tripId ?? '');
-  const users = (rawUsers ?? []) as User[];
   
-  // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showOrganizerModal, setShowOrganizerModal] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Memoized filtered groups
   const filteredGroups = useMemo(() => {
     return groups?.filter(group =>
       group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${group.organizer.firstName} ${group.organizer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+      `${group.organizer?.firstName ?? ''} ${group.organizer?.lastName ?? ''}`.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
   }, [groups, searchTerm]);
 
@@ -73,70 +58,24 @@ export default function AdminGroupsScreen() {
   }
 
   // Event handlers
-  const handleCreateGroup = async (name: string) => {
-    try {
-      await createGroup(name);
-      setShowCreateModal(false);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to create group');
-    }
-  };
-
-  const handleUpdateGroup = async (id: string, name: string) => {
-    try {
-      await updateGroup(id, name);
-      setShowEditModal(false);
-      setSelectedGroup(null);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to update group');
-    }
-  };
-
-  const handleDeleteGroup = async (id: string) => {
-    try {
-      await deleteGroup(id);
-      setShowDeleteModal(false);
-      setSelectedGroup(null);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to delete group');
-    }
-  };
-
-  const handleAssignOrganizer = async (groupId: string, organizerId: string) => {
-    try {
-      await updateGroup(groupId, '', organizerId);
-      setShowOrganizerModal(false);
-      setSelectedGroup(null);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Failed to assign organizer');
-    }
+  const handleCreateGroup = () => {
+    router.push({
+      pathname: "/admin/groups/new",
+      params: { tripId },
+    });
   };
 
   const openEditModal = (group: Group) => {
-    setSelectedGroup(group);
-    setShowEditModal(true);
-  };
-
-  const openDeleteModal = (group: Group) => {
-    setSelectedGroup(group);
-    setShowDeleteModal(true);
-  };
-
-  const openOrganizerModal = (group: Group) => {
-    setSelectedGroup(group);
-    setShowOrganizerModal(true);
+    router.push({
+      pathname: "/admin/groups/edit/[groupId]",
+      params: { groupId: group.id, tripId },
+    });
   };
 
   const renderGroup = ({ item }: { item: Group }) => (
     <GroupManagementCard
       group={item}
       onEdit={openEditModal}
-      onAssignOrganizer={openOrganizerModal}
-      onDelete={openDeleteModal}
     />
   );
 
@@ -150,7 +89,7 @@ export default function AdminGroupsScreen() {
         rightComponent={
           <TouchableOpacity
             style={styles.createButton}
-            onPress={() => setShowCreateModal(true)}
+            onPress={handleCreateGroup}
           >
             <Ionicons name="add" size={20} color={colors.white} />
           </TouchableOpacity>
@@ -175,6 +114,16 @@ export default function AdminGroupsScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.groupsList}
           showsVerticalScrollIndicator={false}
+          onEndReached={() => {
+            if (groupsHasNextPage && !groupsFetchingNextPage && !groupsLoading) {
+              void fetchMoreGroups();
+            }
+          }}
+          onEndReachedThreshold={0.35}
+          refreshing={groupsRefetching && !groupsFetchingNextPage}
+          onRefresh={() => {
+            void refetchGroups();
+          }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="people-circle" size={48} color={colors.textSecondary} />
@@ -184,47 +133,25 @@ export default function AdminGroupsScreen() {
               {!searchTerm && (
                 <TouchableOpacity
                   style={styles.emptyCreateButton}
-                  onPress={() => setShowCreateModal(true)}
+                  onPress={handleCreateGroup}
                 >
                   <Text style={styles.emptyCreateButtonText}>Create your first group</Text>
                 </TouchableOpacity>
               )}
             </View>
           }
+          ListFooterComponent={
+            groupsFetchingNextPage ? (
+              <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs }}>
+                  Loading more groups...
+                </Text>
+              </View>
+            ) : null
+          }
         />
       )}
-
-      <CreateGroupModal
-        visible={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onCreateGroup={handleCreateGroup}
-        isCreating={isCreatingGroup}
-      />
-
-      <EditGroupModal
-        visible={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        group={selectedGroup}
-        onUpdateGroup={handleUpdateGroup}
-        isUpdating={isUpdatingGroup}
-      />
-
-      <DeleteGroupModal
-        visible={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        group={selectedGroup}
-        onDeleteGroup={handleDeleteGroup}
-        isDeleting={isDeletingGroup}
-      />
-
-      <AssignOrganizerModal
-        visible={showOrganizerModal}
-        onClose={() => setShowOrganizerModal(false)}
-        group={selectedGroup}
-        users={users}
-        onAssignOrganizer={handleAssignOrganizer}
-        isAssigning={isUpdatingGroup}
-      />
     </View>
   );
 }

@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { AdminModal, AdminModalButton } from '../AdminModal';
-import { colors, spacing, borderRadius, typography } from '~/styles';
+import { colors, spacing, typography } from '~/styles';
+import {
+  FormField,
+  ThemedTextInput,
+} from '~/components/common/ui';
 import type { NotificationSchedule } from '~/hooks/admin/useAdminSchedules';
 
 interface CreateScheduleModalProps {
@@ -57,40 +61,31 @@ export function CreateScheduleModal({
         </>
       }
     >
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Schedule Name</Text>
-        <TextInput
-          style={styles.textInput}
+      <FormField label="Schedule Name" required>
+        <ThemedTextInput
           value={name}
           onChangeText={setName}
           placeholder="Enter schedule name..."
-          placeholderTextColor={colors.textSecondary}
         />
-      </View>
+      </FormField>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Message</Text>
-        <TextInput
-          style={[styles.textInput, styles.textArea]}
+      <FormField label="Message" required>
+        <ThemedTextInput
           value={message}
           onChangeText={setMessage}
           placeholder="Enter notification message..."
-          placeholderTextColor={colors.textSecondary}
           multiline
           numberOfLines={3}
         />
-      </View>
+      </FormField>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Trigger Time</Text>
-        <TextInput
-          style={styles.textInput}
+      <FormField label="Trigger Time" required>
+        <ThemedTextInput
           value={triggerTime}
           onChangeText={setTriggerTime}
           placeholder="e.g., 09:00, 14:30"
-          placeholderTextColor={colors.textSecondary}
         />
-      </View>
+      </FormField>
     </AdminModal>
   );
 }
@@ -159,40 +154,31 @@ export function EditScheduleModal({
         </>
       }
     >
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Schedule Name</Text>
-        <TextInput
-          style={styles.textInput}
+      <FormField label="Schedule Name" required>
+        <ThemedTextInput
           value={name}
           onChangeText={setName}
           placeholder="Enter schedule name..."
-          placeholderTextColor={colors.textSecondary}
         />
-      </View>
+      </FormField>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Message</Text>
-        <TextInput
-          style={[styles.textInput, styles.textArea]}
+      <FormField label="Message" required>
+        <ThemedTextInput
           value={message}
           onChangeText={setMessage}
           placeholder="Enter notification message..."
-          placeholderTextColor={colors.textSecondary}
           multiline
           numberOfLines={3}
         />
-      </View>
+      </FormField>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Trigger Time</Text>
-        <TextInput
-          style={styles.textInput}
+      <FormField label="Trigger Time" required>
+        <ThemedTextInput
           value={triggerTime}
           onChangeText={setTriggerTime}
           placeholder="e.g., 09:00, 14:30"
-          placeholderTextColor={colors.textSecondary}
         />
-      </View>
+      </FormField>
     </AdminModal>
   );
 }
@@ -249,28 +235,6 @@ export function DeleteScheduleModal({
 }
 
 const styles = StyleSheet.create({
-  inputContainer: {
-    paddingBottom: spacing.md,
-  },
-  inputLabel: {
-    fontSize: typography.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  textInput: {
-    backgroundColor: colors.backgroundDark,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    fontSize: typography.base,
-    color: colors.white,
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
   deleteContent: {
     paddingBottom: spacing.md,
   },
@@ -278,11 +242,10 @@ const styles = StyleSheet.create({
     fontSize: typography.base,
     color: colors.white,
     marginBottom: spacing.sm,
-    textAlign: 'center' as const,
   },
   deleteSubWarning: {
     fontSize: typography.sm,
     color: colors.textSecondary,
-    textAlign: 'center' as const,
+    marginBottom: spacing.md,
   },
 });

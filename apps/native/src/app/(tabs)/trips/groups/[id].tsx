@@ -11,8 +11,9 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTripDetails } from "~/hooks/trips";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";
 import { GroupDetailsLoadingState } from "~/components/trips/groups/details/GroupDetailsLoadingState";
@@ -30,6 +31,8 @@ export default function GroupDetailsScreen() {
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+
+  const { isTripPast } = useTripDetails(group?.trip?.id);
 
   const { data: group, isLoading: groupLoading } = useQuery({
     ...trpc.group.getById.queryOptions({ id: groupId ?? "" }),
@@ -165,7 +168,7 @@ export default function GroupDetailsScreen() {
     }),
   );
 
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   if (!groupId || groupLoading) {
     return <GroupDetailsLoadingState />;
@@ -296,7 +299,7 @@ export default function GroupDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      {canManageGroup && (
+      {canManageGroup && !isTripPast && (
         <View style={styles.editButtonContainer}>
           <EditGroupButton
             onPress={() => router.push(`/trips/groups/edit/${groupId}`)}
@@ -318,7 +321,7 @@ export default function GroupDetailsScreen() {
         {/* Hero Card */}
         <GroupDetailsHero name={group.name} imageUrl={group.image} />
 
-        {canRequestToJoin && !hasPendingRequestToThisGroup ? (
+        {canRequestToJoin && !hasPendingRequestToThisGroup && !isTripPast ? (
           <TouchableOpacity
             style={styles.joinButton}
             activeOpacity={0.8}
@@ -332,7 +335,7 @@ export default function GroupDetailsScreen() {
           </TouchableOpacity>
         ) : null}
 
-        {canRequestToJoin && hasPendingRequestToThisGroup ? (
+        {canRequestToJoin && hasPendingRequestToThisGroup && !isTripPast ? (
           <View style={styles.pendingRequestContainer}>
             <View style={styles.pendingRequestBadge}>
               <Ionicons name="time-outline" size={16} color={colors.primary} />
@@ -371,7 +374,7 @@ export default function GroupDetailsScreen() {
           </View>
         ) : null}
 
-        {isGroupMember ? (
+        {isGroupMember && !isTripPast ? (
           <TouchableOpacity
             style={styles.leaveButton}
             activeOpacity={0.8}
@@ -385,7 +388,7 @@ export default function GroupDetailsScreen() {
           </TouchableOpacity>
         ) : null}
 
-        {canManageGroup ? (
+        {canManageGroup && !isTripPast ? (
           <View style={styles.joinRequestsCard}>
             <Text style={styles.joinRequestsTitle}>Pending join requests</Text>
             {(pendingJoinRequests ?? []).length === 0 ? (
@@ -513,9 +516,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   pendingRequestBadge: {
-    backgroundColor: "rgba(0, 206, 209, 0.12)",
+    backgroundColor: colors.primaryOpacity12,
     borderWidth: 1,
-    borderColor: "rgba(0, 206, 209, 0.35)",
+    borderColor: colors.primaryOpacity30,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -534,9 +537,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   cancelRequestButton: {
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    backgroundColor: colors.dangerOpacity12,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.45)",
+    borderColor: colors.dangerOpacity45,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -554,9 +557,9 @@ const styles = StyleSheet.create({
   },
   groupLockedBadge: {
     marginBottom: spacing.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: colors.whiteOpacity4,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: colors.whiteOpacity10,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -572,9 +575,9 @@ const styles = StyleSheet.create({
   },
   leaveButton: {
     marginBottom: spacing.lg,
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    backgroundColor: colors.dangerOpacity15,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.45)",
+    borderColor: colors.dangerOpacity45,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -592,9 +595,9 @@ const styles = StyleSheet.create({
   },
   joinRequestsCard: {
     marginBottom: spacing.lg,
-    backgroundColor: "rgba(39, 41, 53, 0.45)",
+    backgroundColor: colors.cardDarkOpacity45,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: colors.whiteOpacity8,
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
     gap: spacing.md,
@@ -615,8 +618,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
-    backgroundColor: "rgba(0, 0, 0, 0.12)",
+    borderColor: colors.whiteOpacity6,
+    backgroundColor: colors.blackOpacity12,
   },
   joinRequestTop: {
     flexDirection: "row",
@@ -627,9 +630,9 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: borderRadius.full,
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: colors.whiteOpacity12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.18)",
+    borderColor: colors.whiteOpacity18,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -671,12 +674,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   joinRequestRejectButton: {
-    borderColor: "rgba(239, 68, 68, 0.5)",
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderColor: colors.dangerOpacity50,
+    backgroundColor: colors.dangerOpacity12,
   },
   joinRequestAcceptButton: {
-    borderColor: "rgba(16, 185, 129, 0.5)",
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    borderColor: colors.successOpacity50,
+    backgroundColor: colors.successOpacity12,
   },
   joinRequestButtonText: {
     color: colors.white,

@@ -1,5 +1,5 @@
 import { View, ScrollView, StyleSheet } from "react-native";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "../../../styles";
 import { AccountInfoSection } from "~/components/profile/AccountInfoSection";
 import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
@@ -11,7 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 export default function ProfileScreen() {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();

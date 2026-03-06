@@ -6,10 +6,12 @@ import {
     type QueryCacheNotifyEvent,
     type MutationCacheNotifyEvent,
 } from "@tanstack/react-query";
-import { TRPCProvider } from "./react";
+import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { getTRPCClient } from "./vanilia";
+import type { AppRouter } from "../api/root";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useSession, useAuthLoading, useAuth } from "@integral-2025-app/auth/client";
+import { useSession, useAuth } from "@integral-2025-app/auth/client";
+import { TRPCContext } from "./react";
 
 function makeQueryClient() {
     return new QueryClient({
@@ -47,7 +49,6 @@ const isUnauthorizedError = (error: unknown) => {
 
 const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: string; children: React.ReactNode }) => {
     const session = useSession();
-    const isAuthLoading = useAuthLoading();
     const { signOut, refreshSession } = useAuth();
     const authToken = session?.access_token;
     const queryClient = getQueryClient();
@@ -57,14 +58,27 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
     // Recreate tRPC client when authToken changes to update WebSocket connectionParams
     // Use useMemo unconditionally (always call hooks in same order)
     const trpcClientWrapper = useMemo(
-        () => {
-            // Don't initialize tRPC client until auth is loaded
-            if (isAuthLoading) {
-                return null;
-            }
-            return getTRPCClient(httpUrl, wsUrl, authToken);
-        },
-        [authToken, httpUrl, wsUrl, isAuthLoading]
+        () => getTRPCClient(httpUrl, wsUrl, authToken),
+        [authToken, httpUrl, wsUrl]
+    );
+
+    // Create the options proxy (no React Context) — combines vanilla client + queryClient.
+    // Recreated whenever the vanilla client changes (e.g. auth token rotation).
+    const trpcOptionsProxy = useMemo(
+        () => createTRPCOptionsProxy<AppRouter>({
+            client: trpcClientWrapper.client,
+            queryClient,
+        }),
+        [trpcClientWrapper.client, queryClient]
+    );
+
+    // Memoize context value to avoid unnecessary re-renders
+    const trpcContextValue = useMemo(
+        () => ({
+            trpcProxy: trpcOptionsProxy,
+            trpcVanillaClient: trpcClientWrapper.client,
+        }),
+        [trpcOptionsProxy, trpcClientWrapper.client]
     );
 
     // Clean up previous client's WebSocket connection when token changes
@@ -157,17 +171,12 @@ const APIProvider = ({ httpUrl, wsUrl, children }: { httpUrl: string; wsUrl: str
         };
     }, [trpcClientWrapper, queryClient, signOut, refreshSession, authToken]);
 
-    // Only render TRPCProvider when we have a valid client
-    if (isAuthLoading || !trpcClientWrapper) {
-        return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-    }
-
     return (
-        <QueryClientProvider client={queryClient}>
-            <TRPCProvider trpcClient={trpcClientWrapper.client} queryClient={queryClient}>
+        <TRPCContext.Provider value={trpcContextValue}>
+            <QueryClientProvider client={queryClient}>
                 {children}
-            </TRPCProvider>
-        </QueryClientProvider>
+            </QueryClientProvider>
+        </TRPCContext.Provider>
     );
 }
 

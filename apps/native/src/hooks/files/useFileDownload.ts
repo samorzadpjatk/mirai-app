@@ -9,6 +9,7 @@ interface DownloadInput {
   storagePath: string;
   expiresInSeconds?: number;
   skipCache?: boolean;
+  publicUrl?: string;
 }
 
 interface DownloadProgress {
@@ -150,10 +151,17 @@ export const useFileDownload = () => {
           }
         }
 
-        const { signedUrl } = await trpcClient.storage.createDownloadUrl.query({
-          storagePath: input.storagePath,
-          expiresInSeconds: input.expiresInSeconds,
-        });
+        // Use public URL if available, otherwise get signed URL
+        let signedUrl: string;
+        if (input.publicUrl) {
+          signedUrl = input.publicUrl;
+        } else {
+          const response = await trpcClient.storage.createDownloadUrl.query({
+            storagePath: input.storagePath,
+            expiresInSeconds: input.expiresInSeconds,
+          });
+          signedUrl = response.signedUrl;
+        }
 
         const cachedFileName = await buildCacheFileName(input.storagePath, signedUrl);
         const targetFile = new File(destinationDir, cachedFileName);

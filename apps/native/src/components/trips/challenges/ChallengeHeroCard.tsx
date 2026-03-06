@@ -46,12 +46,12 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusTone: Record<string, string> = {
-  HIDDEN: "#94a3b8",
-  VISIBLE: "#60a5fa",
+  HIDDEN: colors.slate400,
+  VISIBLE: colors.primary,
   ACTIVE: colors.primary,
-  VOTING_PHASE: "#f59e0b",
-  COMPLETED: "#22c55e",
-  CANCELLED: "#ef4444",
+  VOTING_PHASE: colors.warning,
+  COMPLETED: colors.success,
+  CANCELLED: colors.danger,
 };
 
 const getEndsLabel = (isRecurring?: boolean) =>
@@ -91,23 +91,23 @@ export function ChallengeHeroCard({
     {
       place: "1st",
       points: firstPlacePoints ?? 0,
-      iconColor: "#facc15",
-      borderColor: "rgba(250,204,21,0.6)",
-      backgroundColor: "rgba(250,204,21,0.18)",
+      iconColor: colors.yellow400,
+      borderColor: colors.yellow400 + "99",
+      backgroundColor: colors.yellow400 + "2E",
     },
     {
       place: "2nd",
       points: secondPlacePoints ?? 0,
-      iconColor: "#cbd5e1",
-      borderColor: "rgba(203,213,225,0.6)",
-      backgroundColor: "rgba(203,213,225,0.16)",
+      iconColor: colors.gray400,
+      borderColor: colors.gray400 + "99",
+      backgroundColor: colors.gray400 + "29",
     },
     {
       place: "3rd",
       points: thirdPlacePoints ?? 0,
-      iconColor: "#d97706",
-      borderColor: "rgba(217,119,6,0.6)",
-      backgroundColor: "rgba(217,119,6,0.16)",
+      iconColor: colors.orange400,
+      borderColor: colors.orange400 + "99",
+      backgroundColor: colors.orange400 + "29",
     },
   ];
   const heroFallbackColor = `${iconColor}30`;

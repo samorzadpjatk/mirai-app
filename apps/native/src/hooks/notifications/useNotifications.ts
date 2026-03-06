@@ -4,6 +4,7 @@ import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { invalidateNotificationQueries } from "@integral-2025-app/trpc/client/query";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;
@@ -19,7 +20,6 @@ export interface UseNotificationsReturn {
 
 export function useNotifications(): UseNotificationsReturn {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
 
   const subscriptionQueryOptions =
     trpc.notifications.getSubscriptionStatus.queryOptions();
@@ -27,56 +27,26 @@ export function useNotifications(): UseNotificationsReturn {
     subscriptionQueryOptions,
   );
 
+  const queryClient = useQueryClient();
+  const subscribeMutation = useMutation(trpc.notifications.subscribe.mutationOptions({
+    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
+  }));
+  const unsubscribeMutation = useMutation(trpc.notifications.unsubscribe.mutationOptions({
+    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
+  }));
+
   const [permission, setPermission] = useState<Notifications.PermissionStatus>(
     Notifications.PermissionStatus.UNDETERMINED,
   );
+
+  const isSubscribed =
+    permission === Notifications.PermissionStatus.GRANTED &&
+    !!subscriptionStatus?.isSubscribed;
 
   const isSubscribedElsewhere =
     (subscriptionStatus?.isSubscribed &&
       permission !== Notifications.PermissionStatus.GRANTED) ??
     false;
-
-  useEffect(() => {
-    Notifications.getPermissionsAsync()
-      .then((data) => {
-        setPermission(data.status);
-      })
-      .catch((err) => {
-        console.warn("Failed to get notification permissions", err);
-      });
-  }, []);
-
-  const subscribeMutation = useMutation(
-    trpc.notifications.subscribe.mutationOptions({
-      onSuccess: async () => {
-        Alert.alert("Success", "Push notifications enabled!");
-        await queryClient.invalidateQueries({
-          queryKey: subscriptionQueryOptions.queryKey,
-        });
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to subscribe: ${error.message}`);
-      },
-    }),
-  );
-
-  const unsubscribeMutation = useMutation(
-    trpc.notifications.unsubscribe.mutationOptions({
-      onSuccess: async () => {
-        Alert.alert("Success", "Push notifications disabled");
-        await queryClient.invalidateQueries({
-          queryKey: subscriptionQueryOptions.queryKey,
-        });
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to unsubscribe: ${error.message}`);
-      },
-    }),
-  );
-
-  const isSubscribed =
-    permission === Notifications.PermissionStatus.GRANTED &&
-    subscriptionStatus?.isSubscribed;
 
   const requestPermission = useCallback(async () => {
     const { status: existingStatus } =
@@ -97,6 +67,16 @@ export function useNotifications(): UseNotificationsReturn {
       console.warn("Failed to open app settings", error);
       Alert.alert("Error", "Could not open device settings");
     });
+  }, []);
+
+  useEffect(() => {
+    Notifications.getPermissionsAsync()
+      .then((data) => {
+        setPermission(data.status);
+      })
+      .catch((err) => {
+        console.warn("Failed to get notification permissions", err);
+      });
   }, []);
 
   const toggleSubscription = useCallback(async () => {
@@ -151,7 +131,7 @@ export function useNotifications(): UseNotificationsReturn {
 
   return {
     isSupported: true,
-    isSubscribed: !!isSubscribed,
+    isSubscribed,
     isSubscribedElsewhere,
     isLoading: isStatusLoading,
     permission,

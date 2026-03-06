@@ -1,8 +1,7 @@
 import { useColorScheme } from "react-native";
 import { NativeTabs, Label, Icon, VectorIcon } from 'expo-router/unstable-native-tabs';
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useTRPC } from '@integral-2025-app/trpc/client';
-import { useQuery } from '@tanstack/react-query';
+import { useUser } from '@integral-2025-app/auth/client';
 import { ThemeProvider, DarkTheme, DefaultTheme } from '@react-navigation/native';
 
 const colors = {
@@ -16,11 +15,8 @@ const colors = {
 export default function TabsLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark" || colorScheme === null;
+  const user = useUser();
   
-  const trpc = useTRPC();
-  const { data: user } = useQuery(trpc.user.getMy.queryOptions());
-  
-  // Check if user has admin role based on the user object
   const hasAdminAccess = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
 
   const backgroundColor = isDark ? colors.backgroundDark : colors.backgroundLight;

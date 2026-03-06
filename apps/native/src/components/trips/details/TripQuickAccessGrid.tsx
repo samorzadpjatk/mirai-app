@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface TripQuickAccessGridProps {
+  isTripPast?: boolean;
   onOpenGroups: () => void;
   onOpenMap: () => void;
   onOpenChallenges: () => void;
@@ -12,6 +13,7 @@ interface TripQuickAccessGridProps {
 }
 
 export function TripQuickAccessGrid({
+  isTripPast,
   onOpenGroups,
   onOpenMap,
   onOpenChallenges,
@@ -34,15 +36,17 @@ export function TripQuickAccessGrid({
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.gridCard} onPress={onOpenMap}>
-        <View style={styles.gridIconWrapper}>
-          <Ionicons name="map" size={24} color={colors.primary} />
-        </View>
-        <View style={styles.gridCardContent}>
-          <Text style={styles.gridCardTitle}>Map</Text>
-          <Text style={styles.gridCardSubtitle}>Trip Locations</Text>
-        </View>
-      </TouchableOpacity>
+      {!isTripPast && (
+        <TouchableOpacity style={styles.gridCard} onPress={onOpenMap}>
+          <View style={styles.gridIconWrapper}>
+            <Ionicons name="map" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.gridCardContent}>
+            <Text style={styles.gridCardTitle}>Map</Text>
+            <Text style={styles.gridCardSubtitle}>Trip Locations</Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.gridCard} onPress={onOpenChallenges}>
         <View style={styles.gridIconWrapper}>

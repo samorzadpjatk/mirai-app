@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useTRPC } from '@integral-2025-app/trpc/client';
+import { useMutation, useInfiniteQuery } from '@tanstack/react-query';
+import { useTRPC, useTRPCClient } from '@integral-2025-app/trpc/client';
 
 export interface Notification {
   id: string;
@@ -24,13 +24,47 @@ export interface Notification {
 
 export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'all';
 
+const PAGE_SIZE = 50;
+
 export function useAdminNotifications(tripId?: string) {
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const [status, setStatus] = useState<NotificationStatus>('all');
 
-  const { data: result, isLoading, refetch } = useQuery(
-    trpc.notifications.getAll.queryOptions(tripId ? { tripId } : undefined)
-  );
+  const notificationsQueryInput = tripId ? { tripId } : undefined;
+
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    isRefetching,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: [
+      ...trpc.notifications.getAll.queryOptions(notificationsQueryInput).queryKey,
+      'infinite',
+      PAGE_SIZE,
+    ],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const offset = typeof pageParam === 'number' ? pageParam : 0;
+      return trpcClient.notifications.getAll.query({
+        ...(notificationsQueryInput ?? {}),
+        pagination: {
+          limit: PAGE_SIZE,
+          offset,
+        },
+      });
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.pagination?.hasMore) {
+        return undefined;
+      }
+      return lastPage.pagination.offset + lastPage.pagination.limit;
+    },
+  });
 
   const retryMutation = useMutation(trpc.notifications.retryNotification.mutationOptions({
     onSuccess: () => {
@@ -44,7 +78,7 @@ export function useAdminNotifications(tripId?: string) {
     },
   }));
 
-  const notifications = result?.notifications ?? [];
+  const notifications = (data?.pages ?? []).flatMap((page) => page.notifications ?? []);
 
   const retryNotification = (notificationId: string) => {
     return retryMutation.mutateAsync({ notificationId });
@@ -70,6 +104,11 @@ export function useAdminNotifications(tripId?: string) {
   return {
     notifications,
     isLoading,
+    isRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch,
     status,
     setStatus,
     retryNotification,

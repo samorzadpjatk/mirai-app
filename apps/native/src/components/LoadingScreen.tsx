@@ -1,7 +1,7 @@
 import { View, Text, ActivityIndicator } from "react-native";
 import { StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography } from "../styles";
 
 interface LoadingScreenProps {
@@ -11,7 +11,7 @@ interface LoadingScreenProps {
 export default function LoadingScreen({
   message = "Loading...",
 }: LoadingScreenProps) {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   return (
     <>
       <StatusBar style="auto" />

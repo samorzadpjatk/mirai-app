@@ -12,13 +12,14 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { useGroupEditor } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
 import {
   borderRadius as radius,
   colors,
   spacing,
   typography,
 } from "../../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileUpload } from "~/hooks/files";
 import { EditGroupFormFields } from "~/components/trips/groups/edit/EditGroupFormFields";
 import { GroupEditLoadingState } from "~/components/trips/groups/edit/GroupEditLoadingState";
@@ -27,36 +28,7 @@ import { GroupEditNotFoundState } from "~/components/trips/groups/edit/GroupEdit
 import { GroupEditPermissionState } from "~/components/trips/groups/edit/GroupEditPermissionState";
 import { SaveGroupButton } from "~/components/trips/groups/edit/SaveGroupButton";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
-
-const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
-  if (asset.fileName) {
-    const parts = asset.fileName.split(".");
-    if (parts.length > 1) {
-      return parts[parts.length - 1]?.toLowerCase() ?? "jpg";
-    }
-  }
-
-  const contentType = asset.mimeType ?? "";
-  if (contentType === "image/png") return "png";
-  if (contentType === "image/webp") return "webp";
-  if (contentType === "image/heic" || contentType === "image/heif")
-    return "heic";
-  return "jpg";
-};
-
-const getImageContentType = (extension: string) => {
-  switch (extension) {
-    case "png":
-      return "image/png";
-    case "webp":
-      return "image/webp";
-    case "heic":
-    case "heif":
-      return "image/heic";
-    default:
-      return "image/jpeg";
-  }
-};
+import { getImageExtension, getImageContentType } from "~/utils/image";
 
 const getInitials = (firstName?: string | null, lastName?: string | null) => {
   const f = (firstName ?? "")[0] ?? "";
@@ -70,11 +42,18 @@ export default function EditGroupScreen() {
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
   const trpc = useTRPC();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
   const { group, isLoading: groupLoading } = useGroupEditor(groupId);
+  const { isTripPast } = useTripDetails(group?.trip?.id);
+
+  useEffect(() => {
+    if (isTripPast && group?.trip?.id) {
+      router.replace(`/trips/groups/${groupId}`);
+    }
+  }, [isTripPast, group?.trip?.id, groupId, router]);
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
@@ -395,7 +374,7 @@ const styles = StyleSheet.create({
   memberListContainer: {
     backgroundColor: colors.cardDark,
     borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 1)",
+    borderColor: colors.borderZinc700,
     borderRadius: radius.xl,
     overflow: "hidden",
   },
@@ -405,7 +384,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+    borderBottomColor: colors.whiteOpacity5,
   },
   memberAvatar: {
     width: 44,
@@ -413,7 +392,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.textMuted,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: colors.whiteOpacity10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -436,17 +415,17 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   removeButton: {
-    backgroundColor: "rgba(239, 68, 68, 0.16)",
+    backgroundColor: colors.dangerOpacity12,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.5)",
+    borderColor: colors.dangerOpacity50,
     borderRadius: radius.md,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
   },
   removeButtonDisabled: {
     opacity: 0.7,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: colors.whiteOpacity12,
+    backgroundColor: colors.whiteOpacity4,
   },
   removeButtonText: {
     fontSize: 11,
@@ -465,9 +444,9 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     marginTop: spacing.lg,
-    backgroundColor: "rgba(220, 38, 38, 0.14)",
+    backgroundColor: colors.redOpacity500Background,
     borderWidth: 1,
-    borderColor: "rgba(220, 38, 38, 0.55)",
+    borderColor: colors.redOpacity500,
     borderRadius: radius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,

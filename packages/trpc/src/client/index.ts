@@ -1,11 +1,14 @@
-import { TRPCProvider, useTRPC, useTRPCClient, useSubscription } from "./react";
+import { useTRPC, useTRPCClient, useSubscription, TRPCContext } from "./react";
 import { APIProvider } from "./query-client";
 import { getTRPCClient } from "./vanilia";
 export {
-  TRPCProvider,
   useTRPC,
   useTRPCClient,
   APIProvider,
   useSubscription,
-  getTRPCClient
+  getTRPCClient,
+  TRPCContext,
 };
+
+// Export query invalidation utilities
+export * from "./query";

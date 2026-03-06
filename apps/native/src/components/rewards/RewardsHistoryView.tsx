@@ -6,7 +6,9 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from "react-native";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { commonStyles } from "~/styles/commonStyles";
 import { useRewardPurchaseHistory, useUpdateMyRewardPurchaseStatus } from "~/hooks/rewards";
@@ -26,10 +28,33 @@ const statusMeta: Record<PurchaseStatus, { label: string; color: string; icon: k
 };
 
 export default function RewardsHistoryView({ tripId }: Props) {
-  const { data, isLoading, error } = useRewardPurchaseHistory(tripId);
+  const {
+    data,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    isRefetching,
+    refetch,
+  } = useRewardPurchaseHistory(tripId);
   const updateMyPurchaseStatus = useUpdateMyRewardPurchaseStatus();
 
   const purchases = Array.isArray(data) ? data : [];
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!hasNextPage || isFetchingNextPage || isLoading) {
+      return;
+    }
+
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const nearBottom =
+      contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
+
+    if (nearBottom) {
+      void fetchNextPage();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -53,7 +78,20 @@ export default function RewardsHistoryView({ tripId }: Props) {
 
   return (
     <View style={commonStyles.container}>
-      <ScrollView style={{ flex: 1, padding: 16 }}>
+      <ScrollView
+        style={{ flex: 1, padding: 16 }}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching && !isFetchingNextPage}
+            onRefresh={() => {
+              void refetch();
+            }}
+            tintColor="#00ced1"
+          />
+        }
+      >
         {purchases.length === 0 ? (
           <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
             <Ionicons name="time-outline" size={46} color="#6b7280" />
@@ -246,6 +284,13 @@ export default function RewardsHistoryView({ tripId }: Props) {
                 </View>
               );
             })}
+
+            {isFetchingNextPage ? (
+              <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                <ActivityIndicator size="small" color="#00ced1" />
+                <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more claim history...</Text>
+              </View>
+            ) : null}
           </View>
         )}
       </ScrollView>

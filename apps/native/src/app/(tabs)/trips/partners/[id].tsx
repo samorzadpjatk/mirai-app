@@ -1,16 +1,23 @@
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { PARTNERS } from "~/components/trips/details/PartnersSection";
+import { useSponsorById } from "~/hooks/sponsors/useSponsors";
+import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import LoadingScreen from "~/components/LoadingScreen";
 
 export default function PartnerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const partner = PARTNERS.find((p) => p.id === id);
+  const { data: sponsor, isLoading, error } = useSponsorById(id ?? "");
+  const { imageUrl } = usePartnerImageDownload(sponsor?.logoPath);
 
-  if (!partner) {
+  if (isLoading) {
+    return <LoadingScreen message="Loading sponsor..." />;
+  }
+
+  if (error || !sponsor) {
     return (
       <View style={styles.container}>
-        <Text style={styles.notFound}>Partner not found</Text>
+        <Text style={styles.notFound}>Sponsor not found</Text>
       </View>
     );
   }
@@ -19,13 +26,13 @@ export default function PartnerDetailScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.logoWrapper}>
-          <Image source={partner.logo} style={styles.logo} />
+          <Image source={imageUrl ? { uri: imageUrl } : null} style={styles.logo} />
         </View>
 
-        <Text style={styles.name}>{partner.name}</Text>
+        <Text style={styles.name}>{sponsor.name}</Text>
 
         <View style={styles.descriptionCard}>
-          {partner.description.split("\n\n").map((paragraph) => (
+          {sponsor.description.split("\n\n").map((paragraph) => (
             <Text key={paragraph} style={styles.description}>
               {paragraph}
             </Text>

@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
 import { UserAvatar } from "~/components/map/ui/UserAvatar";
 import { formatRelativeTime } from "~/utils/format";
-import { useMapOverlayContext } from "~/contexts/map/MapOverlayContext";
+import { useMapOverlayStore } from "~/stores/map";
 
 export function UsersListPanel() {
   const {
@@ -14,7 +14,7 @@ export function UsersListPanel() {
     onAddPress,
     onManagePress,
     onSelectUser,
-  } = useMapOverlayContext();
+  } = useMapOverlayStore();
 
   return (
     <>

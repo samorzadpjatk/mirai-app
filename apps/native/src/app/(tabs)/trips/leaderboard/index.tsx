@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
 import { colors, spacing } from "../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import { LeaderboardRankingsSection } from "~/components/trips/leaderboard/LeaderboardRankingsSection";
@@ -16,7 +16,7 @@ export default function LeaderboardScreen() {
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const trpc = useTRPC();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const { data: trip, isLoading: tripLoading } = useQuery({
     ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),

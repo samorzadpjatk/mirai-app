@@ -1,51 +1,21 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { invalidateGroupQueries } from "@integral-2025-app/trpc/client/query";
 
 export function useGroupEditor(groupId?: string | null) {
   const trpc = useTRPC();
-
-  const groupQuery = useQuery({
-    ...trpc.group.getById.queryOptions({ id: groupId ?? "" }),
-    enabled: !!groupId,
-  });
-
   const queryClient = useQueryClient();
 
-  const updateMutation = useMutation(
-    trpc.group.update.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
-            .queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({ tripId: "" }).queryKey,
-        });
-      },
-    }),
-  );
-
-  const assignMutation = useMutation(
-    trpc.group.assignUserToGroup.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
-            .queryKey,
-        });
-      },
-    }),
-  );
-
-  const removeMutation = useMutation(
-    trpc.group.removeUserFromGroup.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
-            .queryKey,
-        });
-      },
-    }),
-  );
+  const groupQuery = useQuery(trpc.group.getById.queryOptions({ id: groupId ?? "" }, { enabled: !!groupId }));
+  const updateMutation = useMutation(trpc.group.update.mutationOptions({
+    onSuccess: async () => { await invalidateGroupQueries(queryClient); },
+  }));
+  const assignMutation = useMutation(trpc.group.assignUserToGroup.mutationOptions({
+    onSuccess: async () => { await invalidateGroupQueries(queryClient); },
+  }));
+  const removeMutation = useMutation(trpc.group.removeUserFromGroup.mutationOptions({
+    onSuccess: async () => { await invalidateGroupQueries(queryClient); },
+  }));
 
   const updateGroup = async (data: {
     id: string;

@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from '@integral-2025-app/trpc/client';
+import { invalidateGroupQueries } from '@integral-2025-app/trpc/client/query';
 
 export interface Group {
   id: string;
@@ -23,40 +24,28 @@ export function useAdminCoins(tripId: string) {
   const groupsQuery = trpc.group.getGroupList.queryOptions({ tripId });
   const { data: groups, isLoading: groupsLoading } = useQuery(groupsQuery);
 
-  const coinTransactionsQuery = trpc.coinTransaction.getCoinTransactions.queryOptions({ tripId });
+  const coinsMutation = useMutation(trpc.group.addCoins.mutationOptions({
+    onSuccess: async () => { await invalidateGroupQueries(queryClient, true); },
+  }));
 
-  const addCoinsMutation = useMutation(
-    trpc.coin.addCoins.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey });
-        void queryClient.invalidateQueries({ queryKey: coinTransactionsQuery.queryKey });
-      },
-    }),
-  );
-
-  const removeCoinsMutation = useMutation(
-    trpc.coin.removeCoins.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: groupsQuery.queryKey });
-        void queryClient.invalidateQueries({ queryKey: coinTransactionsQuery.queryKey });
-      },
-    }),
-  );
-
-  const addCoins = (groupId: string, amount: number, reason: string) => {
-    return addCoinsMutation.mutateAsync({
+  const addCoins = (groupId: string, amount: number, _reason: string) => {
+    if (amount <= 0) {
+      throw new Error('Amount must be positive for adding coins');
+    }
+    return coinsMutation.mutateAsync({
       groupId,
       amount,
-      reason,
       tripId,
     });
   };
 
-  const removeCoins = (groupId: string, amount: number, reason: string) => {
-    return removeCoinsMutation.mutateAsync({
+  const removeCoins = (groupId: string, amount: number, _reason: string) => {
+    if (amount <= 0) {
+      throw new Error('Amount must be positive for removing coins');
+    }
+    return coinsMutation.mutateAsync({
       groupId,
-      amount,
-      reason,
+      amount: -amount, // Convert to negative for removal
       tripId,
     });
   };
@@ -66,7 +55,7 @@ export function useAdminCoins(tripId: string) {
     groupsLoading,
     addCoins,
     removeCoins,
-    isAddingCoins: addCoinsMutation.isPending,
-    isRemovingCoins: removeCoinsMutation.isPending,
+    isAddingCoins: coinsMutation.isPending,
+    isRemovingCoins: coinsMutation.isPending,
   };
 }

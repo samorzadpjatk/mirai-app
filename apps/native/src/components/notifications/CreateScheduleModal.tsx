@@ -1,16 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Modal,
-  StyleSheet,
+  ActivityIndicator,
 } from "react-native";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTrips } from "~/hooks/trips";
+import { colors, spacing } from "~/styles";
+import {
+  AppModalShell,
+  AppModalFooter,
+  FormField,
+  ThemedTextInput,
+  SegmentedOption,
+} from "~/components/common/ui";
 
 interface CreateScheduleModalProps {
   isOpen: boolean;
@@ -25,8 +31,7 @@ export function CreateScheduleModal({
 }: CreateScheduleModalProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { data: tripsData } = useQuery(trpc.trip.getAll.queryOptions());
-  const trips = useMemo(() => tripsData ?? [], [tripsData]);
+  const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
 
   const [createName, setCreateName] = useState("");
   const [createType, setCreateType] = useState<"custom" | "ranking">("custom");
@@ -117,318 +122,151 @@ export function CreateScheduleModal({
   };
 
   return (
-    <Modal
+    <AppModalShell
       visible={isOpen}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      title="Create Notification Schedule"
+      onClose={onClose}
+      variant="pageSheet"
     >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Create Notification Schedule</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
+      <ScrollView style={{ padding: spacing.lg }}>
+        <Text style={{ color: colors.textSecondary, marginBottom: spacing.lg }}>
+          Schedule a notification to be sent at specific times
+        </Text>
 
-        <ScrollView style={styles.modalContent}>
-          <Text style={styles.modalDescription}>
-            Schedule a notification to be sent at specific times
-          </Text>
+        <FormField label="Schedule Name" required>
+          <ThemedTextInput
+            placeholder="E.g., Daily Ranking Update"
+            value={createName}
+            onChangeText={setCreateName}
+          />
+        </FormField>
 
-          {/* Schedule Name */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Schedule Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="E.g., Daily Ranking Update"
-              placeholderTextColor="#6b7280"
-              value={createName}
-              onChangeText={setCreateName}
+        <FormField label="Notification Type">
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <SegmentedOption
+              label="Custom Message"
+              selected={createType === "custom"}
+              onPress={() => handleSelectType("custom")}
+            />
+            <SegmentedOption
+              label="Ranking Update"
+              selected={createType === "ranking"}
+              onPress={() => handleSelectType("ranking")}
             />
           </View>
+        </FormField>
 
-          {/* Notification Type */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Notification Type</Text>
-            <View style={styles.typeSelector}>
-              <TouchableOpacity
-                style={[
-                  styles.typeOption,
-                  createType === "custom" && styles.typeOptionActive,
-                ]}
-                onPress={() => handleSelectType("custom")}
-              >
-                <Text
-                  style={[
-                    styles.typeOptionText,
-                    createType === "custom" && styles.typeOptionTextActive,
-                  ]}
-                >
-                  Custom Message
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.typeOption,
-                  createType === "ranking" && styles.typeOptionActive,
-                ]}
-                onPress={() => handleSelectType("ranking")}
-              >
-                <Text
-                  style={[
-                    styles.typeOptionText,
-                    createType === "ranking" && styles.typeOptionTextActive,
-                  ]}
-                >
-                  Ranking Update
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        {createType === "custom" && (
+          <>
+            <FormField label="Notification Title" required>
+              <ThemedTextInput
+                placeholder="Title"
+                value={createTitle}
+                onChangeText={setCreateTitle}
+              />
+            </FormField>
 
-          {/* Custom Message Fields */}
-          {createType === "custom" && (
-            <>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Notification Title</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Title"
-                  placeholderTextColor="#6b7280"
-                  value={createTitle}
-                  onChangeText={setCreateTitle}
-                />
-              </View>
+            <FormField label="Notification Body" required>
+              <ThemedTextInput
+                placeholder="Message content"
+                value={createBody}
+                onChangeText={setCreateBody}
+              />
+            </FormField>
+          </>
+        )}
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Notification Body</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Message content"
-                  placeholderTextColor="#6b7280"
-                  value={createBody}
-                  onChangeText={setCreateBody}
-                />
-              </View>
-            </>
-          )}
+        {createType === "ranking" && (
+          <FormField label="Trip" required>
+            {trips.length === 0 ? (
+              <Text style={{ color: colors.textSecondary }}>(No trips available)</Text>
+            ) : (
+              <View style={{ flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" }}>
+                {trips.map((trip) => (
+                  <SegmentedOption
+                    key={trip.id}
+                    label={trip.name}
+                    selected={createTripId === trip.id}
+                    onPress={() => setCreateTripId(trip.id)}
+                    style={{ flexBasis: "45%" }}
+                  />
+                ))}
 
-          {createType === "ranking" && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Trip</Text>
-              {trips.length === 0 ? (
-                <Text style={styles.emptyTripsText}>(No trips available)</Text>
-              ) : (
-                <View style={styles.typeSelector}>
-                  {trips.map((trip) => (
-                    <TouchableOpacity
-                      key={trip.id}
-                      style={[
-                        styles.typeOption,
-                        createTripId === trip.id && styles.typeOptionActive,
-                      ]}
-                      onPress={() => setCreateTripId(trip.id)}
-                    >
-                      <Text
-                        style={[
-                          styles.typeOptionText,
-                          createTripId === trip.id &&
-                            styles.typeOptionTextActive,
-                        ]}
-                      >
-                        {trip.name}
+                {hasNextPage && (
+                  <TouchableOpacity
+                    style={{
+                      flexBasis: "45%",
+                      borderRadius: spacing.sm,
+                      borderWidth: 1,
+                      borderColor: colors.primary,
+                      paddingVertical: spacing.sm,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: colors.primaryOpacity10,
+                    }}
+                    onPress={() => {
+                      void fetchNextPage();
+                    }}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "600" }}>
+                        Load more trips
                       </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          </FormField>
+        )}
 
-          {/* Date Range */}
-          <View style={styles.rowInputs}>
-            <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={styles.inputLabel}>Start Date</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#6b7280"
-                value={createStartDate}
-                onChangeText={setCreateStartDate}
-              />
-            </View>
-            <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={styles.inputLabel}>End Date</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#6b7280"
-                value={createEndDate}
-                onChangeText={setCreateEndDate}
-              />
-            </View>
-          </View>
-
-          {/* Time */}
-          <View style={styles.rowInputs}>
-            <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={styles.inputLabel}>Hour (0-23)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="9"
-                placeholderTextColor="#6b7280"
-                keyboardType="numeric"
-                value={createHour}
-                onChangeText={setCreateHour}
-              />
-            </View>
-            <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={styles.inputLabel}>Minute (0-59)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                placeholderTextColor="#6b7280"
-                keyboardType="numeric"
-                value={createMinute}
-                onChangeText={setCreateMinute}
-              />
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Modal Footer */}
-        <View style={styles.modalFooter}>
-          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              isSubmitDisabled && styles.submitButtonDisabled,
-            ]}
-            onPress={handleSubmit}
-            disabled={isSubmitDisabled || createScheduleMutation.isPending}
-          >
-            <Text style={styles.submitButtonText}>
-              {createScheduleMutation.isPending
-                ? "Creating..."
-                : "Create Schedule"}
-            </Text>
-          </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: spacing.md }}>
+          <FormField label="Start Date" required style={{ flex: 1 }}>
+            <ThemedTextInput
+              placeholder="YYYY-MM-DD"
+              value={createStartDate}
+              onChangeText={setCreateStartDate}
+            />
+          </FormField>
+          <FormField label="End Date" required style={{ flex: 1 }}>
+            <ThemedTextInput
+              placeholder="YYYY-MM-DD"
+              value={createEndDate}
+              onChangeText={setCreateEndDate}
+            />
+          </FormField>
         </View>
-      </View>
-    </Modal>
+
+        <View style={{ flexDirection: "row", gap: spacing.md }}>
+          <FormField label="Hour (0-23)" required style={{ flex: 1 }}>
+            <ThemedTextInput
+              placeholder="9"
+              keyboardType="numeric"
+              value={createHour}
+              onChangeText={setCreateHour}
+            />
+          </FormField>
+          <FormField label="Minute (0-59)" required style={{ flex: 1 }}>
+            <ThemedTextInput
+              placeholder="0"
+              keyboardType="numeric"
+              value={createMinute}
+              onChangeText={setCreateMinute}
+            />
+          </FormField>
+        </View>
+      </ScrollView>
+      <AppModalFooter
+        primaryLabel={createScheduleMutation.isPending ? "Creating..." : "Create Schedule"}
+        onPrimary={handleSubmit}
+        isPrimaryLoading={createScheduleMutation.isPending}
+        isPrimaryDisabled={isSubmitDisabled}
+        secondaryLabel="Cancel"
+        onSecondary={onClose}
+      />
+    </AppModalShell>
   );
 }
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "#17181c",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#374151",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#ffffff",
-  },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  modalDescription: {
-    color: "#9ca3af",
-    marginBottom: 24,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: "#23262b",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#374151",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    color: "#ffffff",
-    fontSize: 16,
-  },
-  rowInputs: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  typeSelector: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  typeOption: {
-    flex: 1,
-    backgroundColor: "#23262b",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#374151",
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  typeOptionActive: {
-    borderColor: "#00ced1",
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-  },
-  typeOptionText: {
-    color: "#9ca3af",
-    fontSize: 14,
-  },
-  typeOptionTextActive: {
-    color: "#00ced1",
-    fontWeight: "600",
-  },
-  emptyTripsText: {
-    color: "#9ca3af",
-  },
-  modalFooter: {
-    flexDirection: "row",
-    padding: 16,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#374151",
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: "#374151",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    color: "#ffffff",
-    fontWeight: "600",
-  },
-  submitButton: {
-    flex: 1,
-    backgroundColor: "#00ced1",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitButtonText: {
-    color: "#17181c",
-    fontWeight: "600",
-  },
-});

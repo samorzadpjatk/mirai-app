@@ -1,4 +1,5 @@
-export { useAuth, useUser, useSession, useIsAuthenticated, useAuthLoading } from "./authHooks";
+// Primary hooks — backed by Zustand store
+export { useAuth, useUser, useSession, useIsAuthenticated, useAuthLoading } from "./store/authHooks";
 
 export { useLoginForm } from "./hooks/useLoginForm";
 export type {
@@ -7,7 +8,10 @@ export type {
   UseLoginFormResult,
 } from "./hooks/useLoginForm";
 
-export { AuthProvider, AuthContext } from "./AuthContext";
-export type { AuthProviderProps } from "./AuthContext";
+// Zustand store (moved to @integral-2025-app/shared)
+export { authStore } from "@integral-2025-app/shared";
+export type { AuthStore, AuthActions, AuthState, AuthUser, SupabaseClient, SupabaseSession } from "@integral-2025-app/shared";
+export { AuthStoreProvider } from "./store/AuthStoreProvider";
+export type { AuthStoreProviderProps } from "./store/AuthStoreProvider";
 
-export type { AuthUser, AuthState, AuthContextValue } from "./types";
+export type { AuthContextValue } from "./types";

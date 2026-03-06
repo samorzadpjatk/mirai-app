@@ -6,15 +6,10 @@ import type { User } from '~/hooks/admin/useAdminUsers';
 
 interface UserCardProps {
   user: User;
-  onAssignGroup: (user: User) => void;
   onEdit: (user: User) => void;
 }
 
-export function UserCard({
-  user,
-  onAssignGroup,
-  onEdit,
-}: UserCardProps) {
+export function UserCard({ user, onEdit }: UserCardProps) {
   const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') ?? user.email ?? 'Unknown User';
   const groupName = user.group?.name ?? 'Not selected';
   const isAdmin = user.role === 'ADMIN';
@@ -56,13 +51,6 @@ export function UserCard({
         </View>
 
         <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.assignButton]}
-            onPress={() => onAssignGroup(user)}
-          >
-            <Ionicons name="people" size={16} color={colors.white} />
-            <Text style={styles.actionButtonText}>Group</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.editButton]}
             onPress={() => onEdit(user)}

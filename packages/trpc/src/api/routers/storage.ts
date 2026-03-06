@@ -39,6 +39,30 @@ const getResumableEndpoint = () => {
   }
 };
 
+const getPublicUrl = () => {
+  const baseUrl = process.env.SUPABASE_PUBLIC_URL ?? process.env.SUPABASE_URL;
+  if (!baseUrl) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Missing SUPABASE_URL or SUPABASE_PUBLIC_URL",
+    });
+  }
+
+  try {
+    const url = new URL(baseUrl);
+    const host = url.host;
+    if (host.endsWith(".supabase.co") && !host.includes(".storage.")) {
+      url.host = host.replace(".supabase.co", ".storage.supabase.co");
+    }
+    url.pathname = "/storage/v1/object/public";
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return `${baseUrl.replace(/\/$/, "")}/storage/v1/object/public`;
+  }
+};
+
 export const storageRouter = createTRPCRouter({
   createUploadUrl: protectedProcedure
     .input(
@@ -105,6 +129,29 @@ export const storageRouter = createTRPCRouter({
       return {
         signedUrl: data.signedUrl,
         expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
+      };
+    }),
+
+  createPublicUrl: protectedProcedure
+    .input(
+      z.object({
+        storagePath: z.string().min(1),
+      }),
+    )
+    .query(({ input }) => {
+      const objectInfo = resolveStoragePath(input.storagePath);
+      
+      if (objectInfo.bucket !== "files-public") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Public URLs are only available for files-public bucket. Use createDownloadUrl for other buckets.",
+        });
+      }
+      
+      const publicUrlBase = getPublicUrl();
+      
+      return {
+        publicUrl: `${publicUrlBase}/${objectInfo.bucket}/${objectInfo.path}`,
       };
     }),
 });

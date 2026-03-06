@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,8 +10,11 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView } from "expo-camera";
 import { Directory, File, Paths } from "expo-file-system";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import {
+  AppModalShell,
+} from "~/components/common/ui";
 
 interface CapturedPhoto {
   uri: string;
@@ -82,7 +84,7 @@ export function PhotoCaptureModal({
   facing = "front",
   quality = 0.85,
 }: PhotoCaptureModalProps) {
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView | null>(null);
   const [activeFacing, setActiveFacing] = useState<"front" | "back">(facing);
   const [availableLenses, setAvailableLenses] = useState<string[]>([]);
@@ -108,8 +110,6 @@ export function PhotoCaptureModal({
     if (!visible) return;
     setActiveFacing(facing);
   }, [facing, visible]);
-
-  const closeDisabled = isCapturingPhoto || isUsingPhoto;
 
   const persistCapturedPhoto = useCallback((sourceUri: string) => {
     const destinationDir = new Directory(Paths.document, "captured-photos");
@@ -180,37 +180,15 @@ export function PhotoCaptureModal({
   }, [isCapturingPhoto, isUsingPhoto]);
 
   return (
-    <Modal
+    <AppModalShell
       visible={visible}
-      animationType="slide"
-      onRequestClose={() => {
-        if (closeDisabled) return;
-        onClose();
-      }}
+      title={title}
+      onClose={onClose}
+      variant="pageSheet"
     >
-      <View style={styles.container}>
-        <View
-          style={[
-            styles.header,
-            { paddingTop: Math.max(insets.top + spacing.sm, spacing.lg) },
-          ]}
-        >
-          <Text style={styles.title}>{title}</Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={() => {
-                if (closeDisabled) return;
-                onClose();
-              }}
-              style={styles.closeButton}
-              disabled={closeDisabled}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      <View style={{ flex: 1 }}>
 
-        <View style={styles.previewContainer}>
+        <View style={{ flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
           {capturedPhoto ? (
             <Image
               source={{ uri: capturedPhoto.uri }}
@@ -243,7 +221,7 @@ export function PhotoCaptureModal({
         </View>
 
         {!capturedPhoto && lensPresetOptions.length > 1 ? (
-          <View style={styles.lensesContainer}>
+          <View style={{ flexDirection: "row", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, flexWrap: "wrap" }}>
             {lensPresetOptions.map((option) => {
               const lens = option.lens;
               const isSelected = selectedLens === lens;
@@ -272,10 +250,15 @@ export function PhotoCaptureModal({
         ) : null}
 
         <View
-          style={[
-            styles.footer,
-            { paddingBottom: Math.max(insets.bottom + spacing.md, spacing.xl) },
-          ]}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: spacing.md,
+            paddingTop: spacing.md,
+            paddingHorizontal: spacing.lg,
+            paddingBottom: Math.max(insets.bottom + spacing.md, spacing.xl),
+          }}
         >
           {capturedPhoto ? (
             <>
@@ -331,63 +314,15 @@ export function PhotoCaptureModal({
           )}
         </View>
       </View>
-    </Modal>
+    </AppModalShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.backgroundDark,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  title: {
-    color: colors.white,
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  closeButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  closeButtonText: {
-    color: colors.textMuted,
-    fontSize: typography.sm,
-    fontWeight: typography.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  previewContainer: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
   preview: {
     flex: 1,
     borderRadius: borderRadius.xl,
     overflow: "hidden",
-  },
-  lensesContainer: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    flexWrap: "wrap",
   },
   lensChip: {
     borderRadius: 999,
@@ -409,14 +344,6 @@ const styles = StyleSheet.create({
   lensChipTextSelected: {
     color: colors.primary,
     fontWeight: typography.bold,
-  },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.lg,
   },
   actionButton: {
     height: 48,

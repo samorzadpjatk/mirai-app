@@ -161,28 +161,52 @@ export const notificationRouter = createTRPCRouter({
       z
         .object({
           tripId: z.string().optional(),
+          pagination: z
+            .object({
+              limit: z.number().int().min(1).max(100).default(50),
+              offset: z.number().int().min(0).default(0),
+            })
+            .optional(),
         })
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const notifications = await ctx.db.notification.findMany({
-        where: input?.tripId ? { tripId: input.tripId } : undefined,
-        orderBy: { createdAt: "desc" },
-        include: {
-          createdBy: {
-            select: { id: true, firstName: true, lastName: true },
-          },
-          pushes: {
-            select: {
-              targetUserId: true,
-              sentAt: true,
-              status: true,
-              failureReason: true,
+      const where = input?.tripId ? { tripId: input.tripId } : undefined;
+      const limit = input?.pagination?.limit ?? 50;
+      const offset = input?.pagination?.offset ?? 0;
+
+      const [notifications, total] = await Promise.all([
+        ctx.db.notification.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          include: {
+            createdBy: {
+              select: { id: true, firstName: true, lastName: true },
+            },
+            pushes: {
+              select: {
+                targetUserId: true,
+                sentAt: true,
+                status: true,
+                failureReason: true,
+              },
             },
           },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.notification.count({ where }),
+      ]);
+
+      return {
+        notifications,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
         },
-      });
-      return { notifications };
+      };
     }),
 
   sendToGroup: moderatorProcedure

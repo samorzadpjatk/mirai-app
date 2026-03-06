@@ -1,51 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useCreateGroup } from "~/hooks/groups";
+import { useTripDetails } from "~/hooks/trips";
 import { colors, spacing } from "../../../../styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileUpload } from "~/hooks/files";
 import { CreateGroupButton } from "~/components/trips/groups/create/CreateGroupButton";
 import { GroupCreateNoTripState } from "~/components/trips/groups/create/GroupCreateNoTripState";
 import { GroupFormFields } from "~/components/trips/groups/create/GroupFormFields";
 import { GroupImagePicker } from "~/components/trips/groups/GroupImagePicker";
-
-const getImageExtension = (asset: ImagePicker.ImagePickerAsset) => {
-  if (asset.fileName) {
-    const parts = asset.fileName.split(".");
-    if (parts.length > 1) {
-      return parts[parts.length - 1]?.toLowerCase() ?? "jpg";
-    }
-  }
-
-  const contentType = asset.mimeType ?? "";
-  if (contentType === "image/png") return "png";
-  if (contentType === "image/webp") return "webp";
-  if (contentType === "image/heic" || contentType === "image/heif") return "heic";
-  return "jpg";
-};
-
-const getImageContentType = (extension: string) => {
-  switch (extension) {
-    case "png":
-      return "image/png";
-    case "webp":
-      return "image/webp";
-    case "heic":
-    case "heif":
-      return "image/heic";
-    default:
-      return "image/jpeg";
-  }
-};
+import { getImageExtension, getImageContentType } from "~/utils/image";
 
 export default function CreateGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const [groupName, setGroupName] = useState("");
   const [groupImagePath, setGroupImagePath] = useState<string | undefined>();
@@ -55,6 +28,13 @@ export default function CreateGroupScreen() {
   const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
 
   const { createGroup, isCreating } = useCreateGroup(tripId);
+  const { isTripPast } = useTripDetails(tripId);
+
+  useEffect(() => {
+    if (isTripPast && tripId) {
+      router.replace(`/trips/groups?tripId=${tripId}`);
+    }
+  }, [isTripPast, tripId, router]);
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {

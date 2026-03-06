@@ -1,18 +1,21 @@
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, Modal, Pressable, Alert, Dimensions } from "react-native";
-import { SafeAreaTop } from "~/components/SafeAreaWrapper";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, Alert, Dimensions } from "react-native";
 import { useLoginForm } from "@integral-2025-app/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
 import { Ionicons } from "@expo/vector-icons";
-import { useAppSafeAreaInsets } from '~/contexts/SafeAreaInsetsContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from "@integral-2025-app/auth/client";
 import { useState } from "react";
 import { useSupabaseClient } from "@integral-2025-app/supabase/react";
 import { getTRPCClient } from "@integral-2025-app/trpc/client";
-import { TRPC_HTTP_URL, TRPC_WS_URL } from "~/lib/runtimeEnv";
+import { TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import { Asset } from "expo-asset";
 import Pdf from "react-native-pdf";
+import { AppModalShell } from "~/components/common/ui/AppModalShell";
+import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
+import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
+import { colors } from "~/styles";
 
 import PRIVACY_POLICY_PDF_ASSET from "../../../assets/privacy-policy.pdf";
 
@@ -21,7 +24,7 @@ export default function LoginScreen() {
   const { verifyOtp, signInWithPassword, signOut } = useAuth();
   const supabase = useSupabaseClient();
   const router = useRouter();
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const [otp, setOtp] = useState("");
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -250,7 +253,7 @@ export default function LoginScreen() {
           {/* Error Message */}
           {(error ?? precheckError) && (
             <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={20} color="#ef4444" />
+              <Ionicons name="alert-circle" size={20} color={colors.danger} />
               <Text style={styles.errorText}>{precheckError ?? error}</Text>
             </View>
           )}
@@ -264,12 +267,12 @@ export default function LoginScreen() {
               </Text>
               <View style={styles.inputWrapper}>
                 <View style={styles.iconOpacity}>
-                  <Ionicons name="at" size={20} color="#00ced1" />
+                  <Ionicons name="at" size={20} color={colors.primary} />
                 </View>
                 <TextInput
                   style={styles.textInput}
                   placeholder="s12345@pjwstk.edu.pl"
-                  placeholderTextColor="#4b5563"
+                  placeholderTextColor={colors.gray600}
                   value={email}
                   onChangeText={onEmailChange}
                   autoCapitalize="none"
@@ -300,7 +303,7 @@ export default function LoginScreen() {
                 <Ionicons
                   name={hasAcceptedPrivacyPolicy ? "checkbox" : "square-outline"}
                   size={22}
-                  color={hasAcceptedPrivacyPolicy ? "#00ced1" : "#9ca3af"}
+                  color={hasAcceptedPrivacyPolicy ? colors.primary : colors.textSecondary}
                 />
                 <Text style={styles.policyCheckboxText}>
                   Akceptuj{" "}
@@ -319,12 +322,12 @@ export default function LoginScreen() {
                 <Text style={styles.inputLabel}>Verification Password</Text>
                 <View style={styles.inputWrapper}>
                   <View style={styles.iconOpacity}>
-                    <Ionicons name="key" size={20} color="#00ced1" />
+                    <Ionicons name="key" size={20} color={colors.primary} />
                   </View>
                   <TextInput
                     style={styles.textInput}
                     placeholder="Enter password"
-                    placeholderTextColor="#4b5563"
+                    placeholderTextColor={colors.gray600}
                     value={password}
                     onChangeText={setPassword}
                     autoCapitalize="none"
@@ -343,7 +346,7 @@ export default function LoginScreen() {
                   How it works
                 </Text>
                 <View style={[styles.inputWrapper, { paddingVertical: 16 }]}>
-                  <Text style={{ color: "#9ca3af", flex: 1 }}>
+                  <Text style={{ color: colors.textSecondary, flex: 1 }}>
                     We'll send a one-time login code to your email. Use the code to sign in.
                   </Text>
                 </View>
@@ -362,7 +365,7 @@ export default function LoginScreen() {
           {/* Sent Confirmation */}
           {!isGhostLogin && isSent && (
             <View style={styles.successContainer}>
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
               <Text style={styles.successText}>
                 Check your email — we sent a 6-digit code. Enter it below to sign in.
               </Text>
@@ -370,128 +373,75 @@ export default function LoginScreen() {
           )}
 
           {/* OTP Verification Modal */}
-          <Modal
+          <AppModalShell
             visible={!!isSent && !isGhostLogin}
-            animationType="slide"
-            transparent
-            onRequestClose={closeModal}
+            title="Enter verification code"
+            onClose={closeModal}
           >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalCard}>
-                <Text style={styles.modalTitle}>Enter verification code</Text>
-                <Text style={styles.modalSubtitle}>Enter the 6-digit code we sent to <Text style={{fontWeight: 'bold'}}>{email}</Text></Text>
+            <Text style={styles.modalSubtitle}>Enter the 6-digit code we sent to <Text style={{fontWeight: 'bold'}}>{email}</Text></Text>
 
-                <TextInput
-                  value={otp}
-                  onChangeText={(t) => setOtp(t.replace(/[^0-9]/g, "").slice(0, 6))}
-                  keyboardType="number-pad"
-                  placeholder="123456"
-                  placeholderTextColor="#9ca3af"
-                  style={styles.otpInput}
-                  editable={!verifyLoading}
-                />
+            <TextInput
+              value={otp}
+              onChangeText={(t) => setOtp(t.replace(/[^0-9]/g, "").slice(0, 6))}
+              keyboardType="number-pad"
+              placeholder="123456"
+              placeholderTextColor={colors.textSecondary}
+              style={styles.otpInput}
+              editable={!verifyLoading}
+            />
 
-                {verifyError && <Text style={styles.modalErrorText}>{verifyError}</Text>}
+            {verifyError && <Text style={styles.modalErrorText}>{verifyError}</Text>}
 
-                <TouchableOpacity
-                  style={[styles.verifyButton, verifyLoading && { opacity: 0.6 }]}
-                  onPress={onVerify}
-                  disabled={verifyLoading}
-                  activeOpacity={0.9}
-                >
-                  {verifyLoading ? (
-                    <ActivityIndicator color="#17181c" />
-                  ) : (
-                    <Text style={styles.verifyButtonText}>Verify & Sign In</Text>
-                  )}
-                </TouchableOpacity>
+            <PrimaryLoadingButton
+              label="Verify & Sign In"
+              isLoading={verifyLoading}
+              onPress={onVerify}
+              style={styles.verifyButton}
+            />
 
-                <TouchableOpacity style={{ marginTop: 12 }} onPress={closeModal}>
-                  <Text style={{ color: '#9ca3af', textAlign: 'center' }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
+            <TouchableOpacity style={{ marginTop: 12 }} onPress={closeModal}>
+              <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>Cancel</Text>
+            </TouchableOpacity>
+          </AppModalShell>
 
           {/* Login Button */}
-          <TouchableOpacity
-            style={styles.loginButton}
+          <PrimaryLoadingButton
+            label={isGhostLogin ? "Sign In" : isSent ? "Resend Code" : "Send Login Code"}
+            isLoading={isBusy}
             onPress={onSubmit}
-            disabled={isBusy}
-            activeOpacity={0.9}
-          >
-            {isBusy ? (
-              <>
-                <ActivityIndicator color="#17181c" />
-                <Text style={styles.loginButtonText}>
-                  {isGhostLogin ? "Signing In..." : "Sending Code..."}
-                </Text>
-              </>
-            ) : isGhostLogin ? (
-              <>
-                <Text style={styles.loginButtonText}>
-                  Sign In
-                </Text>
-                <Ionicons name="arrow-forward" size={20} color="#17181c" />
-              </>
-            ) : isSent ? (
-              <>
-                <Text style={styles.loginButtonText}>
-                  Resend Code
-                </Text>
-                <Ionicons name="arrow-forward" size={20} color="#17181c" />
-              </>
-            ) : (
-              <>
-                <Text style={styles.loginButtonText}>
-                  Send Login Code
-                </Text>
-                <Ionicons name="arrow-forward" size={20} color="#17181c" />
-              </>
-            )}
-          </TouchableOpacity>
+            style={styles.loginButton}
+            textStyle={styles.loginButtonText}
+          />
 
           <View style={{ height: 32 }} />
         </View>
 
       </ScrollView>
 
-      <Modal
+      <FullScreenModal
         visible={isPolicyModalVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={closePrivacyPolicy}
+        title="Polityka prywatności"
+        onClose={closePrivacyPolicy}
       >
-        <View style={styles.policyModalContainer}>
-          <SafeAreaTop style={styles.policyModalSafeArea}>
-            <View style={styles.policyModalHeader}>
-              <Text style={styles.policyModalTitle}>Polityka prywatności</Text>
-              <Pressable onPress={closePrivacyPolicy} style={styles.policyModalCloseButton}>
-                <Ionicons name="close" size={24} color="white" />
-              </Pressable>
-            </View>
-          </SafeAreaTop>
-
-          {isPolicyLoading ? (
-            <View style={styles.policyModalLoading}>
-              <ActivityIndicator color="#00ced1" size="large" />
-              <Text style={[styles.policyText, { marginTop: 12, color: "#9ca3af" }]}>Pobieranie...</Text>
-            </View>
-          ) : policyPdfUri ? (
-            <Pdf
-              source={{ uri: policyPdfUri }}
-              style={styles.policyPdf}
-              trustAllCerts={false}
-              minScale={1}
-              maxScale={8}
-              onError={(err) => {
-                console.error("[PrivacyPolicy] PDF error:", err);
-                Alert.alert("Błąd", "Nie udało się otworzyć PDF.");
-              }}
-            />
-          ) : null}
-        </View>
-      </Modal>
+        {isPolicyLoading ? (
+          <View style={styles.policyModalLoading}>
+            <ActivityIndicator color={colors.primary} size="large" />
+            <Text style={[styles.policyText, { marginTop: 12, color: colors.textSecondary }]}>Pobieranie...</Text>
+          </View>
+        ) : policyPdfUri ? (
+          <Pdf
+            source={{ uri: policyPdfUri }}
+            style={styles.policyPdf}
+            trustAllCerts={false}
+            minScale={1}
+            maxScale={8}
+            onError={(err) => {
+              console.error("[PrivacyPolicy] PDF error:", err);
+              Alert.alert("Błąd", "Nie udało się otworzyć PDF.");
+            }}
+          />
+        ) : null}
+      </FullScreenModal>
     </>
   );
 }
@@ -499,7 +449,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#17181c",
+    backgroundColor: colors.backgroundDark,
   },
   headerSpacer: {
     padding: 24,
@@ -519,14 +469,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    color: "white",
+    color: colors.white,
     fontSize: 36,
     fontWeight: "bold",
     textAlign: "center",
     letterSpacing: -0.5,
   },
   subtitle: {
-    color: "#9ca3af",
+    color: colors.textSecondary,
     fontSize: 16,
     textAlign: "center",
     marginTop: 8,
@@ -536,9 +486,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   errorContainer: {
-    backgroundColor: "rgba(127, 29, 29, 0.3)",
+    backgroundColor: colors.red900Opacity30,
     borderWidth: 1,
-    borderColor: "#b91c1c",
+    borderColor: colors.red700,
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -547,16 +497,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   errorText: {
-    color: "#f87171",
+    color: colors.red400,
     fontSize: 14,
     flex: 1,
   },
   inputsCard: {
-    backgroundColor: "rgba(39, 41, 53, 0.5)",
+    backgroundColor: colors.cardDarkOpacity40,
     padding: 4,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: colors.borderWhite5,
     marginBottom: 24,
   },
   inputSection: {
@@ -564,10 +514,10 @@ const styles = StyleSheet.create({
   },
   inputSectionBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
+    borderBottomColor: colors.borderWhite5,
   },
   inputLabel: {
-    color: "#9ca3af",
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: "bold",
     textTransform: "uppercase",
@@ -578,11 +528,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "rgba(23, 24, 28, 0.5)",
+    backgroundColor: colors.backgroundDarkOpacity50,
     borderRadius: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#395556",
+    borderColor: colors.borderDark,
   },
   iconOpacity: {
     opacity: 0.6,
@@ -590,7 +540,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     paddingVertical: 16,
-    color: "white",
+    color: colors.white,
     fontWeight: "500",
   },
   forgotPasswordContainer: {
@@ -599,14 +549,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
-    color: "rgba(0, 206, 209, 0.8)",
+    color: colors.primaryOpacity80,
     fontSize: 14,
     fontWeight: "500",
   },
   successContainer: {
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
+    backgroundColor: colors.successOpacity08,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.2)",
+    borderColor: colors.successOpacity20,
     borderRadius: 12,
     padding: 12,
     flexDirection: "row",
@@ -615,27 +565,20 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   successText: {
-    color: "#10b981",
+    color: colors.success,
     fontSize: 14,
     flex: 1,
   },
   loginButton: {
     width: "100%",
-    backgroundColor: "#00ced1",
-    borderRadius: 12,
-    paddingVertical: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    shadowColor: "#00ced1",
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 20,
     elevation: 8,
   },
   loginButtonText: {
-    color: "#17181c",
+    color: colors.backgroundDark,
     fontWeight: "bold",
     fontSize: 18,
   },
@@ -648,63 +591,38 @@ const styles = StyleSheet.create({
   dividerLine: {
     height: 1,
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: colors.borderWhite10,
   },
   dividerText: {
-    color: "#4b5563",
+    color: colors.gray600,
     fontSize: 12,
     fontWeight: "bold",
     textTransform: "uppercase",
     letterSpacing: 2,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  modalCard: {
-    backgroundColor: "#0f1113",
-    borderRadius: 12,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    color: "white",
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
   modalSubtitle: {
-    color: "#9ca3af",
+    color: colors.textSecondary,
     marginBottom: 16,
   },
   otpInput: {
-    backgroundColor: "rgba(23,24,28,0.5)",
-    color: "white",
+    backgroundColor: colors.backgroundDarkOpacity50,
+    color: colors.white,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#374151",
+    borderColor: colors.gray700,
     fontSize: 18,
     textAlign: "center",
     marginBottom: 12,
   },
   modalErrorText: {
-    color: "#f87171",
+    color: colors.red400,
     textAlign: "center",
     marginBottom: 12,
   },
   verifyButton: {
-    backgroundColor: "#00ced1",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  verifyButtonText: {
-    color: "#17181c",
-    fontWeight: "bold",
-    fontSize: 16,
+    marginVertical: 8,
   },
   policyCheckboxRow: {
     flexDirection: "row",
@@ -712,58 +630,29 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   policyCheckboxText: {
-    color: "#d1d5db",
+    color: colors.gray300,
     fontSize: 14,
     lineHeight: 20,
     flex: 1,
   },
   policyErrorText: {
-    color: "#f87171",
+    color: colors.red400,
     fontSize: 13,
   },
   policyHintText: {
-    color: "#9ca3af",
+    color: colors.textSecondary,
     fontSize: 12,
   },
   policyLink: {
-    color: "#00ced1",
+    color: colors.primary,
     textDecorationLine: "underline",
     fontSize: 14,
     fontWeight: "600",
   },
   policyText: {
-    color: "#e5e7eb",
+    color: colors.gray200,
     fontSize: 13,
     lineHeight: 19,
-  },
-  policyModalContainer: {
-    flex: 1,
-    backgroundColor: "#17181c",
-  },
-  policyModalSafeArea: {
-    backgroundColor: "rgba(39, 41, 53, 0.9)",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 206, 209, 0.1)",
-  },
-  policyModalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  policyModalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "white",
-  },
-  policyModalCloseButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(0, 206, 209, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
   },
   policyModalLoading: {
     flex: 1,
@@ -774,6 +663,6 @@ const styles = StyleSheet.create({
   policyPdf: {
     flex: 1,
     width: Dimensions.get("window").width,
-    backgroundColor: "#17181c",
+    backgroundColor: colors.backgroundDark,
   },
 });

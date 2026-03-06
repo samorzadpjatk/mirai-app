@@ -4,23 +4,26 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  Image,
-  TextInput,
+  RefreshControl,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useTRPC } from "@integral-2025-app/trpc/client";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { commonStyles } from "~/styles/commonStyles";
 import { spacing } from "~/styles";
-import { useAppSafeAreaInsets } from "~/contexts/SafeAreaInsetsContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
-import AdminRewardsModal from "~/components/admin/rewards/AdminRewardsModal";
-import AdminRewardDetailModal from "~/components/admin/rewards/AdminRewardDetailModal";
-import { useAdminRewards, useUpdateRewardPurchaseStatus } from "~/hooks/rewards";
+import {
+  useAdminRewards,
+  useRewardPurchaseHistory,
+  useUpdateRewardPurchaseStatus,
+} from "~/hooks/rewards";
 import { useQuery } from "@tanstack/react-query";
 
 type ViewMode = "PURCHASES" | "REWARDS";
@@ -69,22 +72,18 @@ const statusMeta: Record<PurchaseStatus, { label: string; color: string; icon: k
 
 export default function AdminRewardsPage() {
   const trpc = useTRPC();
+  const router = useRouter();
   const params = useLocalSearchParams();
   const tripIdParam =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const tripId = useMemo(() => tripIdParam ?? "all", [tripIdParam]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("PURCHASES");
   const [purchaseStatusFilter, setPurchaseStatusFilter] =
     useState<PurchaseStatusFilter>("BOUGHT");
   const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<Record<string, string>>({});
-  const insets = useAppSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const updatePurchaseStatus = useUpdateRewardPurchaseStatus();
   const tripQueryOptions = trpc.trip.getByIdAdmin.queryOptions({ id: tripIdParam ?? "" });
-  const purchaseHistoryQueryOptions = trpc.reward.getPurchaseHistory.queryOptions({
-    tripId: tripIdParam ?? "",
-  });
 
   const { data: trip, error: tripError } = useQuery({
     ...tripQueryOptions,
@@ -97,16 +96,23 @@ export default function AdminRewardsPage() {
     data: rewards,
     isLoading: rewardsLoading,
     error: rewardsError,
+    hasNextPage: hasMoreRewards,
+    isFetchingNextPage: isFetchingMoreRewards,
+    fetchNextPage: fetchMoreRewards,
+    isRefetching: isRefetchingRewards,
+    refetch: refetchRewards,
   } = useAdminRewards(tripId);
 
   const {
     data: purchasesData,
     isLoading: purchasesLoading,
     error: purchasesError,
-  } = useQuery({
-    ...purchaseHistoryQueryOptions,
-    enabled: Boolean(tripIdParam),
-  });
+    hasNextPage: hasMorePurchases,
+    isFetchingNextPage: isFetchingMorePurchases,
+    fetchNextPage: fetchMorePurchases,
+    isRefetching: isRefetchingPurchases,
+    refetch: refetchPurchases,
+  } = useRewardPurchaseHistory(tripIdParam ?? "");
 
   const safePurchases = useMemo(() => {
     if (!Array.isArray(purchasesData)) return [] as AdminPurchaseListItem[];
@@ -117,6 +123,34 @@ export default function AdminRewardsPage() {
     if (purchaseStatusFilter === "ALL") return safePurchases;
     return safePurchases.filter((purchase) => purchase.status === purchaseStatusFilter);
   }, [safePurchases, purchaseStatusFilter]);
+
+  const handlePurchasesScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!hasMorePurchases || isFetchingMorePurchases || purchasesLoading) {
+      return;
+    }
+
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const nearBottom =
+      contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
+
+    if (nearBottom) {
+      void fetchMorePurchases();
+    }
+  };
+
+  const handleRewardsScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!hasMoreRewards || isFetchingMoreRewards || rewardsLoading) {
+      return;
+    }
+
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const nearBottom =
+      contentOffset.y + layoutMeasurement.height >= contentSize.height - 280;
+
+    if (nearBottom) {
+      void fetchMoreRewards();
+    }
+  };
 
   const handleAcceptPurchase = async (purchaseId: string) => {
     const collectionMethod = collectionMethodByPurchase[purchaseId]?.trim();
@@ -164,6 +198,20 @@ export default function AdminRewardsPage() {
         },
       ],
     );
+  };
+
+  const handleCreateReward = () => {
+    router.push({
+      pathname: "/admin/rewards/new",
+      params: { tripId: tripIdParam },
+    });
+  };
+
+  const handleEditReward = (rewardId: string) => {
+    router.push({
+      pathname: "/admin/rewards/edit/[rewardId]",
+      params: { rewardId, tripId: tripIdParam },
+    });
   };
 
   const handleMarkDelivered = async (purchaseId: string) => {
@@ -231,7 +279,20 @@ export default function AdminRewardsPage() {
       </View>
 
       {viewMode === "PURCHASES" ? (
-        <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
+        <ScrollView
+          style={{ flex: 1, paddingHorizontal: 16 }}
+          onScroll={handlePurchasesScroll}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetchingPurchases && !isFetchingMorePurchases}
+              onRefresh={() => {
+                void refetchPurchases();
+              }}
+              tintColor="#00ced1"
+            />
+          }
+        >
           {!tripIdParam ? (
             <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
               <Ionicons name="information-circle-outline" size={44} color="#6b7280" />
@@ -368,7 +429,7 @@ export default function AdminRewardsPage() {
                         placeholderTextColor="#6b7280"
                         value={collectionMethodByPurchase[purchase.id] ?? purchase.collectionMethod ?? ""}
                         editable={canEditCollectionMethod}
-                        onChangeText={(text) =>
+                        onChangeText={(text: string) =>
                           setCollectionMethodByPurchase((prev) => ({
                             ...prev,
                             [purchase.id]: text,
@@ -504,16 +565,36 @@ export default function AdminRewardsPage() {
               ) : (
                 <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
                   <Ionicons name="cart-outline" size={44} color="#6b7280" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}>
+                  <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}> 
                     No purchases for this filter
                   </Text>
                 </View>
               )}
+
+              {isFetchingMorePurchases ? (
+                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                  <ActivityIndicator size="small" color="#00ced1" />
+                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more purchases...</Text>
+                </View>
+              ) : null}
             </View>
           )}
         </ScrollView>
       ) : (
-        <ScrollView style={{ flex: 1, padding: 16 }}>
+        <ScrollView
+          style={{ flex: 1, padding: 16 }}
+          onScroll={handleRewardsScroll}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetchingRewards && !isFetchingMoreRewards}
+              onRefresh={() => {
+                void refetchRewards();
+              }}
+              tintColor="#00ced1"
+            />
+          }
+        >
           {rewardsError ? (
             <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
               <Ionicons name="warning" size={48} color="#ef4444" />
@@ -544,7 +625,7 @@ export default function AdminRewardsPage() {
                 rewards.map((reward) => (
                   <TouchableOpacity
                     key={reward.id}
-                    onPress={() => setSelectedRewardId(reward.id)}
+                    onPress={() => handleEditReward(reward.id)}
                     activeOpacity={0.8}
                     style={{
                       backgroundColor: "#0f2323",
@@ -637,13 +718,20 @@ export default function AdminRewardsPage() {
               ) : (
                 <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
                   <Ionicons name="gift" size={48} color="#6b7280" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
+                  <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}> 
                     {tripIdParam
                       ? `No rewards for trip: ${tripName ?? "(loading name)"}`
                       : "No rewards in the system"}
                   </Text>
                 </View>
               )}
+
+              {isFetchingMoreRewards ? (
+                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                  <ActivityIndicator size="small" color="#00ced1" />
+                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more rewards...</Text>
+                </View>
+              ) : null}
             </View>
           )}
         </ScrollView>
@@ -651,22 +739,10 @@ export default function AdminRewardsPage() {
 
       {viewMode === "REWARDS" ? (
         <AdminAddFab
-          onPress={() => setShowCreateModal(true)}
+          onPress={handleCreateReward}
           accessibilityLabel="Add reward"
         />
       ) : null}
-
-      <AdminRewardsModal
-        visible={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        tripId={tripId}
-      />
-      {selectedRewardId && (
-        <AdminRewardDetailModal
-          rewardId={selectedRewardId}
-          onClose={() => setSelectedRewardId(null)}
-        />
-      )}
     </View>
   );
 }

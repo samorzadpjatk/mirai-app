@@ -16,7 +16,7 @@ const getTripStatus = (startDate: Date | string, endDate: Date | string) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   if (now >= start && now <= end) return "Ongoing Trip";
-  if (now < start) return "Ongoing trip";
+  if (now < start) return "Future Trip";
   return "Past Trip";
 };
 

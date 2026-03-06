@@ -2,12 +2,13 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, moderatorProcedure, protectedProcedure } from "../../api/trpc";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
-import { type PrismaClient } from "@integral-2025-app/db";
+import { type PrismaClient, type Prisma } from "@integral-2025-app/db";
+import { ensureTripNotEnded } from "../../utils/tripGuards";
 
 const REWARD_IMAGE_SIGNED_URL_SECONDS = 60 * 10;
 
 // Function to calculate total available points for a trip
-const calculateTotalAvailablePoints = async (db: PrismaClient, tripId: string) => {
+const calculateTotalAvailablePoints = async (db: PrismaClient | Prisma.TransactionClient, tripId: string) => {
   const challenges = await db.challenge.findMany({
     where: { tripId },
     select: {
@@ -245,28 +246,46 @@ export const rewardRouter = createTRPCRouter({
 
   // Get all rewards for a trip (admin version - no participation required)
   getByTripAdmin: moderatorProcedure
-    .input(z.object({ tripId: z.string() }))
+    .input(
+      z.object({
+        tripId: z.string(),
+        pagination: z
+          .object({
+            limit: z.number().int().min(1).max(100).default(30),
+            offset: z.number().int().min(0).default(0),
+          })
+          .optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const isAllTrips = input.tripId === "all";
+      const limit = input.pagination?.limit ?? 30;
+      const offset = input.pagination?.offset ?? 0;
+      const where = isAllTrips ? undefined : { tripId: input.tripId };
 
-      const rewards = await ctx.db.reward.findMany({
-        where: isAllTrips ? undefined : { tripId: input.tripId },
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
+      const [rewards, total] = await Promise.all([
+        ctx.db.reward.findMany({
+          where,
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            _count: {
+              select: {
+                purchases: true,
+              },
             },
           },
-          _count: {
-            select: {
-              purchases: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
+          orderBy: { createdAt: "desc" },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.reward.count({ where }),
+      ]);
 
       const rewardsWithSignedImages = await Promise.all(
         rewards.map(async (reward) => {
@@ -281,14 +300,14 @@ export const rewardRouter = createTRPCRouter({
         : await calculateTotalAvailablePoints(ctx.db, input.tripId);
 
       // For admin view, calculate dynamic pricing but don't check affordability
-      return rewardsWithSignedImages.map((reward) => {
+      const mappedRewards = rewardsWithSignedImages.map((reward) => {
         let dynamicCoinCost = reward.coinCost; // Default to static cost
-        
+
         if (!isAllTrips && totalAvailablePoints > 0) {
           // Convert percentage to coin cost: coinCost represents percentage of total points
           const percentageOfTotal = reward.coinCost / 100; // coinCost as percentage
           dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
-          
+
           // Ensure minimum cost of 1 coin
           dynamicCoinCost = Math.max(1, dynamicCoinCost);
         }
@@ -303,6 +322,16 @@ export const rewardRouter = createTRPCRouter({
           purchasedCount: reward._count.purchases,
         };
       });
+
+      return {
+        rewards: mappedRewards,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
+        },
+      };
     }),
 
   // Get single reward by ID
@@ -344,6 +373,11 @@ export const rewardRouter = createTRPCRouter({
             },
             orderBy: { purchasedAt: "desc" },
           },
+          _count: {
+            select: {
+              purchases: true,
+            },
+          },
         },
       });
 
@@ -358,7 +392,28 @@ export const rewardRouter = createTRPCRouter({
 
       const imageData = await resolveRewardImageData(ctx.supabase, reward.image);
 
-      return { ...reward, ...imageData };
+      // Calculate total available points for dynamic pricing
+      const totalAvailablePoints = await calculateTotalAvailablePoints(ctx.db, reward.tripId);
+
+      // Calculate dynamic coin cost based on percentage of total available points
+      let dynamicCoinCost = reward.coinCost; // Default to static cost
+      
+      if (totalAvailablePoints > 0) {
+        // Convert percentage to coin cost: coinCost represents percentage of total points
+        const percentageOfTotal = reward.coinCost / 100; // coinCost as percentage
+        dynamicCoinCost = Math.round(totalAvailablePoints * percentageOfTotal);
+        
+        // Ensure minimum cost of 1 coin
+        dynamicCoinCost = Math.max(1, dynamicCoinCost);
+      }
+
+      return { 
+        ...reward, 
+        ...imageData,
+        coinCost: dynamicCoinCost, // Use dynamic cost
+        originalCoinCost: reward.coinCost, // Keep original for reference
+        purchasedCount: reward._count.purchases,
+      };
     }),
 
   // Create new reward (admin/moderator only)
@@ -529,6 +584,8 @@ export const rewardRouter = createTRPCRouter({
         if (!reward) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Reward not found" });
         }
+
+        await ensureTripNotEnded(ctx.db, reward.tripId);
 
         if (reward.isHidden) {
           throw new TRPCError({
@@ -927,10 +984,22 @@ export const rewardRouter = createTRPCRouter({
 
   // Get purchase history for a trip
   getPurchaseHistory: protectedProcedure
-    .input(z.object({ tripId: z.string() }))
+    .input(
+      z.object({
+        tripId: z.string(),
+        pagination: z
+          .object({
+            limit: z.number().int().min(1).max(100).default(30),
+            offset: z.number().int().min(0).default(0),
+          })
+          .optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const isStaff = ctx.dbUser.role === "ADMIN" || ctx.dbUser.role === "MODERATOR";
       let groupIdFilter: string | undefined;
+      const limit = input.pagination?.limit ?? 30;
+      const offset = input.pagination?.offset ?? 0;
 
       if (!isStaff) {
         const participant = await ctx.db.tripParticipant.findFirst({
@@ -953,37 +1022,59 @@ export const rewardRouter = createTRPCRouter({
         groupIdFilter = participant.groupId;
       }
 
-      const purchases = await ctx.db.rewardPurchase.findMany({
-        where: {
-          reward: { tripId: input.tripId },
-          ...(groupIdFilter ? { groupId: groupIdFilter } : {}),
-        },
-        include: {
-          reward: true,
-          group: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          purchasedBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-          statusUpdatedBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-        orderBy: { purchasedAt: "desc" },
-      });
+      const where = {
+        reward: { tripId: input.tripId },
+        ...(groupIdFilter ? { groupId: groupIdFilter } : {}),
+      };
 
-      return purchases;
+      const [purchases, total] = await Promise.all([
+        ctx.db.rewardPurchase.findMany({
+          where,
+          include: {
+            reward: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            purchasedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+            statusUpdatedBy: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+          orderBy: { purchasedAt: "desc" },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.rewardPurchase.count({ where }),
+      ]);
+
+      return {
+        purchases,
+        pagination: {
+          total,
+          limit,
+          offset,
+          hasMore: offset + limit < total,
+        },
+      };
+    }),
+  // Get total available points for a trip (for reward cost calculation)
+  getTotalAvailablePoints: moderatorProcedure
+    .input(z.object({ tripId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const totalPoints = await calculateTotalAvailablePoints(ctx.db, input.tripId);
+      return { totalPoints };
     }),
 });

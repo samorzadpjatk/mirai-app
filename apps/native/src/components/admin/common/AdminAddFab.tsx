@@ -1,7 +1,6 @@
 import React from "react";
-import { TouchableOpacity, type StyleProp, type ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { colors } from "~/styles";
+import { type StyleProp, type ViewStyle } from "react-native";
+import { FloatingActionButton } from "~/components/common/FloatingActionButton";
 
 interface AdminAddFabProps {
   onPress: () => void;
@@ -21,33 +20,21 @@ export function AdminAddFab({
   style,
 }: AdminAddFabProps) {
   return (
-    <TouchableOpacity
+    <FloatingActionButton
       onPress={onPress}
+      iconName="add"
+      iconSize={32}
+      activeOpacity={0.7}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel}
       style={[
         {
           position: "absolute",
           right,
           bottom,
-          width: 58,
-          height: 58,
-          borderRadius: 999,
-          backgroundColor: colors.primary,
-          alignItems: "center",
-          justifyContent: "center",
-          shadowColor: colors.primary,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.35,
-          shadowRadius: 16,
-          elevation: 8,
-          opacity: disabled ? 0.6 : 1,
         },
         style,
       ]}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-    >
-      <Ionicons name="add" size={32} color={colors.backgroundDark} />
-    </TouchableOpacity>
+    />
   );
 }

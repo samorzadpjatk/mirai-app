@@ -7,23 +7,23 @@ import type { Group } from '~/hooks/admin/useAdminGroups';
 interface GroupManagementCardProps {
   group: Group;
   onEdit: (group: Group) => void;
-  onAssignOrganizer: (group: Group) => void;
-  onDelete: (group: Group) => void;
 }
 
 export function GroupManagementCard({
   group,
   onEdit,
-  onAssignOrganizer,
-  onDelete,
 }: GroupManagementCardProps) {
+  const organizerLabel = group.organizer
+    ? `${group.organizer.firstName ?? ''} ${group.organizer.lastName ?? ''}`.trim() || 'Unknown'
+    : 'Unassigned';
+
   return (
     <View style={styles.groupCard}>
       <View style={styles.groupHeader}>
         <View style={styles.groupInfo}>
           <Text style={styles.groupName}>{group.name}</Text>
           <Text style={styles.organizerInfo}>
-            Organizer: {group.organizer.firstName} {group.organizer.lastName}
+            Organizer: {organizerLabel}
           </Text>
         </View>
         <View style={styles.groupBadges}>
@@ -45,22 +45,6 @@ export function GroupManagementCard({
         >
           <Ionicons name="create" size={16} color={colors.white} />
           <Text style={styles.actionButtonText}>Edit</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.organizerButton]}
-          onPress={() => onAssignOrganizer(group)}
-        >
-          <Ionicons name="person" size={16} color={colors.white} />
-          <Text style={styles.actionButtonText}>Organizer</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => onDelete(group)}
-        >
-          <Ionicons name="trash" size={16} color={colors.white} />
-          <Text style={styles.actionButtonText}>Delete</Text>
         </TouchableOpacity>
       </View>
     </View>

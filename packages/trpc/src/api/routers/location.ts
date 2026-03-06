@@ -17,6 +17,49 @@ import type {
   PrismaClient,
 } from "@integral-2025-app/db";
 import { TRPCError, tracked } from "@trpc/server";
+import { ensureTripNotEnded } from "../../utils/tripGuards";
+
+/**
+ * Check if user is in any active trips (not ended)
+ */
+async function ensureUserInActiveTrip(
+  db: PrismaClient,
+  userId: string,
+): Promise<void> {
+  const memberships = await db.tripParticipant.findMany({
+    where: { userId },
+    include: {
+      trip: {
+        select: { id: true, endDate: true },
+      },
+    },
+  });
+
+  if (memberships.length === 0) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Location sharing requires trip participation",
+    });
+  }
+
+  // Check if all user's trips have ended
+  for (const membership of memberships) {
+    try {
+      await ensureTripNotEnded(db, membership.trip.id);
+      // If we find any active trip, allow the operation
+      return;
+    } catch {
+      // Trip has ended, continue checking others
+      continue;
+    }
+  }
+
+  // All trips have ended
+  throw new TRPCError({
+    code: "FORBIDDEN",
+    message: "Location sharing is not available for past trips",
+  });
+}
 
 /**
  * Expo-compliant location object type
@@ -306,6 +349,12 @@ export const locationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { isSharingLocation, userIdsToShareWith, tripId } = input;
+
+      if (tripId) {
+        await ensureTripNotEnded(ctx.db, tripId);
+      } else {
+        await ensureUserInActiveTrip(ctx.db, ctx.dbUser.id);
+      }
 
       if ((userIdsToShareWith?.length ?? 0) > 0) {
         await assertShareableTargets({
@@ -820,6 +869,7 @@ export const locationRouter = createTRPCRouter({
   addUserToSharing: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureUserInActiveTrip(ctx.db, ctx.dbUser.id);
       await assertShareableTargets({
         db: ctx.db,
         currentUserId: ctx.dbUser.id,
@@ -869,6 +919,7 @@ export const locationRouter = createTRPCRouter({
   removeUserFromSharing: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureUserInActiveTrip(ctx.db, ctx.dbUser.id);
       const location = await ctx.db.location.update({
         where: { userId: ctx.dbUser.id },
         data: {
@@ -904,6 +955,7 @@ export const locationRouter = createTRPCRouter({
   requestLocationSharing: protectedProcedure
     .input(z.object({ receiverId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureUserInActiveTrip(ctx.db, ctx.dbUser.id);
       if (input.receiverId === ctx.dbUser.id) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -963,6 +1015,7 @@ export const locationRouter = createTRPCRouter({
   acceptLocationSharingRequest: protectedProcedure
     .input(z.object({ requestId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureUserInActiveTrip(ctx.db, ctx.dbUser.id);
       const request = await ctx.db.locationSharingRequest.findUnique({
         where: { id: input.requestId },
       });
@@ -988,50 +1041,55 @@ export const locationRouter = createTRPCRouter({
         });
       }
 
-      // Update request status
-      const updatedRequest = await ctx.db.locationSharingRequest.update({
-        where: { id: input.requestId },
-        data: { status: "ACCEPTED" },
+      // Wrap all operations in a transaction for atomicity
+      const result = await ctx.db.$transaction(async (tx) => {
+        // Update request status
+        const updatedRequest = await tx.locationSharingRequest.update({
+          where: { id: input.requestId },
+          data: { status: "ACCEPTED" },
+        });
+
+        // Add both users to each other's sharing lists
+        // Sender shares with receiver
+        await tx.location.upsert({
+          where: { userId: request.senderId },
+          update: {
+            usersToShareWith: {
+              connect: { id: request.receiverId },
+            },
+          },
+          create: {
+            userId: request.senderId,
+            timestamp: new Date(),
+            isSharingLocation: true,
+            usersToShareWith: {
+              connect: { id: request.receiverId },
+            },
+          },
+        });
+
+        // Receiver shares with sender
+        await tx.location.upsert({
+          where: { userId: request.receiverId },
+          update: {
+            usersToShareWith: {
+              connect: { id: request.senderId },
+            },
+          },
+          create: {
+            userId: request.receiverId,
+            timestamp: new Date(),
+            isSharingLocation: true,
+            usersToShareWith: {
+              connect: { id: request.senderId },
+            },
+          },
+        });
+
+        return updatedRequest;
       });
 
-      // Add both users to each other's sharing lists
-      // Sender shares with receiver
-      await ctx.db.location.upsert({
-        where: { userId: request.senderId },
-        update: {
-          usersToShareWith: {
-            connect: { id: request.receiverId },
-          },
-        },
-        create: {
-          userId: request.senderId,
-          timestamp: new Date(),
-          isSharingLocation: true,
-          usersToShareWith: {
-            connect: { id: request.receiverId },
-          },
-        },
-      });
-
-      // Receiver shares with sender
-      await ctx.db.location.upsert({
-        where: { userId: request.receiverId },
-        update: {
-          usersToShareWith: {
-            connect: { id: request.senderId },
-          },
-        },
-        create: {
-          userId: request.receiverId,
-          timestamp: new Date(),
-          isSharingLocation: true,
-          usersToShareWith: {
-            connect: { id: request.senderId },
-          },
-        },
-      });
-
-      return { success: true, request: updatedRequest };
+      return { success: true, request: result };
     }),
 
   /**
@@ -1040,6 +1098,7 @@ export const locationRouter = createTRPCRouter({
   rejectLocationSharingRequest: protectedProcedure
     .input(z.object({ requestId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await ensureUserInActiveTrip(ctx.db, ctx.dbUser.id);
       const request = await ctx.db.locationSharingRequest.findUnique({
         where: { id: input.requestId },
       });

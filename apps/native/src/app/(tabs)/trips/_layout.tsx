@@ -1,7 +1,8 @@
 import { Stack } from "expo-router";
+import { colors } from "../../../styles/colors";
 
-const backgroundColor = "#17181c";
-const headerTintColor = "#00ced1";
+const backgroundColor = colors.backgroundDark;
+const headerTintColor = colors.primary;
 
 export default function TripsLayout() {
   return (
@@ -12,7 +13,7 @@ export default function TripsLayout() {
         headerTintColor: headerTintColor,
         headerTitleStyle: {
           fontFamily: "IBMPlexSans_600SemiBold",
-          color: "#ffffff",
+          color: colors.white,
         },
         headerBackButtonDisplayMode: "minimal",
         contentStyle: { backgroundColor },
