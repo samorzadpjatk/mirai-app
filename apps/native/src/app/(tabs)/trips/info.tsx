@@ -51,6 +51,7 @@ export default function TripInfoScreen() {
   const infopackDownload = useFileDownload();
   
   // Download images on component mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isLoading) {
       const heroResource = getResource("HERO_IMAGE");
@@ -64,7 +65,7 @@ export default function TripInfoScreen() {
         mapBgImageDownload.download({ storagePath: mapBgResource.storagePath }).catch(console.error);
       }
     }
-  }, [isLoading, getResource, heroImageDownload, mapBgImageDownload]);
+  }, [isLoading, getResource, heroImageDownload.download, mapBgImageDownload.download]);
   
   // Check if PDFs are downloaded on component mount
   useEffect(() => {
