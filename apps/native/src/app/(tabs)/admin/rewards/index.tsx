@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  TextInput,
 } from "react-native";
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { StatusBar } from "expo-status-bar";
