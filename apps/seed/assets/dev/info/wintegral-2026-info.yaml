@@ -49,10 +49,10 @@ insurance:
   steps:
     - stepNumber: 1
       title: "Krok 1"
-      text: "Poproście o pomoc osobę z obsługi stoku..."
+      text: "Poproście o pomoc osobę z obsługi stoku lub ratowników. W razie poważnych obrażeń wezwijcie helikopter (numer ratunkowy na stokach: 112)."
     - stepNumber: 2
       title: "Krok 2"
-      text: "Skontaktujcie się z ubezpieczycielem WIENER..."
+      text: "Skontaktujcie się z ubezpieczycielem WIENER pod numerem +48 22 564 06 25. Podajcie:"
       requiredInfo:
         - "imienia i nazwiska"
         - "daty urodzenia"
@@ -61,5 +61,4 @@ insurance:
       exampleCall: "Jestem na wyjeździe w Verbier, doznałem kontuzji, ratownicy zwożą mnie na dół."
     - stepNumber: 3
       title: "Krok 3"
-      text: "Poinformujcie pilota lub członka naszej kadry..."
-      additionalText: "Najbliższy szpital to Vigimed, znajduje się w Rue du Léman 18 B, 1920 Martigny (ok. 30km od La Tzoumaz)."
+      text: "Poinformujcie pilota lub członka naszej kadry o sytuacji. Zadzwońcie na podany numer kontaktowy."
