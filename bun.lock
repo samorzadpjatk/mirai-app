@@ -45,6 +45,7 @@
         "@expo/metro-runtime": "^6.1.2",
         "@expo/vector-icons": "^15.0.3",
         "@integral-2025-app/auth": "workspace:*",
+        "@integral-2025-app/shared": "workspace:*",
         "@integral-2025-app/supabase": "workspace:*",
         "@integral-2025-app/trpc": "workspace:*",
         "@maplibre/maplibre-react-native": "^10.4.2",
