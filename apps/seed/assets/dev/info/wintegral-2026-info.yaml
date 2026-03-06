@@ -14,13 +14,13 @@ resources:
     sortOrder: 2
   - type: pdf_map
     label: "PDF Map"
-    storagePath: "files/trips/wintegral-2026/verbier-piste-map-2024-25.pdf"
+    storagePath: "files-public/maps/verbier-piste-map-2024-25.pdf"
     fileName: "Verbier-Piste-Ski-Map-2024-25.pdf"
     iconName: "document-text"
     sortOrder: 3
   - type: infopack
     label: "Infopack"
-    storagePath: "files/trips/wintegral-2026/wintegral-infopack-2026-02-20.pdf"
+    storagePath: "files-public/infopack/wintegral-infopack-2026-02-20.pdf"
     fileName: "wintegral-infopack-20022026.pdf"
     iconName: "document-text"
     sortOrder: 4
