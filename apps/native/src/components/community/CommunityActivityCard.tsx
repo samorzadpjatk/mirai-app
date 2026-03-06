@@ -12,8 +12,6 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import { useTRPC } from "@integral-2025-app/trpc/client";
-import { useQuery } from "@tanstack/react-query";
 import { LeaderboardPodium } from "~/components/trips/leaderboard/LeaderboardPodium";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 import { colors, spacing, typography } from "../../styles";
@@ -117,6 +115,8 @@ interface CommunityActivityCardProps {
   onPressOwner?: () => void;
   onToggleHeart?: (activityId: string) => void;
   isFocused?: boolean;
+  rankingData?: RankedGroup[];
+  avatarUri?: string | null;
 }
 
 
@@ -318,8 +318,9 @@ export const CommunityActivityCard = React.memo(
     onPressOwner,
     onToggleHeart,
     isFocused = false,
+    rankingData,
+    avatarUri,
   }: CommunityActivityCardProps) {
-    const trpc = useTRPC();
     const lastMediaTapAtRef = useRef(0);
     const mediaSingleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
       null,
@@ -331,30 +332,12 @@ export const CommunityActivityCard = React.memo(
       () => parseRankChangeDetails(activity.description),
       [activity.description],
     );
-    const { data: rankingData } = useQuery({
-      ...trpc.group.ranking.queryOptions({
-        tripId: activity.tripId,
-      }),
-      enabled:
-        activity.activityType === "rank_change" && Boolean(activity.tripId),
-      staleTime: 2 * 60 * 1000,
-    });
     const rankChangeTopThree = useMemo(() => {
       if (activity.activityType !== "rank_change") return [] as RankedGroup[];
 
-      const rankedGroups = rankingData?.data;
+      const rankedGroups = rankingData;
       if (rankedGroups && rankedGroups.length > 0) {
-        return rankedGroups.slice(0, 3).map((group, index) => {
-          return {
-            id: group.id,
-            name: group.name,
-            image: group.image ?? null,
-            coins: group.coins,
-            memberCount: group.participants.length,
-            rank: index + 1,
-            isCurrentUserGroup: false,
-          } satisfies RankedGroup;
-        });
+        return rankedGroups.slice(0, 3);
       }
 
       const anchorGroupName = activity.rankChangeActivity?.group?.name ?? "Team";
@@ -379,24 +362,8 @@ export const CommunityActivityCard = React.memo(
           isCurrentUserGroup: false,
         } satisfies RankedGroup;
       });
-    }, [activity, rankChangeDetails.podium, rankingData?.data]);
+    }, [activity, rankChangeDetails.podium, rankingData]);
 
-    const avatarStoragePath =
-      !owner.avatarImage && owner.avatarUserId
-        ? `avatar/${owner.avatarUserId}.jpg`
-        : null;
-
-    const { data: avatarData } = useQuery({
-      ...trpc.storage.createDownloadUrl.queryOptions({
-        storagePath: avatarStoragePath ?? "",
-        expiresInSeconds: 60 * 60,
-      }),
-      enabled: Boolean(avatarStoragePath),
-      staleTime: 15 * 60 * 1000,
-      retry: false,
-    });
-
-    const avatarUri = owner.avatarImage ?? avatarData?.signedUrl ?? null;
     const rankChangeMessage = useMemo(() => {
       if (activity.activityType !== "rank_change") return null;
       return (

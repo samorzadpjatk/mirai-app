@@ -1,4 +1,4 @@
-import React, {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -14,20 +14,24 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useAuth } from "@integral-2025-app/auth/client";
-import Logo from "../../components/Logo";
-import LoadingScreen from "../../components/LoadingScreen";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSelectedTrip, useTrips } from "~/hooks/trips";
-import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
-import { colors, spacing, typography } from "../../styles";
-import { FilterChip, FilterChipRow, EmptyState, TripPickerModal } from "~/components/common/ui";
+import { StatusBar } from "expo-status-bar";
+
 import { CommunityActivityCard, type CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
+
+import LoadingScreen from "~/components/LoadingScreen";
+
 import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
+import { useCommunityActivityData } from "~/hooks/community/useCommunityActivityData";
+import { useSelectedTrip, useTrips } from "~/hooks/trips";
+import { colors, spacing, typography } from "~/styles";
+import { EmptyState, FilterChip, FilterChipRow, TripPickerModal } from "~/components/common/ui";
+import { useAuth } from "@integral-2025-app/auth/client";
+import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
+import { Logo } from "~/components";
 
 type ActivityFilter = "all" | "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
 
@@ -112,6 +116,10 @@ export default function CommunityScreen() {
     focusActivityId,
   });
 
+  const { rankingData, avatarUrls, isLoading: isActivityDataLoading } = useCommunityActivityData({
+    activities: filteredActivities,
+  });
+
   const handleSelectFilter = useCallback(
     (filter: ActivityFilter) => {
       const paramValue = filter === "custom" ? "news" : filter;
@@ -121,6 +129,15 @@ export default function CommunityScreen() {
   );
 
   const keyExtractor = useCallback((item: CommunityFeedActivity) => item.id, []);
+
+  const getItemLayout = useCallback(
+    (data: ArrayLike<CommunityFeedActivity> | null | undefined, index: number) => ({
+      length: 200, // Approximate height of CommunityActivityCard
+      offset: 200 * index,
+      index,
+    }),
+    [],
+  );
 
   const isRefreshing =
     isTripsRefetching ||
@@ -197,6 +214,26 @@ export default function CommunityScreen() {
           ? (item.submissionActivity?.groupId ?? item.submissionActivity?.group?.id)
           : null;
 
+      const getAvatarUri = (activity: CommunityFeedActivity) => {
+        const owner = activity.activityType === "user_post"
+          ? activity.userPost?.author?.user
+          : activity.admin;
+
+        if (!owner?.id) return null;
+
+        // Check if user has a direct avatar image
+        if (activity.activityType === "submission" && activity.submissionActivity?.group?.image) {
+          return activity.submissionActivity.group.image;
+        }
+
+        if (activity.activityType === "rank_change" && activity.rankChangeActivity?.group?.image) {
+          return activity.rankChangeActivity.group.image;
+        }
+
+        // Use fetched avatar URL
+        return avatarUrls[owner.id] ?? null;
+      };
+
       return (
         <CommunityActivityCard
           activity={item}
@@ -205,9 +242,9 @@ export default function CommunityScreen() {
           onPress={
             challengeId
               ? () =>
-                  router.push(
-                    `/trips/challenges/${challengeId}?tripId=${item.tripId}`,
-                  )
+                router.push(
+                  `/trips/challenges/${challengeId}?tripId=${item.tripId}`,
+                )
               : leaderboardTripId
                 ? () => router.push(`/trips/leaderboard?tripId=${leaderboardTripId}`)
                 : undefined
@@ -217,10 +254,12 @@ export default function CommunityScreen() {
               ? () => router.push(`/trips/groups/${submissionGroupId}`)
               : undefined
           }
+          rankingData={item.activityType === "rank_change" ? rankingData[item.tripId] : undefined}
+          avatarUri={getAvatarUri(item)}
         />
       );
     },
-    [focusActivityId, handleToggleHeart, router],
+    [focusActivityId, handleToggleHeart, router, rankingData, avatarUrls],
   );
 
   if (isLoadingSession || isTripsLoading || isLoadingSelectedTrip) {
@@ -307,14 +346,15 @@ export default function CommunityScreen() {
         style={styles.feedList}
         data={filteredActivities}
         keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
         onEndReached={handleFeedEndReached}
         onEndReachedThreshold={0.35}
         renderItem={renderActivityItem}
-        initialNumToRender={8}
-        maxToRenderPerBatch={8}
-        updateCellsBatchingPeriod={50}
-        windowSize={7}
-        removeClippedSubviews
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        updateCellsBatchingPeriod={30}
+        windowSize={10}
+        removeClippedSubviews={true}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
@@ -450,7 +490,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.semibold,
     flex: 1,
   },
-    loadingState: {
+  loadingState: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
