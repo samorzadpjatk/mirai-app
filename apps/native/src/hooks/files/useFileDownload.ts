@@ -101,7 +101,7 @@ export const useFileDownload = () => {
 
   const download = useCallback(
     async (input: DownloadInput): Promise<DownloadResult> => {
-      abort();
+      // Reset abort state and set to loading
       abortRequestedRef.current = false;
       if (!mountedRef.current) {
         throw new Error("Download aborted: component unmounted");
@@ -260,7 +260,7 @@ export const useFileDownload = () => {
         throw errorObject;
       }
     },
-    [abort, trpcClient],
+    [trpcClient],
   );
 
   return {
