@@ -8,9 +8,9 @@ export type {
   UseLoginFormResult,
 } from "./hooks/useLoginForm";
 
-// Zustand store (moved to @integral-2025-app/shared)
-export { authStore } from "@integral-2025-app/shared";
-export type { AuthStore, AuthActions, AuthState, AuthUser, SupabaseClient, SupabaseSession } from "@integral-2025-app/shared";
+// Zustand store (moved to @mirai-app/shared)
+export { authStore } from "@mirai-app/shared";
+export type { AuthStore, AuthActions, AuthState, AuthUser, SupabaseClient, SupabaseSession } from "@mirai-app/shared";
 export { AuthStoreProvider } from "./store/AuthStoreProvider";
 export type { AuthStoreProviderProps } from "./store/AuthStoreProvider";
 

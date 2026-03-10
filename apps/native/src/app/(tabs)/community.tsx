@@ -29,7 +29,7 @@ import { useCommunityActivityData } from "~/hooks/community/useCommunityActivity
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
 import { EmptyState, FilterChip, FilterChipRow, TripPickerModal } from "~/components/common/ui";
-import { useAuth } from "@integral-2025-app/auth/client";
+import { useAuth } from "@mirai-app/auth/client";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { Logo } from "~/components";
 

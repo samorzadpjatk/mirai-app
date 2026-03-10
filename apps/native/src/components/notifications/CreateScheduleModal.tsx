@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTRPC } from "@mirai-app/trpc/client";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
 import {

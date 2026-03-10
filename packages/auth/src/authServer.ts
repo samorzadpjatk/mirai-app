@@ -1,6 +1,6 @@
-import type { SupabaseClient, SupabaseUser } from "@integral-2025-app/supabase";
-import type { User, Role, PrismaClient } from "@integral-2025-app/db";
-import type { AuthUser } from "@integral-2025-app/shared";
+import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
+import type { User, Role, PrismaClient } from "@mirai-app/db";
+import type { AuthUser } from "@mirai-app/shared";
 
 interface MinimalBuffer {
   from(

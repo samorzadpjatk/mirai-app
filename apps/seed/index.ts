@@ -1,4 +1,4 @@
-import { createDb } from "@integral-2025-app/db";
+import { createDb } from "@mirai-app/db";
 import { env } from "./src/config/env";
 import { runSeed } from "./src/seed";
 

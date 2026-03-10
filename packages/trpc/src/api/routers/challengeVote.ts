@@ -6,7 +6,7 @@ import {
   protectedProcedure,
   moderatorProcedure,
 } from "../../api/trpc";
-import { type Prisma, type PrismaClient } from "@integral-2025-app/db";
+import { type Prisma, type PrismaClient } from "@mirai-app/db";
 import { createChallengeCompletionWithWinnersById } from "../../utils/activityFeed";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
 

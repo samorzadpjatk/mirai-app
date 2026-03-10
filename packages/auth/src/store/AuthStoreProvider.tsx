@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { authStore, type SupabaseClient } from "@integral-2025-app/shared";
-import type { AuthUser } from "@integral-2025-app/shared";
+import { authStore, type SupabaseClient } from "@mirai-app/shared";
+import type { AuthUser } from "@mirai-app/shared";
 
 export interface AuthStoreProviderProps {
   children: ReactNode;

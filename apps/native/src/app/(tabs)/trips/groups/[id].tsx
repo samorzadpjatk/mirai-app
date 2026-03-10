@@ -12,7 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTRPC } from "@mirai-app/trpc/client";
 import { useTripDetails } from "~/hooks/trips";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTRPC } from "@mirai-app/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 
 export function AccountInfoSection() {

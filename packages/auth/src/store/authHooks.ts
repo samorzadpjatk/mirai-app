@@ -1,7 +1,7 @@
 "use client";
 
 import { useStore } from "zustand";
-import { authStore, type AuthStore, type SupabaseSession, type AuthUser } from "@integral-2025-app/shared";
+import { authStore, type AuthStore, type SupabaseSession, type AuthUser } from "@mirai-app/shared";
 
 /**
  * Hook to access the full auth context (backward-compatible with useAuth).

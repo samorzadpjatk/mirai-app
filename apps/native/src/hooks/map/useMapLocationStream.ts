@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useTRPC, useSubscription } from "@integral-2025-app/trpc/client";
+import { useTRPC, useSubscription } from "@mirai-app/trpc/client";
 import * as Crypto from "expo-crypto";
 import { useLocationContext } from "~/stores/location";
 

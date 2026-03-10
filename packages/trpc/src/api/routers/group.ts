@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import type { SupabaseClient } from "@integral-2025-app/supabase";
+import type { SupabaseClient } from "@mirai-app/supabase";
 
 import {
   createTRPCRouter,

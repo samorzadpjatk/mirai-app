@@ -3,8 +3,8 @@ import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@integral-2025-app/trpc/client";
-import { invalidateChallengeQueries } from "@integral-2025-app/trpc/client/query";
+import { useTRPC } from "@mirai-app/trpc/client";
+import { invalidateChallengeQueries } from "@mirai-app/trpc/client/query";
 import { useFileUpload } from "~/hooks/files";
 
 interface ChallengeCaptureOptions {

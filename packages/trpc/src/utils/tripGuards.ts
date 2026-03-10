@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import type { PrismaClient } from "@integral-2025-app/db";
+import type { PrismaClient } from "@mirai-app/db";
 
 /**
  * Ensures that a trip has not ended (beyond the 24-hour grace period).

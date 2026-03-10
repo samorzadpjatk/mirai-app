@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { useTRPC } from '@integral-2025-app/trpc/client';
+import { useTRPC } from '@mirai-app/trpc/client';
 import { useQuery } from '@tanstack/react-query';
 import { colors } from '~/styles';
 

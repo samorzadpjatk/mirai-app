@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@integral-2025-app/monorepo",
+      "name": "@mirai-app/monorepo",
       "dependencies": {
         "@trpc/client": "^11.10.0",
       },
@@ -21,12 +21,12 @@
       },
     },
     "apps/backend-server": {
-      "name": "@integral-2025-app/backend-server",
+      "name": "@mirai-app/backend-server",
       "version": "1.0.0",
       "dependencies": {
         "@fastify/cors": "^11.2.0",
         "@fastify/websocket": "^11.2.0",
-        "@integral-2025-app/trpc": "workspace:*",
+        "@mirai-app/trpc": "workspace:*",
         "@trpc/server": "^11.8.1",
         "fastify": "^5.6.2",
         "ws": "^8.18.3",
@@ -38,17 +38,17 @@
       },
     },
     "apps/native": {
-      "name": "@integral-2025-app/native",
+      "name": "@mirai-app/native",
       "version": "1.0.0",
       "dependencies": {
         "@expo-google-fonts/ibm-plex-sans": "^0.4.1",
         "@expo/metro-runtime": "^6.1.2",
         "@expo/vector-icons": "^15.0.3",
-        "@integral-2025-app/auth": "workspace:*",
-        "@integral-2025-app/shared": "workspace:*",
-        "@integral-2025-app/supabase": "workspace:*",
-        "@integral-2025-app/trpc": "workspace:*",
         "@maplibre/maplibre-react-native": "^10.4.2",
+        "@mirai-app/auth": "workspace:*",
+        "@mirai-app/shared": "workspace:*",
+        "@mirai-app/supabase": "workspace:*",
+        "@mirai-app/trpc": "workspace:*",
         "@react-native-async-storage/async-storage": "^2.2.0",
         "@react-native-community/datetimepicker": "8.4.4",
         "@react-native-picker/picker": "2.11.1",
@@ -105,12 +105,12 @@
       },
     },
     "apps/notification-sender": {
-      "name": "@integral-2025-app/notification-sender",
+      "name": "@mirai-app/notification-sender",
       "version": "0.1.0",
       "dependencies": {
-        "@integral-2025-app/db": "workspace:*",
-        "@integral-2025-app/supabase": "workspace:*",
-        "@integral-2025-app/trpc": "workspace:*",
+        "@mirai-app/db": "workspace:*",
+        "@mirai-app/supabase": "workspace:*",
+        "@mirai-app/trpc": "workspace:*",
         "@trpc/client": "^11.8.1",
       },
       "devDependencies": {
@@ -120,10 +120,10 @@
       },
     },
     "apps/seed": {
-      "name": "@integral-2025-app/seed",
+      "name": "@mirai-app/seed",
       "dependencies": {
-        "@integral-2025-app/db": "workspace:*",
-        "@integral-2025-app/supabase": "workspace:*",
+        "@mirai-app/db": "workspace:*",
+        "@mirai-app/supabase": "workspace:*",
         "csv-parse": "^6.1.0",
         "yaml": "^2.8.1",
       },
@@ -135,12 +135,12 @@
       },
     },
     "packages/auth": {
-      "name": "@integral-2025-app/auth",
+      "name": "@mirai-app/auth",
       "version": "0.1.0",
       "dependencies": {
-        "@integral-2025-app/db": "workspace:*",
-        "@integral-2025-app/shared": "workspace:*",
-        "@integral-2025-app/supabase": "workspace:*",
+        "@mirai-app/db": "workspace:*",
+        "@mirai-app/shared": "workspace:*",
+        "@mirai-app/supabase": "workspace:*",
         "jotai": "^2.18.0",
         "jotai-zustand": "^0.6.0",
         "zod": "^4.3.4",
@@ -160,10 +160,10 @@
       },
     },
     "packages/db": {
-      "name": "@integral-2025-app/db",
+      "name": "@mirai-app/db",
       "version": "0.1.0",
       "dependencies": {
-        "@integral-2025-app/supabase": "workspace:*",
+        "@mirai-app/supabase": "workspace:*",
         "@prisma/adapter-pg": "^7.3.0",
         "@prisma/client": "^7.3.0",
       },
@@ -173,7 +173,7 @@
       },
     },
     "packages/shared": {
-      "name": "@integral-2025-app/shared",
+      "name": "@mirai-app/shared",
       "dependencies": {
         "jotai": "^2.18.0",
         "jotai-tanstack-query": "^0.11.0",
@@ -188,7 +188,7 @@
       },
     },
     "packages/supabase": {
-      "name": "@integral-2025-app/supabase",
+      "name": "@mirai-app/supabase",
       "version": "1.0.0",
       "dependencies": {
         "@supabase/supabase-js": "^2.89.0",
@@ -204,13 +204,13 @@
       },
     },
     "packages/trpc": {
-      "name": "@integral-2025-app/trpc",
+      "name": "@mirai-app/trpc",
       "version": "1.0.0",
       "dependencies": {
-        "@integral-2025-app/auth": "workspace:*",
-        "@integral-2025-app/db": "workspace:*",
-        "@integral-2025-app/shared": "workspace:*",
-        "@integral-2025-app/supabase": "workspace:*",
+        "@mirai-app/auth": "workspace:*",
+        "@mirai-app/db": "workspace:*",
+        "@mirai-app/shared": "workspace:*",
+        "@mirai-app/supabase": "workspace:*",
         "@tanstack/react-query": "^5.90.19",
         "@trpc/client": "^11.10.0",
         "@trpc/server": "^11.10.0",
@@ -616,24 +616,6 @@
 
     "@ide/backoff": ["@ide/backoff@1.0.0", "", {}, "sha512-F0YfUDjvT+Mtt/R4xdl2X0EYCHMMiJqNLdxHD++jDT5ydEFIyqbCHh51Qx2E211dgZprPKhV7sHmnXKpLuvc5g=="],
 
-    "@integral-2025-app/auth": ["@integral-2025-app/auth@workspace:packages/auth"],
-
-    "@integral-2025-app/backend-server": ["@integral-2025-app/backend-server@workspace:apps/backend-server"],
-
-    "@integral-2025-app/db": ["@integral-2025-app/db@workspace:packages/db"],
-
-    "@integral-2025-app/native": ["@integral-2025-app/native@workspace:apps/native"],
-
-    "@integral-2025-app/notification-sender": ["@integral-2025-app/notification-sender@workspace:apps/notification-sender"],
-
-    "@integral-2025-app/seed": ["@integral-2025-app/seed@workspace:apps/seed"],
-
-    "@integral-2025-app/shared": ["@integral-2025-app/shared@workspace:packages/shared"],
-
-    "@integral-2025-app/supabase": ["@integral-2025-app/supabase@workspace:packages/supabase"],
-
-    "@integral-2025-app/trpc": ["@integral-2025-app/trpc@workspace:packages/trpc"],
-
     "@isaacs/balanced-match": ["@isaacs/balanced-match@4.0.1", "", {}, "sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ=="],
 
     "@isaacs/brace-expansion": ["@isaacs/brace-expansion@5.0.0", "", { "dependencies": { "@isaacs/balanced-match": "^4.0.1" } }, "sha512-ZT55BDLV0yv0RBm2czMiZ+SqCGO7AvmOM3G/w2xhVPH+te0aKgFjmBvGlL1dH+ql2tgGO3MVrbb3jCKyvpgnxA=="],
@@ -693,6 +675,24 @@
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
     "@maplibre/maplibre-react-native": ["@maplibre/maplibre-react-native@10.4.2", "", { "dependencies": { "@turf/distance": "^7.1.0", "@turf/helpers": "^7.1.0", "@turf/length": "^7.1.0", "@turf/nearest-point-on-line": "^7.1.0", "debounce": "^2.2.0" }, "peerDependencies": { "@expo/config-plugins": ">=7", "@types/geojson": "^7946.0.0", "@types/react": ">=16.6.1", "react": ">=16.6.1", "react-native": ">=0.59.9" }, "optionalPeers": ["@expo/config-plugins", "@types/geojson", "@types/react"] }, "sha512-5qAfaEe66eMXyILklm2DMHwyaXwXxsZWVop4BqfU7AyTg13LHAcaMmLJNJ3jPkMtiJvjH2m8ywGnobdIg2I0lg=="],
+
+    "@mirai-app/auth": ["@mirai-app/auth@workspace:packages/auth"],
+
+    "@mirai-app/backend-server": ["@mirai-app/backend-server@workspace:apps/backend-server"],
+
+    "@mirai-app/db": ["@mirai-app/db@workspace:packages/db"],
+
+    "@mirai-app/native": ["@mirai-app/native@workspace:apps/native"],
+
+    "@mirai-app/notification-sender": ["@mirai-app/notification-sender@workspace:apps/notification-sender"],
+
+    "@mirai-app/seed": ["@mirai-app/seed@workspace:apps/seed"],
+
+    "@mirai-app/shared": ["@mirai-app/shared@workspace:packages/shared"],
+
+    "@mirai-app/supabase": ["@mirai-app/supabase@workspace:packages/supabase"],
+
+    "@mirai-app/trpc": ["@mirai-app/trpc@workspace:packages/trpc"],
 
     "@mrleebo/prisma-ast": ["@mrleebo/prisma-ast@0.13.1", "", { "dependencies": { "chevrotain": "^10.5.0", "lilconfig": "^2.1.0" } }, "sha512-XyroGQXcHrZdvmrGJvsA9KNeOOgGMg1Vg9OlheUsBOSKznLMDl+YChxbkboRHvtFYJEMRYmlV3uoo/njCw05iw=="],
 
@@ -2672,12 +2672,6 @@
 
     "@fastify/ajv-compiler/ajv": ["ajv@8.18.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-PlXPeEWMXMZ7sPYOHqmDyCJzcfNrUr3fGNKtezX14ykXOEIvyK81d+qydx89KY5O71FKMPaQ2vBfBFI5NHR63A=="],
 
-    "@integral-2025-app/seed/@types/bun": ["@types/bun@1.3.10", "", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
-
-    "@integral-2025-app/shared/@types/bun": ["@types/bun@1.3.10", "", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
-
-    "@integral-2025-app/trpc/@trpc/server": ["@trpc/server@11.11.0", "", { "peerDependencies": { "typescript": ">=5.7.2" } }, "sha512-5CBK5Oit8qv2k2zgIHrUsa12tnCIVpZIJLvMa4n2tejuWz/d7Qb1B1v9zZioapr7y8sEvnk8zPcNnxcT2LlQxg=="],
-
     "@istanbuljs/load-nyc-config/camelcase": ["camelcase@5.3.1", "", {}, "sha512-L28STB170nwWS63UjtlEOE3dldQApaJXZkOI1uMFfzf3rRuPegHaHesyee+YxQ+W6SvRDQV6UrdOdRiR153wJg=="],
 
     "@istanbuljs/load-nyc-config/find-up": ["find-up@4.1.0", "", { "dependencies": { "locate-path": "^5.0.0", "path-exists": "^4.0.0" } }, "sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw=="],
@@ -2693,6 +2687,12 @@
     "@jest/reporters/istanbul-lib-instrument": ["istanbul-lib-instrument@6.0.3", "", { "dependencies": { "@babel/core": "^7.23.9", "@babel/parser": "^7.23.9", "@istanbuljs/schema": "^0.1.3", "istanbul-lib-coverage": "^3.2.0", "semver": "^7.5.4" } }, "sha512-Vtgk7L/R2JHyyGW07spoFlB8/lpjiOLTjMdms6AFMraYt3BaJauod/NGrfnVG/y4Ix1JEuMRPDPEj2ua+zz1/Q=="],
 
     "@jest/reporters/strip-ansi": ["strip-ansi@6.0.1", "", { "dependencies": { "ansi-regex": "^5.0.1" } }, "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A=="],
+
+    "@mirai-app/seed/@types/bun": ["@types/bun@1.3.10", "", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
+
+    "@mirai-app/shared/@types/bun": ["@types/bun@1.3.10", "", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
+
+    "@mirai-app/trpc/@trpc/server": ["@trpc/server@11.11.0", "", { "peerDependencies": { "typescript": ">=5.7.2" } }, "sha512-5CBK5Oit8qv2k2zgIHrUsa12tnCIVpZIJLvMa4n2tejuWz/d7Qb1B1v9zZioapr7y8sEvnk8zPcNnxcT2LlQxg=="],
 
     "@mrleebo/prisma-ast/lilconfig": ["lilconfig@2.1.0", "", {}, "sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ=="],
 
@@ -2948,13 +2948,13 @@
 
     "@fastify/ajv-compiler/ajv/json-schema-traverse": ["json-schema-traverse@1.0.0", "", {}, "sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug=="],
 
-    "@integral-2025-app/seed/@types/bun/bun-types": ["bun-types@1.3.10", "", { "dependencies": { "@types/node": "*" } }, "sha512-tcpfCCl6XWo6nCVnpcVrxQ+9AYN1iqMIzgrSKYMB/fjLtV2eyAVEg7AxQJuCq/26R6HpKWykQXuSOq/21RYcbg=="],
-
-    "@integral-2025-app/shared/@types/bun/bun-types": ["bun-types@1.3.10", "", { "dependencies": { "@types/node": "*" } }, "sha512-tcpfCCl6XWo6nCVnpcVrxQ+9AYN1iqMIzgrSKYMB/fjLtV2eyAVEg7AxQJuCq/26R6HpKWykQXuSOq/21RYcbg=="],
-
     "@istanbuljs/load-nyc-config/find-up/locate-path": ["locate-path@5.0.0", "", { "dependencies": { "p-locate": "^4.1.0" } }, "sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g=="],
 
     "@istanbuljs/load-nyc-config/js-yaml/argparse": ["argparse@1.0.10", "", { "dependencies": { "sprintf-js": "~1.0.2" } }, "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg=="],
+
+    "@mirai-app/seed/@types/bun/bun-types": ["bun-types@1.3.10", "", { "dependencies": { "@types/node": "*" } }, "sha512-tcpfCCl6XWo6nCVnpcVrxQ+9AYN1iqMIzgrSKYMB/fjLtV2eyAVEg7AxQJuCq/26R6HpKWykQXuSOq/21RYcbg=="],
+
+    "@mirai-app/shared/@types/bun/bun-types": ["bun-types@1.3.10", "", { "dependencies": { "@types/node": "*" } }, "sha512-tcpfCCl6XWo6nCVnpcVrxQ+9AYN1iqMIzgrSKYMB/fjLtV2eyAVEg7AxQJuCq/26R6HpKWykQXuSOq/21RYcbg=="],
 
     "@react-native/codegen/hermes-parser/hermes-estree": ["hermes-estree@0.29.1", "", {}, "sha512-jl+x31n4/w+wEqm0I2r4CMimukLbLQEYpisys5oCre611CI5fc9TxhqkBBCJ1edDG4Kza0f7CgNz8xVMLZQOmQ=="],
 

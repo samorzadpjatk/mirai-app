@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@integral-2025-app/trpc/client";
+import { useTRPC, useTRPCClient } from "@mirai-app/trpc/client";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 

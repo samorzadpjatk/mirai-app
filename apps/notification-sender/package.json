@@ -1,5 +1,5 @@
 {
-  "name": "@integral-2025-app/notification-sender",
+  "name": "@mirai-app/notification-sender",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,9 +15,9 @@
     "clean": "rm -rf node_modules"
   },
   "dependencies": {
-    "@integral-2025-app/db": "workspace:*",
-    "@integral-2025-app/supabase": "workspace:*",
-    "@integral-2025-app/trpc": "workspace:*",
+    "@mirai-app/db": "workspace:*",
+    "@mirai-app/supabase": "workspace:*",
+    "@mirai-app/trpc": "workspace:*",
     "@trpc/client": "^11.8.1"
   },
   "devDependencies": {

@@ -13,7 +13,7 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTRPC } from "@mirai-app/trpc/client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { commonStyles } from "~/styles/commonStyles";
 import { spacing } from "~/styles";

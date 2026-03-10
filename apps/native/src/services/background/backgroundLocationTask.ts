@@ -1,8 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
-import { createSupabaseClient } from "@integral-2025-app/supabase";
-import { getTRPCClient } from "@integral-2025-app/trpc/client";
+import { createSupabaseClient } from "@mirai-app/supabase";
+import { getTRPCClient } from "@mirai-app/trpc/client";
 import { authStorage } from "~/services/storage/storage";
 import {
   SUPABASE_ANON_KEY,

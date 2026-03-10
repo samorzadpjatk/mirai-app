@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@integral-2025-app/trpc/client";
+import { useTRPCClient } from "@mirai-app/trpc/client";
 import type { CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 

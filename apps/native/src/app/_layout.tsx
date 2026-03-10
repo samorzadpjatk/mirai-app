@@ -1,4 +1,4 @@
-import { AuthStoreProvider } from "@integral-2025-app/auth/client";
+import { AuthStoreProvider } from "@mirai-app/auth/client";
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import { View } from "react-native";
@@ -36,10 +36,10 @@ import {
 import {
   useAuth,
   useAuthLoading,
-} from "@integral-2025-app/auth/client";
-import { createSupabaseClient } from "@integral-2025-app/supabase";
-import { SupabaseProvider } from "@integral-2025-app/supabase/react";
-import { APIProvider, useTRPCClient } from "@integral-2025-app/trpc/client";
+} from "@mirai-app/auth/client";
+import { createSupabaseClient } from "@mirai-app/supabase";
+import { SupabaseProvider } from "@mirai-app/supabase/react";
+import { APIProvider, useTRPCClient } from "@mirai-app/trpc/client";
 import {
   SUPABASE_ANON_KEY,
   SUPABASE_URL,

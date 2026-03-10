@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTRPC } from "@mirai-app/trpc/client";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";

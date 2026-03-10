@@ -1,5 +1,5 @@
 {
-  "name": "@integral-2025-app/shared",
+  "name": "@mirai-app/shared",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {

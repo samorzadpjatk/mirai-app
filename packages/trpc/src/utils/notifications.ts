@@ -1,4 +1,4 @@
-import type { Prisma } from "@integral-2025-app/db";
+import type { Prisma } from "@mirai-app/db";
 import { TRPCError } from "@trpc/server";
 import { NotificationService } from "../services/notificationService";
 import { executeWithRetry } from "../utils/resilience";

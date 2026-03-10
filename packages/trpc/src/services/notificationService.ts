@@ -1,5 +1,5 @@
 import { executeWithRetry } from "../utils/resilience";
-import { type PrismaClient } from "@integral-2025-app/db";
+import { type PrismaClient } from "@mirai-app/db";
 import { Expo, type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
 import {
   applyRankingTemplate,

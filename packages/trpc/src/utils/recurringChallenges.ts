@@ -1,4 +1,4 @@
-import { type Prisma } from "@integral-2025-app/db";
+import { type Prisma } from "@mirai-app/db";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

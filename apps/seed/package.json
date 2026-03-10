@@ -1,5 +1,5 @@
 {
-  "name": "@integral-2025-app/seed",
+  "name": "@mirai-app/seed",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -23,8 +23,8 @@
     "prod": "bun run --env-file=.env.prod index.ts"
   },
   "dependencies": {
-    "@integral-2025-app/db": "workspace:*",
-    "@integral-2025-app/supabase": "workspace:*",
+    "@mirai-app/db": "workspace:*",
+    "@mirai-app/supabase": "workspace:*",
     "csv-parse": "^6.1.0",
     "yaml": "^2.8.1"
   },

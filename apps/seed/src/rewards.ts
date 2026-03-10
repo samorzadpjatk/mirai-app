@@ -1,7 +1,7 @@
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import { createDb } from "@integral-2025-app/db";
+import { createDb } from "@mirai-app/db";
 import { env } from "./config/env";
 import type { RewardConfig, AuthUserByEmail } from "./types";
 
