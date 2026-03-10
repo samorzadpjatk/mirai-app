@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@integral-2025-app/trpc/client';
+import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
 
 export interface TransactionItem {
   id: string;

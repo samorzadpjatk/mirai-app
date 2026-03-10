@@ -16,8 +16,8 @@ Sprawdź szczegóły ich konfiguracji wewnątrz plików [`turbo.json`](turbo.jso
 
 Znajduje się w nim:
 
-- **Aplikacja natywna** (Expo / React Native) → [`@integral-2025-app/native`](apps/native/)
-- **Backend serwerowy** (Fastify + tRPC) → [`@integral-2025-app/backend-server`](apps/backend-server/)
+- **Aplikacja natywna** (Expo / React Native) → [`@mirai-app/native`](apps/native/)
+- **Backend serwerowy** (Fastify + tRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
 - **Współdzielone biblioteki** → [`packages`](packages/)
 
 Wszystkie skrypty mogą zostać wywołane z katalogu głównego projektu za pomocą `bun run <script>`. (Możesz też wejść do konkretnego pakietu i uruchomić `bun run <script>`).

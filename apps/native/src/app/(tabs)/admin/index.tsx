@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@integral-2025-app/trpc/client';
+import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
 import { colors, spacing, borderRadius, typography } from '../../../styles';
 import { TripPickerModal } from '~/components/common/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

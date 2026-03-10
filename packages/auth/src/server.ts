@@ -5,7 +5,7 @@ export type {
   SignInWithOtpOptions
 } from "./types";
 
-export type { AuthUser } from "@integral-2025-app/shared";
+export type { AuthUser } from "@mirai-app/shared";
 
 export {
   getAuthServerUser as getServerUser,

@@ -1,12 +1,12 @@
-// Map store moved to @integral-2025-app/shared
-export { mapStore } from "@integral-2025-app/shared";
+// Map store moved to @mirai-app/shared
+export { mapStore } from "@mirai-app/shared";
 export type {
   MapStore,
   MapState,
   MapActions,
   MapTheme,
   MapUserLocation,
-} from "@integral-2025-app/shared";
+} from "@mirai-app/shared";
 export { useMapStore, useMapActions } from "./mapHooks";
 
 // Map overlay store (React Native specific - stays here)

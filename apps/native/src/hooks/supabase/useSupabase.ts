@@ -1,5 +1,5 @@
-import { useSupabaseClient } from "@integral-2025-app/supabase/react";
-import type { SupabaseClient } from "@integral-2025-app/supabase";
+import { useSupabaseClient } from "@mirai-app/supabase/react";
+import type { SupabaseClient } from "@mirai-app/supabase";
 
 export const useSupabase = (): SupabaseClient => {
   return useSupabaseClient();

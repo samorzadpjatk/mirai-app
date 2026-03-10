@@ -1,3 +1,3 @@
-// Judgement store moved to @integral-2025-app/shared
-export type { ReviewStatus, Submission } from "@integral-2025-app/shared";
+// Judgement store moved to @mirai-app/shared
+export type { ReviewStatus, Submission } from "@mirai-app/shared";
 export { useJudgement } from "./useJudgement";

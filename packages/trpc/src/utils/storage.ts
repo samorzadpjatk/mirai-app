@@ -1,4 +1,4 @@
-import { STANDARD_BUCKETS, normalizeStoragePath, normalizeBucketName } from '@integral-2025-app/shared';
+import { STANDARD_BUCKETS, normalizeStoragePath, normalizeBucketName } from '@mirai-app/shared';
 
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
 

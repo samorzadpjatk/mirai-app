@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, moderatorProcedure, protectedProcedure } from "../../api/trpc";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
-import { type PrismaClient, type Prisma } from "@integral-2025-app/db";
+import { type PrismaClient, type Prisma } from "@mirai-app/db";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
 
 const REWARD_IMAGE_SIGNED_URL_SECONDS = 60 * 10;

@@ -1,4 +1,4 @@
-import type { SupabaseUser } from "@integral-2025-app/supabase";
+import type { SupabaseUser } from "@mirai-app/supabase";
 
 export type SeedEnv = "dev" | "prod";
 

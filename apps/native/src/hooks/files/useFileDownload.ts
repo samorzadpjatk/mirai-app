@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
-import { useTRPCClient } from "@integral-2025-app/trpc/client";
+import { useTRPCClient } from "@mirai-app/trpc/client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 

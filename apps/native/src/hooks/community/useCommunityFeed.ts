@@ -4,7 +4,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPCClient } from "@integral-2025-app/trpc/client";
+import { useTRPCClient } from "@mirai-app/trpc/client";
 import type { CommunityFeedActivity, ActivityFilter } from "~/components/community/CommunityActivityCard";
 
 type FeedCursor = {

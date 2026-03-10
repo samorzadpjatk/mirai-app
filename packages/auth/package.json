@@ -1,5 +1,5 @@
 {
-  "name": "@integral-2025-app/auth",
+  "name": "@mirai-app/auth",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -32,9 +32,9 @@
     "lint:fix": "eslint --fix ."
   },
   "dependencies": {
-    "@integral-2025-app/db": "workspace:*",
-    "@integral-2025-app/shared": "workspace:*",
-    "@integral-2025-app/supabase": "workspace:*",
+    "@mirai-app/db": "workspace:*",
+    "@mirai-app/shared": "workspace:*",
+    "@mirai-app/supabase": "workspace:*",
     "jotai": "^2.18.0",
     "jotai-zustand": "^0.6.0",
     "zod": "^4.3.4",

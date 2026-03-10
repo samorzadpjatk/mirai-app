@@ -1,4 +1,4 @@
-# @integral-2025-app/trpc
+# @mirai-app/trpc
 
 Shared tRPC package containing both server-side routers and client-side utilities for the Integral 2025 App monorepo.
 
@@ -15,7 +15,7 @@ This package provides:
 
 ```bash
 # Already included if using the workspace
-bun add @integral-2025-app/trpc
+bun add @mirai-app/trpc
 ```
 
 ### For Client-Side Usage (React/React Native)
@@ -31,7 +31,7 @@ bun add @tanstack/react-query @trpc/client @trpc/tanstack-react-query
 ### Server-Side (Next.js API Routes)
 
 ```typescript
-import { appRouter, createCaller, createTRPCContext } from "@integral-2025-app/trpc";
+import { appRouter, createCaller, createTRPCContext } from "@mirai-app/trpc";
 
 // In API route
 export const POST = async (req: Request) => {
@@ -52,8 +52,8 @@ export const POST = async (req: Request) => {
 ### Client-Side (React Native with Expo)
 
 ```tsx
-import { TRPCProvider } from "@integral-2025-app/trpc/client";
-import { createExpoTRPCClient } from "@integral-2025-app/trpc/client/expo";
+import { TRPCProvider } from "@mirai-app/trpc/client";
+import { createExpoTRPCClient } from "@mirai-app/trpc/client/expo";
 import Constants from "expo-constants";
 
 export default function App() {
@@ -68,7 +68,7 @@ export default function App() {
 Then in components:
 
 ```tsx
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTRPC } from "@mirai-app/trpc/client";
 
 function MyComponent() {
   const trpc = useTRPC();
@@ -82,7 +82,7 @@ function MyComponent() {
 ### Client-Side (Next.js or other React apps)
 
 ```tsx
-import { TRPCProvider } from "@integral-2025-app/trpc/client";
+import { TRPCProvider } from "@mirai-app/trpc/client";
 
 export default function RootLayout({ children }) {
   return (
@@ -129,7 +129,7 @@ packages/trpc/
 
 This package provides multiple export paths:
 
-### Main Export (`@integral-2025-app/trpc`)
+### Main Export (`@mirai-app/trpc`)
 
 Server-side utilities and type definitions:
 
@@ -144,10 +144,10 @@ import {
   moderatorProcedure,
   adminProcedure,
   type AppRouter
-} from "@integral-2025-app/trpc";
+} from "@mirai-app/trpc";
 ```
 
-### Client Export (`@integral-2025-app/trpc/client`)
+### Client Export (`@mirai-app/trpc/client`)
 
 Client-side React utilities:
 
@@ -159,10 +159,10 @@ import {
   createQueryClient,
   type TRPCClientConfig,
   type QueryClientConfig
-} from "@integral-2025-app/trpc/client";
+} from "@mirai-app/trpc/client";
 ```
 
-### Expo Export (`@integral-2025-app/trpc/client/expo`)
+### Expo Export (`@mirai-app/trpc/client/expo`)
 
 Expo-specific utilities:
 
@@ -171,7 +171,7 @@ import {
   getExpoBaseUrl,
   createExpoTRPCClient,
   type ExpoTRPCClientOptions
-} from "@integral-2025-app/trpc/client/expo";
+} from "@mirai-app/trpc/client/expo";
 ```
 
 ## Available Routers
@@ -242,9 +242,9 @@ bun run typecheck
 ## Dependencies
 
 ### Runtime Dependencies
-- `@integral-2025-app/auth` - Authentication utilities
-- `@integral-2025-app/db` - Database client
-- `@integral-2025-app/supabase` - Supabase client
+- `@mirai-app/auth` - Authentication utilities
+- `@mirai-app/db` - Database client
+- `@mirai-app/supabase` - Supabase client
 - `@trpc/server` - tRPC server
 - `superjson` - Data serialization
 - `web-push` - Push notifications

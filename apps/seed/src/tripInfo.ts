@@ -1,5 +1,5 @@
-import { createDb } from "@integral-2025-app/db";
-import type { TripResource, TripInsurance, TripInsuranceStep } from "@integral-2025-app/db";
+import { createDb } from "@mirai-app/db";
+import type { TripResource, TripInsurance, TripInsuranceStep } from "@mirai-app/db";
 import type { SeedEnv, TripInfoConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";

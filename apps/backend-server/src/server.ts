@@ -5,7 +5,7 @@ import {
   type FastifyTRPCPluginOptions,
 } from "@trpc/server/adapters/fastify";
 import fastify, { type FastifyRequest } from "fastify";
-import { type AppRouter, appRouter, createTRPCContext } from "@integral-2025-app/trpc";
+import { type AppRouter, appRouter, createTRPCContext } from "@mirai-app/trpc";
 import { fastifyHeadersToFetchHeaders } from "./utils/headers";
 
 export interface ServerOptions {
