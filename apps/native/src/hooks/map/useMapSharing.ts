@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@integral-2025-app/trpc/client";
+import { useTRPC } from "@mirai-app/trpc/client";
 import { Alert } from "react-native";
 
 export function useMapSharing(

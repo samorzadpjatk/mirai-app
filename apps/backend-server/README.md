@@ -156,10 +156,10 @@ await server.stop();
 
 Serwer korzysta z pakietów wspólnych:
 
-- `@integral-2025-app/trpc` - Router tRPC i procedury
-- `@integral-2025-app/auth` - Logika autoryzacji
-- `@integral-2025-app/supabase` - Klient Supabase
-- `@integral-2025-app/db` - Prisma client
+- `@mirai-app/trpc` - Router tRPC i procedury
+- `@mirai-app/auth` - Logika autoryzacji
+- `@mirai-app/supabase` - Klient Supabase
+- `@mirai-app/db` - Prisma client
 
 ## Troubleshooting
 

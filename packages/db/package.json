@@ -1,5 +1,5 @@
 {
-  "name": "@integral-2025-app/db",
+  "name": "@mirai-app/db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@integral-2025-app/supabase": "workspace:*",
+    "@mirai-app/supabase": "workspace:*",
     "@prisma/client": "^7.3.0",
     "@prisma/adapter-pg": "^7.3.0"
   },

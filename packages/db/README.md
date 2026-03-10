@@ -1,4 +1,4 @@
-# @integral-2025-app/db
+# @mirai-app/db
 
 Wspólny pakiet zarządzający schematem bazy danych i migracjami Prisma dla całego monorepo.
 
@@ -150,7 +150,7 @@ pg_cron must be managed manually from supabase dashboard (superuser permissions 
 ## Używanie w aplikacjach
 
 ```typescript
-import { prisma } from "@integral-2025-app/db";
+import { prisma } from "@mirai-app/db";
 
 // Przykład użycia
 const users = await prisma.user.findMany();

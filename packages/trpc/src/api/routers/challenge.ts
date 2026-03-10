@@ -5,7 +5,7 @@ import {
   adminProcedure,
   protectedProcedure,
 } from "../../api/trpc";
-import { type Prisma } from "@integral-2025-app/db";
+import { type Prisma } from "@mirai-app/db";
 import { normalizeSupabaseStoragePath } from "../../utils/storage";
 import {
   createChallengeStatusActivityById,

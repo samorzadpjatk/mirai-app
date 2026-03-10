@@ -1,6 +1,6 @@
-// Auth store moved to @integral-2025-app/shared
-export { authStore } from "@integral-2025-app/shared";
-export type { AuthStore, AuthActions, AuthState, AuthUser } from "@integral-2025-app/shared";
+// Auth store moved to @mirai-app/shared
+export { authStore } from "@mirai-app/shared";
+export type { AuthStore, AuthActions, AuthState, AuthUser } from "@mirai-app/shared";
 
 export {
   useAuth,

@@ -10,12 +10,12 @@ import {
   type RealtimeChannel,
   REALTIME_CHANNEL_STATES,
   type SupabaseClient,
-} from "@integral-2025-app/supabase";
+} from "@mirai-app/supabase";
 import { IMAGE_BUCKET } from "../../utils/storage";
 import type {
   Location as DbLocation,
   PrismaClient,
-} from "@integral-2025-app/db";
+} from "@mirai-app/db";
 import { TRPCError, tracked } from "@trpc/server";
 import { ensureTripNotEnded } from "../../utils/tripGuards";
 

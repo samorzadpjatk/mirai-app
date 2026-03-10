@@ -17,10 +17,10 @@ import {
   requireModerator,
   AuthenticationError,
   AuthorizationError,
-} from "@integral-2025-app/auth";
+} from "@mirai-app/auth";
 import { TRPCError } from "@trpc/server";
-import { createSupabaseClient, type SupabaseClient } from "@integral-2025-app/supabase";
-import { createDb, type PrismaClient } from "@integral-2025-app/db";
+import { createSupabaseClient, type SupabaseClient } from "@mirai-app/supabase";
+import { createDb, type PrismaClient } from "@mirai-app/db";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
   const authorization =

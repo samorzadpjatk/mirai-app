@@ -14,7 +14,7 @@ WORKDIR /repo
 ENV CI=true
 COPY . .
 RUN bun install --frozen-lockfile
-RUN bun run turbo prune @integral-2025-app/$PACKAGE --docker
+RUN bun run turbo prune @mirai-app/$PACKAGE --docker
 
 # ---------- BUNDLER (compile single executable from TypeScript sources) ----------
 FROM oven/bun:slim AS bundler

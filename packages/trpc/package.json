@@ -1,5 +1,5 @@
 {
-  "name": "@integral-2025-app/trpc",
+  "name": "@mirai-app/trpc",
   "version": "1.0.0",
   "description": "Shared tRPC routers and utilities for Integral 2025 App",
   "type": "module",
@@ -40,10 +40,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@integral-2025-app/auth": "workspace:*",
-    "@integral-2025-app/db": "workspace:*",
-    "@integral-2025-app/shared": "workspace:*",
-    "@integral-2025-app/supabase": "workspace:*",
+    "@mirai-app/auth": "workspace:*",
+    "@mirai-app/db": "workspace:*",
+    "@mirai-app/shared": "workspace:*",
+    "@mirai-app/supabase": "workspace:*",
     "@tanstack/react-query": "^5.90.19",
     "@trpc/client": "^11.10.0",
     "@trpc/server": "^11.10.0",

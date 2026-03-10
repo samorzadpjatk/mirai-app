@@ -1,5 +1,5 @@
-import { createDb } from "@integral-2025-app/db";
-import type { Sponsor, TripSponsor } from "@integral-2025-app/db";
+import { createDb } from "@mirai-app/db";
+import type { Sponsor, TripSponsor } from "@mirai-app/db";
 import type { SeedEnv, SponsorConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";

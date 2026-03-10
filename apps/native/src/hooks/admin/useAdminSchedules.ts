@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTRPC } from '@integral-2025-app/trpc/client';
-import { invalidateNotificationQueries } from '@integral-2025-app/trpc/client/query';
+import { useTRPC } from '@mirai-app/trpc/client';
+import { invalidateNotificationQueries } from '@mirai-app/trpc/client/query';
 
 export interface NotificationSchedule {
   id: string;

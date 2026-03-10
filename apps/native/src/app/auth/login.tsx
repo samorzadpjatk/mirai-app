@@ -1,14 +1,14 @@
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, Alert, Dimensions } from "react-native";
-import { useLoginForm } from "@integral-2025-app/auth/client";
+import { useLoginForm } from "@mirai-app/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from "@integral-2025-app/auth/client";
+import { useAuth } from "@mirai-app/auth/client";
 import { useState } from "react";
-import { useSupabaseClient } from "@integral-2025-app/supabase/react";
-import { getTRPCClient } from "@integral-2025-app/trpc/client";
+import { useSupabaseClient } from "@mirai-app/supabase/react";
+import { getTRPCClient } from "@mirai-app/trpc/client";
 import { TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import { Asset } from "expo-asset";
 import Pdf from "react-native-pdf";

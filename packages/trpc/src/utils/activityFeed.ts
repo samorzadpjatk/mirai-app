@@ -1,4 +1,4 @@
-import { type Prisma } from "@integral-2025-app/db";
+import { type Prisma } from "@mirai-app/db";
 
 const HOUR_MS = 60 * 60 * 1000;
 const DEFAULT_PEER_VOTING_DURATION_HOURS = 24;

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@integral-2025-app/trpc/client';
-import { invalidateRewardQueries, invalidateTransactionQueries } from '@integral-2025-app/trpc/client/query';
+import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
+import { invalidateRewardQueries, invalidateTransactionQueries } from '@mirai-app/trpc/client/query';
 
 const PAGE_SIZE = 30;
 

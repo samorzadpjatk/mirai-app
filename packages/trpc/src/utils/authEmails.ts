@@ -1,4 +1,4 @@
-import type { SupabaseClient, SupabaseUser } from "@integral-2025-app/supabase";
+import type { SupabaseClient, SupabaseUser } from "@mirai-app/supabase";
 
 interface SupabaseAdminMetadata {
   ban_reason?: string | null;

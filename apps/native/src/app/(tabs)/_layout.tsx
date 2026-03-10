@@ -1,7 +1,7 @@
 import { useColorScheme } from "react-native";
 import { NativeTabs, Label, Icon, VectorIcon } from 'expo-router/unstable-native-tabs';
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useUser } from '@integral-2025-app/auth/client';
+import { useUser } from '@mirai-app/auth/client';
 import { ThemeProvider, DarkTheme, DefaultTheme } from '@react-navigation/native';
 
 const colors = {

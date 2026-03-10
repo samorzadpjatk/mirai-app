@@ -12,7 +12,7 @@ import {
   buildAuthUserSummaryLookup,
   resolveAuthEmail,
 } from "../../utils/authEmails";
-import type { SupabaseUser } from "@integral-2025-app/supabase";
+import type { SupabaseUser } from "@mirai-app/supabase";
 const roleSchema = z.enum(["USER", "ADMIN", "MODERATOR", "SERVICE"]);
 const nameSchema = z
   .string()
