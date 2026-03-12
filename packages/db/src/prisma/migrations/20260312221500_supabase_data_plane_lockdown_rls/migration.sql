@@ -45,12 +45,34 @@ DECLARE
   table_name text;
   has_anon boolean;
   has_authenticated boolean;
+  can_alter_postgres_defaults boolean;
+  can_alter_supabase_admin_defaults boolean;
 BEGIN
   SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
   INTO has_anon;
 
   SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated')
   INTO has_authenticated;
+
+  SELECT COALESCE(
+    (
+      SELECT pg_has_role(current_user, oid, 'MEMBER')
+      FROM pg_roles
+      WHERE rolname = 'postgres'
+    ),
+    false
+  )
+  INTO can_alter_postgres_defaults;
+
+  SELECT COALESCE(
+    (
+      SELECT pg_has_role(current_user, oid, 'MEMBER')
+      FROM pg_roles
+      WHERE rolname = 'supabase_admin'
+    ),
+    false
+  )
+  INTO can_alter_supabase_admin_defaults;
 
   FOREACH table_name IN ARRAY app_tables LOOP
     EXECUTE format(
@@ -93,22 +115,26 @@ BEGIN
     END IF;
   END LOOP;
 
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'postgres') THEN
+  IF can_alter_postgres_defaults THEN
     IF has_anon THEN
       EXECUTE 'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon';
     END IF;
     IF has_authenticated THEN
       EXECUTE 'ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM authenticated';
     END IF;
+  ELSE
+    RAISE NOTICE 'Skipping ALTER DEFAULT PRIVILEGES FOR ROLE postgres: current_user % is not a member', current_user;
   END IF;
 
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_admin') THEN
+  IF can_alter_supabase_admin_defaults THEN
     IF has_anon THEN
       EXECUTE 'ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE ALL ON TABLES FROM anon';
     END IF;
     IF has_authenticated THEN
       EXECUTE 'ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public REVOKE ALL ON TABLES FROM authenticated';
     END IF;
+  ELSE
+    RAISE NOTICE 'Skipping ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin: current_user % is not a member', current_user;
   END IF;
 END
 $$;
