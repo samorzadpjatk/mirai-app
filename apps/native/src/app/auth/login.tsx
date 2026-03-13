@@ -9,15 +9,15 @@ import { useAuth } from "@mirai-app/auth/client";
 import { useState } from "react";
 import { useSupabaseClient } from "@mirai-app/supabase/react";
 import { getTRPCClient } from "@mirai-app/trpc/client";
-import { TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
-import { Asset } from "expo-asset";
+import { PRIVACY_POLICY_PUBLIC_URL, TRPC_HTTP_URL, TRPC_WS_URL } from "~/config/runtimeEnv";
 import Pdf from "react-native-pdf";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
 import { FullScreenModal } from "~/components/common/ui/FullScreenModal";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { colors } from "~/styles";
+import { useFileDownload } from "~/hooks/files";
 
-import PRIVACY_POLICY_PDF_ASSET from "../../../assets/privacy-policy.pdf";
+const PRIVACY_POLICY_STORAGE_PATH = "files-public/legal/PJApp_Privacy_Policy_PL.pdf";
 
 export default function LoginScreen() {
   const { formState, setEmail, handleSubmit, clearSent, clearError } = useLoginForm();
@@ -39,6 +39,8 @@ export default function LoginScreen() {
   const [policyPdfUri, setPolicyPdfUri] = useState<string | null>(null);
   const [isPolicyLoading, setIsPolicyLoading] = useState(false);
   const [hasViewedPrivacyPolicy, setHasViewedPrivacyPolicy] = useState(false);
+  const privacyPolicyDownload = useFileDownload();
+  const privacyPolicyPublicUrl = PRIVACY_POLICY_PUBLIC_URL;
 
   const { email, isLoading, isSent, error } = formState;
   const ghostEmail = (process.env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL as string | undefined)?.toLowerCase() ?? "";
@@ -205,13 +207,15 @@ export default function LoginScreen() {
     setIsPolicyLoading(true);
 
     try {
-      const asset = Asset.fromModule(PRIVACY_POLICY_PDF_ASSET as number);
-      await asset.downloadAsync();
-      setPolicyPdfUri(asset.localUri ?? asset.uri);
+      const result = await privacyPolicyDownload.download({
+        storagePath: PRIVACY_POLICY_STORAGE_PATH,
+        publicUrl: privacyPolicyPublicUrl,
+      });
+      setPolicyPdfUri(result.uri);
     } catch (err) {
       setIsPolicyModalVisible(false);
       Alert.alert("Błąd", "Nie udało się otworzyć polityki prywatności.");
-      console.error("[PrivacyPolicy] asset error:", err);
+      console.error("[PrivacyPolicy] download error:", err);
     } finally {
       setIsPolicyLoading(false);
     }

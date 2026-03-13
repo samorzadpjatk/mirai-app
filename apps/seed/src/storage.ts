@@ -12,7 +12,6 @@ export const BUCKET_MAP = {
   "trip/images": () => env.imageBucket,
   "trip/videos": () => env.videoBucket,
   rewards: () => env.imageBucket,
-  "files-public": () => env.publicBucket,
 } as const;
 
 export const ensureBuckets = async () => {

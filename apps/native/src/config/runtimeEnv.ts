@@ -21,3 +21,8 @@ export const TRPC_HTTP_URL = getEnvString(
 );
 
 export const TRPC_WS_URL = TRPC_HTTP_URL.replace(/^http/, "ws");
+
+export const PRIVACY_POLICY_PUBLIC_URL = getEnvString(
+  process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL,
+  "PRIVACY_POLICY_PUBLIC_URL",
+);

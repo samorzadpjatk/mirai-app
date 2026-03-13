@@ -50,9 +50,9 @@ export const seedTripInfo = async (
           let bucketName: string;
           let objectPath: string;
           
-          if (resourceConfig.storagePath.startsWith("files-public/")) {
+          if (resourceConfig.storagePath.startsWith("public/")) {
             bucketName = env.publicBucket;
-            objectPath = resourceConfig.storagePath.replace("files-public/", "");
+            objectPath = resourceConfig.storagePath.replace("public/", "");
           } else if (resourceConfig.storagePath.startsWith("images/")) {
             bucketName = env.imageBucket;
             objectPath = resourceConfig.storagePath.replace("images/", "");
