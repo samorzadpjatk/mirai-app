@@ -44,3 +44,4 @@ yarn-error.*
 /android
 
 .tamagui
+google-services.json
