@@ -1,26 +1,26 @@
-# Backend Server
+# @mirai-app/backend-server
 
-Dedykowany serwer backend dla aplikacji Integral, oparty na Fastify i tRPC.
+Dedicated backend server for the MIRAI application, based on Fastify and tRPC.
 
-## Uruchamianie
+## Running
 
 ```bash
 # Development
 bun run dev
 
-# Testy
+# Tests
 bun run test
 
-# Testy z pokryciem
+# Tests with coverage
 bun run test:coverage
 ```
 
-## Konfiguracja
+## Configuration
 
-Serwer wymaga następujących zmiennych środowiskowych:
+The server requires the following environment variables:
 
 ```env
-# Port serwera (domyślnie: 2022)
+# Server port (default: 2022)
 PORT=2022
 
 # Supabase
@@ -28,13 +28,13 @@ SUPABASE_URL="http://localhost:8000"
 SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
 
-## Autoryzacja
+## Authorization
 
-Serwer backend obsługuje autoryzację poprzez tokeny JWT z Supabase.
+The backend server supports authorization via JWT tokens from Supabase.
 
 ### HTTP Requests
 
-Dla żądań HTTP, token jest przekazywany w nagłówku `Authorization`:
+For HTTP requests, the token is passed in the `Authorization` header:
 
 ```typescript
 headers: {
@@ -44,7 +44,7 @@ headers: {
 
 ### WebSocket Connections
 
-Dla połączeń WebSocket, token jest przekazywany w `connectionParams`:
+For WebSocket connections, the token is passed in `connectionParams`:
 
 ```typescript
 createWSClient({
@@ -55,33 +55,33 @@ createWSClient({
 });
 ```
 
-### Ścieżka autoryzacji
+### Authorization Flow
 
-1. **Klient** (aplikacja natywna/webowa):
-   - Pobiera `access_token` z sesji Supabase
-   - Przekazuje token w `connectionParams` (WebSocket) lub `Authorization` header (HTTP)
+1. **Client** (native/web application):
+   - Gets `access_token` from Supabase session
+   - Passes token in `connectionParams` (WebSocket) or `Authorization` header (HTTP)
 
 2. **tRPC Context** (`packages/trpc/src/api/trpc.ts`):
-   - Ekstraktuje token z nagłówków lub `connectionParams`
-   - Tworzy klienta Supabase
-   - Przekazuje token do kontekstu
+   - Extracts token from headers or `connectionParams`
+   - Creates Supabase client
+   - Passes token to context
 
 3. **Auth Middleware** (`packages/auth/src/authServer.ts`):
-   - `protectedProcedure` wywołuje `requireAuth(supabase, accessToken)`
-   - `requireAuth` weryfikuje token przez `supabase.auth.getUser(accessToken)`
-   - Jeśli token jest nieprawidłowy/brakuje → `AuthenticationError`
-   - Jeśli token jest prawidłowy → procedura kontynuuje z danymi użytkownika
+   - `protectedProcedure` calls `requireAuth(supabase, accessToken)`
+   - `requireAuth` verifies token via `supabase.auth.getUser(accessToken)`
+   - If token is invalid/missing → `AuthenticationError`
+   - If token is valid → procedure continues with user data
 
-### Brak tokena
+### Missing Token
 
-Gdy klient łączy się **bez** tokena:
-- HTTP/WebSocket działa normalnie dla `publicProcedure`
-- `protectedProcedure` rzuca `AuthenticationError("Unauthorized")`
-- Nie ma błędów `AuthSessionMissingError` w logach (naprawione w `authServer.ts`)
+When client connects **without** a token:
+- HTTP/WebSocket works normally for `publicProcedure`
+- `protectedProcedure` throws `AuthenticationError("Unauthorized")`
+- No `AuthSessionMissingError` errors in logs (fixed in `authServer.ts`)
 
-### Dynamiczna aktualizacja tokena
+### Dynamic Token Updates
 
-W aplikacji natywnej token jest automatycznie aktualizowany przy zmianach sesji:
+In the native app, the token is automatically updated on session changes:
 
 ```typescript
 // apps/native/src/app/_layout.tsx
@@ -91,9 +91,9 @@ supabaseClient.auth.onAuthStateChange((_event, session) => {
 });
 ```
 
-Zmiana tokena powoduje rekonstrukcję klienta tRPC z nowym tokenem w `connectionParams`.
+Token changes cause tRPC client reconstruction with the new token in `connectionParams`.
 
-## Architektura
+## Architecture
 
 ```
 ┌─────────────────┐
@@ -129,14 +129,14 @@ Zmiana tokena powoduje rekonstrukcję klienta tRPC z nowym tokenem w `connection
 └──────────────────────────────────────┘
 ```
 
-## Endpointy
+## Endpoints
 
 - `/health` - Health check endpoint
 - `/trpc` - tRPC endpoint (HTTP + WebSocket)
 
-## Testowanie
+## Testing
 
-Testy znajdują się w `src/__tests__/`:
+Tests are located in `src/__tests__/`:
 
 ```typescript
 import { createServer } from "../server";
@@ -148,36 +148,36 @@ const server = createServer({
 });
 
 await server.start();
-// ... testy
+// ... tests
 await server.stop();
 ```
 
 ## Monorepo Structure
 
-Serwer korzysta z pakietów wspólnych:
+The server uses shared packages:
 
-- `@mirai-app/trpc` - Router tRPC i procedury
-- `@mirai-app/auth` - Logika autoryzacji
-- `@mirai-app/supabase` - Klient Supabase
+- `@mirai-app/trpc` - tRPC Router and procedures
+- `@mirai-app/auth` - Authorization logic
+- `@mirai-app/supabase` - Supabase client
 - `@mirai-app/db` - Prisma client
 
 ## Troubleshooting
 
 ### AuthSessionMissingError
 
-Jeśli widzisz `AuthSessionMissingError: Auth session missing!` w logach:
+If you see `AuthSessionMissingError: Auth session missing!` in logs:
 
-- **Przyczyna**: Serwer próbował wywołać `supabase.auth.getUser()` bez tokena
-- **Rozwiązanie**: Poprawka została zastosowana w `packages/auth/src/authServer.ts` - funkcja `getAuthServerUser` teraz zwraca `null` gdy brak tokena, zamiast wywoływać Supabase Auth
+- **Cause**: Server tried to call `supabase.auth.getUser()` without a token
+- **Solution**: Fix applied in `packages/auth/src/authServer.ts` - `getAuthServerUser` now returns `null` when no token, instead of calling Supabase Auth
 
-### WebSocket nie łączy się
+### WebSocket Not Connecting
 
-1. Sprawdź, czy serwer działa: `curl http://localhost:2022/health`
-2. Sprawdź URL WebSocket w aplikacji (powinien zaczynać się od `ws://` lub `wss://`)
-3. Sprawdź logi serwera pod kątem błędów
+1. Check if server is running: `curl http://localhost:2022/health`
+2. Check WebSocket URL in app (should start with `ws://` or `wss://`)
+3. Check server logs for errors
 
-### Token nie jest przekazywany
+### Token Not Being Passed
 
-1. Sprawdź, czy sesja Supabase jest aktywna: `supabase.auth.getSession()`
-2. Sprawdź, czy `authToken` jest przekazywany do `APIProvider`
-3. Sprawdź logi serwera - czy token jest widoczny w kontekście
+1. Check if Supabase session is active: `supabase.auth.getSession()`
+2. Check if `authToken` is being passed to `APIProvider`
+3. Check server logs - is token visible in context?

@@ -1,15 +1,18 @@
-# Zasady współpracy wewnętrz repo
+[![English](https://img.shields.io/badge/English-Click-yellow)](CONTRIBUTING.md)
+[![Polski](https://img.shields.io/badge/Polski-Click-yellow)](CONTRIBUTING_PL.md)
 
-## Standardy nazewnictwa
+# Collaboration guidelines inside the repo
 
-Trzymamy się następujących standardów:
-- [Conventional Branch](https://conventional-branch.github.io/pl/)
-- [Conventional Commits](https://www.conventionalcommits.org/pl/v1.0.0/)
+## Naming standards
 
-## Jak wnieść swoją cegiełkę w projekt?
+We follow the following standards:
+- [Conventional Branch](https://conventional-branch.github.io/en/v1.0.0/)
+- [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 
-1. Utwórz brancha dla swojego PR-a
-2. Na swoim branchu, wprowadzamy zmiany w kod źródłowy
-3. Tworzymy PR-a w tytule ogólnie opisując zmiany, a w opisie pokazując, że kod źródłowy po zmianach działa prawidłowo
-4. Prosisz osoby uprawnione o review
-5. Wprowadzasz kod do głównego brancha za pomocą `squash and merge`: tytuł commit-a końcowego również musi trzymać się standardów! 
+## How to contribute to the project?
+
+1. Create a branch for your PR
+2. On your branch, make changes to the source code
+3. Create a PR with a general description of changes in the title, and in the description show that the source code works correctly after the changes
+4. Request review from authorized persons
+5. Merge the code into the main branch using `squash and merge`: the final commit title must also follow the standards! 

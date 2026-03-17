@@ -1,5 +1,7 @@
 {
   "name": "@mirai-app/shared",
+  "private": true,
+  "license": "AGPL-3.0",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {

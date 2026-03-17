@@ -18,8 +18,8 @@
     "test:ui": "vitest --ui"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "private": true,
+  "license": "AGPL-3.0",
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/websocket": "^11.2.0",

@@ -1,37 +1,39 @@
 # @mirai-app/db
 
-Wspólny pakiet zarządzający schematem bazy danych i migracjami Prisma dla całego monorepo.
+Common package managing database schema and Prisma migrations for the MIRAI app monorepo.
 
-## Struktura
+## Structure
 
 ```
 packages/db/
-├── prisma/
-│   ├── schema.prisma    # Schemat bazy danych
-│   ├── seed.ts          # Skrypt wypełniający bazę danymi początkowymi
-│   └── migrations/      # Historia migracji
-└── src/
-    ├── index.ts         # Eksportowany klient Prisma
-    └── env.ts           # Konfiguracja zmiennych środowiskowych
+├── src/
+│   ├── index.ts         # Exported Prisma client
+│   ├── client.ts        # Prisma client configuration
+│   ├── prisma/
+│   │   ├── schema.prisma    # Database schema
+│   │   ├── migrations/      # Migration history
+│   │   └── lib/            # Generated Prisma client
+├── prisma.config.ts      # Prisma configuration
+└── Dockerfile.migrations # Migration container configuration
 ```
 
-## Dostępne komendy
+## Available Commands
 
-Wszystkie komendy można uruchomić z katalogu pakietu lub używając `cd`:
+All commands can be run from the package directory or using `cd`:
 
 ```bash
-# Z katalogu pakietu
-bun run <komenda>
+# From package directory
+bun run <command>
 
-# Z katalogu głównego repozytorium
-cd packages/db && bun run <komenda>
+# From repository root
+cd packages/db && bun run <command>
 ```
 
-### Podstawowe komendy
+### Basic Commands
 
 #### `db:generate`
 
-Generuje klienta Prisma na podstawie schematu. Uruchamiane automatycznie po `bun install`.
+Generates Prisma client based on schema. Runs automatically after `bun install`.
 
 ```bash
 cd packages/db && bun run db:generate
@@ -39,7 +41,7 @@ cd packages/db && bun run db:generate
 
 #### `db:push`
 
-Wypycha zmiany schematu bezpośrednio do bazy danych bez tworzenia migracji. **Przydatne w środowisku deweloperskim**.
+Pushes schema changes directly to database without creating migrations. **Useful in development environment**.
 
 ```bash
 cd packages/db && bun run db:push
@@ -47,35 +49,27 @@ cd packages/db && bun run db:push
 
 #### `db:studio`
 
-Otwiera Prisma Studio - graficzny interfejs do przeglądania i edycji danych w bazie.
+Opens Prisma Studio - graphical interface for viewing and editing database data.
 
 ```bash
-cd packages/db && bun run db:push
+cd packages/db && bun run db:studio
 ```
 
-#### `db:seed`
-
-Wypełnia bazę danych przykładowymi danymi z pliku `prisma/seed.ts`.
-
-```bash
-cd packages/db && bun run db:seed
-```
-
-### Komendy migracji (środowisko produkcyjne)
+### Migration Commands (Production)
 
 #### `db:migrate:dev`
 
-Tworzy nową migrację na podstawie zmian w schemacie i aplikuje ją do bazy deweloperskiej.
+Creates new migration based on schema changes and applies it to development database.
 
 ```bash
 cd packages/db && bun run db:migrate:dev
 ```
 
-Po wywołaniu zostaniesz poproszony o nazwę migracji.
+You'll be prompted for migration name after execution.
 
 #### `db:migrate`
 
-Aplikuje zaległe migracje do bazy danych. **Używane w środowisku produkcyjnym**.
+Applies pending migrations to database. **Used in production environment**.
 
 ```bash
 cd packages/db && bun run db:migrate
@@ -83,81 +77,67 @@ cd packages/db && bun run db:migrate
 
 #### `db:reset`
 
-Resetuje bazę danych: usuwa wszystkie dane, ponownie aplikuje wszystkie migracje i uruchamia seed.
+Resets database: removes all data, reapplies all migrations, and runs seed.
 
-**⚠️ UWAGA: Usuwa wszystkie dane z bazy! Używaj tylko w środowisku deweloperskim!**
+**⚠️ WARNING: Deletes all data from database! Use only in development environment!**
 
 ```bash
 cd packages/db && bun run db:reset
 ```
 
-## Workflow deweloperski
+## Development Workflow
 
-### 1. Inicjalizacja projektu
+### 1. Project Initialization
 
-Po sklonowaniu repozytorium:
+After cloning the repository:
 
 ```bash
-# Zainstaluj zależności (automatycznie uruchomi db:generate)
+# Install dependencies (automatically runs db:generate)
 bun install
 
-# Wypełnij bazę danymi początkowymi
-cd packages/db && bun run db:seed
+# Fill database with initial data
+cd apps/seed && bun run start
 ```
 
-### 2. Modyfikacja schematu
+### 2. Schema Modification
 
-Po zmianie pliku `prisma/schema.prisma`:
+After changing `src/prisma/schema.prisma`:
 
 ```bash
-# W środowisku deweloperskim - szybkie prototypowanie
+# In development environment - quick prototyping
 cd packages/db && bun run db:push
 
-# LUB z migracjami - dla zmian, które mają trafić do produkcji
+# OR with migrations - for changes going to production
 cd packages/db && bun run db:migrate:dev
 ```
 
-### 3. Przeglądanie danych
+### 3. Data Viewing
 
 ```bash
 cd packages/db && bun run db:studio
 ```
 
-Otwiera się w przeglądarce pod adresem `http://localhost:5555`
+Opens in browser at `http://localhost:5555`
 
-## Konfiguracja
+## Configuration
 
-Pakiet wymaga zmiennej środowiskowej `DATABASE_URL` zdefiniowanej w pliku `.env` w katalogu głównym projektu:
+The package requires the `DATABASE_URL` environment variable defined in `.env` file in project root:
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:54322/postgres"
 ```
 
-## PG Cron
-
-pg_cron must be managed manually from supabase dashboard (superuser permissions needed).
-
-### Available Cron Jobs
-
-1. **NotificationSchedule Processing** - Processes scheduled notifications every minute
-   - Go to supabase dashboard (http://localhost:8000) -> SQL Editor
-   - Run [cron_process-notification-schedules.sql](./sql/cron_process-notification-schedules.sql)
-
-2. **Job Details Cleanup** - Cleans up succeeded pg_cron logs daily at 2 AM (default retention period is 7 days, to change edit the parameter passed to the sp in cron sql)
-   - Go to supabase dashboard (http://localhost:8000) -> SQL Editor
-   - Schedule the cron from supabase dashboard: [cron_cleanup_cron_logs_succeeded.sql](./sql/cron_cleanup_cron_logs_succeeded.sql)
-
-## Używanie w aplikacjach
+## Usage in Applications
 
 ```typescript
 import { prisma } from "@mirai-app/db";
 
-// Przykład użycia
+// Example usage
 const users = await prisma.user.findMany();
 ```
 
-## Więcej informacji
+## More Information
 
-- [Dokumentacja Prisma](https://www.prisma.io/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
 - [Prisma Schema Reference](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference)
 - [Prisma Migrate](https://www.prisma.io/docs/concepts/components/prisma-migrate)

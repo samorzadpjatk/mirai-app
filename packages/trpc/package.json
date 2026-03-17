@@ -37,8 +37,8 @@
     "clean": "rm -rf node_modules"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "private": true,
+  "license": "AGPL-3.0",
   "dependencies": {
     "@mirai-app/auth": "workspace:*",
     "@mirai-app/db": "workspace:*",

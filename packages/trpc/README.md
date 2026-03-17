@@ -1,6 +1,6 @@
 # @mirai-app/trpc
 
-Shared tRPC package containing both server-side routers and client-side utilities for the Integral 2025 App monorepo.
+Shared tRPC package containing both server-side routers and client-side utilities for the MIRAI app monorepo.
 
 ## What's Inside
 
@@ -52,15 +52,17 @@ export const POST = async (req: Request) => {
 ### Client-Side (React Native with Expo)
 
 ```tsx
-import { TRPCProvider } from "@mirai-app/trpc/client";
-import { createExpoTRPCClient } from "@mirai-app/trpc/client/expo";
+import { APIProvider } from "@mirai-app/trpc/client";
 import Constants from "expo-constants";
+
+const httpUrl = Constants.expoConfig?.extra?.apiUrl || "https://your-api.com";
+const wsUrl = Constants.expoConfig?.extra?.wsUrl || "wss://your-api.com";
 
 export default function App() {
   return (
-    <TRPCProvider client={createExpoTRPCClient({ expoConfig: Constants.expoConfig })}>
+    <APIProvider httpUrl={httpUrl} wsUrl={wsUrl}>
       <MyApp />
-    </TRPCProvider>
+    </APIProvider>
   );
 }
 ```
@@ -82,18 +84,16 @@ function MyComponent() {
 ### Client-Side (Next.js or other React apps)
 
 ```tsx
-import { TRPCProvider } from "@mirai-app/trpc/client";
+import { APIProvider } from "@mirai-app/trpc/client";
 
 export default function RootLayout({ children }) {
   return (
-    <TRPCProvider
-      client={{
-        baseUrl: "http://localhost:3000",
-        source: "nextjs-app"
-      }}
+    <APIProvider 
+      httpUrl="http://localhost:3000" 
+      wsUrl="ws://localhost:3000"
     >
       {children}
-    </TRPCProvider>
+    </APIProvider>
   );
 }
 ```
@@ -107,22 +107,37 @@ packages/trpc/
 │   │   ├── trpc.ts       # tRPC initialization and procedures
 │   │   ├── root.ts       # Main router combining all sub-routers
 │   │   └── routers/      # Individual feature routers
-│   │       ├── user.ts
-│   │       ├── group.ts
+│   │       ├── activityFeed.ts
+│   │       ├── challenge.ts
+│   │       ├── challengeSubmission.ts
+│   │       ├── challengeVote.ts
 │   │       ├── coin.ts
-│   │       └── ...
+│   │       ├── coinTransaction.ts
+│   │       ├── group.ts
+│   │       ├── location.ts
+│   │       ├── notificationDelivery.ts
+│   │       ├── notificationSchedule.ts
+│   │       ├── notificationSender.ts
+│   │       ├── notifications.ts
+│   │       ├── reward.ts
+│   │       ├── sponsor.ts
+│   │       ├── storage.ts
+│   │       ├── submissionReport.ts
+│   │       ├── trip.ts
+│   │       └── user.ts
 │   ├── client/           # Client-side utilities
 │   │   ├── react.ts      # Base React hooks
-│   │   ├── query-client.ts  # React Query configuration
-│   │   ├── provider.tsx  # Provider component
-│   │   ├── expo.ts       # Expo-specific utilities
-│   │   ├── index.ts      # Client exports
-│   │   └── README.md     # Client documentation
+│   │   ├── query-client.tsx  # React Query configuration
+│   │   ├── invalidationUtils.ts  # Query invalidation utilities
+│   │   ├── vanilia.ts    # Vanilla JS client utilities
+│   │   ├── query/        # Query-specific utilities
+│   │   │   └── index.ts
+│   │   └── index.ts      # Client exports
 │   ├── services/         # Business logic services
 │   ├── utils/            # Shared utilities
 │   └── index.ts          # Main package exports
 ├── package.json
-└── MIGRATION.md          # Migration guide
+└── README.md             # This file
 ```
 
 ## Exports
@@ -153,37 +168,39 @@ Client-side React utilities:
 
 ```typescript
 import {
-  api,
-  TRPCProvider,
-  createTRPCClient,
-  createQueryClient,
-  type TRPCClientConfig,
-  type QueryClientConfig
+  useTRPC,
+  useTRPCClient,
+  APIProvider,
+  useSubscription,
+  getTRPCClient,
+  TRPCContext
 } from "@mirai-app/trpc/client";
 ```
 
-### Expo Export (`@mirai-app/trpc/client/expo`)
-
-Expo-specific utilities:
-
-```typescript
-import {
-  getExpoBaseUrl,
-  createExpoTRPCClient,
-  type ExpoTRPCClientOptions
-} from "@mirai-app/trpc/client/expo";
-```
+The client export also includes query invalidation utilities that are re-exported from the query module.
 
 ## Available Routers
 
 The API includes the following routers:
 
-- **`user`** - User management operations
-- **`group`** - Group management operations
+- **`activityFeed`** - Activity feed operations
+- **`challenge`** - Challenge management operations
+- **`challengeSubmission`** - Challenge submission operations
+- **`challengeVote`** - Challenge voting operations
 - **`coin`** - Coin management operations
 - **`coinTransaction`** - Coin transaction operations
-- **`notifications`** - Notification operations
+- **`group`** - Group management operations
+- **`location`** - Location management operations
+- **`notificationDelivery`** - Notification delivery operations
 - **`notificationSchedule`** - Notification scheduling operations
+- **`notificationSender`** - Notification sender operations
+- **`notifications`** - Notification operations
+- **`reward`** - Reward management operations
+- **`sponsor`** - Sponsor management operations
+- **`storage`** - File storage operations
+- **`submissionReport`** - Submission reporting operations
+- **`trip`** - Trip management operations
+- **`user`** - User management operations
 
 ## Type Safety
 
@@ -236,8 +253,8 @@ bun run typecheck
 
 ## Documentation
 
-- **`MIGRATION.md`** - Guide for migrating to shared client package
-- **`src/client/README.md`** - Detailed client API documentation
+- **`src/client/query/`** - Query invalidation utilities documentation
+- **Package README** - This file
 
 ## Dependencies
 
@@ -263,8 +280,4 @@ When adding new routers or procedures:
 1. Create router in `src/api/routers/`
 2. Add to `src/api/root.ts`
 3. Export types if needed
-4. Add tests in `src/api/__tests__/`
-
-## License
-
-ISC
+4. Add tests in appropriate test directories

@@ -1,116 +1,136 @@
-# Aplikacja mobilna Expo React Native
+# @mirai-app/native
 
-Natywna aplikacja mobilna Samorządu Studenckiego PJATK zbudowana z użyciem Expo i React Native.
+PJATK Student Government mobile application built with Expo and React Native.
 
-## Technologie
+## Technologies
 
-- **Expo SDK 54** z nową architekturą
+- **Expo SDK 54** with new architecture
 - **React 19** & **React Native 0.81**
-- **Expo Router 6** - routing oparty na systemie plików
-- **Supabase** - backend i autentykacja
-- **TypeScript** - statyczne typowanie
-- **Jest** & **React Native Testing Library** - testy
+- **Expo Router 6** - file-based routing
+- **tRPC + Supabase** - backend and authentication
+- **TypeScript** - static typing
+- **Jest** & **React Native Testing Library** - testing
 
-## Wymagania
+## Requirements
 
 - Bun (https://bun.sh) installed
-- iOS Simulator (macOS) lub Android Studio (dla emulatora Android)
-- Expo Go na urządzeniu fizycznym (opcjonalnie)
+- iOS Simulator (macOS) or Android Studio (for Android emulator)
+- Expo Go on physical device (optional)
 
-## Instalacja
+## Installation
 
-Z katalogu głównego projektu:
+From project root:
 
 ```bash
 bun install
 ```
 
-## Dostępne komendy
+## Available Commands
 
-| Komenda | Opis |
+| Command | Description |
 |---------|------|
-| `cd apps/native && bun run dev` | Uruchamia serwer deweloperski Expo |
-| `cd apps/native && bun run android` | Uruchamia aplikację na emulatorze/urządzeniu Android |
-| `cd apps/native && bun run ios` | Uruchamia aplikację na symulatorze/urządzeniu iOS |
-| `cd apps/native && bun run web` | Uruchamia aplikację w przeglądarce |
-| `cd apps/native && bun run build` | Buduje aplikację do produkcji |
-| `cd apps/native && bun run lint` | Sprawdza kod pod kątem błędów ESLint |
-| `cd apps/native && bun run lint:fix` | Naprawia automatycznie błędy ESLint |
-| `cd apps/native && bun run typecheck` | Sprawdza typy TypeScript |
-| `cd apps/native && bun run test` | Uruchamia testy z pokryciem |
-| `cd apps/native && bun run format:check` | Sprawdza formatowanie kodu |
-| `cd apps/native && bun run format:write` | Formatuje kod |
+| `cd apps/native && bun run dev` | Starts Expo development server |
+| `cd apps/native && bun run android` | Runs app on Android emulator/device |
+| `cd apps/native && bun run ios` | Runs app on iOS simulator/device |
+| `cd apps/native && bun run web` | Runs app in browser |
+| `cd apps/native && bun run build` | Builds app for production |
+| `cd apps/native && bun run lint` | Checks code for ESLint errors |
+| `cd apps/native && bun run lint:fix` | Automatically fixes ESLint errors |
+| `cd apps/native && bun run typecheck` | Checks TypeScript types |
+| `cd apps/native && bun run test` | Runs tests with coverage |
+| `cd apps/native && bun run format:check` | Checks code formatting |
+| `cd apps/native && bun run format:write` | Formats code |
 
-## Struktura projektu
+## Project Structure
 
 ```
 apps/native/
 ├── src/
-│   ├── app/          # Routing Expo Router
-│   ├── components/   # Komponenty React
-│   └── hooks/        # Custom React hooks
-├── assets/           # Obrazy, ikony, czcionki
-├── app.json          # Konfiguracja Expo
+│   ├── app/              # Expo Router routing
+│   ├── components/       # React components
+│   │   ├── ui/          # Shared UI components
+│   │   └── ...          # Domain-specific components
+│   ├── hooks/           # Custom React hooks
+│   ├── services/        # Services and APIs
+│   └── utils/           # Utility functions
+├── assets/              # Images, icons, fonts
+├── app.json             # Expo configuration
 └── package.json
 ```
 
-## Uruchomienie z monorepo
+### Shared UI Components
 
-Z katalogu głównego projektu:
+All major UI components are located in `src/components/ui/`:
+
+- **Buttons**: `PrimaryLoadingButton`, `PrimaryAddButton`
+- **Actions**: `FloatingActionButton`
+- **Modals**: `MapModalShell`, `MapModalUserItem`
+- **Forms**: Consistent components for forms and input fields
+
+### Domain Structure
+
+Each domain (trips, groups, challenges, rewards) has its own structure in `src/components/`:
+- Domain-specific components
+- Domain-related hooks
+- Types and interfaces
+
+## Running from Monorepo
+
+From project root:
 
 ```bash
-# Uruch serwer deweloperski
+# Start development server
 cd apps/native && bun run dev
 
-# Uruchom na platformie
+# Run on platform
 cd apps/native && bun run android
 cd apps/native && bun run ios
 ```
 
-## Rozwój
+## Development
 
-1. Uruchom serwer deweloperski: `bun run dev`
-2. Zeskanuj kod QR w aplikacji Expo Go lub wybierz platformę (a/i/w)
-3. Kod przeładowuje się automatycznie po zapisaniu zmian
+1. Start development server: `bun run dev`
+2. Scan QR code in Expo Go app or choose platform (a/i/w)
+3. Code reloads automatically on save
 
 ## Supabase Storage (MinIO)
 
-Storage działa przez Kong pod adresem `http://localhost:8000/storage/v1` i używa MinIO jako backendu S3.
+Storage works through Kong at `http://localhost:8000/storage/v1` and uses MinIO as S3 backend.
 
-1. Uruchom środowisko Supabase (docker compose w katalogu `environment`).
-2. Wejdź do Supabase Studio (`http://localhost:3000`) i utwórz bucket.
-3. Skonfiguruj polityki RLS dla `storage.objects` zgodnie z potrzebami aplikacji.
+1. Run Supabase environment (docker compose in `environment` directory).
+2. Go to Supabase Studio (`http://localhost:3000`) and create bucket.
+3. Configure RLS policies for `storage.objects` as needed by the app.
 
-Aplikacja używa tego samego `EXPO_PUBLIC_SUPABASE_URL` jak dla Auth i Realtime.
+The app uses the same `EXPO_PUBLIC_SUPABASE_URL` as for Auth and Realtime.
 
 ## Routing
 
-Aplikacja używa [Expo Router](https://docs.expo.dev/router/introduction/) - routing oparty na systemie plików. Pliki w `src/app/` automatycznie stają się ekranami.
+The app uses [Expo Router](https://docs.expo.dev/router/introduction/) - file-based routing. Files in `src/app/` automatically become screens.
 
-### Struktura nawigacji
+### Navigation Structure
 
 ```
 src/app/
-├── _layout.tsx           # Główny layout z konfiguracją Stack Navigation
-├── index.tsx             # Ekran główny (po zalogowaniu)
+├── _layout.tsx           # Main layout with Stack Navigation config
+├── index.tsx             # Home screen (after login)
 ├── auth/
-│   ├── login.tsx        # Ekran logowania
-│   └── signup.tsx       # Ekran rejestracji
+│   ├── login.tsx        # Login screen
+│   └── signup.tsx       # Signup screen
 ├── users/
-│   └── index.tsx        # Lista użytkowników (admin)
+│   └── index.tsx        # User list (admin)
 ├── groups/
-│   └── index.tsx        # Lista gildii (admin)
+│   └── index.tsx        # Guild list (admin)
 ├── coins/
-│   └── index.tsx        # Operacje na monetach (admin)
+│   └── index.tsx        # Coin operations (admin)
 ├── transactions/
-│   └── index.tsx        # Historia transakcji (admin)
+│   └── index.tsx        # Transaction history (admin)
 └── notifications/
-    └── index.tsx         # Zarządzanie powiadomieniami (admin)
+    └── index.tsx         # Notification management (admin)
 ```
 
-### Nawigacja między ekranami
+### Screen Navigation
 
-Expo Router zapewnia funkcję `useRouter()` do nawigacji programatycznej:
+Expo Router provides `useRouter()` function for programmatic navigation:
 
 ```tsx
 import { useRouter } from "expo-router";
@@ -118,42 +138,42 @@ import { useRouter } from "expo-router";
 function MyComponent() {
   const router = useRouter();
   
-  // Nawigacja do ekranu
+  // Navigate to screen
   router.push("/users");
   
-  // Zamień aktualny ekran (np. po zalogowaniu)
+  // Replace current screen (e.g., after login)
   router.replace("/");
   
-  // Powrót
+  // Go back
   router.back();
 }
 ```
 
-### Konfiguracja ekranów
+### Screen Configuration
 
-W pliku `_layout.tsx` każdy ekran jest skonfigurowany z własnymi opcjami:
+In `_layout.tsx` each screen is configured with its own options:
 
-- **Auth screens** (`/auth/login`, `/auth/signup`) - bez nagłówka, animacja fade
-- **Admin screens** (`/users`, `/groups`, etc.) - z nagłówkiem i tytułem
-- **Home screen** (`/`) - bez nagłówka
+- **Auth screens** (`/auth/login`, `/auth/signup`) - no header, fade animation
+- **Admin screens** (`/users`, `/groups`, etc.) - with header and title
+- **Home screen** (`/`) - no header
 
-### Zabezpieczenia dostępu
+### Access Control
 
-Każdy ekran administracyjny sprawdza uprawnienia użytkownika i automatycznie przekierowuje na ekran główny, jeśli użytkownik nie ma dostępu (nie jest Admin, Moderator lub Service Account).
+Each admin screen checks user permissions and automatically redirects to home screen if user doesn't have access (not Admin, Moderator, or Service Account).
 
-## Testowanie
+## Testing
 
 ```bash
-# Uruchom wszystkie testy
+# Run all tests
 cd apps/native && bun run test
 
-# Testy bez pokrycia (dla CI)
+# Tests without coverage (for CI)
 cd apps/native && bun run test:ci
 ```
 
-## Więcej informacji
+## More Information
 
-- [Dokumentacja Expo](https://docs.expo.dev/)
-- [Dokumentacja React Native](https://reactnative.dev/)
-- [Dokumentacja Expo Router](https://docs.expo.dev/router/introduction/)
-- [Główne README projektu](../../README.md)
+- [Expo Documentation](https://docs.expo.dev/)
+- [React Native Documentation](https://reactnative.dev/)
+- [Expo Router Documentation](https://docs.expo.dev/router/introduction/)
+- [Project Main README](../../README.md)

@@ -31,8 +31,7 @@
     "clean": "rm -rf node_modules"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "license": "AGPL-3.0",
   "devDependencies": {
     "@types/react": "~19.1.17",
     "postcss": "^8.5.6",

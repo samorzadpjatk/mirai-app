@@ -1,92 +1,114 @@
-# Projekt `PJApp`
+[![English](https://img.shields.io/badge/English-Click-yellow)](README.md)
+[![Polski](https://img.shields.io/badge/Polski-Click-yellow)](README_PL.md)<br>
+[![AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue)](LICENSE)
+<img width="1440" height="565" alt="mirai_app_banner" src="https://github.com/user-attachments/assets/88e9e651-ec6d-458f-b650-4a351b1bb534" />
+<div align="center">
+<h1>MIRAI</h1>
+<b>PJATK Student Government Mobile Application</b>
+<p>also known as: Project <code>PJApp</code></p>
+<p>Currently a trip application prepared for integration trips<br>Will eventually become a general Student Government application for all students</p>
+</div>
 
-Aplikacja mobilna Samorządu Studenckiego PJATK
+<br>
 
-Obecnie aplikacja wyjazdowa przygotowana dla INTEGRAL 2025, rozbudowywana dla WINTEGRAL 2026, aby docelowo stać się ogólną aplikacją Samorządu dla wszystkich studentów
+## Want to join?
 
-## Chcesz dołączyć?
+Check out the [collaboration guidelines inside the repo](CONTRIBUTING.md)!
 
-Spójrz na [zasady współpracy wewnątrz repo](CONTRIBUTING.md)!
+> [!IMPORTANT]
+> **Call for Mainteiners**
+> 
+> We are looking for maintainers to take over the project. 
+> If you are interested, please contact the PJAIT's Student Council.
 
-## Struktura projektu
+## Project Structure
 
-Obecnie repozytorium pełni funkcję monorepo zaimplementowanego z użyciem **Turborepo** dla orchiestracji budowy kodu oraz **Bun workspaces** (Bun jako menedżer pakietów) dla zarządzania pakietami.
+The repository currently functions as a monorepo implemented using **Turborepo** for code build orchestration and **Bun workspaces** (Bun as package manager) for package management.
 
-Sprawdź szczegóły ich konfiguracji wewnątrz plików [`turbo.json`](turbo.json) oraz [`bun.lock`](bun.lock)
+Check their configuration details inside [`turbo.json`](turbo.json) and [`bun.lock`](bun.lock)
 
-Znajduje się w nim:
+It contains:
 
-- **Aplikacja natywna** (Expo / React Native) → [`@mirai-app/native`](apps/native/)
-- **Backend serwerowy** (Fastify + tRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
-- **Współdzielone biblioteki** → [`packages`](packages/)
+- **Native application** (Expo / React Native) → [`@mirai-app/native`](apps/native/)
+- **Backend server** (Fastify + tRPC) → [`@mirai-app/backend-server`](apps/backend-server/)
+- **Notification sender** (Expo Push Notifications) → [`@mirai-app/notification-sender`](apps/notification-sender/)
+- **Seed CLI** (Database & Storage seeding) → [`@mirai-app/seed`](apps/seed/)
+- **Shared packages** → [`packages`](packages/)
+  - [`@mirai-app/auth`](packages/auth/) - Authentication logic
+  - [`@mirai-app/db`](packages/db/) - Prisma database client
+  - [`@mirai-app/shared`](packages/shared/) - Shared utilities
+  - [`@mirai-app/supabase`](packages/supabase/) - Supabase client configuration
 
-Wszystkie skrypty mogą zostać wywołane z katalogu głównego projektu za pomocą `bun run <script>`. (Możesz też wejść do konkretnego pakietu i uruchomić `bun run <script>`).
+All scripts can be called from the project root using `bun run <script>`. (You can also go to a specific package and run `bun run <script>`).
 
-Aby uruchomić skrypt przypisany danemu komponentowi używamy `bun run` (lub `cd <pakiet> && bun run <script>`):
+To run a script assigned to a specific component, use `bun run` (or `cd <package> && bun run <script>`):
 ```bash
 cd apps/native && bun run dev
 ```
 
-## Wymagania techniczne
+## Technical Requirements
 
-Upewnij się, że masz zainstalowane:
+Make sure you have installed:
 
-- **Node.js** (version 18 lub wyższa)
+- **Node.js** (version 18 or higher)
 - **Bun** (https://bun.sh)
-- **Docker** (dla Supabase)
+- **Docker** (for development environment, including Supabase)
 
-## Jak zacząć?
+## How to start?
 
-### 1. Sklonuj repozytorium
+### 1. Clone the repository
 
 ```bash
 git clone <repository-url>
 cd integral-app
 ```
 
-### 2. Zainstaluj zależności
+### 2. Install dependencies
 
 ```bash
 bun install
 ```
 
-### 3. Uruchomienie środowiska deweloperskiego
+### 3. Run the development environment
 
-Spójrz na jego [dokumentację](environment/dev/README.md)
+Check its [documentation](environment/dev/README.md)
 
-### 4. Przygotowuj schemat bazy danych
+### 4. Prepare the database schema
 
 ```bash
 # Generate Prisma client
-cd packages/db && bun run postinstall
+cd packages/seed && bun run db:generate
 
 # Push the schema to the database
-cd packages/db && bun run db:push
+cd packages/seed && bun run db:push
 
 # Optional: Open Prisma Studio to view the database
-cd packages/db && bun run db:studio
+cd packages/seed && bun run db:studio
 ```
 
-> 📖 **Więcej informacji o komendach bazodanowych**: Zobacz [packages/db/README.md](packages/db/README.md)
+> 📖 **More information about database commands**: See [packages/seed/README.md](packages/seed/README.md)
 
-### 5. Uruchom wybraną aplikację
+### 5. Run the selected application
 
-Przed uruchomieniem: 
-- spójrz na dokumentację [aplikacji natywnej](apps/native/README.md) oraz [backendu](apps/backend-server/README.md)
-- wywołaj testy za pomocą `bun run test`
-- sprawdź, czy monorepo buduje aplikację za pomocą `bun run build`
+Before running:
+- check the documentation of the [native application](apps/native/README.md) and [backend](apps/backend-server/README.md)
 
 #### `bun run dev`
 
-Uruchamia wszystkie aplikacje w trybie developerskim jednocześnie:
+Runs all applications in development mode simultaneously:
 
 - Backend server on `http://localhost:2022`
 - Native app (Expo dev server)
+- Notification sender service
 
-#### `bun run dev:web`
+#### `bun run dev:backend`
 
-Uruchamia tylko serwer backendowy (Fastify + tRPC) w trybie deweloperskim (domyślnie port 2022).
+Runs only the backend server (Fastify + tRPC) in development mode (default port 2022).
 
 #### `bun run dev:native`
 
-Uruchamia tylko aplikację natywną (Expo dev server).
+Runs only the native application (Expo dev server).
+
+#### `bun run dev:notification-sender`
+
+Runs only the notification sender service for push notifications.

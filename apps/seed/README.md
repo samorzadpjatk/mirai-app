@@ -1,4 +1,4 @@
-# Seed CLI
+# @mirai-app/seed
 
 Application-level seeding for Supabase Storage + Prisma data.
 

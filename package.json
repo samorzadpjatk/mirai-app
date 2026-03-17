@@ -39,6 +39,7 @@
     "apps/*",
     "packages/*"
   ],
+  "license": "AGPL-3.0",
   "dependencies": {
     "@trpc/client": "^11.10.0"
   }
