@@ -1,51 +1,56 @@
-# Seed App
+# Seed CLI
 
 Application-level seeding for Supabase Storage + Prisma data.
 
 ## What it does
 - Creates required Supabase Storage buckets (files-public/image/video)
-- Uploads files from `assets/public` to the files-public bucket
-- Uploads files from `assets/trips/images` to the image bucket
-- Uploads files from `assets/trips/videos` to the video bucket
-- Reads YAML trip configs from `assets/trips/config/**.yaml`
-- Reads CSV user lists per trip from `assets/trips/config/**.csv`
+- Uploads files from environment-specific asset directories
+- Reads YAML trip configs from `assets/{env}/config/**.yaml`
+- Reads CSV user lists per trip from `assets/{env}/users/**.csv`
 - Creates trips + participants, upserting users in chronological trip order
-- Writes a per-trip `info.json` manifest to the public bucket
+- Seeds sponsors, rewards, and trip info per trip
+- Writes per-trip manifests to storage
 
 ## Folder structure
 ```
 apps/seed/assets/
-  public/
-    ...files uploaded to public bucket
-  trips/
-    images/
-      ...files uploaded to image bucket
-    videos/
-      ...files uploaded to video bucket
+  dev/                    # Development environment assets
     config/
-      wintegral-2026/
-        trip.yaml
-        users.csv
+      example-trip.yaml   # Trip configuration
+    images/
+      trips/              # Trip-specific images
+      sponsors/           # Sponsor logos
+    info/
+      example-info.yaml   # Trip info configuration
+    public/               # Public bucket files
+    rewards/
+      example-rewards.yaml # Rewards configuration
+      *.jpg              # Reward images
+    sponsors/
+      example-sponsors.yaml # Sponsor configurations
+    users/
+      example-trip-members.csv # User lists
+  prod/                   # Production environment assets (same structure)
 ```
 
 ## Trip YAML schema
 Minimal fields required:
 ```yaml
-key: wintegral-2026
-name: Wintegral 2026
-description: Verbier & La Tzoumaz winter trip
+key: example-trip
+name: Example Trip
+description: Example trip description
 startDate: 2026-02-20
 endDate: 2026-03-01
-whatsappUrl: https://example.com
-assets:
-  background: trips/images/wintegral-2026/background.png
-  infopack: public/trips/wintegral-2026/infopack.pdf
+users: users/example-trip-members.csv
+background: images/trips/example-trip/background.png
+sponsors: sponsors/example-trip-sponsors.yaml
+rewards: rewards/example-trip-rewards.yaml
+info: info/example-trip-info.yaml
 ```
 
 Asset references must start with:
-- `public/` (public bucket)
-- `trips/images/` (image bucket)
-- `trips/videos/` (video bucket)
+- `images/` (uploaded to image bucket)
+- `public/` (uploaded to public bucket)
 
 ## Users CSV schema
 Headers supported:
@@ -55,15 +60,102 @@ email,firstName,lastName,role,password,ghost,wristNumber,houseNumber
 - `role` defaults to `USER`
 - `ghost` accepts `true/false`
 
-## Placeholders
+## Additional configuration files
+
+### Sponsors YAML schema
+```yaml
+- id: partner-1
+  name: Example Sponsor
+  description: |
+    Multi-line sponsor description
+  logoPath: images/sponsors/example-sponsor.png
+  height: 18
 ```
-apps/seed/assets/public/legal/Regulamin.txt
-apps/seed/assets/public/legal/Polityka-Prywatnosci.txt
-apps/seed/assets/trips/images/wintegral-2026/background.png
-apps/seed/assets/public/trips/wintegral-2026/infopack.txt
-apps/seed/assets/trips/config/wintegral-2026/trip.yaml
-apps/seed/assets/trips/config/wintegral-2026/users.csv
+
+### Rewards YAML schema
+```yaml
+- name: "Pizza na wieczór"
+  description: "Zamówienie pizzy dla całej grupy na wieczorny relaks"
+  availableQuantity: 3
+  coinCost: 50
+  image: "pizza.jpg"
 ```
+
+### Trip Info YAML schema
+```yaml
+resources:
+  - type: hero_image
+    label: "Example Trip"
+    storagePath: "images/trips/example-trip/hero-bg.jpg"
+    sortOrder: 0
+  - type: map_bg_image
+    label: "Ski Map Background"
+    storagePath: "images/trips/example-trip/map-bg.jpg"
+    sortOrder: 1
+  - type: interactive_map
+    label: "Interactive Map"
+    url: "https://example.com/map"
+    iconName: "map"
+    sortOrder: 2
+  - type: pdf_map
+    label: "PDF Map"
+    storagePath: "public/maps/example-map.pdf"
+    fileName: "example-map"
+    iconName: "document-text"
+    sortOrder: 3
+  - type: infopack
+    label: "Infopack"
+    storagePath: "public/infopack/example-infopack.pdf"
+    fileName: "example-infopack"
+    iconName: "document-text"
+    sortOrder: 4
+  - type: whatsapp
+    label: "WhatsApp"
+    url: "https://example.com/whatsapp"
+    iconName: "chatbubble"
+    sortOrder: 5
+  - type: sos
+    label: "SOS"
+    description: "W razie nagłego wypadku zadzwoń na 112."
+    iconName: "alert-circle"
+    value: "112"
+    sortOrder: 6
+
+insurance:
+  label: "Ubezpieczenie / Kontakt"
+  phoneNumber: "+48123456789"
+  phoneDisplay: "+48 123 456 789"
+  policyNumber: "EXAMPLE123"
+  contractNumber: "EXAMPLE456"
+  providerName: "Example Provider"
+  hospitalName: "Example Hospital"
+  hospitalAddress: "Example Address"
+  hospitalDistance: "ok. 30km od Example Location"
+  steps:
+    - stepNumber: 1
+      title: "Krok 1"
+      text: "Poproście o pomoc osobę z obsługi stoku lub ratowników. W razie poważnych obrażeń wezwijcie helikopter (numer ratunkowy na stokach: 112)."
+    - stepNumber: 2
+      title: "Krok 2"
+      text: "Skontaktujcie się z ubezpieczycielem Example Provider pod numerem +48 123 456 789. Podajcie:"
+      requiredInfo:
+        - "imienia i nazwiska"
+        - "daty urodzenia"
+        - "numeru polisy: EXAMPLE123"
+        - "numeru umowy generalnej: EXAMPLE456"
+      exampleCall: "Jestem na wyjeździe w Example Location, doznałem kontuzji, ratownicy zwożą mnie na dół."
+    - stepNumber: 3
+      title: "Krok 3"
+      text: "Poinformujcie pilota lub członka naszej kadry o sytuacji. Zadzwońcie na podany numer kontaktowy."
+```
+
+## Example files
+The seed app includes example configuration files in `assets/dev/`:
+- `config/example-trip.yaml` - Example trip configuration
+- `rewards/example-rewards.yaml` - Example rewards with images
+- `sponsors/example-sponsors.yaml` - Example sponsor configurations  
+- `info/example-info.yaml` - Example trip info with resources and insurance
+- `users/example-trip-members.csv` - Example user list (create as needed)
 
 ## Environment Setup
 
@@ -100,7 +192,7 @@ in `apps/native/.env` so the app exposes the password login for the reviewer acc
 
 ### Seeding
 - `bun run dev` - Run seed with development environment
-- `bun run prod` - Run seed with production environment
+- `bun run prod` - Run seed with production environment  
 - `bun run db:seed:dev` - Run seed with development environment (alias)
 - `bun run db:seed:prod` - Run seed with production environment (alias)
 
@@ -126,7 +218,6 @@ bun install
 
 # Development seeding
 bun run dev
-
 # Production seeding
 bun run prod
 

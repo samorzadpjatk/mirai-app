@@ -1,0 +1,43 @@
+- id: partner-1
+  name: Example Sponsor
+  description: |
+    Example sponsor description
+
+    Example sponsor description
+
+    Example sponsor description
+  logoPath: images/sponsors/example-sponsor.png
+  height: 18
+
+- id: partner-2
+  name: Example Sponsor 2
+  description: |
+    Example sponsor 2 description
+
+    Example sponsor 2 description
+
+    Example sponsor 2 description
+  logoPath: images/sponsors/example-sponsor.png
+  height: 30
+
+- id: partner-3
+  name: Example Sponsor 3
+  description: |
+    Example sponsor 3 description
+
+    Example sponsor 3 description
+
+    Example sponsor 3 description
+  logoPath: images/sponsors/example-sponsor.png
+  height: 30
+
+- id: partner-4
+  name: Example Sponsor 4
+  description: |
+    Example sponsor 4 description
+
+    Example sponsor 4 description
+
+    Example sponsor 4 description
+  logoPath: images/sponsors/example-sponsor.png
+  height: 30
