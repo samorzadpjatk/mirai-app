@@ -28,8 +28,8 @@
           ],
           "glass" : true,
           "hidden" : false,
-          "image-name" : "mirai_gradient.png",
-          "name" : "mirai_gradient",
+          "image-name" : "mirai_gradient_logo.png",
+          "name" : "mirai_gradient_logo",
           "opacity" : 1,
           "position" : {
             "scale" : 0.75,
@@ -42,8 +42,8 @@
         {
           "blend-mode" : "normal",
           "fill" : "none",
-          "image-name" : "Copilot_mirai_gradient_extended_1_1_smoothed.png",
-          "name" : "Copilot_mirai_gradient_extended_1_1_smoothed",
+          "image-name" : "mirai_gradient_background.png",
+          "name" : "mirai_gradient_background",
           "opacity" : 1,
           "position" : {
             "scale" : 1.25,
