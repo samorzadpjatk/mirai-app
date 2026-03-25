@@ -1,0 +1,44 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"]
+    },
+    "mobile-mcp": {
+      "type": "local",
+      "command": ["npx", "-y", "@mobilenext/mobile-mcp@latest"]
+    },
+    "eslint": {
+      "type": "local",
+      "command": ["npx", "-y", "@eslint/mcp@latest"]
+    },
+    "markitdown": {
+      "type": "local",
+      "command": ["docker", "run", "--rm", "-i", "mcp/markitdown:latest"]
+    },
+    "fetcher": {
+      "type": "local",
+      "command": ["npx", "-y", "fetcher-mcp"]
+    },
+    "supabase": {
+      "type": "remote",
+      "url": "https://localhost:8000/mcp?project_ref={env:SUPABASE_PROJECT_REF}",
+      "headers": {
+        "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
+      }
+    },
+    "maestro": {
+      "type": "local",
+      "command": ["maestro", "mcp"]
+    },
+    "stitch": {
+      "type": "remote",
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "Accept": "application/json",
+        "X-Goog-Api-Key": "{env:STITCH_GOOGLE_API_KEY}"
+      }
+    }
+  }
+}
