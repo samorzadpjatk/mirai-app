@@ -23,25 +23,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve SemVer version with semver-action
+      - name: Resolve SemVer version with git-version
         id: semver
-        uses: gandarez/semver-action@v2.1.0
+        uses: codacy/git-version@v2.8.7
         with:
-          bump: auto
-          branching_model: trunk-based
-          main_branch_name: main
-          prefix: ""
-          patch_regex: '(?i)^(.+:)?((fix|perf|revert)(\([^)]+\))?!?:\s.+)'
-          minor_regex: '(?i)^(.+:)?(feat(\([^)]+\))?!?:\s.+)'
-          major_regex: '(?i)^(.+:)?(([^\n]+!:\s.+)|(BREAKING CHANGE:\s.+))'
-          build_regex: '(?i)^(.+:)?((build|chore|ci|docs|style|refactor|test)(\([^)]+\))?!?:\s.+)'
+          release-branch: main
+          prefix: v
+          minor-identifier: '/^feat(\([^)]+\))?!?:\s.+/'
+          major-identifier: '/^(([^\n]+!:\s.+)|(BREAKING CHANGE:\s.+)|(breaking:\s.+))/'
 
       - name: Publish or refresh tag
         id: publish
         run: |
           set -euo pipefail
-          TAG="${{ steps.semver.outputs.semver_tag }}"
-          PREVIOUS="${{ steps.semver.outputs.previous_tag }}"
+          TAG="${{ steps.semver.outputs.version }}"
+          PREVIOUS="${{ steps.semver.outputs['previous-version'] }}"
           echo "semver_tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "previous_tag=${PREVIOUS}" >> "$GITHUB_OUTPUT"
           if [ -z "$TAG" ]; then
