@@ -2,9 +2,9 @@ default_platform(:android)
 
 require "json"
 require "open3"
-require "shellwords"
 require "fileutils"
 require "digest"
+require "pathname"
 
 platform :android do
   REQUIRED_ENV_BUILD = %w[
@@ -32,6 +32,129 @@ platform :android do
     value
   end
 
+  def resolve_credentials_path
+    # Support both relative to current directory (apps/native) and parent (project root)
+    candidates = [
+      "credentials.json",
+      File.expand_path("../credentials.json"),
+      File.expand_path("../../credentials.json"),
+    ].uniq
+    candidates.find { |path| File.exist?(path) } || candidates.first
+  end
+
+  def bootstrap_android_release_env!
+    credentials_path = resolve_credentials_path
+    credentials = {}
+    credentials_dir = File.dirname(File.expand_path(credentials_path))
+
+    if File.exist?(credentials_path)
+      credentials = JSON.parse(File.read(credentials_path))
+    end
+
+    keystore = credentials.dig("android", "keystore") || {}
+    keystore_path = keystore["keystorePath"].to_s.strip
+    if ENV["ANDROID_KEYSTORE_PATH"].to_s.strip.empty? && !keystore_path.empty?
+      resolved = Pathname.new(keystore_path).absolute? ? keystore_path : File.expand_path(keystore_path, credentials_dir)
+      ENV["ANDROID_KEYSTORE_PATH"] = resolved
+    end
+
+    ENV["ANDROID_KEYSTORE_PASSWORD"] = keystore["keystorePassword"].to_s if ENV["ANDROID_KEYSTORE_PASSWORD"].to_s.strip.empty? && !keystore["keystorePassword"].to_s.strip.empty?
+    ENV["ANDROID_KEY_ALIAS"] = keystore["keyAlias"].to_s if ENV["ANDROID_KEY_ALIAS"].to_s.strip.empty? && !keystore["keyAlias"].to_s.strip.empty?
+    ENV["ANDROID_KEY_PASSWORD"] = keystore["keyPassword"].to_s if ENV["ANDROID_KEY_PASSWORD"].to_s.strip.empty? && !keystore["keyPassword"].to_s.strip.empty?
+
+    if ENV["ANDROID_APP_PACKAGE"].to_s.strip.empty?
+      package_from_credentials = credentials.dig("android", "appPackage").to_s.strip
+      if !package_from_credentials.empty?
+        ENV["ANDROID_APP_PACKAGE"] = package_from_credentials
+      else
+        package_from_config = app_package_from_config.to_s.strip
+        ENV["ANDROID_APP_PACKAGE"] = package_from_config unless package_from_config.empty?
+      end
+    end
+
+    if ENV["ANDROID_SIGNING_LINEAGE"].to_s.strip.empty?
+      lineage = credentials.dig("android", "signingLineage").to_s.strip
+      if lineage.empty?
+        inferred = File.basename(ENV["ANDROID_KEYSTORE_PATH"].to_s, File.extname(ENV["ANDROID_KEYSTORE_PATH"].to_s)).to_s.strip
+        lineage = inferred.empty? ? "play-release" : inferred
+      end
+      ENV["ANDROID_SIGNING_LINEAGE"] = lineage
+    end
+
+    if ENV["PLAY_JSON_KEY_PATH"].to_s.strip.empty?
+      candidates = [
+        credentials.dig("android", "playJsonKeyPath").to_s.strip,
+        "apps/native/credentials/android/play-service-account.json",
+        "credentials/android/play-service-account.json",
+        "credentials/android/play-credentials.json",
+        "credentials/android/service-account.json",
+      ].reject(&:empty?)
+      detected = candidates.find do |path|
+        absolute = Pathname.new(path).absolute? ? path : File.expand_path(path)
+        File.exist?(absolute)
+      end
+      if detected
+        absolute = Pathname.new(detected).absolute? ? detected : File.expand_path(detected)
+        ENV["PLAY_JSON_KEY_PATH"] = absolute
+      end
+    end
+  end
+
+  def bootstrap_android_release_env!
+    credentials_path = resolve_credentials_path
+    credentials = {}
+    credentials_dir = File.dirname(File.expand_path(credentials_path))
+
+    if File.exist?(credentials_path)
+      credentials = JSON.parse(File.read(credentials_path))
+    end
+
+    keystore = credentials.dig("android", "keystore") || {}
+    keystore_path = keystore["keystorePath"].to_s.strip
+    if ENV["ANDROID_KEYSTORE_PATH"].to_s.strip.empty? && !keystore_path.empty?
+      resolved = Pathname.new(keystore_path).absolute? ? keystore_path : File.expand_path(keystore_path, credentials_dir)
+      ENV["ANDROID_KEYSTORE_PATH"] = resolved
+    end
+
+    ENV["ANDROID_KEYSTORE_PASSWORD"] = keystore["keystorePassword"].to_s if ENV["ANDROID_KEYSTORE_PASSWORD"].to_s.strip.empty? && !keystore["keystorePassword"].to_s.strip.empty?
+    ENV["ANDROID_KEY_ALIAS"] = keystore["keyAlias"].to_s if ENV["ANDROID_KEY_ALIAS"].to_s.strip.empty? && !keystore["keyAlias"].to_s.strip.empty?
+    ENV["ANDROID_KEY_PASSWORD"] = keystore["keyPassword"].to_s if ENV["ANDROID_KEY_PASSWORD"].to_s.strip.empty? && !keystore["keyPassword"].to_s.strip.empty?
+
+    if ENV["ANDROID_APP_PACKAGE"].to_s.strip.empty?
+      package_from_credentials = credentials.dig("android", "appPackage").to_s.strip
+      if !package_from_credentials.empty?
+        ENV["ANDROID_APP_PACKAGE"] = package_from_credentials
+      else
+        package_from_config = app_package_from_config.to_s.strip
+        ENV["ANDROID_APP_PACKAGE"] = package_from_config unless package_from_config.empty?
+      end
+    end
+
+    if ENV["ANDROID_SIGNING_LINEAGE"].to_s.strip.empty?
+      lineage = credentials.dig("android", "signingLineage").to_s.strip
+      if lineage.empty?
+        inferred = File.basename(ENV["ANDROID_KEYSTORE_PATH"].to_s, File.extname(ENV["ANDROID_KEYSTORE_PATH"].to_s)).to_s.strip
+        lineage = inferred.empty? ? "play-release" : inferred
+      end
+      ENV["ANDROID_SIGNING_LINEAGE"] = lineage
+    end
+
+    if ENV["PLAY_JSON_KEY_PATH"].to_s.strip.empty?
+      candidates = [
+        credentials.dig("android", "playJsonKeyPath").to_s.strip,
+        "credentials/android/play-credentials.json",
+        "credentials/android/service-account.json",
+      ].reject(&:empty?)
+      detected = candidates.find do |path|
+        absolute = Pathname.new(path).absolute? ? path : File.expand_path(path, credentials_dir)
+        File.exist?(absolute)
+      end
+      if detected
+        ENV["PLAY_JSON_KEY_PATH"] = Pathname.new(detected).absolute? ? detected : File.expand_path(detected, credentials_dir)
+      end
+    end
+  end
+
   def sh_capture!(command)
     stdout, stderr, status = Open3.capture3(command)
     UI.user_error!("Command failed: #{command}\n#{stderr}") unless status.success?
@@ -39,7 +162,16 @@ platform :android do
   end
 
   def load_app_json
-    JSON.parse(File.read("app.json"))
+    # Try multiple paths to support running from different directories
+    candidates = [
+      "app.json",                              # Current dir (apps/native)
+      File.expand_path("../app.json"),         # Parent dir
+      File.expand_path("../../app.json"),      # 2 levels up
+    ].uniq
+    
+    path = candidates.find { |p| File.exist?(p) }
+    UI.user_error!("app.json not found in any expected location") unless path
+    JSON.parse(File.read(path))
   end
 
   def app_package_from_config
@@ -48,6 +180,53 @@ platform :android do
 
   def app_version_name
     load_app_json.dig("expo", "version")
+  end
+
+  def update_app_versions!(version_name:, version_code:)
+    config = load_app_json
+    config["expo"] ||= {}
+    config["expo"]["android"] ||= {}
+    config["expo"]["version"] = version_name
+    config["expo"]["android"]["versionCode"] = version_code
+    
+    # Write to the same path we loaded from
+    candidates = [
+      "app.json",
+      File.expand_path("../app.json"),
+      File.expand_path("../../app.json"),
+    ].uniq
+    
+    path = candidates.find { |p| File.exist?(p) }
+    UI.user_error!("app.json not found") unless path
+    File.write(path, "#{JSON.pretty_generate(config)}\n")
+  end
+
+  def verify_eas_parity!
+    candidates = [
+      "eas.json",
+      File.expand_path("../eas.json"),
+      File.expand_path("../../eas.json"),
+    ].uniq
+    path = candidates.find { |p| File.exist?(p) }
+    UI.user_error!("Missing required file: eas.json") unless path
+    
+    eas = JSON.parse(File.read(path))
+    release_track = eas.dig("submit", "production", "android", "track")
+    UI.user_error!("eas.json submit.production.android.track must be 'internal'") unless release_track == "internal"
+
+    auto_increment = eas.dig("build", "production", "autoIncrement")
+    UI.user_error!("eas.json build.production.autoIncrement must be true") unless auto_increment == true
+  end
+
+  def latest_semver_tag
+    tags = sh_capture!("git tag --sort=-v:refname").split("\n").map(&:strip).reject(&:empty?)
+    tags.each do |tag|
+      normalized = tag.sub(/^v/, "")
+      return tag if normalized.match?(/^\d+\.\d+\.\d+$/)
+    end
+    nil
+  rescue StandardError
+    nil
   end
 
   def resolve_release_version_code
@@ -69,6 +248,7 @@ platform :android do
 
   desc "Validate build prerequisites, signing, and EAS parity checks"
   lane :android_preflight_build do
+    bootstrap_android_release_env!
     REQUIRED_ENV_BUILD.each { |k| ensure_env!(k) }
 
     app_package = app_package_from_config
@@ -80,11 +260,12 @@ platform :android do
       UI.user_error!("File not found: #{path_var}=#{path}") unless File.exist?(path)
     end
 
-    sh("bun ./scripts/release/eas-parity-check.js")
+    verify_eas_parity!
   end
 
   desc "Validate Play credentials and package consistency"
   lane :android_preflight_play do
+    bootstrap_android_release_env!
     REQUIRED_ENV_PLAY.each { |k| ensure_env!(k) }
 
     app_package = app_package_from_config
@@ -97,22 +278,14 @@ platform :android do
 
   desc "Apply CI-provided versionName and monotonic versionCode to app.json"
   lane :android_set_versions do |options|
-    release_version_name = options[:version_name] || ENV["RELEASE_VERSION_NAME"]
-    UI.user_error!("Missing RELEASE_VERSION_NAME from CI semver-action output") if release_version_name.to_s.strip.empty?
+    release_version_name = latest_semver_tag.to_s
+    UI.user_error!("No SemVer repository tag found. Run semver tagging workflow before release.") if release_version_name.strip.empty?
 
-    normalized_version_name = release_version_name.to_s.sub(/^v/, "")
+    normalized_version_name = release_version_name.sub(/^v/, "")
+    UI.user_error!("Latest tag is not SemVer: #{release_version_name}") unless normalized_version_name.match?(/^\d+\.\d+\.\d+$/)
     version_code = resolve_release_version_code
 
-    sh(
-      [
-        "bun",
-        "./scripts/release/set-android-version.js",
-        "--version-name",
-        Shellwords.escape(normalized_version_name),
-        "--version-code",
-        version_code.to_s,
-      ].join(" "),
-    )
+    update_app_versions!(version_name: normalized_version_name, version_code: version_code)
 
     Actions.lane_context[:RELEASE_VERSION_NAME] = normalized_version_name
     Actions.lane_context[:RELEASE_VERSION_CODE] = version_code
@@ -243,5 +416,37 @@ platform :android do
   lane :android_release do |options|
     android_build(from_ref: options[:from_ref], to_ref: options[:to_ref])
     android_submit(artifact_path: Actions.lane_context[:RELEASE_ARTIFACT_PATH], track: "internal")
+  end
+
+  desc "Run local Android CD flow with optional promotions"
+  lane :android_local_cd do |options|
+    auto_approve = options[:auto_approve].to_s == "true"
+    promote_beta = options[:promote_beta].to_s == "true"
+    promote_production = options[:promote_production].to_s == "true"
+    UI.user_error!("promote_production requires promote_beta") if promote_production && !promote_beta
+
+    current_tag = latest_semver_tag.to_s
+    UI.user_error!("No SemVer repository tag found. Create/push tag before local CD.") if current_tag.empty?
+    UI.message("Local release uses repository tag #{current_tag}")
+
+    android_release(from_ref: options[:from_ref], to_ref: options[:to_ref])
+    metadata = JSON.parse(File.read("dist/android/release-metadata.json"))
+    version_code = metadata.fetch("versionCode").to_i
+
+    if promote_beta
+      unless auto_approve
+        answer = UI.input("Approve promotion internal -> beta? Type 'yes' to continue")
+        UI.user_error!("Promotion to beta declined") unless answer.to_s.strip.downcase == "yes"
+      end
+      android_promote(from_track: "internal", to_track: "beta", version_code: version_code, metadata_path: "dist/android/release-metadata.json")
+    end
+
+    if promote_production
+      unless auto_approve
+        answer = UI.input("Approve promotion beta -> production? Type 'yes' to continue")
+        UI.user_error!("Promotion to production declined") unless answer.to_s.strip.downcase == "yes"
+      end
+      android_promote(from_track: "beta", to_track: "production", version_code: version_code, metadata_path: "dist/android/release-metadata.json")
+    end
   end
 end
