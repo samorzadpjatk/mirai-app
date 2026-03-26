@@ -2,16 +2,6 @@ name: Android Release (Fastlane)
 
 on:
   workflow_dispatch:
-    inputs:
-      release_from_ref:
-        description: "Git ref to start commit range from (optional)"
-        required: false
-        type: string
-      release_to_ref:
-        description: "Git ref to end commit range at"
-        required: false
-        default: "HEAD"
-        type: string
 
 permissions:
   contents: write
@@ -121,8 +111,6 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
-          RELEASE_FROM_REF: ${{ inputs.release_from_ref }}
-          RELEASE_TO_REF: ${{ inputs.release_to_ref }}
 
       - name: Resolve built artifact path
         id: artifact
