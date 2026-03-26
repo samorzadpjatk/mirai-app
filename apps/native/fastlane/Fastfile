@@ -1,0 +1,506 @@
+default_platform(:android)
+
+require "json"
+require "open3"
+require "fileutils"
+require "digest"
+require "pathname"
+
+platform :android do
+  REQUIRED_ENV_BUILD = %w[
+    ANDROID_APP_PACKAGE
+    PLAY_JSON_KEY_PATH
+    ANDROID_KEYSTORE_PATH
+    ANDROID_KEYSTORE_PASSWORD
+    ANDROID_KEY_ALIAS
+    ANDROID_KEY_PASSWORD
+    ANDROID_SIGNING_LINEAGE
+  ].freeze
+
+  REQUIRED_ENV_PLAY = %w[
+    ANDROID_APP_PACKAGE
+    PLAY_JSON_KEY_PATH
+    ANDROID_SIGNING_LINEAGE
+  ].freeze
+
+  NON_PROD_TRACKS = %w[internal beta].freeze
+  PROD_TRACK = "production"
+
+   def ensure_env!(key)
+     value = ENV[key]
+     unless value.nil? || value.strip.empty?
+       # Verify the path exists if it looks like a file path
+       if value.start_with?("/") && !File.exist?(value)
+         UI.user_error!("File not found for #{key}: #{value}")
+       end
+       return value
+     end
+     
+     # Provide helpful error message with context about auto-detection
+     case key
+     when "PLAY_JSON_KEY_PATH"
+       checked_paths = [
+         "PLAY_JSON_KEY_PATH environment variable",
+         "credentials.json[android.playJsonKeyPath]",
+         "credentials/android/play-service-account.json",
+         "credentials/android/play-credentials.json",
+         "credentials/android/service-account.json",
+       ]
+       UI.user_error!(
+         "Missing required environment variable: #{key}\n" \
+         "Checked paths:\n" \
+         "  #{checked_paths.map { |p| "• #{p}" }.join("\n  ")}"
+       )
+     when "ANDROID_KEYSTORE_PATH"
+       checked_paths = [
+         "ANDROID_KEYSTORE_PATH environment variable",
+         "credentials.json[android.keystore.keystorePath]",
+       ]
+       UI.user_error!(
+         "Missing required environment variable: #{key}\n" \
+         "Checked paths:\n" \
+         "  #{checked_paths.map { |p| "• #{p}" }.join("\n  ")}"
+       )
+     else
+       UI.user_error!("Missing required environment variable: #{key}")
+     end
+   end
+
+  def resolve_credentials_path
+    # Support both relative to current directory (apps/native) and parent (project root)
+    candidates = [
+      "credentials.json",
+      File.expand_path("../credentials.json"),
+      File.expand_path("../../credentials.json"),
+    ].uniq
+    candidates.find { |path| File.exist?(path) } || candidates.first
+  end
+
+   def bootstrap_android_release_env!
+     credentials_path = resolve_credentials_path
+     credentials = {}
+     credentials_dir = File.dirname(File.expand_path(credentials_path))
+
+     if File.exist?(credentials_path)
+       credentials = JSON.parse(File.read(credentials_path))
+     end
+
+     keystore = credentials.dig("android", "keystore") || {}
+     keystore_path = keystore["keystorePath"].to_s.strip
+     if ENV["ANDROID_KEYSTORE_PATH"].to_s.strip.empty? && !keystore_path.empty?
+       resolved = Pathname.new(keystore_path).absolute? ? keystore_path : File.expand_path(keystore_path, credentials_dir)
+       ENV["ANDROID_KEYSTORE_PATH"] = resolved
+     end
+
+     ENV["ANDROID_KEYSTORE_PASSWORD"] = keystore["keystorePassword"].to_s if ENV["ANDROID_KEYSTORE_PASSWORD"].to_s.strip.empty? && !keystore["keystorePassword"].to_s.strip.empty?
+     ENV["ANDROID_KEY_ALIAS"] = keystore["keyAlias"].to_s if ENV["ANDROID_KEY_ALIAS"].to_s.strip.empty? && !keystore["keyAlias"].to_s.strip.empty?
+     ENV["ANDROID_KEY_PASSWORD"] = keystore["keyPassword"].to_s if ENV["ANDROID_KEY_PASSWORD"].to_s.strip.empty? && !keystore["keyPassword"].to_s.strip.empty?
+
+     if ENV["ANDROID_APP_PACKAGE"].to_s.strip.empty?
+       package_from_credentials = credentials.dig("android", "appPackage").to_s.strip
+       if !package_from_credentials.empty?
+         ENV["ANDROID_APP_PACKAGE"] = package_from_credentials
+       else
+         package_from_config = app_package_from_config.to_s.strip
+         ENV["ANDROID_APP_PACKAGE"] = package_from_config unless package_from_config.empty?
+       end
+     end
+
+     if ENV["ANDROID_SIGNING_LINEAGE"].to_s.strip.empty?
+       lineage = credentials.dig("android", "signingLineage").to_s.strip
+       if lineage.empty?
+         inferred = File.basename(ENV["ANDROID_KEYSTORE_PATH"].to_s, File.extname(ENV["ANDROID_KEYSTORE_PATH"].to_s)).to_s.strip
+         lineage = inferred.empty? ? "play-release" : inferred
+       end
+       ENV["ANDROID_SIGNING_LINEAGE"] = lineage
+     end
+
+     if ENV["PLAY_JSON_KEY_PATH"].to_s.strip.empty?
+       candidates = [
+         credentials.dig("android", "playJsonKeyPath").to_s.strip,
+         "credentials/android/play-service-account.json",
+         "credentials/android/play-credentials.json",
+         "credentials/android/service-account.json",
+       ].reject(&:empty?)
+       detected = candidates.find do |path|
+         absolute = Pathname.new(path).absolute? ? path : File.expand_path(path, credentials_dir)
+         File.exist?(absolute)
+       end
+       if detected
+         absolute = Pathname.new(detected).absolute? ? detected : File.expand_path(detected, credentials_dir)
+         ENV["PLAY_JSON_KEY_PATH"] = absolute
+       end
+     end
+   end
+
+  def sh_capture!(command)
+    stdout, stderr, status = Open3.capture3(command)
+    UI.user_error!("Command failed: #{command}\n#{stderr}") unless status.success?
+    stdout.strip
+  end
+
+  def resolve_app_json_path
+    candidates = [
+      "app.json",
+      File.expand_path("../app.json"),
+      File.expand_path("../../app.json"),
+    ].uniq
+    candidates.find { |p| File.exist?(p) }
+  end
+
+  def app_root_dir
+    app_json_path = resolve_app_json_path
+    UI.user_error!("app.json not found in any expected location") unless app_json_path
+    File.dirname(File.expand_path(app_json_path))
+  end
+
+  def load_app_json
+    path = resolve_app_json_path
+    UI.user_error!("app.json not found in any expected location") unless path
+    JSON.parse(File.read(path))
+  end
+
+  def verify_android_google_services_file!
+    relative_path = load_app_json.dig("expo", "android", "googleServicesFile").to_s.strip
+    return if relative_path.empty?
+
+    app_json_path = resolve_app_json_path
+    UI.user_error!("app.json not found in any expected location") unless app_json_path
+
+    app_root = File.dirname(File.expand_path(app_json_path))
+    absolute_path = Pathname.new(relative_path).absolute? ? relative_path : File.expand_path(relative_path, app_root)
+    return if File.exist?(absolute_path)
+
+    UI.user_error!(
+      "Missing Android google-services.json at #{absolute_path}.\n" \
+      "Set expo.android.googleServicesFile in app.json to an existing file path or add the file there."
+    )
+  end
+
+  def app_package_from_config
+    load_app_json.dig("expo", "android", "package")
+  end
+
+  def app_version_name
+    load_app_json.dig("expo", "version")
+  end
+
+  def resolve_submit_artifact_path!(options)
+    explicit_artifact = (options[:artifact_path] || ENV["ANDROID_ARTIFACT_PATH"]).to_s.strip
+    unless explicit_artifact.empty?
+      candidate = Pathname.new(explicit_artifact).absolute? ? explicit_artifact : File.expand_path(explicit_artifact)
+      UI.user_error!("Artifact not found: #{candidate}") unless File.exist?(candidate)
+      return candidate
+    end
+
+    app_root = app_root_dir
+    dist_dir = File.join(app_root, "dist", "android")
+    metadata_path = (options[:metadata_path] || ENV["ANDROID_RELEASE_METADATA_PATH"] || File.join(dist_dir, "release-metadata.json")).to_s
+    metadata_candidate = Pathname.new(metadata_path).absolute? ? metadata_path : File.expand_path(metadata_path)
+
+    if File.exist?(metadata_candidate)
+      metadata = JSON.parse(File.read(metadata_candidate))
+      metadata_artifact = metadata.fetch("artifactPath", "").to_s.strip
+      unless metadata_artifact.empty?
+        candidate = Pathname.new(metadata_artifact).absolute? ? metadata_artifact : File.expand_path(metadata_artifact, app_root)
+        return candidate if File.exist?(candidate)
+      end
+    end
+
+    aab_candidates = Dir.glob(File.join(dist_dir, "*.aab")).sort_by { |path| File.mtime(path) }.reverse
+    if aab_candidates.length == 1
+      return aab_candidates.first
+    end
+
+    if aab_candidates.length > 1
+      UI.user_error!(
+        "Multiple AAB artifacts found. Provide artifact_path explicitly (or ANDROID_ARTIFACT_PATH).\n" \
+        "Candidates:\n" \
+        "#{aab_candidates.map { |path| "- #{path}" }.join("\n")}"
+      )
+    end
+
+    legacy_candidate = File.join(dist_dir, "app-release.aab")
+    return legacy_candidate if File.exist?(legacy_candidate)
+
+    UI.user_error!(
+      "Artifact not found. Checked:\n" \
+      "- explicit artifact_path/ANDROID_ARTIFACT_PATH\n" \
+      "- release metadata artifactPath at #{metadata_candidate}\n" \
+      "- AAB files under #{dist_dir}"
+    )
+  end
+
+  def update_app_versions!(version_name:, version_code:)
+    config = load_app_json
+    config["expo"] ||= {}
+    config["expo"]["android"] ||= {}
+    config["expo"]["version"] = version_name
+    config["expo"]["android"]["versionCode"] = version_code
+    
+    # Write to the same path we loaded from
+    candidates = [
+      "app.json",
+      File.expand_path("../app.json"),
+      File.expand_path("../../app.json"),
+    ].uniq
+    
+    path = candidates.find { |p| File.exist?(p) }
+    UI.user_error!("app.json not found") unless path
+    File.write(path, "#{JSON.pretty_generate(config)}\n")
+  end
+
+  def verify_eas_parity!
+    candidates = [
+      "eas.json",
+      File.expand_path("../eas.json"),
+      File.expand_path("../../eas.json"),
+    ].uniq
+    path = candidates.find { |p| File.exist?(p) }
+    UI.user_error!("Missing required file: eas.json") unless path
+    
+    eas = JSON.parse(File.read(path))
+    release_track = eas.dig("submit", "production", "android", "track")
+    UI.user_error!("eas.json submit.production.android.track must be 'internal'") unless release_track == "internal"
+
+    auto_increment = eas.dig("build", "production", "autoIncrement")
+    UI.user_error!("eas.json build.production.autoIncrement must be true") unless auto_increment == true
+  end
+
+  def latest_semver_tag
+    tags = sh_capture!("git tag --sort=-v:refname").split("\n").map(&:strip).reject(&:empty?)
+    tags.each do |tag|
+      normalized = tag.sub(/^v/, "")
+      return tag if normalized.match?(/^\d+\.\d+\.\d+$/)
+    end
+    nil
+  rescue StandardError
+    nil
+  end
+
+  def resolve_release_version_code
+    all_codes = []
+    (NON_PROD_TRACKS + [PROD_TRACK]).each do |track|
+      codes = google_play_track_version_codes(
+        package_name: ENV.fetch("ANDROID_APP_PACKAGE"),
+        track: track,
+        json_key: ENV.fetch("PLAY_JSON_KEY_PATH"),
+      )
+      all_codes.concat(Array(codes).map(&:to_i))
+    rescue StandardError
+      next
+    end
+
+    floor = ENV.fetch("ANDROID_VERSION_CODE_FLOOR", "0").to_i
+    [all_codes.max.to_i, floor].max + 1
+  end
+
+  desc "Validate build prerequisites, signing, and EAS parity checks"
+  lane :android_preflight_build do
+    bootstrap_android_release_env!
+    REQUIRED_ENV_BUILD.each { |k| ensure_env!(k) }
+    verify_android_google_services_file!
+
+    app_package = app_package_from_config
+    expected_package = ensure_env!("ANDROID_APP_PACKAGE")
+    UI.user_error!("Package mismatch: app.json=#{app_package}, ANDROID_APP_PACKAGE=#{expected_package}") if app_package != expected_package
+
+    %w[PLAY_JSON_KEY_PATH ANDROID_KEYSTORE_PATH].each do |path_var|
+      path = ENV.fetch(path_var)
+      UI.user_error!("File not found: #{path_var}=#{path}") unless File.exist?(path)
+    end
+
+    verify_eas_parity!
+  end
+
+  desc "Validate Play credentials and package consistency"
+  lane :android_preflight_play do
+    bootstrap_android_release_env!
+    REQUIRED_ENV_PLAY.each { |k| ensure_env!(k) }
+    verify_android_google_services_file!
+
+    app_package = app_package_from_config
+    expected_package = ensure_env!("ANDROID_APP_PACKAGE")
+    UI.user_error!("Package mismatch: app.json=#{app_package}, ANDROID_APP_PACKAGE=#{expected_package}") if app_package != expected_package
+
+    play_json = ENV.fetch("PLAY_JSON_KEY_PATH")
+    UI.user_error!("File not found: PLAY_JSON_KEY_PATH=#{play_json}") unless File.exist?(play_json)
+  end
+
+  desc "Apply CI-provided versionName and monotonic versionCode to app.json"
+  lane :android_set_versions do |options|
+    release_version_name = latest_semver_tag.to_s
+    UI.user_error!("No SemVer repository tag found. Run semver tagging workflow before release.") if release_version_name.strip.empty?
+
+    normalized_version_name = release_version_name.sub(/^v/, "")
+    UI.user_error!("Latest tag is not SemVer: #{release_version_name}") unless normalized_version_name.match?(/^\d+\.\d+\.\d+$/)
+    version_code = resolve_release_version_code
+
+    update_app_versions!(version_name: normalized_version_name, version_code: version_code)
+
+    Actions.lane_context[:RELEASE_VERSION_NAME] = normalized_version_name
+    Actions.lane_context[:RELEASE_VERSION_CODE] = version_code
+    UI.message("Resolved versionName=#{normalized_version_name} versionCode=#{version_code}")
+  end
+
+  desc "Build signed Android release artifact"
+  lane :android_build do |options|
+    android_preflight_build
+    android_set_versions(from_ref: options[:from_ref], to_ref: options[:to_ref])
+    app_root = app_root_dir
+
+    Dir.chdir(app_root) do
+      sh("CI=1 bunx expo prebuild --platform android --clean")
+    end
+
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: File.join(app_root, "android"),
+      properties: {
+        "android.injected.signing.store.file" => ENV.fetch("ANDROID_KEYSTORE_PATH"),
+        "android.injected.signing.store.password" => ENV.fetch("ANDROID_KEYSTORE_PASSWORD"),
+        "android.injected.signing.key.alias" => ENV.fetch("ANDROID_KEY_ALIAS"),
+        "android.injected.signing.key.password" => ENV.fetch("ANDROID_KEY_PASSWORD"),
+      },
+    )
+
+    source_artifact = File.join(app_root, "android", "app", "build", "outputs", "bundle", "release", "app-release.aab")
+    UI.user_error!("Expected release artifact not found at #{source_artifact}") unless File.exist?(source_artifact)
+
+    dist_dir = File.join(app_root, "dist", "android")
+    FileUtils.mkdir_p(dist_dir)
+    release_version_name = Actions.lane_context[:RELEASE_VERSION_NAME]
+    release_version_code = Actions.lane_context[:RELEASE_VERSION_CODE]
+    target_artifact = File.join(dist_dir, "app-#{release_version_name}-#{release_version_code}.aab")
+    FileUtils.cp(source_artifact, target_artifact)
+    FileUtils.cp(target_artifact, File.join(dist_dir, "app-release.aab"))
+
+    metadata = {
+      appPackage: ENV.fetch("ANDROID_APP_PACKAGE"),
+      artifactPath: target_artifact,
+      artifactSha256: Digest::SHA256.file(target_artifact).hexdigest,
+      versionName: release_version_name,
+      versionCode: release_version_code,
+      sourceTrack: "internal",
+      signingLineage: ENV.fetch("ANDROID_SIGNING_LINEAGE"),
+      commitSha: sh_capture!("git rev-parse HEAD"),
+    }
+    File.write(File.join(dist_dir, "release-metadata.json"), JSON.pretty_generate(metadata))
+
+    Actions.lane_context[:RELEASE_ARTIFACT_PATH] = target_artifact
+    UI.success("Built artifact: #{target_artifact}")
+  end
+
+  desc "Upload artifact to Google Play track"
+  lane :android_submit do |options|
+    android_preflight_play
+    track = (options[:track] || "internal").to_s
+    artifact_path = resolve_submit_artifact_path!(options)
+    UI.user_error!("Unsupported track for submit: #{track}") unless (NON_PROD_TRACKS + [PROD_TRACK]).include?(track)
+
+    upload_to_play_store(
+      track: track,
+      aab: artifact_path,
+      json_key: ENV.fetch("PLAY_JSON_KEY_PATH"),
+      package_name: ENV.fetch("ANDROID_APP_PACKAGE"),
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true,
+    )
+  end
+
+  desc "Promote exact version code between tracks with no rebuild"
+  lane :android_promote do |options|
+    android_preflight_play
+    from_track = (options[:from_track] || "internal").to_s
+    to_track = options[:to_track].to_s
+    version_code = options[:version_code].to_i
+    metadata_path = (options[:metadata_path] || "dist/android/release-metadata.json").to_s
+
+    UI.user_error!("Missing to_track") if to_track.empty?
+    UI.user_error!("Missing version_code") if version_code <= 0
+    UI.user_error!("Release metadata file not found: #{metadata_path}") unless File.exist?(metadata_path)
+
+    release_metadata = JSON.parse(File.read(metadata_path))
+    lineage = release_metadata.fetch("signingLineage")
+    expected_lineage = ENV.fetch("ANDROID_SIGNING_LINEAGE")
+    UI.user_error!("Signing lineage mismatch: metadata=#{lineage} env=#{expected_lineage}") if lineage != expected_lineage
+
+    metadata_version_code = release_metadata.fetch("versionCode").to_i
+    UI.user_error!("Metadata versionCode mismatch: metadata=#{metadata_version_code} lane=#{version_code}") if metadata_version_code != version_code
+
+    source_codes = Array(
+      google_play_track_version_codes(
+        package_name: ENV.fetch("ANDROID_APP_PACKAGE"),
+        track: from_track,
+        json_key: ENV.fetch("PLAY_JSON_KEY_PATH"),
+      ),
+    ).map(&:to_i)
+
+    UI.user_error!("Version code #{version_code} not found on #{from_track}") unless source_codes.include?(version_code)
+
+    upload_to_play_store(
+      track: from_track,
+      track_promote_to: to_track,
+      json_key: ENV.fetch("PLAY_JSON_KEY_PATH"),
+      package_name: ENV.fetch("ANDROID_APP_PACKAGE"),
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true,
+      changes_not_sent_for_review: false,
+    )
+
+    promoted_codes = Array(
+      google_play_track_version_codes(
+        package_name: ENV.fetch("ANDROID_APP_PACKAGE"),
+        track: to_track,
+        json_key: ENV.fetch("PLAY_JSON_KEY_PATH"),
+      ),
+    ).map(&:to_i)
+
+    UI.user_error!("Promotion verification failed: #{version_code} missing on #{to_track}") unless promoted_codes.include?(version_code)
+    UI.success("Promoted versionCode=#{version_code} from #{from_track} to #{to_track}")
+  end
+
+  desc "Build and upload to internal track"
+  lane :android_release do |options|
+    android_build(from_ref: options[:from_ref], to_ref: options[:to_ref])
+    android_submit(artifact_path: Actions.lane_context[:RELEASE_ARTIFACT_PATH], track: "internal")
+  end
+
+  desc "Run local Android CD flow with optional promotions"
+  lane :android_local_cd do |options|
+    auto_approve = options[:auto_approve].to_s == "true"
+    promote_beta = options[:promote_beta].to_s == "true"
+    promote_production = options[:promote_production].to_s == "true"
+    UI.user_error!("promote_production requires promote_beta") if promote_production && !promote_beta
+
+    current_tag = latest_semver_tag.to_s
+    UI.user_error!("No SemVer repository tag found. Create/push tag before local CD.") if current_tag.empty?
+    UI.message("Local release uses repository tag #{current_tag}")
+
+    android_release(from_ref: options[:from_ref], to_ref: options[:to_ref])
+    metadata = JSON.parse(File.read("dist/android/release-metadata.json"))
+    version_code = metadata.fetch("versionCode").to_i
+
+    if promote_beta
+      unless auto_approve
+        answer = UI.input("Approve promotion internal -> beta? Type 'yes' to continue")
+        UI.user_error!("Promotion to beta declined") unless answer.to_s.strip.downcase == "yes"
+      end
+      android_promote(from_track: "internal", to_track: "beta", version_code: version_code, metadata_path: "dist/android/release-metadata.json")
+    end
+
+    if promote_production
+      unless auto_approve
+        answer = UI.input("Approve promotion beta -> production? Type 'yes' to continue")
+        UI.user_error!("Promotion to production declined") unless answer.to_s.strip.downcase == "yes"
+      end
+      android_promote(from_track: "beta", to_track: "production", version_code: version_code, metadata_path: "dist/android/release-metadata.json")
+    end
+  end
+end

@@ -33,6 +33,7 @@ yarn-error.*
 # local env files
 .env
 .env*.local
+credential.json
 
 # typescript
 *.tsbuildinfo
@@ -45,3 +46,6 @@ yarn-error.*
 
 .tamagui
 google-services.json
+
+credentials/**
+credentials.json
