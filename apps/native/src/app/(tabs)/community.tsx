@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -20,7 +15,10 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
-import { CommunityActivityCard, type CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
+import {
+  CommunityActivityCard,
+  type CommunityFeedActivity,
+} from "~/components/community/CommunityActivityCard";
 
 import LoadingScreen from "~/components/LoadingScreen";
 
@@ -28,12 +26,23 @@ import { useCommunityFeed } from "~/hooks/community/useCommunityFeed";
 import { useCommunityActivityData } from "~/hooks/community/useCommunityActivityData";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import { colors, spacing, typography } from "~/styles";
-import { EmptyState, FilterChip, FilterChipRow, TripPickerModal } from "~/components/common/ui";
+import {
+  EmptyState,
+  FilterChip,
+  FilterChipRow,
+  TripPickerModal,
+} from "~/components/common/ui";
 import { useAuth } from "@mirai-app/auth/client";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { Logo } from "~/components";
 
-type ActivityFilter = "all" | "submission" | "challenge_event" | "rank_change" | "custom" | "user_post";
+type ActivityFilter =
+  | "all"
+  | "submission"
+  | "challenge_event"
+  | "rank_change"
+  | "custom"
+  | "user_post";
 
 const ACTIVITY_FILTERS: { key: ActivityFilter; label: string }[] = [
   { key: "all", label: "All" },
@@ -110,13 +119,15 @@ export default function CommunityScreen() {
       : params.focusActivityId?.[0];
   }, [params.focusActivityId]);
 
-  const { feedQuery, filteredActivities, handleToggleHeart } = useCommunityFeed({
-    selectedTripId: selectedTrip?.id ?? null,
-    selectedFilter,
-    focusActivityId,
-  });
+  const { feedQuery, filteredActivities, handleToggleHeart } = useCommunityFeed(
+    {
+      selectedTripId: selectedTrip?.id ?? null,
+      selectedFilter,
+      focusActivityId,
+    },
+  );
 
-  const { rankingData, avatarUrls, isLoading: isActivityDataLoading } = useCommunityActivityData({
+  const { rankingData, avatarUrls } = useCommunityActivityData({
     activities: filteredActivities,
   });
 
@@ -128,10 +139,16 @@ export default function CommunityScreen() {
     [router],
   );
 
-  const keyExtractor = useCallback((item: CommunityFeedActivity) => item.id, []);
+  const keyExtractor = useCallback(
+    (item: CommunityFeedActivity) => item.id,
+    [],
+  );
 
   const getItemLayout = useCallback(
-    (data: ArrayLike<CommunityFeedActivity> | null | undefined, index: number) => ({
+    (
+      data: ArrayLike<CommunityFeedActivity> | null | undefined,
+      index: number,
+    ) => ({
       length: 200, // Approximate height of CommunityActivityCard
       offset: 200 * index,
       index,
@@ -156,10 +173,7 @@ export default function CommunityScreen() {
     if (feedQuery.isLoading || feedQuery.isFetchingNextPage) return;
     if (!feedQuery.hasNextPage) return;
     void feedQuery.fetchNextPage();
-  }, [
-    feedQuery,
-    selectedTrip?.id,
-  ]);
+  }, [feedQuery, selectedTrip?.id]);
 
   const handleOpenTripPicker = useCallback(() => {
     setHasDismissedAutoPicker(false);
@@ -190,7 +204,8 @@ export default function CommunityScreen() {
     }) => {
       if (!hasMoreTrips || isFetchingMoreTrips || isTripsLoading) return;
 
-      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
       const nearBottom =
         contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
 
@@ -211,22 +226,30 @@ export default function CommunityScreen() {
         item.activityType === "rank_change" ? item.tripId : null;
       const submissionGroupId =
         item.activityType === "submission"
-          ? (item.submissionActivity?.groupId ?? item.submissionActivity?.group?.id)
+          ? (item.submissionActivity?.groupId ??
+            item.submissionActivity?.group?.id)
           : null;
 
       const getAvatarUri = (activity: CommunityFeedActivity) => {
-        const owner = activity.activityType === "user_post"
-          ? activity.userPost?.author?.user
-          : activity.admin;
+        const owner =
+          activity.activityType === "user_post"
+            ? activity.userPost?.author?.user
+            : activity.admin;
 
         if (!owner?.id) return null;
 
         // Check if user has a direct avatar image
-        if (activity.activityType === "submission" && activity.submissionActivity?.group?.image) {
+        if (
+          activity.activityType === "submission" &&
+          activity.submissionActivity?.group?.image
+        ) {
           return activity.submissionActivity.group.image;
         }
 
-        if (activity.activityType === "rank_change" && activity.rankChangeActivity?.group?.image) {
+        if (
+          activity.activityType === "rank_change" &&
+          activity.rankChangeActivity?.group?.image
+        ) {
           return activity.rankChangeActivity.group.image;
         }
 
@@ -242,11 +265,14 @@ export default function CommunityScreen() {
           onPress={
             challengeId
               ? () =>
-                router.push(
-                  `/trips/challenges/${challengeId}?tripId=${item.tripId}`,
-                )
+                  router.push(
+                    `/trips/challenges/${challengeId}?tripId=${item.tripId}`,
+                  )
               : leaderboardTripId
-                ? () => router.push(`/trips/leaderboard?tripId=${leaderboardTripId}`)
+                ? () =>
+                    router.push(
+                      `/trips/leaderboard?tripId=${leaderboardTripId}`,
+                    )
                 : undefined
           }
           onPressOwner={
@@ -254,7 +280,11 @@ export default function CommunityScreen() {
               ? () => router.push(`/trips/groups/${submissionGroupId}`)
               : undefined
           }
-          rankingData={item.activityType === "rank_change" ? rankingData[item.tripId] : undefined}
+          rankingData={
+            item.activityType === "rank_change"
+              ? rankingData[item.tripId]
+              : undefined
+          }
           avatarUri={getAvatarUri(item)}
         />
       );

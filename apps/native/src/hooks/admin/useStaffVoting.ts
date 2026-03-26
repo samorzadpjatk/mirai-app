@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from "react";
 
 export type VotingPhase = "comparing" | "confirming" | "done" | "blocked";
 
@@ -19,7 +19,7 @@ interface UseStaffVotingProps {
   judgedStaffProgressError?: unknown;
   challenge?: {
     scoringCategory: string;
-    endTime?: string | null;
+    endTime?: string | Date | null;
     status: string;
   };
   onPhaseChange?: (phase: VotingPhase, blockedReason?: string | null) => void;
@@ -162,67 +162,74 @@ export const useStaffVoting = ({
     onPhaseChange?.("comparing");
   }, [votingSubmissions, onPhaseChange]);
 
-  const handlePickWinner = useCallback((winnerId: string) => {
-    if (phase !== "comparing") return;
-    if (!currentPair) return;
-    const [leftId, rightId] = currentPair;
+  const handlePickWinner = useCallback(
+    (winnerId: string) => {
+      if (phase !== "comparing") return;
+      if (!currentPair) return;
+      const [leftId, rightId] = currentPair;
 
-    const leftRating = ratings[leftId] ?? ELO_BASE_RATING;
-    const rightRating = ratings[rightId] ?? ELO_BASE_RATING;
-    const expectedLeft = 1 / (1 + 10 ** ((rightRating - leftRating) / 400));
-    const expectedRight = 1 / (1 + 10 ** ((leftRating - rightRating) / 400));
-    const leftScore = winnerId === leftId ? 1 : 0;
-    const rightScore = winnerId === rightId ? 1 : 0;
+      const leftRating = ratings[leftId] ?? ELO_BASE_RATING;
+      const rightRating = ratings[rightId] ?? ELO_BASE_RATING;
+      const expectedLeft = 1 / (1 + 10 ** ((rightRating - leftRating) / 400));
+      const expectedRight = 1 / (1 + 10 ** ((leftRating - rightRating) / 400));
+      const leftScore = winnerId === leftId ? 1 : 0;
+      const rightScore = winnerId === rightId ? 1 : 0;
 
-    const nextRatings: Record<string, number> = {
-      ...ratings,
-      [leftId]: leftRating + ELO_K * (leftScore - expectedLeft),
-      [rightId]: rightRating + ELO_K * (rightScore - expectedRight),
-    };
+      const nextRatings: Record<string, number> = {
+        ...ratings,
+        [leftId]: leftRating + ELO_K * (leftScore - expectedLeft),
+        [rightId]: rightRating + ELO_K * (rightScore - expectedRight),
+      };
 
-    const nextCompared = new Set(comparedPairs);
-    nextCompared.add(toPairKey(leftId, rightId));
-    const nextComparisonCount = comparisonCount + 1;
-    const nextRanking = rankByRating(votingSubmissions, nextRatings);
-    const nextTop3Ids = nextRanking
-      .slice(0, 3)
-      .map((submission) => submission.id);
-    const nextTop3Key = nextTop3Ids.join("|");
-    const nextStableTop3Count =
-      previousTop3Key === nextTop3Key ? stableTop3Count + 1 : 0;
+      const nextCompared = new Set(comparedPairs);
+      nextCompared.add(toPairKey(leftId, rightId));
+      const nextComparisonCount = comparisonCount + 1;
+      const nextRanking = rankByRating(votingSubmissions, nextRatings);
+      const nextTop3Ids = nextRanking
+        .slice(0, 3)
+        .map((submission) => submission.id);
+      const nextTop3Key = nextTop3Ids.join("|");
+      const nextStableTop3Count =
+        previousTop3Key === nextTop3Key ? stableTop3Count + 1 : 0;
 
-    const reachedHardCap = nextComparisonCount >= hardCap;
-    const reachedStableTop3 = nextStableTop3Count >= TOP3_STABILITY_REQUIRED;
-    const nextPair = pickNextPair(votingSubmissions, nextRatings, nextCompared);
-    const noMorePairs = !nextPair;
+      const reachedHardCap = nextComparisonCount >= hardCap;
+      const reachedStableTop3 = nextStableTop3Count >= TOP3_STABILITY_REQUIRED;
+      const nextPair = pickNextPair(
+        votingSubmissions,
+        nextRatings,
+        nextCompared,
+      );
+      const noMorePairs = !nextPair;
 
-    setRatings(nextRatings);
-    setComparedPairs(nextCompared);
-    setComparisonCount(nextComparisonCount);
-    setStableTop3Count(nextStableTop3Count);
-    setPreviousTop3Key(nextTop3Key);
+      setRatings(nextRatings);
+      setComparedPairs(nextCompared);
+      setComparisonCount(nextComparisonCount);
+      setStableTop3Count(nextStableTop3Count);
+      setPreviousTop3Key(nextTop3Key);
 
-    if (reachedHardCap || reachedStableTop3 || noMorePairs) {
-      setFinalTopThreeIds(nextTop3Ids);
-      setCurrentPair(null);
-      setPhase("confirming");
-      onPhaseChange?.("confirming");
-      return;
-    }
+      if (reachedHardCap || reachedStableTop3 || noMorePairs) {
+        setFinalTopThreeIds(nextTop3Ids);
+        setCurrentPair(null);
+        setPhase("confirming");
+        onPhaseChange?.("confirming");
+        return;
+      }
 
-    setCurrentPair(nextPair);
-  }, [
-    phase,
-    currentPair,
-    ratings,
-    comparedPairs,
-    comparisonCount,
-    stableTop3Count,
-    previousTop3Key,
-    votingSubmissions,
-    hardCap,
-    onPhaseChange,
-  ]);
+      setCurrentPair(nextPair);
+    },
+    [
+      phase,
+      currentPair,
+      ratings,
+      comparedPairs,
+      comparisonCount,
+      stableTop3Count,
+      previousTop3Key,
+      votingSubmissions,
+      hardCap,
+      onPhaseChange,
+    ],
+  );
 
   const bootstrapVoting = useCallback(() => {
     const setBlockedState = (reason: string) => {
@@ -235,7 +242,9 @@ export const useStaffVoting = ({
     if (!challenge) return;
 
     if (challenge.scoringCategory !== "JUDGED_STAFF") {
-      setBlockedState("This screen is available only for Judged Staff challenges.");
+      setBlockedState(
+        "This screen is available only for Judged Staff challenges.",
+      );
       return;
     }
 
@@ -294,9 +303,13 @@ export const useStaffVoting = ({
           onPhaseChange?.("blocked");
         }, 0);
       }
-      setTimeout(() => setBlockedReason(
-        `At least ${MIN_SUBMISSIONS_TO_VOTE} eligible submissions are required to start staff voting. Eligible now: ${judgedStaffProgress?.eligibleSubmissionsCount ?? votingSubmissions.length}.`,
-      ), 0);
+      setTimeout(
+        () =>
+          setBlockedReason(
+            `At least ${MIN_SUBMISSIONS_TO_VOTE} eligible submissions are required to start staff voting. Eligible now: ${judgedStaffProgress?.eligibleSubmissionsCount ?? votingSubmissions.length}.`,
+          ),
+        0,
+      );
       setTimeout(() => setBootstrapped(true), 0);
       return;
     }
@@ -349,17 +362,17 @@ export const useStaffVoting = ({
     finalTopThree,
     stableTop3Count,
     bootstrapped,
-    
+
     // Computed
     ranking,
     calculatedTopThree,
-    
+
     // Actions
     handlePickWinner,
     startComparing,
     resetVoting,
     bootstrapVoting,
-    
+
     // Constants
     MIN_SUBMISSIONS_TO_VOTE,
     TOP3_STABILITY_REQUIRED,

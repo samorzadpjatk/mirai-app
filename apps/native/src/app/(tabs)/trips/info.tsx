@@ -23,7 +23,10 @@ import { useLocalSearchParams } from "expo-router";
 import LoadingScreen from "../../../components/LoadingScreen";
 
 // Type-safe icon name helper
-const getIconName = (iconName: string | null, fallback: keyof typeof Ionicons.glyphMap): keyof typeof Ionicons.glyphMap => {
+const getIconName = (
+  iconName: string | null,
+  fallback: keyof typeof Ionicons.glyphMap,
+): keyof typeof Ionicons.glyphMap => {
   if (!iconName) return fallback;
   // Basic validation - check if it's a reasonable icon name format
   // This is a simple heuristic; in a real app you might want a more robust validation
@@ -38,51 +41,62 @@ export default function TripInfoScreen() {
   const [pdfModalUri, setPdfModalUri] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
-  const paramTripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
+  const paramTripId =
+    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
   const { selectedTripId } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
-  
-  const { getResource, insurance, isLoading, isError } = useTripResources(tripId);
-  
+
+  const { getResource, insurance, isLoading, isError } =
+    useTripResources(tripId);
+
   // File download hooks for images and PDFs
   const heroImageDownload = useFileDownload();
   const mapBgImageDownload = useFileDownload();
   const mapPdfDownload = useFileDownload();
   const infopackDownload = useFileDownload();
-  
+
   // Download images on component mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isLoading) {
       const heroResource = getResource("HERO_IMAGE");
       const mapBgResource = getResource("MAP_BG_IMAGE");
-      
+
       if (heroResource?.storagePath) {
-        heroImageDownload.download({ storagePath: heroResource.storagePath }).catch(console.error);
+        heroImageDownload
+          .download({ storagePath: heroResource.storagePath })
+          .catch(console.error);
       }
-      
+
       if (mapBgResource?.storagePath) {
-        mapBgImageDownload.download({ storagePath: mapBgResource.storagePath }).catch(console.error);
+        mapBgImageDownload
+          .download({ storagePath: mapBgResource.storagePath })
+          .catch(console.error);
       }
     }
-  }, [isLoading, getResource, heroImageDownload.download, mapBgImageDownload.download]);
-  
+  }, [getResource, heroImageDownload, isLoading, mapBgImageDownload]);
+
   // Check if PDFs are downloaded on component mount
   useEffect(() => {
     if (!isLoading) {
       const pdfMapResource = getResource("PDF_MAP");
       const infopackResource = getResource("INFOPACK");
-      
+
       // Note: File existence checking will be handled by the download hook's cache mechanism
-      console.log("PDF Map resource:", pdfMapResource ? "available" : "not found");
-      console.log("Infopack resource:", infopackResource ? "available" : "not found");
+      console.log(
+        "PDF Map resource:",
+        pdfMapResource ? "available" : "not found",
+      );
+      console.log(
+        "Infopack resource:",
+        infopackResource ? "available" : "not found",
+      );
     }
   }, [isLoading, getResource]);
-  
+
   if (isLoading) {
     return <LoadingScreen message="Loading trip info..." />;
   }
-  
+
   if (isError || !tripId) {
     return (
       <View style={styles.container}>
@@ -104,15 +118,18 @@ export default function TripInfoScreen() {
     const infopackResource = getResource("INFOPACK");
     if (infopackResource?.storagePath) {
       try {
-        const result = await infopackDownload.download({ 
-          storagePath: infopackResource.storagePath
+        const result = await infopackDownload.download({
+          storagePath: infopackResource.storagePath,
         });
         setPdfModalTitle("Infopack");
         setPdfModalUri(result.uri);
         setIsPdfModalVisible(true);
       } catch (error) {
         console.error("Error handling Infopack PDF:", error);
-        Alert.alert("Error", "Could not open the infopack. Please try again later.");
+        Alert.alert(
+          "Error",
+          "Could not open the infopack. Please try again later.",
+        );
       }
     }
   };
@@ -134,8 +151,8 @@ export default function TripInfoScreen() {
     const pdfMapResource = getResource("PDF_MAP");
     if (pdfMapResource?.storagePath) {
       try {
-        const result = await mapPdfDownload.download({ 
-          storagePath: pdfMapResource.storagePath
+        const result = await mapPdfDownload.download({
+          storagePath: pdfMapResource.storagePath,
         });
         setPdfModalTitle("PDF Map");
         setPdfModalUri(result.uri);
@@ -181,7 +198,9 @@ export default function TripInfoScreen() {
           <View style={styles.heroCard}>
             <ImageBackground
               source={{
-                uri: heroImageDownload.file?.uri ?? "https://lh3.googleusercontent.com/aida-public/AB6AXuAHhLaOxCenvDHeXPGxGdnYhEumFOLH5A9Wh5fAb63uNUkITSveOg2w84W1Q72tKNnm3nhMAdZEyYc_wtTSqm7mjn2XpnVUwdc4O1eHaoLbQxVFProgk7Jnuc3k0sW4fg5BKzNzg56WwaR-MesVKcfLd3fOfPxZGRKaV_PLrsgOyhirvj2CqfkrxBZpmQNCwGq56LVrNMBKRUwNzDK0bd7ttYLsQDQlxhJ2mEsvE1Mx4HrVpg3u58_JdMp0ZOzRu_9PjH43rDEbQfY",
+                uri:
+                  heroImageDownload.file?.uri ??
+                  "https://lh3.googleusercontent.com/aida-public/AB6AXuAHhLaOxCenvDHeXPGxGdnYhEumFOLH5A9Wh5fAb63uNUkITSveOg2w84W1Q72tKNnm3nhMAdZEyYc_wtTSqm7mjn2XpnVUwdc4O1eHaoLbQxVFProgk7Jnuc3k0sW4fg5BKzNzg56WwaR-MesVKcfLd3fOfPxZGRKaV_PLrsgOyhirvj2CqfkrxBZpmQNCwGq56LVrNMBKRUwNzDK0bd7ttYLsQDQlxhJ2mEsvE1Mx4HrVpg3u58_JdMp0ZOzRu_9PjH43rDEbQfY",
               }}
               style={styles.heroImage}
               imageStyle={{ borderRadius: borderRadius.xl }}
@@ -214,7 +233,9 @@ export default function TripInfoScreen() {
                 >
                   <ImageBackground
                     source={{
-                      uri: mapBgImageDownload.file?.uri ?? "https://lh3.googleusercontent.com/aida-public/AB6AXuCHzNKnjzWDXauSdVPNidYoUGd1qjJ403upT8jZBMcs9oyIqPM11hjsbBSIBs6u_5chLFgfVG4mejWXsgPfu_9y0N8bJxBpErgmUNG7fARqfhlQfGNLvemBM4ALBIIQtp1MG4TRaFWaGLDvqRFdhCmezlqGrCMgWMXBj7CGZDysg-TDAt24y1EddpxoxP890kL_wo4ggi8Pc5lqtBPHTTMhwkZH45PhexYqQ-Vy8-aF5Sl8kDbpffkx6-Kq0GdoDqOmvcskgXS7JxQ",
+                      uri:
+                        mapBgImageDownload.file?.uri ??
+                        "https://lh3.googleusercontent.com/aida-public/AB6AXuCHzNKnjzWDXauSdVPNidYoUGd1qjJ403upT8jZBMcs9oyIqPM11hjsbBSIBs6u_5chLFgfVG4mejWXsgPfu_9y0N8bJxBpErgmUNG7fARqfhlQfGNLvemBM4ALBIIQtp1MG4TRaFWaGLDvqRFdhCmezlqGrCMgWMXBj7CGZDysg-TDAt24y1EddpxoxP890kL_wo4ggi8Pc5lqtBPHTTMhwkZH45PhexYqQ-Vy8-aF5Sl8kDbpffkx6-Kq0GdoDqOmvcskgXS7JxQ",
                     }}
                     style={styles.mapBackground}
                     imageStyle={{ borderRadius: borderRadius.xl, opacity: 0.4 }}
@@ -222,14 +243,18 @@ export default function TripInfoScreen() {
                     <View style={styles.mapGradient} />
                     <View style={styles.mapContent}>
                       <View style={styles.mapIconWrapper}>
-                        <Ionicons 
-                          name={getIconName(getResource("INTERACTIVE_MAP")?.iconName ?? null, "map")} 
-                          size={24} 
-                          color={colors.primary} 
+                        <Ionicons
+                          name={getIconName(
+                            getResource("INTERACTIVE_MAP")?.iconName ?? null,
+                            "map",
+                          )}
+                          size={24}
+                          color={colors.primary}
                         />
                       </View>
                       <Text style={styles.mapTitle}>
-                        {getResource("INTERACTIVE_MAP")?.label ?? "Interactive Map"}
+                        {getResource("INTERACTIVE_MAP")?.label ??
+                          "Interactive Map"}
                       </Text>
                       <Text style={styles.mapSubtitle}>
                         Navigate trails & lifts
@@ -258,7 +283,10 @@ export default function TripInfoScreen() {
                   <View style={styles.pdfMapContent}>
                     <View style={styles.pdfMapIconWrapper}>
                       <Ionicons
-                        name={getIconName(getResource("PDF_MAP")?.iconName ?? null, "document-text")}
+                        name={getIconName(
+                          getResource("PDF_MAP")?.iconName ?? null,
+                          "document-text",
+                        )}
                         size={28}
                         color={colors.white}
                       />
@@ -307,7 +335,10 @@ export default function TripInfoScreen() {
                 >
                   <View style={styles.bentoIconWrapper}>
                     <Ionicons
-                      name={getIconName(getResource("INFOPACK")?.iconName ?? null, "document-text")}
+                      name={getIconName(
+                        getResource("INFOPACK")?.iconName ?? null,
+                        "document-text",
+                      )}
                       size={28}
                       color={colors.white}
                     />
@@ -351,7 +382,10 @@ export default function TripInfoScreen() {
                 >
                   <View style={styles.whatsappIconWrapper}>
                     <Ionicons
-                      name={getIconName(getResource("WHATSAPP")?.iconName ?? null, "chatbubble")}
+                      name={getIconName(
+                        getResource("WHATSAPP")?.iconName ?? null,
+                        "chatbubble",
+                      )}
                       size={28}
                       color={colors.accentMagenta}
                     />
@@ -383,7 +417,10 @@ export default function TripInfoScreen() {
                   activeOpacity={0.8}
                 >
                   <Ionicons
-                    name={getIconName(getResource("SOS")?.iconName ?? null, "alert-circle")}
+                    name={getIconName(
+                      getResource("SOS")?.iconName ?? null,
+                      "alert-circle",
+                    )}
                     size={24}
                     color={colors.primary}
                   />
@@ -392,7 +429,7 @@ export default function TripInfoScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
-              
+
               {insurance && (
                 <TouchableOpacity
                   style={styles.resourceTile}
@@ -417,7 +454,9 @@ export default function TripInfoScreen() {
         >
           <WebView
             source={{
-              uri: getResource("INTERACTIVE_MAP")?.url ?? "https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv=",
+              uri:
+                getResource("INTERACTIVE_MAP")?.url ??
+                "https://infosnow.ch/~apgmontagne/?id=45&lang=en&tab=map-wi&sat=&tv=",
             }}
             style={styles.webView}
             startInLoadingState={true}
@@ -497,12 +536,12 @@ export default function TripInfoScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-              
+
               {insurance.steps?.map((step) => (
                 <View key={step.id} style={styles.insuranceCard}>
                   <Text style={styles.insuranceCardTitle}>{step.title}</Text>
                   <Text style={styles.insuranceText}>{step.text}</Text>
-                  
+
                   {step.requiredInfo && step.requiredInfo.length > 0 && (
                     <>
                       <Text style={styles.insuranceLabel}>
@@ -515,7 +554,7 @@ export default function TripInfoScreen() {
                       ))}
                     </>
                   )}
-                  
+
                   {step.exampleCall && (
                     <>
                       <Text style={styles.insuranceLabel}>
@@ -526,7 +565,7 @@ export default function TripInfoScreen() {
                       </Text>
                     </>
                   )}
-                  
+
                   {step.additionalText && (
                     <Text style={styles.insuranceText}>
                       {step.additionalText}
@@ -534,14 +573,16 @@ export default function TripInfoScreen() {
                   )}
                 </View>
               ))}
-              
+
               {insurance.hospitalName && (
                 <View style={styles.insuranceCard}>
                   <Text style={styles.insuranceCardTitle}>Szpital</Text>
                   <Text style={styles.insuranceText}>
                     Najbliższy szpital to {insurance.hospitalName}
-                    {insurance.hospitalAddress && `, znajduje się w ${insurance.hospitalAddress}`}
-                    {insurance.hospitalDistance && ` (${insurance.hospitalDistance})`}
+                    {insurance.hospitalAddress &&
+                      `, znajduje się w ${insurance.hospitalAddress}`}
+                    {insurance.hospitalDistance &&
+                      ` (${insurance.hospitalDistance})`}
                   </Text>
                 </View>
               )}

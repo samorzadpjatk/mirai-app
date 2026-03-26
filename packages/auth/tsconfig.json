@@ -7,9 +7,15 @@
     },
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "rootDir": "src",
-    "outDir": "dist",
-    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
+    "outDir": "dist"
   },
-  "include": ["src/**/*",],
-  "exclude": ["node_modules", "dist", "**/prisma/lib", "**/prisma/lib/**", "**/__tests__/**", "**/*.test.*"]
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/prisma/lib",
+    "**/prisma/lib/**",
+    "**/__tests__/**",
+    "**/*.test.*"
+  ]
 }

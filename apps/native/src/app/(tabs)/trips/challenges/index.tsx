@@ -16,7 +16,6 @@ import { ChallengesLoadingState } from "~/components/trips/challenges/Challenges
 import { GroupInfoCard } from "~/components/trips/challenges/GroupInfoCard";
 import { TripNotFoundState } from "~/components/trips/challenges/TripNotFoundState";
 import { useChallenges } from "~/hooks/challenges";
-import { useTripDetails } from "~/hooks/trips";
 import type {
   ChallengeListItem,
   ChallengeSubmissionType,
@@ -80,8 +79,6 @@ export default function ChallengesScreen() {
     userGroup,
     leaderboardInfo,
   } = useChallenges(tripId);
-  const { isTripPast } = useTripDetails(tripId);
-
   const [selectedStatusFilter, setSelectedStatusFilter] =
     useState<StatusFilter>("ALL");
   const [selectedTypeFilter, setSelectedTypeFilter] =
@@ -134,30 +131,30 @@ export default function ChallengesScreen() {
         ? challenges
             .filter((challenge) => challenge.lifecycleStatus !== "COMPLETED")
             .sort((a, b) => {
-            const getAllBucket = (challenge: ChallengeListItem) => {
-              if (
-                challenge.status === "to_solve" &&
-                challenge.lifecycleStatus !== "VISIBLE"
-              ) {
-                return 0; // active
-              }
-              if (challenge.status === "submitted") {
-                return 1; // submitted
-              }
-              if (challenge.lifecycleStatus === "VISIBLE") {
-                return 2; // visible
-              }
-              if (challenge.status === "solved") {
-                return 3; // solved
-              }
-              if (challenge.status === "locked") {
-                return 5; // locked at the end
-              }
-              return 4; // other statuses between solved and locked
-            };
+              const getAllBucket = (challenge: ChallengeListItem) => {
+                if (
+                  challenge.status === "to_solve" &&
+                  challenge.lifecycleStatus !== "VISIBLE"
+                ) {
+                  return 0; // active
+                }
+                if (challenge.status === "submitted") {
+                  return 1; // submitted
+                }
+                if (challenge.lifecycleStatus === "VISIBLE") {
+                  return 2; // visible
+                }
+                if (challenge.status === "solved") {
+                  return 3; // solved
+                }
+                if (challenge.status === "locked") {
+                  return 5; // locked at the end
+                }
+                return 4; // other statuses between solved and locked
+              };
 
-            return getAllBucket(a) - getAllBucket(b);
-          })
+              return getAllBucket(a) - getAllBucket(b);
+            })
         : selectedStatusFilter === "solved" ||
             selectedStatusFilter === "to_solve"
           ? challenges.filter(
@@ -190,7 +187,8 @@ export default function ChallengesScreen() {
     }) => {
       if (!hasNextPage || isFetchingNextPage || isLoading) return;
 
-      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
       const nearBottom =
         contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
 
@@ -241,7 +239,6 @@ export default function ChallengesScreen() {
           />
         )}
 
-        
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -305,24 +302,27 @@ export default function ChallengesScreen() {
             const isAll = filter.value === "ALL";
             const color = isAll
               ? colors.primary
-              : statusColors[filter.value] ?? colors.primary;
+              : (statusColors[filter.value] ?? colors.primary);
             const selected = selectedStatusFilter === filter.value;
-            
+
             return (
               <TouchableOpacity
                 key={filter.value}
                 onPress={() => setSelectedStatusFilter(filter.value)}
                 style={[
-                  styles.filterChip, 
+                  styles.filterChip,
                   selected && styles.filterChipActive,
-                  selected && { borderColor: color, backgroundColor: `${color}20` }
+                  selected && {
+                    borderColor: color,
+                    backgroundColor: `${color}20`,
+                  },
                 ]}
               >
                 <Text
                   style={[
                     styles.filterChipText,
                     selected && styles.filterChipTextActive,
-                    selected && { color: color }
+                    selected && { color: color },
                   ]}
                 >
                   {filter.label}
@@ -341,7 +341,9 @@ export default function ChallengesScreen() {
         {isFetchingNextPage ? (
           <View style={styles.loadingMoreWrap}>
             <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.loadingMoreText}>Loading more challenges...</Text>
+            <Text style={styles.loadingMoreText}>
+              Loading more challenges...
+            </Text>
           </View>
         ) : null}
       </ScrollView>

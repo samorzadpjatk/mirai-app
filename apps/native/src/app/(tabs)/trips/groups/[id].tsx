@@ -32,12 +32,11 @@ export default function GroupDetailsScreen() {
 
   const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
 
-  const { isTripPast } = useTripDetails(group?.trip?.id);
-
   const { data: group, isLoading: groupLoading } = useQuery({
     ...trpc.group.getById.queryOptions({ id: groupId ?? "" }),
     enabled: !!groupId,
   });
+  const { isTripPast } = useTripDetails(group?.trip?.id);
   const isCurrentUserMemberInViewedGroup = Boolean(
     group?.participants.some(
       (participant) => participant.user.id === currentUser?.id,
@@ -349,7 +348,11 @@ export default function GroupDetailsScreen() {
               onPress={handleCancelJoinRequest}
               disabled={cancelJoinRequestMutation.isPending}
             >
-              <Ionicons name="close-circle-outline" size={16} color={colors.white} />
+              <Ionicons
+                name="close-circle-outline"
+                size={16}
+                color={colors.white}
+              />
               <Text style={styles.cancelRequestButtonText}>
                 {cancelJoinRequestMutation.isPending
                   ? "Canceling..."
@@ -470,7 +473,9 @@ export default function GroupDetailsScreen() {
           <TransactionHistory transactions={transactions ?? []} />
         </View>
 
-        <GroupApprovedChallenges submissions={group.approvedSubmissions ?? []} />
+        <GroupApprovedChallenges
+          submissions={group.approvedSubmissions ?? []}
+        />
       </ScrollView>
     </View>
   );

@@ -5,7 +5,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useTRPCClient } from "@mirai-app/trpc/client";
-import type { CommunityFeedActivity, ActivityFilter } from "~/components/community/CommunityActivityCard";
+import type {
+  CommunityFeedActivity,
+  ActivityFilter,
+} from "~/components/community/CommunityActivityCard";
 
 type FeedCursor = {
   id: string;
@@ -76,9 +79,7 @@ export const useCommunityFeed = ({
 
   const feedQueryKey = useMemo(
     () =>
-      selectedTripId
-        ? (["community-feed", selectedTripId, 30] as const)
-        : null,
+      selectedTripId ? (["community-feed", selectedTripId, 30] as const) : null,
     [selectedTripId],
   );
 
@@ -148,58 +149,51 @@ export const useCommunityFeed = ({
     );
   };
 
-  const { mutateAsync: toggleHeart } = useMutation(
-    {
-      mutationFn: async ({ activityId, reactionType }: { activityId: string; reactionType: string }) => {
-        return await trpcClient.activityFeed.toggleReaction.mutate({
-          activityId,
-          reactionType,
-        });
-      },
-      onMutate: async ({ activityId }) => {
-        const queryKey = feedQueryKey;
-        if (!selectedTripId || !queryKey) {
-          return undefined;
-        }
-
-        await queryClient.cancelQueries({ queryKey });
-        const previousData = queryClient.getQueryData(feedQueryKey);
-        applyReactionSummaryToFeed(
-          activityId,
-          toggleHeartSummaryLocally,
-          queryKey,
-        );
-        return { queryKey, previousData };
-      },
-      onError: (_error, _variables, context) => {
-        if (!context?.queryKey || !context.previousData) return;
-        queryClient.setQueryData(context.queryKey, context.previousData);
-      },
-      onSuccess: (result, _variables, context) => {
-        applyReactionSummaryToFeed(
-          result.activityId,
-          result.reactionsSummary as CommunityFeedActivity["reactionsSummary"],
-          context?.queryKey,
-        );
-      },
-    },
-  );
-
-  const handleToggleHeart = useCallback(
-    (activityId: string) => {
-      void toggleHeart({
+  const { mutateAsync: toggleHeart } = useMutation({
+    mutationFn: async ({ activityId }: { activityId: string }) => {
+      return await trpcClient.activityFeed.toggleReaction.mutate({
         activityId,
         reactionType: "heart",
       });
+    },
+    onMutate: async ({ activityId }) => {
+      const queryKey = feedQueryKey;
+      if (!selectedTripId || !queryKey) {
+        return undefined;
+      }
+
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData(feedQueryKey);
+      applyReactionSummaryToFeed(
+        activityId,
+        toggleHeartSummaryLocally,
+        queryKey,
+      );
+      return { queryKey, previousData };
+    },
+    onError: (_error, _variables, context) => {
+      if (!context?.queryKey || !context.previousData) return;
+      queryClient.setQueryData(context.queryKey, context.previousData);
+    },
+    onSuccess: (result, _variables, context) => {
+      applyReactionSummaryToFeed(
+        result.activityId,
+        result.reactionsSummary as CommunityFeedActivity["reactionsSummary"],
+        context?.queryKey,
+      );
+    },
+  });
+
+  const handleToggleHeart = useCallback(
+    (activityId: string) => {
+      void toggleHeart({ activityId });
     },
     [toggleHeart],
   );
 
   const activities = useMemo(
     () =>
-      (feedQuery.data?.pages ?? []).flatMap(
-        (page) => page.activities ?? [],
-      ),
+      (feedQuery.data?.pages ?? []).flatMap((page) => page.activities ?? []),
     [feedQuery.data?.pages],
   );
 

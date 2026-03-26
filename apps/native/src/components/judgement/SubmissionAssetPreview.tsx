@@ -1,12 +1,19 @@
-import { View, Text, ActivityIndicator, Modal, Pressable, useWindowDimensions } from 'react-native';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { VideoView, useVideoPlayer } from 'expo-video';
-import { colors } from '~/styles';
-import { type Submission } from '~/stores/judgement';
-import { useFileDownload } from '~/hooks/files';
-import { viewStyles, textStyles } from '~/styles/judgement';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  useWindowDimensions,
+} from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { colors } from "~/styles";
+import { type Submission } from "~/stores/judgement";
+import { useFileDownload } from "~/hooks/files";
+import { viewStyles, textStyles } from "~/styles/judgement";
 
 const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const { width, height } = useWindowDimensions();
@@ -14,7 +21,8 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
   const hasVideo = Boolean(submission.videoId);
   const videoContainerRef = useRef<View>(null);
   const [isVideoFullyVisible, setIsVideoFullyVisible] = useState(false);
-  const [isFullscreenImageVisible, setIsFullscreenImageVisible] = useState(false);
+  const [isFullscreenImageVisible, setIsFullscreenImageVisible] =
+    useState(false);
   const {
     download: downloadImage,
     status: imageStatus,
@@ -30,27 +38,31 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
     abort: abortVideo,
   } = useFileDownload();
 
-  const videoPlayer = useVideoPlayer(videoFile?.uri ? { uri: videoFile.uri, useCaching: true } : null, (player) => {
-    player.muted = true;
-    player.loop = true;
-  });
+  const videoPlayer = useVideoPlayer(
+    videoFile?.uri ? { uri: videoFile.uri, useCaching: true } : null,
+    (player) => {
+      player.muted = true;
+      player.loop = true;
+    },
+  );
 
   const checkVideoVisibility = useCallback(() => {
     if (!videoContainerRef.current) return;
-    videoContainerRef.current.measureInWindow((x, y, layoutWidth, layoutHeight) => {
-      const fullyVisible =
-        x >= 0 &&
-        y >= 0 &&
-        x + layoutWidth <= width &&
-        y + layoutHeight <= height;
-      setIsVideoFullyVisible(fullyVisible);
-    });
+    videoContainerRef.current.measureInWindow(
+      (x, y, layoutWidth, layoutHeight) => {
+        const fullyVisible =
+          x >= 0 &&
+          y >= 0 &&
+          x + layoutWidth <= width &&
+          y + layoutHeight <= height;
+        setIsVideoFullyVisible(fullyVisible);
+      },
+    );
   }, [height, width]);
 
   useEffect(() => {
     if (!hasImage) {
       resetImage();
-      setIsFullscreenImageVisible(false);
       return;
     }
 
@@ -114,7 +126,7 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
     return (
       <>
         <View style={viewStyles.mediaWrapper}>
-          {imageStatus === 'loading' ? (
+          {imageStatus === "loading" ? (
             <View style={viewStyles.mediaLoading}>
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
@@ -135,7 +147,9 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
           {submission.imageIds.length > 1 && (
             <View style={viewStyles.mediaBadge}>
               <Ionicons name="images" size={14} color={colors.white} />
-              <Text style={textStyles.mediaBadgeText}>{submission.imageIds.length}</Text>
+              <Text style={textStyles.mediaBadgeText}>
+                {submission.imageIds.length}
+              </Text>
             </View>
           )}
         </View>
@@ -147,7 +161,10 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
           onRequestClose={closeFullscreenImage}
         >
           <View style={viewStyles.fullscreenImageContainer}>
-            <Pressable style={viewStyles.fullscreenImageClose} onPress={closeFullscreenImage}>
+            <Pressable
+              style={viewStyles.fullscreenImageClose}
+              onPress={closeFullscreenImage}
+            >
               <Ionicons name="close" size={24} color={colors.white} />
             </Pressable>
             {imageFile?.uri ? (
@@ -177,14 +194,14 @@ const SubmissionAssetPreview = ({ submission }: { submission: Submission }) => {
       >
         {videoFile?.uri ? (
           <VideoView player={videoPlayer} style={viewStyles.mediaImage} />
-        ) : videoStatus === 'loading' ? (
+        ) : videoStatus === "loading" ? (
           <ActivityIndicator size="small" color={colors.white} />
         ) : (
           <Ionicons name="play-circle" size={48} color={colors.white} />
         )}
         {!videoFile?.uri && (
           <Text style={textStyles.videoLabel}>
-            {videoStatus === 'loading' ? 'Loading video' : 'Video submission'}
+            {videoStatus === "loading" ? "Loading video" : "Video submission"}
           </Text>
         )}
       </View>

@@ -7,13 +7,22 @@ export interface SupabaseClient {
   auth: {
     getSession(): Promise<{ data: { session: SupabaseSession | null } }>;
     onAuthStateChange(
-      callback: (event: any, session: SupabaseSession | null) => void
+      callback: (event: any, session: SupabaseSession | null) => void,
     ): { data: { subscription: { unsubscribe(): void } } };
-    signInWithOtp(params: { email: string; options?: { shouldCreateUser?: boolean } }): Promise<{ error?: any }>;
-    signInWithPassword(params: { email: string; password: string }): Promise<{ data?: { session?: SupabaseSession | null }; error?: any }>;
-    verifyOtp(params: { email: string; token: string; type: 'email' | 'sms' | 'phone_change' | 'recovery' }): Promise<{ error?: any }>;
+    signInWithOtp(params: {
+      email: string;
+      options?: { shouldCreateUser?: boolean };
+    }): Promise<{ error?: any }>;
+    signInWithPassword(params: {
+      email: string;
+      password: string;
+    }): Promise<{ data?: { session?: SupabaseSession | null }; error?: any }>;
+    verifyOtp(params: unknown): Promise<{ error?: any }>;
     signOut(): Promise<{ error?: any }>;
-    refreshSession(): Promise<{ data?: { session?: SupabaseSession | null }; error?: any }>;
+    refreshSession(): Promise<{
+      data?: { session?: SupabaseSession | null };
+      error?: any;
+    }>;
   };
 }
 
@@ -77,7 +86,9 @@ export type AuthStore = AuthState & AuthActions;
  * Internal state not exposed in the store type but used within actions.
  */
 let _supabaseClient: SupabaseClient | null = null;
-let _onUserFetch: ((authUserId: string) => Promise<AuthUser | null>) | undefined;
+let _onUserFetch:
+  | ((authUserId: string) => Promise<AuthUser | null>)
+  | undefined;
 
 const fetchAndSetUser = async (
   authUserId: string,

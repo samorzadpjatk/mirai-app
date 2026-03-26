@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,15 +12,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@mirai-app/trpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  borderRadius,
-  colors,
-  spacing,
-  typography,
-} from "~/styles";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";
 import { ChallengeNotFoundState } from "~/components/trips/challenges/ChallengeNotFoundState";
-import { useStaffVoting, type VotingSubmission } from "~/hooks/admin/useStaffVoting";
+import {
+  useStaffVoting,
+  type VotingSubmission,
+} from "~/hooks/admin/useStaffVoting";
 import { SubmissionImageCard } from "~/components/admin/challenges/SubmissionImageCard";
 
 export default function AdminChallengeStaffVotingScreen() {
@@ -92,45 +90,12 @@ export default function AdminChallengeStaffVotingScreen() {
     trpc.challengeVote.forceEndJudgedStaffVoting.mutationOptions(),
   );
 
-  const voting = useStaffVoting({
-    votingSubmissions,
-    hasMyCompleteVote,
-    requiredVotePositions,
-    judgedStaffProgress,
-    myVotesError,
-    judgedStaffProgressError,
-    challenge,
-  });
-
-  useEffect(() => {
-    if (!challengeId || !tripId) return;
-    if (isLoadingChallenge || isLoadingSubmissions || isLoadingVotes) {
-      return;
-    }
-    if (!challenge) return;
-    if (challenge.scoringCategory === "JUDGED_STAFF" && isLoadingProgress) {
-      return;
-    }
-
-    voting.bootstrapVoting();
-  }, [
-    challenge,
-    challengeId,
-    isLoadingChallenge,
-    isLoadingProgress,
-    isLoadingSubmissions,
-    isLoadingVotes,
-    tripId,
-    voting,
-  ]);
-
   const navigateBackToChallenges = () => {
     router.replace({
       pathname: "/admin/challenges",
       params: { tripId: tripId ?? "" },
     });
   };
-
 
   const votingSubmissions: VotingSubmission[] = useMemo(() => {
     const raw = submissionsData ?? [];
@@ -156,9 +121,19 @@ export default function AdminChallengeStaffVotingScreen() {
   );
   const hasMyCompleteVote =
     requiredVotePositions > 0 &&
-    Array.from({ length: requiredVotePositions }, (_, index) => index + 1).every(
-      (position) => myVotePositions.has(position),
-    );
+    Array.from(
+      { length: requiredVotePositions },
+      (_, index) => index + 1,
+    ).every((position) => myVotePositions.has(position));
+  const voting = useStaffVoting({
+    votingSubmissions,
+    hasMyCompleteVote,
+    requiredVotePositions,
+    judgedStaffProgress,
+    myVotesError,
+    judgedStaffProgressError,
+    challenge,
+  });
   const submissionEndTimestamp = challenge?.endTime
     ? new Date(challenge.endTime).getTime()
     : null;
@@ -170,6 +145,28 @@ export default function AdminChallengeStaffVotingScreen() {
     challenge?.status !== "COMPLETED" &&
     challenge?.status !== "CANCELLED" &&
     isSubmissionPhaseEnded;
+
+  useEffect(() => {
+    if (!challengeId || !tripId) return;
+    if (isLoadingChallenge || isLoadingSubmissions || isLoadingVotes) {
+      return;
+    }
+    if (!challenge) return;
+    if (challenge.scoringCategory === "JUDGED_STAFF" && isLoadingProgress) {
+      return;
+    }
+
+    voting.bootstrapVoting();
+  }, [
+    challenge,
+    challengeId,
+    isLoadingChallenge,
+    isLoadingProgress,
+    isLoadingSubmissions,
+    isLoadingVotes,
+    tripId,
+    voting,
+  ]);
 
   const handleSubmitPodium = async () => {
     if (
@@ -206,11 +203,15 @@ export default function AdminChallengeStaffVotingScreen() {
       });
 
       await queryClient.invalidateQueries({ queryKey: myVotesQuery.queryKey });
-      await queryClient.invalidateQueries({ queryKey: submissionsQuery.queryKey });
+      await queryClient.invalidateQueries({
+        queryKey: submissionsQuery.queryKey,
+      });
       await queryClient.invalidateQueries({
         queryKey: judgedStaffProgressQuery.queryKey,
       });
-      await queryClient.invalidateQueries({ queryKey: challengeQuery.queryKey });
+      await queryClient.invalidateQueries({
+        queryKey: challengeQuery.queryKey,
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to submit votes";
@@ -221,11 +222,15 @@ export default function AdminChallengeStaffVotingScreen() {
         normalized.includes("already voted");
 
       if (alreadyVoted) {
-        await queryClient.invalidateQueries({ queryKey: myVotesQuery.queryKey });
+        await queryClient.invalidateQueries({
+          queryKey: myVotesQuery.queryKey,
+        });
         await queryClient.invalidateQueries({
           queryKey: judgedStaffProgressQuery.queryKey,
         });
-        await queryClient.invalidateQueries({ queryKey: challengeQuery.queryKey });
+        await queryClient.invalidateQueries({
+          queryKey: challengeQuery.queryKey,
+        });
         return;
       }
 
@@ -332,7 +337,9 @@ export default function AdminChallengeStaffVotingScreen() {
               disabled={forceEndMutation.isPending}
             >
               <Text style={styles.forceButtonText}>
-                {forceEndMutation.isPending ? "Finalizing..." : "Force End Voting"}
+                {forceEndMutation.isPending
+                  ? "Finalizing..."
+                  : "Force End Voting"}
               </Text>
             </TouchableOpacity>
           ) : null}
@@ -357,13 +364,17 @@ export default function AdminChallengeStaffVotingScreen() {
                   submission={voting.currentLeft}
                   title="Pick this"
                   subtitle="Tap to select winner"
-                  onPress={() => voting.handlePickWinner(voting.currentLeft!.id)}
+                  onPress={() =>
+                    voting.handlePickWinner(voting.currentLeft!.id)
+                  }
                 />
                 <SubmissionImageCard
                   submission={voting.currentRight}
                   title="Pick this"
                   subtitle="Tap to select winner"
-                  onPress={() => voting.handlePickWinner(voting.currentRight!.id)}
+                  onPress={() =>
+                    voting.handlePickWinner(voting.currentRight!.id)
+                  }
                 />
               </View>
             ) : (
@@ -374,7 +385,8 @@ export default function AdminChallengeStaffVotingScreen() {
 
             {voting.stableTop3Count > 0 ? (
               <Text style={styles.hintText}>
-                Top 3 stable streak: {voting.stableTop3Count}/{voting.TOP3_STABILITY_REQUIRED}
+                Top 3 stable streak: {voting.stableTop3Count}/
+                {voting.TOP3_STABILITY_REQUIRED}
               </Text>
             ) : null}
           </>
@@ -393,7 +405,11 @@ export default function AdminChallengeStaffVotingScreen() {
                   submission={submission}
                   title={`#${index + 1}`}
                   subtitle={
-                    index === 0 ? "3 points" : index === 1 ? "2 points" : "1 point"
+                    index === 0
+                      ? "3 points"
+                      : index === 1
+                        ? "2 points"
+                        : "1 point"
                   }
                 />
               ))}
@@ -423,7 +439,9 @@ export default function AdminChallengeStaffVotingScreen() {
         {voting.phase === "done" ? (
           <View style={styles.doneCard}>
             <Text style={styles.doneTitle}>
-              {challenge.status === "COMPLETED" ? "Voting completed" : "Vote submitted"}
+              {challenge.status === "COMPLETED"
+                ? "Voting completed"
+                : "Vote submitted"}
             </Text>
             <Text style={styles.doneText}>
               {challenge.status === "COMPLETED"
