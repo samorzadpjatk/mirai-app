@@ -27,19 +27,19 @@ bun install
 
 ## Available Commands
 
-| Command | Description |
-|---------|------|
-| `cd apps/native && bun run dev` | Starts Expo development server |
-| `cd apps/native && bun run android` | Runs app on Android emulator/device |
-| `cd apps/native && bun run ios` | Runs app on iOS simulator/device |
-| `cd apps/native && bun run web` | Runs app in browser |
-| `cd apps/native && bun run build` | Builds app for production |
-| `cd apps/native && bun run lint` | Checks code for ESLint errors |
-| `cd apps/native && bun run lint:fix` | Automatically fixes ESLint errors |
-| `cd apps/native && bun run typecheck` | Checks TypeScript types |
-| `cd apps/native && bun run test` | Runs tests with coverage |
-| `cd apps/native && bun run format:check` | Checks code formatting |
-| `cd apps/native && bun run format:write` | Formats code |
+| Command                                  | Description                         |
+| ---------------------------------------- | ----------------------------------- |
+| `cd apps/native && bun run dev`          | Starts Expo development server      |
+| `cd apps/native && bun run android`      | Runs app on Android emulator/device |
+| `cd apps/native && bun run ios`          | Runs app on iOS simulator/device    |
+| `cd apps/native && bun run web`          | Runs app in browser                 |
+| `cd apps/native && bun run build`        | Builds app for production           |
+| `cd apps/native && bun run lint`         | Checks code for ESLint errors       |
+| `cd apps/native && bun run lint:fix`     | Automatically fixes ESLint errors   |
+| `cd apps/native && bun run typecheck`    | Checks TypeScript types             |
+| `cd apps/native && bun run test`         | Runs tests with coverage            |
+| `cd apps/native && bun run format:check` | Checks code formatting              |
+| `cd apps/native && bun run format:write` | Formats code                        |
 
 ## Project Structure
 
@@ -70,6 +70,7 @@ All major UI components are located in `src/components/ui/`:
 ### Domain Structure
 
 Each domain (trips, groups, challenges, rewards) has its own structure in `src/components/`:
+
 - Domain-specific components
 - Domain-related hooks
 - Types and interfaces
@@ -137,13 +138,13 @@ import { useRouter } from "expo-router";
 
 function MyComponent() {
   const router = useRouter();
-  
+
   // Navigate to screen
   router.push("/users");
-  
+
   // Replace current screen (e.g., after login)
   router.replace("/");
-  
+
   // Go back
   router.back();
 }
@@ -177,3 +178,5 @@ cd apps/native && bun run test:ci
 - [React Native Documentation](https://reactnative.dev/)
 - [Expo Router Documentation](https://docs.expo.dev/router/introduction/)
 - [Project Main README](../../README.md)
+- [Android Fastlane release runbook](./docs/android-fastlane-release-runbook.md)
+- [Android Fastlane rollback procedure](./docs/android-fastlane-rollback.md)

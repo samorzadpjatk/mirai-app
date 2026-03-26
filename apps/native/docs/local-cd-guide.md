@@ -5,6 +5,7 @@ This guide explains how to run the Android Continuous Deployment (CD) pipeline l
 ## Overview
 
 The local CD pipeline includes:
+
 - **Automatic credential importing** from JSON configuration files
 - **Build verification** and signing
 - **APK/AAB generation** with correct versioning
@@ -15,10 +16,8 @@ The local CD pipeline includes:
 
 1. **System dependencies:**
    - macOS or Linux
-   - `bash`
-   - `bun` (for running scripts)
+   - `bun` (for running scripts and credential importing)
    - `bundle` (Ruby bundler for fastlane)
-   - `jq` (JSON command-line processor)
    - Android NDK/SDK (if building locally)
 
 2. **Configuration files:**
@@ -37,6 +36,7 @@ The local CD script automatically imports credentials from your JSON configurati
 ### How it works
 
 When you run the CD script, it:
+
 1. Checks if all required environment variables are already set
 2. If not, automatically runs `import_credentials_into_env.sh`
 3. This script reads from `app.json` and `credentials.json` and exports the following:
@@ -91,6 +91,7 @@ bun ./scripts/release/run-local-cd.js
 ```
 
 The script will:
+
 1. Automatically import credentials from JSON files
 2. Determine the version bump
 3. Build the APK/AAB
@@ -115,6 +116,7 @@ bun ./scripts/release/run-local-cd.js --promote-beta
 ```
 
 This will:
+
 1. Build and upload to internal track
 2. Wait for your confirmation
 3. Promote the version to beta track
@@ -129,6 +131,7 @@ bun ./scripts/release/run-local-cd.js --promote-beta --promote-production
 ```
 
 This will:
+
 1. Build and upload to internal
 2. Wait for confirmation, then promote to beta
 3. Wait for confirmation, then promote to production
@@ -156,21 +159,23 @@ bun ./scripts/release/run-local-cd.js --skip-credential-import
 If you need to import credentials separately (not through the CD script):
 
 ```bash
-bash apps/native/scripts/release/import_credentials_into_env.sh
+bun apps/native/scripts/release/import_credentials_into_env.ts
 ```
 
-This script:
-- Works from any directory (uses absolute paths)
-- Checks for required files before importing
-- Validates `jq` is installed
+This Bun/TypeScript script:
+
+- Works from any directory (uses dynamic path resolution)
+- Validates all required configuration files
+- Parses JSON configurations with clear error reporting
+- Handles both absolute and relative keystore paths
 - Exports all credentials as environment variables
-- Can be sourced in other scripts
+- Can be integrated into other scripts
 
 **Example usage in shell:**
 
 ```bash
-# Source the credentials into the current shell
-source apps/native/scripts/release/import_credentials_into_env.sh
+# Run the credential import script
+bun apps/native/scripts/release/import_credentials_into_env.ts
 
 # Now use the environment variables
 echo $ANDROID_APP_PACKAGE
@@ -186,35 +191,43 @@ If you see "Missing required file" or "Missing required environment variable" er
 1. Verify `apps/native/credentials.json` exists with correct structure
 2. Verify paths in credentials.json point to existing files
 3. Check `apps/native/app.json` has `expo.android.package` set
-4. Ensure `jq` is installed: `which jq`
+4. Verify the keystore file exists at the path specified in credentials.json
 
 ### Path issues
 
 If credentials import fails with path errors:
 
-1. Use absolute paths in `credentials.json`
-2. Or run the script from the project root:
+1. Use absolute paths in `credentials.json`, or
+2. Use relative paths (relative to either project root or apps/native/)
+3. Run the script from the project root:
    ```bash
    cd /path/to/pjapp
    bun apps/native/scripts/release/run-local-cd.js
    ```
 
-### jq not found
+### JSON parsing errors
 
-Install jq:
+If you see "Invalid JSON" errors:
+
+1. Verify `apps/native/credentials.json` has valid JSON syntax
+2. Use a JSON validator: `bun -e "console.log(JSON.parse(require('fs').readFileSync('apps/native/credentials.json', 'utf8')))"`
+3. Ensure all quotes are properly escaped
+4. Check for trailing commas in objects/arrays
+
+### Missing bun
+
+The new credential import script requires `bun`. Install it:
 
 ```bash
 # macOS
-brew install jq
+brew install bun
 
-# Linux (Ubuntu/Debian)
-sudo apt-get install jq
+# Linux
+curl -fsSL https://bun.sh/install | bash
 
-# Linux (Fedora/RHEL)
-sudo dnf install jq
+# Windows
+powershell -c "irm bun.sh/install.ps1 | iex"
 ```
-
-### Authentication failures
 
 If uploads fail with "unauthorized" errors:
 
@@ -286,8 +299,8 @@ After a successful build and upload:
 - Referenced via absolute paths in credentials.json
 
 Consider using tools like:
+
 - AWS Secrets Manager
 - HashiCorp Vault
 - 1Password / LastPass
 - `.env` files with proper gitignore rules
-

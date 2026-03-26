@@ -1,0 +1,215 @@
+name: Android Release (Fastlane)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_from_ref:
+        description: "Git ref to start commit range from (optional)"
+        required: false
+        type: string
+      release_to_ref:
+        description: "Git ref to end commit range at"
+        required: false
+        default: "HEAD"
+        type: string
+
+jobs:
+  build_and_upload_internal:
+    name: Build + upload to internal
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/native
+    outputs:
+      version_code: ${{ steps.metadata.outputs.version_code }}
+      version_name: ${{ steps.metadata.outputs.version_name }}
+      artifact_path: ${{ steps.metadata.outputs.artifact_path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: apps/native
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.6"
+
+      - name: Determine SemVer bump intent from Conventional Commits
+        id: bump
+        run: |
+          if [ -n "${{ inputs.release_from_ref }}" ]; then
+            bun ./scripts/release/derive-bump-intent.js --from "${{ inputs.release_from_ref }}" --to "${{ inputs.release_to_ref }}"
+          else
+            bun ./scripts/release/derive-bump-intent.js --to "${{ inputs.release_to_ref }}"
+          fi
+
+      - name: Resolve SemVer version with semver-action
+        id: semver
+        uses: gandarez/semver-action@v2.1.0
+        with:
+          bump: ${{ steps.bump.outputs.bump }}
+          branching_model: trunk-based
+          main_branch_name: main
+          prefix: ""
+
+      - name: Install JS dependencies
+        run: bun install --frozen-lockfile
+        working-directory: .
+
+      - name: Decode Play service account key
+        run: |
+          mkdir -p .secrets
+          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > .secrets/play-key.json
+        env:
+          PLAY_JSON_KEY_BASE64: ${{ secrets.PLAY_JSON_KEY_BASE64 }}
+
+      - name: Decode Android keystore
+        run: |
+          mkdir -p .secrets
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 -d > .secrets/release.keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Build and upload internal release
+        run: bundle exec fastlane android android_release
+        env:
+          ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
+          PLAY_JSON_KEY_PATH: ${{ github.workspace }}/apps/native/.secrets/play-key.json
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/apps/native/.secrets/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
+          RELEASE_FROM_REF: ${{ inputs.release_from_ref }}
+          RELEASE_TO_REF: ${{ inputs.release_to_ref }}
+          RELEASE_VERSION_NAME: ${{ steps.semver.outputs.semver_tag }}
+
+      - name: Extract release metadata
+        id: metadata
+        run: |
+          METADATA=dist/android/release-metadata.json
+          echo "version_code=$(node -e \"const fs=require('fs');const m=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(m.versionCode));\" $METADATA)" >> $GITHUB_OUTPUT
+          echo "version_name=$(node -e \"const fs=require('fs');const m=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(m.versionName));\" $METADATA)" >> $GITHUB_OUTPUT
+          echo "artifact_path=$(node -e \"const fs=require('fs');const m=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(String(m.artifactPath));\" $METADATA)" >> $GITHUB_OUTPUT
+          echo "version_bump=${{ steps.bump.outputs.bump }}" >> $GITHUB_OUTPUT
+
+      - name: Upload release bundle + metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-internal-${{ steps.metadata.outputs.version_code }}
+          path: |
+            apps/native/dist/android/*.aab
+            apps/native/dist/android/release-metadata.json
+          if-no-files-found: error
+
+  promote_to_beta:
+    name: Promote internal -> beta
+    runs-on: ubuntu-latest
+    needs: build_and_upload_internal
+    environment: android-beta-approval
+    defaults:
+      run:
+        working-directory: apps/native
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: apps/native
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.6"
+
+      - name: Download internal release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-internal-${{ needs.build_and_upload_internal.outputs.version_code }}
+          path: apps/native/dist/android
+
+      - name: Decode Play service account key
+        run: |
+          mkdir -p .secrets
+          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > .secrets/play-key.json
+        env:
+          PLAY_JSON_KEY_BASE64: ${{ secrets.PLAY_JSON_KEY_BASE64 }}
+
+      - name: Promote exact release to beta
+        run: |
+          VERSION_CODE=${{ needs.build_and_upload_internal.outputs.version_code }}
+          bundle exec fastlane android android_promote from_track:internal to_track:beta version_code:$VERSION_CODE metadata_path:dist/android/release-metadata.json
+        env:
+          ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
+          PLAY_JSON_KEY_PATH: ${{ github.workspace }}/apps/native/.secrets/play-key.json
+          ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
+
+  promote_to_production:
+    name: Promote beta -> production
+    runs-on: ubuntu-latest
+    needs: [build_and_upload_internal, promote_to_beta]
+    environment: android-production-approval
+    defaults:
+      run:
+        working-directory: apps/native
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: apps/native
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.6"
+
+      - name: Decode Play service account key
+        run: |
+          mkdir -p .secrets
+          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > .secrets/play-key.json
+        env:
+          PLAY_JSON_KEY_BASE64: ${{ secrets.PLAY_JSON_KEY_BASE64 }}
+
+      - name: Download internal release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-internal-${{ needs.build_and_upload_internal.outputs.version_code }}
+          path: apps/native/dist/android
+
+      - name: Promote exact release to production
+        run: |
+          VERSION_CODE=${{ needs.build_and_upload_internal.outputs.version_code }}
+          bundle exec fastlane android android_promote from_track:beta to_track:production version_code:$VERSION_CODE metadata_path:dist/android/release-metadata.json
+        env:
+          ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
+          PLAY_JSON_KEY_PATH: ${{ github.workspace }}/apps/native/.secrets/play-key.json
+          ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}

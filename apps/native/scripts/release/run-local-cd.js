@@ -73,7 +73,7 @@ function importCredentialsFromEnv() {
   const scriptDir = path.dirname(import.meta.url.replace("file://", ""));
   const credentialScript = path.join(
     scriptDir,
-    "import_credentials_into_env.sh",
+    "import_credentials_into_env.ts",
   );
 
   if (!fs.existsSync(credentialScript)) {
@@ -82,8 +82,8 @@ function importCredentialsFromEnv() {
 
   process.stdout.write("[local-cd] Importing credentials from env...\n");
 
-  // Execute the credential import script using bash and capture the environment
-  const result = spawnSync("bash", [credentialScript], {
+  // Execute the credential import script using bun and capture the environment
+  const result = spawnSync("bun", [credentialScript], {
     stdio: ["ignore", "pipe", "pipe"],
     encoding: "utf8",
     env: process.env,

@@ -45,3 +45,6 @@ yarn-error.*
 
 .tamagui
 google-services.json
+
+credentials/**
+credentials.json
