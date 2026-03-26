@@ -1,0 +1,80 @@
+---
+name: Monorepo Tagging
+
+# Rollback: if auto-tagging causes issues, remove this workflow and
+# restore the SemVer/tag steps inside android-release.yml.
+on:
+  push:
+    branches:
+      - main
+  workflow_call:
+
+permissions:
+  contents: write
+
+outputs:
+  semver_tag: ${{ jobs.compute_and_publish_tag.outputs.semver_tag }}
+  previous_tag: ${{ jobs.compute_and_publish_tag.outputs.previous_tag }}
+  tag_created: ${{ jobs.compute_and_publish_tag.outputs.tag_created }}
+  tag_refreshed: ${{ jobs.compute_and_publish_tag.outputs.tag_refreshed }}
+
+jobs:
+  compute_and_publish_tag:
+    name: Compute and publish release tag
+    runs-on: ubuntu-latest
+    outputs:
+      semver_tag: ${{ steps.publish.outputs.semver_tag }}
+      previous_tag: ${{ steps.publish.outputs.previous_tag }}
+      tag_created: ${{ steps.publish.outputs.tag_created }}
+      tag_refreshed: ${{ steps.publish.outputs.tag_refreshed }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve SemVer version with semver-action
+        id: semver
+        uses: gandarez/semver-action@v2.1.0
+        with:
+          bump: auto
+          branching_model: trunk-based
+          main_branch_name: main
+          prefix: ""
+          patch_pattern: "^(fix|bugfix)/.+"
+          minor_pattern: "^feat/.+"
+          major_pattern: "^(breaking|major)/.+|.+![:/].+"
+          build_pattern: "^(chore|docs|test|refactor|nit)/.+"
+
+      - name: Publish or refresh tag
+        id: publish
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.semver.outputs.semver_tag }}"
+          PREVIOUS="${{ steps.semver.outputs.previous_tag }}"
+          echo "semver_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=${PREVIOUS}" >> "$GITHUB_OUTPUT"
+          if [ -z "$TAG" ]; then
+            echo "tag_created=false" >> "$GITHUB_OUTPUT"
+            echo "tag_refreshed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --tags
+          CURRENT_SHA=$(git rev-parse HEAD)
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            TARGET_SHA=$(git rev-parse "$TAG")
+            if [ "$TARGET_SHA" != "$CURRENT_SHA" ]; then
+              git tag -f "$TAG"
+              git push --force origin "$TAG"
+              echo "tag_created=false" >> "$GITHUB_OUTPUT"
+              echo "tag_refreshed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "tag_created=false" >> "$GITHUB_OUTPUT"
+              echo "tag_refreshed=false" >> "$GITHUB_OUTPUT"
+            fi
+            exit 0
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "tag_created=true" >> "$GITHUB_OUTPUT"
+          echo "tag_refreshed=false" >> "$GITHUB_OUTPUT"
