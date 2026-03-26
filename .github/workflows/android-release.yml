@@ -67,7 +67,7 @@ jobs:
           prefix: ""
           patch_pattern: "^(fix|bugfix)/.+"
           minor_pattern: "^feat/.+"
-          major_pattern: "^(breaking|major)/.+"
+          major_pattern: "^(breaking|major)/.+|.+![:/].+"
           build_pattern: "^(chore|docs|test|refactor|nit)/.+"
 
       - name: Create and push semver tag
