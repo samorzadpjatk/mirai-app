@@ -1,22 +1,12 @@
----
 name: Monorepo Tagging
 
-# Rollback: if auto-tagging causes issues, remove this workflow and
-# restore the SemVer/tag steps inside android-release.yml.
 on:
   push:
     branches:
       - main
-  workflow_call:
 
 permissions:
   contents: write
-
-outputs:
-  semver_tag: ${{ jobs.compute_and_publish_tag.outputs.semver_tag }}
-  previous_tag: ${{ jobs.compute_and_publish_tag.outputs.previous_tag }}
-  tag_created: ${{ jobs.compute_and_publish_tag.outputs.tag_created }}
-  tag_refreshed: ${{ jobs.compute_and_publish_tag.outputs.tag_refreshed }}
 
 jobs:
   compute_and_publish_tag:
