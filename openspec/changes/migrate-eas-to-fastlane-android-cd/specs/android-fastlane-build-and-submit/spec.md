@@ -28,6 +28,20 @@ The Android CD workflow SHALL provide a Fastlane submit lane that uploads a prev
 - **WHEN** the provided artifact path does not exist or is incompatible with submission requirements
 - **THEN** the lane MUST fail and report the invalid artifact condition without attempting partial submission
 
+### Requirement: Submit lane SHALL handle versioned artifact filenames from build outputs
+
+The submit flow SHALL support build outputs whose filenames include resolved version metadata (for example `app-<versionName>-<versionCode>.aab`) and SHALL not assume a single static filename unless explicitly configured.
+
+#### Scenario: Submit-only run reuses versioned build artifact
+
+- **WHEN** build output exists at a versioned path and submit runs without an explicit override
+- **THEN** the lane MUST resolve the generated artifact path via the build-submit artifact contract and upload that file
+
+#### Scenario: Ambiguous artifact candidates fail safely
+
+- **WHEN** submit cannot uniquely resolve an artifact (for example multiple AAB candidates and no explicit override)
+- **THEN** the lane MUST fail with actionable guidance to provide `artifact_path`
+
 ### Requirement: Android release orchestration SHALL support build-only and submit-only execution
 
 The workflow SHALL support independently running build and submit lanes, and an orchestrated release lane that composes both for end-to-end delivery.

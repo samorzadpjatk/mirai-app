@@ -13,10 +13,22 @@ The migration plan SHALL document and enforce key Android build expectations cur
 
 The migration SHALL define a required set of CI secrets and environment variables for build and submission, and MUST validate presence and formatting before release execution.
 
+`credentials/android/google-services.json` SHALL be treated as secret-backed runtime input: CI MUST load base64-encoded content from environment-provided secret material and write the decoded file into the runner filesystem before Android build/submit lanes execute.
+
 #### Scenario: Preflight validation blocks unsafe release
 
 - **WHEN** any required credential, environment variable, or configuration value is missing or malformed
 - **THEN** the preflight step MUST fail the pipeline before build or submission starts
+
+#### Scenario: google-services secret is materialized before lanes
+
+- **WHEN** Android CD release workflow starts
+- **THEN** CI MUST create `credentials/android/google-services.json` by decoding secret-sourced base64 environment data before invoking Fastlane lanes
+
+#### Scenario: Missing google-services secret blocks pipeline
+
+- **WHEN** secret-sourced base64 data for `credentials/android/google-services.json` is absent or invalid
+- **THEN** preflight MUST fail with actionable guidance and MUST NOT run build or submit lanes
 
 ### Requirement: Migration SHALL provide rollback instructions
 
@@ -35,6 +47,20 @@ The change SHALL provide updated operational documentation for triggering lanes,
 
 - **WHEN** a release job fails in build or submit stage
 - **THEN** the runbook MUST include lane-specific troubleshooting actions and verification commands sufficient for recovery
+
+### Requirement: Migration SHALL enforce explicit build-to-submit artifact handoff
+
+The pipeline SHALL pass the exact artifact produced by the build stage into the submit stage (or an equivalent canonical alias) and SHALL NOT rely on an implicit static filename that may differ from versioned build output naming.
+
+#### Scenario: Submit stage consumes build-produced artifact reference
+
+- **WHEN** build stage publishes an artifact with versioned filename
+- **THEN** submit stage MUST use the artifact reference from build outputs for upload
+
+#### Scenario: Missing handoff reference blocks submit
+
+- **WHEN** submit stage cannot resolve artifact reference from build outputs and no explicit `artifact_path` is provided
+- **THEN** pipeline MUST fail before upload with actionable guidance to provide the path
 
 ### Requirement: Migration SHALL define SemVer policy via trunk-based custom semver-action
 
