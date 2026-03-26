@@ -39,5 +39,5 @@
 - [ ] 5.4 Validate promotion uses identical artifact fingerprint/release identity across `internal`, `beta`, and `production`
 - [ ] 5.5 Validate approval gates block promotion until explicit human approval is granted
 - [ ] 5.6 Validate trunk-based custom `semver-action` repository tag bump outcomes against representative Conventional Commit histories and confirm no-tag-change behavior for non-release commit types
-- [ ] 5.7 Validate Android release lanes run end-to-end without Bun/Node helper script dependencies
+- [x] 5.7 Validate Android release lanes run end-to-end without Bun/Node helper script dependencies
 - [ ] 5.8 Validate submit-only lane succeeds when artifact filename is versioned and differs from `dist/android/app-release.aab`
