@@ -21,26 +21,26 @@ import {
 interface ChallengeData {
   id?: string;
   name?: string;
-  description?: string;
-  image?: string;
-  submissionType?: string;
-  scoringCategory?: string;
+  description?: string | null;
+  image?: string | null;
+  submissionType?: string | null;
+  scoringCategory?: string | null;
   isRecurring?: boolean;
-  dailyStartTime?: string;
-  dailyEndTime?: string;
-  startTime?: string | Date;
-  endTime?: string | Date;
-  votingStartTime?: string | Date;
-  votingEndTime?: string | Date;
-  basePoints?: number;
-  firstPlacePoints?: number;
-  secondPlacePoints?: number;
-  thirdPlacePoints?: number;
-  status?: string;
-  targetLatitude?: number;
-  targetLongitude?: number;
-  qrCodeValue?: string;
-  textExpectedPhrase?: string;
+  dailyStartTime?: string | null;
+  dailyEndTime?: string | null;
+  startTime?: string | Date | null;
+  endTime?: string | Date | null;
+  votingStartTime?: string | Date | null;
+  votingEndTime?: string | Date | null;
+  basePoints?: number | null;
+  firstPlacePoints?: number | null;
+  secondPlacePoints?: number | null;
+  thirdPlacePoints?: number | null;
+  status?: string | null;
+  targetLatitude?: number | null;
+  targetLongitude?: number | null;
+  qrCodeValue?: string | null;
+  textExpectedPhrase?: string | null;
   autoApprove?: boolean;
 }
 
@@ -113,8 +113,7 @@ export function useChallengeForm({
     form.submissionType === "IMAGE" || form.submissionType === "VIDEO";
   const showPodiumPoints = form.scoringCategory !== "UNLIMITED";
   const isAutoApproveForced =
-    form.submissionType === "QR_CODE" ||
-    form.submissionType === "LOCATION";
+    form.submissionType === "QR_CODE" || form.submissionType === "LOCATION";
   const isAutoApproveDisabled =
     form.submissionType === "IMAGE" ||
     form.submissionType === "VIDEO" ||
@@ -145,7 +144,9 @@ export function useChallengeForm({
 
   const statusLabel = useMemo(() => {
     const options = isNewChallenge ? newChallengeStatusOptions : statusOptions;
-    return options.find((item) => item.value === form.status)?.label ?? "Select";
+    return (
+      options.find((item) => item.value === form.status)?.label ?? "Select"
+    );
   }, [form.status, isNewChallenge]);
 
   const activeSelectOptions = useMemo(() => {
@@ -410,12 +411,13 @@ export function useChallengeForm({
       endTime: challenge.endTime ? new Date(challenge.endTime) : null,
       votingDurationValue: votingDurationDraft.value,
       votingDurationUnit: votingDurationDraft.unit,
-      targetLocation: challenge.targetLatitude && challenge.targetLongitude
-        ? {
-            latitude: challenge.targetLatitude,
-            longitude: challenge.targetLongitude,
-          }
-        : null,
+      targetLocation:
+        challenge.targetLatitude && challenge.targetLongitude
+          ? {
+              latitude: challenge.targetLatitude,
+              longitude: challenge.targetLongitude,
+            }
+          : null,
       qrCodeValue: expectedValue,
       textExpectedPhrase: challenge.textExpectedPhrase ?? "",
       autoApprove: challenge.autoApprove ?? false,

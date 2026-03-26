@@ -26,7 +26,10 @@ export default function PartnerDetailScreen() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.logoWrapper}>
-          <Image source={imageUrl ? { uri: imageUrl } : null} style={styles.logo} />
+          <Image
+            source={imageUrl ? { uri: imageUrl } : undefined}
+            style={styles.logo}
+          />
         </View>
 
         <Text style={styles.name}>{sponsor.name}</Text>

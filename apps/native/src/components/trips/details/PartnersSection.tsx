@@ -1,10 +1,4 @@
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { colors, spacing, typography } from "~/styles";
 import { usePartnerImageDownload } from "~/hooks/partners/usePartnerImageDownload";
@@ -14,7 +8,7 @@ function PartnerLogo({ sponsor }: { sponsor: Partner }) {
 
   return (
     <Image
-      source={imageUrl ? { uri: imageUrl } : null}
+      source={imageUrl ? { uri: imageUrl } : undefined}
       style={[
         styles.logo,
         sponsor.height ? { height: sponsor.height } : undefined,

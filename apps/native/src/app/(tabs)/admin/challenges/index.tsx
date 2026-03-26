@@ -183,7 +183,6 @@ const styles = StyleSheet.create({
   },
 });
 
-
 export default function AdminChallengesScreen() {
   const router = useRouter();
   const trpc = useTRPC();
@@ -256,7 +255,8 @@ export default function AdminChallengesScreen() {
     }) => {
       if (!hasNextPage || isFetchingNextPage || isLoading) return;
 
-      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
       const nearBottom =
         contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
 
@@ -271,7 +271,8 @@ export default function AdminChallengesScreen() {
     trpc.challenge.delete.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey,
+          queryKey: trpc.challenge.getAllByTrip.queryOptions({ tripId })
+            .queryKey,
         });
       },
       onError: (error) => {
@@ -503,12 +504,7 @@ export default function AdminChallengesScreen() {
       >
         <View style={styles.headerContainer}>
           <Text style={styles.headerTitle}>Existing Challenges</Text>
-          <Text
-            style={[
-              styles.headerSubtitle,
-              { color: colors.gray400 },
-            ]}
-          >
+          <Text style={[styles.headerSubtitle, { color: colors.gray400 }]}>
             {filteredChallenges.length}/{totalChallenges}
           </Text>
         </View>
@@ -518,10 +514,10 @@ export default function AdminChallengesScreen() {
             const isAll = filter.value === "ALL";
             const color = isAll
               ? colors.primary
-              : statusColors[filter.value] ?? colors.gray400;
+              : (statusColors[filter.value] ?? colors.gray400);
             const count = isAll
               ? totalChallenges
-              : statusCounts[filter.value] ?? 0;
+              : (statusCounts[filter.value] ?? 0);
             const selected = selectedStatusFilter === filter.value;
 
             return (
@@ -626,8 +622,8 @@ export default function AdminChallengesScreen() {
             const judgedStaffProgress =
               challenge.scoringCategory === "JUDGED_STAFF"
                 ? judgedStaffProgressByChallengeId.get(challenge.id)
-                : null;
-            
+                : undefined;
+
             return (
               <AdminChallengeListCard
                 key={challenge.id}
@@ -641,7 +637,9 @@ export default function AdminChallengesScreen() {
 
           {filteredChallenges.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No challenges found yet.</Text>
+              <Text style={styles.emptyStateText}>
+                No challenges found yet.
+              </Text>
             </View>
           ) : null}
 
