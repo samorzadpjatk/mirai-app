@@ -26,11 +26,45 @@ platform :android do
   NON_PROD_TRACKS = %w[internal beta].freeze
   PROD_TRACK = "production"
 
-  def ensure_env!(key)
-    value = ENV[key]
-    UI.user_error!("Missing required environment variable: #{key}") if value.nil? || value.strip.empty?
-    value
-  end
+   def ensure_env!(key)
+     value = ENV[key]
+     unless value.nil? || value.strip.empty?
+       # Verify the path exists if it looks like a file path
+       if value.start_with?("/") && !File.exist?(value)
+         UI.user_error!("File not found for #{key}: #{value}")
+       end
+       return value
+     end
+     
+     # Provide helpful error message with context about auto-detection
+     case key
+     when "PLAY_JSON_KEY_PATH"
+       checked_paths = [
+         "PLAY_JSON_KEY_PATH environment variable",
+         "credentials.json[android.playJsonKeyPath]",
+         "credentials/android/play-service-account.json",
+         "credentials/android/play-credentials.json",
+         "credentials/android/service-account.json",
+       ]
+       UI.user_error!(
+         "Missing required environment variable: #{key}\n" \
+         "Checked paths:\n" \
+         "  #{checked_paths.map { |p| "• #{p}" }.join("\n  ")}"
+       )
+     when "ANDROID_KEYSTORE_PATH"
+       checked_paths = [
+         "ANDROID_KEYSTORE_PATH environment variable",
+         "credentials.json[android.keystore.keystorePath]",
+       ]
+       UI.user_error!(
+         "Missing required environment variable: #{key}\n" \
+         "Checked paths:\n" \
+         "  #{checked_paths.map { |p| "• #{p}" }.join("\n  ")}"
+       )
+     else
+       UI.user_error!("Missing required environment variable: #{key}")
+     end
+   end
 
   def resolve_credentials_path
     # Support both relative to current directory (apps/native) and parent (project root)
@@ -42,118 +76,62 @@ platform :android do
     candidates.find { |path| File.exist?(path) } || candidates.first
   end
 
-  def bootstrap_android_release_env!
-    credentials_path = resolve_credentials_path
-    credentials = {}
-    credentials_dir = File.dirname(File.expand_path(credentials_path))
+   def bootstrap_android_release_env!
+     credentials_path = resolve_credentials_path
+     credentials = {}
+     credentials_dir = File.dirname(File.expand_path(credentials_path))
 
-    if File.exist?(credentials_path)
-      credentials = JSON.parse(File.read(credentials_path))
-    end
+     if File.exist?(credentials_path)
+       credentials = JSON.parse(File.read(credentials_path))
+     end
 
-    keystore = credentials.dig("android", "keystore") || {}
-    keystore_path = keystore["keystorePath"].to_s.strip
-    if ENV["ANDROID_KEYSTORE_PATH"].to_s.strip.empty? && !keystore_path.empty?
-      resolved = Pathname.new(keystore_path).absolute? ? keystore_path : File.expand_path(keystore_path, credentials_dir)
-      ENV["ANDROID_KEYSTORE_PATH"] = resolved
-    end
+     keystore = credentials.dig("android", "keystore") || {}
+     keystore_path = keystore["keystorePath"].to_s.strip
+     if ENV["ANDROID_KEYSTORE_PATH"].to_s.strip.empty? && !keystore_path.empty?
+       resolved = Pathname.new(keystore_path).absolute? ? keystore_path : File.expand_path(keystore_path, credentials_dir)
+       ENV["ANDROID_KEYSTORE_PATH"] = resolved
+     end
 
-    ENV["ANDROID_KEYSTORE_PASSWORD"] = keystore["keystorePassword"].to_s if ENV["ANDROID_KEYSTORE_PASSWORD"].to_s.strip.empty? && !keystore["keystorePassword"].to_s.strip.empty?
-    ENV["ANDROID_KEY_ALIAS"] = keystore["keyAlias"].to_s if ENV["ANDROID_KEY_ALIAS"].to_s.strip.empty? && !keystore["keyAlias"].to_s.strip.empty?
-    ENV["ANDROID_KEY_PASSWORD"] = keystore["keyPassword"].to_s if ENV["ANDROID_KEY_PASSWORD"].to_s.strip.empty? && !keystore["keyPassword"].to_s.strip.empty?
+     ENV["ANDROID_KEYSTORE_PASSWORD"] = keystore["keystorePassword"].to_s if ENV["ANDROID_KEYSTORE_PASSWORD"].to_s.strip.empty? && !keystore["keystorePassword"].to_s.strip.empty?
+     ENV["ANDROID_KEY_ALIAS"] = keystore["keyAlias"].to_s if ENV["ANDROID_KEY_ALIAS"].to_s.strip.empty? && !keystore["keyAlias"].to_s.strip.empty?
+     ENV["ANDROID_KEY_PASSWORD"] = keystore["keyPassword"].to_s if ENV["ANDROID_KEY_PASSWORD"].to_s.strip.empty? && !keystore["keyPassword"].to_s.strip.empty?
 
-    if ENV["ANDROID_APP_PACKAGE"].to_s.strip.empty?
-      package_from_credentials = credentials.dig("android", "appPackage").to_s.strip
-      if !package_from_credentials.empty?
-        ENV["ANDROID_APP_PACKAGE"] = package_from_credentials
-      else
-        package_from_config = app_package_from_config.to_s.strip
-        ENV["ANDROID_APP_PACKAGE"] = package_from_config unless package_from_config.empty?
-      end
-    end
+     if ENV["ANDROID_APP_PACKAGE"].to_s.strip.empty?
+       package_from_credentials = credentials.dig("android", "appPackage").to_s.strip
+       if !package_from_credentials.empty?
+         ENV["ANDROID_APP_PACKAGE"] = package_from_credentials
+       else
+         package_from_config = app_package_from_config.to_s.strip
+         ENV["ANDROID_APP_PACKAGE"] = package_from_config unless package_from_config.empty?
+       end
+     end
 
-    if ENV["ANDROID_SIGNING_LINEAGE"].to_s.strip.empty?
-      lineage = credentials.dig("android", "signingLineage").to_s.strip
-      if lineage.empty?
-        inferred = File.basename(ENV["ANDROID_KEYSTORE_PATH"].to_s, File.extname(ENV["ANDROID_KEYSTORE_PATH"].to_s)).to_s.strip
-        lineage = inferred.empty? ? "play-release" : inferred
-      end
-      ENV["ANDROID_SIGNING_LINEAGE"] = lineage
-    end
+     if ENV["ANDROID_SIGNING_LINEAGE"].to_s.strip.empty?
+       lineage = credentials.dig("android", "signingLineage").to_s.strip
+       if lineage.empty?
+         inferred = File.basename(ENV["ANDROID_KEYSTORE_PATH"].to_s, File.extname(ENV["ANDROID_KEYSTORE_PATH"].to_s)).to_s.strip
+         lineage = inferred.empty? ? "play-release" : inferred
+       end
+       ENV["ANDROID_SIGNING_LINEAGE"] = lineage
+     end
 
-    if ENV["PLAY_JSON_KEY_PATH"].to_s.strip.empty?
-      candidates = [
-        credentials.dig("android", "playJsonKeyPath").to_s.strip,
-        "apps/native/credentials/android/play-service-account.json",
-        "credentials/android/play-service-account.json",
-        "credentials/android/play-credentials.json",
-        "credentials/android/service-account.json",
-      ].reject(&:empty?)
-      detected = candidates.find do |path|
-        absolute = Pathname.new(path).absolute? ? path : File.expand_path(path)
-        File.exist?(absolute)
-      end
-      if detected
-        absolute = Pathname.new(detected).absolute? ? detected : File.expand_path(detected)
-        ENV["PLAY_JSON_KEY_PATH"] = absolute
-      end
-    end
-  end
-
-  def bootstrap_android_release_env!
-    credentials_path = resolve_credentials_path
-    credentials = {}
-    credentials_dir = File.dirname(File.expand_path(credentials_path))
-
-    if File.exist?(credentials_path)
-      credentials = JSON.parse(File.read(credentials_path))
-    end
-
-    keystore = credentials.dig("android", "keystore") || {}
-    keystore_path = keystore["keystorePath"].to_s.strip
-    if ENV["ANDROID_KEYSTORE_PATH"].to_s.strip.empty? && !keystore_path.empty?
-      resolved = Pathname.new(keystore_path).absolute? ? keystore_path : File.expand_path(keystore_path, credentials_dir)
-      ENV["ANDROID_KEYSTORE_PATH"] = resolved
-    end
-
-    ENV["ANDROID_KEYSTORE_PASSWORD"] = keystore["keystorePassword"].to_s if ENV["ANDROID_KEYSTORE_PASSWORD"].to_s.strip.empty? && !keystore["keystorePassword"].to_s.strip.empty?
-    ENV["ANDROID_KEY_ALIAS"] = keystore["keyAlias"].to_s if ENV["ANDROID_KEY_ALIAS"].to_s.strip.empty? && !keystore["keyAlias"].to_s.strip.empty?
-    ENV["ANDROID_KEY_PASSWORD"] = keystore["keyPassword"].to_s if ENV["ANDROID_KEY_PASSWORD"].to_s.strip.empty? && !keystore["keyPassword"].to_s.strip.empty?
-
-    if ENV["ANDROID_APP_PACKAGE"].to_s.strip.empty?
-      package_from_credentials = credentials.dig("android", "appPackage").to_s.strip
-      if !package_from_credentials.empty?
-        ENV["ANDROID_APP_PACKAGE"] = package_from_credentials
-      else
-        package_from_config = app_package_from_config.to_s.strip
-        ENV["ANDROID_APP_PACKAGE"] = package_from_config unless package_from_config.empty?
-      end
-    end
-
-    if ENV["ANDROID_SIGNING_LINEAGE"].to_s.strip.empty?
-      lineage = credentials.dig("android", "signingLineage").to_s.strip
-      if lineage.empty?
-        inferred = File.basename(ENV["ANDROID_KEYSTORE_PATH"].to_s, File.extname(ENV["ANDROID_KEYSTORE_PATH"].to_s)).to_s.strip
-        lineage = inferred.empty? ? "play-release" : inferred
-      end
-      ENV["ANDROID_SIGNING_LINEAGE"] = lineage
-    end
-
-    if ENV["PLAY_JSON_KEY_PATH"].to_s.strip.empty?
-      candidates = [
-        credentials.dig("android", "playJsonKeyPath").to_s.strip,
-        "credentials/android/play-credentials.json",
-        "credentials/android/service-account.json",
-      ].reject(&:empty?)
-      detected = candidates.find do |path|
-        absolute = Pathname.new(path).absolute? ? path : File.expand_path(path, credentials_dir)
-        File.exist?(absolute)
-      end
-      if detected
-        ENV["PLAY_JSON_KEY_PATH"] = Pathname.new(detected).absolute? ? detected : File.expand_path(detected, credentials_dir)
-      end
-    end
-  end
+     if ENV["PLAY_JSON_KEY_PATH"].to_s.strip.empty?
+       candidates = [
+         credentials.dig("android", "playJsonKeyPath").to_s.strip,
+         "credentials/android/play-service-account.json",
+         "credentials/android/play-credentials.json",
+         "credentials/android/service-account.json",
+       ].reject(&:empty?)
+       detected = candidates.find do |path|
+         absolute = Pathname.new(path).absolute? ? path : File.expand_path(path, credentials_dir)
+         File.exist?(absolute)
+       end
+       if detected
+         absolute = Pathname.new(detected).absolute? ? detected : File.expand_path(detected, credentials_dir)
+         ENV["PLAY_JSON_KEY_PATH"] = absolute
+       end
+     end
+   end
 
   def sh_capture!(command)
     stdout, stderr, status = Open3.capture3(command)

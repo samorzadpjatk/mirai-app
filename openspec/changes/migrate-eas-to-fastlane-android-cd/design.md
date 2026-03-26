@@ -39,6 +39,14 @@ Android delivery currently relies on EAS Build and EAS Submit abstractions. The 
    - Rationale: Play promotion reuses the same binary; dual keystores would break promotion eligibility and lineage continuity.
    - Alternative considered: separate staging/production Play signing; rejected because promotions would require rebuilds and diverging lineages.
 
+6. Keep release orchestration and runtime implementation Ruby-native inside Fastlane (`Fastfile`/`Appfile`) without Bun/Node helper scripts.
+   - Rationale: minimizes moving parts, avoids extra runtime dependencies in release jobs, and centralizes release logic in one toolchain.
+   - Alternative considered: hybrid Ruby + Bun/Node helpers; rejected to reduce operational complexity.
+
+7. Use GitHub `semver-action` trunk-based custom configuration as the only bump-decision engine.
+   - Rationale: centralizes SemVer policy in CI tagging workflow and avoids duplicate bump logic in Fastlane.
+   - Alternative considered: duplicate bump checks in Fastfile; rejected to prevent drift between CI and release runtime.
+
 ## Risks / Trade-offs
 
 - [CI runner drift (Java/Android SDK/Gradle/Ruby versions)] -> Mitigation: pin versions in workflow and validate in preflight.
@@ -46,6 +54,8 @@ Android delivery currently relies on EAS Build and EAS Submit abstractions. The 
 - [Fastlane plugin or Play API instability] -> Mitigation: lock plugin versions and add retry/backoff for transient upload failures.
 - [Operational knowledge gap after moving away from EAS commands] -> Mitigation: migration runbook, lane-level docs, and rollback procedure.
 - [Longer initial setup time compared to managed EAS flow] -> Mitigation: template workflow and reusable lane conventions.
+- [Cross-runtime release logic drift (Ruby vs JS helper scripts)] -> Mitigation: keep release logic only in Fastlane Ruby files.
+- [SemVer policy drift between CI and Fastlane] -> Mitigation: use trunk-based custom `semver-action` as single bump source; Fastlane only reads tags.
 
 ## Migration Plan
 
@@ -63,12 +73,12 @@ Rollback strategy:
 ## Open Questions
 
 - Which Play track(s) should be automated first (`internal`, `alpha`, `beta`, `production`) and with what promotion policy? **Resolved:** automate `internal` first with human-gated promotions `internal -> beta -> production` using the same binary (no rebuild between tracks).
-- Should version code/name bumping remain external to Fastlane or be lane-managed? **Resolved:** versionName is computed in CI by GitHub `semver-action` from Conventional Commits (`feat`=minor, `fix`=patch, `type!` or `BREAKING CHANGE`=major; chores/docs/tests/refactor/nit without `!` do not bump by default). versionCode remains CI-managed, strictly monotonic.
+- Should version code/name bumping remain external to Fastlane or be lane-managed? **Resolved:** GitHub Actions (trunk-based custom `semver-action`) computes and creates repository semver tags; Fastlane reads the latest semver tag as `versionName` source of truth and does not run bump checks. versionCode remains CI-managed, strictly monotonic.
 - Do we require per-branch signing contexts (for example staging vs production keystores) at initial rollout? **Resolved:** Play-bound artifacts share a single signing lineage/keystore to allow promotion; non-Play debug/internal signing can differ.
 
 ## Tasks
 
-- Integrate GitHub `semver-action` to compute SemVer bump intent for versionName from Conventional Commits and expose the resolved version to release lanes.
+- Integrate GitHub `semver-action` (trunk-based custom) to compute and create SemVer tags in the repository from Conventional Commits, then expose tags to release lanes.
 - Enforce manual approval gates on promotions `internal -> beta -> production` with lane support for pausing/resuming at each hop.
 - Ensure release artifact and Play release-id are immutable across track promotions (submit once, promote without rebuild).
 
@@ -76,12 +86,12 @@ Rollback strategy:
 
 - Single Play app lineage with one app ID and one promotion chain.
 - Human-gated promotion at each step: `internal -> beta -> production`.
-- `versionName` follows SemVer resolved in CI by GitHub `semver-action` from Conventional Commits.
+- `versionName` follows the latest repository SemVer tag created by GitHub Actions (`semver-action` trunk-based custom config).
 - `versionCode` is lane-managed in CI and strictly monotonic.
 
 Conceptual flow:
 
-`main` -> compute SemVer `versionName` via GitHub `semver-action` + resolve CI `versionCode` -> build + sign (Play release lineage) -> upload to `internal` -> human approval -> promote same release to `beta` -> human approval -> promote same release to `production`.
+`main` -> compute + create repository SemVer tag via GitHub `semver-action` (trunk-based custom) -> Fastlane resolves `versionName` from latest semver tag + resolve CI `versionCode` -> build + sign (Play release lineage) -> upload to `internal` -> human approval -> promote same release to `beta` -> human approval -> promote same release to `production`.
 
 No rebuild occurs between tracks; the same binary is promoted.
 
@@ -92,7 +102,7 @@ No rebuild occurs between tracks; the same binary is promoted.
 - `type!:` or `BREAKING CHANGE:` -> major bump
 - `chore/docs/test/refactor/nit` without breaking marker -> no bump by default
 
-The policy is executed by GitHub `semver-action` over the effective release commit range and remains overrideable only through an explicit release operator action.
+The policy is executed by GitHub `semver-action` over the effective release commit range and materialized as repository tags; release lanes consume those tags and remain overrideable only through an explicit release operator action.
 
 ## Signing Lineage Clarification
 

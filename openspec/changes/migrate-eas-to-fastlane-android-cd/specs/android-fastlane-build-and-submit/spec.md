@@ -42,6 +42,15 @@ The workflow SHALL support independently running build and submit lanes, and an 
 - **WHEN** the orchestrated release lane is executed
 - **THEN** it MUST run build then submit in sequence and stop on the first failing stage
 
+### Requirement: Android release orchestration SHALL be implemented in Fastlane Ruby files
+
+Release orchestration, preflight validation, and versioning behavior for Android CD SHALL be implemented in Fastlane Ruby configuration (`Fastfile` and `Appfile`) without requiring Bun/Node helper scripts at release runtime.
+
+#### Scenario: Release flow runs without Bun/Node helper scripts
+
+- **WHEN** Android release lanes are executed
+- **THEN** all required release logic MUST be provided by Fastlane Ruby code paths
+
 ### Requirement: Android Play promotion SHALL use a single app lineage
 
 The workflow SHALL treat the Play release as a single lineage for one application ID and one promotion chain, where the same uploaded release is promoted from `internal` to `beta` to `production` without rebuilding.

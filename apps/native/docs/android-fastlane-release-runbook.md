@@ -31,16 +31,17 @@ The workflow pauses before each promotion until approved.
 ## Release Execution
 
 1. Open GitHub Actions and run `Android Release (Fastlane)`.
-2. Optionally set `release_from_ref` to limit Conventional Commit parsing range used for bump intent.
-3. Wait for `Build + upload to internal` to finish.
+2. Workflow computes bump intent, creates/pushes SemVer tag via `semver-action`, and refreshes tags.
+3. Fastlane reads latest repository SemVer tag as `versionName` and runs build + upload to internal.
 4. Approve `Promote internal -> beta` when validation is complete.
 5. Approve `Promote beta -> production` when beta sign-off is complete.
 
 ## Local CD Execution (without GitHub Actions)
 
-You can run the same CD flow locally with Bun + Fastlane.
+You can run the same CD flow locally with Fastlane.
 
-1. Export required environment variables (same values as repo secrets):
+1. Option A: Create `apps/native/credential.json` from `apps/native/credential.example.json` and fill Android keystore values.
+2. Option B: Export required environment variables directly (same values as repo secrets):
    - `ANDROID_APP_PACKAGE`
    - `ANDROID_SIGNING_LINEAGE`
    - `PLAY_JSON_KEY_PATH`
@@ -48,30 +49,29 @@ You can run the same CD flow locally with Bun + Fastlane.
    - `ANDROID_KEYSTORE_PASSWORD`
    - `ANDROID_KEY_ALIAS`
    - `ANDROID_KEY_PASSWORD`
-2. From `apps/native`, run:
+3. From `apps/native`, run:
 
 ```bash
-bun run release:android:local-cd
+bundle exec fastlane android android_local_cd
 ```
 
-Optional flags:
+Fastlane bootstrap behavior:
 
-- `--from-ref <git-ref>` and `--to-ref <git-ref>` to control bump intent commit range
-- `--promote-beta` to include `internal -> beta` promotion
-- `--promote-production` to include `beta -> production` promotion (requires `--promote-beta`)
-- `--yes` to auto-approve local promotion gates without prompts
+- If env vars are missing, Fastlane tries to populate Android release values from `credential.json` (or `CREDENTIALS_JSON_PATH`).
+- `ANDROID_APP_PACKAGE` falls back to `expo.android.package` from `app.json`.
+- `PLAY_JSON_KEY_PATH` defaults to `credentials/android/play-credentials.json` or `credentials/android/service-account.json` when present.
 
 Examples:
 
 ```bash
 # Build + internal upload only
-bun run release:android:local-cd
+bundle exec fastlane android android_local_cd
 
 # Build + internal upload + beta promotion with prompt
-bun run release:android:local-cd -- --promote-beta
+bundle exec fastlane android android_local_cd promote_beta:true
 
 # Full local chain with non-interactive approvals
-bun run release:android:local-cd -- --promote-beta --promote-production --yes
+bundle exec fastlane android android_local_cd promote_beta:true promote_production:true auto_approve:true
 ```
 
 ## Expected Outputs
@@ -81,7 +81,7 @@ bun run release:android:local-cd -- --promote-beta --promote-production --yes
 
 Metadata includes:
 
-- `versionName` (SemVer resolved in CI by GitHub `semver-action`)
+- `versionName` (latest repository SemVer tag created by GitHub Actions)
 - `versionCode` (CI-managed monotonic integer)
 - `artifactSha256` (artifact fingerprint for no-rebuild promotion evidence)
 - `signingLineage` (single lineage identifier)

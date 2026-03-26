@@ -1,2 +1,2 @@
-json_key_file(ENV.fetch("PLAY_JSON_KEY_PATH"))
-package_name(ENV.fetch("ANDROID_APP_PACKAGE"))
+json_key_file(ENV["PLAY_JSON_KEY_PATH"]) if ENV["PLAY_JSON_KEY_PATH"].to_s.strip != ""
+package_name(ENV["ANDROID_APP_PACKAGE"]) if ENV["ANDROID_APP_PACKAGE"].to_s.strip != ""

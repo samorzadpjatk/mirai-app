@@ -4,6 +4,7 @@
 - [x] 1.2 Implement `android_build`, `android_submit`, and composed `android_release` lanes with non-interactive CI-safe defaults
 - [x] 1.3 Configure lane parameters for artifact path, release track, and submission metadata so submit-only runs can reuse prior artifacts
 - [x] 1.4 Enforce single Play app lineage configuration (one app ID and one release signing lineage for promoted artifacts)
+- [x] 1.5 Remove Bun/Node release helper scripts and port release-critical logic into Fastlane Ruby (`Fastfile`/`Appfile`)
 
 ## 2. CI/CD Workflow Migration
 
@@ -18,8 +19,9 @@
 - [x] 3.1 Implement preflight checks for required secrets, keystore files, package ID consistency, and Play service account availability
 - [x] 3.2 Add EAS-parity checklist validation for Android build expectations (clean context, signing handling, artifact conventions)
 - [x] 3.3 Fail pipeline early with actionable error messages when any preflight or parity validation fails
-- [x] 3.4 Integrate GitHub `semver-action` for bump intent (`feat`=minor, `fix`=patch, breaking markers=major, non-release types=no default bump)
-- [x] 3.5 Implement CI-managed versioning that consumes `semver-action` output for SemVer `versionName` and enforces strictly monotonic `versionCode`
+- [x] 3.4 Integrate GitHub `semver-action` trunk-based custom workflow that creates SemVer tags in the repository (`feat`=minor, `fix`=patch, breaking markers=major, non-release types=no default bump)
+- [x] 3.5 Implement CI-managed versioning where Fastlane derives `versionName` from latest repository semver tag and enforces strictly monotonic `versionCode`
+- [x] 3.6 Ensure preflight/version/credential handling in release runtime does not depend on Bun/Node helper scripts and that Fastlane does not run bump checks
 
 ## 4. Migration Safety and Operations
 
@@ -34,4 +36,5 @@
 - [ ] 5.3 Validate composed release lane stops on first failure and reports stage-specific diagnostics
 - [ ] 5.4 Validate promotion uses identical artifact fingerprint/release identity across `internal`, `beta`, and `production`
 - [ ] 5.5 Validate approval gates block promotion until explicit human approval is granted
-- [ ] 5.6 Validate `semver-action` version bump outcomes against representative Conventional Commit histories and confirm no-bump behavior for non-release commit types
+- [ ] 5.6 Validate trunk-based custom `semver-action` repository tag bump outcomes against representative Conventional Commit histories and confirm no-tag-change behavior for non-release commit types
+- [ ] 5.7 Validate Android release lanes run end-to-end without Bun/Node helper script dependencies

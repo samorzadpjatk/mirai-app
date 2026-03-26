@@ -36,29 +36,56 @@ The change SHALL provide updated operational documentation for triggering lanes,
 - **WHEN** a release job fails in build or submit stage
 - **THEN** the runbook MUST include lane-specific troubleshooting actions and verification commands sufficient for recovery
 
-### Requirement: Migration SHALL define SemVer and Conventional Commits bump policy
+### Requirement: Migration SHALL define SemVer policy via trunk-based custom semver-action
 
-The release process SHALL set `versionName` from SemVer computed by GitHub `semver-action` with bump intent derived from Conventional Commits: `feat` indicates minor, `fix` indicates patch, and major is triggered by `type!` or `BREAKING CHANGE`; commit types such as `chore`, `docs`, `test`, `refactor`, and `nit` without breaking markers SHALL not bump by default.
+The release process SHALL use GitHub `semver-action` trunk-based custom configuration to compute and create repository SemVer tags from Conventional Commits: `feat` indicates minor, `fix` indicates patch, and major is triggered by `type!` or `BREAKING CHANGE`; commit types such as `chore`, `docs`, `test`, `refactor`, and `nit` without breaking markers SHALL not bump by default.
 
 #### Scenario: Minor bump for feature commits
 
 - **WHEN** the effective commit set includes `feat:` changes and no breaking marker
-- **THEN** GitHub `semver-action` MUST resolve a minor SemVer bump for release versionName
+- **THEN** GitHub `semver-action` trunk-based custom workflow MUST create a new repository tag with a minor SemVer bump
 
 #### Scenario: Patch bump for fix-only commits
 
 - **WHEN** the effective commit set includes `fix:` changes and no `feat:` or breaking marker
-- **THEN** GitHub `semver-action` MUST resolve a patch SemVer bump for release versionName
+- **THEN** GitHub `semver-action` trunk-based custom workflow MUST create a new repository tag with a patch SemVer bump
 
 #### Scenario: Major bump for breaking changes
 
 - **WHEN** the effective commit set includes `type!:` or `BREAKING CHANGE:`
-- **THEN** GitHub `semver-action` MUST resolve a major SemVer bump for release versionName
+- **THEN** GitHub `semver-action` trunk-based custom workflow MUST create a new repository tag with a major SemVer bump
 
 #### Scenario: No default bump for non-release commit types
 
 - **WHEN** the effective commit set contains only `chore`, `docs`, `test`, `refactor`, or `nit` commits without breaking markers
-- **THEN** GitHub `semver-action` MUST keep versionName unchanged unless an explicit override is provided
+- **THEN** GitHub `semver-action` trunk-based custom workflow MUST keep repository SemVer tag unchanged unless an explicit override is provided
+
+### Requirement: Fastlane SHALL derive versionName from repository semver tags
+
+Android release lanes SHALL derive app `versionName` from the latest repository SemVer tag created by CI tagging workflow.
+
+#### Scenario: Release uses latest semver tag as versionName
+
+- **WHEN** Android release lane starts
+- **THEN** Fastlane MUST resolve the latest repository SemVer tag and apply it as app `versionName`
+
+### Requirement: Fastlane SHALL NOT perform bump decision logic
+
+Fastlane release lanes SHALL NOT perform SemVer bump classification or bump-policy decision logic; that behavior SHALL be owned by GitHub `semver-action` trunk-based custom workflow.
+
+#### Scenario: Fastlane consumes tags only
+
+- **WHEN** release lanes execute
+- **THEN** Fastlane MUST consume existing repository SemVer tags and MUST NOT run bump-decision checks
+
+### Requirement: Migration SHALL avoid Bun/Node release helper runtime dependencies
+
+Android release automation SHALL implement release orchestration and credential/version handling in Fastlane Ruby (`Fastfile`/`Appfile`) and SHALL NOT require Bun/Node helper scripts in release execution paths.
+
+#### Scenario: Release runtime uses Fastlane-only logic
+
+- **WHEN** build, submit, or promote lanes are executed in CI or locally
+- **THEN** the lanes MUST complete using Fastlane Ruby logic without invoking Bun/Node helper scripts for release-critical behavior
 
 ### Requirement: Migration SHALL enforce CI-managed monotonic versionCode
 
