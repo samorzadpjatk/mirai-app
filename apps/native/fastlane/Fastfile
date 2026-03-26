@@ -139,17 +139,42 @@ platform :android do
     stdout.strip
   end
 
-  def load_app_json
-    # Try multiple paths to support running from different directories
+  def resolve_app_json_path
     candidates = [
-      "app.json",                              # Current dir (apps/native)
-      File.expand_path("../app.json"),         # Parent dir
-      File.expand_path("../../app.json"),      # 2 levels up
+      "app.json",
+      File.expand_path("../app.json"),
+      File.expand_path("../../app.json"),
     ].uniq
-    
-    path = candidates.find { |p| File.exist?(p) }
+    candidates.find { |p| File.exist?(p) }
+  end
+
+  def app_root_dir
+    app_json_path = resolve_app_json_path
+    UI.user_error!("app.json not found in any expected location") unless app_json_path
+    File.dirname(File.expand_path(app_json_path))
+  end
+
+  def load_app_json
+    path = resolve_app_json_path
     UI.user_error!("app.json not found in any expected location") unless path
     JSON.parse(File.read(path))
+  end
+
+  def verify_android_google_services_file!
+    relative_path = load_app_json.dig("expo", "android", "googleServicesFile").to_s.strip
+    return if relative_path.empty?
+
+    app_json_path = resolve_app_json_path
+    UI.user_error!("app.json not found in any expected location") unless app_json_path
+
+    app_root = File.dirname(File.expand_path(app_json_path))
+    absolute_path = Pathname.new(relative_path).absolute? ? relative_path : File.expand_path(relative_path, app_root)
+    return if File.exist?(absolute_path)
+
+    UI.user_error!(
+      "Missing Android google-services.json at #{absolute_path}.\n" \
+      "Set expo.android.googleServicesFile in app.json to an existing file path or add the file there."
+    )
   end
 
   def app_package_from_config
@@ -158,6 +183,52 @@ platform :android do
 
   def app_version_name
     load_app_json.dig("expo", "version")
+  end
+
+  def resolve_submit_artifact_path!(options)
+    explicit_artifact = (options[:artifact_path] || ENV["ANDROID_ARTIFACT_PATH"]).to_s.strip
+    unless explicit_artifact.empty?
+      candidate = Pathname.new(explicit_artifact).absolute? ? explicit_artifact : File.expand_path(explicit_artifact)
+      UI.user_error!("Artifact not found: #{candidate}") unless File.exist?(candidate)
+      return candidate
+    end
+
+    app_root = app_root_dir
+    dist_dir = File.join(app_root, "dist", "android")
+    metadata_path = (options[:metadata_path] || ENV["ANDROID_RELEASE_METADATA_PATH"] || File.join(dist_dir, "release-metadata.json")).to_s
+    metadata_candidate = Pathname.new(metadata_path).absolute? ? metadata_path : File.expand_path(metadata_path)
+
+    if File.exist?(metadata_candidate)
+      metadata = JSON.parse(File.read(metadata_candidate))
+      metadata_artifact = metadata.fetch("artifactPath", "").to_s.strip
+      unless metadata_artifact.empty?
+        candidate = Pathname.new(metadata_artifact).absolute? ? metadata_artifact : File.expand_path(metadata_artifact, app_root)
+        return candidate if File.exist?(candidate)
+      end
+    end
+
+    aab_candidates = Dir.glob(File.join(dist_dir, "*.aab")).sort_by { |path| File.mtime(path) }.reverse
+    if aab_candidates.length == 1
+      return aab_candidates.first
+    end
+
+    if aab_candidates.length > 1
+      UI.user_error!(
+        "Multiple AAB artifacts found. Provide artifact_path explicitly (or ANDROID_ARTIFACT_PATH).\n" \
+        "Candidates:\n" \
+        "#{aab_candidates.map { |path| "- #{path}" }.join("\n")}"
+      )
+    end
+
+    legacy_candidate = File.join(dist_dir, "app-release.aab")
+    return legacy_candidate if File.exist?(legacy_candidate)
+
+    UI.user_error!(
+      "Artifact not found. Checked:\n" \
+      "- explicit artifact_path/ANDROID_ARTIFACT_PATH\n" \
+      "- release metadata artifactPath at #{metadata_candidate}\n" \
+      "- AAB files under #{dist_dir}"
+    )
   end
 
   def update_app_versions!(version_name:, version_code:)
@@ -228,6 +299,7 @@ platform :android do
   lane :android_preflight_build do
     bootstrap_android_release_env!
     REQUIRED_ENV_BUILD.each { |k| ensure_env!(k) }
+    verify_android_google_services_file!
 
     app_package = app_package_from_config
     expected_package = ensure_env!("ANDROID_APP_PACKAGE")
@@ -245,6 +317,7 @@ platform :android do
   lane :android_preflight_play do
     bootstrap_android_release_env!
     REQUIRED_ENV_PLAY.each { |k| ensure_env!(k) }
+    verify_android_google_services_file!
 
     app_package = app_package_from_config
     expected_package = ensure_env!("ANDROID_APP_PACKAGE")
@@ -274,13 +347,16 @@ platform :android do
   lane :android_build do |options|
     android_preflight_build
     android_set_versions(from_ref: options[:from_ref], to_ref: options[:to_ref])
+    app_root = app_root_dir
 
-    sh("bunx expo prebuild --platform android --non-interactive --clean")
+    Dir.chdir(app_root) do
+      sh("CI=1 bunx expo prebuild --platform android --clean")
+    end
 
     gradle(
       task: "bundle",
       build_type: "Release",
-      project_dir: "android",
+      project_dir: File.join(app_root, "android"),
       properties: {
         "android.injected.signing.store.file" => ENV.fetch("ANDROID_KEYSTORE_PATH"),
         "android.injected.signing.store.password" => ENV.fetch("ANDROID_KEYSTORE_PASSWORD"),
@@ -289,14 +365,16 @@ platform :android do
       },
     )
 
-    source_artifact = "android/app/build/outputs/bundle/release/app-release.aab"
+    source_artifact = File.join(app_root, "android", "app", "build", "outputs", "bundle", "release", "app-release.aab")
     UI.user_error!("Expected release artifact not found at #{source_artifact}") unless File.exist?(source_artifact)
 
-    FileUtils.mkdir_p("dist/android")
+    dist_dir = File.join(app_root, "dist", "android")
+    FileUtils.mkdir_p(dist_dir)
     release_version_name = Actions.lane_context[:RELEASE_VERSION_NAME]
     release_version_code = Actions.lane_context[:RELEASE_VERSION_CODE]
-    target_artifact = "dist/android/app-#{release_version_name}-#{release_version_code}.aab"
+    target_artifact = File.join(dist_dir, "app-#{release_version_name}-#{release_version_code}.aab")
     FileUtils.cp(source_artifact, target_artifact)
+    FileUtils.cp(target_artifact, File.join(dist_dir, "app-release.aab"))
 
     metadata = {
       appPackage: ENV.fetch("ANDROID_APP_PACKAGE"),
@@ -308,7 +386,7 @@ platform :android do
       signingLineage: ENV.fetch("ANDROID_SIGNING_LINEAGE"),
       commitSha: sh_capture!("git rev-parse HEAD"),
     }
-    File.write("dist/android/release-metadata.json", JSON.pretty_generate(metadata))
+    File.write(File.join(dist_dir, "release-metadata.json"), JSON.pretty_generate(metadata))
 
     Actions.lane_context[:RELEASE_ARTIFACT_PATH] = target_artifact
     UI.success("Built artifact: #{target_artifact}")
@@ -318,9 +396,7 @@ platform :android do
   lane :android_submit do |options|
     android_preflight_play
     track = (options[:track] || "internal").to_s
-    artifact_path = (options[:artifact_path] || ENV["ANDROID_ARTIFACT_PATH"] || "dist/android/app-release.aab").to_s
-
-    UI.user_error!("Artifact not found: #{artifact_path}") unless File.exist?(artifact_path)
+    artifact_path = resolve_submit_artifact_path!(options)
     UI.user_error!("Unsupported track for submit: #{track}") unless (NON_PROD_TRACKS + [PROD_TRACK]).include?(track)
 
     upload_to_play_store(
