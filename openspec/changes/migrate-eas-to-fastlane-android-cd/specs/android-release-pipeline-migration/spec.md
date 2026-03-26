@@ -104,6 +104,24 @@ Fastlane release lanes SHALL NOT perform SemVer bump classification or bump-poli
 - **WHEN** release lanes execute
 - **THEN** Fastlane MUST consume existing repository SemVer tags and MUST NOT run bump-decision checks
 
+### Requirement: Release workflow SHALL operate without explicit git ref inputs
+
+The Android release job SHALL not require `release_from_ref` / `release_to_ref` inputs or similar commit-range refs in order to compute `versionName`, `versionCode`, or artifact handoff metadata. When these inputs are omitted, the workflow MUST still resolve the latest SemVer tag and build the expected artifact, provided `actions/checkout` fetches tags (fetch-depth: 0) before `semver-action` runs.
+
+#### Scenario: Workflow dispatched with no ref inputs
+
+- **WHEN** the GitHub workflow is triggered manually via `workflow_dispatch` without supplying `release_from_ref` or `release_to_ref`
+- **THEN** the job MUST still resolve the latest SemVer tag (via `semver-action`) and run Fastlane lanes that rely solely on the tag-based metadata.
+
+### Requirement: Release workflow SHALL remove unused `release_from_ref`/`release_to_ref` inputs
+
+The Android release workflow SHALL stop exposing `release_from_ref` and `release_to_ref` `workflow_dispatch` inputs and shall not inject them as environment variables, since the Fastlane lanes do not consume them.
+
+#### Scenario: Workflow definition no longer advertises stale ref inputs
+
+- **WHEN** operators inspect the Android release workflow metadata or dispatch UI
+- **THEN** they MUST not see `release_from_ref` or `release_to_ref` inputs, avoiding confusion and signaling that SemVer tags (not git ranges) drive releases.
+
 ### Requirement: Migration SHALL avoid Bun/Node release helper runtime dependencies
 
 Android release automation SHALL implement release orchestration and credential/version handling in Fastlane Ruby (`Fastfile`/`Appfile`) and SHALL NOT require Bun/Node helper scripts in release execution paths.

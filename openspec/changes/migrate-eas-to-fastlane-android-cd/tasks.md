@@ -15,6 +15,7 @@
 - [x] 2.4 Implement immutable promotion flow `internal -> beta -> production` using the same uploaded release (no rebuild policy)
 - [x] 2.5 Add manual approval gates for each promotion hop (`internal -> beta` and `beta -> production`)
 - [x] 2.6 Update CI artifact handoff to pass build-produced artifact path into submit stage explicitly
+- [x] 2.7 Remove unused `release_from_ref`/`release_to_ref` workflow inputs and related env exports from the Android CD workflow definition
 
 ## 3. Preflight Validation and Parity Controls
 
