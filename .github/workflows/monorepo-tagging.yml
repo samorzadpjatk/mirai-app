@@ -31,10 +31,10 @@ jobs:
           branching_model: trunk-based
           main_branch_name: main
           prefix: ""
-          patch_pattern: "^(fix|bugfix)/.+"
-          minor_pattern: "^feat/.+"
-          major_pattern: "^(breaking|major)/.+|.+![:/].+"
-          build_pattern: "^(chore|docs|test|refactor|nit)/.+"
+          patch_regex: '(?i)^(.+:)?((fix|perf|revert)(\([^)]+\))?!?:\s.+)'
+          minor_regex: '(?i)^(.+:)?(feat(\([^)]+\))?!?:\s.+)'
+          major_regex: '(?i)^(.+:)?(([^\n]+!:\s.+)|(BREAKING CHANGE:\s.+))'
+          build_regex: '(?i)^(.+:)?((build|chore|ci|docs|style|refactor|test)(\([^)]+\))?!?:\s.+)'
 
       - name: Publish or refresh tag
         id: publish
