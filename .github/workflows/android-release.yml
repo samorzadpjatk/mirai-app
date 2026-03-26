@@ -104,8 +104,15 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
-      - name: Build and upload internal release
-        run: bundle exec fastlane android android_release
+      - name: Materialize google-services.json
+        run: |
+          mkdir -p credentials/android
+          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > credentials/android/google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+
+      - name: Build release artifact
+        run: bundle exec fastlane android android_build
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
           PLAY_JSON_KEY_PATH: ${{ github.workspace }}/apps/native/.secrets/play-key.json
@@ -116,6 +123,20 @@ jobs:
           ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
           RELEASE_FROM_REF: ${{ inputs.release_from_ref }}
           RELEASE_TO_REF: ${{ inputs.release_to_ref }}
+
+      - name: Resolve built artifact path
+        id: artifact
+        run: |
+          METADATA=dist/android/release-metadata.json
+          ARTIFACT_PATH=$(ruby -rjson -e 'print JSON.parse(File.read(ARGV[0]))["artifactPath"]' $METADATA)
+          echo "artifact_path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+
+      - name: Upload internal release artifact
+        run: bundle exec fastlane android android_submit track:internal artifact_path:${{ steps.artifact.outputs.artifact_path }}
+        env:
+          ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
+          PLAY_JSON_KEY_PATH: ${{ github.workspace }}/apps/native/.secrets/play-key.json
+          ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
 
       - name: Extract release metadata
         id: metadata
@@ -173,6 +194,13 @@ jobs:
         env:
           PLAY_JSON_KEY_BASE64: ${{ secrets.PLAY_JSON_KEY_BASE64 }}
 
+      - name: Materialize google-services.json
+        run: |
+          mkdir -p credentials/android
+          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > credentials/android/google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+
       - name: Promote exact release to beta
         run: |
           VERSION_CODE=${{ needs.build_and_upload_internal.outputs.version_code }}
@@ -213,6 +241,13 @@ jobs:
           printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > .secrets/play-key.json
         env:
           PLAY_JSON_KEY_BASE64: ${{ secrets.PLAY_JSON_KEY_BASE64 }}
+
+      - name: Materialize google-services.json
+        run: |
+          mkdir -p credentials/android
+          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > credentials/android/google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
 
       - name: Download internal release metadata
         uses: actions/download-artifact@v4
