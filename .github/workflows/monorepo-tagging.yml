@@ -4,6 +4,20 @@ on:
   push:
     branches:
       - main
+  workflow_call:
+    outputs:
+      semver_tag:
+        description: Computed semantic version tag.
+        value: ${{ jobs.compute_and_publish_tag.outputs.semver_tag }}
+      previous_tag:
+        description: Previous semantic version tag.
+        value: ${{ jobs.compute_and_publish_tag.outputs.previous_tag }}
+      tag_created:
+        description: Whether a new tag was created.
+        value: ${{ jobs.compute_and_publish_tag.outputs.tag_created }}
+      tag_refreshed:
+        description: Whether an existing tag was moved.
+        value: ${{ jobs.compute_and_publish_tag.outputs.tag_refreshed }}
 
 permissions:
   contents: write
