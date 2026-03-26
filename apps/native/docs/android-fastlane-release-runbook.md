@@ -13,6 +13,7 @@ This runbook defines the Android release process after migration from EAS Build/
 
 - `PLAY_JSON_KEY_BASE64` (base64 encoded Play service account JSON)
 - `ANDROID_KEYSTORE_BASE64` (base64 encoded release keystore)
+- `GOOGLE_SERVICES_JSON_BASE64` (base64 encoded `credentials/android/google-services.json`)
 - `ANDROID_KEYSTORE_PASSWORD`
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
@@ -32,9 +33,10 @@ The workflow pauses before each promotion until approved.
 
 1. Open GitHub Actions and run `Android Release (Fastlane)`.
 2. Workflow computes bump intent, creates/pushes SemVer tag via `semver-action`, and refreshes tags.
-3. Fastlane reads latest repository SemVer tag as `versionName` and runs build + upload to internal.
-4. Approve `Promote internal -> beta` when validation is complete.
-5. Approve `Promote beta -> production` when beta sign-off is complete.
+3. Workflow materializes `credentials/android/google-services.json` from `GOOGLE_SERVICES_JSON_BASE64`.
+4. Fastlane reads latest repository SemVer tag as `versionName` and runs build + upload to internal.
+5. Approve `Promote internal -> beta` when validation is complete.
+6. Approve `Promote beta -> production` when beta sign-off is complete.
 
 ## Local CD Execution (without GitHub Actions)
 
@@ -42,6 +44,7 @@ You can run the same CD flow locally with Fastlane.
 
 1. Option A: Create `apps/native/credential.json` from `apps/native/credential.example.json` and fill Android keystore values.
 2. Option B: Export required environment variables directly (same values as repo secrets):
+   - `GOOGLE_SERVICES_JSON_BASE64`
    - `ANDROID_APP_PACKAGE`
    - `ANDROID_SIGNING_LINEAGE`
    - `PLAY_JSON_KEY_PATH`
@@ -61,6 +64,13 @@ Fastlane bootstrap behavior:
 - `ANDROID_APP_PACKAGE` falls back to `expo.android.package` from `app.json`.
 - `PLAY_JSON_KEY_PATH` defaults to `credentials/android/play-credentials.json` or `credentials/android/service-account.json` when present.
 
+When running locally, materialize `credentials/android/google-services.json` first if it is not present in your workspace:
+
+```bash
+mkdir -p credentials/android
+printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > credentials/android/google-services.json
+```
+
 Examples:
 
 ```bash
@@ -77,6 +87,7 @@ bundle exec fastlane android android_local_cd promote_beta:true promote_producti
 ## Expected Outputs
 
 - Built artifact: `apps/native/dist/android/app-<versionName>-<versionCode>.aab`
+- Compatibility alias: `apps/native/dist/android/app-release.aab`
 - Metadata: `apps/native/dist/android/release-metadata.json`
 
 Metadata includes:
@@ -91,5 +102,7 @@ Metadata includes:
 - `Missing required environment variable`: verify repository variables/secrets are set.
 - `Package mismatch`: ensure `ANDROID_APP_PACKAGE` equals `expo.android.package` in `app.json`.
 - `File not found` for keystore or Play key: verify base64 secrets are valid and decode correctly.
+- `Missing Android google-services.json`: verify `GOOGLE_SERVICES_JSON_BASE64` is configured and decoded to `credentials/android/google-services.json` before lanes.
 - `Version code ... not found on <track>`: confirm internal upload succeeded and track propagation finished.
 - `Monotonicity` failure: existing Play version code is greater or equal; inspect latest published code.
+- `Artifact not found: dist/android/app-release.aab`: submit lane now resolves from `release-metadata.json` or discovered AABs; if multiple bundles exist, pass `artifact_path:<path>` explicitly.
