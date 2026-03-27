@@ -11,26 +11,18 @@
         "root": "./src/app"
       }
     },
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "owner": "samorzadpjatk",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "scheme": "native",
     "notification": {
-      "icon": "./assets/mirai_logo.png",
+      "icon": "./assets/mirai_notification_logo.png",
       "color": "#000000",
       "androidMode": "default",
       "androidCollapsedTitle": "MIRAI",
       "iosDisplayInForeground": true
-    },
-    "splash": {
-      "image": "./assets/mirai_logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
     },
     "ios": {
       "icon": "./assets/ios_logo.icon",
@@ -47,19 +39,15 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/mirai_logo.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/mirai_adaptive_logo_foreground.png",
+        "monochromeImage": "./assets/mirai_adaptive_logo_monochrome.png",
+        "backgroundImage": "./assets/mirai_adaptive_logo_background.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "edu.samorzadpjatk.mirai",
       "googleServicesFile": "credentials/android/google-services.json",
       "permissions": [
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_BACKGROUND_LOCATION",
@@ -78,9 +66,7 @@
       [
         "expo-asset",
         {
-          "assets": [
-            "./assets/mirai_logo.png"
-          ]
+          "assets": ["./assets/mirai_logo.png"]
         }
       ],
       [
@@ -97,7 +83,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/mirai_logo.png",
+          "icon": "./assets/mirai_notification_logo.png",
           "color": "#000000",
           "sounds": []
         }
