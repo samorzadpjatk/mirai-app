@@ -33,6 +33,7 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location even when the app is in the background.",
         "ITSAppUsesNonExemptEncryption": false
       },
+      "appleTeamId": "92Z87C8SAM",
       "entitlements": {
         "aps-environment": "development"
       }
