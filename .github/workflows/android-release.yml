@@ -36,6 +36,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set working directory explicitly
+        run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
+
       - name: Record release tag metadata
         run: |
           echo "RELEASE_TAG=${{ needs.monorepo_tagging.outputs.semver_tag }}" >> $GITHUB_ENV
@@ -139,22 +142,22 @@ jobs:
 
       - name: Decode Play service account key
         run: |
-          mkdir -p credentials/android
-          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > credentials/android/play-service-account.json
+          mkdir -p "$WORKDIR/credentials/android"
+          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > "$WORKDIR/credentials/android/play-service-account.json"
         env:
           PLAY_JSON_KEY_BASE64: ${{ secrets.PLAY_JSON_KEY_BASE64 }}
 
       - name: Decode Android keystore
         run: |
-          mkdir -p credentials/android
-          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 -d > credentials/android/keystore.jks
+          mkdir -p "$WORKDIR/credentials/android"
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 -d > "$WORKDIR/credentials/android/keystore.jks"
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
       - name: Materialize google-services.json
         run: |
-          mkdir -p credentials/android
-          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > credentials/android/google-services.json
+          mkdir -p "$WORKDIR/credentials/android"
+          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > "$WORKDIR/credentials/android/google-services.json"
         env:
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
 
@@ -162,8 +165,8 @@ jobs:
         run: bundle exec fastlane android android_build
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
-          PLAY_JSON_KEY_PATH: credentials/android/play-service-account.json
-          ANDROID_KEYSTORE_PATH: credentials/android/keystore.jks
+          PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
+          ANDROID_KEYSTORE_PATH: ${{ env.WORKDIR }}/credentials/android/keystore.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -180,7 +183,7 @@ jobs:
         run: bundle exec fastlane android android_submit track:internal artifact_path:${{ steps.artifact.outputs.artifact_path }}
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
-          PLAY_JSON_KEY_PATH: credentials/android/play-service-account.json
+          PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
           ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
 
       - name: Extract release metadata
@@ -215,6 +218,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set working directory explicitly
+        run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -235,15 +241,15 @@ jobs:
 
       - name: Decode Play service account key
         run: |
-          mkdir -p credentials/android
-          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > credentials/android/play-service-account.json
+          mkdir -p "$WORKDIR/credentials/android"
+          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > "$WORKDIR/credentials/android/play-service-account.json"
         env:
           PLAY_JSON_KEY_BASE64: ${{ secrets.PLAY_JSON_KEY_BASE64 }}
 
       - name: Materialize google-services.json
         run: |
-          mkdir -p credentials/android
-          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > credentials/android/google-services.json
+          mkdir -p "$WORKDIR/credentials/android"
+          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > "$WORKDIR/credentials/android/google-services.json"
         env:
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
 
@@ -253,7 +259,7 @@ jobs:
           bundle exec fastlane android android_promote from_track:internal to_track:beta version_code:$VERSION_CODE metadata_path:dist/android/release-metadata.json
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
-          PLAY_JSON_KEY_PATH: credentials/android/play-service-account.json
+          PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
           ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
 
   promote_to_production:
@@ -270,6 +276,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set working directory explicitly
+        run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -284,15 +293,15 @@ jobs:
 
       - name: Decode Play service account key
         run: |
-          mkdir -p credentials/android
-          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > credentials/android/play-service-account.json
+          mkdir -p "$WORKDIR/credentials/android"
+          printf '%s' "${PLAY_JSON_KEY_BASE64}" | base64 -d > "$WORKDIR/credentials/android/play-service-account.json"
         env:
           PLAY_JSON_KEY_BASE64: ${{ secrets.PLAY_JSON_KEY_BASE64 }}
 
       - name: Materialize google-services.json
         run: |
-          mkdir -p credentials/android
-          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > credentials/android/google-services.json
+          mkdir -p "$WORKDIR/credentials/android"
+          printf '%s' "${GOOGLE_SERVICES_JSON_BASE64}" | base64 -d > "$WORKDIR/credentials/android/google-services.json"
         env:
           GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
 
@@ -308,5 +317,5 @@ jobs:
           bundle exec fastlane android android_promote from_track:internal to_track:production version_code:$VERSION_CODE metadata_path:dist/android/release-metadata.json
         env:
           ANDROID_APP_PACKAGE: ${{ secrets.ANDROID_APP_PACKAGE }}
-          PLAY_JSON_KEY_PATH: credentials/android/play-service-account.json
+          PLAY_JSON_KEY_PATH: ${{ env.WORKDIR }}/credentials/android/play-service-account.json
           ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}

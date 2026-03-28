@@ -32,6 +32,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set working directory explicitly
+        run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
+
       - name: Record release tag metadata
         run: |
           echo "RELEASE_TAG=${{ needs.monorepo_tagging.outputs.semver_tag }}" >> "$GITHUB_ENV"
@@ -128,9 +131,9 @@ jobs:
 
       - name: Materialize iOS signing files
         run: |
-          mkdir -p credentials/ios
-          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > credentials/ios/profile.mobileprovision
-          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > credentials/ios/dist-cert.p12
+          mkdir -p "$WORKDIR/credentials/ios"
+          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/profile.mobileprovision"
+          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/dist-cert.p12"
         env:
           IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
@@ -145,8 +148,8 @@ jobs:
         run: bundle exec fastlane ios ios_build release_classification:${{ steps.routing.outputs.classification }}
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
-          IOS_DIST_CERT_PATH: credentials/ios/dist-cert.p12
-          IOS_PROFILE_PATH: credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_RELEASE_CLASSIFICATION: ${{ steps.routing.outputs.classification }}
           IOS_APPLICATION_ARCHIVE_PATH: dist/ios/*.ipa
@@ -167,8 +170,8 @@ jobs:
             destination:testflight_internal
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
-          IOS_DIST_CERT_PATH: credentials/ios/dist-cert.p12
-          IOS_PROFILE_PATH: credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
@@ -197,6 +200,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set working directory explicitly
+        run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -217,9 +223,9 @@ jobs:
 
       - name: Materialize iOS signing files
         run: |
-          mkdir -p credentials/ios
-          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > credentials/ios/profile.mobileprovision
-          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > credentials/ios/dist-cert.p12
+          mkdir -p "$WORKDIR/credentials/ios"
+          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/profile.mobileprovision"
+          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/dist-cert.p12"
         env:
           IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
@@ -232,8 +238,8 @@ jobs:
             destination:testflight_external
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
-          IOS_DIST_CERT_PATH: credentials/ios/dist-cert.p12
-          IOS_PROFILE_PATH: credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
@@ -254,6 +260,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set working directory explicitly
+        run: echo "WORKDIR=${GITHUB_WORKSPACE}/apps/native" >> $GITHUB_ENV
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -274,9 +283,9 @@ jobs:
 
       - name: Materialize iOS signing files
         run: |
-          mkdir -p credentials/ios
-          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > credentials/ios/profile.mobileprovision
-          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > credentials/ios/dist-cert.p12
+          mkdir -p "$WORKDIR/credentials/ios"
+          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/profile.mobileprovision"
+          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > "$WORKDIR/credentials/ios/dist-cert.p12"
         env:
           IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
           IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
@@ -289,8 +298,8 @@ jobs:
             destination:app_store
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
-          IOS_DIST_CERT_PATH: credentials/ios/dist-cert.p12
-          IOS_PROFILE_PATH: credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PATH: ${{ env.WORKDIR }}/credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: ${{ env.WORKDIR }}/credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
