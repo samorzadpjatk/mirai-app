@@ -12,13 +12,19 @@ jobs:
     uses: ./.github/workflows/monorepo-tagging.yml
     secrets: inherit
 
-  build_and_submit:
-    name: Build + submit iOS release
+  build:
+    name: Build iOS release
     runs-on: macos-latest
     needs: [monorepo_tagging]
     defaults:
       run:
         working-directory: apps/native
+    outputs:
+      version: ${{ steps.current_semver.outputs.release }}
+      classification: ${{ steps.routing.outputs.classification }}
+      submit_internal: ${{ steps.routing.outputs.submit_internal }}
+      submit_external: ${{ steps.routing.outputs.submit_external }}
+      submit_production: ${{ steps.routing.outputs.submit_production }}
 
     steps:
       - name: Checkout
@@ -71,25 +77,30 @@ jobs:
           PREVIOUS_MINOR=${{ steps.previous_semver.outputs.minor }}
 
           CLASSIFICATION="patch"
-          DESTINATION="testflight_internal"
+          SUBMIT_INTERNAL="true"
+          SUBMIT_EXTERNAL="false"
+          SUBMIT_PRODUCTION="false"
 
           if [ "$CURRENT_MAJOR" -gt "$PREVIOUS_MAJOR" ]; then
             CLASSIFICATION="major"
-            DESTINATION="app_store"
+            SUBMIT_EXTERNAL="true"
+            SUBMIT_PRODUCTION="true"
           elif [ "$CURRENT_MINOR" -gt "$PREVIOUS_MINOR" ]; then
             CLASSIFICATION="minor"
-            DESTINATION="testflight_external"
+            SUBMIT_EXTERNAL="true"
           fi
 
           echo "classification=$CLASSIFICATION" >> "$GITHUB_OUTPUT"
-          echo "destination=$DESTINATION" >> "$GITHUB_OUTPUT"
           echo "current_version=${{ steps.current_semver.outputs.release }}" >> "$GITHUB_OUTPUT"
           echo "previous_version=${{ steps.previous_semver.outputs.release }}" >> "$GITHUB_OUTPUT"
+          echo "submit_internal=$SUBMIT_INTERNAL" >> "$GITHUB_OUTPUT"
+          echo "submit_external=$SUBMIT_EXTERNAL" >> "$GITHUB_OUTPUT"
+          echo "submit_production=$SUBMIT_PRODUCTION" >> "$GITHUB_OUTPUT"
 
           echo "Routing classification: $CLASSIFICATION"
-          echo "Routing destination: $DESTINATION"
           echo "Current version: ${{ steps.current_semver.outputs.release }}"
           echo "Previous version: ${{ steps.previous_semver.outputs.release }}"
+          echo "Destinations -> internal:$SUBMIT_INTERNAL external:$SUBMIT_EXTERNAL production:$SUBMIT_PRODUCTION"
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -134,8 +145,8 @@ jobs:
         run: bundle exec fastlane ios ios_build release_classification:${{ steps.routing.outputs.classification }}
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
-          IOS_DIST_CERT_PATH: ${{ github.workspace }}/apps/native/credentials/ios/dist-cert.p12
-          IOS_PROFILE_PATH: ${{ github.workspace }}/apps/native/credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PATH: credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_RELEASE_CLASSIFICATION: ${{ steps.routing.outputs.classification }}
           IOS_APPLICATION_ARCHIVE_PATH: dist/ios/*.ipa
@@ -146,24 +157,23 @@ jobs:
           METADATA=dist/ios/release-metadata.json
           ARTIFACT_PATH=$(ruby -rjson -e 'print JSON.parse(File.read(ARGV[0]))["artifactPath"]' "$METADATA")
           echo "artifact_path=$ARTIFACT_PATH" >> "$GITHUB_OUTPUT"
+          echo "metadata_path=$METADATA" >> "$GITHUB_OUTPUT"
 
-      - name: Submit iOS release artifact
+      - name: Submit iOS release to internal
         run: |
           bundle exec fastlane ios ios_submit \
             artifact_path:${{ steps.artifact.outputs.artifact_path }} \
             release_classification:${{ steps.routing.outputs.classification }} \
-            destination:${{ steps.routing.outputs.destination }}
+            destination:testflight_internal
         env:
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
-          IOS_DIST_CERT_PATH: ${{ github.workspace }}/apps/native/credentials/ios/dist-cert.p12
-          IOS_PROFILE_PATH: ${{ github.workspace }}/apps/native/credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PATH: credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: credentials/ios/profile.mobileprovision
           IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
           IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
           IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
           IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
           IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
-          IOS_RELEASE_CLASSIFICATION: ${{ steps.routing.outputs.classification }}
-          IOS_RELEASE_DESTINATION: ${{ steps.routing.outputs.destination }}
 
       - name: Upload iOS release artifact + metadata
         uses: actions/upload-artifact@v4
@@ -173,3 +183,115 @@ jobs:
             apps/native/dist/ios/*.ipa
             apps/native/dist/ios/release-metadata.json
           if-no-files-found: error
+
+  submit_external:
+    name: Submit iOS to external testing
+    runs-on: macos-latest
+    needs: [build]
+    if: needs.build.outputs.submit_external == 'true'
+    defaults:
+      run:
+        working-directory: apps/native
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: apps/native
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.6"
+
+      - name: Download iOS release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-release-${{ needs.build.outputs.version }}
+          path: apps/native/dist/ios
+
+      - name: Materialize iOS signing files
+        run: |
+          mkdir -p credentials/ios
+          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > credentials/ios/profile.mobileprovision
+          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > credentials/ios/dist-cert.p12
+        env:
+          IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+
+      - name: Submit iOS release to external testing
+        run: |
+          bundle exec fastlane ios ios_submit \
+            artifact_path:dist/ios/*.ipa \
+            release_classification:${{ needs.build.outputs.classification }} \
+            destination:testflight_external
+        env:
+          IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+          IOS_DIST_CERT_PATH: credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
+          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+          IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
+
+  submit_production:
+    name: Submit iOS to App Store
+    runs-on: macos-latest
+    needs: [build]
+    if: needs.build.outputs.submit_production == 'true'
+    environment: ios-production-approval
+    defaults:
+      run:
+        working-directory: apps/native
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: apps/native
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.6"
+
+      - name: Download iOS release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-release-${{ needs.build.outputs.version }}
+          path: apps/native/dist/ios
+
+      - name: Materialize iOS signing files
+        run: |
+          mkdir -p credentials/ios
+          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > credentials/ios/profile.mobileprovision
+          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > credentials/ios/dist-cert.p12
+        env:
+          IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+
+      - name: Submit iOS release to App Store
+        run: |
+          bundle exec fastlane ios ios_submit \
+            artifact_path:dist/ios/*.ipa \
+            release_classification:${{ needs.build.outputs.classification }} \
+            destination:app_store
+        env:
+          IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+          IOS_DIST_CERT_PATH: credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
+          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}

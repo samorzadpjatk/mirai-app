@@ -801,12 +801,30 @@ platform :ios do
 
   def ios_destination_for_classification(classification)
     case classification
-    when "patch"
+    when "patch", "minor", "major"
       "testflight_internal"
-    when "minor"
+    else
+      UI.user_error!("Unsupported release classification: #{classification}")
+    end
+  end
+
+  def ios_external_destination_for_classification(classification)
+    case classification
+    when "minor", "major"
       "testflight_external"
+    when "patch"
+      nil
+    else
+      UI.user_error!("Unsupported release classification: #{classification}")
+    end
+  end
+
+  def ios_production_destination_for_classification(classification)
+    case classification
     when "major"
       "app_store"
+    when "patch", "minor"
+      nil
     else
       UI.user_error!("Unsupported release classification: #{classification}")
     end
