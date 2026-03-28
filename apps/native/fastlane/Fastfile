@@ -449,6 +449,7 @@ platform :android do
       task: "bundle",
       build_type: "Release",
       project_dir: File.join(app_root, "android"),
+      flags: "--no-daemon",
       properties: {
         "android.injected.signing.store.file" => ENV.fetch("ANDROID_KEYSTORE_PATH"),
         "android.injected.signing.store.password" => ENV.fetch("ANDROID_KEYSTORE_PASSWORD"),
