@@ -1,10 +1,169 @@
 default_platform(:android)
 
 require "json"
+require "rubygems"
 require "open3"
 require "fileutils"
 require "digest"
 require "pathname"
+require "shellwords"
+require "tmpdir"
+require "securerandom"
+require "base64"
+
+ENV["PATH"] = [
+  "/opt/homebrew/bin",
+  "/opt/homebrew/sbin",
+  Gem.bindir,
+  File.expand_path("~/.gem/bin"),
+  File.expand_path("~/.asdf/shims"),
+  ENV["PATH"],
+].compact.map(&:to_s).reject(&:empty?).uniq.join(":")
+
+# Shared helper methods for both platforms
+def sh_capture!(command)
+  stdout, stderr, status = Open3.capture3(command)
+  UI.user_error!("Command failed: #{command}\n#{stderr}") unless status.success?
+  stdout.strip
+end
+
+# Execute shell command without logging (for sensitive operations)
+def sh_silent(command)
+  stdout, stderr, status = Open3.capture3(command)
+  unless status.success?
+    UI.user_error!("Command failed with exit code #{status.exitstatus}\n#{stderr}")
+  end
+  stdout
+end
+
+def mask_sensitive_value(value)
+  return "" if value.nil? || value.to_s.strip.empty?
+  "***HIDDEN***"
+end
+
+# Hide sensitive environment variables from Fastlane output
+def hide_sensitive_env_vars!
+  sensitive_keys = %w[
+    ANDROID_KEYSTORE_PASSWORD
+    ANDROID_KEY_PASSWORD
+    IOS_DIST_CERT_PASSWORD
+    IOS_KEYCHAIN_PASSWORD
+    IOS_ASC_KEY_CONTENT_BASE64
+    FASTLANE_PASSWORD
+    MATCH_PASSWORD
+    GH_TOKEN
+    GITHUB_TOKEN
+  ]
+
+  sensitive_keys.each do |key|
+    next unless ENV[key]
+    ENV["FASTLANE_HIDE_#{key}"] = "true"
+  end
+end
+
+# Sanitize lane context to prevent sensitive data leaks
+def sanitize_lane_context!
+  sensitive_context_keys = [
+    :IOS_KEYCHAIN_PASSWORD,
+    :IOS_DIST_CERT_PASSWORD,
+    :ANDROID_KEYSTORE_PASSWORD,
+    :ANDROID_KEY_PASSWORD,
+  ]
+
+  sensitive_context_keys.each do |key|
+    if Actions.lane_context[key]
+      # Store internally but mark as hidden
+      Actions.lane_context["#{key}_HIDDEN".to_sym] = true
+    end
+  end
+end
+
+def resolve_credentials_path
+  candidates = [
+    "credentials.json",
+    File.expand_path("../credentials.json"),
+    File.expand_path("../../credentials.json"),
+  ].uniq
+  candidates.find { |path| File.exist?(path) } || candidates.first
+end
+
+def resolve_app_json_path
+  candidates = [
+    "app.json",
+    File.expand_path("../app.json"),
+    File.expand_path("../../app.json"),
+  ].uniq
+  candidates.find { |p| File.exist?(p) }
+end
+
+def app_root_dir
+  app_json_path = resolve_app_json_path
+  UI.user_error!("app.json not found in any expected location") unless app_json_path
+  File.dirname(File.expand_path(app_json_path))
+end
+
+def load_app_json
+  path = resolve_app_json_path
+  UI.user_error!("app.json not found in any expected location") unless path
+  JSON.parse(File.read(path))
+end
+
+def app_version_name
+  load_app_json.dig("expo", "version")
+end
+
+def latest_semver_tag
+  tags = sh_capture!("git tag --sort=-v:refname").split("\n").map(&:strip).reject(&:empty?)
+  tags.each do |tag|
+    normalized = tag.sub(/^v/, "")
+    return tag if normalized.match?(/^\d+\.\d+\.\d+$/)
+  end
+  nil
+rescue StandardError
+  nil
+end
+
+def make_path_absolute(path, base_dir)
+  Pathname.new(path).absolute? ? path : File.expand_path(path, base_dir)
+end
+
+# Global hooks for security
+before_all do |lane, options|
+  hide_sensitive_env_vars!
+  UI.message("Starting lane: #{lane}")
+end
+
+after_all do |lane|
+  # Clean up sensitive data from lane context after execution
+  sensitive_keys = [
+    :IOS_KEYCHAIN_PASSWORD,
+    :IOS_INSTALLED_PROFILE_PATH,
+    :ANDROID_KEYSTORE_PASSWORD,
+    :ANDROID_KEY_PASSWORD,
+  ]
+
+  sensitive_keys.each do |key|
+    Actions.lane_context.delete(key) if Actions.lane_context[key]
+  end
+
+  UI.success("Lane #{lane} completed successfully")
+end
+
+error do |lane, exception|
+  # Ensure sensitive data is cleaned even on error
+  sensitive_keys = [
+    :IOS_KEYCHAIN_PASSWORD,
+    :IOS_INSTALLED_PROFILE_PATH,
+    :ANDROID_KEYSTORE_PASSWORD,
+    :ANDROID_KEY_PASSWORD,
+  ]
+
+  sensitive_keys.each do |key|
+    Actions.lane_context.delete(key) if Actions.lane_context[key]
+  end
+
+  UI.error("Lane #{lane} failed: #{exception.message}")
+end
 
 platform :android do
   REQUIRED_ENV_BUILD = %w[
@@ -26,54 +185,44 @@ platform :android do
   NON_PROD_TRACKS = %w[internal beta].freeze
   PROD_TRACK = "production"
 
-   def ensure_env!(key)
-     value = ENV[key]
-     unless value.nil? || value.strip.empty?
-       # Verify the path exists if it looks like a file path
-       if value.start_with?("/") && !File.exist?(value)
-         UI.user_error!("File not found for #{key}: #{value}")
-       end
-       return value
-     end
-     
-     # Provide helpful error message with context about auto-detection
-     case key
-     when "PLAY_JSON_KEY_PATH"
-       checked_paths = [
-         "PLAY_JSON_KEY_PATH environment variable",
-         "credentials.json[android.playJsonKeyPath]",
-         "credentials/android/play-service-account.json",
-         "credentials/android/play-credentials.json",
-         "credentials/android/service-account.json",
-       ]
-       UI.user_error!(
-         "Missing required environment variable: #{key}\n" \
-         "Checked paths:\n" \
-         "  #{checked_paths.map { |p| "• #{p}" }.join("\n  ")}"
-       )
-     when "ANDROID_KEYSTORE_PATH"
-       checked_paths = [
-         "ANDROID_KEYSTORE_PATH environment variable",
-         "credentials.json[android.keystore.keystorePath]",
-       ]
-       UI.user_error!(
-         "Missing required environment variable: #{key}\n" \
-         "Checked paths:\n" \
-         "  #{checked_paths.map { |p| "• #{p}" }.join("\n  ")}"
-       )
-     else
-       UI.user_error!("Missing required environment variable: #{key}")
-     end
-   end
+  def ensure_env!(key)
+    value = ENV[key]
+    unless value.nil? || value.strip.empty?
+      # Verify the path exists if it looks like a file path
+      if value.start_with?("/") && !File.exist?(value)
+        UI.user_error!("File not found for #{key}: #{value}")
+      end
+      return value
+    end
 
-  def resolve_credentials_path
-    # Support both relative to current directory (apps/native) and parent (project root)
-    candidates = [
-      "credentials.json",
-      File.expand_path("../credentials.json"),
-      File.expand_path("../../credentials.json"),
-    ].uniq
-    candidates.find { |path| File.exist?(path) } || candidates.first
+    # Provide helpful error message with context about auto-detection
+    case key
+    when "PLAY_JSON_KEY_PATH"
+      checked_paths = [
+        "PLAY_JSON_KEY_PATH environment variable",
+        "credentials.json[android.playJsonKeyPath]",
+        "credentials/android/play-service-account.json",
+        "credentials/android/play-credentials.json",
+        "credentials/android/service-account.json",
+      ]
+      UI.user_error!(
+        "Missing required environment variable: #{key}\n" \
+        "Checked paths:\n" \
+        "  #{checked_paths.map { |p| "• #{p}" }.join("\n  ")}"
+      )
+    when "ANDROID_KEYSTORE_PATH"
+      checked_paths = [
+        "ANDROID_KEYSTORE_PATH environment variable",
+        "credentials.json[android.keystore.keystorePath]",
+      ]
+      UI.user_error!(
+        "Missing required environment variable: #{key}\n" \
+        "Checked paths:\n" \
+        "  #{checked_paths.map { |p| "• #{p}" }.join("\n  ")}"
+      )
+    else
+      UI.user_error!("Missing required environment variable: #{key}")
+    end
   end
 
    def bootstrap_android_release_env!
@@ -88,8 +237,7 @@ platform :android do
      keystore = credentials.dig("android", "keystore") || {}
      keystore_path = keystore["keystorePath"].to_s.strip
      if ENV["ANDROID_KEYSTORE_PATH"].to_s.strip.empty? && !keystore_path.empty?
-       resolved = Pathname.new(keystore_path).absolute? ? keystore_path : File.expand_path(keystore_path, credentials_dir)
-       ENV["ANDROID_KEYSTORE_PATH"] = resolved
+       ENV["ANDROID_KEYSTORE_PATH"] = make_path_absolute(keystore_path, credentials_dir)
      end
 
      ENV["ANDROID_KEYSTORE_PASSWORD"] = keystore["keystorePassword"].to_s if ENV["ANDROID_KEYSTORE_PASSWORD"].to_s.strip.empty? && !keystore["keystorePassword"].to_s.strip.empty?
@@ -123,52 +271,20 @@ platform :android do
          "credentials/android/service-account.json",
        ].reject(&:empty?)
        detected = candidates.find do |path|
-         absolute = Pathname.new(path).absolute? ? path : File.expand_path(path, credentials_dir)
+         absolute = make_path_absolute(path, credentials_dir)
          File.exist?(absolute)
        end
        if detected
-         absolute = Pathname.new(detected).absolute? ? detected : File.expand_path(detected, credentials_dir)
-         ENV["PLAY_JSON_KEY_PATH"] = absolute
+         ENV["PLAY_JSON_KEY_PATH"] = make_path_absolute(detected, credentials_dir)
        end
      end
    end
-
-  def sh_capture!(command)
-    stdout, stderr, status = Open3.capture3(command)
-    UI.user_error!("Command failed: #{command}\n#{stderr}") unless status.success?
-    stdout.strip
-  end
-
-  def resolve_app_json_path
-    candidates = [
-      "app.json",
-      File.expand_path("../app.json"),
-      File.expand_path("../../app.json"),
-    ].uniq
-    candidates.find { |p| File.exist?(p) }
-  end
-
-  def app_root_dir
-    app_json_path = resolve_app_json_path
-    UI.user_error!("app.json not found in any expected location") unless app_json_path
-    File.dirname(File.expand_path(app_json_path))
-  end
-
-  def load_app_json
-    path = resolve_app_json_path
-    UI.user_error!("app.json not found in any expected location") unless path
-    JSON.parse(File.read(path))
-  end
 
   def verify_android_google_services_file!
     relative_path = load_app_json.dig("expo", "android", "googleServicesFile").to_s.strip
     return if relative_path.empty?
 
-    app_json_path = resolve_app_json_path
-    UI.user_error!("app.json not found in any expected location") unless app_json_path
-
-    app_root = File.dirname(File.expand_path(app_json_path))
-    absolute_path = Pathname.new(relative_path).absolute? ? relative_path : File.expand_path(relative_path, app_root)
+    absolute_path = make_path_absolute(relative_path, app_root_dir)
     return if File.exist?(absolute_path)
 
     UI.user_error!(
@@ -181,14 +297,10 @@ platform :android do
     load_app_json.dig("expo", "android", "package")
   end
 
-  def app_version_name
-    load_app_json.dig("expo", "version")
-  end
-
   def resolve_submit_artifact_path!(options)
     explicit_artifact = (options[:artifact_path] || ENV["ANDROID_ARTIFACT_PATH"]).to_s.strip
     unless explicit_artifact.empty?
-      candidate = Pathname.new(explicit_artifact).absolute? ? explicit_artifact : File.expand_path(explicit_artifact)
+      candidate = make_path_absolute(explicit_artifact, Dir.pwd)
       UI.user_error!("Artifact not found: #{candidate}") unless File.exist?(candidate)
       return candidate
     end
@@ -196,13 +308,13 @@ platform :android do
     app_root = app_root_dir
     dist_dir = File.join(app_root, "dist", "android")
     metadata_path = (options[:metadata_path] || ENV["ANDROID_RELEASE_METADATA_PATH"] || File.join(dist_dir, "release-metadata.json")).to_s
-    metadata_candidate = Pathname.new(metadata_path).absolute? ? metadata_path : File.expand_path(metadata_path)
+    metadata_candidate = make_path_absolute(metadata_path, Dir.pwd)
 
     if File.exist?(metadata_candidate)
       metadata = JSON.parse(File.read(metadata_candidate))
       metadata_artifact = metadata.fetch("artifactPath", "").to_s.strip
       unless metadata_artifact.empty?
-        candidate = Pathname.new(metadata_artifact).absolute? ? metadata_artifact : File.expand_path(metadata_artifact, app_root)
+        candidate = make_path_absolute(metadata_artifact, app_root)
         return candidate if File.exist?(candidate)
       end
     end
@@ -237,45 +349,22 @@ platform :android do
     config["expo"]["android"] ||= {}
     config["expo"]["version"] = version_name
     config["expo"]["android"]["versionCode"] = version_code
-    
-    # Write to the same path we loaded from
-    candidates = [
-      "app.json",
-      File.expand_path("../app.json"),
-      File.expand_path("../../app.json"),
-    ].uniq
-    
-    path = candidates.find { |p| File.exist?(p) }
+
+    path = resolve_app_json_path
     UI.user_error!("app.json not found") unless path
     File.write(path, "#{JSON.pretty_generate(config)}\n")
   end
 
   def verify_eas_parity!
-    candidates = [
-      "eas.json",
-      File.expand_path("../eas.json"),
-      File.expand_path("../../eas.json"),
-    ].uniq
-    path = candidates.find { |p| File.exist?(p) }
-    UI.user_error!("Missing required file: eas.json") unless path
-    
-    eas = JSON.parse(File.read(path))
+    eas_path = File.join(app_root_dir, "eas.json")
+    UI.user_error!("Missing required file: #{eas_path}") unless File.exist?(eas_path)
+
+    eas = JSON.parse(File.read(eas_path))
     release_track = eas.dig("submit", "production", "android", "track")
     UI.user_error!("eas.json submit.production.android.track must be 'internal'") unless release_track == "internal"
 
     auto_increment = eas.dig("build", "production", "autoIncrement")
     UI.user_error!("eas.json build.production.autoIncrement must be true") unless auto_increment == true
-  end
-
-  def latest_semver_tag
-    tags = sh_capture!("git tag --sort=-v:refname").split("\n").map(&:strip).reject(&:empty?)
-    tags.each do |tag|
-      normalized = tag.sub(/^v/, "")
-      return tag if normalized.match?(/^\d+\.\d+\.\d+$/)
-    end
-    nil
-  rescue StandardError
-    nil
   end
 
   def resolve_release_version_code
@@ -311,6 +400,7 @@ platform :android do
     end
 
     verify_eas_parity!
+    UI.message("Android preflight validated")
   end
 
   desc "Validate Play credentials and package consistency"
@@ -325,6 +415,7 @@ platform :android do
 
     play_json = ENV.fetch("PLAY_JSON_KEY_PATH")
     UI.user_error!("File not found: PLAY_JSON_KEY_PATH=#{play_json}") unless File.exist?(play_json)
+    UI.message("Android Play preflight validated")
   end
 
   desc "Apply CI-provided versionName and monotonic versionCode to app.json"
@@ -353,6 +444,7 @@ platform :android do
       sh("CI=1 bunx expo prebuild --platform android --clean")
     end
 
+    UI.message("Building Android release with signing configuration...")
     gradle(
       task: "bundle",
       build_type: "Release",
@@ -363,6 +455,8 @@ platform :android do
         "android.injected.signing.key.alias" => ENV.fetch("ANDROID_KEY_ALIAS"),
         "android.injected.signing.key.password" => ENV.fetch("ANDROID_KEY_PASSWORD"),
       },
+      print_command: false,
+      print_command_output: true,
     )
 
     source_artifact = File.join(app_root, "android", "app", "build", "outputs", "bundle", "release", "app-release.aab")
@@ -501,6 +595,533 @@ platform :android do
         UI.user_error!("Promotion to production declined") unless answer.to_s.strip.downcase == "yes"
       end
       android_promote(from_track: "beta", to_track: "production", version_code: version_code, metadata_path: "dist/android/release-metadata.json")
+    end
+  end
+end
+
+platform :ios do
+  REQUIRED_ENV_IOS_BUILD = %w[
+    IOS_DIST_CERT_PATH
+    IOS_PROFILE_PATH
+    IOS_DIST_CERT_PASSWORD
+    IOS_BUNDLE_IDENTIFIER
+  ].freeze
+
+  REQUIRED_ENV_IOS_SUBMIT = %w[
+    IOS_ASC_KEY_ID
+    IOS_ASC_ISSUER_ID
+    IOS_ASC_KEY_CONTENT_BASE64
+    IOS_BUNDLE_IDENTIFIER
+  ].freeze
+
+  IOS_DESTINATIONS = %w[testflight_internal testflight_external app_store].freeze
+
+  def ios_ensure_env!(key)
+    value = ENV[key].to_s.strip
+    UI.user_error!("Missing required environment variable: #{key}") if value.empty?
+    if key.end_with?("_PATH")
+      absolute = make_path_absolute(value, Dir.pwd)
+      UI.user_error!("File not found for #{key}: #{absolute}") unless File.exist?(absolute)
+      return absolute
+    end
+    value
+  end
+
+  def ios_bundle_id_from_config
+    load_app_json.dig("expo", "ios", "bundleIdentifier").to_s.strip
+  end
+
+  def ios_run_if_script_defined!(script_name, app_root)
+    package_json_path = File.join(app_root, "package.json")
+    return unless File.exist?(package_json_path)
+
+    scripts = JSON.parse(File.read(package_json_path)).fetch("scripts", {})
+    return unless scripts.key?(script_name)
+
+    Dir.chdir(app_root) do
+      UI.message("Running lifecycle hook: #{script_name}")
+      sh("bun run #{script_name}")
+    end
+  end
+
+  def ios_profile_metadata(profile_path)
+    xml = sh_capture!("security cms -D -i #{Shellwords.escape(profile_path)}")
+    uuid = xml[/<key>UUID<\/key>\s*<string>([^<]+)<\/string>/, 1].to_s.strip
+    app_identifier = xml[/<key>application-identifier<\/key>\s*<string>([^<]+)<\/string>/, 1].to_s.strip
+    team_identifier = xml[/<key>TeamIdentifier<\/key>\s*<array>\s*<string>([^<]+)<\/string>/m, 1].to_s.strip
+    {
+      uuid: uuid,
+      application_identifier: app_identifier,
+      team_identifier: team_identifier,
+    }
+  end
+
+  def ios_profile_supports_bundle_id?(profile_app_identifier, bundle_id)
+    return false if profile_app_identifier.to_s.strip.empty? || bundle_id.to_s.strip.empty?
+
+    _team, suffix = profile_app_identifier.split(".", 2)
+    return false if suffix.to_s.strip.empty?
+    return true if suffix == "*"
+
+    if suffix.end_with?("*")
+      prefix = suffix.delete_suffix("*")
+      return bundle_id.start_with?(prefix)
+    end
+
+    suffix == bundle_id
+  end
+
+  def ios_prepare_signing_material!
+    cert_path = ios_ensure_env!("IOS_DIST_CERT_PATH")
+    profile_path = ios_ensure_env!("IOS_PROFILE_PATH")
+    cert_password = ios_ensure_env!("IOS_DIST_CERT_PASSWORD")
+
+    UI.message("Validating distribution certificate...")
+    # Use sh_silent to avoid logging the password in the command
+    sh_silent("openssl pkcs12 -in #{Shellwords.escape(cert_path)} -nokeys -passin pass:#{Shellwords.escape(cert_password)} >/dev/null 2>&1")
+
+    keychain_name = ENV.fetch("IOS_KEYCHAIN_NAME", "fastlane_ios_release_#{SecureRandom.hex(4)}")
+    keychain_password = ENV.fetch("IOS_KEYCHAIN_PASSWORD", SecureRandom.hex(24))
+
+    UI.message("Creating temporary keychain: #{keychain_name}")
+    create_keychain(
+      name: keychain_name,
+      password: keychain_password,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: true,
+      add_to_search_list: true,
+      default_keychain: true,
+    )
+
+    UI.message("Importing distribution certificate...")
+    import_certificate(
+      certificate_path: cert_path,
+      certificate_password: cert_password,
+      keychain_name: keychain_name,
+      keychain_password: keychain_password,
+    )
+
+    provisioning_dir = File.expand_path("~/Library/MobileDevice/Provisioning Profiles")
+    FileUtils.mkdir_p(provisioning_dir)
+    profile_metadata = ios_profile_metadata(profile_path)
+    profile_uuid = profile_metadata.fetch(:uuid)
+    UI.user_error!("Unable to parse provisioning profile UUID: #{profile_path}") if profile_uuid.empty?
+
+    installed_profile_path = File.join(provisioning_dir, "#{profile_uuid}.mobileprovision")
+    FileUtils.cp(profile_path, installed_profile_path)
+
+    # Store context values - password is stored but sanitized from logs
+    Actions.lane_context[:IOS_KEYCHAIN_NAME] = keychain_name
+    Actions.lane_context[:IOS_KEYCHAIN_PASSWORD] = keychain_password
+    Actions.lane_context[:IOS_PROFILE_UUID] = profile_uuid
+    Actions.lane_context[:IOS_INSTALLED_PROFILE_PATH] = installed_profile_path
+    Actions.lane_context[:IOS_PROFILE_APP_IDENTIFIER] = profile_metadata.fetch(:application_identifier)
+    Actions.lane_context[:IOS_PROFILE_TEAM_IDENTIFIER] = profile_metadata.fetch(:team_identifier)
+
+    # Mark sensitive data in lane context
+    sanitize_lane_context!
+  end
+
+  def ios_apply_profile_to_project!(xcode_target)
+    project_path = xcode_target[:project]
+    if project_path.to_s.strip.empty? && xcode_target[:workspace]
+      workspace_base = File.basename(xcode_target[:workspace], ".xcworkspace")
+      candidate = File.join(File.dirname(xcode_target[:workspace]), "#{workspace_base}.xcodeproj")
+      project_path = candidate if File.exist?(candidate)
+    end
+
+    UI.user_error!("Unable to resolve .xcodeproj for provisioning profile update") if project_path.to_s.strip.empty?
+
+    profile_path = Actions.lane_context[:IOS_INSTALLED_PROFILE_PATH].to_s
+    if profile_path.empty?
+      profile_uuid = Actions.lane_context[:IOS_PROFILE_UUID].to_s
+      profile_path = File.expand_path("~/Library/MobileDevice/Provisioning Profiles/#{profile_uuid}.mobileprovision") unless profile_uuid.empty?
+    end
+    UI.user_error!("Provisioning profile not found for project update: #{profile_path}") unless File.exist?(profile_path)
+
+    build_configuration = ENV.fetch("IOS_BUILD_CONFIGURATION", "Release")
+    UI.message("Applying provisioning profile to Xcode project (#{build_configuration})")
+    update_project_provisioning(
+      xcodeproj: project_path,
+      profile: profile_path,
+      target_filter: ".*",
+      build_configuration: build_configuration,
+      code_signing_identity: ENV.fetch("IOS_CODE_SIGNING_IDENTITY", "Apple Distribution"),
+    )
+  end
+
+  def ios_cleanup_signing_material!
+    keychain_name = Actions.lane_context[:IOS_KEYCHAIN_NAME].to_s
+    return if keychain_name.empty?
+
+    UI.message("Cleaning up temporary keychain: #{keychain_name}")
+    delete_keychain(name: keychain_name)
+
+    # Clear sensitive data from lane context
+    Actions.lane_context.delete(:IOS_KEYCHAIN_PASSWORD)
+    Actions.lane_context.delete(:IOS_KEYCHAIN_NAME)
+    Actions.lane_context.delete(:IOS_INSTALLED_PROFILE_PATH)
+  rescue StandardError => e
+    UI.important("Could not delete temporary keychain #{keychain_name}: #{e.message}")
+  end
+
+  def ios_resolve_xcode_project(app_root)
+    ios_dir = File.join(app_root, "ios")
+    workspace = Dir.glob(File.join(ios_dir, "*.xcworkspace")).first
+    project = Dir.glob(File.join(ios_dir, "*.xcodeproj")).first
+
+    if workspace
+      scheme = ENV["IOS_SCHEME"].to_s.strip
+      if scheme.empty?
+        base = File.basename(workspace, ".xcworkspace")
+        candidate = File.join(ios_dir, "#{base}.xcodeproj")
+        scheme = base if File.exist?(candidate)
+      end
+      UI.user_error!("Unable to resolve IOS_SCHEME for workspace #{workspace}") if scheme.to_s.strip.empty?
+      return { workspace: workspace, scheme: scheme }
+    end
+
+    if project
+      scheme = ENV["IOS_SCHEME"].to_s.strip
+      if scheme.empty?
+        scheme = File.basename(project, ".xcodeproj")
+      end
+      return { project: project, scheme: scheme }
+    end
+
+    UI.user_error!("Unable to resolve iOS workspace/project under #{ios_dir}")
+  end
+
+  def ios_release_classification!(options)
+    classification = (options[:release_classification] || ENV["IOS_RELEASE_CLASSIFICATION"] || "patch").to_s.strip
+    UI.user_error!("Unsupported iOS release classification: #{classification}") unless %w[patch minor major].include?(classification)
+    classification
+  end
+
+  def ios_destination_for_classification(classification)
+    case classification
+    when "patch"
+      "testflight_internal"
+    when "minor"
+      "testflight_external"
+    when "major"
+      "app_store"
+    else
+      UI.user_error!("Unsupported release classification: #{classification}")
+    end
+  end
+
+  def ios_resolve_archive_path!(options)
+    explicit_artifact = (options[:artifact_path] || ENV["IOS_ARTIFACT_PATH"]).to_s.strip
+    unless explicit_artifact.empty?
+      candidate = make_path_absolute(explicit_artifact, Dir.pwd)
+      UI.user_error!("iOS artifact not found: #{candidate}") unless File.exist?(candidate)
+      return candidate
+    end
+
+    app_root = app_root_dir
+    metadata_path = (options[:metadata_path] || ENV["IOS_RELEASE_METADATA_PATH"] || File.join(app_root, "dist", "ios", "release-metadata.json")).to_s
+    metadata_candidate = make_path_absolute(metadata_path, Dir.pwd)
+    if File.exist?(metadata_candidate)
+      metadata = JSON.parse(File.read(metadata_candidate))
+      metadata_artifact = metadata.fetch("artifactPath", "").to_s.strip
+      unless metadata_artifact.empty?
+        candidate = make_path_absolute(metadata_artifact, app_root)
+        return candidate if File.exist?(candidate)
+      end
+    end
+
+    application_archive_path = (options[:application_archive_path] || ENV["IOS_APPLICATION_ARCHIVE_PATH"] || "dist/ios/*.ipa").to_s
+    glob_pattern = make_path_absolute(application_archive_path, app_root)
+    candidates = Dir.glob(glob_pattern).sort_by { |path| File.mtime(path) }.reverse
+
+    return candidates.first if candidates.length == 1
+
+    if candidates.length > 1
+      UI.user_error!(
+        "Multiple iOS artifacts matched #{glob_pattern}. Provide artifact_path explicitly.\n" \
+        "Candidates:\n#{candidates.map { |path| "- #{path}" }.join("\n")}"
+      )
+    end
+
+    UI.user_error!(
+      "iOS artifact not found. Checked:\n" \
+      "- explicit artifact_path/IOS_ARTIFACT_PATH\n" \
+      "- release metadata artifactPath at #{metadata_candidate}\n" \
+      "- applicationArchivePath glob #{glob_pattern}"
+    )
+  end
+
+  def ios_app_store_connect_api_key!
+    key_id = ios_ensure_env!("IOS_ASC_KEY_ID")
+    issuer_id = ios_ensure_env!("IOS_ASC_ISSUER_ID")
+    key_content_base64 = ios_ensure_env!("IOS_ASC_KEY_CONTENT_BASE64")
+    key_content = Base64.decode64(key_content_base64)
+    UI.user_error!("IOS_ASC_KEY_CONTENT_BASE64 did not decode to a .p8 key") unless key_content.include?("BEGIN PRIVATE KEY")
+
+    UI.message("Creating App Store Connect API key (key_id: #{key_id})")
+    app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_content: key_content,
+      is_key_content_base64: false,
+      duration: 1200,
+      in_house: false,
+    )
+  end
+
+  def ios_verify_eas_parity!
+    eas_path = File.join(app_root_dir, "eas.json")
+    UI.user_error!("Missing required file: #{eas_path}") unless File.exist?(eas_path)
+
+    eas = JSON.parse(File.read(eas_path))
+    asc_app_id = eas.dig("submit", "production", "ios", "ascAppId").to_s.strip
+    UI.user_error!("eas.json submit.production.ios.ascAppId is required") if asc_app_id.empty?
+  end
+
+  desc "Validate iOS build prerequisites, signing material, and EAS parity checks"
+  lane :ios_preflight_build do
+    bootstrap_ios_release_env!
+    REQUIRED_ENV_IOS_BUILD.each { |k| ios_ensure_env!(k) }
+
+    bundle_id_from_config = ios_bundle_id_from_config
+    bundle_id_from_env = ios_ensure_env!("IOS_BUNDLE_IDENTIFIER")
+    UI.user_error!("iOS bundle ID mismatch: app.json=#{bundle_id_from_config} IOS_BUNDLE_IDENTIFIER=#{bundle_id_from_env}") if bundle_id_from_config != bundle_id_from_env
+
+    sh("xcodebuild -version")
+    sh("ruby --version")
+    sh("node --version")
+    sh("bun --version")
+
+    cert_path = ios_ensure_env!("IOS_DIST_CERT_PATH")
+    profile_path = ios_ensure_env!("IOS_PROFILE_PATH")
+    cert_password = ios_ensure_env!("IOS_DIST_CERT_PASSWORD")
+
+    UI.message("Validating distribution certificate at #{cert_path}")
+    # Use sh_silent to avoid logging the password in the command
+    sh_silent("openssl pkcs12 -in #{Shellwords.escape(cert_path)} -nokeys -passin pass:#{Shellwords.escape(cert_password)} >/dev/null 2>&1")
+
+    profile = ios_profile_metadata(profile_path)
+    profile_identifier = profile.fetch(:application_identifier)
+    unless ios_profile_supports_bundle_id?(profile_identifier, bundle_id_from_env)
+      UI.user_error!("Provisioning profile application-identifier #{profile_identifier} is incompatible with bundle identifier #{bundle_id_from_env}")
+    end
+
+    ios_verify_eas_parity!
+    UI.message("iOS preflight validated for bundle ID #{bundle_id_from_env}")
+  end
+
+  desc "Validate iOS submit prerequisites and App Store Connect credentials"
+  lane :ios_preflight_submit do
+    bootstrap_ios_release_env!
+    REQUIRED_ENV_IOS_SUBMIT.each { |k| ios_ensure_env!(k) }
+    ios_preflight_build
+    ios_app_store_connect_api_key!
+    UI.message("iOS submit preflight validated")
+  end
+
+  desc "Build signed iOS release artifact with EAS-aligned lifecycle ordering"
+  lane :ios_build do |options|
+    ios_preflight_build
+    app_root = app_root_dir
+    classification = ios_release_classification!(options)
+    destination = ios_destination_for_classification(classification)
+
+    ios_run_if_script_defined!("eas-build-pre-install", app_root)
+
+    repo_root = File.expand_path("../..", app_root)
+    Dir.chdir(repo_root) do
+      Bundler.unbundled_system("bun install --frozen-lockfile")
+    end
+
+    Dir.chdir(app_root) do
+      Bundler.unbundled_system("CI=1 bunx expo prebuild --platform ios --clean")
+    end
+
+    ios_prepare_signing_material!
+
+    begin
+      ios_dir = File.join(app_root, "ios")
+      Dir.chdir(ios_dir) do
+        UI.message("Installing CocoaPods dependencies...")
+        Bundler.unbundled_system("pod install")
+      end
+
+      ios_run_if_script_defined!("eas-build-post-install", app_root)
+
+      xcode_target = ios_resolve_xcode_project(app_root)
+      ios_apply_profile_to_project!(xcode_target)
+      output_dir = File.join(app_root, "dist", "ios")
+      FileUtils.mkdir_p(output_dir)
+
+      version_name = latest_semver_tag.to_s.sub(/^v/, "")
+      version_name = app_version_name.to_s if version_name.empty?
+      output_name = "app-#{version_name}.ipa"
+
+      UI.message("Building iOS archive with Gym...")
+
+      # Get keychain path and provisioning profile info from lane context
+      keychain_name = Actions.lane_context[:IOS_KEYCHAIN_NAME]
+      keychain_path = sh_capture!("security list-keychains | grep '#{keychain_name}' | tr -d '\"' | xargs").strip
+      profile_uuid = Actions.lane_context[:IOS_PROFILE_UUID]
+      team_identifier = Actions.lane_context[:IOS_PROFILE_TEAM_IDENTIFIER].to_s
+      bundle_identifier = ios_ensure_env!("IOS_BUNDLE_IDENTIFIER")
+      UI.user_error!("Missing team identifier from provisioning profile metadata") if team_identifier.empty?
+      archive_code_sign_identity = ENV.fetch("IOS_ARCHIVE_CODE_SIGN_IDENTITY", "Apple Distribution")
+      archive_xcargs = [
+        "CODE_SIGN_STYLE=Manual",
+        "CODE_SIGN_IDENTITY=#{Shellwords.escape(archive_code_sign_identity)}",
+        "DEVELOPMENT_TEAM=#{team_identifier}",
+      ].join(" ")
+
+      gym_options = {
+        scheme: xcode_target.fetch(:scheme),
+        clean: true,
+        suppress_xcode_output: true,
+        xcodebuild_formatter: '',
+        silent: false,
+        xcargs: archive_xcargs,
+        export_method: (ENV["IOS_EXPORT_METHOD"].to_s.strip.empty? ? "app-store" : ENV["IOS_EXPORT_METHOD"]),
+        output_directory: output_dir,
+        output_name: output_name,
+        export_options: {
+          method: (ENV["IOS_EXPORT_METHOD"].to_s.strip.empty? ? "app-store" : ENV["IOS_EXPORT_METHOD"]),
+          provisioningProfiles: {
+            bundle_identifier => profile_uuid
+          }
+        },
+        export_xcargs: "OTHER_CODE_SIGN_FLAGS=\"--keychain #{keychain_path}\"",
+      }
+      gym_options[:workspace] = xcode_target[:workspace] if xcode_target[:workspace]
+      gym_options[:project] = xcode_target[:project] if xcode_target[:project]
+
+      gym(gym_options)
+
+      artifact_path = ios_resolve_archive_path!(
+        artifact_path: File.join(output_dir, output_name),
+        application_archive_path: ENV["IOS_APPLICATION_ARCHIVE_PATH"],
+      )
+
+      metadata = {
+        artifactPath: artifact_path,
+        artifactSha256: Digest::SHA256.file(artifact_path).hexdigest,
+        bundleIdentifier: ios_ensure_env!("IOS_BUNDLE_IDENTIFIER"),
+        releaseClassification: classification,
+        releaseDestination: destination,
+        profileUuid: Actions.lane_context[:IOS_PROFILE_UUID],
+        commitSha: sh_capture!("git rev-parse HEAD"),
+      }
+
+      metadata_path = File.join(output_dir, "release-metadata.json")
+      File.write(metadata_path, JSON.pretty_generate(metadata))
+      Actions.lane_context[:IOS_RELEASE_ARTIFACT_PATH] = artifact_path
+      Actions.lane_context[:IOS_RELEASE_METADATA_PATH] = metadata_path
+
+      ios_run_if_script_defined!("eas-build-on-success", app_root)
+      UI.success("Built iOS artifact: #{artifact_path}")
+      UI.message("Resolved release classification=#{classification} destination=#{destination}")
+    rescue StandardError => e
+      ios_run_if_script_defined!("eas-build-on-error", app_root)
+      raise e
+    ensure
+      ios_run_if_script_defined!("eas-build-on-complete", app_root)
+      ios_cleanup_signing_material!
+    end
+  end
+
+  desc "Submit iOS release artifact based on SemVer routing"
+  lane :ios_submit do |options|
+    ios_preflight_submit
+
+    classification = ios_release_classification!(options)
+    destination = (options[:destination] || ENV["IOS_RELEASE_DESTINATION"] || ios_destination_for_classification(classification)).to_s
+    UI.user_error!("Unsupported iOS destination: #{destination}") unless IOS_DESTINATIONS.include?(destination)
+
+    artifact_path = ios_resolve_archive_path!(options)
+    api_key = ios_app_store_connect_api_key!
+
+    UI.message("Submitting iOS release classification=#{classification} destination=#{destination} artifact=#{artifact_path}")
+
+    case destination
+    when "testflight_internal"
+      upload_to_testflight(
+        ipa: artifact_path,
+        api_key: api_key,
+        skip_waiting_for_build_processing: true,
+        distribute_external: false,
+        changelog: ENV["IOS_RELEASE_CHANGELOG"].to_s,
+      )
+    when "testflight_external"
+      groups = ENV.fetch("IOS_TESTFLIGHT_EXTERNAL_GROUPS", "").split(",").map(&:strip).reject(&:empty?)
+      upload_to_testflight(
+        ipa: artifact_path,
+        api_key: api_key,
+        skip_waiting_for_build_processing: true,
+        distribute_external: true,
+        groups: groups,
+        changelog: ENV["IOS_RELEASE_CHANGELOG"].to_s,
+      )
+    when "app_store"
+      upload_to_app_store(
+        ipa: artifact_path,
+        api_key: api_key,
+        skip_metadata: true,
+        skip_screenshots: true,
+        skip_app_version_update: true,
+        force: true,
+        submit_for_review: false,
+        automatic_release: false,
+      )
+    end
+  end
+
+  desc "Build and submit iOS release with SemVer-based routing"
+  lane :ios_release do |options|
+    classification = ios_release_classification!(options)
+    destination = ios_destination_for_classification(classification)
+    UI.message("iOS release routing -> classification=#{classification} destination=#{destination}")
+
+    ios_build(release_classification: classification)
+    ios_submit(
+      artifact_path: Actions.lane_context[:IOS_RELEASE_ARTIFACT_PATH],
+      metadata_path: Actions.lane_context[:IOS_RELEASE_METADATA_PATH],
+      release_classification: classification,
+      destination: destination,
+    )
+  end
+
+  private_lane :bootstrap_ios_release_env! do
+    credentials_path = resolve_credentials_path
+    credentials = {}
+    credentials_dir = File.dirname(File.expand_path(credentials_path))
+
+    if File.exist?(credentials_path)
+      credentials = JSON.parse(File.read(credentials_path))
+    end
+
+    ios_credentials = credentials.fetch("ios", {})
+    distribution_certificate = ios_credentials.fetch("distributionCertificate", {})
+    provisioning_profile_path = ios_credentials.fetch("provisioningProfilePath", "").to_s.strip
+
+    cert_path = distribution_certificate.fetch("path", "").to_s.strip
+    cert_password = distribution_certificate.fetch("password", "").to_s.strip
+
+    if ENV["IOS_DIST_CERT_PATH"].to_s.strip.empty? && !cert_path.empty?
+      ENV["IOS_DIST_CERT_PATH"] = make_path_absolute(cert_path, credentials_dir)
+    end
+
+    if ENV["IOS_PROFILE_PATH"].to_s.strip.empty? && !provisioning_profile_path.empty?
+      ENV["IOS_PROFILE_PATH"] = make_path_absolute(provisioning_profile_path, credentials_dir)
+    end
+
+    if ENV["IOS_DIST_CERT_PASSWORD"].to_s.strip.empty? && !cert_password.empty?
+      ENV["IOS_DIST_CERT_PASSWORD"] = cert_password
+    end
+
+    if ENV["IOS_BUNDLE_IDENTIFIER"].to_s.strip.empty?
+      bundle_id = ios_bundle_id_from_config
+      ENV["IOS_BUNDLE_IDENTIFIER"] = bundle_id unless bundle_id.empty?
     end
   end
 end

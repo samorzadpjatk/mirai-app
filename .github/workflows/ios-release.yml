@@ -1,0 +1,175 @@
+name: iOS Release (Fastlane)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  monorepo_tagging:
+    name: Run monorepo tagging
+    uses: ./.github/workflows/monorepo-tagging.yml
+    secrets: inherit
+
+  build_and_submit:
+    name: Build + submit iOS release
+    runs-on: macos-latest
+    needs: [monorepo_tagging]
+    defaults:
+      run:
+        working-directory: apps/native
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Record release tag metadata
+        run: |
+          echo "RELEASE_TAG=${{ needs.monorepo_tagging.outputs.semver_tag }}" >> "$GITHUB_ENV"
+          echo "PREVIOUS_RELEASE_TAG=${{ needs.monorepo_tagging.outputs.previous_tag }}" >> "$GITHUB_ENV"
+          echo "TAG_CREATED=${{ needs.monorepo_tagging.outputs.tag_created }}" >> "$GITHUB_ENV"
+          echo "TAG_REFRESHED=${{ needs.monorepo_tagging.outputs.tag_refreshed }}" >> "$GITHUB_ENV"
+
+      - name: Parse current release SemVer
+        id: current_semver
+        uses: madhead/semver-utils@v4
+        with:
+          version: ${{ env.RELEASE_TAG }}
+          lenient: false
+
+      - name: Parse previous release SemVer
+        id: previous_semver
+        uses: madhead/semver-utils@v4
+        with:
+          version: ${{ env.PREVIOUS_RELEASE_TAG }}
+          lenient: false
+
+      - name: Compare release SemVer values
+        id: semver_compare
+        uses: madhead/semver-utils@v4
+        with:
+          version: ${{ steps.current_semver.outputs.release }}
+          compare-to: ${{ steps.previous_semver.outputs.release }}
+          lenient: false
+
+      - name: Compute iOS destination routing from SemVer outputs
+        id: routing
+        run: |
+          if [ "${{ steps.semver_compare.outputs.comparison-result }}" != ">" ]; then
+            echo "Current release must be newer than previous release." >&2
+            echo "Current: ${{ steps.current_semver.outputs.release }}" >&2
+            echo "Previous: ${{ steps.previous_semver.outputs.release }}" >&2
+            exit 1
+          fi
+
+          CURRENT_MAJOR=${{ steps.current_semver.outputs.major }}
+          CURRENT_MINOR=${{ steps.current_semver.outputs.minor }}
+          PREVIOUS_MAJOR=${{ steps.previous_semver.outputs.major }}
+          PREVIOUS_MINOR=${{ steps.previous_semver.outputs.minor }}
+
+          CLASSIFICATION="patch"
+          DESTINATION="testflight_internal"
+
+          if [ "$CURRENT_MAJOR" -gt "$PREVIOUS_MAJOR" ]; then
+            CLASSIFICATION="major"
+            DESTINATION="app_store"
+          elif [ "$CURRENT_MINOR" -gt "$PREVIOUS_MINOR" ]; then
+            CLASSIFICATION="minor"
+            DESTINATION="testflight_external"
+          fi
+
+          echo "classification=$CLASSIFICATION" >> "$GITHUB_OUTPUT"
+          echo "destination=$DESTINATION" >> "$GITHUB_OUTPUT"
+          echo "current_version=${{ steps.current_semver.outputs.release }}" >> "$GITHUB_OUTPUT"
+          echo "previous_version=${{ steps.previous_semver.outputs.release }}" >> "$GITHUB_OUTPUT"
+
+          echo "Routing classification: $CLASSIFICATION"
+          echo "Routing destination: $DESTINATION"
+          echo "Current version: ${{ steps.current_semver.outputs.release }}"
+          echo "Previous version: ${{ steps.previous_semver.outputs.release }}"
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: apps/native
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.6"
+
+      - name: Ensure tags are up to date
+        run: git fetch --tags --force
+
+      - name: Install JS dependencies
+        run: bun install --frozen-lockfile
+        working-directory: .
+
+      - name: Materialize iOS signing files
+        run: |
+          mkdir -p credentials/ios
+          printf '%s' "${IOS_PROFILE_MOBILEPROVISION_BASE64}" | base64 -d > credentials/ios/profile.mobileprovision
+          printf '%s' "${IOS_DIST_CERT_P12_BASE64}" | base64 -d > credentials/ios/dist-cert.p12
+        env:
+          IOS_PROFILE_MOBILEPROVISION_BASE64: ${{ secrets.IOS_PROFILE_MOBILEPROVISION_BASE64 }}
+          IOS_DIST_CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+
+      - name: Materialize credentials.json from secret values
+        run: |
+          ruby -rjson -e 'payload={"ios"=>{"distributionCertificate"=>{"path"=>"credentials/ios/dist-cert.p12","password"=>ENV.fetch("IOS_DIST_CERT_PASSWORD")},"provisioningProfilePath"=>"credentials/ios/profile.mobileprovision"}}; File.write("credentials.json", JSON.pretty_generate(payload)+"\n")'
+        env:
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+
+      - name: Build iOS release artifact
+        run: bundle exec fastlane ios ios_build release_classification:${{ steps.routing.outputs.classification }}
+        env:
+          IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+          IOS_DIST_CERT_PATH: ${{ github.workspace }}/apps/native/credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: ${{ github.workspace }}/apps/native/credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_RELEASE_CLASSIFICATION: ${{ steps.routing.outputs.classification }}
+          IOS_APPLICATION_ARCHIVE_PATH: dist/ios/*.ipa
+
+      - name: Resolve built iOS artifact path
+        id: artifact
+        run: |
+          METADATA=dist/ios/release-metadata.json
+          ARTIFACT_PATH=$(ruby -rjson -e 'print JSON.parse(File.read(ARGV[0]))["artifactPath"]' "$METADATA")
+          echo "artifact_path=$ARTIFACT_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Submit iOS release artifact
+        run: |
+          bundle exec fastlane ios ios_submit \
+            artifact_path:${{ steps.artifact.outputs.artifact_path }} \
+            release_classification:${{ steps.routing.outputs.classification }} \
+            destination:${{ steps.routing.outputs.destination }}
+        env:
+          IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+          IOS_DIST_CERT_PATH: ${{ github.workspace }}/apps/native/credentials/ios/dist-cert.p12
+          IOS_PROFILE_PATH: ${{ github.workspace }}/apps/native/credentials/ios/profile.mobileprovision
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_ASC_KEY_ID: ${{ secrets.IOS_ASC_KEY_ID }}
+          IOS_ASC_ISSUER_ID: ${{ secrets.IOS_ASC_ISSUER_ID }}
+          IOS_ASC_KEY_CONTENT_BASE64: ${{ secrets.IOS_ASC_KEY_CONTENT_BASE64 }}
+          IOS_TESTFLIGHT_EXTERNAL_GROUPS: ${{ secrets.IOS_TESTFLIGHT_EXTERNAL_GROUPS }}
+          IOS_RELEASE_CLASSIFICATION: ${{ steps.routing.outputs.classification }}
+          IOS_RELEASE_DESTINATION: ${{ steps.routing.outputs.destination }}
+
+      - name: Upload iOS release artifact + metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-release-${{ steps.current_semver.outputs.release }}
+          path: |
+            apps/native/dist/ios/*.ipa
+            apps/native/dist/ios/release-metadata.json
+          if-no-files-found: error

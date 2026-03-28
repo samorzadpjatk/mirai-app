@@ -81,6 +81,51 @@ Run local Android CD flow with optional promotions
 
 ----
 
+
+## iOS
+
+### ios ios_preflight_build
+
+```sh
+[bundle exec] fastlane ios ios_preflight_build
+```
+
+Validate iOS build prerequisites, signing material, and EAS parity checks
+
+### ios ios_preflight_submit
+
+```sh
+[bundle exec] fastlane ios ios_preflight_submit
+```
+
+Validate iOS submit prerequisites and App Store Connect credentials
+
+### ios ios_build
+
+```sh
+[bundle exec] fastlane ios ios_build
+```
+
+Build signed iOS release artifact with EAS-aligned lifecycle ordering
+
+### ios ios_submit
+
+```sh
+[bundle exec] fastlane ios ios_submit
+```
+
+Submit iOS release artifact based on SemVer routing
+
+### ios ios_release
+
+```sh
+[bundle exec] fastlane ios ios_release
+```
+
+Build and submit iOS release with SemVer-based routing
+
+----
+
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
 
 More information about _fastlane_ can be found on [fastlane.tools](https://fastlane.tools).
