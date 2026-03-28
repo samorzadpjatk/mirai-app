@@ -186,6 +186,8 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_SIGNING_LINEAGE: ${{ secrets.ANDROID_SIGNING_LINEAGE }}
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false"
+          JAVA_TOOL_OPTIONS: "-Xmx4g -XX:MaxMetaspaceSize=1g"
 
       - name: Resolve built artifact path
         id: artifact
