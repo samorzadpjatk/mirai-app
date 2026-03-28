@@ -101,7 +101,10 @@
               "org.gradle.jvmargs": "-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
               "org.gradle.daemon": "false",
               "org.gradle.parallel": "true",
-              "org.gradle.workers.max": "2"
+              "org.gradle.workers.max": "2",
+              "android.lint.parallel": "false",
+              "android.lint.checkReleaseBuilds": "true",
+              "android.lint.abortOnError": "true"
             }
           }
         }
