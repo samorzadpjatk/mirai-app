@@ -140,6 +140,21 @@ jobs:
         run: bun install --frozen-lockfile
         working-directory: .
 
+      - name: Create .env file with EXPO environment variables
+        run: |
+          > "$WORKDIR/.env"
+          for var in $(env | grep '^EXPO_'); do
+            key=$(echo "$var" | cut -d= -f1)
+            value=$(echo "$var" | cut -d= -f2-)
+            echo "$key=$value" >> "$WORKDIR/.env"
+          done
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ env.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ env.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_TRPC_API_URL: ${{ env.EXPO_PUBLIC_TRPC_API_URL }}
+          EXPO_PUBLIC_GHOST_LOGIN_EMAIL: ${{ env.EXPO_PUBLIC_GHOST_LOGIN_EMAIL }}
+          EXPO_PUBLIC_PRIVACY_POLICY_URL: ${{ env.EXPO_PUBLIC_PRIVACY_POLICY_URL }}
+
       - name: Decode Play service account key
         run: |
           mkdir -p "$WORKDIR/credentials/android"
