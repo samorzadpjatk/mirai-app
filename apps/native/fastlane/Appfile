@@ -1,2 +1,6 @@
 json_key_file(ENV["PLAY_JSON_KEY_PATH"]) if ENV["PLAY_JSON_KEY_PATH"].to_s.strip != ""
 package_name(ENV["ANDROID_APP_PACKAGE"]) if ENV["ANDROID_APP_PACKAGE"].to_s.strip != ""
+app_identifier(ENV["IOS_BUNDLE_IDENTIFIER"]) if ENV["IOS_BUNDLE_IDENTIFIER"].to_s.strip != ""
+apple_id(ENV["IOS_APPLE_ID"]) if ENV["IOS_APPLE_ID"].to_s.strip != ""
+itc_team_id(ENV["IOS_ITC_TEAM_ID"]) if ENV["IOS_ITC_TEAM_ID"].to_s.strip != ""
+team_id(ENV["IOS_TEAM_ID"]) if ENV["IOS_TEAM_ID"].to_s.strip != ""
