@@ -4,28 +4,10 @@
   "description": "Shared tRPC routers and utilities for Integral 2025 App",
   "type": "module",
   "main": "./src/index.ts",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
-    "./client": {
-      "types": "./dist/client/index.d.ts",
-      "import": "./src/client/index.ts",
-      "default": "./src/client/index.ts"
-    },
-    "./client/query": {
-      "types": "./dist/client/query/index.d.ts",
-      "import": "./src/client/query/index.ts",
-      "default": "./src/client/query/index.ts"
-    },
-    "./client/expo": {
-      "types": "./dist/client/expo.d.ts",
-      "import": "./dist/client/expo.js",
-      "default": "./dist/client/expo.js"
-    }
+    ".": "./src/index.ts",
+    "./client": "./src/client/index.ts",
+    "./client/query": "./src/client/query/index.ts"
   },
   "scripts": {
     "build": "tsc -b",
