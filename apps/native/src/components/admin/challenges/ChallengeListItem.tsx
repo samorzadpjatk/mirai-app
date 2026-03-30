@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, spacing, borderRadius } from '~/styles';
-import type { ChallengeItem } from '~/hooks/admin/useAdminChallengesByTrip';
+import type { ChallengeItem } from '@mirai-app/admin-hooks';
 
 interface ChallengeListItemProps {
   challenge: ChallengeItem;

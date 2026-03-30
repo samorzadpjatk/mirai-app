@@ -40,6 +40,7 @@
     "@mirai-app/auth": "workspace:*",
     "@mirai-app/shared": "workspace:*",
     "@mirai-app/supabase": "workspace:*",
+    "@mirai-app/admin-hooks": "workspace:*",
     "@mirai-app/trpc": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
