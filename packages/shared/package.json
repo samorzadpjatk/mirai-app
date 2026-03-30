@@ -4,6 +4,11 @@
   "license": "AGPL-3.0",
   "module": "index.ts",
   "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./design-tokens": "./design-tokens/index.ts",
+    "./design-tokens/*": "./design-tokens/*.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
