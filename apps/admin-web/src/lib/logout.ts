@@ -18,7 +18,7 @@ export const logout = async (): Promise<void> => {
     await supabase.auth.signOut();
 
     // Clear the auth store state
-    authStore.getState().signOut();
+    await authStore.getState().signOut();
   } catch (error) {
     console.error("[admin-web] Error during logout:", error);
   } finally {

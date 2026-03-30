@@ -69,7 +69,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (pathname !== "/login") {
     const roleFromDb = await getDbRole(token);
-    const role = roleFromDb ?? data.user.app_metadata?.role;
+    const role = roleFromDb ?? (data.user.app_metadata?.role as string | undefined);
 
     console.log("[Middleware] roleFromDb:", roleFromDb);
     console.log(
@@ -78,7 +78,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     );
     console.log("[Middleware] final role:", role);
 
-    if (role?.toUpperCase() !== "ADMIN") {
+    if (typeof role !== "string" || role.toUpperCase() !== "ADMIN") {
       console.error("[Middleware] Forbidden: role is not ADMIN");
       return new Response("Forbidden", { status: 403 });
     }

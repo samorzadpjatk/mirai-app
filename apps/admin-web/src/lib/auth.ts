@@ -47,7 +47,7 @@ const mapToAuthUser = (user: {
   name:
     user.firstName && user.lastName
       ? `${user.firstName} ${user.lastName}`
-      : user.firstName || user.lastName || null,
+      : user.firstName ?? user.lastName ?? null,
   emailVerified: null,
   role: user.role,
 });
@@ -62,7 +62,7 @@ export const onAuthUserFetch = async (
 
   try {
     const me = await getMyUser(session.access_token);
-    if (!me || me.authUserId !== authUserId) {
+    if (me?.authUserId !== authUserId) {
       return null;
     }
 
@@ -83,7 +83,7 @@ export const onAuthUserFetch = async (
     const { data, error: supabaseError } = await supabase.auth.getUser(
       session.access_token,
     );
-    if (supabaseError || !data.user || data.user.id !== authUserId) {
+    if (supabaseError || data.user?.id !== authUserId) {
       return null;
     }
 
