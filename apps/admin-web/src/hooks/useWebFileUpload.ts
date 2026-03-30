@@ -138,17 +138,15 @@ const uploadWithProgress = (
         return;
       }
 
+      const xhrResponse: unknown = xhr.response;
       const responseMessage =
-        typeof xhr.response === "object" &&
-        xhr.response !== null &&
-        "message" in xhr.response &&
-        typeof xhr.response.message === "string"
-          ? xhr.response.message
+        isObject(xhrResponse) && typeof xhrResponse.message === "string"
+          ? xhrResponse.message
           : null;
 
       reject(
         new Error(
-          responseMessage ||
+          responseMessage ??
             `Upload failed with status ${xhr.status}. Please try again.`,
         ),
       );

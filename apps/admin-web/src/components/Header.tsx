@@ -67,7 +67,7 @@ export function Header({ currentPath }: HeaderProps) {
           </div>
           {user && (
             <span className="hidden text-sm text-text-secondary md:inline">
-              {user.name || user.email || "Admin"}
+              {user.name ?? user.email ?? "Admin"}
             </span>
           )}
           <LogoutButton className="text-text-secondary hover:text-text-primary" />

@@ -14,7 +14,7 @@ export function Input({
   className = "",
   ...props
 }: InputProps) {
-  const inputId = id || props.name;
+  const inputId = id ?? props.name;
 
   return (
     <div className="space-y-1.5">

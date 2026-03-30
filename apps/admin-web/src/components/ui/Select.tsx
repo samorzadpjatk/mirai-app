@@ -23,7 +23,7 @@ export function Select({
   className = "",
   ...props
 }: SelectProps) {
-  const selectId = id || props.name;
+  const selectId = id ?? props.name;
 
   return (
     <div className="space-y-1.5">

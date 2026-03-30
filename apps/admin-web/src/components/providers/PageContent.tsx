@@ -11,7 +11,7 @@ const resolve = <T extends Record<string, ComponentType<any>>>(
   loader: () => Promise<T>,
   name: keyof T,
 ): LazyPage =>
-  lazy(() => loader().then((m) => ({ default: m[name] as ComponentType<any> })));
+  lazy(() => loader().then((m) => ({ default: m[name]! })));
 
 const pages: Record<string, LazyPage> = {
   // Dashboard

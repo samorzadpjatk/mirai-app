@@ -17,7 +17,7 @@ const getTokenExpiration = (token: string): number | null => {
   try {
     const payload = token.split(".")[1];
     if (!payload) return null;
-    const decoded = JSON.parse(atob(payload));
+    const decoded = JSON.parse(atob(payload)) as { exp?: number };
     return decoded.exp ? decoded.exp * 1000 : null;
   } catch {
     return null;
