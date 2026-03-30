@@ -146,8 +146,8 @@ export default function AdminNotificationsScreen() {
         (notification) =>
           notification.title.toLowerCase().includes(term) ||
           notification.body.toLowerCase().includes(term) ||
-          notification.createdBy.firstName?.toLowerCase().includes(term) ||
-          notification.createdBy.lastName?.toLowerCase().includes(term),
+          (notification.createdBy.firstName ?? "").toLowerCase().includes(term) ||
+          (notification.createdBy.lastName ?? "").toLowerCase().includes(term),
       );
     }
 
