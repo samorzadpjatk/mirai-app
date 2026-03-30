@@ -1,0 +1,39 @@
+{
+  "name": "@mirai-app/admin-web",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "lint": "eslint .",
+    "typecheck": "astro check && tsc --noEmit"
+  },
+  "dependencies": {
+    "@astrojs/node": "^10.0.4",
+    "@astrojs/react": "^5.0.2",
+    "@mirai-app/auth": "workspace:*",
+    "@mirai-app/db": "workspace:*",
+    "@mirai-app/shared": "workspace:*",
+    "@mirai-app/supabase": "workspace:*",
+    "@mirai-app/admin-hooks": "workspace:*",
+    "@mirai-app/trpc": "workspace:*",
+    "@tailwindcss/vite": "^4.2.2",
+    "@tanstack/react-query": "^5.90.20",
+    "@trpc/tanstack-react-query": "11.10.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^6.1.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-hot-toast": "^2.6.0",
+    "react-icons": "^5.6.0",
+    "superjson": "^2.2.6",
+    "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8"
+  }
+}

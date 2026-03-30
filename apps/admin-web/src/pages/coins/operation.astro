@@ -1,0 +1,9 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+
+const operationParam = Astro.url.searchParams.get("mode");
+const operation = operationParam === "remove" ? "remove" : "add";
+const groupId = Astro.url.searchParams.get("groupId") ?? "";
+---
+
+<AdminLayout title="Coin Operation" description="Manage group coin operations" page="coins-operation" pageProps={{ operation, groupId }} />
