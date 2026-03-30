@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import type { Notification } from '~/hooks/admin/useAdminNotifications';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import type { Notification } from "@mirai-app/admin-hooks";
 
 interface NotificationCardProps {
   notification: Notification;
@@ -13,24 +13,28 @@ interface NotificationCardProps {
 }
 
 // Helper function to get display name from user object
-const getDisplayName = (user: { firstName?: string; lastName?: string; name?: string }): string => {
+const getDisplayName = (user: {
+  firstName?: string | null;
+  lastName?: string | null;
+  name?: string | null;
+}): string => {
   if (user.firstName && user.lastName) {
     return `${user.firstName} ${user.lastName}`;
   }
   if (user.firstName) return user.firstName;
   if (user.lastName) return user.lastName;
-  if ('name' in user && user.name) return user.name;
-  return 'Unknown User';
+  if ("name" in user && user.name) return user.name;
+  return "Unknown User";
 };
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'sent':
-      return { color: colors.success, text: 'Sent' };
-    case 'failed':
-      return { color: colors.danger, text: 'Failed' };
-    case 'pending':
-      return { color: colors.primary, text: 'Pending' };
+    case "sent":
+      return { color: colors.success, text: "Sent" };
+    case "failed":
+      return { color: colors.danger, text: "Failed" };
+    case "pending":
+      return { color: colors.primary, text: "Pending" };
     default:
       return { color: colors.textSecondary, text: status };
   }
@@ -43,16 +47,22 @@ export function NotificationCard({
   isRetrying = false,
   isDeleting = false,
 }: NotificationCardProps) {
-  const sentCount = notification.pushes.filter((push) => push.status === 'sent').length;
-  const failedCount = notification.pushes.filter((push) => push.status === 'failed').length;
-  const pendingCount = notification.pushes.filter((push) => push.status === 'pending').length;
+  const sentCount = notification.pushes.filter(
+    (push) => push.status === "sent",
+  ).length;
+  const failedCount = notification.pushes.filter(
+    (push) => push.status === "failed",
+  ).length;
+  const pendingCount = notification.pushes.filter(
+    (push) => push.status === "pending",
+  ).length;
 
   const statusBadge =
     failedCount > 0
-      ? getStatusBadge('failed')
+      ? getStatusBadge("failed")
       : pendingCount > 0
-        ? getStatusBadge('pending')
-        : getStatusBadge('sent');
+        ? getStatusBadge("pending")
+        : getStatusBadge("sent");
 
   return (
     <View style={styles.card}>
@@ -71,19 +81,25 @@ export function NotificationCard({
       </View>
 
       <Text style={styles.body}>{notification.body}</Text>
-      
+
       <View style={styles.pushSummary}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Sent</Text>
-          <Text style={[styles.summaryValue, { color: colors.success }]}>{sentCount}</Text>
+          <Text style={[styles.summaryValue, { color: colors.success }]}>
+            {sentCount}
+          </Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Failed</Text>
-          <Text style={[styles.summaryValue, { color: colors.danger }]}>{failedCount}</Text>
+          <Text style={[styles.summaryValue, { color: colors.danger }]}>
+            {failedCount}
+          </Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Pending</Text>
-          <Text style={[styles.summaryValue, { color: colors.primary }]}>{pendingCount}</Text>
+          <Text style={[styles.summaryValue, { color: colors.primary }]}>
+            {pendingCount}
+          </Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Total</Text>
@@ -103,7 +119,7 @@ export function NotificationCard({
         >
           <Ionicons name="refresh" size={16} color={colors.white} />
           <Text style={styles.actionButtonText}>
-            {isRetrying ? 'Retrying...' : 'Retry'}
+            {isRetrying ? "Retrying..." : "Retry"}
           </Text>
         </TouchableOpacity>
 
@@ -114,7 +130,7 @@ export function NotificationCard({
         >
           <Ionicons name="trash" size={16} color={colors.white} />
           <Text style={styles.actionButtonText}>
-            {isDeleting ? 'Deleting...' : 'Delete'}
+            {isDeleting ? "Deleting..." : "Delete"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -132,9 +148,9 @@ const styles = StyleSheet.create({
     borderColor: colors.borderWhite5,
   },
   header: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'flex-start' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "flex-start" as const,
     marginBottom: spacing.md,
   },
   titleSection: {
@@ -169,8 +185,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   pushSummary: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
     gap: spacing.xs,
     marginBottom: spacing.md,
   },
@@ -180,7 +196,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderWhite5,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.xs,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     backgroundColor: colors.backgroundDark,
   },
   summaryLabel: {
@@ -203,14 +219,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   actions: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     gap: spacing.sm,
   },
   actionButton: {
     flex: 1,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     gap: spacing.xs,
