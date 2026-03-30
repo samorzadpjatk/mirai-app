@@ -3,9 +3,7 @@ import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import {
-  SafeAreaProvider,
-} from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { UpdatePopup } from "~/components/updates/UpdatePopup";
 import { useAutoPushSubscription } from "~/hooks/notifications";
 import { useExpoUpdates } from "~/hooks/useExpoUpdates";
@@ -33,10 +31,7 @@ import {
   IBMPlexSans_700Bold,
   useFonts,
 } from "@expo-google-fonts/ibm-plex-sans";
-import {
-  useAuth,
-  useAuthLoading,
-} from "@mirai-app/auth/client";
+import { useAuth, useAuthLoading } from "@mirai-app/auth/client";
 import { createSupabaseClient } from "@mirai-app/supabase";
 import { SupabaseProvider } from "@mirai-app/supabase/react";
 import { APIProvider, useTRPCClient } from "@mirai-app/trpc/client";
@@ -120,15 +115,6 @@ function App() {
               options={{
                 title: "Admin Challenges",
                 headerShown: false,
-
-              }}
-            />
-            <Stack.Screen
-              name="admin/challenges"
-              options={{
-                title: "Admin Challenges",
-                headerShown: false,
-
               }}
             />
           </Stack.Protected>
@@ -143,7 +129,6 @@ function App() {
               }}
             />
           </Stack.Protected>
-
         </Stack>
       )}
 
@@ -161,12 +146,12 @@ function App() {
 
 function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
   const trpcClient = useTRPCClient();
-  
+
   const onUserFetch = async () => {
     try {
       const user = await trpcClient.user.getMy.query();
       if (!user) return null;
-      
+
       // Transform database user to AuthUser format
       return {
         id: user.id,
@@ -174,7 +159,10 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName || user.lastName || null,
+        name:
+          user.firstName && user.lastName
+            ? `${user.firstName} ${user.lastName}`
+            : user.firstName || user.lastName || null,
         emailVerified: null, // TODO: Add email verification logic when available
         role: user.role,
       };

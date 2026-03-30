@@ -32,6 +32,13 @@ export default function ProfileLayout() {
           title: "Edit Profile",
         }}
       />
+      <Stack.Screen
+        name="admin-web"
+        options={{
+          headerShown: true,
+          title: "Web Admin",
+        }}
+      />
     </Stack>
   );
 }
