@@ -90,7 +90,7 @@ export function GroupAssignmentModal({
               const fullName = [user.firstName, user.lastName]
                 .filter(Boolean)
                 .join(" ");
-              const displayName = fullName || user.email || "Unknown";
+              const displayName = fullName || (user.email ?? "Unknown");
 
               return (
                 <button

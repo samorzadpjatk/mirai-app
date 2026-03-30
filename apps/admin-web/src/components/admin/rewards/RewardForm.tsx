@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { ComponentProps } from "react";
+import type { FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
@@ -19,7 +19,7 @@ interface RewardFormProps {
 }
 
 const createStoragePath = (tripId: string, fileName: string): string => {
-  const extension = fileName.split(".").pop()?.toLowerCase() || "jpg";
+  const extension = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
   return `rewards/${tripId}/reward-${Date.now()}.${extension}`;
 };
 
@@ -136,8 +136,8 @@ export function RewardForm({ mode, rewardId }: RewardFormProps) {
     return Math.max(1, Math.round(total * (percentage / 100)));
   }, [coinCostPercentage, totalPointsQuery.data]);
 
-  const onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = async (
-    event,
+  const onSubmit = async (
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
     setFormError(null);

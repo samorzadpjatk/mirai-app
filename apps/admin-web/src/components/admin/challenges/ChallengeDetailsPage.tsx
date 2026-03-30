@@ -382,7 +382,7 @@ export function ChallengeDetailsPage({
           </p>
           <p>
             <span className="font-medium text-text-primary">QR value:</span>{" "}
-            {challenge.qrCodeValue || "-"}
+            {challenge.qrCodeValue ?? "-"}
           </p>
         </div>
       </Card>

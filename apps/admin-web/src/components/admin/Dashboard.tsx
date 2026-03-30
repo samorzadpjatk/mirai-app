@@ -15,14 +15,14 @@ import {
 import type { IconType } from "react-icons";
 
 // Tile configuration matching native app
-const tiles: Array<{
+const tiles: {
   href: string;
   title: string;
   subtitle: string;
   icon: IconType;
   accentColor: string;
   accentBg: string;
-}> = [
+}[] = [
   {
     href: "/users",
     title: "Users",

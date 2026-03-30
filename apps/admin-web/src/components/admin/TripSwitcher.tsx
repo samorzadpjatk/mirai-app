@@ -52,7 +52,7 @@ export function TripSwitcher() {
       <div className="relative">
         <select
           id="trip-select"
-          value={selectedTrip?.id || ""}
+          value={selectedTrip?.id ?? ""}
           onChange={handleTripChange}
           className="appearance-none rounded-full border border-border bg-card py-1.5 pl-3 pr-8 text-sm text-text-primary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         >

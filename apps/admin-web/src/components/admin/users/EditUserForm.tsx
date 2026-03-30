@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { ComponentProps } from "react";
+import type { FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
@@ -59,8 +59,8 @@ export function EditUserForm({ userId }: EditUserFormProps) {
     [firstName, lastName],
   );
 
-  const onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = async (
-    event,
+  const onSubmit = async (
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
     setFormError(null);

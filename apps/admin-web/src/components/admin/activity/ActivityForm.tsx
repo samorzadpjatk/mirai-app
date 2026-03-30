@@ -38,7 +38,7 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
     queryKey: ["activity", "by-id", activityId],
     enabled: mode === "edit" && Boolean(activityId),
     queryFn: () =>
-      trpcClient.activityFeed.getById.query({ id: activityId as string }),
+      trpcClient.activityFeed.getById.query({ id: activityId! }),
   });
 
   const activity = mode === "edit" ? activityQuery.data : null;
@@ -86,7 +86,7 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
 
     let imagePath: string | null = null;
     if (selectedFile) {
-      const extension = selectedFile.name.split(".").pop() || "jpg";
+      const extension = selectedFile.name.split(".").pop() ?? "jpg";
       const storagePath = `activity/${tripId}/custom-${Date.now()}.${extension}`;
       const uploaded = await upload({
         storagePath,
@@ -117,7 +117,7 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
           title?: string;
           description?: string | null;
           isPinned?: boolean;
-        } = { activityId: activityId as string };
+        } = { activityId: activityId! };
 
         if (normalizedTitle !== activityTitle) {
           payload.title = normalizedTitle;

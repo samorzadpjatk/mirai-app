@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ComponentProps } from "react";
+import type { FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
@@ -68,8 +68,8 @@ export function CreateNotificationForm() {
     [groups],
   );
 
-  const onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = async (
-    event,
+  const onSubmit = async (
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
     setFormError(null);

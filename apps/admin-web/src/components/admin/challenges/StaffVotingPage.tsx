@@ -167,7 +167,7 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
   const votePositions = useMemo(
     () =>
       new Set(
-        (myVotesQuery.data ?? []).map((vote) => vote.votePosition as number),
+        (myVotesQuery.data ?? []).map((vote) => vote.votePosition),
       ),
     [myVotesQuery.data],
   );
@@ -218,11 +218,11 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
 
   const submitVotesMutation = useMutation({
     mutationFn: (
-      votes: Array<{
+      votes: {
         submissionId: string;
         votePosition: number;
         votePoints: number;
-      }>,
+      }[],
     ) =>
       trpcClient.challengeVote.submitVotes.mutate({
         tripId,

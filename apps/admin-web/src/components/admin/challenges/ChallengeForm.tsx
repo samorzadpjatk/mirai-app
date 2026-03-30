@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { ComponentProps } from "react";
+import type { FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Input } from "../../ui/Input";
 import { TimeInput } from "../../ui/TimeInput";
@@ -32,7 +32,7 @@ interface ChallengeFormProps {
 }
 
 const createStoragePath = (tripId: string, fileName: string): string => {
-  const extension = fileName.split(".").pop()?.toLowerCase() || "jpg";
+  const extension = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
   return `challenge/${tripId}/cover-${Date.now()}.${extension}`;
 };
 
@@ -297,8 +297,8 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
     return null;
   };
 
-  const onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = async (
-    event,
+  const onSubmit = async (
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
     setFormError(null);

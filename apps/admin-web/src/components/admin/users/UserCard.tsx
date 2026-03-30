@@ -10,8 +10,7 @@ interface UserCardProps {
 export function UserCard({ user }: UserCardProps) {
   const userName =
     [user.firstName, user.lastName].filter(Boolean).join(" ") ||
-    user.email ||
-    "Unknown user";
+    (user.email ?? "Unknown user");
   const groupName = user.group?.name ?? "Not selected";
   const bannedUntilLabel = user.bannedUntil
     ? new Date(user.bannedUntil).toLocaleString()

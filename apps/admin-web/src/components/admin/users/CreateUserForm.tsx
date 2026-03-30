@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ComponentProps } from "react";
+import type { FormEvent } from "react";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
@@ -31,8 +31,8 @@ export function CreateUserForm() {
     );
   }, [email, firstName, lastName]);
 
-  const onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = async (
-    event,
+  const onSubmit = async (
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
     setFormError(null);

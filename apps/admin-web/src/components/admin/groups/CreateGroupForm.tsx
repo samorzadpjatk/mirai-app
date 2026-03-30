@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ComponentProps } from "react";
+import type { FormEvent } from "react";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
@@ -29,7 +29,7 @@ export function CreateGroupForm() {
         .join(" ");
       options.push({
         value: user.id,
-        label: fullName || user.email || "Unknown",
+        label: fullName || (user.email ?? "Unknown"),
       });
     });
     return options;
@@ -39,8 +39,8 @@ export function CreateGroupForm() {
     return groupName.trim().length > 0;
   }, [groupName]);
 
-  const onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]> = async (
-    event,
+  const onSubmit = async (
+    event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
     setFormError(null);

@@ -35,7 +35,7 @@ export function JudgmentForm({
   const parsedRanking = useMemo(() => {
     const value = Number.parseInt(ranking, 10);
     if (value === 1 || value === 2 || value === 3) {
-      return value as 1 | 2 | 3;
+      return value;
     }
     return undefined;
   }, [ranking]);
