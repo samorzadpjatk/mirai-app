@@ -1,0 +1,18 @@
+---
+import "../styles/global.css";
+import { LoginApp } from "../components/LoginApp";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content="Admin login" />
+    <title>Admin Login</title>
+  </head>
+  <body class="min-h-screen bg-admin-bg">
+    <main class="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-12">
+      <LoginApp client:only="react" />
+    </main>
+  </body>
+</html>

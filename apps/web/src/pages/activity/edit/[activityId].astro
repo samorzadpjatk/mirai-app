@@ -1,0 +1,7 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+
+const { activityId } = Astro.params;
+---
+
+<AdminLayout title="Edit Activity" description="Edit activity" page="activity-edit" pageProps={{ mode: "edit", activityId: activityId ?? "" }} />
