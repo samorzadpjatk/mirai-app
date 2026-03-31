@@ -1,7 +1,0 @@
----
-import AdminLayout from "../../layouts/AdminLayout.astro";
-
-const groupId = Astro.url.searchParams.get("groupId") ?? "";
----
-
-<AdminLayout title="Remove Coins" description="Remove coins from a group" page="coins-operation" pageProps={{ operation: "remove", groupId }} />
