@@ -6,14 +6,19 @@
   "type": "module",
   "exports": {
     ".": "./index.ts",
-    "./design-tokens": "./design-tokens/index.ts",
-    "./design-tokens/*": "./design-tokens/*.ts"
+    "./design-tokens": "./src/design-tokens/index.ts",
+    "./design-tokens/*": "./src/design-tokens/*.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./hooks/*": "./src/hooks/*.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/react": "^19.0.0"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5",
+    "react": "^19.0.0",
+    "@tanstack/react-query": "^5.0.0"
   },
   "dependencies": {
     "jotai": "^2.18.0",
