@@ -60,7 +60,7 @@ export type UserSearchField =
   | "houseNumber"
   | "groupName";
 
-type UseAdminUsersResult = {
+interface UseAdminUsersResult {
   users: User[];
   usersLoading: boolean;
   usersError: unknown;
@@ -96,7 +96,7 @@ type UseAdminUsersResult = {
   isUpdatingName: boolean;
   isUpdatingWristNumber: boolean;
   isUpdatingHouseNumber: boolean;
-};
+}
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
