@@ -141,7 +141,7 @@ const parseGroupsResponse = (value: unknown): GroupsResponse => {
   };
 };
 
-export function useAdminGroups(tripId: string, searchTerm: string = "") {
+export function useAdminGroups(tripId: string, searchTerm = "") {
   const trpc = useTRPCClient();
 
   const {
