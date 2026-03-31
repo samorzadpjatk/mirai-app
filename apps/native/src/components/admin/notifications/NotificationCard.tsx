@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "~/styles";
-import type { Notification } from "@mirai-app/admin-hooks";
+import type { Notification } from "@mirai-app/shared/hooks";
 
 interface NotificationCardProps {
   notification: Notification;

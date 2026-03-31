@@ -26,11 +26,11 @@ import {
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAdminNotifications, type Notification } from "@mirai-app/admin-hooks";
+import { useAdminNotifications, type Notification } from "@mirai-app/shared/hooks";
 import {
   useAdminSchedules,
   type NotificationSchedule,
-} from "@mirai-app/admin-hooks";
+} from "@mirai-app/shared/hooks";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { EmptyState } from "~/components/common/ui";
 

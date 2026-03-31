@@ -6,7 +6,7 @@ import {
   FormField,
   ThemedTextInput,
 } from '~/components/common/ui';
-import type { NotificationSchedule } from '@mirai-app/admin-hooks';
+import type { NotificationSchedule } from '@mirai-app/shared/hooks';
 
 interface CreateScheduleModalProps {
   visible: boolean;

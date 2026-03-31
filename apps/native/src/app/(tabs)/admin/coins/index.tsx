@@ -11,10 +11,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '~/styles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAdminCoins } from '@mirai-app/admin-hooks';
+import { useAdminCoins } from '@mirai-app/shared/hooks';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { GroupCard } from '~/components/admin/groups/GroupCard';
-import type { Group } from '@mirai-app/admin-hooks';
+import type { Group } from '@mirai-app/shared/hooks';
 
 export default function AdminCoinsScreen() {
   const router = useRouter();

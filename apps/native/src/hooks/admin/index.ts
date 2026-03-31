@@ -1,1 +1,1 @@
-export * from "@mirai-app/admin-hooks";
+export * from "@mirai-app/shared/hooks";

@@ -8,8 +8,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useTrips } from "~/hooks/trips";
-import { useAdminChallenges } from "@mirai-app/admin-hooks";
-import type { AdminChallengeUI } from "@mirai-app/admin-hooks";
+import { useAdminChallenges } from "@mirai-app/shared/hooks";
+import type { AdminChallengeUI } from "@mirai-app/shared/hooks";
 import { colors, spacing } from "~/styles";
 import {
   AppModalShell,

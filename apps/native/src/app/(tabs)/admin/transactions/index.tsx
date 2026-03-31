@@ -12,11 +12,11 @@ import { useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, spacing, typography } from '../../../../styles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAdminTransactions } from '@mirai-app/admin-hooks';
+import { useAdminTransactions } from '@mirai-app/shared/hooks';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { TransactionsFilters } from '~/components/admin/transactions/TransactionsFilters';
 import TransactionCard from '~/components/admin/transactions/TransactionCard';
-import type { TransactionItem } from '@mirai-app/admin-hooks';
+import type { TransactionItem } from '@mirai-app/shared/hooks';
 
 export default function AdminTransactionsScreen() {
   const insets = useSafeAreaInsets();

@@ -7,7 +7,7 @@ import {
   FormField,
   ThemedTextInput,
 } from '~/components/common/ui';
-import type { Group, User } from '@mirai-app/admin-hooks';
+import type { Group, User } from '@mirai-app/shared/hooks';
 
 interface CreateGroupModalProps {
   visible: boolean;

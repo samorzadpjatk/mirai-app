@@ -12,11 +12,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
-import { useAdminGroups } from '@mirai-app/admin-hooks';
+import { useAdminGroups } from '@mirai-app/shared/hooks';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { GroupsSearchBar } from '~/components/admin/groups/GroupsSearchBar';
 import { GroupManagementCard } from '~/components/admin/groups/GroupManagementCard';
-import type { Group } from '@mirai-app/admin-hooks';
+import type { Group } from '@mirai-app/shared/hooks';
 
 export default function AdminGroupsScreen() {
   const insets = useSafeAreaInsets();
