@@ -25,9 +25,9 @@ services:
   # E-MAIL SERVICES
   # ===========================================================================
 
-  mailhog:
-    container_name: mailhog
-    image: mailhog/mailhog:latest
+  mailpit:
+    container_name: mailpit
+    image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
       - "8025:8025" # Web UI
@@ -224,7 +224,7 @@ services:
       db:
         # Disable this if you are using an external Postgres database
         condition: service_healthy
-      mailhog:
+      mailpit:
         condition: service_started
     environment:
       GOTRUE_API_HOST: 0.0.0.0
@@ -253,9 +253,9 @@ services:
 
       # GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: true
       # GOTRUE_SMTP_MAX_FREQUENCY: 1s
-      # Use Mailhog for local development/testing (no auth required)
+      # Use Mailpit for local development/testing (no auth required)
       GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL:-admin@example.com}
-      GOTRUE_SMTP_HOST: mailhog
+      GOTRUE_SMTP_HOST: mailpit
       GOTRUE_SMTP_PORT: "1025"
       GOTRUE_SMTP_USER: ""
       GOTRUE_SMTP_PASS: ""
