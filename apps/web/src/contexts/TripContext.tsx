@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { useAdminTrips } from "@mirai-app/shared/hooks";
+import { useAdminTrips } from "@mirai-app/trpc/hooks";
 import { ACTIVE_TRIP_STORAGE_KEY } from "../hooks/useActiveTripId";
 
 interface Trip {

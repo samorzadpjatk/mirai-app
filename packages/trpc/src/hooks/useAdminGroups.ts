@@ -7,7 +7,7 @@ import {
   useQueryClient,
   useQuery,
 } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPCClient } from "../client/react";
 
 const GROUPS_PER_PAGE = 30;
 

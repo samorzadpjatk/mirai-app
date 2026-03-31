@@ -7,7 +7,7 @@ import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminUsers } from "@mirai-app/shared/hooks";
+import { useAdminUsers } from "@mirai-app/trpc/hooks";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
 

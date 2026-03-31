@@ -2,7 +2,7 @@
 
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
-import type { AdminActivity } from "@mirai-app/shared/hooks";
+import type { AdminActivity } from "@mirai-app/trpc/hooks";
 
 interface AdminActivityCardProps {
   item: AdminActivity;

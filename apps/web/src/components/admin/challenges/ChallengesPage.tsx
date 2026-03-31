@@ -10,7 +10,7 @@ import {
   useAdminChallenges,
   type ChallengeFilterStatus,
   type ChallengeSortBy,
-} from "@mirai-app/shared/hooks";
+} from "@mirai-app/trpc/hooks";
 import { ChallengeCard } from "./ChallengeCard";
 import { useTrip } from "../../../contexts/TripContext";
 

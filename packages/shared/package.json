@@ -7,9 +7,7 @@
   "exports": {
     ".": "./index.ts",
     "./design-tokens": "./src/design-tokens/index.ts",
-    "./design-tokens/*": "./src/design-tokens/*.ts",
-    "./hooks": "./src/hooks/index.ts",
-    "./hooks/*": "./src/hooks/*.ts"
+    "./design-tokens/*": "./src/design-tokens/*.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -7,7 +7,7 @@ import { colors, spacing, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { useAdminCoins } from "@mirai-app/shared/hooks";
+import { useAdminCoins } from "@mirai-app/trpc/hooks";
 
 interface CoinOperationScreenProps {
   operation: "add" | "remove";

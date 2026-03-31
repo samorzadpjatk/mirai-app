@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPCClient } from "../client/react";
 
 export interface AdminTrip {
   id: string;

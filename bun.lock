@@ -217,6 +217,7 @@
         "@types/react": "^19.0.0",
       },
       "peerDependencies": {
+        "@mirai-app/trpc": "workspace:*",
         "@tanstack/react-query": "^5.0.0",
         "react": "^19.0.0",
         "typescript": "^5",

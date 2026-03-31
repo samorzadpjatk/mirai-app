@@ -7,7 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPCClient } from "../client/react";
 
 const NOTIFICATIONS_PER_PAGE = 50;
 

@@ -9,7 +9,7 @@ import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import { useTRPCClient } from "@mirai-app/trpc/client";
-import { useAdminNotifications } from "@mirai-app/shared/hooks";
+import { useAdminNotifications } from "@mirai-app/trpc/hooks";
 import { useTrip } from "../../../contexts/TripContext";
 
 type AudienceType = "all" | "group";

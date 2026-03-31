@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPCClient } from "../client/react";
 
 const CHALLENGES_PER_PAGE = 30;
 

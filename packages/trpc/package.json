@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client/index.ts",
-    "./client/query": "./src/client/query/index.ts"
+    "./client/query": "./src/client/query/index.ts",
+    "./hooks": "./src/hooks/index.ts"
   },
   "scripts": {
     "build": "tsc -b",

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { Reward } from "@mirai-app/shared/hooks";
+import type { Reward } from "@mirai-app/trpc/hooks";
 
 interface RewardCardProps {
   reward: Reward;

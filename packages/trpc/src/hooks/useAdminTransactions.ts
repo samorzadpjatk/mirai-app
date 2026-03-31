@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPCClient } from "../client/react";
 
 const PAGE_SIZE = 50;
 

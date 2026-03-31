@@ -6,7 +6,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPCClient } from "../client/react";
 
 const REWARDS_PER_PAGE = 30;
 

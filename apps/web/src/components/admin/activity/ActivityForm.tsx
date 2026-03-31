@@ -10,7 +10,7 @@ import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import { useTRPCClient } from "@mirai-app/trpc/client";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
-import { useAdminActivity } from "@mirai-app/shared/hooks";
+import { useAdminActivity } from "@mirai-app/trpc/hooks";
 import { useTrip } from "../../../contexts/TripContext";
 
 interface ActivityFormProps {

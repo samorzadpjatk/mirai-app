@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { TransactionItem } from "@mirai-app/shared/hooks";
+import type { TransactionItem } from "@mirai-app/trpc/hooks";
 
 interface TransactionCardProps {
   transaction: TransactionItem;

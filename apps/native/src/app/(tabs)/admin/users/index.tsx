@@ -9,12 +9,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, spacing } from '~/styles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAdminUsers } from '@mirai-app/shared/hooks';
+import { useAdminUsers } from '@mirai-app/trpc/hooks';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { AdminSearchBar } from '~/components/admin/AdminSearchBar';
 import { UserCard } from '~/components/admin/users/UserCard';
 import { AdminAddFab } from '~/components/admin/common/AdminAddFab';
-import type { User, UserSearchField } from '@mirai-app/shared/hooks';
+import type { User, UserSearchField } from '@mirai-app/trpc/hooks';
 
 export default function AdminUsersScreen() {
   const insets = useSafeAreaInsets();

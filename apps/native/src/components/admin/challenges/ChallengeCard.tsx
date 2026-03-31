@@ -1,7 +1,7 @@
 import React, { type ComponentProps } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { AdminChallengeUI } from "@mirai-app/shared/hooks";
+import type { AdminChallengeUI } from "@mirai-app/trpc/hooks";
 import { commonStyles } from "~/styles/commonStyles";
 
 export default function ChallengeCard({

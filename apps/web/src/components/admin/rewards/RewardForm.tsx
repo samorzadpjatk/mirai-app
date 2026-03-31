@@ -9,7 +9,7 @@ import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
 import { useTRPCClient } from "@mirai-app/trpc/client";
-import { useAdminRewards } from "@mirai-app/shared/hooks";
+import { useAdminRewards } from "@mirai-app/trpc/hooks";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";
 
