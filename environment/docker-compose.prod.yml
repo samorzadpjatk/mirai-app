@@ -77,6 +77,24 @@ services:
       backend-server:
         condition: service_started
 
+  web:
+    image: ghcr.io/samorzadpjatk/pjapp-web:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=backend-services"
+      - "com.centurylinklabs.watchtower.lifecycle.pre-update=/bin/sh -c 'echo Starting web update && sleep 5'"
+      - "com.centurylinklabs.watchtower.lifecycle.post-update=/bin/sh -c 'echo Web updated'"
+    ports:
+      - "${ADMIN_WEB_PORT:-4321}:4321"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "4321"
+    depends_on:
+      kong:
+        condition: service_healthy
+      backend-server:
+        condition: service_started
+
   db-migrations:
     image: ghcr.io/samorzadpjatk/pjapp-db-migrations:latest
     labels:
