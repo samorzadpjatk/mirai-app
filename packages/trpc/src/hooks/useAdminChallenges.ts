@@ -96,8 +96,8 @@ const parseChallenge = (value: unknown): Challenge | null => {
         ? value.scoringCategory
         : "standard",
     icon:
-      typeof (value as Record<string, unknown>).icon === "string"
-        ? ((value as Record<string, unknown>).icon as string)
+      typeof (value).icon === "string"
+        ? ((value).icon)
         : "star",
     participantGroupsCount:
       typeof value.participantGroupsCount === "number"
@@ -161,7 +161,7 @@ const statusPriority: Record<ChallengeStatus, number> = {
 
 export function useAdminChallenges(
   tripId?: string,
-  searchTerm: string = "",
+  searchTerm = "",
   statusFilter: ChallengeFilterStatus = "ALL",
   sortBy: ChallengeSortBy = "priority",
 ) {
