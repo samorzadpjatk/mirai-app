@@ -1,8 +1,16 @@
 import { useColorScheme } from "react-native";
-import { NativeTabs, Label, Icon, VectorIcon } from 'expo-router/unstable-native-tabs';
+import {
+  NativeTabs,
+  Label,
+  Icon,
+  VectorIcon,
+} from "expo-router/unstable-native-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useUser } from '@mirai-app/auth/client';
-import { ThemeProvider, DarkTheme, DefaultTheme } from '@react-navigation/native';
+import {
+  ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+} from "@react-navigation/native";
 
 const colors = {
   backgroundDark: "#17181c",
@@ -15,13 +23,14 @@ const colors = {
 export default function TabsLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark" || colorScheme === null;
-  const user = useUser();
-  
-  const hasAdminAccess = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
 
-  const backgroundColor = isDark ? colors.backgroundDark : colors.backgroundLight;
+  const backgroundColor = isDark
+    ? colors.backgroundDark
+    : colors.backgroundLight;
   const activeColor = colors.accentColor;
-  const inactiveColor = isDark ? colors.inactiveColorDark : colors.inactiveColorLight;
+  const inactiveColor = isDark
+    ? colors.inactiveColorDark
+    : colors.inactiveColorLight;
 
   return (
     <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
@@ -36,28 +45,22 @@ export default function TabsLayout() {
         }}
         minimizeBehavior="onScrollDown"
       >
-      <NativeTabs.Trigger name="community">
-        <Icon src={<VectorIcon family={Ionicons} name="people" />} />
-        <Label>Community</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="trips">
-        <Icon src={<VectorIcon family={Ionicons} name="snow" />} />
-        <Label>Trips</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="notifications">
-        <Icon src={<VectorIcon family={Ionicons} name="notifications" />} />
-        <Label>Notifications</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="profile">
-        <Icon src={<VectorIcon family={Ionicons} name="person" />} />
-        <Label>Profile</Label>
-      </NativeTabs.Trigger>
-      {hasAdminAccess && (
-        <NativeTabs.Trigger name="admin">
-          <Icon src={<VectorIcon family={Ionicons} name="settings" />} />
-          <Label>Admin</Label>
+        <NativeTabs.Trigger name="community">
+          <Icon src={<VectorIcon family={Ionicons} name="people" />} />
+          <Label>Community</Label>
         </NativeTabs.Trigger>
-      )}
+        <NativeTabs.Trigger name="trips">
+          <Icon src={<VectorIcon family={Ionicons} name="snow" />} />
+          <Label>Trips</Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="notifications">
+          <Icon src={<VectorIcon family={Ionicons} name="notifications" />} />
+          <Label>Notifications</Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="profile">
+          <Icon src={<VectorIcon family={Ionicons} name="person" />} />
+          <Label>Profile</Label>
+        </NativeTabs.Trigger>
       </NativeTabs>
     </ThemeProvider>
   );

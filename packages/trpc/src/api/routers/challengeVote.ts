@@ -132,7 +132,7 @@ const ensureChallengeVoting = (params: {
 };
 
 const recomputeSubmissionVotes = async (
-  ctx: { db: PrismaClient | Prisma.TransactionClient },
+  ctx: { db: Prisma.TransactionClient },
   challengeId: string,
 ) => {
   const submissions = await ctx.db.challengeSubmission.findMany({
@@ -153,27 +153,12 @@ const recomputeSubmissionVotes = async (
     tally.set(vote.submissionId, current);
   }
 
-  // Handle both PrismaClient and TransactionClient
-  if ('$transaction' in ctx.db) {
-    // Regular PrismaClient - use its transaction method
-    await ctx.db.$transaction(
-      submissions.map((submission) => {
-        const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
-        return ctx.db.challengeSubmission.update({
-          where: { id: submission.id },
-          data: { voteCount: stats.count, voteScore: stats.score },
-        });
-      }),
-    );
-  } else {
-    // TransactionClient - execute updates sequentially within the existing transaction
-    for (const submission of submissions) {
-      const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
-      await ctx.db.challengeSubmission.update({
-        where: { id: submission.id },
-        data: { voteCount: stats.count, voteScore: stats.score },
-      });
-    }
+  for (const submission of submissions) {
+    const stats = tally.get(submission.id) ?? { count: 0, score: 0 };
+    await ctx.db.challengeSubmission.update({
+      where: { id: submission.id },
+      data: { voteCount: stats.count, voteScore: stats.score },
+    });
   }
 };
 

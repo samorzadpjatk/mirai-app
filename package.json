@@ -10,6 +10,7 @@
     "dev:backend": "turbo run dev --filter=@mirai-app/backend-server",
     "dev:notification-sender": "turbo run dev --filter=@mirai-app/notification-sender",
     "dev:native": "turbo run dev --filter=@mirai-app/native",
+    "dev:web": "turbo run dev --filter=@mirai-app/web",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format:check": "turbo run format:check",

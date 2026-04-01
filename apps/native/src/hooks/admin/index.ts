@@ -1,1 +1,1 @@
-export * from "./useAdminChallenges";
+export * from "@mirai-app/trpc/hooks";

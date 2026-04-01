@@ -162,6 +162,14 @@ In `_layout.tsx` each screen is configured with its own options:
 
 Each admin screen checks user permissions and automatically redirects to home screen if user doesn't have access (not Admin, Moderator, or Service Account).
 
+### Admin Panel Migration
+
+Native admin panel routes and tab entry have been removed. Admin users should use the web admin dashboard via the "Open Web Admin" action in the profile screen.
+
+To configure the destination URL, set:
+
+- `EXPO_PUBLIC_ADMIN_WEB_URL` (defaults to `http://localhost:3000` if not provided)
+
 ## Testing
 
 ```bash

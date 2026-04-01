@@ -1,0 +1,7 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+
+const { id } = Astro.params;
+---
+
+<AdminLayout title="Edit Challenge" description="Edit challenge details" page="challenge-edit" pageProps={{ mode: "edit", challengeId: id ?? "" }} />

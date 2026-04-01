@@ -1,0 +1,7 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+
+const { userId } = Astro.params;
+---
+
+<AdminLayout title="Edit User" description="Edit user details" page="users-edit" pageProps={{ userId: userId ?? "" }} />

@@ -3,7 +3,7 @@ import { View, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, typography } from '~/styles';
 import { FilterChip, FilterChipRow } from '~/components/common/ui';
-import type { NotificationStatus } from '~/hooks/admin/useAdminNotifications';
+import type { NotificationStatus } from '@mirai-app/trpc/hooks';
 
 interface NotificationFiltersProps {
   searchTerm: string;

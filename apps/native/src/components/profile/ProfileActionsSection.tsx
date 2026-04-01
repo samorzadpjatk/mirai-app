@@ -1,4 +1,10 @@
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useAuth } from "@mirai-app/auth/client";
@@ -13,12 +19,12 @@ interface ProfileActionsSectionProps {
 export function ProfileActionsSection({
   onEditProfile,
 }: ProfileActionsSectionProps) {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const router = useRouter();
   const { isSubscribed, isLoading, onTogglePress } = useNotifications();
-  const { 
-    isLocationSharingEnabled, 
-    isLoading: isLocationLoading, 
+  const {
+    isLocationSharingEnabled,
+    isLoading: isLocationLoading,
     toggleLocationSharing,
     isBackgroundLocationEnabled,
     isUpdatingBackgroundLocation,
@@ -51,7 +57,9 @@ export function ProfileActionsSection({
         ? "Access mode: Always"
         : "Access mode: While in use";
   const isBackgroundControlDisabled =
-    !isLocationSharingEnabled || isLocationLoading || isUpdatingBackgroundLocation;
+    !isLocationSharingEnabled ||
+    isLocationLoading ||
+    isUpdatingBackgroundLocation;
   const isBackgroundDisplayedOn =
     isLocationSharingEnabled && isBackgroundLocationEnabled;
 
@@ -59,6 +67,8 @@ export function ProfileActionsSection({
     await signOut();
     router.replace("/auth/login");
   };
+
+  const hasAdminAccess = user?.role === "ADMIN" || user?.role === "MODERATOR";
 
   return (
     <View style={styles.section}>
@@ -71,6 +81,24 @@ export function ProfileActionsSection({
         <Text style={styles.actionText}>Edit Profile</Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </TouchableOpacity>
+
+      {hasAdminAccess ? (
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => router.push("/profile/admin-web")}
+        >
+          <View style={styles.actionIcon}>
+            <Ionicons name="globe-outline" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.actionTextWrap}>
+            <Text style={styles.actionTitle}>Open Web Admin</Text>
+            <Text style={styles.actionSubtext}>
+              Admin tools are available in the web dashboard
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+      ) : null}
 
       <TouchableOpacity
         style={[styles.actionButton, isSubscribed && styles.activeButton]}
@@ -95,11 +123,19 @@ export function ProfileActionsSection({
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.actionButton, isLocationSharingEnabled && styles.activeButton]}
+        style={[
+          styles.actionButton,
+          isLocationSharingEnabled && styles.activeButton,
+        ]}
         onPress={handleLocationToggle}
         disabled={isLocationLoading}
       >
-        <View style={[styles.actionIcon, isLocationSharingEnabled && styles.activeIcon]}>
+        <View
+          style={[
+            styles.actionIcon,
+            isLocationSharingEnabled && styles.activeIcon,
+          ]}
+        >
           {isLocationSharingEnabled ? (
             <Ionicons name="location" size={20} color={colors.primary} />
           ) : (
@@ -107,7 +143,9 @@ export function ProfileActionsSection({
           )}
         </View>
         <Text style={styles.actionText}>
-          {isLocationSharingEnabled ? "Location Sharing Enabled" : "Enable Location Sharing"}
+          {isLocationSharingEnabled
+            ? "Location Sharing Enabled"
+            : "Enable Location Sharing"}
         </Text>
         {isLocationSharingEnabled && (
           <View style={styles.activeBadge}>
@@ -146,20 +184,33 @@ export function ProfileActionsSection({
         </View>
         <View style={styles.actionTextWrap}>
           <Text
-            style={[styles.actionTitle, isBackgroundControlDisabled && styles.disabledText]}
+            style={[
+              styles.actionTitle,
+              isBackgroundControlDisabled && styles.disabledText,
+            ]}
           >
             Background Location
           </Text>
           <Text
-            style={[styles.actionSubtext, isBackgroundControlDisabled && styles.disabledText]}
+            style={[
+              styles.actionSubtext,
+              isBackgroundControlDisabled && styles.disabledText,
+            ]}
           >
-            {!isLocationSharingEnabled ? "Enable location sharing first" : permissionModeLabel}
+            {!isLocationSharingEnabled
+              ? "Enable location sharing first"
+              : permissionModeLabel}
           </Text>
         </View>
         {isUpdatingBackgroundLocation ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <View style={[styles.activeBadge, !isBackgroundDisplayedOn && styles.offBadge]}>
+          <View
+            style={[
+              styles.activeBadge,
+              !isBackgroundDisplayedOn && styles.offBadge,
+            ]}
+          >
             <Text
               style={[
                 styles.activeBadgeText,
@@ -177,7 +228,9 @@ export function ProfileActionsSection({
         onPress={handleOpenSystemSettings}
       >
         <Ionicons name="settings-outline" size={16} color={colors.primary} />
-        <Text style={styles.settingsActionText}>Open system location settings</Text>
+        <Text style={styles.settingsActionText}>
+          Open system location settings
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity

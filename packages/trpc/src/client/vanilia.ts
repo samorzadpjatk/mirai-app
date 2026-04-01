@@ -7,7 +7,7 @@ import {
   wsLink,
 } from "@trpc/client";
 import SuperJSON from "superjson";
-import { type AppRouter } from "../api/root";
+import type { AppRouter } from "../api/root";
 
 const createWsClient = (wsUrl: string, authorizationToken?: string) => {
   console.log(
