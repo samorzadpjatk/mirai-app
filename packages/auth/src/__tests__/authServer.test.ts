@@ -104,9 +104,14 @@ const createMockPrismaClient = (
   } as unknown as PrismaClient;
 };
 
+// Standard base64 encoding for JWT - uses Buffer for consistent behavior across environments
+// Bun compatibility fix: Using Buffer.from().toString("base64") instead of btoa() because
+// Bun's btoa() can produce encoding that Buffer.from(str, "base64") fails to decode correctly.
+// This ensures mock JWT tokens are both encodable and decodable in the Bun test environment.
 const base64Encode = (obj: object): string => {
   const json = JSON.stringify(obj);
-  return btoa(json);
+  // Use Buffer.from for consistent base64 encoding (handles UTF-8 properly)
+  return Buffer.from(json).toString("base64");
 };
 
 const createJwtPayload = (payload: object): string => {
@@ -114,6 +119,19 @@ const createJwtPayload = (payload: object): string => {
   const body = base64Encode(payload);
   const signature = "mock-signature";
   return `${header}.${body}.${signature}`;
+};
+
+// Helper to create a valid mock JWT token for use in tests
+// This creates a valid JWT format without causing decode errors
+const createValidMockToken = (
+  overrides: { userId?: string; exp?: number } = {},
+): string => {
+  const payload = {
+    sub: overrides.userId ?? "auth-user-123",
+    exp: overrides.exp ?? Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
+    iat: Math.floor(Date.now() / 1000),
+  };
+  return createJwtPayload(payload);
 };
 
 describe("decodeJwtPayload", () => {
@@ -228,7 +246,7 @@ describe("requireAuth", () => {
     });
 
     await expect(
-      requireAuth(mockDb, mockSupabase, "valid-token"),
+      requireAuth(mockDb, mockSupabase, createValidMockToken()),
     ).rejects.toThrow(AuthenticationError);
   });
 
@@ -243,7 +261,11 @@ describe("requireAuth", () => {
       userFindFirst: { result: mockDbUser },
     });
 
-    const result = await requireAuth(mockDb, mockSupabase, "valid-token");
+    const result = await requireAuth(
+      mockDb,
+      mockSupabase,
+      createValidMockToken(),
+    );
     expect(result.user).toBeDefined();
     expect(result.dbUser).toEqual(mockDbUser);
   });
@@ -262,7 +284,7 @@ describe("requireAuth", () => {
     });
 
     await expect(
-      requireAuth(mockDb, mockSupabase, "valid-token"),
+      requireAuth(mockDb, mockSupabase, createValidMockToken()),
     ).rejects.toThrow("User is banned");
   });
 });
@@ -280,7 +302,7 @@ describe("requireAdmin", () => {
     });
 
     await expect(
-      requireAdmin(mockDb, mockSupabase, "valid-token"),
+      requireAdmin(mockDb, mockSupabase, createValidMockToken()),
     ).rejects.toThrow(AuthorizationError);
   });
 
@@ -295,7 +317,11 @@ describe("requireAdmin", () => {
       userFindFirst: { result: mockDbUser },
     });
 
-    const result = await requireAdmin(mockDb, mockSupabase, "valid-token");
+    const result = await requireAdmin(
+      mockDb,
+      mockSupabase,
+      createValidMockToken(),
+    );
     expect(result).toEqual(mockDbUser);
   });
 
@@ -311,7 +337,7 @@ describe("requireAdmin", () => {
     });
 
     await expect(
-      requireAdmin(mockDb, mockSupabase, "valid-token"),
+      requireAdmin(mockDb, mockSupabase, createValidMockToken()),
     ).rejects.toThrow(AuthorizationError);
   });
 });
@@ -329,7 +355,7 @@ describe("requireModerator", () => {
     });
 
     await expect(
-      requireModerator(mockDb, mockSupabase, "valid-token"),
+      requireModerator(mockDb, mockSupabase, createValidMockToken()),
     ).rejects.toThrow(AuthorizationError);
   });
 
@@ -344,7 +370,11 @@ describe("requireModerator", () => {
       userFindFirst: { result: mockDbUser },
     });
 
-    const result = await requireModerator(mockDb, mockSupabase, "valid-token");
+    const result = await requireModerator(
+      mockDb,
+      mockSupabase,
+      createValidMockToken(),
+    );
     expect(result).toEqual(mockDbUser);
   });
 
@@ -359,7 +389,11 @@ describe("requireModerator", () => {
       userFindFirst: { result: mockDbUser },
     });
 
-    const result = await requireModerator(mockDb, mockSupabase, "valid-token");
+    const result = await requireModerator(
+      mockDb,
+      mockSupabase,
+      createValidMockToken(),
+    );
     expect(result).toEqual(mockDbUser);
   });
 });
@@ -590,7 +624,11 @@ describe("getSession", () => {
       userFindFirst: { result: mockDbUser },
     });
 
-    const result = await getSession(mockDb, mockSupabase, "valid-token");
+    const result = await getSession(
+      mockDb,
+      mockSupabase,
+      createValidMockToken(),
+    );
 
     expect(result).toEqual({
       user: expect.objectContaining({
@@ -610,7 +648,11 @@ describe("getSession", () => {
       userFindFirst: { result: null },
     });
 
-    const result = await getSession(mockDb, mockSupabase, "valid-token");
+    const result = await getSession(
+      mockDb,
+      mockSupabase,
+      createValidMockToken(),
+    );
 
     expect(result?.user).toBeNull();
     expect(result?.authUserId).toBe(mockSupabaseUser.id);
