@@ -21,7 +21,9 @@
     "db:studio:prod": "bunx --bun --env-file=.env.prod prisma studio --config ../../packages/db/prisma.config.ts",
     "db:format": "bunx --bun prisma format --config ../../packages/db/prisma.config.ts",
     "dev": "bun run --env-file=.env.dev index.ts",
-    "prod": "bun run --env-file=.env.prod index.ts"
+    "prod": "bun run --env-file=.env.prod index.ts",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage"
   },
   "dependencies": {
     "@mirai-app/db": "workspace:*",

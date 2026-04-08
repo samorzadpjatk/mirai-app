@@ -29,7 +29,9 @@
     "dev": "tsc --watch",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage"
   },
   "dependencies": {
     "@mirai-app/db": "workspace:*",
