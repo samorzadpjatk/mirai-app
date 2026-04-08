@@ -17,7 +17,7 @@ const getGlobalBuffer = () =>
 const getGlobalAtob = () =>
   (globalThis as typeof globalThis & { atob?: (data: string) => string }).atob;
 
-function decodeJwtPayload<
+export function decodeJwtPayload<
   T extends Record<string, unknown> = Record<string, unknown>,
 >(token: string): T | null {
   const [, payload] = token.split(".");
@@ -279,7 +279,10 @@ export async function requireAuth(
     const bannedUntilRaw = adminUser?.banned_until ?? null;
     if (bannedUntilRaw) {
       const bannedUntil = new Date(bannedUntilRaw);
-      if (!Number.isNaN(bannedUntil.getTime()) && bannedUntil.getTime() > Date.now()) {
+      if (
+        !Number.isNaN(bannedUntil.getTime()) &&
+        bannedUntil.getTime() > Date.now()
+      ) {
         throw new AuthenticationError("User is banned");
       }
     }
