@@ -92,5 +92,18 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests with coverage
+      - name: Run Bun tests with coverage
         run: bun run test:coverage
+
+      - name: Run Jest tests for native app
+        working-directory: apps/native
+        run: |
+          ./node_modules/.bin/jest --coverage --coverageReporters=text-summary --silent || true
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: |
+            **/coverage/**
