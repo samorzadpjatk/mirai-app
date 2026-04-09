@@ -71,10 +71,10 @@ const t = initTRPC.context<TRPCContext>().create({
  *
  * @example
  * ```typescript
- * import { createTRPCRouter, protectedProcedure } from "@mirai-app/frameworks/trpc/server";
+ * import { createTRPCRouter, publicProcedure } from "@mirai-app/frameworks/trpc/server";
  *
  * export const userRouter = createTRPCRouter({
- *   get: protectedProcedure
+ *   get: publicProcedure
  *     .input(z.object({ id: z.string() }))
  *     .query(async ({ ctx, input }) => {
  *       return ctx.db.user.findUnique({ where: { id: input.id } });
@@ -123,59 +123,6 @@ export const baseProcedure = t.procedure;
  * such as health checks or public data.
  */
 export const publicProcedure = baseProcedure;
-
-/**
- * Protected procedure - requires authentication
- *
- * Use this for endpoints that require a valid user session.
- * The authentication middleware validates the access token and
- * adds user information to the context.
- */
-export const protectedProcedure = baseProcedure.use(
-  async ({ ctx, next, path }) => {
-    if (!ctx.accessToken) {
-      throw new Error("UNAUTHORIZED: No access token provided");
-    }
-
-    // Get user from Supabase
-    const { data, error } = await ctx.supabase.auth.getUser(ctx.accessToken);
-
-    if (error || !data.user) {
-      throw new Error("UNAUTHORIZED: Invalid or expired token");
-    }
-
-    return next({
-      ctx: {
-        ...ctx,
-        user: data.user,
-      },
-    });
-  },
-);
-
-/**
- * Admin procedure - requires admin role
- *
- * Use this for administrative endpoints. In addition to authentication,
- * this checks if the user has admin privileges.
- */
-export const adminProcedure = protectedProcedure.use(
-  async ({ ctx, next, path }) => {
-    // Check admin role in database
-    const dbUser = await ctx.db.user.findUnique({
-      where: { id: (ctx as TRPCContext & { user: { id: string } }).user.id },
-      select: { role: true },
-    });
-
-    if (dbUser?.role !== "ADMIN") {
-      throw new Error("FORBIDDEN: Admin access required");
-    }
-
-    return next({
-      ctx,
-    });
-  },
-);
 
 /**
  * Platform detection helper for telemetry

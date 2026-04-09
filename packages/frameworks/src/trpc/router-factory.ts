@@ -20,17 +20,17 @@ import type { TRPCRouterRecord } from "@trpc/server";
  * @example
  * ```typescript
  * import { createNamespaceRouter } from "@mirai-app/frameworks/trpc/router-factory";
- * import { protectedProcedure } from "@mirai-app/frameworks/trpc/server";
+ * import { publicProcedure } from "@mirai-app/frameworks/trpc/server";
  * import { z } from "zod";
  *
  * export const userRouter = createNamespaceRouter("user", {
- *   get: protectedProcedure
+ *   get: publicProcedure
  *     .input(z.object({ id: z.string() }))
  *     .query(async ({ ctx, input }) => {
  *       return ctx.db.user.findUnique({ where: { id: input.id } });
  *     }),
  *
- *   list: protectedProcedure
+ *   list: publicProcedure
  *     .query(async ({ ctx }) => {
  *       return ctx.db.user.findMany();
  *     }),
@@ -97,26 +97,26 @@ export const ROUTER_NAMING = {
  * ```typescript
  * {
  *   // Create
- *   create: protectedProcedure
+ *   create: publicProcedure
  *     .input(CreateInputSchema)
  *     .mutation(async ({ ctx, input }) => { ... }),
  *
  *   // Read (single)
- *   get: protectedProcedure
+ *   get: publicProcedure
  *     .input(z.object({ id: z.string() }))
  *     .query(async ({ ctx, input }) => { ... }),
  *
  *   // Read (list)
- *   list: protectedProcedure
+ *   list: publicProcedure
  *     .query(async ({ ctx }) => { ... }),
  *
  *   // Update
- *   update: protectedProcedure
+ *   update: publicProcedure
  *     .input(UpdateInputSchema)
  *     .mutation(async ({ ctx, input }) => { ... }),
  *
  *   // Delete
- *   delete: protectedProcedure
+ *   delete: publicProcedure
  *     .input(z.object({ id: z.string() }))
  *     .mutation(async ({ ctx, input }) => { ... }),
  * }
@@ -126,7 +126,7 @@ export const ROUTER_NAMING = {
  * ```typescript
  * {
  *   // Subscription for real-time updates
- *   onUpdate: protectedProcedure
+ *   onUpdate: publicProcedure
  *     .subscription(async function* ({ ctx, input, signal }) {
  *       // Implementation using async generators
  *     }),

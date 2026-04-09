@@ -34,8 +34,6 @@ export {
   createCallerFactory,
   baseProcedure,
   publicProcedure,
-  protectedProcedure,
-  adminProcedure,
   getPlatformFromUserAgent,
   getAccessTokenFromHeaders,
   type TRPCContext,
