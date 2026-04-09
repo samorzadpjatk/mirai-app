@@ -433,7 +433,9 @@ Similarly for Realtime and Storage modules.
 import { z } from "zod";
 
 export const ProviderConfigSchema = z.object({
-  auth: z.enum(["supabase", "firebase", "auth0", "custom"]).default("supabase"),
+  auth: z
+    .enum(["supabase", "better-auth", "firebase", "auth0", "custom"])
+    .default("supabase"),
   realtime: z
     .enum(["supabase", "pusher", "ably", "socketio"])
     .default("supabase"),
@@ -577,10 +579,86 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
 
 **Auth:**
 
+- **Better Auth** (recommended — type-safe, framework-agnostic, DDD-friendly)
 - Firebase Auth (Google)
 - Auth0
 - Keycloak
 - Custom JWT
+
+### Better Auth Integration
+
+Better Auth provides a clean, type-safe API that aligns with your domain-driven approach:
+
+```typescript
+// packages/adapters/src/gateways/auth/BetterAuthAdapter.ts
+import { auth } from "@packages/auth";
+import type { AuthPort } from "@mirai-app/use-cases/ports/AuthPort";
+
+export class BetterAuthAdapter implements AuthPort {
+  constructor(private readonly betterAuth: typeof auth) {}
+
+  async getUserByToken(token: string): Promise<Result<AuthUser, AuthError>> {
+    // Better Auth's API is synchronous for session validation
+    const session = await this.betterAuth.api.getSession({
+      headers: new Headers({ Authorization: `Bearer ${token}` }),
+    });
+
+    if (!session) return err(new TokenExpiredError());
+
+    return ok({
+      id: session.user.id,
+      email: session.user.email,
+      role: session.user.role ?? "user",
+      emailVerified: session.user.emailVerified,
+      metadata: session.user,
+    });
+  }
+
+  async signInWithPassword(
+    email: string,
+    password: string,
+  ): Promise<Result<AuthSession, AuthError>> {
+    const result = await this.betterAuth.api.signInEmail({
+      body: { email, password },
+    });
+
+    if (!result) return err(new InvalidCredentialsError());
+
+    return ok(this.mapSession(result));
+  }
+
+  // ... other methods
+}
+```
+
+**Better Auth Setup (in auth package):**
+
+```typescript
+// packages/auth/src/index.ts
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma), // Uses your existing Prisma setup
+  emailAndPassword: {
+    enabled: true,
+    // No magic links by default — you control the flow
+  },
+  socialProviders: {
+    // Configure as needed
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+  },
+  plugins: [
+    // admin plugin for roles
+    admin(),
+    // multi-session plugin if needed
+    multiSession(),
+  ],
+});
+```
 
 **Realtime:**
 
