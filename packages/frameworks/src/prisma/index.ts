@@ -1,5 +1,6 @@
 export {
   createPrismaClient,
+  createPrismaClient as createDb,
   getPrismaClient,
   clearPrismaCache,
 } from "./client";

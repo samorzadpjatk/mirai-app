@@ -15,7 +15,7 @@ export type {
 } from "./hooks/useLoginForm";
 
 // Zustand store (now in frameworks/stores)
-export { authStore } from "../../stores/authStore";
+export { authStore } from "../stores/index.ts";
 export type {
   AuthStore,
   AuthActions,
@@ -23,7 +23,7 @@ export type {
   AuthUser,
   SupabaseClient,
   SupabaseSession,
-} from "../../stores/authStore";
+} from "../stores/index.ts";
 export { AuthStoreProvider } from "./store/AuthStoreProvider";
 export type { AuthStoreProviderProps } from "./store/AuthStoreProvider";
 

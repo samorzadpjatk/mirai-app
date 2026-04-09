@@ -144,11 +144,6 @@ export const protectedProcedure = baseProcedure.use(
       throw new Error("UNAUTHORIZED: Invalid or expired token");
     }
 
-    // Log access in development
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[tRPC] ${path} - User: ${data.user.id}`);
-    }
-
     return next({
       ctx: {
         ...ctx,
@@ -174,10 +169,6 @@ export const adminProcedure = protectedProcedure.use(
 
     if (dbUser?.role !== "ADMIN") {
       throw new Error("FORBIDDEN: Admin access required");
-    }
-
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[tRPC] ${path} - Admin access granted`);
     }
 
     return next({

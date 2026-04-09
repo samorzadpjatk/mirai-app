@@ -150,7 +150,6 @@ const APIProvider = ({
 
     // Clean up previous WebSocket connection if it exists
     if (cleanupRef.current) {
-      console.log("[APIProvider] Cleaning up previous WebSocket connection");
       cleanupRef
         .current()
         .then(() => {
@@ -166,7 +165,6 @@ const APIProvider = ({
 
     // Store new cleanup function
     if (trpcClientWrapper) {
-      console.log("[APIProvider] Storing new cleanup function");
       cleanupRef.current = trpcClientWrapper.cleanup;
     }
 
@@ -175,7 +173,6 @@ const APIProvider = ({
       unsubscribeMutation();
       // Cleanup on unmount
       if (cleanupRef.current) {
-        console.log("[APIProvider] Cleaning up previous WebSocket connection");
         cleanupRef
           .current()
           .then(() => {

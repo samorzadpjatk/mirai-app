@@ -159,42 +159,6 @@ export type {
 export { REALTIME_CHANNEL_STATES } from "./supabase/types";
 
 // =============================================================================
-// Factory Functions (Dependency Injection)
-// =============================================================================
-
-// Repository factories
-export {
-  createUserRepository,
-  createTripRepository,
-  createChallengeRepository,
-  createGroupRepository,
-  createRewardRepository,
-  createNotificationRepository,
-  createChallengeSubmissionRepository,
-  createSponsorRepository,
-  createLocationRepository,
-  createChallengeVoteRepository,
-  createSubmissionReportRepository,
-  createCoinTransactionRepository,
-  createNotificationDeliveryRepository,
-  createNotificationScheduleRepository,
-  createActivityFeedRepository,
-  clearRepositoryCache,
-} from "./factories";
-
-// Service factories and classes
-export {
-  createCoinTransactionService,
-  createCoinService,
-  createRankingActivityService,
-  createNotificationSenderService,
-  createTripPointsCalculator,
-  createTripAccessChecker,
-  createGroupCoinsService,
-  getNotificationService,
-} from "./factories";
-
-// =============================================================================
 // Re-export Inner Layers (for convenience)
 // =============================================================================
 
