@@ -124,8 +124,11 @@ import type {
   CoinTransactionRepository,
   NotificationDeliveryRepository,
   NotificationScheduleRepository,
+  AuthPort,
+  TelemetryPort,
 } from "@mirai-app/use-cases";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { TokenExtractor } from "../utils/TokenExtractor";
 
 // =============================================================================
 // Injection Tokens
@@ -285,6 +288,31 @@ export interface ControllerModuleDeps {
 
   /** Supabase client (from FrameworkModule) */
   supabase: SupabaseClient;
+
+  // =================================================================
+  // Auth & Telemetry Dependencies (injected for controller auth)
+  // =================================================================
+
+  /** Authentication port for token validation */
+  authPort: AuthPort;
+
+  /** Telemetry port for logging */
+  telemetryPort: TelemetryPort;
+
+  /** Token extractor utility for Bearer token parsing */
+  tokenExtractor: typeof TokenExtractor;
+
+  /** Authenticate user use case (for auth flow in controllers) */
+  authenticateUserUseCase: unknown;
+
+  /** Authorize admin use case (for role checks in controllers) */
+  authorizeAdminUseCase: unknown;
+
+  /** Authorize moderator use case (for role checks in controllers) */
+  authorizeModeratorUseCase: unknown;
+
+  /** Log telemetry use case (for telemetry in controllers) */
+  logTelemetryUseCase: unknown;
 }
 
 // =============================================================================
@@ -295,21 +323,27 @@ export interface ControllerModuleDeps {
  * Controller module definition type
  *
  * Used for type checking and module composition.
+ * Providers use object type to satisfy awilix-modular's DefProviderMap constraint.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ControllerModuleDef {
   name: "ControllerModule";
+  // DefProviderMap constraint: values must be object | string | boolean | number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  providers: Record<string, any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  exports: Record<string, any>;
+  providers: Record<string, object | string | boolean | number>;
+  exports: string[];
 }
 
 // =============================================================================
 // Module Creation
 // =============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Cradle = any;
+/**
+ * Cradle type for awilix dependency resolution.
+ * This represents the DI container's resolved dependencies.
+ * Using Record<string, unknown> for type safety while allowing any dependency.
+ */
+type Cradle = Record<string, unknown>;
 
 /**
  * Create user controller instance
