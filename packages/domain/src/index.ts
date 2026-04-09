@@ -56,6 +56,43 @@ export * from "./entities/ChallengeVote";
 export * from "./entities/Sponsor";
 export * from "./entities/SubmissionReport";
 
+// Trip Management Entities
+export * from "./entities/TripResource";
+export * from "./entities/TripInsurance";
+export * from "./entities/TripInsuranceStep";
+export * from "./entities/TripParticipant";
+export * from "./entities/TripSponsor";
+
+// Event Management Entities
+export * from "./entities/Event";
+export * from "./entities/UserEvent";
+
+// Group Management Entity
+export * from "./entities/GroupJoinRequest";
+
+// Activity Feed Entities
+export * from "./entities/ActivityReaction";
+export * from "./entities/SubmissionActivity";
+export * from "./entities/ChallengeActivity";
+export * from "./entities/RankChangeActivity";
+export * from "./entities/UserPost";
+
+// Economy/Rewards Entities
+export * from "./entities/CoinTransaction";
+export * from "./entities/RewardPurchase";
+
+// Notification Entities
+export * from "./entities/NotificationScheduleExecution";
+export * from "./entities/NotificationPush";
+export * from "./entities/NotificationDelivery";
+export * from "./entities/PushSubscription";
+
+// Location Entity
+export * from "./entities/LocationSharingRequest";
+
+// System Entity
+export * from "./entities/UserAgent";
+
 // Value Objects
 export * from "./value-objects/UserId";
 export * from "./value-objects/ChallengeId";
