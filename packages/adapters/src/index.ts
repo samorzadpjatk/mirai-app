@@ -89,10 +89,6 @@ export {
   createCallerFactory,
   createTRPCRouter,
   publicProcedure,
-  protectedProcedure,
-  moderatorProcedure,
-  adminProcedure,
-  mobileAppProcedure,
   type TRPCContext,
   type DIContext,
 } from "./api/trpc";

@@ -19,4 +19,6 @@ export { PrismaRewardRepository } from "./PrismaRewardRepository";
 export { PrismaCoinTransactionRepository } from "./PrismaCoinTransactionRepository";
 export { PrismaSponsorRepository } from "./PrismaSponsorRepository";
 export { PrismaSubmissionReportRepository } from "./PrismaSubmissionReportRepository";
+export { PrismaTelemetryAdapter } from "./PrismaTelemetryAdapter";
+export { SupabaseAuthAdapter } from "./SupabaseAuthAdapter";
 export { BasePrismaRepository } from "./BasePrismaRepository";
