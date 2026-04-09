@@ -102,8 +102,13 @@ export function initializeContainer(
 /**
  * Register a module's providers with the container
  *
+ * Simplified to use awilix's native registration patterns.
+ * Supports:
+ * - Class providers (auto-injected with cradle dependencies)
+ * - Factory providers with { factory, lifetime } objects
+ *
  * @param container - Target container
- * @param module - Module to register
+ * @param mod - Module to register
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function registerModule(
@@ -113,39 +118,37 @@ function registerModule(
 ): void {
   const providers = mod.providers;
 
-  // Guard against undefined providers (empty module placeholders)
+  // Guard against undefined providers
   if (!providers) {
     return;
   }
 
-  // Register all providers
+  // Register all providers using awilix native patterns
   for (const [key, provider] of Object.entries(providers)) {
     if (typeof provider === "function") {
-      // Class provider - register as singleton by default
+      // Class provider - auto-injected with PROXY mode
       container.register(
         key,
         asClass(provider as new (...args: unknown[]) => unknown).singleton(),
       );
     } else if (provider && typeof provider === "object") {
-      // Object provider configuration
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const config = provider as any;
 
-      if ("useValue" in config) {
+      if ("factory" in config && typeof config.factory === "function") {
+        // Factory provider with explicit lifetime
+        const lifetime =
+          config.lifetime === Lifetime.SCOPED
+            ? Lifetime.SCOPED
+            : Lifetime.SINGLETON;
+        container.register(key, asFunction(config.factory)[lifetime]());
+      } else if ("useValue" in config) {
         container.register(key, asValue(config.useValue));
       } else if (
         "useClass" in config &&
         typeof config.useClass === "function"
       ) {
         container.register(key, asClass(config.useClass).singleton());
-      } else if (
-        "useFactory" in config &&
-        typeof config.useFactory === "function"
-      ) {
-        // Factory with dependency injection
-        // Use asFunction for lazy evaluation with access to container cradle
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        container.register(key, (cradle: any) => config.useFactory(cradle));
       }
     }
   }

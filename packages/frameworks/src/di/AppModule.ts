@@ -9,7 +9,7 @@
  * ```
  * AppModule (root)
  * ├── RepositoryModule    (data access layer - 16 repositories)
- * ├── UseCaseModule       (business logic layer - 73 use cases)
+ * ├── UseCaseModule       (business logic layer - 75 use cases)
  * ├── ControllerModule    (API layer - 17 controllers)
  * └── FrameworkModule     (infrastructure services)
  * ```
@@ -44,31 +44,24 @@
 
 import { createStaticModule, type StaticModule } from "awilix-modular";
 import { RepositoryModule } from "@mirai-app/adapters/modules/RepositoryModule";
-import { ControllerModule } from "@mirai-app/adapters/modules/ControllerModule";
+import {
+  ControllerModule,
+  type ControllerModuleDef,
+} from "@mirai-app/adapters/modules/ControllerModule";
+import { UseCaseModule } from "@mirai-app/use-cases/modules/UseCaseModule";
 
 // =============================================================================
 // Module Imports
 // =============================================================================
 
-// RepositoryModule is imported from adapters package (Step 4/5 completed)
+// RepositoryModule is imported from adapters package
 // Provides all 16 Prisma repositories as injectable services
 
-// ControllerModule is imported from adapters package (Step 8 completed)
-// Provides all 17 tRPC controllers as injectable services
+// UseCaseModule is imported from use-cases package
+// Provides all 75 use cases organized by domain
 
-/**
- * PLACEHOLDER: UseCaseModule
- *
- * Will be created in Step 6 of the awilix-modular implementation.
- * Provides all 73 use cases organized by domain.
- *
- * Expected exports: getUserUseCase, createUserUseCase, etc.
- */
-const UseCaseModulePlaceholder: StaticModule = createStaticModule({
-  name: "UseCaseModule",
-  providers: {},
-  exports: [],
-});
+// ControllerModule is imported from adapters package
+// Provides all 17 tRPC controllers as injectable services
 
 // =============================================================================
 // Module Type Definitions
@@ -88,41 +81,106 @@ export interface RepositoryModuleDef {
 }
 
 /**
- * UseCaseModule definition (placeholder)
+ * UseCaseModule definition
+ *
+ * Provides all 75 use cases organized by domain.
+ * Use cases are request-scoped (SCOPED lifetime).
  */
 export interface UseCaseModuleDef {
   name: "UseCaseModule";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  providers: Record<string, any>;
-  exports: string[];
-}
-
-/**
- * ControllerModule definition
- *
- * Provides all 17 tRPC controllers as injectable services.
- * Controllers are request-scoped (SCOPED lifetime).
- */
-export interface ControllerModuleDef {
-  name: "ControllerModule";
   providers: {
-    userController: unknown;
-    tripController: unknown;
-    challengeController: unknown;
-    groupController: unknown;
-    locationController: unknown;
-    notificationController: unknown;
-    notificationScheduleController: unknown;
-    notificationDeliveryController: unknown;
-    challengeSubmissionController: unknown;
-    challengeVoteController: unknown;
-    activityFeedController: unknown;
-    rewardController: unknown;
-    coinController: unknown;
-    coinTransactionController: unknown;
-    sponsorController: unknown;
-    submissionReportController: unknown;
-    storageController: unknown;
+    // User Domain
+    getUserUseCase: unknown;
+    createUserUseCase: unknown;
+    updateUserUseCase: unknown;
+    // Challenge Domain
+    getChallengeUseCase: unknown;
+    createChallengeUseCase: unknown;
+    updateChallengeUseCase: unknown;
+    updateChallengeStatusUseCase: unknown;
+    // Group Domain
+    getGroupUseCase: unknown;
+    createGroupUseCase: unknown;
+    updateGroupUseCase: unknown;
+    // Challenge Submission
+    createSubmissionUseCase: unknown;
+    getSubmissionUseCase: unknown;
+    getSubmissionByChallengeAndGroupUseCase: unknown;
+    updateSubmissionUseCase: unknown;
+    deleteSubmissionUseCase: unknown;
+    listSubmissionsByChallengeUseCase: unknown;
+    // Challenge Vote
+    getMyVotesUseCase: unknown;
+    getVotesByChallengeUseCase: unknown;
+    getChallengeVotingProgressUseCase: unknown;
+    getJudgedStaffVotingProgressUseCase: unknown;
+    submitVoteUseCase: unknown;
+    submitVotesUseCase: unknown;
+    forceEndVotingUseCase: unknown;
+    // Location
+    getLocationUseCase: unknown;
+    createLocationUseCase: unknown;
+    updateLocationUseCase: unknown;
+    listLocationsUseCase: unknown;
+    updateSharingSettingsUseCase: unknown;
+    addSharingUserUseCase: unknown;
+    removeSharingUserUseCase: unknown;
+    getSharingSettingsUseCase: unknown;
+    // Notification
+    getNotificationUseCase: unknown;
+    // Activity Feed
+    getActivityFeedUseCase: unknown;
+    createActivityUseCase: unknown;
+    addReactionUseCase: unknown;
+    // Submission Report
+    createReportUseCase: unknown;
+    getReportsUseCase: unknown;
+    // Sponsor
+    createSponsorUseCase: unknown;
+    getSponsorUseCase: unknown;
+    updateSponsorUseCase: unknown;
+    deleteSponsorUseCase: unknown;
+    listSponsorsUseCase: unknown;
+    linkSponsorToTripUseCase: unknown;
+    unlinkSponsorFromTripUseCase: unknown;
+    // Reward
+    getRewardUseCase: unknown;
+    createRewardUseCase: unknown;
+    updateRewardUseCase: unknown;
+    setRewardHiddenUseCase: unknown;
+    deleteRewardUseCase: unknown;
+    listRewardsUseCase: unknown;
+    purchaseRewardUseCase: unknown;
+    updatePurchaseStatusUseCase: unknown;
+    updateMyPurchaseStatusUseCase: unknown;
+    getPurchaseHistoryUseCase: unknown;
+    // Coin Transaction
+    getCoinStatisticsUseCase: unknown;
+    getMostActiveAdminStatsUseCase: unknown;
+    getCoinTransactionsUseCase: unknown;
+    getCoinQuickStatsUseCase: unknown;
+    getCoinAdditionalInsightsUseCase: unknown;
+    addCoinsUseCase: unknown;
+    removeCoinsUseCase: unknown;
+    // Notification Delivery
+    getDeliveriesUseCase: unknown;
+    getDeliveryByNotificationIdUseCase: unknown;
+    getDeliveryStatsUseCase: unknown;
+    getFailedDeliveriesUseCase: unknown;
+    // Notification Schedule
+    getNotificationSchedulesUseCase: unknown;
+    getNotificationScheduleByIdUseCase: unknown;
+    createNotificationScheduleUseCase: unknown;
+    updateNotificationScheduleUseCase: unknown;
+    deleteNotificationScheduleUseCase: unknown;
+    getActiveNotificationSchedulesUseCase: unknown;
+    getUpcomingNotificationSchedulesUseCase: unknown;
+    updateNotificationScheduleLastRunUseCase: unknown;
+    toggleNotificationScheduleActiveUseCase: unknown;
+    bulkToggleNotificationScheduleActiveUseCase: unknown;
+    bulkDeleteNotificationSchedulesUseCase: unknown;
+    duplicateNotificationScheduleUseCase: unknown;
+    getNotificationScheduleExecutionHistoryUseCase: unknown;
   };
   exports: string[];
 }
@@ -192,11 +250,11 @@ export const AppModule: StaticModule = createStaticModule({
    * 3. ControllerModule (depends on UseCaseModule)
    */
   imports: [
-    RepositoryModule, // Real repository module from adapters (Step 4/5)
-    UseCaseModulePlaceholder,
+    RepositoryModule, // Data access layer - 16 repositories
+    UseCaseModule, // Business logic layer - 75 use cases
     // ControllerModule is lazy-loaded to avoid circular dependency
     // The function is evaluated when the module is first used
-    () => ControllerModule, // Real controller module from adapters (Step 8 - THIS MODULE)
+    () => ControllerModule, // API layer - 17 controllers
   ],
 
   /**
@@ -214,8 +272,8 @@ export const AppModule: StaticModule = createStaticModule({
    * Exports
    *
    * Aggregates all exports from imported modules for public API surface.
-   * Currently empty since placeholders have no exports.
-   * Will be populated as modules gain providers.
+   * All services from RepositoryModule, UseCaseModule, and ControllerModule
+   * are available through the root container.
    */
   exports: [],
 });
@@ -228,6 +286,7 @@ export const AppModule: StaticModule = createStaticModule({
  * Module dependencies type for constructor injection
  *
  * Use this type to access any dependency registered through AppModule.
+ * Includes all controllers and use cases from imported modules.
  *
  * @example
  * ```typescript
@@ -239,6 +298,7 @@ export const AppModule: StaticModule = createStaticModule({
  *
  *   async doSomething() {
  *     const controller = this.deps.userController;
+ *     const useCase = this.deps.getUserUseCase;
  *     return await controller.getById({ id: "123" });
  *   }
  * }
@@ -251,7 +311,8 @@ export type ModuleDeps = Record<string, any>;
 // Re-export Module Definition Types
 // =============================================================================
 
-export type { RepositoryModuleDef, UseCaseModuleDef, ControllerModuleDef };
+export type { RepositoryModuleDef, UseCaseModuleDef };
+export type { ControllerModuleDef };
 
 // =============================================================================
 // Helper Functions

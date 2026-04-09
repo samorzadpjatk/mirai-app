@@ -1,5 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { createStaticModule, type StaticModule } from "awilix-modular";
+import { NotificationService } from "@mirai-app/adapters/services/notificationService";
 
 import {
   initializeContainer,
@@ -199,7 +200,26 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
     test("ControllerModuleDef type are exported", () => {
       const checkType: ControllerModuleDef = {
         name: "ControllerModule",
-        providers: {},
+        providers: {
+          userController: undefined,
+          tripController: undefined,
+          challengeController: undefined,
+          groupController: undefined,
+          locationController: undefined,
+          notificationController: undefined,
+          notificationScheduleController: undefined,
+          notificationDeliveryController: undefined,
+          challengeSubmissionController: undefined,
+          challengeVoteController: undefined,
+          activityFeedController: undefined,
+          rewardController: undefined,
+          coinController: undefined,
+          coinTransactionController: undefined,
+          sponsorController: undefined,
+          submissionReportController: undefined,
+          storageController: undefined,
+          notificationService: NotificationService,
+        },
         exports: [],
       };
 
