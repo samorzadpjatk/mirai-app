@@ -1,0 +1,84 @@
+/**
+ * Storage Controller
+ *
+ * tRPC-ready controller wrapping StorageController with proper procedure types.
+ */
+
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { protectedProcedure } from "../trpc";
+import { StorageController } from "../../controllers/storage-controller";
+
+export const storageController = {
+  createUploadUrl: protectedProcedure
+    .input(
+      z.object({
+        storagePath: z.string().min(1),
+        upsert: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const controller = new StorageController(ctx.supabase);
+      const result = await controller.createUploadUrl({
+        storagePath: input.storagePath,
+        upsert: input.upsert,
+      });
+
+      if (!result.success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: result.error,
+        });
+      }
+      return result.data;
+    }),
+
+  createDownloadUrl: protectedProcedure
+    .input(
+      z.object({
+        storagePath: z.string().min(1),
+        expiresInSeconds: z
+          .number()
+          .int()
+          .min(60)
+          .max(60 * 60)
+          .optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const controller = new StorageController(ctx.supabase);
+      const result = await controller.createDownloadUrl({
+        storagePath: input.storagePath,
+        expiresInSeconds: input.expiresInSeconds,
+      });
+
+      if (!result.success) {
+        throw new TRPCError({
+          code: result.code ?? "BAD_REQUEST",
+          message: result.error,
+        });
+      }
+      return result.data;
+    }),
+
+  createPublicUrl: protectedProcedure
+    .input(
+      z.object({
+        storagePath: z.string().min(1),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const controller = new StorageController(ctx.supabase);
+      const result = await controller.createPublicUrl({
+        storagePath: input.storagePath,
+      });
+
+      if (!result.success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: result.error,
+        });
+      }
+      return result.data;
+    }),
+};
