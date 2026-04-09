@@ -303,7 +303,10 @@ export class RewardController {
   async setHidden(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@mirai-app/use-cases").SetRewardHiddenOutput }
+    | {
+        success: true;
+        data: import("@mirai-app/use-cases").SetRewardHiddenOutput;
+      }
     | { success: false; error: string }
   > {
     const parsed = schemas.setHidden.safeParse(input);
@@ -362,7 +365,10 @@ export class RewardController {
   async purchase(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@mirai-app/use-cases").PurchaseRewardOutput }
+    | {
+        success: true;
+        data: import("@mirai-app/use-cases").PurchaseRewardOutput;
+      }
     | { success: false; error: string }
   > {
     const parsed = schemas.purchase.safeParse(input);
@@ -467,6 +473,24 @@ export class RewardController {
     }
 
     return { success: true, data: result.value };
+  }
+
+  /**
+   * Get total available points for a trip
+   */
+  async getTotalAvailablePoints(input: {
+    tripId: string;
+  }): Promise<
+    | { success: true; data: { totalPoints: number } }
+    | { success: false; error: string }
+  > {
+    try {
+      const totalPoints =
+        await this.pointsCalculator.calculateTotalAvailablePoints(input.tripId);
+      return { success: true, data: { totalPoints } };
+    } catch (error) {
+      return { success: false, error: "Failed to calculate points" };
+    }
   }
 
   /**
