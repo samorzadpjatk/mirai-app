@@ -71,34 +71,50 @@ describe("[UNIT] SomeUseCase", () => {
 });
 ```
 
-### Effect Pattern (newer use cases returning `Effect`)
+### Async/Await Pattern (use cases returning Promises that throw)
+
+Use cases that throw errors should be tested with direct async/await:
 
 ```typescript
-import { Effect } from "effect";
+describe("[UNIT] SomeUseCase", () => {
+  describe("execute", () => {
+    it("should succeed with valid input", async () => {
+      const useCase = new SomeUseCase(mockRepo);
+      const result = await useCase.execute({
+        /* input */
+      });
 
-async function runAsResult<T>(
-  effect: Effect.Effect<T, Error>,
-): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
-  try {
-    const value = await Effect.runPromise(effect);
-    return { kind: "ok", value };
-  } catch (error) {
-    return {
-      kind: "err",
-      error: error instanceof Error ? error.message : "Unexpected error",
-    };
-  }
-}
+      expect(result.someField).toBe("expected");
+      expect(mockRepo.create).toHaveBeenCalled();
+    });
 
-// Usage:
-const result = await runAsResult(useCase.execute(input));
-expect(result.kind).toBe("ok");
+    it("should throw error when entity not found", async () => {
+      mockRepo.findById = mock(() => Promise.resolve(null));
+      const useCase = new SomeUseCase(mockRepo);
+
+      await expect(useCase.execute({ id: "missing" })).rejects.toThrow(
+        "not found",
+      );
+    });
+
+    it("should throw error on validation failure", async () => {
+      const useCase = new SomeUseCase(mockRepo);
+
+      await expect(
+        useCase.execute({
+          /* invalid */
+        }),
+      ).rejects.toThrow("validation");
+    });
+  });
+});
 ```
 
-**How to identify which pattern**: Check the use case file's return type.
+**Key patterns:**
 
-- `execute(input): Result<Output, string>` → Result pattern
-- `execute(input): Effect.Effect<Output, UseCaseError>` → Effect pattern
+- **Success cases**: `const result = await useCase.execute(input)` then assert on `result`
+- **Error cases**: `await expect(useCase.execute(input)).rejects.toThrow("message")`
+- **Never use** `runAsResult()` helper - use native Bun test patterns directly
 
 ## Repository Mock Factory
 
@@ -299,6 +315,6 @@ bun test -t '\[INTEGRATION\]'
 - [ ] Imports from `bun:test` (not Jest)
 - [ ] Uses `mock()` for all repository interface methods (no partial mocks)
 - [ ] Tests happy path + all error paths
-- [ ] For Effect-based use cases, uses `runAsResult()` helper
-- [ ] For Result-based use cases, uses `result.kind === "ok"/"err"` pattern
+- [ ] For use cases that return Promises, uses direct async/await pattern
+- [ ] For use cases that return Result type, uses `result.kind === "ok"/"err"` pattern
 - [ ] Tests run: `cd <package> && bun test <file>`
