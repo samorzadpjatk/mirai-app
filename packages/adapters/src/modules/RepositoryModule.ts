@@ -106,8 +106,8 @@ import type {
   RewardPurchaseRepository,
   CoinTransactionRepository,
   NotificationDeliveryRepository,
+  NotificationScheduleRepository,
 } from "@mirai-app/use-cases";
-import type { NotificationScheduleRepository } from "@mirai-app/domain";
 
 // =============================================================================
 // Injection Tokens

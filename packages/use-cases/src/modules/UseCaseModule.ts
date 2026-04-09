@@ -341,8 +341,8 @@ import type {
   TripAccessChecker,
   CoinTransactionRepository,
   NotificationDeliveryRepository,
+  NotificationScheduleRepository,
 } from "../ports";
-import type { NotificationScheduleRepository } from "@mirai-app/domain";
 
 // =============================================================================
 // Injection Tokens

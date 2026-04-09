@@ -27,6 +27,12 @@
  * | `coinTransactionController` | CoinTransactionController | coinTransactionRepository | 5 coin statistics use cases | Medium |
  * | `storageController` | StorageController | (none) | (none - uses Supabase directly) | Low |
  *
+ * ## Service Catalog (1 service)
+ *
+ * | Token | Class | Dependencies |
+ * |-------|-------|-------------|
+ * | `notificationService` | NotificationService | db |
+ *
  * ## Complexity Classification
  *
  * ### Simple Controllers (1-2 dependencies)
@@ -95,6 +101,7 @@ import { NotificationDeliveryController } from "../controllers/notification-deli
 import { CoinController } from "../controllers/coin-controller";
 import { CoinTransactionController } from "../controllers/coin-transaction-controller";
 import { StorageController } from "../controllers/storage-controller";
+import { NotificationService } from "../services/notificationService";
 
 // =============================================================================
 // Type Imports (for type definitions)
@@ -116,13 +123,28 @@ import type {
   RewardPurchaseRepository,
   CoinTransactionRepository,
   NotificationDeliveryRepository,
+  NotificationScheduleRepository,
 } from "@mirai-app/use-cases";
-import type { NotificationScheduleRepository } from "@mirai-app/domain";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // =============================================================================
 // Injection Tokens
 // =============================================================================
+
+/**
+ * Service injection tokens
+ *
+ * String-based tokens for service resolution. Using consistent
+ * camelCase naming convention based on service name.
+ */
+export const SERVICE_TOKENS = {
+  NotificationService: "notificationService",
+} as const;
+
+/**
+ * Type for service token keys
+ */
+export type ServiceToken = (typeof SERVICE_TOKENS)[keyof typeof SERVICE_TOKENS];
 
 /**
  * Controller injection tokens
@@ -240,6 +262,9 @@ export interface ControllerModuleDeps {
   /** Storage operations API */
   [CONTROLLER_TOKENS.StorageController]: StorageController;
 
+  /** Notification service */
+  [SERVICE_TOKENS.NotificationService]: NotificationService;
+
   /** Repository dependencies (from RepositoryModule) */
   userRepository: UserRepository;
   tripRepository: TripRepository;
@@ -273,26 +298,10 @@ export interface ControllerModuleDeps {
  */
 export interface ControllerModuleDef {
   name: "ControllerModule";
-  providers: {
-    [CONTROLLER_TOKENS.UserController]: typeof UserController;
-    [CONTROLLER_TOKENS.TripController]: typeof TripController;
-    [CONTROLLER_TOKENS.ChallengeController]: typeof ChallengeController;
-    [CONTROLLER_TOKENS.GroupController]: typeof GroupController;
-    [CONTROLLER_TOKENS.LocationController]: typeof LocationController;
-    [CONTROLLER_TOKENS.NotificationController]: typeof NotificationController;
-    [CONTROLLER_TOKENS.ChallengeSubmissionController]: typeof ChallengeSubmissionController;
-    [CONTROLLER_TOKENS.ChallengeVoteController]: typeof ChallengeVoteController;
-    [CONTROLLER_TOKENS.ActivityFeedController]: typeof ActivityFeedController;
-    [CONTROLLER_TOKENS.RewardController]: typeof RewardController;
-    [CONTROLLER_TOKENS.SponsorController]: typeof SponsorController;
-    [CONTROLLER_TOKENS.SubmissionReportController]: typeof SubmissionReportController;
-    [CONTROLLER_TOKENS.NotificationScheduleController]: typeof NotificationScheduleController;
-    [CONTROLLER_TOKENS.NotificationDeliveryController]: typeof NotificationDeliveryController;
-    [CONTROLLER_TOKENS.CoinController]: typeof CoinController;
-    [CONTROLLER_TOKENS.CoinTransactionController]: typeof CoinTransactionController;
-    [CONTROLLER_TOKENS.StorageController]: typeof StorageController;
-  };
-  exports: ControllerToken[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  providers: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  exports: Record<string, any>;
 }
 
 // =============================================================================
@@ -471,6 +480,13 @@ function createStorageController(cradle: Cradle): StorageController {
   return new StorageController(cradle.supabase);
 }
 
+/**
+ * Create notification service instance
+ */
+function createNotificationService(cradle: Cradle): NotificationService {
+  return new NotificationService(cradle.db);
+}
+
 // =============================================================================
 // Module Creation
 // =============================================================================
@@ -585,6 +601,12 @@ export const ControllerModule: StaticModule<ControllerModuleDef> =
         factory: createStorageController,
         lifetime: Lifetime.SCOPED,
       },
+
+      // Services
+      [SERVICE_TOKENS.NotificationService]: {
+        factory: createNotificationService,
+        lifetime: Lifetime.SCOPED,
+      },
     },
 
     exports: [
@@ -616,6 +638,9 @@ export const ControllerModule: StaticModule<ControllerModuleDef> =
 
       // Infrastructure
       CONTROLLER_TOKENS.StorageController,
+
+      // Services
+      SERVICE_TOKENS.NotificationService,
     ],
   });
 
@@ -640,3 +665,4 @@ export { NotificationDeliveryController } from "../controllers/notification-deli
 export { CoinController } from "../controllers/coin-controller";
 export { CoinTransactionController } from "../controllers/coin-transaction-controller";
 export { StorageController } from "../controllers/storage-controller";
+export { NotificationService } from "../services/notificationService";
