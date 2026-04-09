@@ -8,10 +8,11 @@
  *
  * ```
  * AppModule (root)
- * ├── RepositoryModule    (data access layer - 16 repositories)
- * ├── UseCaseModule       (business logic layer - 75 use cases)
- * ├── ControllerModule    (API layer - 17 controllers)
- * └── FrameworkModule     (infrastructure services)
+ * ├── RepositoryModule         (data access layer - 16 repositories)
+ * ├── BaseUseCaseModule        (core business logic - 75 use cases)
+ * ├── AuthUseCaseModule        (auth/telemetry use cases + ports)
+ * ├── ControllerModule         (API layer - 17 controllers)
+ * └── FrameworkModule          (infrastructure services)
  * ```
  *
  * ## Usage
@@ -48,7 +49,8 @@ import {
   ControllerModule,
   type ControllerModuleDef,
 } from "@mirai-app/adapters/modules/ControllerModule";
-import { UseCaseModule } from "@mirai-app/use-cases/modules/UseCaseModule";
+import { UseCaseModule as BaseUseCaseModule } from "@mirai-app/use-cases/modules/UseCaseModule";
+import { UseCaseModule as AuthUseCaseModule } from "@mirai-app/adapters/modules/UseCaseModule";
 
 // =============================================================================
 // Module Imports
@@ -57,8 +59,11 @@ import { UseCaseModule } from "@mirai-app/use-cases/modules/UseCaseModule";
 // RepositoryModule is imported from adapters package
 // Provides all 16 Prisma repositories as injectable services
 
-// UseCaseModule is imported from use-cases package
-// Provides all 75 use cases organized by domain
+// BaseUseCaseModule is imported from use-cases package
+// Provides all 75 core use cases organized by domain
+
+// AuthUseCaseModule is imported from adapters package
+// Provides auth/telemetry use cases and port abstractions
 
 // ControllerModule is imported from adapters package
 // Provides all 17 tRPC controllers as injectable services
@@ -75,113 +80,34 @@ import { UseCaseModule } from "@mirai-app/use-cases/modules/UseCaseModule";
  */
 export interface RepositoryModuleDef {
   name: "RepositoryModule";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  providers: Record<string, any>;
+  // DefProviderMap constraint: values must be object | string | boolean | number
+  providers: Record<string, object | string | boolean | number>;
   exports: string[];
 }
 
 /**
- * UseCaseModule definition
+ * BaseUseCaseModule definition
  *
- * Provides all 75 use cases organized by domain.
+ * Provides all 75 core use cases organized by domain.
  * Use cases are request-scoped (SCOPED lifetime).
  */
 export interface UseCaseModuleDef {
   name: "UseCaseModule";
-  providers: {
-    // User Domain
-    getUserUseCase: unknown;
-    createUserUseCase: unknown;
-    updateUserUseCase: unknown;
-    // Challenge Domain
-    getChallengeUseCase: unknown;
-    createChallengeUseCase: unknown;
-    updateChallengeUseCase: unknown;
-    updateChallengeStatusUseCase: unknown;
-    // Group Domain
-    getGroupUseCase: unknown;
-    createGroupUseCase: unknown;
-    updateGroupUseCase: unknown;
-    // Challenge Submission
-    createSubmissionUseCase: unknown;
-    getSubmissionUseCase: unknown;
-    getSubmissionByChallengeAndGroupUseCase: unknown;
-    updateSubmissionUseCase: unknown;
-    deleteSubmissionUseCase: unknown;
-    listSubmissionsByChallengeUseCase: unknown;
-    // Challenge Vote
-    getMyVotesUseCase: unknown;
-    getVotesByChallengeUseCase: unknown;
-    getChallengeVotingProgressUseCase: unknown;
-    getJudgedStaffVotingProgressUseCase: unknown;
-    submitVoteUseCase: unknown;
-    submitVotesUseCase: unknown;
-    forceEndVotingUseCase: unknown;
-    // Location
-    getLocationUseCase: unknown;
-    createLocationUseCase: unknown;
-    updateLocationUseCase: unknown;
-    listLocationsUseCase: unknown;
-    updateSharingSettingsUseCase: unknown;
-    addSharingUserUseCase: unknown;
-    removeSharingUserUseCase: unknown;
-    getSharingSettingsUseCase: unknown;
-    // Notification
-    getNotificationUseCase: unknown;
-    // Activity Feed
-    getActivityFeedUseCase: unknown;
-    createActivityUseCase: unknown;
-    addReactionUseCase: unknown;
-    // Submission Report
-    createReportUseCase: unknown;
-    getReportsUseCase: unknown;
-    // Sponsor
-    createSponsorUseCase: unknown;
-    getSponsorUseCase: unknown;
-    updateSponsorUseCase: unknown;
-    deleteSponsorUseCase: unknown;
-    listSponsorsUseCase: unknown;
-    linkSponsorToTripUseCase: unknown;
-    unlinkSponsorFromTripUseCase: unknown;
-    // Reward
-    getRewardUseCase: unknown;
-    createRewardUseCase: unknown;
-    updateRewardUseCase: unknown;
-    setRewardHiddenUseCase: unknown;
-    deleteRewardUseCase: unknown;
-    listRewardsUseCase: unknown;
-    purchaseRewardUseCase: unknown;
-    updatePurchaseStatusUseCase: unknown;
-    updateMyPurchaseStatusUseCase: unknown;
-    getPurchaseHistoryUseCase: unknown;
-    // Coin Transaction
-    getCoinStatisticsUseCase: unknown;
-    getMostActiveAdminStatsUseCase: unknown;
-    getCoinTransactionsUseCase: unknown;
-    getCoinQuickStatsUseCase: unknown;
-    getCoinAdditionalInsightsUseCase: unknown;
-    addCoinsUseCase: unknown;
-    removeCoinsUseCase: unknown;
-    // Notification Delivery
-    getDeliveriesUseCase: unknown;
-    getDeliveryByNotificationIdUseCase: unknown;
-    getDeliveryStatsUseCase: unknown;
-    getFailedDeliveriesUseCase: unknown;
-    // Notification Schedule
-    getNotificationSchedulesUseCase: unknown;
-    getNotificationScheduleByIdUseCase: unknown;
-    createNotificationScheduleUseCase: unknown;
-    updateNotificationScheduleUseCase: unknown;
-    deleteNotificationScheduleUseCase: unknown;
-    getActiveNotificationSchedulesUseCase: unknown;
-    getUpcomingNotificationSchedulesUseCase: unknown;
-    updateNotificationScheduleLastRunUseCase: unknown;
-    toggleNotificationScheduleActiveUseCase: unknown;
-    bulkToggleNotificationScheduleActiveUseCase: unknown;
-    bulkDeleteNotificationSchedulesUseCase: unknown;
-    duplicateNotificationScheduleUseCase: unknown;
-    getNotificationScheduleExecutionHistoryUseCase: unknown;
-  };
+  // DefProviderMap constraint: values must be object | string | boolean | number
+  providers: Record<string, object | string | boolean | number>;
+  exports: string[];
+}
+
+/**
+ * AuthUseCaseModule definition
+ *
+ * Provides auth/telemetry use cases and port abstractions.
+ * These are registered in the adapters layer.
+ */
+export interface AuthUseCaseModuleDef {
+  name: "UseCaseModule";
+  // DefProviderMap constraint: values must be object | string | boolean | number
+  providers: Record<string, object | string | boolean | number>;
   exports: string[];
 }
 
@@ -197,17 +123,19 @@ export interface AppModuleDef {
 
   /**
    * Imported modules - these modules' exported providers become
-   * available for injection in this module and its children
+   * available for injection in this module and its children.
+   * Uses lazy loading pattern for ControllerModule to avoid circular deps.
    */
+  // DefProviderMap constraint: StaticModule expects object | string | boolean | number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  imports: Array<StaticModule<any>>;
+  imports: Array<StaticModule<any> | (() => StaticModule<any>)>;
 
   /**
    * Providers defined directly in this module
    * (currently none - all providers come from imported modules)
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  providers: Record<string, any>;
+  // DefProviderMap constraint: values must be object | string | boolean | number
+  providers: Record<string, object | string | boolean | number>;
 
   /**
    * Providers exported by this module
@@ -238,7 +166,10 @@ export interface AppModuleDef {
  * const controller = container.resolve("userController");
  * ```
  */
-export const AppModule: StaticModule = createStaticModule({
+// Type annotation uses any due to awilix-modular's complex generic constraints
+// The actual type safety is provided by the module definition interfaces above
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const AppModule: StaticModule<any> = createStaticModule<AppModuleDef>({
   name: "AppModule",
 
   /**
@@ -246,15 +177,30 @@ export const AppModule: StaticModule = createStaticModule({
    *
    * Import order matters for dependency resolution:
    * 1. RepositoryModule (lowest level - no dependencies)
-   * 2. UseCaseModule (depends on RepositoryModule)
-   * 3. ControllerModule (depends on UseCaseModule)
+   * 2. BaseUseCaseModule (75 core use cases from use-cases package)
+   * 3. AuthUseCaseModule (auth/telemetry use cases from adapters)
+   * 4. ControllerModule (depends on all use cases)
+   *
+   * LAZY LOADING PATTERN:
+   * ControllerModule is wrapped in a function `() => ControllerModule` to enable
+   * lazy loading. This pattern defers module resolution until runtime,
+   * preventing circular dependency issues between modules.
+   *
+   * awilix-modular supports both direct module references and lazy-loaded
+   * factory functions. The factory function is evaluated on first use,
+   * allowing modules that depend on each other to be defined without
+   * causing import-time circular dependencies.
    */
   imports: [
     RepositoryModule, // Data access layer - 16 repositories
-    UseCaseModule, // Business logic layer - 75 use cases
-    // ControllerModule is lazy-loaded to avoid circular dependency
-    // The function is evaluated when the module is first used
-    () => ControllerModule, // API layer - 17 controllers
+    BaseUseCaseModule, // Core use cases - 75 use cases
+    AuthUseCaseModule, // Auth/telemetry use cases + ports
+    // Lazy-loaded module: factory function prevents circular deps
+    // ControllerModule is evaluated when first resolved
+    // Named function preserves module name for introspection
+    function loadControllerModule() {
+      return ControllerModule;
+    }, // API layer - 17 controllers (lazy-loaded)
   ],
 
   /**
@@ -304,15 +250,14 @@ export const AppModule: StaticModule = createStaticModule({
  * }
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ModuleDeps = Record<string, any>;
+// Using unknown for safety, but dependencies can be cast to specific types when needed
+export type ModuleDeps = Record<string, unknown>;
 
 // =============================================================================
 // Re-export Module Definition Types
 // =============================================================================
 
-export type { RepositoryModuleDef, UseCaseModuleDef };
-export type { ControllerModuleDef };
+// Note: ModuleDef types are defined in this file and don't need re-export
 
 // =============================================================================
 // Helper Functions
@@ -336,10 +281,15 @@ export function hasModule(moduleName: string): boolean {
     return false;
   }
   return AppModule.imports.some((mod) => {
-    // Handle both direct modules and forward refs
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const modName = typeof mod === "function" ? (mod as any).name : mod.name;
-    return modName === moduleName;
+    // Handle both direct modules and lazy-loaded forward refs
+    // Lazy loading pattern: () => Module is used to avoid circular dependencies
+    if (typeof mod === "function") {
+      // For lazy-loaded modules, call the function to get the actual module
+      // and read its name property
+      const resolvedMod = (mod as () => StaticModule<unknown>)();
+      return resolvedMod.name === moduleName;
+    }
+    return mod.name === moduleName;
   });
 }
 
@@ -353,9 +303,14 @@ export function getRegisteredModules(): string[] {
     return [];
   }
   return AppModule.imports.map((mod) => {
-    // Handle both direct modules and forward refs
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return typeof mod === "function" ? (mod as any).name : mod.name;
+    // Handle both direct modules and lazy-loaded forward refs
+    // Lazy loading pattern: () => Module defers module resolution to runtime
+    // For lazy-loaded modules, call the function to get the actual module name
+    if (typeof mod === "function") {
+      const resolvedMod = (mod as () => StaticModule<unknown>)();
+      return resolvedMod.name;
+    }
+    return mod.name;
   });
 }
 

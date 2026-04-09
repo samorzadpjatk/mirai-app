@@ -123,7 +123,38 @@ export {
   createConfiguredTestContainer,
   /** Create test container from a module */
   createTestContainerFromModule,
+  /** Create mock port factory for DI registration */
+  createMockPortFactory,
+  /** Create mock function with call tracking */
+  createMockFn,
+  /** Mock function type */
+  type MockFn,
 } from "./test-container";
+
+// =============================================================================
+// Test Fixtures
+// =============================================================================
+
+export {
+  /** Create test UserId (branded type) */
+  createTestUserId,
+  /** Create multiple test UserIds */
+  createTestUserIds,
+  /** Create test UserRole */
+  createTestUserRole,
+  /** Pre-defined test roles */
+  TestRoles,
+  /** Test auth context type */
+  type TestAuthContext,
+  /** Create test auth context */
+  createTestAuthContext,
+  /** Pre-defined auth contexts (user, moderator, admin, service) */
+  TestAuthContexts,
+  /** Create mock AuthPort for testing */
+  createMockAuthPort,
+  /** Create mock TelemetryPort for testing */
+  createMockTelemetryPort,
+} from "./test-fixtures";
 
 // =============================================================================
 // Service Identifiers (TYPES)
