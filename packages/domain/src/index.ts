@@ -111,4 +111,23 @@ export * from "./value-objects/SponsorId";
 export * from "./value-objects/TripSponsorId";
 export * from "./value-objects/ReportId";
 export * from "./value-objects/ReportReason";
+export * from "./value-objects/AuthContext";
 // export * from "./value-objects/Email";
+
+// Types (Domain-specific type exports - file exists at src/types/Result.ts)
+// Note: Result type and most functions are already exported from utils/result
+// The types/Result.ts file provides the same API for specific domain usage
+export {
+  // Additional type guards available from types/Result module
+  isOk,
+  isErr,
+} from "./types/Result";
+
+// Enums
+export {
+  UserRole,
+  isUserRole,
+  getAllUserRoles,
+  isAdminRole,
+  isModeratorRole,
+} from "./enums/UserRole";
