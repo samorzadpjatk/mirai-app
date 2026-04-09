@@ -22,7 +22,6 @@ next-env.d.ts
 # expo
 .expo/
 .expo-shared/
-dist/
 *.jks
 *.p8
 *.p12
@@ -33,7 +32,7 @@ web-build/
 
 # production
 build/
-dist/
+**/dist/
 
 # misc
 .DS_Store
