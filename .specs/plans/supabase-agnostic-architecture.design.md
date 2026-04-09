@@ -437,7 +437,9 @@ export const ProviderConfigSchema = z.object({
   realtime: z
     .enum(["supabase", "pusher", "ably", "socketio"])
     .default("supabase"),
-  storage: z.enum(["supabase", "s3", "gcs", "azure"]).default("supabase"),
+  storage: z
+    .enum(["supabase", "s3", "minio", "gcs", "azure"])
+    .default("supabase"),
 });
 
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
@@ -588,9 +590,99 @@ export class SupabaseRealtimeAdapter implements RealtimePort {
 
 **Storage:**
 
-- AWS S3
+- AWS S3 (using `@aws-sdk/client-s3`)
+- **MinIO** (S3-compatible, self-hosted)
 - Google Cloud Storage
 - Azure Blob Storage
+
+### MinIO + tusd Configuration
+
+For self-hosted storage with resumable uploads:
+
+```typescript
+// Storage adapter selection
+storage: z.enum(["supabase", "s3", "minio", "gcs", "azure"]).default(
+  "supabase",
+);
+
+// MinIO uses S3-compatible SDK
+const s3Client = new S3Client({
+  endpoint: process.env.MINIO_ENDPOINT, // e.g., "http://localhost:9000"
+  region: process.env.MINIO_REGION || "us-east-1",
+  credentials: {
+    accessKeyId: process.env.MINIO_ACCESS_KEY,
+    secretAccessKey: process.env.MINIO_SECRET_KEY,
+  },
+  forcePathStyle: true, // Required for MinIO
+});
+```
+
+### tusd Resumable Upload Flow
+
+tusd enables resumable uploads (pause/resume, unreliable networks). Two deployment patterns:
+
+**Option A: Client → tusd → MinIO (Direct)**
+
+```
+Client      tusd        MinIO
+  │    POST   │          │
+  │──────────>│          │
+  │  Upload   │          │
+  │──────────>│─────────>│
+  │  201 OK   │          │
+  │<──────────│          │
+```
+
+- Pros: Backend not involved, scales horizontally
+- Cons: tusd needs auth validation hook
+
+**Option B: Client → Backend → tusd → MinIO**
+
+```
+Client      Backend    tusd        MinIO
+  │   POST    │          │          │
+  │──────────>│─────────>│          │
+  │  201 OK   │          │          │
+  │<──────────│          │          │
+  │  Upload   │          │          │
+  │──────────>│          │          │
+  │           │          │─────────>│
+```
+
+- Pros: Full auth control in backend
+- Cons: Backend becomes bottleneck, more complex
+
+**Recommendation:** Option A with tusd hooks for auth validation.
+
+### TusdStorageAdapter (Extension)
+
+```typescript
+// packages/adapters/src/gateways/storage/TusdStorageAdapter.ts
+export class TusdStorageAdapter implements StoragePort {
+  constructor(
+    private readonly s3Client: S3Client, // MinIO-compatible
+    private readonly tusdEndpoint: string,
+  ) {}
+
+  async createSignedUploadUrl(
+    bucket: string,
+    path: string,
+    expiresInSeconds: number,
+  ): Promise<Result<string, StorageError>> {
+    // Return tusd endpoint + upload metadata
+    // tusd generates its own S3-signed URL internally
+    const uploadUrl = `${this.tusdEndpoint}/files/`;
+    return ok(uploadUrl);
+  }
+
+  async upload(): Promise<never> {
+    // Upload happens directly to tusd, not through this adapter
+    throw new Error("Use createSignedUploadUrl for tusd uploads");
+  }
+
+  // download(), delete(), list(), getMetadata() use S3Client normally
+}
+```
 
 ### Adding a New Provider
 
