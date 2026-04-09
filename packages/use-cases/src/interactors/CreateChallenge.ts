@@ -5,7 +5,7 @@ import {
   ScoringCategory,
 } from "@mirai-app/domain";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import { UseCaseRepositoryError, UseCaseValidationError } from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for CreateChallenge use case
@@ -117,7 +117,7 @@ export class CreateChallengeUseCase {
     });
 
     if (challengeResult.kind === "err") {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "challenge",
         message: challengeResult.error,
       });
@@ -128,7 +128,7 @@ export class CreateChallengeUseCase {
     try {
       saved = await this.challengeRepository.create(challengeResult.value);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "CreateChallenge.create",
         message: "Failed to create challenge",
         cause,

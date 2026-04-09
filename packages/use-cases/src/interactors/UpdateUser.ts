@@ -1,10 +1,6 @@
 import type { UserRepository } from "../ports/UserRepository";
 import type { User } from "@mirai-app/domain";
-import {
-  UseCaseNotFoundError,
-  UseCaseRepositoryError,
-  UseCaseValidationError,
-} from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for UpdateUser use case
@@ -57,7 +53,7 @@ export class UpdateUserUseCase {
     try {
       user = await this.userRepository.findById(input.userId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "UpdateUser.findById",
         message: "Failed to load user",
         cause,
@@ -65,7 +61,7 @@ export class UpdateUserUseCase {
     }
 
     if (!user) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "User",
         message: "User not found",
       });
@@ -81,7 +77,7 @@ export class UpdateUserUseCase {
       });
 
       if (nameResult.kind === "err") {
-        throw new UseCaseValidationError({
+        throw AppError.validation({
           field: "name",
           message: nameResult.error,
         });
@@ -100,7 +96,7 @@ export class UpdateUserUseCase {
     try {
       saved = await this.userRepository.update(updatedUser);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "UpdateUser.update",
         message: "Failed to update user",
         cause,

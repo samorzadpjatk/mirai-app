@@ -1,10 +1,6 @@
 import { ChallengeVote, validateVoteSet } from "@mirai-app/domain";
 import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
-import {
-  UseCaseConflictError,
-  UseCaseValidationError,
-  UseCaseRepositoryError,
-} from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Single vote input for batch submission
@@ -76,21 +72,21 @@ export class SubmitVotesUseCase {
   async execute(input: SubmitVotesInput): Promise<SubmitVotesOutput> {
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "challengeId",
         message: "challengeId is required",
       });
     }
 
     if (!input.voterId || input.voterId.trim() === "") {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "voterId",
         message: "voterId is required",
       });
     }
 
     if (!input.votes || input.votes.length === 0) {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "votes",
         message: "at least one vote is required",
       });
@@ -104,7 +100,7 @@ export class SubmitVotesUseCase {
         input.voterId,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "SubmitVotes.hasVoted",
         message: "Failed to check if user has voted",
         cause,
@@ -112,7 +108,7 @@ export class SubmitVotesUseCase {
     }
 
     if (hasVoted) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Vote",
         message: "You have already voted in this challenge",
       });
@@ -128,7 +124,7 @@ export class SubmitVotesUseCase {
     );
 
     if (!validation.isValid) {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "votes",
         message: validation.error ?? "Invalid vote set",
       });
@@ -149,7 +145,7 @@ export class SubmitVotesUseCase {
       });
 
       if (voteResult.kind === "err") {
-        throw new UseCaseValidationError({
+        throw AppError.validation({
           field: "vote",
           message: `Failed to create vote: ${voteResult.error}`,
         });
@@ -163,7 +159,7 @@ export class SubmitVotesUseCase {
     try {
       savedVotes = await this.voteRepository.createMany(voteEntities);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "SubmitVotes.createMany",
         message: "Failed to save votes",
         cause,

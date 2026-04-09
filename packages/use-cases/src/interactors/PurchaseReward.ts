@@ -6,11 +6,7 @@ import type {
   GroupCoinsService,
   TripAccessChecker,
 } from "../ports/RewardRepository";
-import {
-  UseCaseNotFoundError,
-  UseCaseConflictError,
-  UseCaseRepositoryError,
-} from "../errors";
+import { AppError } from "../errors";
 import type { RewardId } from "@mirai-app/domain";
 
 /**
@@ -87,7 +83,7 @@ export class PurchaseRewardUseCase {
     try {
       reward = await this.rewardRepository.findById(input.rewardId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.findById",
         message: "Failed to load reward",
         cause,
@@ -95,7 +91,7 @@ export class PurchaseRewardUseCase {
     }
 
     if (!reward) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "Reward",
         message: "Reward not found",
       });
@@ -106,7 +102,7 @@ export class PurchaseRewardUseCase {
     try {
       hasEnded = await this.accessChecker.hasTripEnded(reward.tripId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.hasTripEnded",
         message: "Failed to check trip status",
         cause,
@@ -114,7 +110,7 @@ export class PurchaseRewardUseCase {
     }
 
     if (hasEnded) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Trip",
         message: "Cannot purchase rewards for ended trips",
       });
@@ -122,7 +118,7 @@ export class PurchaseRewardUseCase {
 
     // Check if reward is hidden
     if (reward.isHidden) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Reward",
         message: "Reward is hidden",
       });
@@ -130,7 +126,7 @@ export class PurchaseRewardUseCase {
 
     // Check if sufficient quantity is available
     if (!reward.canPurchaseQuantity(input.quantity)) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Reward",
         message: `Not enough rewards available (requested: ${input.quantity}, available: ${reward.availableQuantity})`,
       });
@@ -144,7 +140,7 @@ export class PurchaseRewardUseCase {
         reward.tripId,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.isGroupLeader",
         message: "Failed to check leader status",
         cause,
@@ -152,7 +148,7 @@ export class PurchaseRewardUseCase {
     }
 
     if (!leaderCheck.isLeader || !leaderCheck.groupId) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "User",
         message: "Only group leaders can purchase rewards",
       });
@@ -165,7 +161,7 @@ export class PurchaseRewardUseCase {
         reward.tripId,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.calculateTotalAvailablePoints",
         message: "Failed to calculate points",
         cause,
@@ -179,7 +175,7 @@ export class PurchaseRewardUseCase {
     try {
       groupCoins = await this.coinsService.getBalance(leaderCheck.groupId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.getBalance",
         message: "Failed to get group coins",
         cause,
@@ -189,7 +185,7 @@ export class PurchaseRewardUseCase {
     const groupCoinsAmount = CoinAmount.unsafeCreate(groupCoins);
 
     if (!groupCoinsAmount.isGreaterThanOrEqual(totalCost)) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Coins",
         message: `Not enough coins (need: ${totalCost.toNumber()}, have: ${groupCoins})`,
       });
@@ -205,7 +201,7 @@ export class PurchaseRewardUseCase {
         input.quantity,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.decrementQuantity",
         message: "Failed to decrement reward quantity",
         cause,
@@ -221,7 +217,7 @@ export class PurchaseRewardUseCase {
         input.userId,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.deductCoins",
         message: "Failed to deduct coins",
         cause,
@@ -240,7 +236,7 @@ export class PurchaseRewardUseCase {
 
     if (purchaseResult.kind === "err") {
       // This shouldn't happen since we validated everything
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.createPurchase",
         message: `Failed to create purchase: ${purchaseResult.error}`,
         cause: purchaseResult.error,
@@ -253,7 +249,7 @@ export class PurchaseRewardUseCase {
         purchaseResult.value,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.savePurchase",
         message: "Failed to save purchase",
         cause,
@@ -265,7 +261,7 @@ export class PurchaseRewardUseCase {
     try {
       remainingCoins = await this.coinsService.getBalance(leaderCheck.groupId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "PurchaseReward.getRemainingBalance",
         message: "Failed to get remaining balance",
         cause,

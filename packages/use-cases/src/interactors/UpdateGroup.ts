@@ -1,10 +1,6 @@
 import type { GroupRepository } from "../ports/GroupRepository";
 import type { Group } from "@mirai-app/domain";
-import {
-  UseCaseNotFoundError,
-  UseCaseRepositoryError,
-  UseCaseValidationError,
-} from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for UpdateGroup use case
@@ -63,7 +59,7 @@ export class UpdateGroupUseCase {
     try {
       group = await this.groupRepository.findById(input.groupId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "UpdateGroup.findById",
         message: "Failed to load group",
         cause,
@@ -71,14 +67,14 @@ export class UpdateGroupUseCase {
     }
 
     if (!group) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "Group",
         message: "Group not found",
       });
     }
 
     if (group.isDeleted()) {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "status",
         message: "Cannot update a deleted group",
       });
@@ -101,7 +97,7 @@ export class UpdateGroupUseCase {
       });
 
       if (detailsResult.kind === "err") {
-        throw new UseCaseValidationError({
+        throw AppError.validation({
           field: "group",
           message: detailsResult.error,
         });
@@ -120,7 +116,7 @@ export class UpdateGroupUseCase {
     try {
       saved = await this.groupRepository.update(updatedGroup);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "UpdateGroup.update",
         message: "Failed to update group",
         cause,

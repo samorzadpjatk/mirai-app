@@ -1,10 +1,6 @@
 import { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "../ports/UserRepository";
-import {
-  UseCaseConflictError,
-  UseCaseRepositoryError,
-  UseCaseValidationError,
-} from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for CreateUser use case
@@ -57,7 +53,7 @@ export class CreateUserUseCase {
     try {
       exists = await this.userRepository.existsByAuthUserId(input.authUserId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "CreateUser.existsByAuthUserId",
         message: "Failed to check user uniqueness",
         cause,
@@ -65,7 +61,7 @@ export class CreateUserUseCase {
     }
 
     if (exists) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "User",
         message: "User already exists with this authUserId",
       });
@@ -80,7 +76,7 @@ export class CreateUserUseCase {
     });
 
     if (userResult.kind === "err") {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "user",
         message: userResult.error,
       });
@@ -91,7 +87,7 @@ export class CreateUserUseCase {
     try {
       saved = await this.userRepository.create(userResult.value);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "CreateUser.create",
         message: "Failed to create user",
         cause,

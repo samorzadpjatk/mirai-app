@@ -1,6 +1,6 @@
 import type { GroupRepository } from "../ports/GroupRepository";
 import type { Group } from "@mirai-app/domain";
-import { UseCaseNotFoundError, UseCaseRepositoryError } from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for GetGroup use case
@@ -55,7 +55,7 @@ export class GetGroupUseCase {
     try {
       group = await this.groupRepository.findById(input.groupId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "GetGroup.findById",
         message: "Failed to load group",
         cause,
@@ -63,7 +63,7 @@ export class GetGroupUseCase {
     }
 
     if (!group) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "Group",
         message: "Group not found",
       });

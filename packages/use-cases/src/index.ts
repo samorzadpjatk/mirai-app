@@ -71,12 +71,15 @@ export type {
 } from "./ports/TelemetryPort";
 
 export {
-  UseCaseNotFoundError,
-  UseCaseConflictError,
-  UseCaseValidationError,
-  UseCaseRepositoryError,
+  type UseCaseNotFoundError,
+  type UseCaseConflictError,
+  type UseCaseValidationError,
+  type UseCaseRepositoryError,
   type UseCaseError,
+  AppError,
+  isUseCaseError,
   getUseCaseErrorMessage,
+  getUseCaseErrorCode,
 } from "./errors";
 
 // Interactors (Use Case Implementations)

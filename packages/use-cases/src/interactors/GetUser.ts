@@ -1,6 +1,6 @@
 import type { UserRepository } from "../ports/UserRepository";
 import type { User } from "@mirai-app/domain";
-import { UseCaseNotFoundError, UseCaseRepositoryError } from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for GetUser use case
@@ -50,7 +50,7 @@ export class GetUserUseCase {
     try {
       user = await this.userRepository.findById(input.userId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "GetUser.findById",
         message: "Failed to load user",
         cause,
@@ -58,7 +58,7 @@ export class GetUserUseCase {
     }
 
     if (!user) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "User",
         message: "User not found",
       });

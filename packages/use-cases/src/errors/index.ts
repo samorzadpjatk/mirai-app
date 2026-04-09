@@ -5,25 +5,26 @@
  */
 
 export {
-  // Base error classes
-  UseCaseNotFoundError,
-  UseCaseConflictError,
-  UseCaseValidationError,
-  UseCaseRepositoryError,
-  UseCaseUnauthorizedError,
-  // Specific use case errors
-  UserAlreadyExistsError,
-  InsufficientCoinsError,
-  ChallengeClosedError,
-  RewardOutOfStockError,
-  InvalidCredentialsError,
-  OperationNotAllowedError,
-  VotingError,
-  SubmissionError,
+  // Error types
+  type UseCaseNotFoundError,
+  type UseCaseConflictError,
+  type UseCaseValidationError,
+  type UseCaseRepositoryError,
+  type UseCaseUnauthorizedError,
+  type UserAlreadyExistsError,
+  type InsufficientCoinsError,
+  type ChallengeClosedError,
+  type RewardOutOfStockError,
+  type InvalidCredentialsError,
+  type OperationNotAllowedError,
+  type VotingError,
+  type SubmissionError,
   // Union type
   type UseCaseError,
   // Utility functions
   isUseCaseError,
   getUseCaseErrorMessage,
   getUseCaseErrorCode,
+  // Factory
+  AppError,
 } from "./UseCaseErrors";

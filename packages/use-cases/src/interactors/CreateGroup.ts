@@ -1,10 +1,6 @@
 import { Group, GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "../ports/GroupRepository";
-import {
-  UseCaseConflictError,
-  UseCaseRepositoryError,
-  UseCaseValidationError,
-} from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for CreateGroup use case
@@ -64,7 +60,7 @@ export class CreateGroupUseCase {
     try {
       existingGroup = await this.groupRepository.findByCode(input.code);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "CreateGroup.findByCode",
         message: "Failed to check group code uniqueness",
         cause,
@@ -72,7 +68,7 @@ export class CreateGroupUseCase {
     }
 
     if (existingGroup) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Group",
         message: "Group code already exists",
       });
@@ -91,7 +87,7 @@ export class CreateGroupUseCase {
     });
 
     if (groupResult.kind === "err") {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "group",
         message: groupResult.error,
       });
@@ -102,7 +98,7 @@ export class CreateGroupUseCase {
     try {
       saved = await this.groupRepository.create(groupResult.value);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "CreateGroup.create",
         message: "Failed to create group",
         cause,

@@ -1,6 +1,6 @@
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
 import type { Challenge } from "@mirai-app/domain";
-import { UseCaseNotFoundError, UseCaseRepositoryError } from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for GetChallenge use case
@@ -64,7 +64,7 @@ export class GetChallengeUseCase {
     try {
       challenge = await this.challengeRepository.findById(input.challengeId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "GetChallenge.findById",
         message: "Failed to load challenge",
         cause,
@@ -72,7 +72,7 @@ export class GetChallengeUseCase {
     }
 
     if (!challenge) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "Challenge",
         message: "Challenge not found",
       });

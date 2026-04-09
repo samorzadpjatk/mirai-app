@@ -1,12 +1,7 @@
 import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
 import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
-import {
-  UseCaseNotFoundError,
-  UseCaseConflictError,
-  UseCaseValidationError,
-  UseCaseRepositoryError,
-} from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for ForceEndVoting use case
@@ -69,21 +64,21 @@ export class ForceEndVotingUseCase {
   async execute(input: ForceEndVotingInput): Promise<ForceEndVotingOutput> {
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "challengeId",
         message: "challengeId is required",
       });
     }
 
     if (!input.tripId || input.tripId.trim() === "") {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "tripId",
         message: "tripId is required",
       });
     }
 
     if (!input.adminId || input.adminId.trim() === "") {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "adminId",
         message: "adminId is required",
       });
@@ -94,7 +89,7 @@ export class ForceEndVotingUseCase {
     try {
       challenge = await this.challengeRepository.findById(input.challengeId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "ForceEndVoting.findById",
         message: "Failed to load challenge",
         cause,
@@ -102,7 +97,7 @@ export class ForceEndVotingUseCase {
     }
 
     if (!challenge) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "Challenge",
         message: "Challenge not found",
       });
@@ -110,7 +105,7 @@ export class ForceEndVotingUseCase {
 
     // Validate challenge is in correct trip
     if (challenge.tripId !== input.tripId) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "Challenge",
         message: "Challenge not found in trip",
       });
@@ -118,7 +113,7 @@ export class ForceEndVotingUseCase {
 
     // Validate it's a judged staff challenge
     if (challenge.scoringCategory !== "JUDGED_STAFF") {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Challenge",
         message: "Force end is available only for judged staff challenges",
       });
@@ -126,7 +121,7 @@ export class ForceEndVotingUseCase {
 
     // Validate challenge is not already cancelled or completed
     if (challenge.status === "CANCELLED") {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Challenge",
         message: "Cancelled challenge cannot be finalized",
       });
@@ -137,7 +132,7 @@ export class ForceEndVotingUseCase {
     try {
       votes = await this.voteRepository.findByChallengeId(input.challengeId);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "ForceEndVoting.findByChallengeId",
         message: "Failed to load votes",
         cause,
@@ -157,7 +152,7 @@ export class ForceEndVotingUseCase {
 
     // Validate submission phase has ended
     if (!challenge.endTime) {
-      throw new UseCaseValidationError({
+      throw AppError.validation({
         field: "endTime",
         message: "Staff voting requires submission end time",
       });
@@ -165,7 +160,7 @@ export class ForceEndVotingUseCase {
 
     const now = new Date();
     if (challenge.endTime.getTime() > now.getTime()) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Challenge",
         message:
           "You can force end staff voting only after submission phase ends",
@@ -180,7 +175,7 @@ export class ForceEndVotingUseCase {
         input.challengeId,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "ForceEndVoting.recomputeSubmissionVotes",
         message: "Failed to recompute submission votes",
         cause,
@@ -194,7 +189,7 @@ export class ForceEndVotingUseCase {
         "COMPLETED",
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "ForceEndVoting.updateStatus",
         message: "Failed to update challenge status",
         cause,
@@ -210,7 +205,7 @@ export class ForceEndVotingUseCase {
           adminId: input.adminId,
         });
       } catch (cause) {
-        throw new UseCaseRepositoryError({
+        throw AppError.repository({
           operation: "ForceEndVoting.onChallengeCompleted",
           message: "Failed to trigger completion callback",
           cause,

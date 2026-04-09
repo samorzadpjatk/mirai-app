@@ -2,11 +2,7 @@ import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
-import {
-  UseCaseNotFoundError,
-  UseCaseConflictError,
-  UseCaseRepositoryError,
-} from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for AddCoins use case
@@ -60,7 +56,7 @@ export class AddCoinsUseCase {
         input.tripId,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "AddCoins.verifyGroupInTrip",
         message: "Failed to verify group",
         cause,
@@ -68,21 +64,21 @@ export class AddCoinsUseCase {
     }
 
     if (!groupCheck.exists) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "Group",
         message: "Group not found",
       });
     }
 
     if (groupCheck.tripId !== input.tripId) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Group",
         message: "Group does not belong to this trip",
       });
     }
 
     if (groupCheck.isDeleted) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Group",
         message: "Group has been deleted",
       });
@@ -92,7 +88,7 @@ export class AddCoinsUseCase {
     try {
       await this.coinRepo.incrementGroupCoins(input.groupId, input.amount);
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "AddCoins.incrementGroupCoins",
         message: "Failed to increment group coins",
         cause,
@@ -109,7 +105,7 @@ export class AddCoinsUseCase {
         adminId: input.adminId,
       });
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "AddCoins.create",
         message: "Failed to create transaction",
         cause,

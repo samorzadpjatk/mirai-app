@@ -2,11 +2,7 @@ import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
-import {
-  UseCaseNotFoundError,
-  UseCaseConflictError,
-  UseCaseRepositoryError,
-} from "../errors";
+import { AppError } from "../errors";
 
 /**
  * Input for RemoveCoins use case
@@ -60,7 +56,7 @@ export class RemoveCoinsUseCase {
         input.tripId,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "RemoveCoins.verifyGroupInTrip",
         message: "Failed to verify group",
         cause,
@@ -68,21 +64,21 @@ export class RemoveCoinsUseCase {
     }
 
     if (!groupCheck.exists) {
-      throw new UseCaseNotFoundError({
+      throw AppError.notFound({
         entity: "Group",
         message: "Group not found",
       });
     }
 
     if (groupCheck.tripId !== input.tripId) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Group",
         message: "Group does not belong to this trip",
       });
     }
 
     if (groupCheck.isDeleted) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Group",
         message: "Group has been deleted",
       });
@@ -96,7 +92,7 @@ export class RemoveCoinsUseCase {
         input.amount,
       );
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "RemoveCoins.decrementGroupCoins",
         message: "Failed to decrement group coins",
         cause,
@@ -104,7 +100,7 @@ export class RemoveCoinsUseCase {
     }
 
     if (!decrementResult.success) {
-      throw new UseCaseConflictError({
+      throw AppError.conflict({
         entity: "Coins",
         message: "Group does not have enough coins",
       });
@@ -120,7 +116,7 @@ export class RemoveCoinsUseCase {
         adminId: input.adminId,
       });
     } catch (cause) {
-      throw new UseCaseRepositoryError({
+      throw AppError.repository({
         operation: "RemoveCoins.create",
         message: "Failed to create transaction",
         cause,
