@@ -1,3 +1,3 @@
-[test]
-preload = ["../../happydom.ts"]
-coverageThreshold = { lines = 0.80, branches = 0.75 }
+# Note: This app uses Jest for testing, not Bun's built-in test runner
+# Tests are run via: bun jest or bun run test
+# See jest.config.cjs for Jest configuration
