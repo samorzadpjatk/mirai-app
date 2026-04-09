@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./ports/*": "./src/ports/*.ts",
+    "./interactors": "./src/interactors/index.ts",
     "./interactors/*": "./src/interactors/*.ts",
     "./dto/*": "./src/dto/*.ts",
     "./errors/*": "./src/errors/*.ts",

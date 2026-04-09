@@ -54,6 +54,22 @@ export type {
   NotificationScheduleExecutionRecord,
 } from "./ports/NotificationScheduleRepository";
 
+// =============================================================================
+// Auth & Telemetry Ports (for DDD architecture)
+// =============================================================================
+export type {
+  AuthPort,
+  AuthError,
+  InvalidTokenError,
+  SessionExpiredError,
+} from "./ports/AuthPort";
+export type {
+  TelemetryPort,
+  TelemetryEvent,
+  TelemetrySeverity,
+  TelemetryError,
+} from "./ports/TelemetryPort";
+
 export {
   UseCaseNotFoundError,
   UseCaseConflictError,
@@ -79,6 +95,11 @@ export {
   type UpdateUserInput,
   type UpdateUserOutput,
 } from "./interactors/UpdateUser";
+export {
+  AuthenticateUserUseCase,
+  type AuthenticateUserInput,
+  type AuthenticateUserOutput,
+} from "./interactors/AuthenticateUser";
 
 export {
   GetChallengeUseCase,
@@ -519,3 +540,24 @@ export {
 export type { Result } from "@mirai-app/domain";
 
 export { ok, err } from "@mirai-app/domain";
+
+// Authorization Use Cases
+export {
+  AuthorizeAdminUseCase,
+  authorizeAdminUseCase,
+  type AuthorizeAdminInput,
+  type AuthorizeAdminOutput,
+} from "./interactors/AuthorizeAdmin";
+export {
+  AuthorizeModeratorUseCase,
+  authorizeModeratorUseCase,
+  type AuthorizeModeratorInput,
+  type AuthorizeModeratorOutput,
+} from "./interactors/AuthorizeModerator";
+
+// Telemetry Use Case
+export {
+  LogTelemetryUseCase,
+  type LogTelemetryInput,
+  type LogTelemetryOutput,
+} from "./interactors/LogTelemetry";
