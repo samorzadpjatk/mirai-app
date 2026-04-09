@@ -21,5 +21,6 @@ export const fastifyHeadersToFetchHeaders = (
       fetchHeaders.set(key, String(value));
     }
   }
+  console.log("Converted Fastify headers to Fetch headers:", fetchHeaders);
   return fetchHeaders;
 };

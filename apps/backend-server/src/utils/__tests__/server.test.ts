@@ -67,6 +67,13 @@ mock.module("@mirai-app/adapters", () => ({
   createTRPCContext: () => ({}),
 }));
 
+mock.module("@mirai-app/use-cases/interactors", () => ({
+  AuthenticateUserUseCase: class {},
+  AuthorizeAdminUseCase: class {},
+  AuthorizeModeratorUseCase: class {},
+  LogTelemetryUseCase: class {},
+}));
+
 mock.module("@mirai-app/frameworks/supabase", () => ({
   createSupabaseClient: () => ({}),
 }));
