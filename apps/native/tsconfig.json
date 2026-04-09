@@ -1,17 +1,12 @@
-// Imagine your lint finds a bug in expo-file-system lib (https://github.com/expo/expo/issues/41737)
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM"],
-    "jsxImportSource": "nativewind",
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
     "baseUrl": ".",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM"],
     "paths": {
       "~/*": ["./src/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts"],
-  "exclude": ["**/node_modules/**"]
+  "include": ["src/**/*", "**/*.ts", "**/*.tsx"]
 }
