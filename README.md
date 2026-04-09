@@ -7,14 +7,14 @@
 <h1>MIRAI</h1>
 <b>PJATK Student Government Mobile Application</b>
 <p>also known as: Project <code>PJApp</code></p>
-<p>Currently a trip application prepared for integration trips<br>Will eventually become a general Student Government application for all students</p>
+<p>A trip application for integration trips.<br>Expanding soon into a general Student Government application for all students.</p>
 </div>
 
 <br>
 
 ## Want to join?
 
-Check out the [collaboration guidelines inside the repo](CONTRIBUTING.md)!
+Read the [collaboration guidelines](CONTRIBUTING.md).
 
 > [!IMPORTANT]
 > **Call for Mainteiners**
@@ -24,9 +24,9 @@ Check out the [collaboration guidelines inside the repo](CONTRIBUTING.md)!
 
 ## Project Structure
 
-The repository currently functions as a monorepo implemented using **Turborepo** for code build orchestration and **Bun workspaces** (Bun as package manager) for package management.
+This monorepo uses **Turborepo** for builds and **Bun workspaces** for package management.
 
-Check their configuration details inside [`turbo.json`](turbo.json) and [`bun.lock`](bun.lock)
+See [`turbo.json`](turbo.json) and [`bun.lock`](bun.lock) for configuration details.
 
 It contains:
 
@@ -40,9 +40,7 @@ It contains:
   - [`@mirai-app/shared`](packages/shared/) - Shared utilities
   - [`@mirai-app/supabase`](packages/supabase/) - Supabase client configuration
 
-All scripts can be called from the project root using `bun run <script>`. (You can also go to a specific package and run `bun run <script>`).
-
-To run a script assigned to a specific component, use `bun run` (or `cd <package> && bun run <script>`):
+Run scripts from the project root with `bun run <script>`, or from a specific package with `cd <package> && bun run <script>`:
 
 ```bash
 cd apps/native && bun run dev
@@ -50,11 +48,11 @@ cd apps/native && bun run dev
 
 ## Technical Requirements
 
-Make sure you have installed:
+Install:
 
-- **Node.js** (version 18 or higher)
+- **Node.js** 18+
 - **Bun** (https://bun.sh)
-- **Docker** (for development environment, including Supabase)
+- **Docker** (for Supabase and the development environment)
 
 ## How to start?
 
@@ -71,9 +69,9 @@ cd integral-app
 bun install
 ```
 
-### 3. Run the development environment
+### 3. Start the development environment
 
-Check its [documentation](environment/dev/README.md)
+Read the [development environment documentation](environment/dev/README.md).
 
 ### 4. Prepare the database schema
 
@@ -90,23 +88,21 @@ cd packages/seed && bun run db:studio
 
 > 📖 **More information about database commands**: See [packages/seed/README.md](packages/seed/README.md)
 
-### 5. Run the selected application
+### 5. Start the application
 
-Before running:
-
-- check the documentation of the [native application](apps/native/README.md) and [backend](apps/backend-server/README.md)
+Before starting, read the [native application](apps/native/README.md) and [backend](apps/backend-server/README.md) documentation.
 
 #### `bun run dev`
 
-Runs all applications in development mode simultaneously:
+Runs all applications simultaneously:
 
-- Backend server on `http://localhost:2022`
+- Backend server at `http://localhost:2022`
 - Native app (Expo dev server)
 - Notification sender service
 
 #### `bun run dev:backend`
 
-Runs only the backend server (Fastify + tRPC) in development mode (default port 2022).
+Runs only the backend server (Fastify + tRPC) at port 2022.
 
 #### `bun run dev:native`
 
@@ -120,13 +116,13 @@ Runs only the notification sender service for push notifications.
 
 ### Quick Start
 
-Run the complete test suite:
+Run all tests:
 
 ```bash
 bun test
 ```
 
-Run only unit tests (fast, no external dependencies):
+Run only unit tests (fast, isolated):
 
 ```bash
 bun run test:unit
@@ -140,10 +136,10 @@ bun run test:integration
 
 ### Test Organization
 
-Tests are organized using tags:
+Tag conventions:
 
-- `[UNIT]` - Pure business logic tests (fast)
-- `[INTEGRATION]` - Tests requiring external services (database, APIs)
+- `[UNIT]` - Pure business logic (fast)
+- `[INTEGRATION]` - Tests with external services (database, APIs)
 
 ### Running Tests by Package
 
@@ -159,4 +155,4 @@ cd packages/adapters && bun run test:unit
 cd packages/adapters && bun run test:integration
 ```
 
-For detailed testing documentation, see [TESTING.md](./TESTING.md).
+See [TESTING.md](./TESTING.md) for detailed testing documentation.

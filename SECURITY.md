@@ -2,6 +2,11 @@
 
 ## Reporting a Vulnerability
 
-To report a security issue, please email [samorzad@pja.edu.pl](mailto:samorzad@pja.edu.pl) with a description of the issue, the steps you took to create the issue, affected versions, and, if known, mitigations for the issue. 
+Email [samorzad@pja.edu.pl](mailto:samorzad@pja.edu.pl) to report security issues. Include:
 
-This project follows a 90 day disclosure timeline.
+- Issue description
+- Steps to reproduce
+- Affected versions
+- Known mitigations
+
+We follow a 90-day disclosure timeline.

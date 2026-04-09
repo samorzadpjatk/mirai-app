@@ -41,6 +41,7 @@ export const MyFeatureModule = createStaticModule({
   },
   exports: ["myRepository", "myController"],
 });
+// For cross-cutting concerns (auth, telemetry), see UseCaseModule pattern below
 ```
 
 ### 2. Register in AppModule (2 minutes)
@@ -66,7 +67,7 @@ export const AppModule = createStaticModule({
 ```typescript
 // apps/backend-server/src/routers/myFeature.ts
 export const myFeatureRouter = createTRPCRouter({
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       // Resolve controller from container
@@ -260,6 +261,72 @@ export const ControllerModule: StaticModule = createStaticModule({
 });
 ```
 
+### UseCaseModule Pattern (Cross-Cutting Concerns)
+
+For use cases that depend on infrastructure ports (auth, telemetry):
+
+```typescript
+// packages/adapters/src/modules/UseCaseModule.ts
+import { createStaticModule, type StaticModule } from "awilix-modular";
+import { Lifetime } from "awilix";
+
+// Port tokens
+export const PORT_TOKENS = {
+  AuthPort: "authPort",
+  TelemetryPort: "telemetryPort",
+} as const;
+
+// Use case tokens
+export const USE_CASE_TOKENS = {
+  AuthenticateUser: "authenticateUserUseCase",
+  AuthorizeAdmin: "authorizeAdminUseCase",
+  LogTelemetry: "logTelemetryUseCase",
+} as const;
+
+export const UseCaseModule: StaticModule = createStaticModule({
+  name: "UseCaseModule",
+
+  imports: [RepositoryModule], // Needs repositories
+
+  providers: {
+    // Port implementations (framework-specific)
+    [PORT_TOKENS.AuthPort]: {
+      factory: (cradle) => new SupabaseAuthAdapter(cradle.supabase),
+      lifetime: Lifetime.SCOPED,
+    },
+    [PORT_TOKENS.TelemetryPort]: {
+      factory: (cradle) => new PrismaTelemetryAdapter(cradle.prisma),
+      lifetime: Lifetime.SINGLETON,
+    },
+
+    // Use cases that use ports
+    [USE_CASE_TOKENS.AuthenticateUser]: {
+      factory: (cradle) =>
+        new AuthenticateUserUseCase(cradle[PORT_TOKENS.AuthPort]),
+      lifetime: Lifetime.SCOPED,
+    },
+    [USE_CASE_TOKENS.AuthorizeAdmin]: {
+      factory: (cradle) => new AuthorizeAdminUseCase(),
+      lifetime: Lifetime.SCOPED, // Stateless, but scoped for consistency
+    },
+  },
+
+  exports: [
+    PORT_TOKENS.AuthPort,
+    PORT_TOKENS.TelemetryPort,
+    USE_CASE_TOKENS.AuthenticateUser,
+    USE_CASE_TOKENS.AuthorizeAdmin,
+  ],
+});
+```
+
+**Key Differences from Repository/Controller Modules:**
+
+- Registers both ports (interfaces) and their implementations
+- Port implementations depend on framework clients (Supabase, Prisma)
+- Use cases receive ports via DI, not repositories
+- Typically singleton for stateless services, scoped for request context
+
 ---
 
 ## Using the Container
@@ -291,7 +358,7 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 ```typescript
 // apps/backend-server/src/routers/user.ts
 export const userRouter = createTRPCRouter({
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       // Resolve controller from request-scoped container
@@ -299,7 +366,7 @@ export const userRouter = createTRPCRouter({
       return controller.getById(input);
     }),
 
-  create: protectedProcedure
+  create: publicProcedure
     .input(CreateUserInput.schema)
     .mutation(async ({ ctx, input }) => {
       const controller = ctx.container.resolve("userController");
@@ -433,6 +500,67 @@ describe("GetUserUseCase", () => {
     expect(result.value.id).toBe("123");
   });
 });
+```
+
+### Testing with AuthContext Fixtures
+
+Test fixtures simplify creating authentication contexts:
+
+```typescript
+import {
+  createTestAuthContext,
+  TestAuthContexts,
+  createMockAuthPort,
+  createMockTelemetryPort,
+} from "@mirai-app/frameworks/di";
+import { UserRole } from "@mirai-app/domain";
+
+describe("Authenticated Use Case", () => {
+  it("should work with admin user", async () => {
+    const container = createTestContainer();
+
+    // Use pre-defined admin context
+    const adminContext = TestAuthContexts.admin;
+
+    // Or create custom context
+    const moderatorContext = createTestAuthContext({
+      role: UserRole.MODERATOR,
+      email: "mod@example.com",
+    });
+
+    // Mock auth port
+    container.register({
+      authPort: createMockAuthPort({
+        validToken: "test-token",
+        authContext: adminContext,
+      }),
+    });
+
+    const useCase = container.resolve("myUseCase");
+    const result = await useCase.execute({ token: "test-token" });
+
+    expect(result.kind).toBe("ok");
+  });
+});
+```
+
+### Available Test Fixtures
+
+```typescript
+// Pre-defined AuthContext instances
+TestAuthContexts.user; // Regular user
+TestAuthContexts.moderator; // Moderator role
+TestAuthContexts.admin; // Admin role
+TestAuthContexts.service; // Service account
+
+// Factory functions
+const userId = createTestUserId("uuid-123");
+const role = createTestUserRole(UserRole.ADMIN);
+const authContext = createTestAuthContext({ role, email: "..." });
+
+// Mock ports
+const mockAuth = createMockAuthPort({ validToken: "..." });
+const mockTelemetry = createMockTelemetryPort(); // Tracks logged events
 ```
 
 ### Integration Test with Real Module
@@ -630,6 +758,37 @@ export const AppModule = createStaticModule({
 });
 ```
 
+### Issue 7: Port Not Found Despite Being Registered
+
+**Symptom:**
+
+```
+Error: Could not resolve 'authPort'
+```
+
+**Solution:**
+
+Ports are registered with token keys like `PORT_TOKENS.AuthPort`:
+
+```typescript
+// Check token export
+export const PORT_TOKENS = {
+  AuthPort: "authPort", // String value must match resolve()
+};
+
+// Ensure port is exported from module
+export const UseCaseModule = createStaticModule({
+  providers: {
+    [PORT_TOKENS.AuthPort]: SupabaseAuthAdapter,
+  },
+  exports: [PORT_TOKENS.AuthPort], // ← Must export!
+});
+
+// Use consistent token
+const port = container.resolve(PORT_TOKENS.AuthPort);
+// NOT: container.resolve("AuthPort") ❌
+```
+
 ---
 
 ## Best Practices
@@ -717,6 +876,36 @@ const controller = container.resolve("userController"); // May not have request 
  * | tripController | TripController | tripRepository |
  */
 export const ControllerModule = createStaticModule({
+  // ...
+});
+```
+
+### 6. Document Cross-Cutting Dependencies
+
+For modules with ports and use cases:
+
+```typescript
+/**
+ * UseCaseModule - Cross-Cutting Concerns Module
+ *
+ * ## Dependencies
+ * - RepositoryModule (for use cases needing data access)
+ * - SupabaseClient (for AuthPort implementation)
+ * - PrismaClient (for TelemetryPort implementation)
+ *
+ * ## Ports (2)
+ * | Token | Interface | Implementation | Purpose |
+ * |-------|-----------|----------------|---------|
+ * | authPort | AuthPort | SupabaseAuthAdapter | Token validation |
+ * | telemetryPort | TelemetryPort | PrismaTelemetryAdapter | Event logging |
+ *
+ * ## Use Cases (8)
+ * | Token | Class | Dependencies |
+ * |-------|-------|--------------|
+ * | authenticateUserUseCase | AuthenticateUserUseCase | authPort |
+ * | authorizeAdminUseCase | AuthorizeAdminUseCase | (none - pure) |
+ */
+export const UseCaseModule = createStaticModule({
   // ...
 });
 ```

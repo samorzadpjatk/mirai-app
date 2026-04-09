@@ -1,7 +1,7 @@
 # TESTING.md — Testing Best Practices (Promise Edition)
 
-> **Single source of truth for testing in the MIRAI monorepo**  
-> Aligned with **CLAUDE.md** and **AGENTS.md v1.0.3**  
+> **Testing source of truth for the MIRAI monorepo**  
+> Aligns with **CLAUDE.md** and **AGENTS.md v1.0.3**  
 > Stack: **TypeScript · awilix‑modular · Bun · Jest (native)**
 
 ---
@@ -19,14 +19,14 @@ The MIRAI monorepo uses a **hybrid testing strategy**:
 
 ## Error‑handling model by layer
 
-| Layer | Error Model | Async | Notes |
-|------|------------|-------|------|
-| **Domain** | `Either<DomainError, A>` | No | Pure, deterministic |
-| **Use Cases** | Typed exceptions | Yes | Orchestration |
-| **Adapters** | Exceptions | Yes | Integration |
-| **Frameworks** | Exceptions | Yes | Wiring only |
+| Layer          | Error Model              | Async | Notes               |
+| -------------- | ------------------------ | ----- | ------------------- |
+| **Domain**     | `Either<DomainError, A>` | No    | Pure, deterministic |
+| **Use Cases**  | Typed exceptions         | Yes   | Orchestration       |
+| **Adapters**   | Exceptions               | Yes   | Integration         |
+| **Frameworks** | Exceptions               | Yes   | Wiring only         |
 
-**Never use `Result<T,E>` or string errors.**
+**Avoid `Result<T,E>` and string errors.**
 
 ---
 
@@ -58,9 +58,10 @@ coverageThreshold = { lines = 0.80, branches = 0.75 }
 
 ---
 
-## Domain layer testing (Either)
+## Domain layer tests (Either)
 
 ### Rules
+
 - **Pure unit tests**
 - **No mocks**
 - **No async**
@@ -74,7 +75,7 @@ import { describe, it, expect } from "bun:test";
 import { User } from "./User";
 
 describe("[UNIT] User (Domain)", () => {
-  it("creates user with valid email", () => {
+  it("creates a user with a valid email", () => {
     const result = User.create({
       id: "user-1",
       email: "test@example.com",
@@ -84,7 +85,7 @@ describe("[UNIT] User (Domain)", () => {
     expect(result._tag).toBe("Right");
   });
 
-  it("rejects invalid email", () => {
+  it("rejects an invalid email", () => {
     const result = User.create({
       id: "user-1",
       email: "invalid",
@@ -98,9 +99,10 @@ describe("[UNIT] User (Domain)", () => {
 
 ---
 
-## Use‑case testing (async + DI)
+## Use‑case tests (async + DI)
 
 ### Rules
+
 - **Return `Promise`**
 - **Use `async/await`**
 - **Mock ports only**
@@ -124,7 +126,7 @@ describe("[UNIT] CreateUserUseCase", () => {
     });
   });
 
-  it("creates user", async () => {
+  it("creates a user", async () => {
     const useCase = container.resolve("createUserUseCase");
     const user = await useCase.execute({ email: "test@example.com" });
 
@@ -135,9 +137,10 @@ describe("[UNIT] CreateUserUseCase", () => {
 
 ---
 
-## Adapter testing (integration)
+## Adapter tests (integration)
 
 ### Rules
+
 - **Real DB / SDKs**
 - **No mocks**
 - **Clean up after tests**
@@ -154,7 +157,7 @@ describe("[INTEGRATION] PrismaUserRepository", () => {
     repo = new PrismaUserRepository(db);
   });
 
-  it("persists user", async () => {
+  it("persists a user", async () => {
     const user = makeTestUser();
     const saved = await repo.create(user);
     expect(saved.id).toBeDefined();
@@ -168,40 +171,46 @@ describe("[INTEGRATION] PrismaUserRepository", () => {
 
 ---
 
-## Framework testing
+## Framework tests
 
 - **Minimal coverage (60%)**
 - **Verify wiring only**
-- **Do not test framework internals**
+- **Skip framework internals**
 
 ---
 
-## Testing patterns (merged)
+## Testing patterns
 
 ### Pure functions
+
 - No mocks
 - Table‑driven tests
 - Edge cases first
 
 ### External dependency mocking
+
 - Type‑level stubs (`satisfies`)
 - `mock.module()` at package boundaries only
 
 ### Async & timers (Bun)
+
 - Real timers
 - Short waits
-- Cleanup intervals
+- Clean up intervals
 
 ### React hooks (Happy DOM)
+
 - `@testing-library/react`
 - Mock browser APIs
 - SSR safety via code review + integration
 
 ### Zustand stores
+
 - Direct store testing
 - Reset state via `setState`
 
 ### Fastify utilities
+
 - Type‑level mocks
 - Realistic headers
 
@@ -209,30 +218,30 @@ describe("[INTEGRATION] PrismaUserRepository", () => {
 
 ## Mocking rules
 
-| Layer | Mocking |
-|------|--------|
-| Domain | ❌ Never |
-| Use Cases | ✅ Ports only |
-| Adapters | ❌ (use real deps) |
-| Frameworks | Minimal |
-| External APIs | Always |
+| Layer         | Mocking            |
+| ------------- | ------------------ |
+| Domain        | ❌ Never           |
+| Use Cases     | ✅ Ports only      |
+| Adapters      | ❌ (use real deps) |
+| Frameworks    | Minimal            |
+| External APIs | Always             |
 
 ---
 
 ## Coverage targets
 
-| Layer | Target |
-|------|--------|
-| Domain | 90%+ |
-| Use Cases | 85%+ |
-| Adapters | 75%+ |
-| Frameworks | 60%+ |
+| Layer      | Target |
+| ---------- | ------ |
+| Domain     | 90%+   |
+| Use Cases  | 85%+   |
+| Adapters   | 75%+   |
+| Frameworks | 60%+   |
 
 **Domain has zero exemptions.**
 
 ---
 
-## Anti‑patterns (DO NOT DO)
+## Anti‑patterns
 
 - ❌ `Result<T,E>`
 - ❌ String errors
@@ -246,14 +255,17 @@ describe("[INTEGRATION] PrismaUserRepository", () => {
 ## TDD checklist
 
 ### Before coding
+
 - **Test exists**
 - **Test fails**
 
 ### While coding
+
 - **Minimal code**
 - **All tests green**
 
 ### After
+
 - **Refactor**
 - **Add edge cases**
 - **Verify coverage**
@@ -271,4 +283,4 @@ describe("[INTEGRATION] PrismaUserRepository", () => {
 ---
 
 **Last Updated:** 2026‑04‑09  
-**Version:** 3.0.0
+**Version:** 3.0.1

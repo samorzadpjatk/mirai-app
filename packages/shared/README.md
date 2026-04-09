@@ -1,14 +1,14 @@
 # @mirai-app/shared
 
-Shared utilities and types used across the MIRAI app monorepo.
+Utilities and types for the MIRAI app monorepo.
 
 ## Overview
 
-This package contains common functionality that is shared between different applications and packages in the monorepo, including:
+This package provides:
 
 - **Storage utilities** - File storage standards and configurations
-- **State management** - Zustand stores for shared application state (auth, map, judgement)
-- **Trip information** - Types and utilities specific to trip data
+- **State management** - Zustand stores for auth, map, and judgement state
+- **Trip information** - Trip data types and utilities
 - **Shared exports** - Centralized access to all shared functionality
 
 ## Structure
@@ -16,9 +16,9 @@ This package contains common functionality that is shared between different appl
 ```
 packages/shared/
 ├── src/
-│   ├── storage/       # Storage-related utilities and standards
-│   ├── stores/        # Zustand stores for shared state management
-│   ├── tripInfo/      # Trip information types and utilities
+│   ├── storage/       # Storage utilities and standards
+│   ├── stores/        # Zustand stores for shared state
+│   ├── tripInfo/      # Trip data types and utilities
 │   └── index.ts       # Main exports
 ├── package.json
 ├── tsconfig.json
@@ -36,15 +36,14 @@ bun install
 ```typescript
 import { sharedUtility, SharedType } from "@mirai-app/shared";
 
-// Example usage
 const result = sharedUtility.someFunction();
 ```
 
 ## Development
 
-This package is part of the monorepo and should be developed in conjunction with other packages. Changes here can affect multiple applications.
+Develop this package alongside others in the monorepo. Changes affect all applications.
 
-## More Information
+## Documentation
 
 - [Monorepo Documentation](../../README.md)
 - [Bun Documentation](https://bun.com)

@@ -1,9 +1,10 @@
-Effect has been fully removed below.  
-The architecture, rules, and examples are rewritten to use **plain TypeScript**, **Promises**, and **Either** only, while preserving Clean Architecture, SDD, TDD, DDD, SADD, and Kaizen guarantees.
+Effect no longer exists in this codebase.
+The architecture, rules, and examples now use **plain TypeScript**, **Promises**, and **Either**, while preserving Clean Architecture, SDD, TDD, DDD, SADD, and Kaizen guarantees.
 
 ---
 
-# CLAUDE.md — Mirai App Monorepo Conventions  
+# CLAUDE.md — Mirai App Monorepo Conventions
+
 > **CEK Five Pillars Compliance Document**  
 > Updated for **Promise‑based orchestration** and **awilix‑modular**  
 > Architecture: **Clean Architecture + SDD + TDD + SADD + Kaizen**
@@ -12,13 +13,13 @@ The architecture, rules, and examples are rewritten to use **plain TypeScript**,
 
 # 1. CEK Five Pillars Overview
 
-| Pillar | Focus | Key Principle |
-|------|------|---------------|
-| **SDD** | Planning | Specification before implementation |
-| **TDD** | Quality | Test‑first development (Red‑Green‑Refactor) |
-| **DDD** | Architecture | Clean Architecture with strict inward dependencies |
-| **SADD** | Execution | Subagent workflows with quality gates |
-| **Kaizen** | Improvement | Continuous small improvements (YAGNI) |
+| Pillar     | Focus        | Key Principle                                      |
+| ---------- | ------------ | -------------------------------------------------- |
+| **SDD**    | Planning     | Specifications precede implementations             |
+| **TDD**    | Quality      | Test‑first development (Red‑Green‑Refactor)        |
+| **DDD**    | Architecture | Clean Architecture with strict inward dependencies |
+| **SADD**   | Execution    | Subagent workflows with quality gates              |
+| **Kaizen** | Improvement  | Continuous small improvements (YAGNI)              |
 
 ---
 
@@ -40,14 +41,14 @@ The architecture, rules, and examples are rewritten to use **plain TypeScript**,
 ┌─────────────────────────────────────────────────────────────────────────┐
 │              APPLICATION LAYER (packages/use-cases/)                    │
 │   Interactors (Use Cases) · Ports (Interfaces) · DTOs · Errors          │
-│   Uses **async/await + Promise** for orchestration                     │
+│   **async/await + Promise** orchestrates use cases                     │
 └─────────────────────────────────────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                 DOMAIN LAYER (packages/domain/)                         │
 │   Entities · Value Objects · Domain Services · Pure Functions           │
-│   Uses **Either** for pure error handling                               │
+│   **Either** handles pure errors                                        │
 │   ZERO external dependencies                                             │
 └─────────────────────────────────────────────────────────────────────────┘
                      ▲
@@ -55,53 +56,60 @@ The architecture, rules, and examples are rewritten to use **plain TypeScript**,
 ┌─────────────────────────────────────────────────────────────────────────┐
 │           INFRASTRUCTURE (packages/frameworks/)                         │
 │   tRPC config · Prisma client · Supabase client · DI container          │
-│   awilix‑modular is the ONLY DI system                                  │
+│   awilix‑modular serves as the ONLY DI system                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 **Dependency Rule**
+
 ```
 Frameworks → Adapters → Use Cases → Domain
 ```
 
 ---
 
-# 3. SDD Conventions  
-Unchanged.
+# 3. SDD Conventions
+
+No changes.
 
 ---
 
 # 4. TDD Conventions (Promise Edition)
 
-## 4.1 Red‑Green‑Refactor  
-Unchanged.
+## 4.1 Red‑Green‑Refactor
 
-## 4.2 Test Locations  
-Unchanged.
+No changes.
+
+## 4.2 Test Locations
+
+No changes.
 
 ## 4.3 Async Testing Rules
 
 ### Domain tests
-- Pure functions  
-- Use `Either`  
-- No async  
-- No DI  
+
+- Pure functions
+- Use `Either`
+- No async
+- No DI
 
 ```ts
 import { Either } from "effect/Either";
 ```
 
 ### Use case tests
+
 - Use `async/await`
-- Mock ports via awilix‑modular test container  
+- Mock ports via awilix‑modular test container
 
 ```ts
 const result = await useCase.execute(input);
 ```
 
 ### Adapter tests
-- Integration tests  
-- Real Prisma test DB or test doubles  
+
+- Integration tests
+- Real Prisma test DB or test doubles
 
 ---
 
@@ -110,6 +118,7 @@ const result = await useCase.execute(input);
 ## 5.1 Domain Layer (`packages/domain/`)
 
 ### Rules
+
 1. **Pure TypeScript only**
 2. **No external dependencies**
 3. **No DI**
@@ -127,7 +136,7 @@ export class User {
   private constructor(
     readonly id: UserId,
     readonly email: Email,
-    readonly createdAt: Date
+    readonly createdAt: Date,
   ) {}
 
   static create(props: {
@@ -138,51 +147,78 @@ export class User {
     const emailResult = Email.create(props.email);
     if (emailResult._tag === "Left") return left(emailResult.left);
 
-    return right(
-      new User(props.id, emailResult.right, props.createdAt)
-    );
+    return right(new User(props.id, emailResult.right, props.createdAt));
   }
 }
 ```
 
 ---
 
+### Result<T, E> Type
+
+The domain layer uses `Result<T, E>` for explicit error handling:
+
+```typescript
+import { Result, ok, err, isOk, isErr } from "../types/Result";
+
+export class MyEntity {
+  static create(props: {...}): Result<MyEntity, ValidationError> {
+    if (invalid) return err(new ValidationError("..."));
+    return ok(new MyEntity(...));
+  }
+}
+
+// Usage:
+const result = MyEntity.create(props);
+if (isOk(result)) {
+  return result.value; // MyEntity
+} else {
+  return result.error; // ValidationError
+}
+```
+
+**Pattern:** Call `ok()` and `err()` helpers to create results. Call `isOk()` and `isErr()` to check.
+
+---
+
 ## 5.2 Use Cases Layer (`packages/use-cases/`)
 
 ### Rules
-1. Uses **async/await + Promise**
-2. Defines **ports** (repository interfaces)
+
+1. Use **async/await + Promise**
+2. Define **ports** (repository interfaces)
 3. No framework imports
 4. No Prisma, no tRPC, no DI annotations
 
 ### Example
 
-```ts
-import { User } from "@mirai-app/domain";
-import { UserRepository } from "../ports/UserRepository";
-import { UserId } from "@mirai-app/domain";
+```typescript
+// packages/use-cases/src/interactors/CreateUser.ts
+import { User, Result, ok, err } from "@mirai-app/domain";
+import type { UserRepository } from "../ports/UserRepository";
+
+export class UserAlreadyExistsError extends Error {
+  readonly _tag = "UserAlreadyExistsError";
+}
 
 export class CreateUserUseCase {
-  constructor(private readonly repo: UserRepository) {}
+  constructor(private userRepo: UserRepository) {}
 
-  async execute(input: { email: string }) {
-    const existing = await this.repo.findByEmail(input.email);
-    if (existing) throw new UserAlreadyExistsError();
-
-    const id = UserId.generate();
-    const now = new Date();
-
-    const userResult = User.create({
-      id,
-      email: input.email,
-      createdAt: now,
-    });
-
-    if (userResult._tag === "Left") {
-      throw new InvalidUserError(userResult.left);
+  async execute(input: {
+    email: string;
+  }): Promise<Result<User, UserAlreadyExistsError>> {
+    const existing = await this.userRepo.findByEmail(input.email);
+    if (existing) {
+      return err(new UserAlreadyExistsError());
     }
 
-    return await this.repo.create(userResult.right);
+    const userResult = User.create({ email: input.email });
+    if (userResult.kind === "err") {
+      return err(userResult.error);
+    }
+
+    const saved = await this.userRepo.create(userResult.value);
+    return ok(saved);
   }
 }
 ```
@@ -192,10 +228,11 @@ export class CreateUserUseCase {
 ## 5.3 Adapters Layer (`packages/adapters/`)
 
 ### Rules
-1. Implements ports
-2. Converts between domain and persistence
+
+1. Implement ports
+2. Convert between domain and persistence
 3. No business logic
-4. Uses DI via awilix‑modular string keys
+4. Use DI via awilix‑modular string keys
 
 ### Example
 
@@ -214,9 +251,10 @@ export class PrismaUserRepository {
 ## 5.4 Frameworks Layer (`packages/frameworks/`)
 
 ### Rules
-1. awilix‑modular is the **only DI system**
+
+1. awilix‑modular serves as the **only DI system**
 2. No business logic
-3. Provides Prisma, tRPC context, etc.
+3. Provide Prisma, tRPC context, etc.
 
 ### DI Example
 
@@ -238,44 +276,132 @@ const useCase = container.resolve("createUserUseCase");
 
 ---
 
+## 5.5 Authentication & Authorization Patterns
+
+### New Pattern (Post-Refactoring)
+
+Controllers now handle authentication. tRPC middleware no longer manages it:
+
+```
+Client Request (Authorization: Bearer <token>)
+    ↓
+Controller (TokenExtractor.extract from headers)
+    ↓
+Use Case (AuthenticateUserUseCase)
+    ↓
+Port (AuthPort) → Adapter (SupabaseAuthAdapter)
+    ↓
+AuthContext returned
+```
+
+### Controller Pattern
+
+```typescript
+import {
+  requireAuth,
+  requireAdmin,
+} from "@mirai-app/adapters/controller-helpers";
+
+export class MyController {
+  async getData(input: GetDataInput, di: DIContext) {
+    // 1. Extract and validate auth at controller level
+    const authContext = await requireAuth(di.headers, di);
+
+    // 2. Pass AuthContext explicitly to use cases
+    return await this.useCase.execute({ ...input, authContext });
+  }
+
+  async adminOnly(input: AdminInput, di: DIContext) {
+    // Throws TRPCError FORBIDDEN if not admin
+    const authContext = await requireAdmin(di.headers, di);
+    // ...
+  }
+}
+```
+
+### AuthContext Value Object
+
+```typescript
+import { AuthContext, UserRole } from "@mirai-app/domain";
+
+// Created by use cases, passed to controllers
+authContext.userId; // Branded UserId type
+authContext.role; // UserRole.USER | MODERATOR | ADMIN
+authContext.email; // User email
+authContext.isAdmin(); // Helper: role === ADMIN
+authContext.isModerator(); // Helper: role === MODERATOR || ADMIN
+```
+
+### Authorization Use Cases
+
+```typescript
+// Check admin role
+const result = authorizeAdminUseCase.execute({ authContext });
+if (isErr(result)) {
+  // Permission denied - user is not admin
+}
+
+// Check moderator (includes admins)
+const result = authorizeModeratorUseCase.execute({ authContext });
+```
+
+### Result<T,E> from Auth Use Cases
+
+```typescript
+const result = await authenticateUserUseCase.execute({ token });
+if (isOk(result)) {
+  return result.value; // AuthContext
+} else {
+  // Handle: InvalidTokenError, SessionExpiredError, etc.
+}
+```
+
+---
+
 # 6. Error Handling Conventions
 
 ### Domain errors
-- `Either<DomainError, A>`
-- Sealed domain error hierarchy
+
+- `Result<T, DomainError>` (using `ok()`, `err()` helpers)
+- `isOk()` / `isErr()` for checking results
+- Never throw exceptions in domain
 
 ### Use case errors
-- Thrown typed errors (`throw new UseCaseError()`)
+
+- Return `Result<T, Error>` for expected failures
+- Throw typed exceptions only for unexpected errors
 
 ### Adapter errors
-- Let infrastructure throw
-- Translate at adapter boundary if needed
+
+- Translate domain Result to framework errors (e.g., TRPCError)
 
 ---
 
-# 7. SADD Conventions  
-Unchanged.
+# 7. SADD Conventions
+
+No changes.
 
 ---
 
-# 8. Kaizen Conventions  
-Unchanged.
+# 8. Kaizen Conventions
+
+No changes.
 
 ---
 
 # 9. Updated Poka‑Yoke Rules
 
-- Branded types required  
-- No UUID generation in domain  
-- No DI in domain  
+- Branded types required
+- No UUID generation in domain
+- No DI in domain
 
 ---
 
 # 10. Summary of Architectural Guarantees
 
-| Layer | Error Model | Dependencies | DI | UUID | Async |
-|------|------------|--------------|----|------|-------|
-| Domain | Either | None | No | No | No |
-| Use Cases | Exceptions | Domain | Yes | Yes | Yes |
-| Adapters | Exceptions | Use Cases + Domain | Yes | Yes | Yes |
-| Frameworks | Exceptions | Everything | Yes | Yes | Yes |
+| Layer      | Error Model         | Dependencies       | DI  | UUID | Async |
+| ---------- | ------------------- | ------------------ | --- | ---- | ----- |
+| Domain     | Result<T,E>         | None               | No  | No   | No    |
+| Use Cases  | Result + Exceptions | Domain             | Yes | Yes  | Yes   |
+| Adapters   | Exceptions          | Use Cases + Domain | Yes | Yes  | Yes   |
+| Frameworks | Exceptions          | Everything         | Yes | Yes  | Yes   |

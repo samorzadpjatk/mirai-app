@@ -4,9 +4,7 @@
 >
 > Depends on @mirai-app/domain and @mirai-app/use-cases
 
-## Purpose
-
-The adapters layer contains:
+## Contents
 
 - **Controllers**: tRPC routers, API endpoints (thin controllers)
 - **Gateways**: Repository implementations (Prisma, etc.)
@@ -15,34 +13,35 @@ The adapters layer contains:
 
 ## Rules
 
-1. **Implements Inner Layer Interfaces**: Implements ports from use-cases layer
-2. **Data Conversion Only**: Converts between formats, no business logic
-3. **No Decisions**: Adapters adapt, they don't decide
+1. **Implement Inner Layer Interfaces**: Implement use-case ports
+2. **Convert Data Only**: Convert formats, not business logic
+3. **No Decisions**: Adapters adapt; they never decide
 4. **Framework-Specific**: Contains framework-specific code (tRPC, Prisma)
-5. **No Domain Logic**: Business rules stay in domain layer
+5. **No Domain Logic**: Keep business rules in the domain layer
 
 ## Directory Structure
 
 ```
 src/
 ├── index.ts              # Public exports
-├── controllers/          # tRPC routers, API controllers
-│   └── .gitkeep
-├── gateways/             # Repository implementations
-│   └── .gitkeep
-├── presenters/           # Response formatters
-│   └── .gitkeep
-└── mappers/              # Domain <-> DTO <-> DB mapping
-    └── .gitkeep
+├── api/                  # tRPC routers and controllers
+│   ├── trpc.ts          # tRPC setup (publicProcedure only)
+│   ├── controller-helpers.ts  # Auth helpers
+│   └── controllers/      # tRPC routers
+├── utils/               # Utility functions
+│   └── TokenExtractor.ts    # Extract Bearer tokens from headers
+├── gateways/            # Repository implementations
+├── presenters/          # Response formatters
+└── mappers/             # Domain <-> DTO <-> DB mapping
 ```
 
-## Example Usage
+## Examples
 
 ### Repository Implementation (Gateway)
 
-#### Option 1: Using BasePrismaRepository (Recommended)
+#### Option 1: BasePrismaRepository (Recommended)
 
-For repositories with standard CRUD operations, extend the base class:
+Extend the base class for standard CRUD operations:
 
 ```typescript
 // gateways/PrismaUserRepository.ts
@@ -75,7 +74,7 @@ export class PrismaUserRepository
     super(prisma.user, UserMapperAdapter);
   }
 
-  // Add only custom query methods
+  // Add custom query methods only
   async findByAuthUserId(authUserId: string): Promise<User | null> {
     const record = await this.model.findUnique({ where: { authUserId } });
     return record ? this.mapper.toDomain(record) : null;
@@ -91,12 +90,12 @@ export class PrismaUserRepository
 **Benefits:**
 
 - ~70% less code per repository
-- Consistent error handling across all repositories
-- Bug fixes apply to one place (base class)
+- Consistent error handling
+- One place for bug fixes
 
 #### Option 2: Manual Implementation (Legacy/Complex Cases)
 
-For repositories with highly custom needs, implement manually:
+Implement manually for highly custom needs:
 
 ```typescript
 // gateways/PrismaCustomRepository.ts
@@ -118,9 +117,7 @@ export class PrismaCustomRepository implements CustomRepository {
 }
 ```
 
-Use this only when the base class doesn't fit your needs.
-
-````
+Use this only when the base class doesn't fit.
 
 ### Mapper
 
@@ -153,66 +150,120 @@ export class UserMapper {
     };
   }
 }
-````
+```
 
-### Controller (tRPC Router)
+### Controller (tRPC Router) - New Auth Pattern
+
+Controllers handle authentication explicitly. The tRPC layer provides only transport.
 
 ```typescript
 // controllers/user-controller.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, createTRPCRouter } from "@mirai-app/frameworks/trpc";
+import { publicProcedure, createTRPCRouter } from "../trpc";
+import { requireAuth, requireAdmin } from "../controller-helpers";
 import { CreateUserUseCase } from "@mirai-app/use-cases";
-import { PrismaUserRepository } from "../gateways/PrismaUserRepository";
-
-// Input validation schema
-const createUserInput = z.object({
-  email: z.string().email(),
-});
 
 export const userController = createTRPCRouter({
-  create: protectedProcedure
-    .input(createUserInput)
-    .mutation(async ({ ctx, input }) => {
-      // Create use case with repository
-      const userRepo = new PrismaUserRepository(ctx.prisma);
-      const useCase = new CreateUserUseCase(userRepo);
+  // Public endpoint - no auth required
+  getPublicData: publicProcedure.query(async ({ ctx }) => {
+    // No auth needed
+    return { data: "public" };
+  }),
 
-      // Execute use case
-      const result = await useCase.execute(input);
+  // Protected endpoint - requires authentication
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // 1. Extract and validate auth at controller level
+      const authContext = await requireAuth(ctx.headers, ctx.di);
 
-      // Handle error
-      if (result.isError()) {
+      // 2. Resolve use case from DI
+      const useCase = ctx.di.resolve<CreateUserUseCase>("createUserUseCase");
+
+      // 3. Execute with explicit auth context
+      const result = await useCase.execute({
+        ...input,
+        authContext, // Pass auth downstream
+      });
+
+      // 4. Handle Result type
+      if (result.kind === "err") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: result.error,
+          message: result.error.message,
         });
       }
 
-      // Return success
       return result.value;
     }),
 
-  getById: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      const userRepo = new PrismaUserRepository(ctx.prisma);
-      const user = await userRepo.findById(input.id);
+  // Admin-only endpoint
+  adminAction: publicProcedure.mutation(async ({ ctx }) => {
+    // Throws TRPCError FORBIDDEN if not admin
+    const authContext = await requireAdmin(ctx.headers, ctx.di);
 
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
-      }
-
-      return {
-        id: user.id,
-        email: user.email.value,
-      };
-    }),
+    // Execute admin-only logic...
+    return { success: true };
+  }),
 });
 ```
+
+### TokenExtractor Utility
+
+Extracts Bearer tokens from HTTP Authorization headers:
+
+```typescript
+import { TokenExtractor } from "../utils/TokenExtractor";
+
+// In controller or helper:
+const authHeader = ctx.headers.get("authorization");
+const token = TokenExtractor.extract(authHeader); // Returns string | null
+
+if (!token) {
+  throw new TRPCError({ code: "UNAUTHORIZED", message: "No token" });
+}
+```
+
+The TokenExtractor validates the Bearer scheme and handles various header formats.
+
+### Controller Helpers (controller-helpers.ts)
+
+Standard functions for authentication and authorization:
+
+```typescript
+import {
+  requireAuth, // Requires valid authentication
+  requireAdmin, // Requires ADMIN role
+  requireModerator, // Requires MODERATOR or ADMIN role
+  getOptionalAuth, // Returns null if not authenticated
+} from "../controller-helpers";
+
+// Usage examples:
+
+// 1. Require authentication
+const authContext = await requireAuth(ctx.headers, ctx.di);
+// Throws TRPCError UNAUTHORIZED if missing/invalid
+
+// 2. Require admin role
+const authContext = await requireAdmin(ctx.headers, ctx.di);
+// Throws TRPCError FORBIDDEN if not admin
+
+// 3. Require moderator (includes admins)
+const authContext = await requireModerator(ctx.headers, ctx.di);
+// Throws TRPCError FORBIDDEN if not moderator/admin
+
+// 4. Optional authentication
+const authContext = await getOptionalAuth(ctx.headers, ctx.di);
+// Returns AuthContext | null - doesn't throw
+```
+
+All helpers return `AuthContext` with:
+
+- `userId`: Branded UserId type
+- `role`: UserRole (ADMIN, MODERATOR, USER)
+- `email`: User email
+- Helper methods: `isAdmin()`, `isModerator()`, `hasRoleAtLeast()`
 
 ## Testing
 
@@ -273,26 +324,52 @@ export const badController = createTRPCRouter({
 });
 ```
 
+### ❌ Auth Logic in tRPC Middleware
+
+```typescript
+// BAD: Using deleted auth-aware procedures
+export const badController = createTRPCRouter({
+  action: protectedProcedure // ❌ DELETED - doesn't exist
+    .mutation(async ({ ctx, input }) => {
+      // ❌ Old pattern no longer works
+      const userId = ctx.user.id; // ❌ ctx.user removed
+    }),
+});
+```
+
 ### ✅ Clean Controller
 
 ```typescript
-// GOOD: Thin controller delegates to use case
+// GOOD: Thin controller with DI
 export const goodController = createTRPCRouter({
-  create: procedure.mutation(async ({ ctx, input }) => {
-    // Only: Input validation (zod)
-    // Only: Dependency injection
-    const userRepo = new PrismaUserRepository(ctx.prisma);
-    const useCase = new CreateUserUseCase(userRepo);
+  create: publicProcedure
+    .input(createUserInput)
+    .mutation(async ({ ctx, input }) => {
+      // Only: Input validation (zod)
+      // Only: Auth extraction via helpers
+      const authContext = await requireAuth(ctx.headers, ctx.di);
 
-    // Only: Execute and handle result
-    const result = await useCase.execute(input);
+      // Only: DI resolution
+      const controller = ctx.di.resolve("userController");
 
-    if (result.isError()) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: result.error });
-    }
+      // Only: Execute and handle result
+      return controller.create(input, authContext);
+    }),
+});
+```
 
-    return result.value;
-  }),
+### ✅ Auth in Controllers
+
+```typescript
+// GOOD: Auth at controller level
+export const goodController = createTRPCRouter({
+  action: publicProcedure // ✅ Only publicProcedure exists
+    .mutation(async ({ ctx, input }) => {
+      // Controller handles auth
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+      const controller = ctx.di.resolve("myController");
+      return controller.action(input, authContext);
+    }),
 });
 ```
 

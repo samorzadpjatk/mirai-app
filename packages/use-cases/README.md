@@ -27,16 +27,19 @@ The use cases layer contains:
 src/
 ├── index.ts              # Public exports
 ├── ports/                # Repository & service interfaces
-│   └── .gitkeep
+│   ├── UserRepository.ts # Data access ports
+│   ├── AuthPort.ts       # 🔴 NEW: Authentication port
+│   └── TelemetryPort.ts  # 🔴 NEW: Telemetry port
 ├── interactors/          # Use case implementations
-│   └── .gitkeep
+│   ├── CreateUser.ts     # Business workflow use cases
+│   ├── AuthenticateUser.ts   # 🔴 NEW: Authentication use case
+│   ├── AuthorizeAdmin.ts     # 🔴 NEW: Authorization use case
+│   ├── AuthorizeModerator.ts # 🔴 NEW: Authorization use case
+│   └── LogTelemetry.ts       # 🔴 NEW: Telemetry use case
 ├── dto/                  # Data Transfer Objects
-│   ├── input/            # Input DTOs (CreateUserInput, etc.)
-│   │   └── .gitkeep
-│   └── output/           # Output DTOs (UserDTO, etc.)
-│       └── .gitkeep
+│   ├── input/            # Input DTOs
+│   └── output/           # Output DTOs
 └── errors/               # Use case specific errors
-    └── .gitkeep
 ```
 
 ## Example Usage
@@ -55,6 +58,31 @@ export interface UserRepository {
   delete(id: string): Promise<void>;
 }
 ```
+
+### Cross-Cutting Concern Ports
+
+Unlike repository ports that handle data access, these ports abstract
+infrastructure concerns (authentication, logging, metrics):
+
+```typescript
+// ports/AuthPort.ts - Authentication abstraction
+export interface AuthPort {
+  validateToken(token: string): Promise<Result<AuthContext, AuthError>>;
+  getUserById(userId: UserId): Promise<Result<AuthUser, AuthError>>;
+}
+
+// ports/TelemetryPort.ts - Observability abstraction
+export interface TelemetryPort {
+  log(event: TelemetryEvent): Promise<Result<void, TelemetryError>>;
+  trackMetric(name: string, value: number): Promise<void>;
+}
+```
+
+**Key Differences from Repository Ports:**
+
+- Repository ports: Data persistence (CRUD operations)
+- Cross-cutting ports: Infrastructure services (auth, logging, external APIs)
+- Cross-cutting ports often have framework-specific implementations (Supabase, Sentry, etc.)
 
 ### Creating an Input DTO
 
@@ -122,6 +150,110 @@ export class CreateUserUseCase {
 }
 ```
 
+## Authentication & Authorization Use Cases
+
+### Authentication Use Case
+
+Delegates token validation to AuthPort:
+
+```typescript
+// interactors/AuthenticateUser.ts
+import type { AuthPort } from "../ports/AuthPort";
+import type { Result } from "@mirai-app/domain";
+import { AuthContext } from "@mirai-app/domain";
+
+export interface AuthenticateUserInput {
+  token: string;
+}
+
+export class AuthenticateUserUseCase {
+  constructor(private readonly authPort: AuthPort) {}
+
+  async execute(
+    input: AuthenticateUserInput,
+  ): Promise<Result<AuthContext, AuthError>> {
+    // Delegate to port - no business logic, just orchestration
+    return this.authPort.validateToken(input.token);
+  }
+}
+```
+
+### Authorization Use Cases
+
+Check roles and return `Result<void, PermissionDeniedError>`:
+
+```typescript
+// interactors/AuthorizeAdmin.ts
+import { AuthContext, isErr, ok, err } from "@mirai-app/domain";
+import { PermissionDeniedError } from "../errors/PermissionDeniedError";
+import type { Result } from "@mirai-app/domain";
+
+export interface AuthorizeAdminInput {
+  authContext: AuthContext;
+}
+
+export class AuthorizeAdminUseCase {
+  execute(input: AuthorizeAdminInput): Result<void, PermissionDeniedError> {
+    if (input.authContext.role !== UserRole.ADMIN) {
+      return err(new PermissionDeniedError("Admin role required"));
+    }
+    return ok(undefined);
+  }
+}
+
+// Usage in controller:
+const result = authorizeAdminUseCase.execute({ authContext });
+if (isErr(result)) {
+  // Handle: User is not admin
+}
+```
+
+### Role Hierarchy
+
+- **ADMIN**: Full system access
+- **MODERATOR**: Moderation capabilities (includes all USER permissions)
+- **USER**: Basic user access
+
+Hierarchy: ADMIN > MODERATOR > USER
+
+### Telemetry Use Case
+
+Fire-and-forget logging that shouldn't block the main request:
+
+```typescript
+// interactors/LogTelemetry.ts
+import type { TelemetryPort } from "../ports/TelemetryPort";
+import type { Result } from "@mirai-app/domain";
+
+export interface LogTelemetryInput {
+  userId: UserId;
+  event: string;
+  metadata?: Record<string, unknown>;
+}
+
+export class LogTelemetryUseCase {
+  constructor(private readonly telemetryPort: TelemetryPort) {}
+
+  async execute(
+    input: LogTelemetryInput,
+  ): Promise<Result<void, TelemetryError>> {
+    return this.telemetryPort.log({
+      userId: input.userId,
+      event: input.event,
+      timestamp: new Date(),
+      metadata: input.metadata,
+    });
+  }
+}
+
+// Usage in controller (errors are non-blocking):
+const result = await logTelemetryUseCase.execute(input);
+if (isErr(result)) {
+  // Log locally but don't fail the request
+  console.warn("Telemetry failed:", result.error);
+}
+```
+
 ## Testing
 
 Use case tests mock repositories:
@@ -167,6 +299,17 @@ export class PrismaUserRepository implements UserRepository {
   async findById(id: string): Promise<User | null> { ... }
 }
 ```
+
+### Cross-Cutting vs Repository Ports
+
+- **Repository Ports**: Define data persistence contracts
+  - Example: `UserRepository.create(user: User)`
+  - Implemented by: Prisma repositories in adapters layer
+
+- **Cross-Cutting Ports**: Define infrastructure service contracts
+  - Example: `AuthPort.validateToken(token: string)`
+  - Example: `TelemetryPort.log(event: TelemetryEvent)`
+  - Implemented by: Framework-specific adapters (Supabase, Sentry, etc.)
 
 ### DTOs Separate Layers
 

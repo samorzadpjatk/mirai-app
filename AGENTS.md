@@ -69,6 +69,7 @@ Is it pure business logic?
 - **Execute:** Use `/sdd:implement`.
 
 **File locations:**
+
 - **Draft:** `.specs/tasks/draft/`
 - **Ready:** `.specs/tasks/todo/`
 - **Active:** `.specs/tasks/in-progress/`
@@ -88,12 +89,12 @@ Is it pure business logic?
 
 **Test locations by layer:**
 
-| Layer | Pattern | Example |
-| --- | --- | --- |
-| Domain | Co-located | `src/entities/User.ts` → `User.test.ts` |
-| Use Cases | Co-located | `src/interactors/CreateUser.ts` → `CreateUser.test.ts` |
-| Adapters | `__tests__/` | `src/gateways/*.ts` → `__tests__/*.test.ts` |
-| Apps | `__tests__/` | `src/components/*.tsx` → `__tests__/*.test.tsx` |
+| Layer     | Pattern      | Example                                                |
+| --------- | ------------ | ------------------------------------------------------ |
+| Domain    | Co-located   | `src/entities/User.ts` → `User.test.ts`                |
+| Use Cases | Co-located   | `src/interactors/CreateUser.ts` → `CreateUser.test.ts` |
+| Adapters  | `__tests__/` | `src/gateways/*.ts` → `__tests__/*.test.ts`            |
+| Apps      | `__tests__/` | `src/components/*.tsx` → `__tests__/*.test.tsx`        |
 
 **Test running:**
 
@@ -103,20 +104,21 @@ cd packages/domain && bun test
 bun test --coverage
 ```
 
-#### Effect-aware testing rules
+#### Testing rules
 
-- **Domain tests:** Use `Either` (pure, no async, no DI).
-- **Use case tests:** Use `Effect.runPromise(...)` and mock ports via DI container.
-- **Adapter tests:** Integration tests; wrap external calls with `Effect.tryPromise(...)`.
+- **Domain tests:** Use `Result<T,E>` (pure, no async, no DI).
+- **Use case tests:** Use `async/await` and mock ports via DI container.
+- **Adapter tests:** Integration tests; wrap external calls with `Effect.tryPromise(...)`, but prefer `Result` for domain interactions.
 
 ---
 
-### DDD: Domain-driven design (Effect TS edition)
+### DDD: Domain-driven design
 
 **Key rules:**
+
 - **Domain purity:** ZERO external dependencies in domain.
 - **Dependency direction:** Always inward (Frameworks → Adapters → Use Cases → Domain).
-- **Error handling model:** Domain uses `Either`; use-cases/adapters use `Effect`.
+- **Error handling model:** Domain uses `Result<T,E>`; use-cases use `async/await` + `Promise<Result<T,E>>`.
 - **ID types:** Use branded types; do not mix IDs across aggregates.
 - **No UUID/time randomness in domain:** Pass `id` and `createdAt` in.
 
@@ -124,7 +126,8 @@ bun test --coverage
 
 ```ts
 // packages/domain/src/entities/MyEntity.ts
-import { Either, left, right } from "effect/Either";
+import type { Result } from "./result";
+import { ok, err } from "./result";
 
 export class ValidationError extends Error {
   readonly _tag = "ValidationError";
@@ -141,8 +144,27 @@ export class MyEntity {
     id: string;
     name: string;
     createdAt: Date;
+  }): Result<MyEntity, ValidationError> {
+    if (props.name.trim().length === 0)
+      return err(new ValidationError("Name is required"));
+    return ok(new MyEntity(props.id, props.name, props.createdAt));
+  }
+}
+
+export class MyEntity {
+  private constructor(
+    readonly id: string,
+    readonly name: string,
+    readonly createdAt: Date,
+  ) {}
+
+  static create(props: {
+    id: string;
+    name: string;
+    createdAt: Date;
   }): Either<ValidationError, MyEntity> {
-    if (props.name.trim().length === 0) return left(new ValidationError("Name is required"));
+    if (props.name.trim().length === 0)
+      return left(new ValidationError("Name is required"));
     return right(new MyEntity(props.id, props.name, props.createdAt));
   }
 }
@@ -153,7 +175,7 @@ export class MyEntity {
 - **Wrong imports:** Importing Prisma/tRPC/Effect runtime services into domain.
 - **Hidden nondeterminism:** Using `Date.now()`, `Math.random()`, `crypto.randomUUID()` in domain.
 - **Mutation:** Mutating entity state instead of returning new instances.
-- **Exceptions as control flow:** Throwing in domain instead of returning `Either`.
+- **Exceptions as control flow:** Throwing in domain instead of returning `Result<T,E>`.
 
 ---
 
@@ -163,13 +185,13 @@ export class MyEntity {
 
 **Quality gates:**
 
-| Component | Threshold | Judges |
-| --- | --- | --- |
-| Documentation | 4.0/5.0 | 1 |
-| Package scaffold | 4.0/5.0 | 1 |
-| Entity extraction | 4.5/5.0 | 2 (panel) |
-| Use case | 4.5/5.0 | 2 (panel) |
-| Critical logic | 4.5/5.0 | 2 (panel) |
+| Component         | Threshold | Judges    |
+| ----------------- | --------- | --------- |
+| Documentation     | 4.0/5.0   | 1         |
+| Package scaffold  | 4.0/5.0   | 1         |
+| Entity extraction | 4.5/5.0   | 2 (panel) |
+| Use case          | 4.5/5.0   | 2 (panel) |
+| Critical logic    | 4.5/5.0   | 2 (panel) |
 
 **Parallel vs sequential:**
 
@@ -192,6 +214,7 @@ Sequential (dependent):
 ```
 
 **Subagent commands:**
+
 - **Launch:** `/sadd:launch-sub-agent`
 - **Do + judge:** `/sadd:do-and-judge`
 - **Parallel:** `/sadd:do-in-parallel`
@@ -204,11 +227,13 @@ Sequential (dependent):
 **When to use:** Every code interaction.
 
 **YAGNI checklist:**
+
 - **Need now:** Is this required for current acceptance criteria?
 - **Simplify:** Can this be simpler without losing clarity?
 - **Refactor now:** Is there duplication you can remove while context is fresh?
 
 **Red flags:**
+
 - **“Later” refactor:** Refactor now.
 - **Speculative features:** Don’t build “maybe” features.
 - **Untested “simple” code:** Test it anyway.
@@ -237,11 +262,12 @@ container.register({
 
 ```ts
 export const userRouter = createTRPCRouter({
-  getById: protectedProcedure
+  getById: publicProcedure // ✅ Only procedure type
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Auth happens in controller, not middleware
       const controller = ctx.container.resolve("userController");
-      return controller.getById(input);
+      return controller.getById(input, ctx.container);
     }),
 });
 ```
@@ -267,11 +293,11 @@ export const ControllerModule = createStaticModule({
 
 ### Scope strategy
 
-| Scope | Use for | Lifetime |
-| --- | --- | --- |
-| SINGLETON | Repositories, stateless services | One per app |
-| SCOPED | Controllers, use cases | One per request |
-| TRANSIENT | Utilities, factories | New each resolve |
+| Scope     | Use for                          | Lifetime         |
+| --------- | -------------------------------- | ---------------- |
+| SINGLETON | Repositories, stateless services | One per app      |
+| SCOPED    | Controllers, use cases           | One per request  |
+| TRANSIENT | Utilities, factories             | New each resolve |
 
 ---
 
@@ -288,11 +314,41 @@ export const ControllerModule = createStaticModule({
 
 ---
 
-## Use case template (Effect + ports)
+### Authentication in Controllers
+
+Controllers handle authentication using helper functions from `controller-helpers.ts`:
+
+```typescript
+import { requireAuth, requireAdmin, requireModerator, getOptionalAuth }
+  from "@mirai-app/adapters";
+
+// In controller method:
+async getById(input: GetByIdInput, di: DIContext) {
+  // Require authentication (throws TRPCError if missing/invalid)
+  const authContext = await requireAuth(di.headers, di);
+
+  // Now authContext.userId, authContext.role available
+  return await this.useCase.execute({ ...input, authContext });
+}
+
+// For admin-only endpoints:
+async adminAction(input: AdminInput, di: DIContext) {
+  // Throws if not admin
+  const authContext = await requireAdmin(di.headers, di);
+  // ...
+}
+```
+
+AuthContext is passed explicitly to use cases. No auth in tRPC middleware.
+
+---
+
+## Use case template (async/await + Result)
 
 ```ts
 // packages/use-cases/src/interactors/DoSomething.ts
-import { Effect } from "effect";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 export class EntityNotFoundError extends Error {
   readonly _tag = "EntityNotFoundError";
@@ -301,16 +357,46 @@ export class EntityNotFoundError extends Error {
 export class DoSomethingUseCase {
   constructor(private readonly repo: MyEntityRepository) {}
 
-  execute(input: DoSomethingInput) {
-    return Effect.gen(function* (_) {
-      const entity = yield* _(this.repo.findById(input.entityId));
-      if (!entity) return yield* _(Effect.fail(new EntityNotFoundError()));
+  async execute(
+    input: DoSomethingInput,
+  ): Promise<Result<SomethingResultDTO, EntityNotFoundError>> {
+    const entity = await this.repo.findById(input.entityId);
+    if (!entity) return err(new EntityNotFoundError());
 
-      const updated = yield* _(this.repo.save(entity));
-      return SomethingResultDTO.fromDomain(updated);
-    }.bind(this));
+    const updated = await this.repo.save(entity);
+    return ok(SomethingResultDTO.fromDomain(updated));
   }
 }
+```
+
+### Use case test template
+
+```ts
+import { describe, it, expect, beforeEach } from "bun:test";
+import { createTestContainer } from "@mirai-app/frameworks/di";
+import { asClass } from "awilix";
+
+describe("[UNIT] DoSomethingUseCase", () => {
+  let container: any;
+
+  beforeEach(() => {
+    container = createTestContainer();
+    container.register({
+      myEntityRepository: asClass(InMemoryMyEntityRepository).singleton(),
+      doSomethingUseCase: asClass(DoSomethingUseCase).scoped(),
+    });
+  });
+
+  it("returns DTO on success", async () => {
+    const useCase = container.resolve("doSomethingUseCase");
+    const result = await useCase.execute({ entityId: "1" });
+
+    expect(result.kind).toBe("ok");
+    if (result.kind === "ok") {
+      expect(result.value).toBeDefined();
+    }
+  });
+});
 ```
 
 ### Use case test template (Effect.runPromise)
@@ -357,10 +443,10 @@ If you use a shared base repository (e.g., `BasePrismaRepository`), it must rema
 
 ### Commands
 
-| Command | Purpose | When to use |
-| --- | --- | --- |
-| `bun test` | Run all tests | Full validation |
-| `bun test:unit` | Unit tests only | Fast feedback |
+| Command                | Purpose                | When to use       |
+| ---------------------- | ---------------------- | ----------------- |
+| `bun test`             | Run all tests          | Full validation   |
+| `bun test:unit`        | Unit tests only        | Fast feedback     |
 | `bun test:integration` | Integration tests only | External services |
 
 ### Test tagging convention
@@ -395,27 +481,27 @@ describe("[INTEGRATION] PrismaUserRepository", () => {});
 
 ### Layer boundary confusion
 
-- **Domain:** pure business logic (`Either`)
-- **Use cases:** orchestration (`Effect`)
-- **Adapters:** framework integration (`Effect.tryPromise`)
+- **Domain:** pure business logic (`Result<T,E>` - no exceptions, no async)
+- **Use cases:** orchestration (`async/await` + `Promise<Result<T,E>>`)
+- **Adapters:** framework integration (translate Result to TRPCError)
 - **Frameworks:** configuration + DI wiring
 
 ---
 
 ## Skill reference
 
-| Skill | Path | Use case |
-| --- | --- | --- |
-| sdd:add-task | `.agents/skills/sdd-add-task/` | Create new specification |
-| sdd:plan | `.agents/skills/sdd-plan/` | Refine task specification |
-| sdd:implement | `.agents/skills/sdd-implement/` | Execute implementation |
-| sadd:launch-sub-agent | `.agents/skills/sadd-launch-sub-agent/` | Execute with subagent |
-| sadd:do-and-judge | `.agents/skills/sadd-do-and-judge/` | Execute with retry |
-| sadd:judge | `.agents/skills/sadd-judge/` | Evaluate work |
-| kaizen:why | `.agents/skills/kaizen-why/` | Root cause analysis |
-| kaizen:plan-do-check-act | `.agents/skills/kaizen-plan-do-check-act/` | PDCA cycle |
+| Skill                    | Path                                       | Use case                  |
+| ------------------------ | ------------------------------------------ | ------------------------- |
+| sdd:add-task             | `.agents/skills/sdd-add-task/`             | Create new specification  |
+| sdd:plan                 | `.agents/skills/sdd-plan/`                 | Refine task specification |
+| sdd:implement            | `.agents/skills/sdd-implement/`            | Execute implementation    |
+| sadd:launch-sub-agent    | `.agents/skills/sadd-launch-sub-agent/`    | Execute with subagent     |
+| sadd:do-and-judge        | `.agents/skills/sadd-do-and-judge/`        | Execute with retry        |
+| sadd:judge               | `.agents/skills/sadd-judge/`               | Evaluate work             |
+| kaizen:why               | `.agents/skills/kaizen-why/`               | Root cause analysis       |
+| kaizen:plan-do-check-act | `.agents/skills/kaizen-plan-do-check-act/` | PDCA cycle                |
 
 ---
 
 **Last Updated:** 2026-04-09  
-**Version:** 1.0.3
+**Version:** 1.1.0

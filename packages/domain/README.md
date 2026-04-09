@@ -1,12 +1,10 @@
-# @mirai-app/domain - Domain Layer
+# @mirai-app/domain
 
 > **Innermost layer of Clean Architecture - Pure business logic**
 >
-> ZERO external dependencies. Only pure TypeScript/JavaScript.
+> Zero external dependencies. Only pure TypeScript/JavaScript.
 
-## Purpose
-
-The domain layer contains:
+## What this package exports
 
 - **Entities**: Business objects with identity (User, Challenge, etc.)
 - **Value Objects**: Immutable concepts without identity (Email, Money, DateRange)
@@ -30,56 +28,70 @@ src/
 ├── entities/             # Domain entities
 │   └── .gitkeep
 ├── value-objects/        # Value objects
+│   ├── AuthContext.ts    # 🔴 NEW: Auth context VO
 │   └── .gitkeep
+├── enums/                # 🔴 NEW: Enumeration types
+│   └── UserRole.ts       # User roles (ADMIN, MODERATOR, USER)
+├── types/                # 🔴 NEW: Core types
+│   └── Result.ts         # Result<T,E> type
 ├── domain-services/      # Pure domain operations
 │   └── .gitkeep
-├── repositories/         # Repository INTERFACES only
-│   └── .gitkeep
 └── utils/                # Pure utilities
-    ├── result.ts         # Result<T,E> type
-    └── validation.ts     # Pure validation functions
+    ├── result.ts         # Result utilities (legacy)
+    └── validation.ts     # Validation functions
 ```
 
-## Example Usage
+## Creating an Entity
 
 ```typescript
-// Creating an entity
 import { User } from "@mirai-app/domain";
-import { Email } from "@mirai-app/domain/value-objects/Email";
+import { isOk, isErr } from "@mirai-app/domain";
 
 const result = User.create({ email: "user@example.com" });
 
-if (result.isError()) {
+if (isErr(result)) {
   console.error(result.error);
 } else {
   const user = result.value;
-  console.log(user.id); // UUID
-  console.log(user.email.value); // "user@example.com"
+  console.log(user.id);
+  console.log(user.email.value);
 }
 ```
 
 ## Testing
 
-All domain code must be tested with pure unit tests:
+Test domain code with pure unit tests:
 
 ```typescript
 import { describe, it, expect } from "bun:test";
+import { isOk, isErr } from "@mirai-app/domain";
 import { User } from "./User";
 
 describe("User", () => {
-  it("should create with valid email", () => {
+  it("creates with valid email", () => {
     const result = User.create({ email: "test@example.com" });
-    expect(result.isSuccess()).toBe(true);
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.value.email.value).toBe("test@example.com");
+    }
+  });
+
+  it("rejects invalid email", () => {
+    const result = User.create({ email: "invalid" });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.message).toContain("Invalid");
+    }
   });
 });
 ```
 
-## Error Handling
+## Error Handling with Result<T,E>
 
-Always use `Result<T,E>` for operations that can fail:
+The domain uses `Result<T, E>` for operations that fail:
 
 ```typescript
-import { Result, ok, err } from "@mirai-app/domain/utils/result";
+import { Result, ok, err, isOk, isErr } from "./types/Result";
 
 function validateEmail(input: string): Result<Email, string> {
   if (!input.includes("@")) {
@@ -87,11 +99,96 @@ function validateEmail(input: string): Result<Email, string> {
   }
   return ok(new Email(input));
 }
+
+// Usage with type guards:
+const result = validateEmail("user@example.com");
+if (isOk(result)) {
+  console.log(result.value); // Email
+} else {
+  console.error(result.error); // string
+}
+
+// Usage with discriminated unions:
+if (result.kind === "ok") {
+  console.log(result.value); // Email
+} else {
+  console.error(result.error); // string
+}
+```
+
+### Result<T,E> Type
+
+```typescript
+type Result<T, E> = { kind: "ok"; value: T } | { kind: "err"; error: E };
+```
+
+**Helpers:**
+
+- `ok(value)` - Create success result
+- `err(error)` - Create error result
+- `isOk(result)` - Type guard for success
+- `isErr(result)` - Type guard for error
+
+## AuthContext
+
+`AuthContext` holds authentication state as an immutable value object:
+
+```typescript
+import { AuthContext, UserRole, UserId } from "@mirai-app/domain";
+import { isOk } from "@mirai-app/domain";
+
+// Create AuthContext
+const result = AuthContext.create({
+  userId: createUserId("uuid-123"),
+  role: UserRole.USER,
+  email: "user@example.com",
+  authenticatedAt: new Date(),
+});
+
+if (isOk(result)) {
+  const auth = result.value;
+
+  // Access properties
+  console.log(auth.userId); // Branded UserId
+  console.log(auth.role); // UserRole.USER
+  console.log(auth.email); // "user@example.com"
+  console.log(auth.isAdmin()); // false
+
+  // Check permissions
+  if (auth.hasRoleAtLeast(UserRole.MODERATOR)) {
+    // User is moderator or admin
+  }
+
+  // Immutable updates
+  const adminAuth = auth.withRole(UserRole.ADMIN);
+}
+```
+
+### UserRole Enum
+
+```typescript
+import { UserRole, isAdminRole, isModeratorRole } from "@mirai-app/domain";
+
+// Values
+UserRole.USER; // "USER"
+UserRole.MODERATOR; // "MODERATOR"
+UserRole.ADMIN; // "ADMIN"
+
+// Type guard
+const role: string = getRoleFromSomewhere();
+if (isAdminRole(role)) {
+  // role is typed as UserRole.ADMIN
+}
+
+// Hierarchy check
+isModeratorOrBetter(UserRole.MODERATOR); // true
+isModeratorOrBetter(UserRole.ADMIN); // true
+isModeratorOrBetter(UserRole.USER); // false
 ```
 
 ## Branded Types
 
-Use branded types to prevent mixing different kinds of IDs:
+Branded types prevent mixing different kinds of IDs:
 
 ```typescript
 type UserId = string & { readonly brand: unique symbol };
@@ -106,6 +203,8 @@ const challengeId = createChallengeId("uuid-456");
 // TypeScript prevents accidental mixing:
 // userId === challengeId  // Compile error!
 ```
+
+AuthContext uses branded `UserId` to distinguish user identifiers from other IDs.
 
 ## References
 
