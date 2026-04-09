@@ -3,27 +3,15 @@
   "version": "0.1.0",
   "description": "Domain layer - pure business logic, zero external dependencies",
   "type": "module",
+  "main": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./entities/*": {
-      "types": "./dist/entities/*.d.ts",
-      "default": "./dist/entities/*.js"
-    },
-    "./value-objects/*": {
-      "types": "./dist/value-objects/*.d.ts",
-      "default": "./dist/value-objects/*.js"
-    },
-    "./utils/*": {
-      "types": "./dist/utils/*.d.ts",
-      "default": "./dist/utils/*.js"
-    }
+    ".": "./src/index.ts",
+    "./entities/*": "./src/entities/*.ts",
+    "./value-objects/*": "./src/value-objects/*.ts",
+    "./utils/*": "./src/utils/*.ts",
+    "./errors": "./src/errors/index.ts"
   },
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
     "test": "bun test",
     "test:unit": "bun test",
     "test:coverage": "bun test --coverage",

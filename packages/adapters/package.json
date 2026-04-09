@@ -3,59 +3,26 @@
   "version": "0.1.0",
   "description": "Adapters layer - interface adapters, depends on domain and use-cases",
   "type": "module",
+  "main": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.ts"
-    },
-    "./controllers/*": {
-      "types": "./dist/controllers/*.d.ts",
-      "default": "./dist/controllers/*.js"
-    },
-    "./auth": {
-      "types": "./dist/controllers/auth/index.d.ts",
-      "default": "./src/controllers/auth/index.ts"
-    },
-    "./auth/authServer": {
-      "types": "./dist/controllers/auth/authServer.d.ts",
-      "default": "./src/controllers/auth/authServer.ts"
-    },
-    "./gateways/*": {
-      "types": "./dist/gateways/*.d.ts",
-      "default": "./dist/gateways/*.js"
-    },
-    "./mappers/*": {
-      "types": "./dist/mappers/*.d.ts",
-      "default": "./dist/mappers/*.js"
-    },
-    "./api/*": {
-      "types": "./dist/api/*.d.ts",
-      "default": "./dist/api/*.js"
-    },
-    "./api": {
-      "types": "./dist/api/index.d.ts",
-      "default": "./src/api/index.ts"
-    },
-    "./services/*": {
-      "types": "./dist/services/*.d.ts",
-      "default": "./dist/services/*.js"
-    },
-    "./utils/*": {
-      "types": "./dist/utils/*.d.ts",
-      "default": "./dist/utils/*.js"
-    },
-    "./modules": {
-      "types": "./dist/modules/RepositoryModule.d.ts",
-      "default": "./src/modules/RepositoryModule.ts"
-    },
-    "./modules/*": {
-      "types": "./dist/modules/*.d.ts",
-      "default": "./src/modules/*.ts"
-    }
+    ".": "./src/index.ts",
+    "./controllers/*": "./src/controllers/*.ts",
+    "./auth": "./src/controllers/auth/index.ts",
+    "./auth/authServer": "./src/controllers/auth/authServer.ts",
+    "./gateways": "./src/gateways/index.ts",
+    "./gateways/*": "./src/gateways/*.ts",
+    "./mappers/*": "./src/mappers/*.ts",
+    "./api/*": "./src/api/*.ts",
+    "./api": "./src/api/index.ts",
+    "./services/*": "./src/services/*.ts",
+    "./utils/*": "./src/utils/*.ts",
+    "./modules": "./src/modules/RepositoryModule.ts",
+    "./modules/*": "./src/modules/*.ts",
+    "./errors": "./src/errors/index.ts",
+    "./layers": "./src/layers/index.ts",
+    "./test-utils": "./src/test-utils/index.ts"
   },
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
     "test": "bun test",
     "test:coverage": "bun test --coverage",
     "test:unit": "bun test -t '\\[UNIT\\]'",
@@ -68,9 +35,9 @@
   "dependencies": {
     "@mirai-app/domain": "workspace:*",
     "@mirai-app/use-cases": "workspace:*",
-    "@mirai-app/frameworks": "workspace:*",
     "@mirai-app/shared": "workspace:*",
     "@trpc/server": "^11.10.0",
+    "effect": "^3.18.4",
     "expo-server-sdk": "^3.14.0",
     "superjson": "^2.2.2",
     "zod": "^3.22.4"

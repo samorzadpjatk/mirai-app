@@ -3,31 +3,16 @@
   "version": "0.1.0",
   "description": "Use cases layer - application orchestration, depends only on domain",
   "type": "module",
+  "main": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./ports/*": {
-      "types": "./dist/ports/*.d.ts",
-      "default": "./dist/ports/*.js"
-    },
-    "./interactors/*": {
-      "types": "./dist/interactors/*.d.ts",
-      "default": "./dist/interactors/*.js"
-    },
-    "./dto/*": {
-      "types": "./dist/dto/*.d.ts",
-      "default": "./dist/dto/*.js"
-    },
-    "./errors/*": {
-      "types": "./dist/errors/*.d.ts",
-      "default": "./dist/errors/*.js"
-    }
+    ".": "./src/index.ts",
+    "./ports/*": "./src/ports/*.ts",
+    "./interactors/*": "./src/interactors/*.ts",
+    "./dto/*": "./src/dto/*.ts",
+    "./errors/*": "./src/errors/*.ts",
+    "./modules/*": "./src/modules/*.ts"
   },
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
     "test": "bun test",
     "test:unit": "bun test",
     "test:coverage": "bun test --coverage",
@@ -38,10 +23,10 @@
   },
   "dependencies": {
     "@mirai-app/domain": "workspace:*",
-    "@mirai-app/frameworks": "workspace:*",
     "effect": "^3.18.4"
   },
   "devDependencies": {
+    "@mirai-app/adapters": "workspace:*",
     "@types/bun": "latest",
     "typescript": "^5.9.3"
   },

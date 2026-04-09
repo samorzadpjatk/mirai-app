@@ -1,0 +1,72 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "apps/backend-server/src/server.ts",
+    "apps/web/src/index.tsx",
+    "apps/notification-sender/src/index.ts",
+    "packages/*/src/index.ts"
+  ],
+  "project": [
+    "apps/backend-server/**/*.ts",
+    "apps/web/**/*.{ts,tsx}",
+    "apps/notification-sender/**/*.ts",
+    "packages/**/*.ts"
+  ],
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__mocks__/**",
+    "**/__tests__/**",
+    "**/*.d.ts",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/*.config.ts",
+    "**/*.config.cjs",
+    "**/*.config.mjs",
+    "**/tailwind.config.*",
+    "**/metro.config.*",
+    "**/babel.config.*",
+    "**/jest.config.*",
+    "**/jest.setup.*",
+    "apps/seed/**",
+    "apps/native/**",
+    "packages/test-utils/**"
+  ],
+  "project": ["apps/**/*.{ts,tsx}", "packages/**/*.{ts,tsx}"],
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__mocks__/**",
+    "**/__tests__/**",
+    "**/*.d.ts",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "apps/seed/**",
+    "apps/native/**",
+    "packages/test-utils/**"
+  ],
+  "workspaces": {
+    "packages/domain": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/use-cases": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/adapters": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "packages/frameworks": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/shared": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    }
+  }
+}
