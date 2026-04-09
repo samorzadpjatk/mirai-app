@@ -66,22 +66,141 @@ const mockSupabase = () => {
   } as any;
 };
 
+// Helper to create user controller mock
+const createUserControllerMock = () => ({
+  getById: mock(({ id }: { id: string }) => {
+    if (id === "user-2") {
+      return Promise.resolve({
+        success: true,
+        data: {
+          id: "user-2",
+          authUserId: "auth-user-2",
+          firstName: "Jane",
+          lastName: "Smith",
+          fullName: "Jane Smith",
+          role: "USER",
+          hasAvatar: false,
+          createdAt: new Date(),
+          lastSeenOn: null,
+        },
+      });
+    }
+    if (id === "nonexistent") {
+      return Promise.resolve({
+        success: false,
+        error: "User not found",
+      });
+    }
+    return Promise.resolve({
+      success: false,
+      error: "User not found",
+    });
+  }),
+});
+
+// Create auth use case mocks
+const createAuthUseCaseMocks = (userId: string, role: string) => ({
+  authenticateUserUseCase: {
+    execute: mock(() =>
+      Promise.resolve({
+        kind: "ok" as const,
+        value: {
+          userId: userId,
+          role: role,
+          authUserId: `auth-${userId}`,
+          email: "test@example.com",
+        },
+      }),
+    ),
+  },
+  authorizeModeratorUseCase: {
+    execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+  },
+  authorizeAdminUseCase: {
+    execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+  },
+});
+
+// Helper to create mock DI context with all required tokens
+const createMockDIContext = (userId: string, role: string) => {
+  const authMocks = createAuthUseCaseMocks(userId, role);
+  const userController = createUserControllerMock();
+
+  return {
+    container: {} as any,
+    resolve: mock(<T>(token: string): T => {
+      if (token === "userController") {
+        return userController as unknown as T;
+      }
+      if (token === "authenticateUserUseCase") {
+        return authMocks.authenticateUserUseCase as unknown as T;
+      }
+      if (token === "authorizeModeratorUseCase") {
+        return authMocks.authorizeModeratorUseCase as unknown as T;
+      }
+      if (token === "authorizeAdminUseCase") {
+        return authMocks.authorizeAdminUseCase as unknown as T;
+      }
+      throw new Error(`Unknown token: ${token}`);
+    }),
+    scope: {
+      requestId: "test-request-id",
+      dispose: () => Promise.resolve(),
+      container: {} as any,
+    },
+  };
+};
+
+// Helper to create custom DI context for specific test scenarios
+const createCustomDIContext = (
+  customMocks: Record<string, unknown>,
+  baseUserId = "user-1",
+  baseRole = "MODERATOR",
+) => {
+  const authMocks = createAuthUseCaseMocks(baseUserId, baseRole);
+  const userController = createUserControllerMock();
+
+  return {
+    container: {} as any,
+    resolve: mock(<T>(token: string): T => {
+      // Check for custom mocks first
+      if (customMocks[token] !== undefined) {
+        return customMocks[token] as T;
+      }
+      // Fall back to defaults
+      if (token === "userController") {
+        return userController as unknown as T;
+      }
+      if (token === "authenticateUserUseCase") {
+        return authMocks.authenticateUserUseCase as unknown as T;
+      }
+      if (token === "authorizeModeratorUseCase") {
+        return authMocks.authorizeModeratorUseCase as unknown as T;
+      }
+      if (token === "authorizeAdminUseCase") {
+        return authMocks.authorizeAdminUseCase as unknown as T;
+      }
+      throw new Error(`Unknown token: ${token}`);
+    }),
+    scope: {
+      requestId: "test-request-id",
+      dispose: () => Promise.resolve(),
+      container: {} as any,
+    },
+  };
+};
+
+// Helper to create headers with authorization
+const createAuthHeaders = (token = "test-token") => {
+  const headers = new Headers();
+  headers.set("authorization", `Bearer ${token}`);
+  return headers;
+};
+
 describe("[INTEGRATION] user router with DI", () => {
   let mockCtx: any;
 
   const setupAuthMocks = (role: "USER" | "MODERATOR" | "ADMIN" = "USER") => {
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-user-1` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-user-1` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.admin.getUserById.mockResolvedValueOnce({
-      data: { user: { id: "auth-user-1", banned_until: null } },
-      error: null,
-    });
     mockCtx.db.user.findFirst.mockResolvedValueOnce({
       id: "user-1",
       authUserId: "auth-user-1",
@@ -97,13 +216,15 @@ describe("[INTEGRATION] user router with DI", () => {
       role: role,
     });
     mockCtx.dbUser.role = role;
+    // Update DI context with proper auth mocks (includes userController)
+    mockCtx.di = createMockDIContext("user-1", role);
   };
 
   beforeEach(() => {
     mockCtx = {
       db: mockDb(),
       supabase: mockSupabase(),
-      headers: new Headers(),
+      headers: createAuthHeaders(),
       accessToken: "test-token",
       dbUser: {
         id: "user-1",
@@ -112,51 +233,7 @@ describe("[INTEGRATION] user router with DI", () => {
         lastName: "Doe",
         role: "USER" as const,
       },
-      // Mock DI context for dependency injection
-      di: {
-        container: {} as any,
-        resolve: <T>(token: string): T => {
-          // Mock controller resolution for UserController
-          if (token === "userController") {
-            return {
-              getById: mock(({ id }: { id: string }) => {
-                if (id === "user-2") {
-                  return Promise.resolve({
-                    success: true,
-                    data: {
-                      id: "user-2",
-                      authUserId: "auth-user-2",
-                      firstName: "Jane",
-                      lastName: "Smith",
-                      fullName: "Jane Smith",
-                      role: "USER",
-                      hasAvatar: false,
-                      createdAt: new Date(),
-                      lastSeenOn: null,
-                    },
-                  });
-                }
-                if (id === "nonexistent") {
-                  return Promise.resolve({
-                    success: false,
-                    error: "User not found",
-                  });
-                }
-                return Promise.resolve({
-                  success: false,
-                  error: "User not found",
-                });
-              }),
-            } as unknown as T;
-          }
-          throw new Error(`Unknown token: ${token}`);
-        },
-        scope: {
-          requestId: "req-test-123",
-          dispose: () => Promise.resolve(),
-          container: {} as any,
-        },
-      },
+      di: createMockDIContext("user-1", "USER"),
     };
   });
 
@@ -180,24 +257,26 @@ describe("[INTEGRATION] user router with DI", () => {
     test("DI resolve is called with correct token", async () => {
       setupAuthMocks("MODERATOR");
       const resolveSpy = mock((token: string) => {
-        return {
-          getById: mock(() =>
-            Promise.resolve({
-              success: true,
-              data: {
-                id: "test-user",
-                authUserId: "auth-test",
-                firstName: "Test",
-                lastName: "User",
-                fullName: "Test User",
-                role: "USER",
-                hasAvatar: false,
-                createdAt: new Date(),
-                lastSeenOn: null,
-              },
-            }),
-          ),
-        };
+        if (token === "userController") {
+          return createUserControllerMock();
+        }
+        // Return auth mocks for other tokens
+        if (token === "authenticateUserUseCase") {
+          return {
+            execute: mock(() =>
+              Promise.resolve({
+                kind: "ok" as const,
+                value: {
+                  userId: "user-1",
+                  role: "MODERATOR",
+                  authUserId: "auth-user-1",
+                  email: "test@example.com",
+                },
+              }),
+            ),
+          };
+        }
+        return undefined;
       });
 
       mockCtx.di.resolve = resolveSpy;
@@ -234,7 +313,13 @@ describe("[INTEGRATION] user router with DI", () => {
         ),
       };
 
-      mockCtx.di.resolve = mock(() => controllerMock);
+      mockCtx.di = createCustomDIContext(
+        {
+          userController: controllerMock,
+        },
+        "user-1",
+        "MODERATOR",
+      );
 
       const caller = createCaller(mockCtx);
       await caller.user.getById({ id: "user-1" });
@@ -247,6 +332,15 @@ describe("[INTEGRATION] user router with DI", () => {
       setupAuthMocks("MODERATOR");
 
       // Simulate DI container throwing an error
+      mockCtx.di = createCustomDIContext(
+        {
+          userController: undefined,
+        },
+        "user-1",
+        "MODERATOR",
+      );
+
+      // Make resolve throw for userController
       mockCtx.di.resolve = mock(() => {
         throw new Error("DI container not initialized");
       });

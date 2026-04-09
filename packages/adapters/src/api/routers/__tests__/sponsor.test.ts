@@ -54,22 +54,57 @@ const createMockSupabase = () => {
   };
 };
 
+// Helper to create mock DI context with auth use cases
+const createMockDIContext = (userId: string, role: string) => {
+  return {
+    container: {} as any,
+    resolve: mock(<T>(token: string): T => {
+      if (token === "authenticateUserUseCase") {
+        return {
+          execute: mock(() =>
+            Promise.resolve({
+              kind: "ok" as const,
+              value: {
+                userId: userId,
+                role: role,
+                authUserId: `auth-${userId}`,
+                email: "test@example.com",
+              },
+            }),
+          ),
+        } as unknown as T;
+      }
+      if (token === "authorizeModeratorUseCase") {
+        return {
+          execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+        } as unknown as T;
+      }
+      if (token === "authorizeAdminUseCase") {
+        return {
+          execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+        } as unknown as T;
+      }
+      throw new Error(`Unknown token: ${token}`);
+    }),
+    scope: {
+      requestId: "test-request-id",
+      dispose: () => Promise.resolve(),
+      container: {} as any,
+    },
+  };
+};
+
+// Helper to create headers with authorization
+const createAuthHeaders = (token = "test-token") => {
+  const headers = new Headers();
+  headers.set("authorization", `Bearer ${token}`);
+  return headers;
+};
+
 describe("[INTEGRATION] sponsor router", () => {
   let mockCtx: any;
 
   const setupAdminMocks = () => {
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "auth-admin-1" } },
-      error: null,
-    });
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "auth-admin-1" } },
-      error: null,
-    });
-    mockCtx.supabase.auth.admin.getUserById.mockResolvedValueOnce({
-      data: { user: { id: "auth-admin-1", banned_until: null } },
-      error: null,
-    });
     mockCtx.db.user.findFirst.mockResolvedValueOnce({
       id: "admin-1",
       authUserId: "auth-admin-1",
@@ -84,21 +119,11 @@ describe("[INTEGRATION] sponsor router", () => {
       lastName: "User",
       role: "ADMIN",
     });
+    // Update DI context with admin auth mocks
+    mockCtx.di = createMockDIContext("admin-1", "ADMIN");
   };
 
   const setupUserMocks = (userId = "user-1", role = "USER") => {
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.admin.getUserById.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}`, banned_until: null } },
-      error: null,
-    });
     mockCtx.db.user.findFirst.mockResolvedValueOnce({
       id: userId,
       authUserId: `auth-${userId}`,
@@ -113,13 +138,15 @@ describe("[INTEGRATION] sponsor router", () => {
       lastName: "Test",
       role: role,
     });
+    // Update DI context with user auth mocks
+    mockCtx.di = createMockDIContext(userId, role);
   };
 
   beforeEach(() => {
     mockCtx = {
       db: createMockDb(),
       supabase: createMockSupabase(),
-      headers: new Headers(),
+      headers: createAuthHeaders(),
       accessToken: "test-token",
       dbUser: {
         id: "user-1",
@@ -128,6 +155,7 @@ describe("[INTEGRATION] sponsor router", () => {
         lastName: "User",
         role: "ADMIN" as const,
       },
+      di: createMockDIContext("user-1", "ADMIN"),
     };
   });
 
@@ -216,6 +244,33 @@ describe("[INTEGRATION] sponsor router", () => {
 
     test("throws error for non-admin user", async () => {
       mockCtx.dbUser.role = "USER";
+      // Update DI to return FORBIDDEN for non-admin
+      mockCtx.di.resolve = mock(<T>(token: string): T => {
+        if (token === "authenticateUserUseCase") {
+          return {
+            execute: mock(() =>
+              Promise.resolve({
+                kind: "ok" as const,
+                value: {
+                  userId: "user-1",
+                  role: "USER",
+                  authUserId: "auth-user-1",
+                  email: "test@example.com",
+                },
+              }),
+            ),
+          } as unknown as T;
+        }
+        if (token === "authorizeAdminUseCase") {
+          return {
+            execute: mock(() => ({
+              kind: "err" as const,
+              error: new Error("Admin access required"),
+            })),
+          } as unknown as T;
+        }
+        throw new Error(`Unknown token: ${token}`);
+      });
       const caller = createCaller(mockCtx);
       await expect(
         caller.sponsor.create({

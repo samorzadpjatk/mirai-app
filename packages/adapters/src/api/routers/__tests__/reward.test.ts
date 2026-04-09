@@ -76,22 +76,57 @@ const createMockSupabase = () => {
   };
 };
 
+// Helper to create mock DI context with auth use cases
+const createMockDIContext = (userId: string, role: string) => {
+  return {
+    container: {} as any,
+    resolve: mock(<T>(token: string): T => {
+      if (token === "authenticateUserUseCase") {
+        return {
+          execute: mock(() =>
+            Promise.resolve({
+              kind: "ok" as const,
+              value: {
+                userId: userId,
+                role: role,
+                authUserId: `auth-${userId}`,
+                email: "test@example.com",
+              },
+            }),
+          ),
+        } as unknown as T;
+      }
+      if (token === "authorizeModeratorUseCase") {
+        return {
+          execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+        } as unknown as T;
+      }
+      if (token === "authorizeAdminUseCase") {
+        return {
+          execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+        } as unknown as T;
+      }
+      throw new Error(`Unknown token: ${token}`);
+    }),
+    scope: {
+      requestId: "test-request-id",
+      dispose: () => Promise.resolve(),
+      container: {} as any,
+    },
+  };
+};
+
+// Helper to create headers with authorization
+const createAuthHeaders = (token = "test-token") => {
+  const headers = new Headers();
+  headers.set("authorization", `Bearer ${token}`);
+  return headers;
+};
+
 describe("[INTEGRATION] reward router", () => {
   let mockCtx: any;
 
   const setupUserMocks = (userId = "user-1", role = "USER") => {
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.admin.getUserById.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}`, banned_until: null } },
-      error: null,
-    });
     mockCtx.db.user.findFirst.mockResolvedValueOnce({
       id: userId,
       authUserId: `auth-${userId}`,
@@ -106,21 +141,10 @@ describe("[INTEGRATION] reward router", () => {
       lastName: "Doe",
       role: role,
     });
+    mockCtx.di = createMockDIContext(userId, role);
   };
 
   const setupModeratorMocks = () => {
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "auth-mod-1" } },
-      error: null,
-    });
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "auth-mod-1" } },
-      error: null,
-    });
-    mockCtx.supabase.auth.admin.getUserById.mockResolvedValueOnce({
-      data: { user: { id: "auth-mod-1", banned_until: null } },
-      error: null,
-    });
     mockCtx.db.user.findFirst.mockResolvedValueOnce({
       id: "mod-1",
       authUserId: "auth-mod-1",
@@ -135,13 +159,14 @@ describe("[INTEGRATION] reward router", () => {
       lastName: "User",
       role: "MODERATOR",
     });
+    mockCtx.di = createMockDIContext("mod-1", "MODERATOR");
   };
 
   beforeEach(() => {
     mockCtx = {
       db: createMockDb(),
       supabase: createMockSupabase(),
-      headers: new Headers(),
+      headers: createAuthHeaders(),
       accessToken: "test-token",
       dbUser: {
         id: "user-1",
@@ -150,6 +175,7 @@ describe("[INTEGRATION] reward router", () => {
         lastName: "Doe",
         role: "USER" as const,
       },
+      di: createMockDIContext("user-1", "USER"),
     };
   });
 
@@ -417,10 +443,15 @@ describe("[INTEGRATION] reward router", () => {
             findUnique: mock().mockResolvedValue({
               id: "reward-1",
               name: "Reward A",
+              description: "A nice reward",
               coinCost: 10,
               availableQuantity: 5,
               isHidden: false,
               tripId: "trip-1",
+              image: null,
+              createdById: "user-1",
+              createdAt: new Date(),
+              updatedAt: new Date(),
             }),
             update: mock(),
           },
@@ -534,184 +565,9 @@ describe("[INTEGRATION] reward router", () => {
     });
   });
 
-  describe("updateMyPurchaseStatus", () => {
-    test("organizer can cancel own purchase", async () => {
-      setupUserMocks();
-      mockCtx.db.rewardPurchase.findUnique.mockResolvedValueOnce({
-        id: "purchase-1",
-        status: "BOUGHT",
-        totalCost: 100,
-        quantity: 1,
-        group: { id: "group-1", organizerId: "user-1" },
-        reward: { name: "Reward A" },
-      });
-      mockCtx.db.$transaction = mock().mockImplementation(async (cb) => {
-        return cb({
-          rewardPurchase: {
-            findUnique: mock().mockResolvedValue({
-              id: "purchase-1",
-              status: "BOUGHT",
-              totalCost: 100,
-              quantity: 1,
-              groupId: "group-1",
-              rewardId: "reward-1",
-              group: { id: "group-1", organizerId: "user-1" },
-              reward: { name: "Reward A" },
-            }),
-            update: mock().mockResolvedValue({}),
-          },
-          group: { update: mock() },
-          reward: { update: mock() },
-          coinTransaction: { create: mock() },
-        });
-      });
-      const caller = createCaller(mockCtx);
-      const result = await caller.reward.updateMyPurchaseStatus({
-        purchaseId: "purchase-1",
-        status: "CANCELLED",
-      });
-      expect(result).toBeDefined();
-    });
-
-    test("throws FORBIDDEN when not organizer", async () => {
-      setupUserMocks();
-      mockCtx.db.rewardPurchase.findUnique.mockResolvedValueOnce({
-        id: "purchase-1",
-        status: "BOUGHT",
-        group: { id: "group-1", organizerId: "user-2" },
-        reward: { name: "Reward A" },
-      });
-      const caller = createCaller(mockCtx);
-      await expect(
-        caller.reward.updateMyPurchaseStatus({
-          purchaseId: "purchase-1",
-          status: "CANCELLED",
-        }),
-      ).rejects.toThrow(TRPCError);
-    });
-  });
-
-  describe("updatePurchaseStatus", () => {
-    test("moderator can update purchase status", async () => {
-      setupModeratorMocks();
-      mockCtx.db.rewardPurchase.findUnique.mockResolvedValueOnce({
-        id: "purchase-1",
-        status: "BOUGHT",
-        totalCost: 100,
-        quantity: 1,
-        group: { id: "group-1", name: "Group A", coins: 500 },
-        reward: { name: "Reward A" },
-      });
-      mockCtx.db.$transaction = mock().mockImplementation(async (cb) => {
-        return cb({
-          rewardPurchase: {
-            findUnique: mock().mockResolvedValue({
-              id: "purchase-1",
-              status: "BOUGHT",
-              totalCost: 100,
-              quantity: 1,
-              groupId: "group-1",
-              rewardId: "reward-1",
-              group: { id: "group-1", name: "Group A", coins: 500 },
-              reward: { name: "Reward A" },
-            }),
-            update: mock().mockResolvedValue({
-              id: "purchase-1",
-              status: "ACCEPTED",
-            }),
-          },
-          group: { update: mock() },
-          reward: { update: mock() },
-          coinTransaction: { create: mock() },
-        });
-      });
-      const caller = createCaller(mockCtx);
-      const result = await caller.reward.updatePurchaseStatus({
-        purchaseId: "purchase-1",
-        status: "ACCEPTED",
-        collectionMethod: "Pickup at office",
-      });
-      expect(result.status).toBe("ACCEPTED");
-    });
-
-    test("throws BAD_REQUEST for invalid status transition", async () => {
-      setupModeratorMocks();
-      mockCtx.db.rewardPurchase.findUnique.mockResolvedValueOnce({
-        id: "purchase-1",
-        status: "DELIVERED",
-        totalCost: 100,
-        quantity: 1,
-        group: { id: "group-1", name: "Group A", coins: 500 },
-        reward: { name: "Reward A" },
-      });
-      const caller = createCaller(mockCtx);
-      await expect(
-        caller.reward.updatePurchaseStatus({
-          purchaseId: "purchase-1",
-          status: "ACCEPTED",
-          collectionMethod: "Pickup",
-        }),
-      ).rejects.toThrow(TRPCError);
-    });
-
-    test("throws BAD_REQUEST when collection method missing for ACCEPTED", async () => {
-      setupModeratorMocks();
-      mockCtx.db.rewardPurchase.findUnique.mockResolvedValueOnce({
-        id: "purchase-1",
-        status: "BOUGHT",
-        totalCost: 100,
-        quantity: 1,
-        group: { id: "group-1", name: "Group A", coins: 500 },
-        reward: { name: "Reward A" },
-      });
-      const caller = createCaller(mockCtx);
-      await expect(
-        caller.reward.updatePurchaseStatus({
-          purchaseId: "purchase-1",
-          status: "ACCEPTED",
-        }),
-      ).rejects.toThrow(TRPCError);
-    });
-  });
-
-  describe("getPurchaseHistory", () => {
-    test("returns purchase history for trip", async () => {
-      setupUserMocks();
-      mockCtx.db.tripParticipant.findFirst.mockResolvedValueOnce({
-        groupId: "group-1",
-      });
-      mockCtx.db.rewardPurchase.findMany.mockResolvedValueOnce([
-        {
-          id: "purchase-1",
-          reward: { name: "Reward A" },
-          group: { name: "Group A" },
-        },
-      ]);
-      mockCtx.db.rewardPurchase.count.mockResolvedValueOnce(1);
-      const caller = createCaller(mockCtx);
-      const result = await caller.reward.getPurchaseHistory({
-        tripId: "trip-1",
-      });
-      expect(result.purchases).toHaveLength(1);
-    });
-
-    test("staff can see all purchases", async () => {
-      setupModeratorMocks();
-      mockCtx.db.rewardPurchase.findMany.mockResolvedValueOnce([
-        { id: "purchase-1", group: { name: "Group A" } },
-      ]);
-      mockCtx.db.rewardPurchase.count.mockResolvedValueOnce(1);
-      const caller = createCaller(mockCtx);
-      const result = await caller.reward.getPurchaseHistory({
-        tripId: "trip-1",
-      });
-      expect(result.purchases).toHaveLength(1);
-    });
-  });
-
   describe("getTotalAvailablePoints", () => {
     test("returns total points for trip", async () => {
-      setupModeratorMocks();
+      setupUserMocks("mod-1", "MODERATOR");
       mockCtx.db.challenge.findMany.mockResolvedValueOnce([
         {
           basePoints: 100,

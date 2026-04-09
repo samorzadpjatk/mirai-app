@@ -43,22 +43,57 @@ const createMockSupabase = () => {
   };
 };
 
+// Helper to create mock DI context with auth use cases
+const createMockDIContext = (userId: string, role: string) => {
+  return {
+    container: {} as any,
+    resolve: mock(<T>(token: string): T => {
+      if (token === "authenticateUserUseCase") {
+        return {
+          execute: mock(() =>
+            Promise.resolve({
+              kind: "ok" as const,
+              value: {
+                userId: userId,
+                role: role,
+                authUserId: `auth-${userId}`,
+                email: "test@example.com",
+              },
+            }),
+          ),
+        } as unknown as T;
+      }
+      if (token === "authorizeModeratorUseCase") {
+        return {
+          execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+        } as unknown as T;
+      }
+      if (token === "authorizeAdminUseCase") {
+        return {
+          execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+        } as unknown as T;
+      }
+      throw new Error(`Unknown token: ${token}`);
+    }),
+    scope: {
+      requestId: "test-request-id",
+      dispose: () => Promise.resolve(),
+      container: {} as any,
+    },
+  };
+};
+
+// Helper to create headers with authorization
+const createAuthHeaders = (token = "test-token") => {
+  const headers = new Headers();
+  headers.set("authorization", `Bearer ${token}`);
+  return headers;
+};
+
 describe("[INTEGRATION] storage router", () => {
   let mockCtx: any;
 
   const setupUserMocks = (userId = "user-1", role = "USER") => {
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.admin.getUserById.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}`, banned_until: null } },
-      error: null,
-    });
     mockCtx.db.user.findFirst.mockResolvedValueOnce({
       id: userId,
       authUserId: `auth-${userId}`,
@@ -73,6 +108,8 @@ describe("[INTEGRATION] storage router", () => {
       lastName: "Doe",
       role: role,
     });
+    // Update DI context with proper auth mocks
+    mockCtx.di = createMockDIContext(userId, role);
   };
 
   beforeEach(() => {
@@ -80,7 +117,7 @@ describe("[INTEGRATION] storage router", () => {
     mockCtx = {
       db: createMockDb(),
       supabase: createMockSupabase(),
-      headers: new Headers(),
+      headers: createAuthHeaders(),
       accessToken: "test-token",
       dbUser: {
         id: "user-1",
@@ -89,6 +126,7 @@ describe("[INTEGRATION] storage router", () => {
         lastName: "Doe",
         role: "USER" as const,
       },
+      di: createMockDIContext("user-1", "USER"),
     };
   });
 

@@ -60,22 +60,195 @@ const createMockSupabase = () => {
   };
 };
 
+// Helper to create trip controller mock
+const createTripControllerMock = () => ({
+  getById: mock(({ id }: { id: string }) => {
+    if (id === "nonexistent") {
+      return Promise.resolve({
+        success: false,
+        error: "Trip not found",
+      });
+    }
+    return Promise.resolve({
+      success: true,
+      data: {
+        id: id,
+        name: "Summer Trip",
+        description: null,
+        startDate: new Date(),
+        endDate: new Date(),
+        backgroundImagePath: null,
+        status: "PLANNING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isPlanning: true,
+        isActive: false,
+        isCompleted: false,
+        isCancelled: false,
+      },
+    });
+  }),
+  list: mock(() =>
+    Promise.resolve({
+      success: true,
+      data: [
+        {
+          id: "trip-1",
+          name: "Summer Trip",
+          description: null,
+          startDate: new Date(),
+          endDate: new Date(),
+          backgroundImagePath: null,
+          status: "PLANNING",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isPlanning: true,
+          isActive: false,
+          isCompleted: false,
+          isCancelled: false,
+        },
+      ],
+    }),
+  ),
+  create: mock(() =>
+    Promise.resolve({
+      success: true,
+      data: {
+        id: "trip-new",
+        name: "New Trip",
+        description: null,
+        startDate: new Date(),
+        endDate: new Date(),
+        backgroundImagePath: null,
+        status: "PLANNING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    }),
+  ),
+  update: mock(() =>
+    Promise.resolve({
+      success: true,
+      data: {
+        id: "trip-1",
+        name: "Updated Trip",
+        description: null,
+        startDate: new Date(),
+        endDate: new Date(),
+        backgroundImagePath: null,
+        status: "PLANNING",
+        updatedAt: new Date(),
+      },
+    }),
+  ),
+  delete: mock(() =>
+    Promise.resolve({ success: true, data: { deleted: true } }),
+  ),
+});
+
+// Create auth use case mocks
+const createAuthUseCaseMocks = (userId: string, role: string) => ({
+  authenticateUserUseCase: {
+    execute: mock(() =>
+      Promise.resolve({
+        kind: "ok" as const,
+        value: {
+          userId: userId,
+          role: role,
+          authUserId: `auth-${userId}`,
+          email: "test@example.com",
+        },
+      }),
+    ),
+  },
+  authorizeModeratorUseCase: {
+    execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+  },
+  authorizeAdminUseCase: {
+    execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+  },
+});
+
+// Helper to create mock DI context with all required tokens
+const createMockDIContext = (userId: string, role: string) => {
+  const authMocks = createAuthUseCaseMocks(userId, role);
+  const tripController = createTripControllerMock();
+
+  return {
+    container: {} as any,
+    resolve: mock(<T>(token: string): T => {
+      if (token === "tripController") {
+        return tripController as unknown as T;
+      }
+      if (token === "authenticateUserUseCase") {
+        return authMocks.authenticateUserUseCase as unknown as T;
+      }
+      if (token === "authorizeModeratorUseCase") {
+        return authMocks.authorizeModeratorUseCase as unknown as T;
+      }
+      if (token === "authorizeAdminUseCase") {
+        return authMocks.authorizeAdminUseCase as unknown as T;
+      }
+      throw new Error(`Unknown token: ${token}`);
+    }),
+    scope: {
+      requestId: "test-request-id",
+      dispose: () => Promise.resolve(),
+      container: {} as any,
+    },
+  };
+};
+
+// Helper to create custom DI context for specific test scenarios
+const createCustomDIContext = (
+  customMocks: Record<string, unknown>,
+  baseUserId = "admin-1",
+  baseRole = "ADMIN",
+) => {
+  const authMocks = createAuthUseCaseMocks(baseUserId, baseRole);
+  const tripController = createTripControllerMock();
+
+  return {
+    container: {} as any,
+    resolve: mock(<T>(token: string): T => {
+      // Check for custom mocks first
+      if (customMocks[token] !== undefined) {
+        return customMocks[token] as T;
+      }
+      // Fall back to defaults
+      if (token === "tripController") {
+        return tripController as unknown as T;
+      }
+      if (token === "authenticateUserUseCase") {
+        return authMocks.authenticateUserUseCase as unknown as T;
+      }
+      if (token === "authorizeModeratorUseCase") {
+        return authMocks.authorizeModeratorUseCase as unknown as T;
+      }
+      if (token === "authorizeAdminUseCase") {
+        return authMocks.authorizeAdminUseCase as unknown as T;
+      }
+      throw new Error(`Unknown token: ${token}`);
+    }),
+    scope: {
+      requestId: "test-request-id",
+      dispose: () => Promise.resolve(),
+      container: {} as any,
+    },
+  };
+};
+
+// Helper to create headers with authorization
+const createAuthHeaders = (token = "test-token") => {
+  const headers = new Headers();
+  headers.set("authorization", `Bearer ${token}`);
+  return headers;
+};
+
 describe("[INTEGRATION] trip router", () => {
   let mockCtx: any;
 
   const setupUserMocks = (userId = "user-1", role = "USER") => {
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}` } },
-      error: null,
-    });
-    mockCtx.supabase.auth.admin.getUserById.mockResolvedValueOnce({
-      data: { user: { id: `auth-${userId}`, banned_until: null } },
-      error: null,
-    });
     mockCtx.db.user.findFirst.mockResolvedValueOnce({
       id: userId,
       authUserId: `auth-${userId}`,
@@ -90,21 +263,11 @@ describe("[INTEGRATION] trip router", () => {
       lastName: "Doe",
       role: role,
     });
+    // Update DI context with proper auth mocks (includes tripController)
+    mockCtx.di = createMockDIContext(userId, role);
   };
 
   const setupAdminMocks = () => {
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "auth-admin-1" } },
-      error: null,
-    });
-    mockCtx.supabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "auth-admin-1" } },
-      error: null,
-    });
-    mockCtx.supabase.auth.admin.getUserById.mockResolvedValueOnce({
-      data: { user: { id: "auth-admin-1", banned_until: null } },
-      error: null,
-    });
     mockCtx.db.user.findFirst.mockResolvedValueOnce({
       id: "admin-1",
       authUserId: "auth-admin-1",
@@ -119,13 +282,15 @@ describe("[INTEGRATION] trip router", () => {
       lastName: "User",
       role: "ADMIN",
     });
+    // Update DI context with admin auth mocks (includes tripController)
+    mockCtx.di = createMockDIContext("admin-1", "ADMIN");
   };
 
   beforeEach(() => {
     mockCtx = {
       db: createMockDb(),
       supabase: createMockSupabase(),
-      headers: new Headers(),
+      headers: createAuthHeaders(),
       accessToken: "test-token",
       dbUser: {
         id: "user-1",
@@ -134,105 +299,7 @@ describe("[INTEGRATION] trip router", () => {
         lastName: "Doe",
         role: "USER" as const,
       },
-      // Mock DI context for dependency injection
-      di: {
-        container: {} as any,
-        resolve: <T>(token: string): T => {
-          // Mock controller resolution for tripController
-          if (token === "tripController") {
-            return {
-              getById: mock(({ id }: { id: string }) => {
-                if (id === "nonexistent") {
-                  return Promise.resolve({
-                    success: false,
-                    error: "Trip not found",
-                  });
-                }
-                return Promise.resolve({
-                  success: true,
-                  data: {
-                    id: id,
-                    name: "Summer Trip",
-                    description: null,
-                    startDate: new Date(),
-                    endDate: new Date(),
-                    backgroundImagePath: null,
-                    status: "PLANNING",
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    isPlanning: true,
-                    isActive: false,
-                    isCompleted: false,
-                    isCancelled: false,
-                  },
-                });
-              }),
-              list: mock(() =>
-                Promise.resolve({
-                  success: true,
-                  data: [
-                    {
-                      id: "trip-1",
-                      name: "Summer Trip",
-                      description: null,
-                      startDate: new Date(),
-                      endDate: new Date(),
-                      backgroundImagePath: null,
-                      status: "PLANNING",
-                      createdAt: new Date(),
-                      updatedAt: new Date(),
-                      isPlanning: true,
-                      isActive: false,
-                      isCompleted: false,
-                      isCancelled: false,
-                    },
-                  ],
-                }),
-              ),
-              create: mock(() =>
-                Promise.resolve({
-                  success: true,
-                  data: {
-                    id: "trip-new",
-                    name: "New Trip",
-                    description: null,
-                    startDate: new Date(),
-                    endDate: new Date(),
-                    backgroundImagePath: null,
-                    status: "PLANNING",
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  },
-                }),
-              ),
-              update: mock(() =>
-                Promise.resolve({
-                  success: true,
-                  data: {
-                    id: "trip-1",
-                    name: "Updated Trip",
-                    description: null,
-                    startDate: new Date(),
-                    endDate: new Date(),
-                    backgroundImagePath: null,
-                    status: "PLANNING",
-                    updatedAt: new Date(),
-                  },
-                }),
-              ),
-              delete: mock(() =>
-                Promise.resolve({ success: true, data: { deleted: true } }),
-              ),
-            } as unknown as T;
-          }
-          throw new Error(`Unknown token: ${token}`);
-        },
-        scope: {
-          requestId: "test-request-id",
-          dispose: () => Promise.resolve(),
-          container: {} as any,
-        },
-      },
+      di: createMockDIContext("user-1", "USER"),
     };
   });
 
@@ -305,29 +372,28 @@ describe("[INTEGRATION] trip router", () => {
     test("DI resolve is called with correct token", async () => {
       setupUserMocks();
       const resolveSpy = mock((token: string) => {
-        return {
-          getById: mock(() =>
-            Promise.resolve({
-              success: true,
-              data: {
-                id: "trip-test",
-                name: "Test Trip",
-                description: null,
-                startDate: new Date(),
-                endDate: new Date(),
-                backgroundImagePath: null,
-                status: "PLANNING",
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isPlanning: true,
-                isActive: false,
-                isCompleted: false,
-                isCancelled: false,
-              },
-            }),
-          ),
-        };
+        if (token === "tripController") {
+          return createTripControllerMock();
+        }
+        // Return auth mocks for other tokens
+        if (token === "authenticateUserUseCase") {
+          return {
+            execute: mock(() =>
+              Promise.resolve({
+                kind: "ok" as const,
+                value: {
+                  userId: "user-1",
+                  role: "USER",
+                  authUserId: "auth-user-1",
+                  email: "test@example.com",
+                },
+              }),
+            ),
+          };
+        }
+        return undefined;
       });
+
       mockCtx.di.resolve = resolveSpy;
       const caller = createCaller(mockCtx);
       await caller.trip.getById({ id: "trip-test" });
@@ -380,10 +446,10 @@ describe("[INTEGRATION] trip router", () => {
 
     test("throws NOT_FOUND when trip does not exist", async () => {
       setupAdminMocks();
-      // Update mock to return error for nonexistent trip
-      mockCtx.di.resolve = <T>(token: string): T => {
-        if (token === "tripController") {
-          return {
+      // Use custom DI context with custom tripController behavior
+      mockCtx.di = createCustomDIContext(
+        {
+          tripController: {
             update: mock(({ tripId }: { tripId: string }) => {
               if (tripId === "nonexistent") {
                 return Promise.resolve({
@@ -405,10 +471,12 @@ describe("[INTEGRATION] trip router", () => {
                 },
               });
             }),
-          } as unknown as T;
-        }
-        throw new Error(`Unknown token: ${token}`);
-      };
+          },
+        },
+        "admin-1",
+        "ADMIN",
+      );
+
       const caller = createCaller(mockCtx);
       await expect(
         caller.trip.update({ id: "nonexistent", name: "Updated" }),
@@ -426,10 +494,10 @@ describe("[INTEGRATION] trip router", () => {
 
     test("throws NOT_FOUND when trip does not exist", async () => {
       setupAdminMocks();
-      // Update mock to return error for delete
-      mockCtx.di.resolve = <T>(token: string): T => {
-        if (token === "tripController") {
-          return {
+      // Use custom DI context with custom tripController behavior
+      mockCtx.di = createCustomDIContext(
+        {
+          tripController: {
             getById: mock(() =>
               Promise.resolve({
                 success: true,
@@ -456,10 +524,12 @@ describe("[INTEGRATION] trip router", () => {
                 error: "Trip not found",
               }),
             ),
-          } as unknown as T;
-        }
-        throw new Error(`Unknown token: ${token}`);
-      };
+          },
+        },
+        "admin-1",
+        "ADMIN",
+      );
+
       const caller = createCaller(mockCtx);
       await expect(caller.trip.delete({ id: "nonexistent" })).rejects.toThrow(
         TRPCError,
