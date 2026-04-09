@@ -78,7 +78,7 @@ export class LocationMapper {
     lastInactivityNotification: Date | null;
     usersToShareWith?: { connect: Array<{ id: string }> };
   } {
-    const data: ReturnType<typeof this.toPrismaCreate> = {
+    const data: ReturnType<typeof LocationMapper.toPrismaCreate> = {
       id: location.id,
       userId: location.userId,
       timestamp: location.timestamp,
@@ -119,7 +119,7 @@ export class LocationMapper {
     lastInactivityNotification: Date | null;
     usersToShareWith?: { set: Array<{ id: string }> };
   } {
-    const data: ReturnType<typeof this.toPrismaUpdate> = {
+    const data: ReturnType<typeof LocationMapper.toPrismaUpdate> = {
       timestamp: location.timestamp,
       isSharingLocation: location.isSharingLocation(),
       latitude: location.latitude,

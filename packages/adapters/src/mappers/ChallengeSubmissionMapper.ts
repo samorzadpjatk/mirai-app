@@ -95,7 +95,7 @@ export class ChallengeSubmissionMapper {
       textContent: record.textContent,
       latitude: record.latitude,
       longitude: record.longitude,
-      status: this.mapStatusFromPrisma(record.status),
+      status: ChallengeSubmissionMapper.mapStatusFromPrisma(record.status),
       reviewedById: record.reviewedById,
       reviewedAt: record.reviewedAt,
       rejectionReason: record.rejectionReason,

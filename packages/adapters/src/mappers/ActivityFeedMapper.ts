@@ -132,7 +132,9 @@ export class ActivityFeedMapper {
     } | null;
   }): ActivityFeed {
     // Map activity type
-    const activityType = this.mapActivityType(record.activityType);
+    const activityType = ActivityFeedMapper.mapActivityType(
+      record.activityType,
+    );
 
     // Map submission activity metadata
     let submissionActivity: SubmissionActivityMetadata | null = null;
@@ -154,7 +156,7 @@ export class ActivityFeedMapper {
     if (record.challengeActivity) {
       challengeActivity = {
         challengeId: record.challengeActivity.challengeId,
-        eventType: this.mapChallengeEventType(
+        eventType: ActivityFeedMapper.mapChallengeEventType(
           record.challengeActivity.eventType,
         ),
         endTime: record.challengeActivity.endTime,

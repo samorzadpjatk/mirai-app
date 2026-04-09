@@ -30,7 +30,7 @@ export class RewardMapper {
     updatedAt: Date;
   }): Reward {
     // Parse images from the image field (could be single URL or JSON array)
-    const images = this.parseImages(record.image);
+    const images = RewardMapper.parseImages(record.image);
 
     const result = Reward.create({
       id: RewardId.unsafeCreate(record.id),

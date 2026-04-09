@@ -1,4 +1,7 @@
-import { NotificationSchedule, NotificationScheduleType } from "@mirai-app/domain";
+import {
+  NotificationSchedule,
+  NotificationScheduleType,
+} from "@mirai-app/domain";
 
 /**
  * NotificationScheduleMapper
@@ -27,7 +30,9 @@ export class NotificationScheduleMapper {
     createdAt: Date;
     updatedAt: Date;
   }): NotificationSchedule {
-    const notificationType = this.mapTypeFromPrisma(record.notificationType);
+    const notificationType = NotificationScheduleMapper.mapTypeFromPrisma(
+      record.notificationType,
+    );
 
     const result = NotificationSchedule.create({
       id: record.id,

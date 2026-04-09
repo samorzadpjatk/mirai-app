@@ -28,8 +28,8 @@ export class NotificationMapper {
     createdAt: Date;
     updatedAt: Date;
   }): Notification {
-    const status = this.mapStatusFromPrisma(record.status);
-    const priority = this.mapPriorityFromPrisma(record.priority);
+    const status = NotificationMapper.mapStatusFromPrisma(record.status);
+    const priority = NotificationMapper.mapPriorityFromPrisma(record.priority);
 
     const result = Notification.create({
       id: record.id,
