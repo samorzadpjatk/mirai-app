@@ -54,7 +54,7 @@ module.exports = {
     "^@mirai-app/shared$": "<rootDir>/../../packages/shared/index.ts",
     "^@mirai-app/shared/(.*)$": "<rootDir>/../../packages/shared/src/$1",
     "^@mirai-app/test-utils$":
-      "<rootDir>/../../packages/test-utils/src/index.ts",
+      "<rootDir>/../../packages/adapters/src/test-utils/index.ts",
     "^@mirai-app/use-cases$": "<rootDir>/../../packages/use-cases/src/index.ts",
     "^@mirai-app/use-cases/(.*)$": "<rootDir>/../../packages/use-cases/src/$1",
   },

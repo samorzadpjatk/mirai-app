@@ -1,14 +1,18 @@
 /**
- * Test Utilities - In-Memory Repository Implementations
+ * Test Utilities - Mock Factories and In-Memory Repository Implementations
  *
- * Provides in-memory implementations of repository ports for unit testing.
- * These repositories store data in memory and provide realistic CRUD behavior
- * without requiring a database.
+ * Provides mock factories for Prisma/Supabase and in-memory implementations
+ * of repository ports for unit testing. These utilities enable testing without
+ * requiring a real database or external services.
  *
  * @example
  * ```typescript
- * import { InMemoryUserRepository } from "@mirai-app/adapters/test-utils";
+ * import { InMemoryUserRepository, createMockContext } from "@mirai-app/adapters/test-utils";
  *
+ * // Using mock factories
+ * const mockContext = createMockContext({ userId: "user-123", role: "ADMIN" });
+ *
+ * // Using in-memory repositories
  * const repo = new InMemoryUserRepository();
  * repo.seed([mockUser]);
  *
@@ -19,6 +23,18 @@
  * ```
  */
 
+// Mock factories
+export {
+  createMockPrismaClient,
+  createMockContext,
+  type MockPrismaClient,
+  type MockContext,
+  type MockAuthUser,
+  type CreateMockPrismaClientOptions,
+  type CreateMockContextOptions,
+} from "./mocks";
+
+// In-memory repositories
 export { InMemoryRepository } from "./InMemoryRepository";
 export { InMemoryUserRepository } from "./InMemoryUserRepository";
 export { InMemoryChallengeRepository } from "./InMemoryChallengeRepository";
