@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@mirai-app/frameworks/trpc/client";
-import { TRIP_RESOURCE_TYPES } from "@mirai-app/shared";
+import { TRIP_RESOURCE_TYPES } from "../../types/trip";
 
 export function useTripResources(tripId?: string | null) {
   const trpc = useTRPC();
