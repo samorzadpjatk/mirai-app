@@ -1,8 +1,23 @@
-import { describe, expect, test, beforeEach, mock } from "bun:test";
+import {
+  describe,
+  expect,
+  test,
+  beforeEach,
+  mock,
+  beforeAll,
+  afterAll,
+} from "bun:test";
+
+// Set required environment variables BEFORE any imports
+process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
+process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
+process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
 
 // Store original values
 let cookies: string[] = [];
-let locationHref = "";
+let logout: () => Promise<void>;
+let originalDocumentCookieDescriptor: PropertyDescriptor | undefined;
+let originalWindowLocationDescriptor: PropertyDescriptor | undefined;
 
 // Mock modules
 const mockSignOut = mock(() => Promise.resolve());
@@ -25,12 +40,20 @@ mock.module("../supabase", () => ({
   },
 }));
 
-// Mock document.cookie
-global.document = {
-  get cookie() {
-    return cookies.join("; ");
-  },
-  set cookie(value: string) {
+// Store original descriptors before mocking
+originalDocumentCookieDescriptor = Object.getOwnPropertyDescriptor(
+  global.document,
+  "cookie",
+);
+originalWindowLocationDescriptor = Object.getOwnPropertyDescriptor(
+  global.window,
+  "location",
+);
+
+// Mock document.cookie using defineProperty to preserve other document methods
+Object.defineProperty(global.document, "cookie", {
+  get: () => cookies.join("; "),
+  set: (value: string) => {
     // Parse and store cookie
     if (value.includes("Max-Age=0")) {
       // Deleting cookie - remove from array
@@ -40,29 +63,53 @@ global.document = {
       cookies.push(value);
     }
   },
-} as any;
+  configurable: true,
+});
 
-// Mock window.location
-global.window = {
-  get location() {
-    return {
-      href: locationHref,
-      set href(value: string) {
-        locationHref = value;
-      },
-    };
+// Create window location mock
+const locationMock = {
+  href: "/current-page",
+};
+
+Object.defineProperty(global.window, "location", {
+  get: () => locationMock,
+  set: (value: any) => {
+    if (value && typeof value === "object" && value.href !== undefined) {
+      locationMock.href = value.href;
+    }
   },
-  set location(value: any) {},
-} as any;
+  configurable: true,
+});
 
-// Import after mocks
-import { logout } from "../logout";
+// Dynamic import after mocks are set up
+beforeAll(async () => {
+  const logoutModule = await import("../logout");
+  logout = logoutModule.logout;
+});
 
 beforeEach(() => {
   cookies = [];
-  locationHref = "/current-page";
+  global.window.location.href = "/current-page";
   mockSignOut.mockClear();
   mockSupabaseSignOut.mockClear();
+});
+
+// Restore original descriptors after all tests
+afterAll(() => {
+  if (originalDocumentCookieDescriptor) {
+    Object.defineProperty(
+      global.document,
+      "cookie",
+      originalDocumentCookieDescriptor,
+    );
+  }
+  if (originalWindowLocationDescriptor) {
+    Object.defineProperty(
+      global.window,
+      "location",
+      originalWindowLocationDescriptor,
+    );
+  }
 });
 
 describe("[INTEGRATION] logout", () => {
@@ -104,7 +151,7 @@ describe("[INTEGRATION] logout", () => {
   test("redirects to /login", async () => {
     await logout();
 
-    expect(locationHref).toBe("/login");
+    expect(global.window.location.href).toBe("/login");
   });
 
   test("redirects to /login even if supabase signOut fails", async () => {
@@ -114,7 +161,7 @@ describe("[INTEGRATION] logout", () => {
 
     await logout();
 
-    expect(locationHref).toBe("/login");
+    expect(global.window.location.href).toBe("/login");
   });
 
   test("redirects to /login even if authStore signOut fails", async () => {
@@ -124,7 +171,7 @@ describe("[INTEGRATION] logout", () => {
 
     await logout();
 
-    expect(locationHref).toBe("/login");
+    expect(global.window.location.href).toBe("/login");
   });
 
   test("clears cookies even if supabase signOut fails", async () => {
@@ -164,7 +211,7 @@ describe("[INTEGRATION] logout", () => {
 
     await logout();
 
-    expect(locationHref).toBe("/login");
+    expect(global.window.location.href).toBe("/login");
   });
 
   test("always executes in finally block", async () => {
@@ -178,7 +225,7 @@ describe("[INTEGRATION] logout", () => {
     await logout();
 
     // Despite errors, redirect should still happen
-    expect(locationHref).toBe("/login");
+    expect(global.window.location.href).toBe("/login");
     expect(cookies).toHaveLength(0);
   });
 

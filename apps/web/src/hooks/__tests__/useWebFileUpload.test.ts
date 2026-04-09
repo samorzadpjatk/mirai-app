@@ -1,10 +1,17 @@
 /// <reference lib="dom" />
 
+// Set up environment variables at the very top
+// Note: These will be set after imports are hoisted, so the hook must be dynamically imported
+process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
+process.env.PUBLIC_SUPABASE_ANON_KEY = "mock-anon-key";
+process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
+process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
+
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { renderHook, act } from "@testing-library/react";
-import { useWebFileUpload } from "../useWebFileUpload";
+import type { useWebFileUpload as useWebFileUploadType } from "../useWebFileUpload";
 
-// Mock dependencies
+// Mock dependencies - these are hoisted by Bun
 const mockMutate = mock(() =>
   Promise.resolve({
     token: "mock-token",
@@ -36,17 +43,19 @@ mock.module("@mirai-app/frameworks/auth/client", () => ({
   },
 }));
 
-// Mock env
-mock.module("../lib/env", () => ({
-  env: {
-    supabaseUrl: "http://localhost:54321",
-    supabaseAnonKey: "mock-anon-key",
-  },
-}));
+// Store reference to the hook (loaded dynamically)
+let useWebFileUpload: typeof useWebFileUploadType;
 
 describe("[UNIT] useWebFileUpload", () => {
-  beforeEach(() => {
+  // Load the hook module inside describe but outside tests
+  // This runs after mocks are set up but before tests run
+  beforeEach(async () => {
     mockMutate.mockClear();
+    // Load hook fresh for each test to ensure clean state
+    if (!useWebFileUpload) {
+      const mod = await import("../useWebFileUpload");
+      useWebFileUpload = mod.useWebFileUpload;
+    }
   });
 
   describe("initial state", () => {
