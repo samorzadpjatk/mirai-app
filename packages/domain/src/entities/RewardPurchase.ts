@@ -299,3 +299,15 @@ export class RewardPurchase {
     return this.quantity > 0 ? Math.round(this.totalCost / this.quantity) : 0;
   }
 }
+
+/**
+ * Check if a purchase status transition is valid
+ * Standalone function for use outside of class instances
+ */
+export function canTransitionPurchaseStatus(
+  from: RewardPurchaseStatus,
+  to: RewardPurchaseStatus,
+): boolean {
+  if (from === to) return true;
+  return VALID_STATUS_TRANSITIONS[from].includes(to);
+}

@@ -112,8 +112,21 @@ export class RankChangeActivity {
    */
   getRankWithSuffix(): string {
     const rank = this.newRank;
+    // Special case: 11, 12, 13 always use "th"
+    const lastTwo = rank % 100;
+    if (lastTwo >= 11 && lastTwo <= 13) {
+      return `${rank}th`;
+    }
+    // All other cases: check last digit
+    const lastDigit = rank % 10;
     const suffix =
-      rank === 1 ? "st" : rank === 2 ? "nd" : rank === 3 ? "rd" : "th";
+      lastDigit === 1
+        ? "st"
+        : lastDigit === 2
+          ? "nd"
+          : lastDigit === 3
+            ? "rd"
+            : "th";
     return `${rank}${suffix}`;
   }
 
