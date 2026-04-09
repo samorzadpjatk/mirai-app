@@ -141,6 +141,68 @@ jest.mock("expo-task-manager", () => ({
   unregisterAllTasksAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// Mock expo-location
+jest.mock("expo-location", () => ({
+  Accuracy: {
+    Lowest: 1,
+    Low: 2,
+    Balanced: 3,
+    High: 4,
+    Highest: 5,
+    BestForNavigation: 6,
+  },
+  ActivityType: {
+    Other: 0,
+    AutomotiveNavigation: 1,
+    Fitness: 2,
+    OtherNavigation: 3,
+    Airborne: 4,
+  },
+  hasStartedLocationUpdatesAsync: jest.fn(() => Promise.resolve(false)),
+  startLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
+  stopLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
+  requestBackgroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: true, status: "granted" }),
+  ),
+  requestForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: true, status: "granted" }),
+  ),
+  getCurrentPositionAsync: jest.fn(() =>
+    Promise.resolve({
+      coords: {
+        latitude: 0,
+        longitude: 0,
+        altitude: null,
+        accuracy: null,
+        altitudeAccuracy: null,
+        heading: null,
+        speed: null,
+      },
+      timestamp: Date.now(),
+    }),
+  ),
+}));
+
+// Mock @react-native-async-storage/async-storage
+jest.mock("@react-native-async-storage/async-storage", () => ({
+  getItem: jest.fn(() => Promise.resolve(null)),
+  setItem: jest.fn(() => Promise.resolve()),
+  removeItem: jest.fn(() => Promise.resolve()),
+  clear: jest.fn(() => Promise.resolve()),
+  getAllKeys: jest.fn(() => Promise.resolve([])),
+  multiGet: jest.fn(() => Promise.resolve([])),
+  multiSet: jest.fn(() => Promise.resolve()),
+  multiRemove: jest.fn(() => Promise.resolve()),
+  multiMerge: jest.fn(() => Promise.resolve()),
+  mergeItem: jest.fn(() => Promise.resolve()),
+  flushGetRequests: jest.fn(),
+  useAsyncStorage: jest.fn((key) => ({
+    getItem: jest.fn(() => Promise.resolve(null)),
+    setItem: jest.fn(() => Promise.resolve()),
+    removeItem: jest.fn(() => Promise.resolve()),
+  })),
+}));
+
 // Mock expo-image-manipulator
 jest.mock("expo-image-manipulator", () => ({
   manipulateAsync: jest.fn(() =>
