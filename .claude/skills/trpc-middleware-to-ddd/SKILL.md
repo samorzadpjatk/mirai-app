@@ -13,7 +13,7 @@ This skill provides patterns and best practices for migrating tRPC-specific midd
 - You're using tRPC with middleware for auth, validation, or logging
 - You want to decouple business logic from tRPC framework specifics
 - You need to make authentication/authorization testable without tRPC setup
-- You're adopting DDD/Clean Architecture with Effect TS
+- You're adopting DDD/Clean Architecture with Promise-based patterns (no Effect library)
 
 ## Anti-Patterns to Avoid
 
@@ -45,6 +45,22 @@ class CreateOrderUseCase {
 }
 ```
 
+## Result Type Pattern
+
+This skill uses a lightweight Result type for error handling (no external libraries required):
+
+```typescript
+// packages/domain/src/types/Result.ts
+export type Result<T, E> = { kind: "ok"; value: T } | { kind: "err"; error: E };
+
+export const ok = <T>(value: T): Result<T, never> => ({ kind: "ok", value });
+export const err = <E>(error: E): Result<never, E> => ({ kind: "err", error });
+export const isOk = <T, E>(r: Result<T, E>): r is { kind: "ok"; value: T } =>
+  r.kind === "ok";
+export const isErr = <T, E>(r: Result<T, E>): r is { kind: "err"; error: E } =>
+  r.kind === "err";
+```
+
 ## Recommended Patterns
 
 ### Pattern 1: Ports for Cross-Cutting Concerns
@@ -53,27 +69,26 @@ Define authentication/authorization as ports in the Use Cases layer:
 
 ```typescript
 // packages/use-cases/src/ports/AuthService.ts
-import { Effect } from "effect";
 
-export class AuthenticationError extends Data.TaggedError(
-  "AuthenticationError",
-)<{}> {}
-export class AuthorizationError extends Data.TaggedError(
-  "AuthorizationError",
-)<{}> {}
+export class AuthenticationError extends Error {
+  readonly _tag = "AuthenticationError";
+}
+export class AuthorizationError extends Error {
+  readonly _tag = "AuthorizationError";
+}
 
 export interface AuthService {
   /** Verify token and return authenticated user */
   verifyToken(
     token: string,
-  ): Effect.Effect<AuthenticatedUser, AuthenticationError>;
+  ): Promise<Result<AuthenticatedUser, AuthenticationError>>;
 
   /** Check if user has permission for resource */
   checkPermission(
     user: AuthenticatedUser,
     resource: string,
     action: string,
-  ): Effect.Effect<void, AuthorizationError>;
+  ): Promise<Result<void, AuthorizationError>>;
 }
 ```
 
@@ -83,35 +98,44 @@ Implement the port in the Adapters layer:
 
 ```typescript
 // packages/adapters/src/gateways/SupabaseAuthAdapter.ts
-import { Effect } from "effect";
+import { Result, ok, err } from "../../domain/src/types/Result";
 
 export class SupabaseAuthAdapter implements AuthService {
   constructor(private supabase: SupabaseClient) {}
 
-  verifyToken(token: string) {
-    return Effect.tryPromise({
-      try: () => this.supabase.auth.getUser(token),
-      catch: () => new AuthenticationError(),
-    }).pipe(
-      Effect.map(({ data }) => data.user),
-      Effect.mapError(() => new AuthenticationError()),
-    );
+  async verifyToken(
+    token: string,
+  ): Promise<Result<AuthenticatedUser, AuthenticationError>> {
+    try {
+      const { data, error } = await this.supabase.auth.getUser(token);
+      if (error || !data.user) {
+        return err(new AuthenticationError());
+      }
+      return ok(data.user);
+    } catch {
+      return err(new AuthenticationError());
+    }
   }
 
-  checkPermission(user, resource, action) {
+  async checkPermission(
+    user,
+    resource,
+    action,
+  ): Promise<Result<void, AuthorizationError>> {
     // Implementation using your permission system
-    return Effect.succeed(undefined); // or fail with AuthorizationError
+    // Return ok(undefined) for success, err(new AuthorizationError()) for failure
+    return ok(undefined);
   }
 }
 ```
 
-### Pattern 3: Use Case with Effect Composition
+### Pattern 3: Use Case with Promise-Based Composition
 
-Business logic composes authentication/authorization using Effect:
+Business logic composes authentication/authorization using Promises:
 
 ```typescript
 // packages/use-cases/src/interactors/CreateOrder.ts
-import { Effect, pipe } from "effect";
+import { Result, ok, err, isOk, isErr } from "../../domain/src/types/Result";
 
 export class CreateOrderUseCase {
   constructor(
@@ -120,84 +144,119 @@ export class CreateOrderUseCase {
     private logger: Logger,
   ) {}
 
-  execute(input: CreateOrderInput, token: string) {
-    return Effect.gen(
-      function* (_) {
-        // Authentication
-        const user = yield* _(this.authService.verifyToken(token));
+  async execute(
+    input: CreateOrderInput,
+    token: string,
+  ): Promise<Result<OrderDTO, CreateOrderError>> {
+    // Authentication
+    const authResult = await this.authService.verifyToken(token);
+    if (isErr(authResult)) {
+      return err(new CreateOrderError("Authentication failed"));
+    }
+    const user = authResult.value;
 
-        // Authorization (business rule!)
-        yield* _(this.authService.checkPermission(user, "order", "create"));
-
-        // Business logic
-        const order = yield* _(
-          Order.create({
-            userId: user.id,
-            items: input.items,
-          }),
-        );
-
-        // Persist
-        const saved = yield* _(this.orderRepository.save(order));
-
-        yield* _(this.logger.log(`Order created: ${saved.id}`));
-
-        return OrderDTO.fromDomain(saved);
-      }.bind(this),
+    // Authorization (business rule!)
+    const permResult = await this.authService.checkPermission(
+      user,
+      "order",
+      "create",
     );
+    if (isErr(permResult)) {
+      return err(new CreateOrderError("Permission denied"));
+    }
+
+    // Business logic
+    const orderResult = Order.create({
+      userId: user.id,
+      items: input.items,
+    });
+    if (isErr(orderResult)) {
+      return err(new CreateOrderError(orderResult.error.message));
+    }
+    const order = orderResult.value;
+
+    // Persist
+    const saved = await this.orderRepository.save(order);
+
+    await this.logger.log(`Order created: ${saved.id}`);
+
+    return ok(OrderDTO.fromDomain(saved));
   }
 }
 ```
 
-### Pattern 4: Request Context via Scoped DI
+### Pattern 4: Token Extraction in Controllers (No ctx)
 
-Instead of tRPC context, use scoped container registration:
+Extract token from HTTP request headers in controllers, NOT from tRPC context:
 
 ```typescript
-// packages/frameworks/trpc/context.ts
-export const createTRPCContext = async (opts: { req: Request }) => {
-  const token = extractToken(opts.req);
-
-  // Create request-scoped container
-  const scope = container.createScope();
-
-  // Register request-specific values
-  scope.register({
-    authToken: asValue(token),
-    requestId: asValue(generateRequestId()),
-    requestTime: asValue(new Date()),
-  });
-
-  return { scope, token };
+// packages/adapters/src/utils/TokenExtractor.ts
+export const TokenExtractor = {
+  extract(req: Request): string | null {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    return authHeader.slice(7); // Remove "Bearer " prefix
+  },
 };
 
 // packages/adapters/src/controllers/OrderController.ts
 export class OrderController {
-  constructor(private useCase: CreateOrderUseCase) {}
+  constructor(
+    private authUseCase: AuthenticateUserUseCase,
+    private orderUseCase: CreateOrderUseCase,
+  ) {}
 
-  async create(input: CreateOrderInput, token: string) {
-    // Use case receives dependencies via DI, not context
-    return Effect.runPromise(this.useCase.execute(input, token));
+  async create(input: CreateOrderInput, req: Request) {
+    // Extract token from HTTP headers (NOT from ctx)
+    const token = TokenExtractor.extract(req);
+    if (!token) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+
+    // Authenticate
+    const authResult = await this.authUseCase.execute(token);
+    if (isErr(authResult)) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    const authContext = authResult.value;
+
+    // Pass AuthContext explicitly to business use case
+    return this.orderUseCase.execute(input, authContext);
   }
 }
 ```
 
-### Pattern 5: Thin tRPC Procedures
+**Key Points:**
 
-tRPC procedures should be thin HTTP adapters only:
+- Token comes from `req.headers`, NOT from `ctx.token`
+- Controller is responsible for auth orchestration
+- AuthContext passed explicitly to downstream use cases
+- No `ctx.user` or auth-related fields in tRPC context
+
+### Pattern 5: Thin tRPC Procedures (No Auth Middleware)
+
+tRPC procedures should be thin HTTP adapters only - auth happens in controllers:
 
 ```typescript
 // apps/backend-server/src/routers/orderRouter.ts
 export const orderRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: publicProcedure // ← No protectedProcedure!
     .input(CreateOrderSchema)
     .mutation(async ({ ctx, input }) => {
-      // Only framework concerns: parse input, extract token
+      // Only framework concerns: parse input, resolve controller
       const controller = ctx.container.resolve("orderController");
-      return controller.create(input, ctx.token);
+      // Pass raw request to controller - auth happens there (NO ctx.token!)
+      return controller.create(input, ctx.req);
     }),
 });
 ```
+
+**Key Differences from Traditional tRPC:**
+
+- Use `publicProcedure` everywhere (no `protectedProcedure`, `adminProcedure`)
+- Pass `ctx.req` (raw request) to controllers, not `ctx.token`
+- Controllers handle all auth orchestration
+- tRPC layer is 100% auth-agnostic
 
 ## Testing Strategy
 
@@ -208,31 +267,30 @@ describe("[UNIT] CreateOrderUseCase", () => {
   it("creates order when authorized", async () => {
     // Arrange
     const mockAuth = {
-      verifyToken: () => Effect.succeed(mockUser),
-      checkPermission: () => Effect.succeed(undefined),
+      verifyToken: () => Promise.resolve(ok(mockUser)),
+      checkPermission: () => Promise.resolve(ok(undefined)),
     };
-    const mockRepo = { save: () => Effect.succeed(mockOrder) };
+    const mockRepo = { save: (order) => Promise.resolve(order) };
     const useCase = new CreateOrderUseCase(mockAuth, mockRepo, mockLogger);
 
     // Act
-    const result = await Effect.runPromise(
-      useCase.execute(input, "valid-token"),
-    );
+    const result = await useCase.execute(input, "valid-token");
 
     // Assert
     expect(result).toBeDefined();
+    expect(isOk(result)).toBe(true);
   });
 
   it("fails when not authorized", async () => {
     const mockAuth = {
-      verifyToken: () => Effect.succeed(mockUser),
-      checkPermission: () => Effect.fail(new AuthorizationError()),
+      verifyToken: () => Promise.resolve(ok(mockUser)),
+      checkPermission: () => Promise.resolve(err(new AuthorizationError())),
     };
     const useCase = new CreateOrderUseCase(mockAuth, mockRepo, mockLogger);
 
-    await expect(
-      Effect.runPromise(useCase.execute(input, "valid-token")),
-    ).rejects.toThrow(AuthorizationError);
+    const result = await useCase.execute(input, "valid-token");
+
+    expect(isErr(result)).toBe(true);
   });
 });
 ```
@@ -256,26 +314,32 @@ describe("[INTEGRATION] OrderRouter", () => {
 
 ## Layer Responsibilities
 
-| Concern             | Framework (tRPC) | Adapter | Use Case | Domain |
-| ------------------- | ---------------- | ------- | -------- | ------ |
-| HTTP parsing        | ✅               | ❌      | ❌       | ❌     |
-| Request routing     | ✅               | ❌      | ❌       | ❌     |
-| Token extraction    | ✅               | ❌      | ❌       | ❌     |
-| Token verification  | ❌               | ✅      | ❌       | ❌     |
-| Authorization       | ❌               | ❌      | ✅       | ❌     |
-| Business invariants | ❌               | ❌      | ❌       | ✅     |
-| Input validation    | ❌               | ❌      | ✅       | ✅     |
-| Persistence         | ❌               | ✅      | ❌       | ❌     |
-| Error formatting    | ✅               | ❌      | ❌       | ❌     |
+| Concern              | Framework (tRPC) | Adapter (Controller) | Use Case | Domain |
+| -------------------- | ---------------- | -------------------- | -------- | ------ |
+| HTTP parsing         | ✅               | ❌                   | ❌       | ❌     |
+| Request routing      | ✅               | ❌                   | ❌       | ❌     |
+| **Token extraction** | ❌               | ✅                   | ❌       | ❌     |
+| Token verification   | ❌               | ✅                   | ❌       | ❌     |
+| Authorization        | ❌               | ❌                   | ✅       | ❌     |
+| Business invariants  | ❌               | ❌                   | ❌       | ✅     |
+| Input validation     | ❌               | ❌                   | ✅       | ✅     |
+| Persistence          | ❌               | ✅                   | ❌       | ❌     |
+| Error formatting     | ✅               | ❌                   | ❌       | ❌     |
+| Auth middleware      | ❌ (DELETED)     | N/A                  | N/A      | N/A    |
+
+**Key Principle:** Token extraction moved from tRPC context to Controller layer. No `ctx.token` anywhere.
 
 ## Migration Checklist
 
 - [ ] Identify all tRPC middleware currently handling auth/validation
+- [ ] **DELETE** `protectedProcedure`, `adminProcedure`, `moderatorProcedure` from tRPC
 - [ ] Define `AuthService` port interface in Use Cases layer
+- [ ] Create `TokenExtractor` utility to extract tokens from HTTP headers (not ctx)
 - [ ] Create adapter implementation (Supabase/Clerk/etc.) in Adapters layer
-- [ ] Move authorization checks into Use Cases using Effect
-- [ ] Replace tRPC context with scoped DI container registration
-- [ ] Make tRPC procedures thin (just parse input and call controller)
+- [ ] Move authorization checks into Use Cases using Result types
+- [ ] Update all controllers to extract tokens and handle auth orchestration
+- [ ] Make tRPC procedures thin using `publicProcedure` only (no auth middleware)
+- [ ] Verify no `ctx.token` or `ctx.user` references remain in codebase
 - [ ] Write unit tests for use cases without tRPC setup
 - [ ] Write integration tests for adapter layer only
 - [ ] Remove business logic from all tRPC middleware
