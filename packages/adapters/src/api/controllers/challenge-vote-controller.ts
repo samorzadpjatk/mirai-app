@@ -2,27 +2,33 @@
  * Challenge Vote Controller
  *
  * tRPC-ready controller wrapping ChallengeVoteController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  protectedProcedure,
-  moderatorProcedure,
-  adminProcedure,
-} from "../trpc";
+import { publicProcedure } from "../trpc";
 import { ChallengeVoteController } from "../../controllers/challengeVote-controller";
 import { PrismaChallengeVoteRepository } from "../../gateways/PrismaChallengeVoteRepository";
+import {
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+} from "../controller-helpers";
 
 export const challengeVoteController = {
-  getMyByChallenge: protectedProcedure
+  getMyByChallenge: publicProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip participant
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -54,9 +60,12 @@ export const challengeVoteController = {
       return result.data.votes;
     }),
 
-  getByChallenge: moderatorProcedure
+  getByChallenge: publicProcedure
     .input(z.object({ challengeId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaChallengeVoteRepository(ctx.db);
       const controller = new ChallengeVoteController(repo);
       const result = await controller.getByChallenge({
@@ -75,7 +84,7 @@ export const challengeVoteController = {
       return result.data.votes;
     }),
 
-  submitVotes: protectedProcedure
+  submitVotes: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -93,11 +102,14 @@ export const challengeVoteController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip participant
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -180,7 +192,7 @@ export const challengeVoteController = {
       return result.data.votes;
     }),
 
-  submitVote: protectedProcedure
+  submitVote: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -192,11 +204,14 @@ export const challengeVoteController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip participant
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -258,9 +273,12 @@ export const challengeVoteController = {
       return result.data;
     }),
 
-  forceEndJudgedStaffVoting: adminProcedure
+  forceEndJudgedStaffVoting: publicProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      const authContext = await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaChallengeVoteRepository(ctx.db);
       const controller = new ChallengeVoteController(
         repo,
@@ -314,7 +332,7 @@ export const challengeVoteController = {
       const result = await controller.forceEndVoting({
         challengeId: input.challengeId,
         tripId: input.tripId,
-        adminId: ctx.dbUser.id,
+        adminId: authContext.userId,
       });
 
       if (!result.success) {

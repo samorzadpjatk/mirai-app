@@ -2,14 +2,17 @@
  * Coin Transaction Controller
  *
  * tRPC-ready controller wrapping CoinTransactionController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, moderatorProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { CoinTransactionController } from "../../controllers/coin-transaction-controller";
 import { PrismaCoinTransactionRepository } from "../../gateways/PrismaCoinTransactionRepository";
 import { PrismaCoinTransactionService } from "../../services/PrismaCoinTransactionService";
+import { requireAuth, requireModerator } from "../controller-helpers";
 import {
   GetCoinStatisticsUseCase,
   GetMostActiveAdminStatsUseCase,
@@ -46,9 +49,12 @@ const createCoinTransactionController = (ctx: { db: unknown }) => {
 };
 
 export const coinTransactionController = {
-  getStatistics: moderatorProcedure
+  getStatistics: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createCoinTransactionController(ctx);
       const result = await controller.getStatistics({ tripId: input.tripId });
 
@@ -61,9 +67,12 @@ export const coinTransactionController = {
       return result.data;
     }),
 
-  getMostActiveAdminStats: moderatorProcedure
+  getMostActiveAdminStats: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createCoinTransactionController(ctx);
       const result = await controller.getMostActiveAdminStats({
         tripId: input.tripId,
@@ -78,7 +87,7 @@ export const coinTransactionController = {
       return result.data;
     }),
 
-  getAll: moderatorProcedure
+  getAll: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -91,6 +100,9 @@ export const coinTransactionController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createCoinTransactionController(ctx);
       const result = await controller.getAll({
         tripId: input.tripId,
@@ -106,9 +118,12 @@ export const coinTransactionController = {
       return result.data;
     }),
 
-  getQuickStats: moderatorProcedure
+  getQuickStats: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createCoinTransactionController(ctx);
       const result = await controller.getQuickStats({ tripId: input.tripId });
 
@@ -138,9 +153,12 @@ export const coinTransactionController = {
       return data;
     }),
 
-  getAdditionalInsights: moderatorProcedure
+  getAdditionalInsights: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createCoinTransactionController(ctx);
       const result = await controller.getAdditionalInsights({
         tripId: input.tripId,
@@ -179,7 +197,7 @@ export const coinTransactionController = {
       };
     }),
 
-  getCoinTransactions: protectedProcedure
+  getCoinTransactions: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -188,6 +206,9 @@ export const coinTransactionController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const controller = createCoinTransactionController(ctx);
       const service = new PrismaCoinTransactionService(
         ctx.db,
@@ -195,7 +216,7 @@ export const coinTransactionController = {
       );
 
       const result = await service.getCoinTransactionsForUser({
-        userId: ctx.dbUser.id,
+        userId: authContext.userId,
         tripId: input.tripId,
         groupId: input.groupId,
         limit: input.limit,

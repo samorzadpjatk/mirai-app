@@ -2,17 +2,20 @@
  * Activity Feed Controller
  *
  * tRPC-ready controller wrapping ActivityFeedController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  protectedProcedure,
-  moderatorProcedure,
-  adminProcedure,
-} from "../trpc";
+import { publicProcedure } from "../trpc";
 import { ActivityFeedController } from "../../controllers/activityFeed-controller";
 import { PrismaActivityFeedRepository } from "../../gateways/PrismaActivityFeedRepository";
+import {
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+} from "../controller-helpers";
 
 const activityCursorSchema = z.object({
   id: z.string(),
@@ -21,7 +24,7 @@ const activityCursorSchema = z.object({
 });
 
 export const activityFeedController = {
-  getByTrip: protectedProcedure
+  getByTrip: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -31,11 +34,14 @@ export const activityFeedController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip participant
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -71,13 +77,13 @@ export const activityFeedController = {
       await ctx.db.$executeRaw`
         UPDATE "User"
         SET "last_seen_on" = NOW()
-        WHERE "id" = ${ctx.dbUser.id}
+        WHERE "id" = ${authContext.userId}
       `;
 
       return result.data;
     }),
 
-  getByTripModeration: moderatorProcedure
+  getByTripModeration: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -86,6 +92,9 @@ export const activityFeedController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       // Verify trip exists
       const trip = await ctx.db.trip.findUnique({
         where: { id: input.tripId },
@@ -146,9 +155,12 @@ export const activityFeedController = {
       };
     }),
 
-  getById: moderatorProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.getById({ id: input.id });
@@ -165,7 +177,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  createCustom: moderatorProcedure
+  createCustom: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -176,6 +188,9 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       // Verify trip exists
       const trip = await ctx.db.trip.findUnique({
         where: { id: input.tripId },
@@ -193,7 +208,7 @@ export const activityFeedController = {
       const controller = new ActivityFeedController(repo);
       const result = await controller.createCustom({
         ...input,
-        createdByAdmin: ctx.dbUser.id,
+        createdByAdmin: authContext.userId,
       });
 
       if (!result.success) {
@@ -203,7 +218,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  createUserPost: protectedProcedure
+  createUserPost: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -214,11 +229,14 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip participant
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -244,7 +262,7 @@ export const activityFeedController = {
         imageUrl: input.imageUrl ?? null,
         userPost: {
           authorId: participant.id,
-          authorUserId: ctx.dbUser.id,
+          authorUserId: authContext.userId,
           authorFirstName: participant.user.firstName ?? "",
           authorLastName: participant.user.lastName ?? "",
           authorHasAvatar: participant.user.hasAvatar,
@@ -261,7 +279,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  createSubmissionActivity: moderatorProcedure
+  createSubmissionActivity: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -279,6 +297,9 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       // Verify submission exists in the trip
       const submission = await ctx.db.challengeSubmission.findFirst({
         where: {
@@ -311,7 +332,7 @@ export const activityFeedController = {
         description: input.description ?? null,
         imageUrl: submission.imageIds[0] ?? input.imageUrl ?? null,
         isPinned: input.isPinned ?? false,
-        createdByAdmin: ctx.dbUser.id,
+        createdByAdmin: authContext.userId,
         submissionActivity: {
           submissionId: input.submissionId,
           challengeId: input.challengeId,
@@ -330,7 +351,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  createChallengeActivity: moderatorProcedure
+  createChallengeActivity: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -356,6 +377,9 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       // Verify challenge exists in the trip
       const challenge = await ctx.db.challenge.findFirst({
         where: {
@@ -387,7 +411,7 @@ export const activityFeedController = {
         description: input.description ?? challenge.description ?? null,
         imageUrl: challenge.image ?? null,
         isPinned: input.isPinned ?? false,
-        createdByAdmin: ctx.dbUser.id,
+        createdByAdmin: authContext.userId,
         challengeActivity: {
           challengeId: input.challengeId,
           eventType: input.eventType,
@@ -406,7 +430,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  createRankChangeActivity: moderatorProcedure
+  createRankChangeActivity: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -420,6 +444,9 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       // Verify group exists in the trip
       const group = await ctx.db.group.findFirst({
         where: {
@@ -447,7 +474,7 @@ export const activityFeedController = {
         description: input.description ?? null,
         imageUrl: group.image ?? null,
         isPinned: input.isPinned ?? false,
-        createdByAdmin: ctx.dbUser.id,
+        createdByAdmin: authContext.userId,
         rankChangeActivity: {
           groupId: input.groupId,
           newRank: input.newRank,
@@ -463,7 +490,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  update: moderatorProcedure
+  update: publicProcedure
     .input(
       z.object({
         activityId: z.string(),
@@ -473,6 +500,9 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.update({
@@ -489,7 +519,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  setPinned: moderatorProcedure
+  setPinned: publicProcedure
     .input(
       z.object({
         activityId: z.string(),
@@ -497,6 +527,9 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.setPinned({
@@ -511,7 +544,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  hide: moderatorProcedure
+  hide: publicProcedure
     .input(
       z.object({
         activityId: z.string(),
@@ -519,11 +552,14 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.hide({
         activityId: input.activityId,
-        hiddenByAdmin: ctx.dbUser.id,
+        hiddenByAdmin: authContext.userId,
         reason: input.reason ?? null,
       });
 
@@ -534,9 +570,12 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  unhide: moderatorProcedure
+  unhide: publicProcedure
     .input(z.object({ activityId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.unhide({
@@ -550,7 +589,7 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  toggleReaction: protectedProcedure
+  toggleReaction: publicProcedure
     .input(
       z.object({
         activityId: z.string(),
@@ -558,11 +597,14 @@ export const activityFeedController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const repo = new PrismaActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.toggleReaction({
         activityId: input.activityId,
-        userId: ctx.dbUser.id,
+        userId: authContext.userId,
         reactionType: input.reactionType,
       });
 
@@ -580,9 +622,12 @@ export const activityFeedController = {
       return result.data;
     }),
 
-  delete: adminProcedure
+  delete: publicProcedure
     .input(z.object({ activityId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.delete({

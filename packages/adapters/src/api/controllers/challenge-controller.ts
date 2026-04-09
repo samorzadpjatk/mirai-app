@@ -2,15 +2,21 @@
  * Challenge Controller
  *
  * tRPC-ready controller wrapping ChallengeController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { adminProcedure, protectedProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { ChallengeController } from "../../controllers/challenge-controller";
+import { requireAuth, requireAdmin } from "../controller-helpers";
 
 export const challengeController = {
-  getAll: adminProcedure.query(async ({ ctx }) => {
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    // Require admin role
+    await requireAdmin(ctx.headers, ctx.di);
+
     // Using DI container to resolve ChallengeController - no manual instantiation needed
     const controller = ctx.di.resolve<ChallengeController>(
       "challengeController",
@@ -23,7 +29,7 @@ export const challengeController = {
     return result.data;
   }),
 
-  getAllByTrip: protectedProcedure
+  getAllByTrip: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -36,6 +42,9 @@ export const challengeController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       // Using DI container to resolve ChallengeController - no manual instantiation needed
       const controller = ctx.di.resolve<ChallengeController>(
         "challengeController",
@@ -56,9 +65,12 @@ export const challengeController = {
       };
     }),
 
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       // Using DI container to resolve ChallengeController - no manual instantiation needed
       const controller = ctx.di.resolve<ChallengeController>(
         "challengeController",
@@ -76,7 +88,7 @@ export const challengeController = {
       return result.data;
     }),
 
-  create: adminProcedure
+  create: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -121,6 +133,9 @@ export const challengeController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       // Using DI container to resolve ChallengeController - no manual instantiation needed
       const controller = ctx.di.resolve<ChallengeController>(
         "challengeController",
@@ -138,7 +153,7 @@ export const challengeController = {
       return result.data;
     }),
 
-  update: adminProcedure
+  update: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -159,6 +174,9 @@ export const challengeController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       // Using DI container to resolve ChallengeController - no manual instantiation needed
       const controller = ctx.di.resolve<ChallengeController>(
         "challengeController",
@@ -186,7 +204,7 @@ export const challengeController = {
       return result.data;
     }),
 
-  updateStatus: adminProcedure
+  updateStatus: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -202,6 +220,9 @@ export const challengeController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       // Using DI container to resolve ChallengeController - no manual instantiation needed
       const controller = ctx.di.resolve<ChallengeController>(
         "challengeController",
@@ -217,9 +238,12 @@ export const challengeController = {
       return result.data;
     }),
 
-  delete: adminProcedure
+  delete: publicProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       // Using DI container to resolve ChallengeController - no manual instantiation needed
       const controller = ctx.di.resolve<ChallengeController>(
         "challengeController",

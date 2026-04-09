@@ -2,13 +2,16 @@
  * Location Controller
  *
  * tRPC-ready controller wrapping LocationController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { LocationController } from "../../controllers/location-controller";
 import { PrismaLocationRepository } from "../../gateways/PrismaLocationRepository";
+import { requireAuth } from "../controller-helpers";
 
 // Helper to map error to TRPC error code
 const mapLocationErrorToCode = (error: string): string => {
@@ -20,11 +23,14 @@ const mapLocationErrorToCode = (error: string): string => {
 };
 
 export const locationController = {
-  getMyLocation: protectedProcedure.query(async ({ ctx }) => {
+  getMyLocation: publicProcedure.query(async ({ ctx }) => {
+    // Require authentication
+    const authContext = await requireAuth(ctx.headers, ctx.di);
+
     const controller = new LocationController(
       new PrismaLocationRepository(ctx.db),
     );
-    const result = await controller.getByUserId({ userId: ctx.dbUser.id });
+    const result = await controller.getByUserId({ userId: authContext.userId });
     if (!result.success) {
       throw new TRPCError({
         code: mapLocationErrorToCode(result.error),
@@ -34,7 +40,7 @@ export const locationController = {
     return result.data;
   }),
 
-  updateLocation: protectedProcedure
+  updateLocation: publicProcedure
     .input(
       z.object({
         latitude: z.number().min(-90).max(90).optional().nullable(),
@@ -47,11 +53,14 @@ export const locationController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const controller = new LocationController(
         new PrismaLocationRepository(ctx.db),
       );
       const result = await controller.update({
-        userId: ctx.dbUser.id,
+        userId: authContext.userId,
         ...input,
       });
       if (!result.success) {
@@ -63,12 +72,15 @@ export const locationController = {
       return result.data;
     }),
 
-  getFriendsLocations: protectedProcedure.query(async ({ ctx }) => {
+  getFriendsLocations: publicProcedure.query(async ({ ctx }) => {
+    // Require authentication
+    const authContext = await requireAuth(ctx.headers, ctx.di);
+
     const controller = new LocationController(
       new PrismaLocationRepository(ctx.db),
     );
     const result = await controller.list({
-      viewerUserId: ctx.dbUser.id,
+      viewerUserId: authContext.userId,
     });
     if (!result.success) {
       throw new TRPCError({
@@ -79,12 +91,15 @@ export const locationController = {
     return result.data.locations;
   }),
 
-  getMySharingSettings: protectedProcedure.query(async ({ ctx }) => {
+  getMySharingSettings: publicProcedure.query(async ({ ctx }) => {
+    // Require authentication
+    const authContext = await requireAuth(ctx.headers, ctx.di);
+
     const controller = new LocationController(
       new PrismaLocationRepository(ctx.db),
     );
     const result = await controller.getSharingSettings({
-      userId: ctx.dbUser.id,
+      userId: authContext.userId,
     });
     if (!result.success) {
       throw new TRPCError({
@@ -95,7 +110,7 @@ export const locationController = {
     return result.data;
   }),
 
-  updateSharingSettings: protectedProcedure
+  updateSharingSettings: publicProcedure
     .input(
       z.object({
         isSharingLocation: z.boolean(),
@@ -103,11 +118,14 @@ export const locationController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const controller = new LocationController(
         new PrismaLocationRepository(ctx.db),
       );
       const result = await controller.updateSharingSettings({
-        userId: ctx.dbUser.id,
+        userId: authContext.userId,
         isSharingLocation: input.isSharingLocation,
         usersToShareWith: input.userIdsToShareWith?.map((id) => ({
           id,
@@ -124,14 +142,17 @@ export const locationController = {
       return result.data;
     }),
 
-  addUserToSharing: protectedProcedure
+  addUserToSharing: publicProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const controller = new LocationController(
         new PrismaLocationRepository(ctx.db),
       );
       const result = await controller.addSharingUser({
-        ownerUserId: ctx.dbUser.id,
+        ownerUserId: authContext.userId,
         userToAddId: input.userId,
         userFirstName: null,
         userLastName: null,
@@ -145,14 +166,17 @@ export const locationController = {
       return result.data;
     }),
 
-  removeUserFromSharing: protectedProcedure
+  removeUserFromSharing: publicProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const controller = new LocationController(
         new PrismaLocationRepository(ctx.db),
       );
       const result = await controller.removeSharingUser({
-        ownerUserId: ctx.dbUser.id,
+        ownerUserId: authContext.userId,
         userToRemoveId: input.userId,
       });
       if (!result.success) {

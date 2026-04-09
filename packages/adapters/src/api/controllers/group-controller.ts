@@ -2,28 +2,34 @@
  * Group Controller
  *
  * tRPC-ready controller wrapping GroupController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  protectedProcedure,
-  moderatorProcedure,
-  adminProcedure,
-} from "../trpc";
+import { publicProcedure } from "../trpc";
 import { GroupController } from "../../controllers/group-controller";
 import { PrismaGroupRepository } from "../../gateways/PrismaGroupRepository";
+import {
+  requireAuth,
+  requireModerator,
+  requireAdmin,
+} from "../controller-helpers";
 
 export const groupController = {
-  getAllNames: moderatorProcedure
+  getAllNames: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaGroupRepository(ctx.db);
       const groups = await repo.findByTripId(input.tripId);
       return groups.map((g) => ({ id: g.id, name: g.name }));
     }),
 
-  getAll: protectedProcedure
+  getAll: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -36,6 +42,9 @@ export const groupController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const repo = new PrismaGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.getByTripId({ tripId: input.tripId });
@@ -54,9 +63,12 @@ export const groupController = {
       };
     }),
 
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const repo = new PrismaGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.getById({ id: input.id });
@@ -72,7 +84,7 @@ export const groupController = {
       return result.data;
     }),
 
-  create: protectedProcedure
+  create: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -83,6 +95,9 @@ export const groupController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const repo = new PrismaGroupRepository(ctx.db);
       const controller = new GroupController(repo);
 
@@ -94,7 +109,7 @@ export const groupController = {
         name: input.name,
         description: input.description ?? null,
         image: input.image ?? null,
-        organizerId: input.organizerId ?? ctx.dbUser.id,
+        organizerId: input.organizerId ?? authContext.userId,
         code,
         coins: 0,
       });
@@ -105,7 +120,7 @@ export const groupController = {
       return result.data;
     }),
 
-  update: protectedProcedure
+  update: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -117,6 +132,9 @@ export const groupController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const repo = new PrismaGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.update({
@@ -132,9 +150,12 @@ export const groupController = {
       return result.data;
     }),
 
-  delete: adminProcedure
+  delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.delete({ id: input.id });
@@ -150,7 +171,7 @@ export const groupController = {
       return { success: true };
     }),
 
-  addCoins: moderatorProcedure
+  addCoins: publicProcedure
     .input(
       z.object({
         groupId: z.string(),
@@ -159,6 +180,9 @@ export const groupController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.addCoins({
@@ -172,9 +196,12 @@ export const groupController = {
       return result.data;
     }),
 
-  ranking: protectedProcedure
+  ranking: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const repo = new PrismaGroupRepository(ctx.db);
       const groups = await repo.findByTripId(input.tripId);
       return {

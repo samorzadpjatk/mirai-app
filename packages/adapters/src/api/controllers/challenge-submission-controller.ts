@@ -2,27 +2,33 @@
  * Challenge Submission Controller
  *
  * tRPC-ready controller wrapping ChallengeSubmissionController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  protectedProcedure,
-  moderatorProcedure,
-  adminProcedure,
-} from "../trpc";
+import { publicProcedure } from "../trpc";
 import { ChallengeSubmissionController } from "../../controllers/challengeSubmission-controller";
 import { PrismaChallengeSubmissionRepository } from "../../gateways/PrismaChallengeSubmissionRepository";
+import {
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+} from "../controller-helpers";
 
 export const challengeSubmissionController = {
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip participant
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -67,14 +73,17 @@ export const challengeSubmissionController = {
       return result.data;
     }),
 
-  getByChallenge: protectedProcedure
+  getByChallenge: publicProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip participant
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -118,7 +127,7 @@ export const challengeSubmissionController = {
 
       // Hide media from unapproved submissions for non-moderators
       const isModerator =
-        ctx.dbUser.role === "ADMIN" || ctx.dbUser.role === "MODERATOR";
+        authContext.role === "ADMIN" || authContext.role === "MODERATOR";
       if (!isModerator) {
         return {
           submissions: result.data.submissions.map((submission) =>
@@ -137,9 +146,12 @@ export const challengeSubmissionController = {
       return result.data;
     }),
 
-  getByChallengeForAdmin: moderatorProcedure
+  getByChallengeForAdmin: publicProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       // Verify challenge exists in trip
       const challenge = await ctx.db.challenge.findFirst({
         where: {
@@ -172,14 +184,17 @@ export const challengeSubmissionController = {
       return result.data.submissions;
     }),
 
-  getMyForChallenge: protectedProcedure
+  getMyForChallenge: publicProcedure
     .input(z.object({ challengeId: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip participant
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -231,7 +246,7 @@ export const challengeSubmissionController = {
       return result.data;
     }),
 
-  create: protectedProcedure
+  create: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -244,6 +259,9 @@ export const challengeSubmissionController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip not ended
       const trip = await ctx.db.trip.findUnique({
         where: { id: input.tripId },
@@ -261,7 +279,7 @@ export const challengeSubmissionController = {
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -333,7 +351,7 @@ export const challengeSubmissionController = {
       return result.data;
     }),
 
-  review: moderatorProcedure
+  review: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -345,6 +363,9 @@ export const challengeSubmissionController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       if (input.status === "REJECTED" && !input.rejectionReason) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -357,7 +378,7 @@ export const challengeSubmissionController = {
       const result = await controller.update({
         submissionId: input.id,
         reviewAction: input.status === "APPROVED" ? "APPROVE" : "REJECT",
-        reviewedById: ctx.dbUser.id,
+        reviewedById: authContext.userId,
         rejectionReason: input.rejectionReason,
         awardedPoints: input.awardedPoints,
         bonusPoints: input.bonusPoints,
@@ -376,9 +397,12 @@ export const challengeSubmissionController = {
       return result.data;
     }),
 
-  adminDelete: adminProcedure
+  adminDelete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaChallengeSubmissionRepository(ctx.db);
       const controller = new ChallengeSubmissionController(repo);
       const result = await controller.delete({ submissionId: input.id });

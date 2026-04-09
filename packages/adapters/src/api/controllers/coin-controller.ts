@@ -2,15 +2,18 @@
  * Coin Controller
  *
  * tRPC-ready controller for coin operations with activity feed integration.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { moderatorProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { PrismaCoinTransactionRepository } from "../../gateways/PrismaCoinTransactionRepository";
 import { PrismaCoinService } from "../../services/PrismaCoinService";
 import { PrismaRankingActivityService } from "../../services/PrismaRankingActivityService";
 import { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
+import { requireModerator } from "../controller-helpers";
 
 // Helper to create coin service from context
 const createCoinService = (ctx: { db: unknown }) => {
@@ -26,7 +29,7 @@ const createCoinService = (ctx: { db: unknown }) => {
 };
 
 export const coinController = {
-  addCoins: moderatorProcedure
+  addCoins: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -36,6 +39,9 @@ export const coinController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       const service = createCoinService(ctx);
 
       const result = await service.addCoinsWithActivity({
@@ -43,7 +49,7 @@ export const coinController = {
         groupId: input.groupId,
         amount: input.amount,
         reason: input.reason,
-        adminId: ctx.dbUser.id,
+        adminId: authContext.userId,
       });
 
       if (!result.success) {
@@ -58,7 +64,7 @@ export const coinController = {
       return result.data;
     }),
 
-  removeCoins: moderatorProcedure
+  removeCoins: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -68,6 +74,9 @@ export const coinController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       const service = createCoinService(ctx);
 
       const result = await service.removeCoinsWithActivity({
@@ -75,7 +84,7 @@ export const coinController = {
         groupId: input.groupId,
         amount: input.amount,
         reason: input.reason,
-        adminId: ctx.dbUser.id,
+        adminId: authContext.userId,
       });
 
       if (!result.success) {
