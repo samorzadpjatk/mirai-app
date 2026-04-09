@@ -8,7 +8,7 @@ mock.module("astro:middleware", () => ({
 }));
 
 // Mock other dependencies
-mock.module("@mirai-app/supabase", () => ({
+mock.module("@repo/frameworks/supabase", () => ({
   createSupabaseClient: () => ({
     auth: {
       getUser: mock(() =>
@@ -36,7 +36,7 @@ mock.module("../lib/env", () => ({
   },
 }));
 
-describe("middleware", () => {
+describe("[UNIT] middleware", () => {
   test("exports onRequest handler", async () => {
     // Import after mocks are set up
     const { onRequest } = await import("../middleware");

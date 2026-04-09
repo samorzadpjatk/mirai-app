@@ -1,5 +1,9 @@
-import { createDb } from "@mirai-app/db";
-import type { TripResource, TripInsurance, TripInsuranceStep } from "@mirai-app/db";
+import { createPrismaClient } from "@repo/frameworks/prisma";
+import type {
+  TripResource,
+  TripInsurance,
+  TripInsuranceStep,
+} from "@repo/frameworks/prisma";
 import type { SeedEnv, TripInfoConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
@@ -9,7 +13,10 @@ import { env } from "./config/env";
 import { readFile } from "./utils/fs";
 import { assetsRoot } from "./constants";
 
-export const loadTripInfoConfig = async (envRoot: string, infoPath: string): Promise<TripInfoConfig> => {
+export const loadTripInfoConfig = async (
+  envRoot: string,
+  infoPath: string,
+): Promise<TripInfoConfig> => {
   const infoConfigPath = joinPath(envRoot, infoPath);
   const content = await readTextFile(infoConfigPath);
   const parsed = yaml.parse(content) as TripInfoConfig;
@@ -20,7 +27,7 @@ export const seedTripInfo = async (
   databaseUrl: string,
   tripId: string,
   seedEnv: SeedEnv,
-  infoConfig: TripInfoConfig
+  infoConfig: TripInfoConfig,
 ): Promise<void> => {
   const db = createDb(databaseUrl);
 
@@ -45,11 +52,11 @@ export const seedTripInfo = async (
         try {
           const envRoot = joinPath(assetsRoot, seedEnv);
           const filePath = joinPath(envRoot, resourceConfig.storagePath);
-          
+
           // Determine bucket and object path
           let bucketName: string;
           let objectPath: string;
-          
+
           if (resourceConfig.storagePath.startsWith("public/")) {
             bucketName = env.publicBucket;
             objectPath = resourceConfig.storagePath.replace("public/", "");
@@ -60,23 +67,27 @@ export const seedTripInfo = async (
             bucketName = env.videoBucket;
             objectPath = resourceConfig.storagePath.replace("videos/", "");
           } else {
-            console.warn(`✗ Unknown storage path format: ${resourceConfig.storagePath}`);
+            console.warn(
+              `✗ Unknown storage path format: ${resourceConfig.storagePath}`,
+            );
             bucketName = env.publicBucket;
             objectPath = resourceConfig.storagePath;
           }
-          
+
           const file = readFile(filePath);
           const { error: uploadError } = await supabase.storage
             .from(bucketName)
             .upload(objectPath, file, {
               upsert: true,
             });
-            
+
           if (uploadError) {
-            console.warn(`✗ Failed to upload file ${resourceConfig.storagePath}: ${uploadError.message}`);
+            console.warn(
+              `✗ Failed to upload file ${resourceConfig.storagePath}: ${uploadError.message}`,
+            );
           } else {
             console.log(`✓ Uploaded file: ${resourceConfig.storagePath}`);
-            
+
             // Get public URL for public bucket files
             if (bucketName === env.publicBucket) {
               const { data: publicUrlData } = supabase.storage
@@ -86,7 +97,10 @@ export const seedTripInfo = async (
             }
           }
         } catch (fileError) {
-          console.warn(`✗ Failed to process file ${resourceConfig.storagePath}:`, fileError);
+          console.warn(
+            `✗ Failed to process file ${resourceConfig.storagePath}:`,
+            fileError,
+          );
         }
       }
 
@@ -107,7 +121,9 @@ export const seedTripInfo = async (
         data: resource,
       });
 
-      console.log(`✓ Seeded resource: ${resourceConfig.label} (${resourceConfig.type})`);
+      console.log(
+        `✓ Seeded resource: ${resourceConfig.label} (${resourceConfig.type})`,
+      );
     }
 
     // Handle insurance if present
@@ -146,15 +162,16 @@ export const seedTripInfo = async (
 
       // Create insurance steps
       for (const stepConfig of infoConfig.insurance.steps) {
-        const step: Omit<TripInsuranceStep, "id" | "createdAt" | "updatedAt"> = {
-          insuranceId: createdInsurance.id,
-          stepNumber: stepConfig.stepNumber,
-          title: stepConfig.title,
-          text: stepConfig.text,
-          requiredInfo: stepConfig.requiredInfo ?? [],
-          exampleCall: stepConfig.exampleCall ?? null,
-          additionalText: stepConfig.additionalText ?? null,
-        };
+        const step: Omit<TripInsuranceStep, "id" | "createdAt" | "updatedAt"> =
+          {
+            insuranceId: createdInsurance.id,
+            stepNumber: stepConfig.stepNumber,
+            title: stepConfig.title,
+            text: stepConfig.text,
+            requiredInfo: stepConfig.requiredInfo ?? [],
+            exampleCall: stepConfig.exampleCall ?? null,
+            additionalText: stepConfig.additionalText ?? null,
+          };
 
         await db.tripInsuranceStep.create({
           data: step,

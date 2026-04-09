@@ -2,10 +2,14 @@ import { useState, useEffect } from "react";
 import { View } from "react-native";
 import { UserMap } from "~/components/map/UserMap";
 import { useMapUsers } from "~/hooks/map";
-import { useMapOverlayStore, mapOverlayStore, setMapOverlayExternals } from "~/stores/map";
+import {
+  useMapOverlayStore,
+  mapOverlayStore,
+  setMapOverlayExternals,
+} from "~/stores/map";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
-import { useAuth } from "@mirai-app/auth/client";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useAuth } from "@repo/frameworks/auth/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";
@@ -26,13 +30,8 @@ function MapScreenContent({
   currentUserName?: string;
   currentUserAvatarUrl?: string | null;
 }) {
-  const {
-    users,
-    onMapUserPress,
-    onMapPress,
-    mapTheme,
-    focusedCoordinate,
-  } = useMapOverlayStore();
+  const { users, onMapUserPress, onMapPress, mapTheme, focusedCoordinate } =
+    useMapOverlayStore();
 
   return (
     <View style={{ flex: 1 }}>
@@ -64,11 +63,19 @@ export default function MapScreen() {
   const [currentCoordinate, setCurrentCoordinate] = useState<
     [number, number] | null
   >(null);
-  const { canShareOwnLocation, canViewOthersLocations, isLoading: isLocationLoading } = useLocationContext();
+  const {
+    canShareOwnLocation,
+    canViewOthersLocations,
+    isLoading: isLocationLoading,
+  } = useLocationContext();
 
   // Map hooks
   const { locationsByUserId, usersData } = useMapLocationStream(
-    !!session?.access_token && canShareOwnLocation && canViewOthersLocations && !isLocationLoading && !isTripPast,
+    !!session?.access_token &&
+      canShareOwnLocation &&
+      canViewOthersLocations &&
+      !isLocationLoading &&
+      !isTripPast,
   );
   const {
     sharingUserIds,
@@ -88,7 +95,8 @@ export default function MapScreen() {
   const avatarStoragePath = currentUser?.id
     ? `avatar/${currentUser.id}.jpg`
     : null;
-  const currentUserName = `${currentUser?.firstName ?? ""} ${currentUser?.lastName ?? ""}`.trim();
+  const currentUserName =
+    `${currentUser?.firstName ?? ""} ${currentUser?.lastName ?? ""}`.trim();
 
   useEffect(() => {
     if (!currentUser?.hasAvatar || !avatarStoragePath) {
@@ -132,13 +140,24 @@ export default function MapScreen() {
       isRemovingUser,
       mapTheme,
     });
-    
+
     setMapOverlayExternals({
       updateSharing,
       removeUser,
       currentCoordinate,
     });
-  }, [users, session, sharingUserIds, allAvailableUsers, sharingSettings, isRemovingUser, mapTheme, updateSharing, removeUser, currentCoordinate]);
+  }, [
+    users,
+    session,
+    sharingUserIds,
+    allAvailableUsers,
+    sharingSettings,
+    isRemovingUser,
+    mapTheme,
+    updateSharing,
+    removeUser,
+    currentCoordinate,
+  ]);
 
   if (!session?.access_token) {
     return null;

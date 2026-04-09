@@ -1,34 +1,114 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [".env", "tsconfig.base.json"],
+  "globalEnv": [
+    "NODE_ENV",
+    "DATABASE_URL",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY"
+  ],
+
   "tasks": {
+    "build:domain": {
+      "dependsOn": [],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV"]
+    },
+
+    "build:use-cases": {
+      "dependsOn": ["build:domain"],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV"]
+    },
+
+    "build:adapters": {
+      "dependsOn": ["build:domain", "build:use-cases"],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV"]
+    },
+
+    "build:frameworks": {
+      "dependsOn": ["build:domain", "build:use-cases", "build:adapters"],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV"]
+    },
+
+    "build:shared": {
+      "dependsOn": [],
+      "outputs": ["dist/**"],
+      "env": ["NODE_ENV"]
+    },
+
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".astro/**"]
+      "outputs": ["dist/**", ".astro/**", "build/**"],
+      "env": ["NODE_ENV"]
     },
+
     "clean": {
       "outputs": []
     },
+
     "dev": {
       "cache": false,
       "persistent": true
     },
+
     "lint": {
-      "dependsOn": ["^lint"],
+      "dependsOn": ["^build"],
       "outputs": []
     },
+
     "typecheck": {
-      "dependsOn": ["^typecheck"],
+      "dependsOn": ["^build"],
       "outputs": []
     },
+
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
     },
+
+    "test:ci": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+
+    "test:unit": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+
     "format:check": {
       "outputs": []
     },
+
     "format:write": {
       "outputs": []
+    },
+
+    "depcruise": {
+      "outputs": []
+    },
+
+    "depcruise:check": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+
+    "depcruise:graph": {
+      "dependsOn": ["^build"],
+      "outputs": ["dependency-graph.*"]
     }
   }
 }

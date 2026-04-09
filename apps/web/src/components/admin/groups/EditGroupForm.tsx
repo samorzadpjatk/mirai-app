@@ -8,7 +8,7 @@ import { Button } from "../../ui/Button";
 import { Modal } from "../../ui/Modal";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
-import { useAdminGroups, type AdminGroup } from "@mirai-app/trpc/hooks";
+import { useAdminGroups, type AdminGroup } from "@repo/frameworks/trpc/hooks";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
 

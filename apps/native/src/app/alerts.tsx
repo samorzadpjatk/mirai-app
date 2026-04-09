@@ -7,7 +7,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";

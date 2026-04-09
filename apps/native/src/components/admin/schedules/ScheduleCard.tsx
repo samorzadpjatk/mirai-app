@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import type { NotificationSchedule } from '@mirai-app/trpc/hooks';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import type { NotificationSchedule } from "@repo/frameworks/trpc/hooks";
 
 interface ScheduleCardProps {
   schedule: NotificationSchedule;
@@ -27,16 +27,22 @@ export function ScheduleCard({
         <View style={styles.titleSection}>
           <Text style={styles.title}>{schedule.name}</Text>
           <Text style={styles.triggerTime}>
-            <Ionicons name="time" size={14} color={colors.textSecondary} />
-            {' '}{schedule.triggerTime}
+            <Ionicons name="time" size={14} color={colors.textSecondary} />{" "}
+            {schedule.triggerTime}
           </Text>
         </View>
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: schedule.isActive ? colors.success : colors.textSecondary }
-        ]}>
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor: schedule.isActive
+                ? colors.success
+                : colors.textSecondary,
+            },
+          ]}
+        >
           <Text style={styles.statusText}>
-            {schedule.isActive ? 'Active' : 'Inactive'}
+            {schedule.isActive ? "Active" : "Inactive"}
           </Text>
         </View>
       </View>
@@ -44,14 +50,15 @@ export function ScheduleCard({
       <Text style={styles.message} numberOfLines={2}>
         {schedule.message}
       </Text>
-      
+
       <View style={styles.metaSection}>
         <Text style={styles.metaText}>
           Created: {new Date(schedule.createdAt).toLocaleDateString()}
         </Text>
         {schedule.lastTriggered && (
           <Text style={styles.metaText}>
-            Last triggered: {new Date(schedule.lastTriggered).toLocaleDateString()}
+            Last triggered:{" "}
+            {new Date(schedule.lastTriggered).toLocaleDateString()}
           </Text>
         )}
       </View>
@@ -75,20 +82,24 @@ export function ScheduleCard({
 
         <TouchableOpacity
           style={[
-            styles.actionButton, 
+            styles.actionButton,
             styles.toggleButton,
-            { backgroundColor: schedule.isActive ? colors.warning : colors.success }
+            {
+              backgroundColor: schedule.isActive
+                ? colors.warning
+                : colors.success,
+            },
           ]}
           onPress={() => onToggle(schedule)}
           disabled={isToggling}
         >
-          <Ionicons 
-            name={schedule.isActive ? "pause" : "play"} 
-            size={16} 
-            color={colors.white} 
+          <Ionicons
+            name={schedule.isActive ? "pause" : "play"}
+            size={16}
+            color={colors.white}
           />
           <Text style={styles.actionButtonText}>
-            {isToggling ? '...' : (schedule.isActive ? 'Pause' : 'Start')}
+            {isToggling ? "..." : schedule.isActive ? "Pause" : "Start"}
           </Text>
         </TouchableOpacity>
 
@@ -114,9 +125,9 @@ const styles = StyleSheet.create({
     borderColor: colors.borderWhite5,
   },
   header: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'flex-start' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "flex-start" as const,
     marginBottom: spacing.md,
   },
   titleSection: {
@@ -131,8 +142,8 @@ const styles = StyleSheet.create({
   triggerTime: {
     fontSize: typography.sm,
     color: colors.textSecondary,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
@@ -159,14 +170,14 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   actions: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     gap: spacing.sm,
   },
   actionButton: {
     flex: 1,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     gap: spacing.xs,

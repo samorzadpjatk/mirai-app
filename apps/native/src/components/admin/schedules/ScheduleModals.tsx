@@ -1,29 +1,30 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { AdminModal, AdminModalButton } from '../AdminModal';
-import { colors, spacing, typography } from '~/styles';
-import {
-  FormField,
-  ThemedTextInput,
-} from '~/components/common/ui';
-import type { NotificationSchedule } from '@mirai-app/trpc/hooks';
+import React, { useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { AdminModal, AdminModalButton } from "../AdminModal";
+import { colors, spacing, typography } from "~/styles";
+import { FormField, ThemedTextInput } from "~/components/common/ui";
+import type { NotificationSchedule } from "@repo/frameworks/trpc/hooks";
 
 interface CreateScheduleModalProps {
   visible: boolean;
   onClose: () => void;
-  onCreateSchedule: (name: string, message: string, triggerTime: string) => void;
+  onCreateSchedule: (
+    name: string,
+    message: string,
+    triggerTime: string,
+  ) => void;
   isCreating: boolean;
 }
 
-export function CreateScheduleModal({ 
-  visible, 
-  onClose, 
-  onCreateSchedule, 
-  isCreating 
+export function CreateScheduleModal({
+  visible,
+  onClose,
+  onCreateSchedule,
+  isCreating,
 }: CreateScheduleModalProps) {
-  const [name, setName] = useState('');
-  const [message, setMessage] = useState('');
-  const [triggerTime, setTriggerTime] = useState('');
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+  const [triggerTime, setTriggerTime] = useState("");
 
   const handleCreate = () => {
     if (!name.trim() || !message.trim() || !triggerTime.trim()) {
@@ -39,9 +40,9 @@ export function CreateScheduleModal({
   };
 
   const resetForm = () => {
-    setName('');
-    setMessage('');
-    setTriggerTime('');
+    setName("");
+    setMessage("");
+    setTriggerTime("");
   };
 
   return (
@@ -51,10 +52,14 @@ export function CreateScheduleModal({
       title="Create Schedule"
       actions={
         <>
-          <AdminModalButton title="Cancel" onPress={handleClose} variant="cancel" />
-          <AdminModalButton 
-            title="Create" 
-            onPress={handleCreate} 
+          <AdminModalButton
+            title="Cancel"
+            onPress={handleClose}
+            variant="cancel"
+          />
+          <AdminModalButton
+            title="Create"
+            onPress={handleCreate}
             disabled={!name.trim() || !message.trim() || !triggerTime.trim()}
             loading={isCreating}
           />
@@ -94,25 +99,30 @@ interface EditScheduleModalProps {
   visible: boolean;
   onClose: () => void;
   schedule: NotificationSchedule | null;
-  onUpdateSchedule: (id: string, name: string, message: string, triggerTime: string) => void;
+  onUpdateSchedule: (
+    id: string,
+    name: string,
+    message: string,
+    triggerTime: string,
+  ) => void;
   isUpdating: boolean;
 }
 
-export function EditScheduleModal({ 
-  visible, 
-  onClose, 
-  schedule, 
-  onUpdateSchedule, 
-  isUpdating 
+export function EditScheduleModal({
+  visible,
+  onClose,
+  schedule,
+  onUpdateSchedule,
+  isUpdating,
 }: EditScheduleModalProps) {
-  const [name, setName] = useState('');
-  const [message, setMessage] = useState('');
-  const [triggerTime, setTriggerTime] = useState('');
+  const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
+  const [triggerTime, setTriggerTime] = useState("");
 
   const resetForm = () => {
-    setName('');
-    setMessage('');
-    setTriggerTime('');
+    setName("");
+    setMessage("");
+    setTriggerTime("");
   };
 
   React.useEffect(() => {
@@ -129,7 +139,12 @@ export function EditScheduleModal({
     if (!schedule || !name.trim() || !message.trim() || !triggerTime.trim()) {
       return;
     }
-    onUpdateSchedule(schedule.id, name.trim(), message.trim(), triggerTime.trim());
+    onUpdateSchedule(
+      schedule.id,
+      name.trim(),
+      message.trim(),
+      triggerTime.trim(),
+    );
   };
 
   const handleClose = () => {
@@ -144,11 +159,20 @@ export function EditScheduleModal({
       title="Edit Schedule"
       actions={
         <>
-          <AdminModalButton title="Cancel" onPress={handleClose} variant="cancel" />
-          <AdminModalButton 
-            title="Update" 
-            onPress={handleUpdate} 
-            disabled={!schedule || !name.trim() || !message.trim() || !triggerTime.trim()}
+          <AdminModalButton
+            title="Cancel"
+            onPress={handleClose}
+            variant="cancel"
+          />
+          <AdminModalButton
+            title="Update"
+            onPress={handleUpdate}
+            disabled={
+              !schedule ||
+              !name.trim() ||
+              !message.trim() ||
+              !triggerTime.trim()
+            }
             loading={isUpdating}
           />
         </>
@@ -191,12 +215,12 @@ interface DeleteScheduleModalProps {
   isDeleting: boolean;
 }
 
-export function DeleteScheduleModal({ 
-  visible, 
-  onClose, 
-  schedule, 
-  onDeleteSchedule, 
-  isDeleting 
+export function DeleteScheduleModal({
+  visible,
+  onClose,
+  schedule,
+  onDeleteSchedule,
+  isDeleting,
 }: DeleteScheduleModalProps) {
   const handleDelete = () => {
     if (!schedule) return;
@@ -211,9 +235,9 @@ export function DeleteScheduleModal({
       actions={
         <>
           <AdminModalButton title="Cancel" onPress={onClose} variant="cancel" />
-          <AdminModalButton 
-            title="Delete" 
-            onPress={handleDelete} 
+          <AdminModalButton
+            title="Delete"
+            onPress={handleDelete}
             variant="danger"
             loading={isDeleting}
           />
@@ -226,7 +250,8 @@ export function DeleteScheduleModal({
             Are you sure you want to delete the schedule "{schedule.name}"?
           </Text>
           <Text style={styles.deleteSubWarning}>
-            This action cannot be undone and will stop all scheduled notifications.
+            This action cannot be undone and will stop all scheduled
+            notifications.
           </Text>
         </View>
       )}

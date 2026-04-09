@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-describe("supabase.ts with valid environment", () => {
+describe("[INTEGRATION] supabase.ts with valid environment", () => {
   test("exports supabase client", async () => {
     const { supabase } = await import("../supabase");
 

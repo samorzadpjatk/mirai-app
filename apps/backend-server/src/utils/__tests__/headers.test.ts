@@ -2,7 +2,7 @@ import { describe, test, expect, spyOn } from "bun:test";
 import type { FastifyRequest } from "fastify";
 import { fastifyHeadersToFetchHeaders } from "../headers";
 
-describe("fastifyHeadersToFetchHeaders", () => {
+describe("[UNIT] fastifyHeadersToFetchHeaders", () => {
   describe("simple string header values", () => {
     test("converts single string header value", () => {
       const mockHeaders = {

@@ -2,9 +2,9 @@ import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateNotificationQueries } from "@mirai-app/trpc/client/query";
-import { useAuth } from "@mirai-app/auth/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
+import { invalidateNotificationQueries } from "@repo/frameworks/trpc/client/query";
+import { useAuth } from "@repo/frameworks/auth/client";
 
 function resolveProjectId(): string | undefined {
   const expoConfigExtra = (Constants.expoConfig?.extra ?? null) as unknown;
@@ -50,12 +50,19 @@ export function useAutoPushSubscription() {
   // Use tRPC + React Query directly for server-state
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const subscriptionQuery = useQuery(trpc.notifications.getSubscriptionStatus.queryOptions());
-  const subscribeMutation = useMutation(trpc.notifications.subscribe.mutationOptions({
-    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
-  }));
+  const subscriptionQuery = useQuery(
+    trpc.notifications.getSubscriptionStatus.queryOptions(),
+  );
+  const subscribeMutation = useMutation(
+    trpc.notifications.subscribe.mutationOptions({
+      onSuccess: async () => {
+        await invalidateNotificationQueries(queryClient);
+      },
+    }),
+  );
 
-  const { data: subscriptionStatus, isLoading: isStatusLoading } = subscriptionQuery;
+  const { data: subscriptionStatus, isLoading: isStatusLoading } =
+    subscriptionQuery;
 
   const hasSession = !!session?.access_token;
   const authUserId = session?.user?.id ?? null;

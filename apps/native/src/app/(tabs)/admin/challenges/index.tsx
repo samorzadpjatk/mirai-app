@@ -18,7 +18,7 @@ import {
   useQueries,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPC, useTRPCClient } from "@repo/frameworks/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";

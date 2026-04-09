@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import { FilterChip, FilterChipRow } from '~/components/common/ui';
-import type { NotificationStatus } from '@mirai-app/trpc/hooks';
+import React from "react";
+import { View, TextInput, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import { FilterChip, FilterChipRow } from "~/components/common/ui";
+import type { NotificationStatus } from "@repo/frameworks/trpc/hooks";
 
 interface NotificationFiltersProps {
   searchTerm: string;
@@ -16,10 +16,10 @@ interface NotificationFiltersProps {
 }
 
 const statusOptions: { key: NotificationStatus; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'sent', label: 'Sent' },
-  { key: 'failed', label: 'Failed' },
+  { key: "all", label: "All" },
+  { key: "pending", label: "Pending" },
+  { key: "sent", label: "Sent" },
+  { key: "failed", label: "Failed" },
 ];
 
 export function NotificationFilters({
@@ -46,7 +46,10 @@ export function NotificationFilters({
         </View>
       </View>
 
-      <FilterChipRow style={styles.statusSelector} horizontalSpacing={spacing.sm}>
+      <FilterChipRow
+        style={styles.statusSelector}
+        horizontalSpacing={spacing.sm}
+      >
         {statusOptions.map((option) => (
           <FilterChip
             key={option.key}
@@ -58,7 +61,10 @@ export function NotificationFilters({
       </FilterChipRow>
 
       {groups.length ? (
-        <FilterChipRow style={styles.groupSelector} horizontalSpacing={spacing.sm}>
+        <FilterChipRow
+          style={styles.groupSelector}
+          horizontalSpacing={spacing.sm}
+        >
           <FilterChip
             label="All groups"
             selected={selectedGroupId === "all"}
@@ -87,8 +93,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   searchBar: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,

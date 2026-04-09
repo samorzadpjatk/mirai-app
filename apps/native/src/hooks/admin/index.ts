@@ -1,1 +1,1 @@
-export * from "@mirai-app/trpc/hooks";
+export * from "@repo/frameworks/trpc/hooks";

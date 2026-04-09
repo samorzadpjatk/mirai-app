@@ -3,8 +3,8 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateNotificationQueries } from "@mirai-app/trpc/client/query";
+import { useTRPC } from "@repo/frameworks/trpc/client";
+import { invalidateNotificationQueries } from "@repo/frameworks/trpc/client/query";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;
@@ -28,12 +28,20 @@ export function useNotifications(): UseNotificationsReturn {
   );
 
   const queryClient = useQueryClient();
-  const subscribeMutation = useMutation(trpc.notifications.subscribe.mutationOptions({
-    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
-  }));
-  const unsubscribeMutation = useMutation(trpc.notifications.unsubscribe.mutationOptions({
-    onSuccess: async () => { await invalidateNotificationQueries(queryClient); },
-  }));
+  const subscribeMutation = useMutation(
+    trpc.notifications.subscribe.mutationOptions({
+      onSuccess: async () => {
+        await invalidateNotificationQueries(queryClient);
+      },
+    }),
+  );
+  const unsubscribeMutation = useMutation(
+    trpc.notifications.unsubscribe.mutationOptions({
+      onSuccess: async () => {
+        await invalidateNotificationQueries(queryClient);
+      },
+    }),
+  );
 
   const [permission, setPermission] = useState<Notifications.PermissionStatus>(
     Notifications.PermissionStatus.UNDETERMINED,

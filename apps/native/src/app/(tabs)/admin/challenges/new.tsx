@@ -2,7 +2,7 @@ import React from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";

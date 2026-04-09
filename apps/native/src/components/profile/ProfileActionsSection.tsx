@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useAuth } from "@mirai-app/auth/client";
+import { useAuth } from "@repo/frameworks/auth/client";
 import { useRouter } from "expo-router";
 import { useNotifications } from "~/hooks/notifications";
 import { useLocationContext } from "~/stores/location";

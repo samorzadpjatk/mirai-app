@@ -14,6 +14,7 @@
     "lint:fix": "eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
+    "test:unit": "bun test",
     "test:coverage": "bun test --coverage"
   },
   "keywords": [],
@@ -22,7 +23,7 @@
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/websocket": "^11.2.0",
-    "@mirai-app/trpc": "workspace:*",
+    "@repo/adapters": "workspace:*",
     "@trpc/server": "^11.8.1",
     "fastify": "^5.6.2",
     "ws": "^8.18.3"

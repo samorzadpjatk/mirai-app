@@ -1,4 +1,4 @@
-import { createSupabaseClient } from "@mirai-app/supabase";
+import { createSupabaseClient } from "@repo/frameworks/supabase";
 import { env } from "./env";
 
 export const supabase = createSupabaseClient(

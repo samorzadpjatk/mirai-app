@@ -8,7 +8,7 @@ import {
   DEFAULT_IMAGE_MIME_TYPES,
 } from "../fileValidation";
 
-describe("formatBytes", () => {
+describe("[UNIT] formatBytes", () => {
   describe("edge cases", () => {
     test("returns '0 B' for zero bytes", () => {
       expect(formatBytes(0)).toBe("0 B");

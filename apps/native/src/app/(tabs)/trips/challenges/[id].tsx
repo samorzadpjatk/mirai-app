@@ -10,7 +10,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { QrScannerModal } from "~/components/common";
 import { AppModalShell, AppModalFooter } from "~/components/common/ui";
 import { ThemedTextInput } from "~/components/common/ui";

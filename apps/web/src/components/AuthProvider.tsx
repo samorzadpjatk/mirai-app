@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthStoreProvider, authStore } from "@mirai-app/auth/client";
+import { AuthStoreProvider, authStore } from "@repo/frameworks/auth/client";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { env } from "../lib/env";

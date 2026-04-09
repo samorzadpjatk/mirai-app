@@ -15,17 +15,11 @@
   },
   "peerDependencies": {
     "typescript": "^5",
-    "react": "^19.0.0",
-    "@tanstack/react-query": "^5.0.0"
-  },
-  "dependencies": {
-    "jotai": "^2.18.0",
-    "jotai-tanstack-query": "^0.11.0",
-    "jotai-zustand": "^0.6.0",
-    "zustand": "^5.0.11"
+    "react": "^19.0.0"
   },
   "scripts": {
     "test": "bun test",
+    "test:unit": "bun test",
     "test:coverage": "bun test --coverage"
   }
 }

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useTRPC, useSubscription } from "@mirai-app/trpc/client";
+import { useTRPC, useSubscription } from "@repo/frameworks/trpc/client";
 import * as Crypto from "expo-crypto";
 import { useLocationContext } from "~/stores/location";
 
@@ -72,8 +72,13 @@ export function useMapLocationStream(enabled: boolean) {
         },
         onError: (error: unknown) => {
           // Only log UNAUTHORIZED errors as warnings, others as errors
-          if (error instanceof Error && error.message.includes('UNAUTHORIZED')) {
-            console.warn("Location subscription unauthorized - user may not be logged in");
+          if (
+            error instanceof Error &&
+            error.message.includes("UNAUTHORIZED")
+          ) {
+            console.warn(
+              "Location subscription unauthorized - user may not be logged in",
+            );
           } else {
             console.error("Location subscription error:", error);
           }

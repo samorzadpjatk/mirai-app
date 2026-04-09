@@ -1,7 +1,7 @@
 import { View, ScrollView, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { useAuth } from "@mirai-app/auth/client";
+import { useAuth } from "@repo/frameworks/auth/client";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import LoadingScreen from "../../../components/LoadingScreen";
@@ -20,11 +20,13 @@ export default function TripDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
-  const paramTripId = typeof params.id === "string" ? params.id : params.id?.[0];
+  const paramTripId =
+    typeof params.id === "string" ? params.id : params.id?.[0];
   const { selectedTripId, isLoadingSelectedTrip } = useSelectedTrip();
   const tripId = selectedTripId ?? paramTripId;
 
-  const { isLoadingUser, trip, isLoadingTrip, isTripPast } = useTripDetails(tripId);
+  const { isLoadingUser, trip, isLoadingTrip, isTripPast } =
+    useTripDetails(tripId);
 
   // Keep trip store in sync with current trip state
   useTripSync();
@@ -79,7 +81,11 @@ export default function TripDetailsScreen() {
           <TripBanner />
 
           {/* Partners */}
-          <PartnersSection sponsors={trip.tripSponsors?.map(ts => ts.sponsor).filter(Boolean)} />
+          <PartnersSection
+            sponsors={trip.tripSponsors
+              ?.map((ts) => ts.sponsor)
+              .filter(Boolean)}
+          />
 
           {/* Quick Access Grid */}
           <TripQuickAccessGrid

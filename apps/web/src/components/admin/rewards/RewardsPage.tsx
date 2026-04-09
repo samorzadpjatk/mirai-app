@@ -5,7 +5,7 @@ import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminRewards } from "@mirai-app/trpc/hooks";
+import { useAdminRewards } from "@repo/frameworks/trpc/hooks";
 import { RewardCard } from "./RewardCard";
 import { useTrip } from "../../../contexts/TripContext";
 export function RewardsPage() {

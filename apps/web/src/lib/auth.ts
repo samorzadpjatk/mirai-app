@@ -1,5 +1,5 @@
-import { authStore, type AuthUser } from "@mirai-app/auth/client";
-import { getTRPCClient } from "@mirai-app/trpc/client";
+import { authStore, type AuthUser } from "@repo/frameworks/auth/client";
+import { getTRPCClient } from "@repo/frameworks/trpc/client";
 import { supabase } from "./supabase";
 import { env } from "./env";
 
@@ -47,7 +47,7 @@ const mapToAuthUser = (user: {
   name:
     user.firstName && user.lastName
       ? `${user.firstName} ${user.lastName}`
-      : user.firstName ?? user.lastName ?? null,
+      : (user.firstName ?? user.lastName ?? null),
   emailVerified: null,
   role: user.role,
 });

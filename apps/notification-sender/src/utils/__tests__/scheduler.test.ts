@@ -9,7 +9,7 @@ import {
 } from "bun:test";
 import { Scheduler, createInactivityScheduler } from "../scheduler";
 
-describe("Scheduler", () => {
+describe("[UNIT] Scheduler", () => {
   describe("start()", () => {
     test("runs task immediately via setTimeout", async () => {
       const task = mock(() => Promise.resolve());
@@ -173,7 +173,7 @@ describe("Scheduler", () => {
   });
 });
 
-describe("createInactivityScheduler", () => {
+describe("[UNIT] createInactivityScheduler", () => {
   test("creates a Scheduler instance", () => {
     const checkFn = () => Promise.resolve("result");
     const scheduler = createInactivityScheduler(checkFn, 10);

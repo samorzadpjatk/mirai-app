@@ -1,6 +1,6 @@
 "use client";
 
-import type { AdminGroup } from "@mirai-app/trpc/hooks";
+import type { AdminGroup } from "@repo/frameworks/trpc/hooks";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 

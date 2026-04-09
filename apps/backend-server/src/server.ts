@@ -5,7 +5,9 @@ import {
   type FastifyTRPCPluginOptions,
 } from "@trpc/server/adapters/fastify";
 import fastify, { type FastifyRequest } from "fastify";
-import { type AppRouter, appRouter, createTRPCContext } from "@mirai-app/trpc";
+import { type AppRouter, appRouter, createTRPCContext } from "@repo/adapters";
+import { createDb } from "@repo/frameworks/prisma";
+import { createSupabaseClient } from "@repo/frameworks/supabase";
 import { fastifyHeadersToFetchHeaders } from "./utils/headers";
 
 export interface ServerOptions {
@@ -55,9 +57,7 @@ export function createServer(opts: ServerOptions) {
         }
 
         if (!databaseUrl) {
-          throw new Error(
-            "Missing database credentials. Set DATABASE_URL.",
-          );
+          throw new Error("Missing database credentials. Set DATABASE_URL.");
         }
 
         // Extract headers and add the original URL for auth token parsing
@@ -69,11 +69,24 @@ export function createServer(opts: ServerOptions) {
           headers.set("x-original-url", req.url);
         }
 
-        return createTRPCContext({
-          headers,
-          databaseUrl,
+        // Create database instance in the framework layer and pass to context
+        // This removes the cyclic dependency between adapters and frameworks
+        const db = createDb(databaseUrl);
+
+        // Create Supabase client in the framework layer and pass to context
+        // This maintains Clean Architecture by avoiding runtime imports in adapters
+        const supabase = createSupabaseClient(
           supabaseUrl,
           supabaseKey,
+          undefined,
+          { auth: { autoRefreshToken: false, persistSession: false } },
+        );
+        console.log("[Supabase] Created server client using SERVICE_ROLE key");
+
+        return createTRPCContext({
+          headers,
+          db,
+          supabase,
           connectionParams,
         });
       },

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPC, useTRPCClient } from "@repo/frameworks/trpc/client";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
@@ -17,7 +17,8 @@ export function useChallenges(tripId?: string | null) {
 
   const challengesQuery = useInfiniteQuery({
     queryKey: [
-      ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId ?? "" }).queryKey,
+      ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId ?? "" })
+        .queryKey,
       "infinite",
       PAGE_SIZE,
     ],
@@ -46,7 +47,10 @@ export function useChallenges(tripId?: string | null) {
 
   const { data: trip, isLoading: tripLoading } = tripQuery;
   const challengesData = useMemo(
-    () => (challengesQuery.data?.pages ?? []).flatMap((page) => page.challenges ?? []),
+    () =>
+      (challengesQuery.data?.pages ?? []).flatMap(
+        (page) => page.challenges ?? [],
+      ),
     [challengesQuery.data?.pages],
   );
   const { isLoading: challengesLoading } = challengesQuery;
@@ -148,7 +152,7 @@ export function useChallenges(tripId?: string | null) {
                     ? "completed"
                     : rawStatus === "VISIBLE"
                       ? "visible"
-                    : "to_solve";
+                      : "to_solve";
 
       const basePoints = dbChallenge.basePoints ?? 0;
       const maxPoints =

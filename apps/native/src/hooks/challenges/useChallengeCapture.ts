@@ -3,8 +3,8 @@ import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import { invalidateChallengeQueries } from "@mirai-app/trpc/client/query";
+import { useTRPC } from "@repo/frameworks/trpc/client";
+import { invalidateChallengeQueries } from "@repo/frameworks/trpc/client/query";
 import { useFileUpload } from "~/hooks/files";
 
 interface ChallengeCaptureOptions {
@@ -27,16 +27,29 @@ export function useChallengeCapture({
   challengeId,
 }: ChallengeCaptureOptions) {
   const router = useRouter();
-  
+
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const userQuery = useQuery(trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }, { enabled: !!tripId }));
-  const createSubmissionMutation = useMutation(trpc.challengeSubmission.create.mutationOptions({
-    onSuccess: async () => { await invalidateChallengeQueries(queryClient); },
-  }));
-  const deleteSubmissionMutation = useMutation(trpc.challengeSubmission.deleteMine.mutationOptions({
-    onSuccess: async () => { await invalidateChallengeQueries(queryClient); },
-  }));
+  const userQuery = useQuery(
+    trpc.user.getMyWithGroup.queryOptions(
+      { tripId: tripId ?? "" },
+      { enabled: !!tripId },
+    ),
+  );
+  const createSubmissionMutation = useMutation(
+    trpc.challengeSubmission.create.mutationOptions({
+      onSuccess: async () => {
+        await invalidateChallengeQueries(queryClient);
+      },
+    }),
+  );
+  const deleteSubmissionMutation = useMutation(
+    trpc.challengeSubmission.deleteMine.mutationOptions({
+      onSuccess: async () => {
+        await invalidateChallengeQueries(queryClient);
+      },
+    }),
+  );
 
   const userTrip = userQuery.data;
   const currentUserLoading = userQuery.isLoading;
@@ -159,7 +172,9 @@ export function useChallengeCapture({
         return;
       }
 
-      const userTripForCurrentTrip = userTrip?.trips?.find(t => t.tripId === tripId);
+      const userTripForCurrentTrip = userTrip?.trips?.find(
+        (t) => t.tripId === tripId,
+      );
       const groupId = userTripForCurrentTrip?.group?.id;
 
       if (!groupId) {
@@ -282,7 +297,9 @@ export function useChallengeCapture({
         return;
       }
 
-      const userTripForCurrentTrip = userTrip?.trips?.find(t => t.tripId === tripId);
+      const userTripForCurrentTrip = userTrip?.trips?.find(
+        (t) => t.tripId === tripId,
+      );
       const groupId = userTripForCurrentTrip?.group?.id;
 
       if (!groupId) {

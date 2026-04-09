@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import { AdminModal, AdminModalButton } from '../AdminModal';
+import React, { useState } from "react";
 import {
-  FormField,
-  ThemedTextInput,
-} from '~/components/common/ui';
-import type { Group, User } from '@mirai-app/trpc/hooks';
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import { AdminModal, AdminModalButton } from "../AdminModal";
+import { FormField, ThemedTextInput } from "~/components/common/ui";
+import type { Group, User } from "@repo/frameworks/trpc/hooks";
 
 interface CreateGroupModalProps {
   visible: boolean;
@@ -16,17 +19,22 @@ interface CreateGroupModalProps {
   isCreating: boolean;
 }
 
-export function CreateGroupModal({ visible, onClose, onCreateGroup, isCreating }: CreateGroupModalProps) {
-  const [groupName, setGroupName] = useState('');
+export function CreateGroupModal({
+  visible,
+  onClose,
+  onCreateGroup,
+  isCreating,
+}: CreateGroupModalProps) {
+  const [groupName, setGroupName] = useState("");
 
   const handleCreate = () => {
     if (!groupName.trim()) return;
     onCreateGroup(groupName.trim());
-    setGroupName('');
+    setGroupName("");
   };
 
   const handleClose = () => {
-    setGroupName('');
+    setGroupName("");
     onClose();
   };
 
@@ -37,10 +45,14 @@ export function CreateGroupModal({ visible, onClose, onCreateGroup, isCreating }
       title="Create Group"
       actions={
         <>
-          <AdminModalButton title="Cancel" onPress={handleClose} variant="cancel" />
-          <AdminModalButton 
-            title="Create" 
-            onPress={handleCreate} 
+          <AdminModalButton
+            title="Cancel"
+            onPress={handleClose}
+            variant="cancel"
+          />
+          <AdminModalButton
+            title="Create"
+            onPress={handleCreate}
             disabled={!groupName.trim()}
             loading={isCreating}
           />
@@ -66,14 +78,20 @@ interface EditGroupModalProps {
   isUpdating: boolean;
 }
 
-export function EditGroupModal({ visible, onClose, group, onUpdateGroup, isUpdating }: EditGroupModalProps) {
-  const [groupName, setGroupName] = useState('');
+export function EditGroupModal({
+  visible,
+  onClose,
+  group,
+  onUpdateGroup,
+  isUpdating,
+}: EditGroupModalProps) {
+  const [groupName, setGroupName] = useState("");
 
   React.useEffect(() => {
     if (group) {
       setGroupName(group.name);
     } else {
-      setGroupName('');
+      setGroupName("");
     }
   }, [group]);
 
@@ -83,7 +101,7 @@ export function EditGroupModal({ visible, onClose, group, onUpdateGroup, isUpdat
   };
 
   const handleClose = () => {
-    setGroupName('');
+    setGroupName("");
     onClose();
   };
 
@@ -94,10 +112,14 @@ export function EditGroupModal({ visible, onClose, group, onUpdateGroup, isUpdat
       title="Edit Group"
       actions={
         <>
-          <AdminModalButton title="Cancel" onPress={handleClose} variant="cancel" />
-          <AdminModalButton 
-            title="Update" 
-            onPress={handleUpdate} 
+          <AdminModalButton
+            title="Cancel"
+            onPress={handleClose}
+            variant="cancel"
+          />
+          <AdminModalButton
+            title="Update"
+            onPress={handleUpdate}
             disabled={!groupName.trim()}
             loading={isUpdating}
           />
@@ -123,7 +145,13 @@ interface DeleteGroupModalProps {
   isDeleting: boolean;
 }
 
-export function DeleteGroupModal({ visible, onClose, group, onDeleteGroup, isDeleting }: DeleteGroupModalProps) {
+export function DeleteGroupModal({
+  visible,
+  onClose,
+  group,
+  onDeleteGroup,
+  isDeleting,
+}: DeleteGroupModalProps) {
   const handleDelete = () => {
     if (!group) return;
     onDeleteGroup(group.id);
@@ -137,9 +165,9 @@ export function DeleteGroupModal({ visible, onClose, group, onDeleteGroup, isDel
       actions={
         <>
           <AdminModalButton title="Cancel" onPress={onClose} variant="cancel" />
-          <AdminModalButton 
-            title="Delete" 
-            onPress={handleDelete} 
+          <AdminModalButton
+            title="Delete"
+            onPress={handleDelete}
             variant="danger"
             loading={isDeleting}
           />
@@ -152,7 +180,8 @@ export function DeleteGroupModal({ visible, onClose, group, onDeleteGroup, isDel
             Are you sure you want to delete the group "{group.name}"?
           </Text>
           <Text style={styles.deleteSubWarning}>
-            This action cannot be undone and will remove all members from the group.
+            This action cannot be undone and will remove all members from the
+            group.
           </Text>
           {group._count.participants > 0 && (
             <Text style={styles.memberCount}>
@@ -174,13 +203,13 @@ interface AssignOrganizerModalProps {
   isAssigning: boolean;
 }
 
-export function AssignOrganizerModal({ 
-  visible, 
-  onClose, 
-  group, 
-  users, 
-  onAssignOrganizer, 
-  isAssigning 
+export function AssignOrganizerModal({
+  visible,
+  onClose,
+  group,
+  users,
+  onAssignOrganizer,
+  isAssigning,
 }: AssignOrganizerModalProps) {
   const [selectedOrganizer, setSelectedOrganizer] = useState<User | null>(null);
 
@@ -204,9 +233,9 @@ export function AssignOrganizerModal({
       actions={
         <>
           <AdminModalButton title="Cancel" onPress={onClose} variant="cancel" />
-          <AdminModalButton 
-            title="Assign" 
-            onPress={handleAssign} 
+          <AdminModalButton
+            title="Assign"
+            onPress={handleAssign}
             disabled={!selectedOrganizer}
             loading={isAssigning}
           />
@@ -216,9 +245,19 @@ export function AssignOrganizerModal({
       {group && (
         <>
           <View style={{ marginBottom: spacing.md }}>
-            <Text style={{ fontSize: typography.base, color: colors.white, fontWeight: typography.medium, marginBottom: spacing.xs }}>{group.name}</Text>
+            <Text
+              style={{
+                fontSize: typography.base,
+                color: colors.white,
+                fontWeight: typography.medium,
+                marginBottom: spacing.xs,
+              }}
+            >
+              {group.name}
+            </Text>
             <Text style={styles.currentOrganizer}>
-              Current organizer: {group.organizer?.firstName} {group.organizer?.lastName}
+              Current organizer: {group.organizer?.firstName}{" "}
+              {group.organizer?.lastName}
             </Text>
           </View>
 
@@ -228,15 +267,19 @@ export function AssignOrganizerModal({
                 key={user.id}
                 style={[
                   styles.userOption,
-                  selectedOrganizer?.id === user.id && styles.userOptionSelected,
+                  selectedOrganizer?.id === user.id &&
+                    styles.userOptionSelected,
                 ]}
                 onPress={() => setSelectedOrganizer(user)}
               >
                 <View style={styles.userOptionInfo}>
-                  <Text style={[
-                    styles.userOptionName,
-                    selectedOrganizer?.id === user.id && styles.userOptionNameSelected,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.userOptionName,
+                      selectedOrganizer?.id === user.id &&
+                        styles.userOptionNameSelected,
+                    ]}
+                  >
                     {user.firstName} {user.lastName}
                   </Text>
                   <Text style={styles.userOptionEmail}>{user.email}</Text>
@@ -281,9 +324,9 @@ const styles = StyleSheet.create({
     maxHeight: 200,
   },
   userOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     backgroundColor: colors.backgroundDark,

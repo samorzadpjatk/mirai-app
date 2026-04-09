@@ -1,9 +1,9 @@
 "use client";
 
-import { useLoginForm, useAuth } from "@mirai-app/auth/client";
+import { useLoginForm, useAuth } from "@repo/frameworks/auth/client";
 import { useState } from "react";
 import { OTPCodeInput } from "./OTPCodeInput";
-import { authStore } from "@mirai-app/auth/client";
+import { authStore } from "@repo/frameworks/auth/client";
 import { checkIsAdminUser } from "../lib/auth";
 
 export function LoginForm() {

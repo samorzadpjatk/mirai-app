@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   ActivityIndicator,
   Image,
@@ -8,13 +8,8 @@ import {
   View,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
-import {
-  borderRadius,
-  colors,
-  spacing,
-  typography,
-} from "~/styles";
+import { useTRPC } from "@repo/frameworks/trpc/client";
+import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
 
 interface SubmissionImageCardProps {

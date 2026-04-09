@@ -5,7 +5,7 @@ import { renderHook, act } from "@testing-library/react";
 import { useChallengeForm } from "../admin/useChallengeForm";
 import type { ChallengeFormState } from "../../components/admin/challenges/challengeFormConstants";
 
-describe("useChallengeForm", () => {
+describe("[UNIT] useChallengeForm", () => {
   describe("initial state", () => {
     test("has default empty form state for new challenge", () => {
       const { result } = renderHook(() => useChallengeForm());

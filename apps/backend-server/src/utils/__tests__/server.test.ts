@@ -62,9 +62,13 @@ mock.module("fastify", () => ({
   }),
 }));
 
-mock.module("@mirai-app/trpc", () => ({
+mock.module("@repo/adapters", () => ({
   appRouter: {},
   createTRPCContext: () => ({}),
+}));
+
+mock.module("@repo/frameworks/supabase", () => ({
+  createSupabaseClient: () => ({}),
 }));
 
 mock.module("../utils/headers", () => ({
@@ -86,7 +90,7 @@ afterEach(() => {
   delete (globalThis as { trpcOnError?: unknown }).trpcOnError;
 });
 
-describe("createServer", () => {
+describe("[UNIT] createServer", () => {
   test("exports createServer function", async () => {
     const { createServer } = await import("../../server");
     expect(typeof createServer).toBe("function");
@@ -145,7 +149,7 @@ describe("createServer", () => {
   });
 });
 
-describe("ServerOptions interface", () => {
+describe("[UNIT] ServerOptions interface", () => {
   test("interface allows partial options", async () => {
     const { createServer } = await import("../../server");
 
@@ -157,7 +161,7 @@ describe("ServerOptions interface", () => {
   });
 });
 
-describe("Health Check Endpoint", () => {
+describe("[UNIT] Health Check Endpoint", () => {
   test("registers GET /health endpoint", async () => {
     const { createServer } = await import("../../server");
     createServer({});
@@ -184,7 +188,7 @@ describe("Health Check Endpoint", () => {
   });
 });
 
-describe("CORS Configuration", () => {
+describe("[UNIT] CORS Configuration", () => {
   test("registers CORS plugin in dev mode", async () => {
     const { createServer } = await import("../../server");
     createServer({ dev: true });
@@ -212,7 +216,7 @@ describe("CORS Configuration", () => {
   });
 });
 
-describe("WebSocket Plugin", () => {
+describe("[UNIT] WebSocket Plugin", () => {
   test("registers WebSocket plugin", async () => {
     const { createServer } = await import("../../server");
     createServer({});
@@ -222,7 +226,7 @@ describe("WebSocket Plugin", () => {
   });
 });
 
-describe("tRPC Plugin", () => {
+describe("[UNIT] tRPC Plugin", () => {
   test("registers tRPC plugin with correct prefix", async () => {
     const { createServer } = await import("../../server");
     createServer({ prefix: "/api/trpc" });
@@ -280,7 +284,7 @@ describe("tRPC Plugin", () => {
   });
 });
 
-describe("Server Context Creation", () => {
+describe("[UNIT] Server Context Creation", () => {
   test("throws error when SUPABASE_URL is missing", async () => {
     const originalUrl = process.env.SUPABASE_URL;
     process.env.SUPABASE_URL = "";
@@ -384,7 +388,7 @@ describe("Server Context Creation", () => {
   });
 });
 
-describe("Server Start/Stop", () => {
+describe("[UNIT] Server Start/Stop", () => {
   test("start calls server.listen with correct parameters", async () => {
     const listenMock = mock(() => Promise.resolve());
 

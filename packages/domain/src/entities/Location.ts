@@ -1,0 +1,635 @@
+import type { Result } from "../utils/result";
+import { ok, err } from "../utils/result";
+import type { LocationId } from "../value-objects/LocationId";
+
+/**
+ * Location accuracy levels
+ */
+export enum LocationAccuracy {
+  HIGH = "HIGH", // < 10 meters
+  MEDIUM = "MEDIUM", // 10-50 meters
+  LOW = "LOW", // > 50 meters
+  UNKNOWN = "UNKNOWN",
+}
+
+/**
+ * Validation constants
+ */
+const VALIDATION = {
+  latitude: { min: -90, max: 90 },
+  longitude: { min: -180, max: 180 },
+  accuracy: { high: 10, medium: 50 },
+};
+
+/**
+ * User info for location sharing
+ */
+export interface SharingUserInfo {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  hasAvatar?: boolean | null;
+}
+
+/**
+ * Location entity - represents a user's geographical location
+ *
+ * This is a pure domain entity with no external dependencies.
+ * All operations return new instances (immutable).
+ *
+ * Based on Expo Location Object: https://docs.expo.dev/versions/latest/sdk/location/#locationobject
+ */
+export class Location {
+  private constructor(
+    public readonly id: LocationId,
+    public readonly userId: string,
+    public readonly latitude: number | null,
+    public readonly longitude: number | null,
+    public readonly accuracy: number | null,
+    public readonly altitude: number | null,
+    public readonly altitudeAccuracy: number | null,
+    public readonly heading: number | null,
+    public readonly speed: number | null,
+    public readonly sharingLocation: boolean,
+    public readonly timestamp: Date,
+    public readonly lastInactivityNotification: Date | null,
+    public readonly usersToShareWith: SharingUserInfo[],
+  ) {}
+
+  /**
+   * Factory method to create a new Location
+   */
+  static create(props: {
+    id?: LocationId;
+    userId: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    accuracy?: number | null;
+    altitude?: number | null;
+    altitudeAccuracy?: number | null;
+    heading?: number | null;
+    speed?: number | null;
+    isSharingLocation?: boolean;
+    timestamp?: Date;
+    lastInactivityNotification?: Date | null;
+    usersToShareWith?: SharingUserInfo[];
+  }): Result<Location, string> {
+    // Validate userId
+    if (!props.userId || props.userId.trim() === "") {
+      return err("userId is required");
+    }
+
+    // Validate latitude if provided
+    if (props.latitude !== undefined && props.latitude !== null) {
+      if (
+        props.latitude < VALIDATION.latitude.min ||
+        props.latitude > VALIDATION.latitude.max
+      ) {
+        return err(
+          `latitude must be between ${VALIDATION.latitude.min} and ${VALIDATION.latitude.max}`,
+        );
+      }
+    }
+
+    // Validate longitude if provided
+    if (props.longitude !== undefined && props.longitude !== null) {
+      if (
+        props.longitude < VALIDATION.longitude.min ||
+        props.longitude > VALIDATION.longitude.max
+      ) {
+        return err(
+          `longitude must be between ${VALIDATION.longitude.min} and ${VALIDATION.longitude.max}`,
+        );
+      }
+    }
+
+    // Validate accuracy if provided
+    if (
+      props.accuracy !== undefined &&
+      props.accuracy !== null &&
+      props.accuracy < 0
+    ) {
+      return err("accuracy must be non-negative");
+    }
+
+    // Validate speed if provided
+    if (props.speed !== undefined && props.speed !== null && props.speed < 0) {
+      return err("speed must be non-negative");
+    }
+
+    // Validate heading if provided (0-360 degrees)
+    if (props.heading !== undefined && props.heading !== null) {
+      if (props.heading < 0 || props.heading > 360) {
+        return err("heading must be between 0 and 360 degrees");
+      }
+    }
+
+    // Validate usersToShareWith - prevent self-sharing
+    const shareList = props.usersToShareWith ?? [];
+    if (shareList.some((u) => u.id === props.userId)) {
+      return err("Cannot share location with yourself");
+    }
+
+    return ok(
+      new Location(
+        props.id ?? (crypto.randomUUID() as LocationId),
+        props.userId.trim(),
+        props.latitude ?? null,
+        props.longitude ?? null,
+        props.accuracy ?? null,
+        props.altitude ?? null,
+        props.altitudeAccuracy ?? null,
+        props.heading ?? null,
+        props.speed ?? null,
+        props.isSharingLocation ?? false,
+        props.timestamp ?? new Date(),
+        props.lastInactivityNotification ?? null,
+        shareList,
+      ),
+    );
+  }
+
+  /**
+   * Factory method to reconstitute a Location from persistence
+   */
+  static reconstitute(data: {
+    id: LocationId;
+    userId: string;
+    latitude: number | null;
+    longitude: number | null;
+    accuracy: number | null;
+    altitude: number | null;
+    altitudeAccuracy: number | null;
+    heading: number | null;
+    speed: number | null;
+    isSharingLocation: boolean;
+    timestamp: Date;
+    lastInactivityNotification: Date | null;
+    usersToShareWith: SharingUserInfo[];
+  }): Location {
+    return new Location(
+      data.id,
+      data.userId,
+      data.latitude,
+      data.longitude,
+      data.accuracy,
+      data.altitude,
+      data.altitudeAccuracy,
+      data.heading,
+      data.speed,
+      data.isSharingLocation,
+      data.timestamp,
+      data.lastInactivityNotification,
+      data.usersToShareWith,
+    );
+  }
+
+  /**
+   * Update coordinates and related data
+   */
+  updateCoordinates(props: {
+    latitude?: number | null;
+    longitude?: number | null;
+    accuracy?: number | null;
+    altitude?: number | null;
+    speed?: number | null;
+    heading?: number | null;
+  }): Result<Location, string> {
+    let newLat = this.latitude;
+    let newLon = this.longitude;
+
+    // Validate and update latitude if provided
+    if (props.latitude !== undefined) {
+      if (props.latitude !== null) {
+        if (
+          props.latitude < VALIDATION.latitude.min ||
+          props.latitude > VALIDATION.latitude.max
+        ) {
+          return err(
+            `latitude must be between ${VALIDATION.latitude.min} and ${VALIDATION.latitude.max}`,
+          );
+        }
+      }
+      newLat = props.latitude;
+    }
+
+    // Validate and update longitude if provided
+    if (props.longitude !== undefined) {
+      if (props.longitude !== null) {
+        if (
+          props.longitude < VALIDATION.longitude.min ||
+          props.longitude > VALIDATION.longitude.max
+        ) {
+          return err(
+            `longitude must be between ${VALIDATION.longitude.min} and ${VALIDATION.longitude.max}`,
+          );
+        }
+      }
+      newLon = props.longitude;
+    }
+
+    // Validate speed if provided
+    if (props.speed !== undefined && props.speed !== null && props.speed < 0) {
+      return err("speed must be non-negative");
+    }
+
+    // Validate heading if provided
+    if (props.heading !== undefined && props.heading !== null) {
+      if (props.heading < 0 || props.heading > 360) {
+        return err("heading must be between 0 and 360 degrees");
+      }
+    }
+
+    return ok(
+      new Location(
+        this.id,
+        this.userId,
+        newLat,
+        newLon,
+        props.accuracy !== undefined ? props.accuracy : this.accuracy,
+        props.altitude !== undefined ? props.altitude : this.altitude,
+        this.altitudeAccuracy,
+        props.heading !== undefined ? props.heading : this.heading,
+        props.speed !== undefined ? props.speed : this.speed,
+        this.sharingLocation,
+        new Date(), // new timestamp
+        this.lastInactivityNotification,
+        this.usersToShareWith,
+      ),
+    );
+  }
+
+  /**
+   * Start sharing location
+   */
+  startSharing(): Location {
+    return new Location(
+      this.id,
+      this.userId,
+      this.latitude,
+      this.longitude,
+      this.accuracy,
+      this.altitude,
+      this.altitudeAccuracy,
+      this.heading,
+      this.speed,
+      true,
+      new Date(), // update timestamp when sharing starts
+      this.lastInactivityNotification,
+      this.usersToShareWith,
+    );
+  }
+
+  /**
+   * Stop sharing location
+   */
+  stopSharing(): Location {
+    return new Location(
+      this.id,
+      this.userId,
+      this.latitude,
+      this.longitude,
+      this.accuracy,
+      this.altitude,
+      this.altitudeAccuracy,
+      this.heading,
+      this.speed,
+      false,
+      new Date(), // update timestamp when sharing stops
+      this.lastInactivityNotification,
+      this.usersToShareWith,
+    );
+  }
+
+  /**
+   * Add a user to share location with
+   */
+  addSharingUser(user: SharingUserInfo): Result<Location, string> {
+    // Prevent self-sharing
+    if (user.id === this.userId) {
+      return err("Cannot share location with yourself");
+    }
+
+    // Check if already sharing with this user
+    if (this.usersToShareWith.some((u) => u.id === user.id)) {
+      return err(`Already sharing location with user ${user.id}`);
+    }
+
+    return ok(
+      new Location(
+        this.id,
+        this.userId,
+        this.latitude,
+        this.longitude,
+        this.accuracy,
+        this.altitude,
+        this.altitudeAccuracy,
+        this.heading,
+        this.speed,
+        this.sharingLocation,
+        new Date(),
+        this.lastInactivityNotification,
+        [...this.usersToShareWith, user],
+      ),
+    );
+  }
+
+  /**
+   * Remove a user from sharing list
+   */
+  removeSharingUser(userId: string): Location {
+    return new Location(
+      this.id,
+      this.userId,
+      this.latitude,
+      this.longitude,
+      this.accuracy,
+      this.altitude,
+      this.altitudeAccuracy,
+      this.heading,
+      this.speed,
+      this.sharingLocation,
+      new Date(),
+      this.lastInactivityNotification,
+      this.usersToShareWith.filter((u) => u.id !== userId),
+    );
+  }
+
+  /**
+   * Update the entire sharing users list
+   */
+  updateSharingUsers(users: SharingUserInfo[]): Result<Location, string> {
+    // Prevent self-sharing
+    if (users.some((u) => u.id === this.userId)) {
+      return err("Cannot share location with yourself");
+    }
+
+    return ok(
+      new Location(
+        this.id,
+        this.userId,
+        this.latitude,
+        this.longitude,
+        this.accuracy,
+        this.altitude,
+        this.altitudeAccuracy,
+        this.heading,
+        this.speed,
+        this.sharingLocation,
+        new Date(),
+        this.lastInactivityNotification,
+        users,
+      ),
+    );
+  }
+
+  /**
+   * Update last inactivity notification timestamp
+   */
+  updateInactivityNotification(): Location {
+    return new Location(
+      this.id,
+      this.userId,
+      this.latitude,
+      this.longitude,
+      this.accuracy,
+      this.altitude,
+      this.altitudeAccuracy,
+      this.heading,
+      this.speed,
+      this.sharingLocation,
+      this.timestamp,
+      new Date(),
+      this.usersToShareWith,
+    );
+  }
+
+  /**
+   * Check if location sharing is enabled
+   */
+  isSharingLocation(): boolean {
+    return this.sharingLocation;
+  }
+
+  /**
+   * Check if location is accurate enough (< 50 meters)
+   */
+  isAccurate(): boolean {
+    return (
+      this.accuracy !== null && this.accuracy <= VALIDATION.accuracy.medium
+    );
+  }
+
+  /**
+   * Check if user is moving (speed > 0)
+   */
+  isMoving(): boolean {
+    return this.speed !== null && this.speed > 0;
+  }
+
+  /**
+   * Check if location has valid coordinates
+   */
+  hasCoordinates(): boolean {
+    return this.latitude !== null && this.longitude !== null;
+  }
+
+  /**
+   * Get accuracy level
+   */
+  getAccuracyLevel(): LocationAccuracy {
+    if (this.accuracy === null) {
+      return LocationAccuracy.UNKNOWN;
+    }
+    if (this.accuracy <= VALIDATION.accuracy.high) {
+      return LocationAccuracy.HIGH;
+    }
+    if (this.accuracy <= VALIDATION.accuracy.medium) {
+      return LocationAccuracy.MEDIUM;
+    }
+    return LocationAccuracy.LOW;
+  }
+
+  /**
+   * Get coordinates as [lat, lng] tuple
+   * Returns null if coordinates are not set
+   */
+  getCoordinates(): [number, number] | null {
+    if (this.latitude === null || this.longitude === null) {
+      return null;
+    }
+    return [this.latitude, this.longitude];
+  }
+
+  /**
+   * Calculate distance to another location using Haversine formula
+   * Returns distance in kilometers, or null if either location has no coordinates
+   */
+  distanceTo(other: Location): number | null {
+    if (!this.hasCoordinates() || !other.hasCoordinates()) {
+      return null;
+    }
+
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = this.toRadians(other.latitude! - this.latitude!);
+    const dLon = this.toRadians(other.longitude! - this.longitude!);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRadians(this.latitude!)) *
+        Math.cos(this.toRadians(other.latitude!)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  /**
+   * Check if this location is within a given radius of coordinates
+   * @param latitude - Center point latitude
+   * @param longitude - Center point longitude
+   * @param radiusKm - Radius in kilometers
+   */
+  isWithinRadius(
+    latitude: number,
+    longitude: number,
+    radiusKm: number,
+  ): boolean {
+    if (!this.hasCoordinates()) {
+      return false;
+    }
+
+    const distance = calculateDistance(
+      latitude,
+      longitude,
+      this.latitude!,
+      this.longitude!,
+    );
+
+    return distance <= radiusKm;
+  }
+
+  /**
+   * Check if this location can be viewed by a specific user
+   */
+  canBeViewedBy(viewerUserId: string): boolean {
+    // Owner can always view
+    if (viewerUserId === this.userId) {
+      return true;
+    }
+
+    // If not sharing, no one else can view
+    if (!this.sharingLocation) {
+      return false;
+    }
+
+    // Check if viewer is in sharing list
+    return this.usersToShareWith.some((u) => u.id === viewerUserId);
+  }
+
+  /**
+   * Check if sharing with a specific user
+   */
+  isSharingWith(userId: string): boolean {
+    return this.usersToShareWith.some((u) => u.id === userId);
+  }
+
+  /**
+   * Check if location data is stale (older than threshold)
+   * @param thresholdMs - Threshold in milliseconds (default: 5 minutes)
+   */
+  isStale(thresholdMs: number = 5 * 60 * 1000): boolean {
+    return Date.now() - this.timestamp.getTime() > thresholdMs;
+  }
+
+  /**
+   * Convert degrees to radians
+   */
+  private toRadians(degrees: number): number {
+    return (degrees * Math.PI) / 180;
+  }
+
+  /**
+   * Get location summary
+   */
+  getSummary(): string {
+    if (!this.hasCoordinates()) {
+      return "No coordinates available";
+    }
+    const coords = `${this.latitude!.toFixed(4)}, ${this.longitude!.toFixed(4)}`;
+    const accuracy = this.accuracy
+      ? `±${this.accuracy.toFixed(0)}m`
+      : "unknown accuracy";
+    return `${coords} (${accuracy})`;
+  }
+
+  /**
+   * Convert to Expo-compliant location object format
+   */
+  toExpoFormat(): {
+    coords: {
+      latitude: number;
+      longitude: number;
+      altitude: number | null;
+      accuracy: number | null;
+      altitudeAccuracy: number | null;
+      heading: number | null;
+      speed: number | null;
+    };
+    timestamp: number;
+  } | null {
+    if (!this.hasCoordinates()) {
+      return null;
+    }
+
+    return {
+      coords: {
+        latitude: this.latitude!,
+        longitude: this.longitude!,
+        altitude: this.altitude,
+        accuracy: this.accuracy,
+        altitudeAccuracy: this.altitudeAccuracy,
+        heading: this.heading,
+        speed: this.speed,
+      },
+      timestamp: this.timestamp.getTime(),
+    };
+  }
+}
+
+/**
+ * Calculate distance between two geographic points using the Haversine formula
+ * @param lat1 Latitude of first point in degrees
+ * @param lon1 Longitude of first point in degrees
+ * @param lat2 Latitude of second point in degrees
+ * @param lon2 Longitude of second point in degrees
+ * @returns Distance in kilometers
+ */
+export function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+
+  return distance;
+}
+
+/**
+ * Converts degrees to radians
+ */
+function toRadians(degrees: number): number {
+  return degrees * (Math.PI / 180);
+}

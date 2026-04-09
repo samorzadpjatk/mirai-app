@@ -4,7 +4,7 @@ import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { ACTIVE_TRIP_STORAGE_KEY, useActiveTripId } from "../useActiveTripId";
 
-describe("useActiveTripId", () => {
+describe("[UNIT] useActiveTripId", () => {
   // Store original window object for restoration
   let originalWindow: typeof window;
 

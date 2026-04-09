@@ -13,7 +13,7 @@ const mockGetUser = mock(() =>
   Promise.resolve({ data: { user: null }, error: null }),
 );
 
-mock.module("@mirai-app/trpc/client", () => ({
+mock.module("@repo/frameworks/trpc/client", () => ({
   getTRPCClient: () => ({
     client: {
       user: {
@@ -36,7 +36,7 @@ mock.module("../supabase", () => ({
 
 // Import after mocks
 import { onAuthUserFetch, checkIsAdminUser } from "../auth";
-import { authStore } from "@mirai-app/auth/client";
+import { authStore } from "@repo/frameworks/auth/client";
 
 // Reset authStore before each test
 const resetAuthStore = () => {
@@ -80,7 +80,7 @@ const createMockUserResponse = (
   ...overrides,
 });
 
-describe("onAuthUserFetch", () => {
+describe("[INTEGRATION] onAuthUserFetch", () => {
   test("returns null when no session exists", async () => {
     const result = await onAuthUserFetch("auth-user-123");
     expect(result).toBeNull();
@@ -301,7 +301,7 @@ describe("onAuthUserFetch", () => {
   });
 });
 
-describe("checkIsAdminUser", () => {
+describe("[INTEGRATION] checkIsAdminUser", () => {
   test("returns false when no session exists", async () => {
     const result = await checkIsAdminUser();
     expect(result).toBe(false);

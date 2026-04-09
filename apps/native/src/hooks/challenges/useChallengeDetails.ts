@@ -1,13 +1,18 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 
 export function useChallengeDetails(
   challengeId?: string | null,
   tripId?: string | null,
 ) {
   const trpc = useTRPC();
-  const challengeQuery = useQuery(trpc.challenge.getById.queryOptions({ id: challengeId ?? "", tripId: tripId ?? "" }, { enabled: !!challengeId && !!tripId }));
+  const challengeQuery = useQuery(
+    trpc.challenge.getById.queryOptions(
+      { id: challengeId ?? "", tripId: tripId ?? "" },
+      { enabled: !!challengeId && !!tripId },
+    ),
+  );
   const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
 
   const { data: challenge, isLoading: challengeLoading } = challengeQuery;

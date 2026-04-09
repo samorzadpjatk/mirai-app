@@ -1,4 +1,4 @@
-import { createDb } from "@mirai-app/db";
+import { createPrismaClient } from "@repo/frameworks/prisma";
 import { env } from "./env";
 
-export const prisma = createDb(env.databaseUrl);
+export const prisma = await createPrismaClient(env.databaseUrl);

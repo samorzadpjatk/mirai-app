@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPC, useTRPCClient } from "@repo/frameworks/trpc/client";
 import type { TripListItem } from "~/components/trips/list/types";
-import { getCachedTrips, setCachedTrips } from "~/services/storage/selectedTripStorage";
+import {
+  getCachedTrips,
+  setCachedTrips,
+} from "~/services/storage/selectedTripStorage";
 
 const PAGE_SIZE = 20;
 
 export function useTrips() {
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
-  const [cachedTrips, setCachedTripsState] = useState<TripListItem[] | null>(null);
+  const [cachedTrips, setCachedTripsState] = useState<TripListItem[] | null>(
+    null,
+  );
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
 
   const {
@@ -83,7 +88,8 @@ export function useTrips() {
     return [];
   }, [tripsData, cachedTrips]);
 
-  const isLoadingTrips = (isLoading || !isCacheHydrated) && allTrips.length === 0;
+  const isLoadingTrips =
+    (isLoading || !isCacheHydrated) && allTrips.length === 0;
 
   return {
     trips: allTrips,

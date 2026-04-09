@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { colors, spacing, borderRadius, typography } from '../../../../styles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAdminSchedules } from '@mirai-app/trpc/hooks';
+import { useAdminSchedules } from '@repo/frameworks/trpc/hooks';
 import { AdminHeader } from '~/components/admin/AdminHeader';
 import { ScheduleCard } from '~/components/admin/schedules/ScheduleCard';
 import {
@@ -21,7 +21,7 @@ import {
   EditScheduleModal,
   DeleteScheduleModal,
 } from '~/components/admin/schedules/ScheduleModals';
-import type { NotificationSchedule } from '@mirai-app/trpc/hooks';
+import type { NotificationSchedule } from '@repo/frameworks/trpc/hooks';
 
 function parseTriggerTime(triggerTime: string): { hour: number; minute: number } {
   const [hoursRaw, minutesRaw] = triggerTime.split(':');

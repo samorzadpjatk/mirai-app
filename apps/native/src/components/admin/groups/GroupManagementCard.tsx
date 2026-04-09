@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography } from '~/styles';
-import type { Group } from '@mirai-app/trpc/hooks';
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, spacing, borderRadius, typography } from "~/styles";
+import type { Group } from "@repo/frameworks/trpc/hooks";
 
 interface GroupManagementCardProps {
   group: Group;
@@ -14,17 +14,16 @@ export function GroupManagementCard({
   onEdit,
 }: GroupManagementCardProps) {
   const organizerLabel = group.organizer
-    ? `${group.organizer.firstName ?? ''} ${group.organizer.lastName ?? ''}`.trim() || 'Unknown'
-    : 'Unassigned';
+    ? `${group.organizer.firstName ?? ""} ${group.organizer.lastName ?? ""}`.trim() ||
+      "Unknown"
+    : "Unassigned";
 
   return (
     <View style={styles.groupCard}>
       <View style={styles.groupHeader}>
         <View style={styles.groupInfo}>
           <Text style={styles.groupName}>{group.name}</Text>
-          <Text style={styles.organizerInfo}>
-            Organizer: {organizerLabel}
-          </Text>
+          <Text style={styles.organizerInfo}>Organizer: {organizerLabel}</Text>
         </View>
         <View style={styles.groupBadges}>
           <View style={[styles.badge, styles.membersBadge]}>
@@ -61,9 +60,9 @@ const styles = StyleSheet.create({
     borderColor: colors.borderWhite5,
   },
   groupHeader: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'flex-start' as const,
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "flex-start" as const,
     marginBottom: spacing.md,
   },
   groupInfo: {
@@ -80,12 +79,12 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   groupBadges: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     gap: spacing.sm,
   },
   badge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
@@ -103,14 +102,14 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
   },
   groupActions: {
-    flexDirection: 'row' as const,
+    flexDirection: "row" as const,
     gap: spacing.sm,
   },
   actionButton: {
     flex: 1,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     gap: spacing.xs,

@@ -9,7 +9,7 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
-import { useAdminCoins } from "@mirai-app/trpc/hooks";
+import { useAdminCoins } from "@repo/frameworks/trpc/hooks";
 
 interface CoinOperationFormProps {
   operation: "add" | "remove";

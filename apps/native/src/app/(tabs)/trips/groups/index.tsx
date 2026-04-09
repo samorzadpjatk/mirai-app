@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { colors, spacing } from "../../../../styles";

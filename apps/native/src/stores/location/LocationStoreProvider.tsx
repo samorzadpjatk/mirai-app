@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { Alert } from "react-native";
 import { locationStore, setLocationServerUpdater } from "./locationStore";
 
@@ -12,7 +12,9 @@ interface LocationStoreProviderProps {
  * Bridges the Zustand location store with tRPC server data.
  * Hydrates the store with server sharing settings and synchronizes background tasks.
  */
-export function LocationStoreProvider({ children }: LocationStoreProviderProps) {
+export function LocationStoreProvider({
+  children,
+}: LocationStoreProviderProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hasHydrated = useRef(false);
@@ -33,11 +35,20 @@ export function LocationStoreProvider({ children }: LocationStoreProviderProps) 
       onError: (error) => {
         console.error("Failed to update location sharing settings:", error);
         if (error?.data?.code === "UNAUTHORIZED") {
-          Alert.alert("Authentication Required", "Please sign in again to update location settings.");
+          Alert.alert(
+            "Authentication Required",
+            "Please sign in again to update location settings.",
+          );
         } else if (error?.data?.code === "FORBIDDEN") {
-          Alert.alert("Access Denied", "You don't have permission to update location settings.");
+          Alert.alert(
+            "Access Denied",
+            "You don't have permission to update location settings.",
+          );
         } else {
-          Alert.alert("Connection Error", "Failed to update location sharing settings. Please check your internet connection and try again.");
+          Alert.alert(
+            "Connection Error",
+            "Failed to update location sharing settings. Please check your internet connection and try again.",
+          );
         }
       },
     }),
@@ -45,7 +56,9 @@ export function LocationStoreProvider({ children }: LocationStoreProviderProps) 
 
   // Inject the server updater into the store
   useEffect(() => {
-    setLocationServerUpdater((input) => updateSharingMutation.mutateAsync(input));
+    setLocationServerUpdater((input) =>
+      updateSharingMutation.mutateAsync(input),
+    );
     return () => setLocationServerUpdater(null);
   }, [updateSharingMutation]);
 
@@ -62,10 +75,12 @@ export function LocationStoreProvider({ children }: LocationStoreProviderProps) 
 
     const unsubscribe = locationStore.subscribe((state, prevState) => {
       if (
-        state.isBackgroundLocationEnabled !== prevState.isBackgroundLocationEnabled ||
+        state.isBackgroundLocationEnabled !==
+          prevState.isBackgroundLocationEnabled ||
         state.isLocationSharingEnabled !== prevState.isLocationSharingEnabled ||
         state.permissionStatus !== prevState.permissionStatus ||
-        state.backgroundPermissionStatus !== prevState.backgroundPermissionStatus
+        state.backgroundPermissionStatus !==
+          prevState.backgroundPermissionStatus
       ) {
         void state.syncBackgroundTask();
       }

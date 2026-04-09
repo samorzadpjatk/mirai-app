@@ -49,7 +49,7 @@ const mockGetByChallengeForAdmin = mock(() => Promise.resolve([]));
 const mockReview = mock(() => Promise.resolve({ success: true }));
 const mockCreateReport = mock(() => Promise.resolve({ success: true }));
 
-mock.module("@mirai-app/trpc/client", () => ({
+mock.module("@repo/frameworks/trpc/client", () => ({
   useTRPCClient: () => ({
     challengeSubmission: {
       getByChallengeForAdmin: {
@@ -67,7 +67,7 @@ mock.module("@mirai-app/trpc/client", () => ({
   }),
 }));
 
-describe("useChallengeSubmissions", () => {
+describe("[UNIT] useChallengeSubmissions", () => {
   beforeEach(() => {
     mockInvalidateQueries.mockClear();
     mockGetByChallengeForAdmin.mockClear();

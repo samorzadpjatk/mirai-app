@@ -1,8 +1,8 @@
-import { createDb } from "@mirai-app/db";
+import { createPrismaClient } from "@repo/frameworks/prisma";
 import { env } from "./src/config/env";
 import { runSeed } from "./src/seed";
 
-const db = createDb(env.databaseUrl);
+const db = await createPrismaClient(env.databaseUrl);
 
 try {
   await runSeed();

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import {
   getCachedTripById,
   setCachedTripById,
@@ -12,7 +12,9 @@ import { isTripPast } from "~/utils/trip";
 export function useTripDetails(tripId?: string | null) {
   const trpc = useTRPC();
   const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
-  const tripQuery = useQuery(trpc.trip.getById.queryOptions({ id: tripId ?? "" }, { enabled: !!tripId }));
+  const tripQuery = useQuery(
+    trpc.trip.getById.queryOptions({ id: tripId ?? "" }, { enabled: !!tripId }),
+  );
 
   const { data: currentUser, isLoading: isLoadingUser } = currentUserQuery;
 
@@ -67,9 +69,7 @@ export function useTripDetails(tripId?: string | null) {
   const localCachedTrip = cachedTripId === (tripId ?? null) ? cachedTrip : null;
   const trip = tripQuery.data ?? localCachedTrip ?? null;
   const isLoadingTrip =
-    Boolean(tripId) &&
-    !trip &&
-    (tripQuery.isLoading || !isCacheHydrated);
+    Boolean(tripId) && !trip && (tripQuery.isLoading || !isCacheHydrated);
 
   const isTripPastValue = trip ? isTripPast(trip.endDate) : false;
 

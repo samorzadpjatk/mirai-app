@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
-import { authStore } from "@mirai-app/auth/client";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { authStore } from "@repo/frameworks/auth/client";
+import { useTRPCClient } from "@repo/frameworks/trpc/client";
 import { env } from "../lib/env";
 import {
   validateImageFile,

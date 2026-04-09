@@ -1,0 +1,7 @@
+[install]
+# Allow workspace packages to be resolved
+exact = true
+
+[test]
+# Ensure workspace imports are resolved during tests
+preload = ["../../happydom.ts"]

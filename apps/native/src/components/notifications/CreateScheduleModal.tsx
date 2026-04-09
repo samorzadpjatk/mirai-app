@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
 import {
@@ -179,9 +179,17 @@ export function CreateScheduleModal({
         {createType === "ranking" && (
           <FormField label="Trip" required>
             {trips.length === 0 ? (
-              <Text style={{ color: colors.textSecondary }}>(No trips available)</Text>
+              <Text style={{ color: colors.textSecondary }}>
+                (No trips available)
+              </Text>
             ) : (
-              <View style={{ flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: spacing.sm,
+                  flexWrap: "wrap",
+                }}
+              >
                 {trips.map((trip) => (
                   <SegmentedOption
                     key={trip.id}
@@ -212,7 +220,13 @@ export function CreateScheduleModal({
                     {isFetchingNextPage ? (
                       <ActivityIndicator size="small" color={colors.primary} />
                     ) : (
-                      <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "600" }}>
+                      <Text
+                        style={{
+                          color: colors.primary,
+                          fontSize: 14,
+                          fontWeight: "600",
+                        }}
+                      >
                         Load more trips
                       </Text>
                     )}
@@ -260,7 +274,9 @@ export function CreateScheduleModal({
         </View>
       </ScrollView>
       <AppModalFooter
-        primaryLabel={createScheduleMutation.isPending ? "Creating..." : "Create Schedule"}
+        primaryLabel={
+          createScheduleMutation.isPending ? "Creating..." : "Create Schedule"
+        }
         onPrimary={handleSubmit}
         isPrimaryLoading={createScheduleMutation.isPending}
         isPrimaryDisabled={isSubmitDisabled}

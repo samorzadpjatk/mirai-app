@@ -8,8 +8,8 @@ import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
-import { useTRPCClient } from "@mirai-app/trpc/client";
-import { useAdminRewards } from "@mirai-app/trpc/hooks";
+import { useTRPCClient } from "@repo/frameworks/trpc/client";
+import { useAdminRewards } from "@repo/frameworks/trpc/hooks";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";
 

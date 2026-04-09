@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 // with environment variables already set. Missing env vars would cause
 // the import to throw before tests can run.
 
-describe("env.ts with valid environment variables", () => {
+describe("[INTEGRATION] env.ts with valid environment variables", () => {
   test("exports env object with all required properties", async () => {
     // Dynamic import to test the module
     const { env } = await import("../env");
@@ -90,7 +90,7 @@ describe("env.ts with valid environment variables", () => {
   });
 });
 
-describe("env.ts trpcWsUrl fallback behavior", () => {
+describe("[INTEGRATION] env.ts trpcWsUrl fallback behavior", () => {
   test("trpcWsUrl is derived from trpcUrl when not explicitly set", async () => {
     // This test documents the behavior: if PUBLIC_TRPC_WS_URL is not set,
     // trpcWsUrl should be derived from trpcUrl by replacing http with ws
@@ -109,7 +109,7 @@ describe("env.ts trpcWsUrl fallback behavior", () => {
   });
 });
 
-describe("env.ts snapshot verification", () => {
+describe("[INTEGRATION] env.ts snapshot verification", () => {
   test("env exports match expected structure", async () => {
     const { env } = await import("../env");
 

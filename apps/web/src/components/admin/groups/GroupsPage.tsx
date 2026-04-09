@@ -7,7 +7,7 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { GroupCard } from "./GroupCard";
 import { GroupAssignmentModal } from "./GroupAssignmentModal";
-import { useAdminGroups } from "@mirai-app/trpc/hooks";
+import { useAdminGroups } from "@repo/frameworks/trpc/hooks";
 import { useTrip } from "../../../contexts/TripContext";
 
 export function GroupsPage() {

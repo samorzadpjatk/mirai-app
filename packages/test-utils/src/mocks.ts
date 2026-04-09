@@ -1,5 +1,5 @@
-import type { PrismaClient, User, Role } from "@mirai-app/db";
-import type { SupabaseClient } from "@mirai-app/supabase";
+import type { PrismaClient, User, Role } from "@repo/frameworks/prisma";
+import type { SupabaseClient } from "@repo/frameworks/supabase";
 
 export interface MockAuthUser {
   id: string;

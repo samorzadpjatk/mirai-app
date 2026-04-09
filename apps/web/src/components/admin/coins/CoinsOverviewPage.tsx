@@ -6,7 +6,7 @@ import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { useTrip } from "../../../contexts/TripContext";
-import { useAdminCoins } from "@mirai-app/trpc/hooks";
+import { useAdminCoins } from "@repo/frameworks/trpc/hooks";
 
 export function CoinsOverviewPage() {
   const { selectedTrip, isLoading: tripsLoading } = useTrip();

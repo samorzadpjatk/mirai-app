@@ -2,6 +2,7 @@
 [![Polski](https://img.shields.io/badge/Polski-Click-yellow)](README_PL.md)<br>
 [![AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue)](LICENSE)
 <img width="1440" height="565" alt="mirai_app_banner" src="https://github.com/user-attachments/assets/88e9e651-ec6d-458f-b650-4a351b1bb534" />
+
 <div align="center">
 <h1>MIRAI</h1>
 <b>PJATK Student Government Mobile Application</b>
@@ -17,8 +18,8 @@ Check out the [collaboration guidelines inside the repo](CONTRIBUTING.md)!
 
 > [!IMPORTANT]
 > **Call for Mainteiners**
-> 
-> We are looking for maintainers to take over the project. 
+>
+> We are looking for maintainers to take over the project.
 > If you are interested, please contact the PJAIT's Student Council.
 
 ## Project Structure
@@ -42,6 +43,7 @@ It contains:
 All scripts can be called from the project root using `bun run <script>`. (You can also go to a specific package and run `bun run <script>`).
 
 To run a script assigned to a specific component, use `bun run` (or `cd <package> && bun run <script>`):
+
 ```bash
 cd apps/native && bun run dev
 ```
@@ -91,6 +93,7 @@ cd packages/seed && bun run db:studio
 ### 5. Run the selected application
 
 Before running:
+
 - check the documentation of the [native application](apps/native/README.md) and [backend](apps/backend-server/README.md)
 
 #### `bun run dev`
@@ -112,3 +115,48 @@ Runs only the native application (Expo dev server).
 #### `bun run dev:notification-sender`
 
 Runs only the notification sender service for push notifications.
+
+## Testing
+
+### Quick Start
+
+Run the complete test suite:
+
+```bash
+bun test
+```
+
+Run only unit tests (fast, no external dependencies):
+
+```bash
+bun run test:unit
+```
+
+Run only integration tests (slower, requires external services):
+
+```bash
+bun run test:integration
+```
+
+### Test Organization
+
+Tests are organized using tags:
+
+- `[UNIT]` - Pure business logic tests (fast)
+- `[INTEGRATION]` - Tests requiring external services (database, APIs)
+
+### Running Tests by Package
+
+```bash
+# Domain layer (pure unit tests)
+cd packages/domain && bun test
+
+# Use cases (pure unit tests)
+cd packages/use-cases && bun test
+
+# Adapters (mixed - can run separately)
+cd packages/adapters && bun run test:unit
+cd packages/adapters && bun run test:integration
+```
+
+For detailed testing documentation, see [TESTING.md](./TESTING.md).

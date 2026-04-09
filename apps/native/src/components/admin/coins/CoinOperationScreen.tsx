@@ -7,7 +7,7 @@ import { colors, spacing, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { useAdminCoins } from "@mirai-app/trpc/hooks";
+import { useAdminCoins } from "@repo/frameworks/trpc/hooks";
 
 interface CoinOperationScreenProps {
   operation: "add" | "remove";
@@ -24,26 +24,39 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   }>();
 
   const tripId = useMemo(
-    () => (typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? ""),
+    () =>
+      typeof params.tripId === "string"
+        ? params.tripId
+        : (params.tripId?.[0] ?? ""),
     [params.tripId],
   );
   const groupId = useMemo(
-    () => (typeof params.groupId === "string" ? params.groupId : params.groupId?.[0] ?? ""),
+    () =>
+      typeof params.groupId === "string"
+        ? params.groupId
+        : (params.groupId?.[0] ?? ""),
     [params.groupId],
   );
   const groupName = useMemo(
-    () => (typeof params.groupName === "string" ? params.groupName : params.groupName?.[0] ?? ""),
+    () =>
+      typeof params.groupName === "string"
+        ? params.groupName
+        : (params.groupName?.[0] ?? ""),
     [params.groupName],
   );
   const groupCoins = useMemo(
-    () => (typeof params.groupCoins === "string" ? params.groupCoins : params.groupCoins?.[0] ?? "0"),
+    () =>
+      typeof params.groupCoins === "string"
+        ? params.groupCoins
+        : (params.groupCoins?.[0] ?? "0"),
     [params.groupCoins],
   );
 
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
 
-  const { addCoins, removeCoins, isAddingCoins, isRemovingCoins } = useAdminCoins(tripId);
+  const { addCoins, removeCoins, isAddingCoins, isRemovingCoins } =
+    useAdminCoins(tripId);
   const isSubmitting = operation === "add" ? isAddingCoins : isRemovingCoins;
 
   const submit = async () => {
@@ -67,12 +80,16 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
       } else {
         await removeCoins(groupId, numericAmount, reason.trim());
       }
-      Alert.alert("Success", `Coins ${operation === "add" ? "added" : "removed"} successfully.`, [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
+      Alert.alert(
+        "Success",
+        `Coins ${operation === "add" ? "added" : "removed"} successfully.`,
+        [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ],
+      );
     } catch (error) {
       console.error(`Failed to ${operation} coins`, error);
       Alert.alert("Error", "Operation failed. Try again.");
@@ -85,21 +102,23 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
     : `${operation === "add" ? "Add" : "Remove"} coins for group`;
   const buttonLabel = operation === "add" ? "Add Coins" : "Remove Coins";
   const reasonPlaceholder =
-    operation === "add" ? "Describe why you are adding coins" : "Describe why you are removing coins";
+    operation === "add"
+      ? "Describe why you are adding coins"
+      : "Describe why you are removing coins";
 
   return (
     <View
       style={[
         styles.container,
-        { paddingTop: spacing.xl, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        {
+          paddingTop: spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
       ]}
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title={title}
-        subtitle={subtitle}
-      />
+      <AdminHeader title={title} subtitle={subtitle} />
 
       <ScrollView
         style={styles.scroll}

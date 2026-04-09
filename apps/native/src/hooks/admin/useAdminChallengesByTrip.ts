@@ -1,6 +1,10 @@
-import { useMemo } from 'react';
-import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@mirai-app/trpc/client';
+import { useMemo } from "react";
+import {
+  useMutation,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useTRPC, useTRPCClient } from "@repo/frameworks/trpc/client";
 
 export interface ChallengeItem {
   id: string;
@@ -18,7 +22,9 @@ export function useAdminChallengesByTrip(tripId: string) {
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
-  const challengeQueryKey = trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey;
+  const challengeQueryKey = trpc.challenge.getAllByTrip.queryOptions({
+    tripId,
+  }).queryKey;
   const {
     data,
     isLoading,
@@ -28,11 +34,11 @@ export function useAdminChallengesByTrip(tripId: string) {
     fetchNextPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: [...challengeQueryKey, 'infinite', PAGE_SIZE],
+    queryKey: [...challengeQueryKey, "infinite", PAGE_SIZE],
     enabled: !!tripId,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === 'number' ? pageParam : 0;
+      const offset = typeof pageParam === "number" ? pageParam : 0;
       return trpcClient.challenge.getAllByTrip.query({
         tripId,
         pagination: {
@@ -63,7 +69,7 @@ export function useAdminChallengesByTrip(tripId: string) {
       title: challenge.name,
       description: challenge.description ?? null,
       basePoints: challenge.basePoints ?? 0,
-      status: challenge.status ?? 'HIDDEN',
+      status: challenge.status ?? "HIDDEN",
       tripId: challenge.tripId,
     }));
   }, [challengesData]);
@@ -80,9 +86,12 @@ export function useAdminChallengesByTrip(tripId: string) {
     return deleteChallengeMutation.mutateAsync({ id, tripId });
   };
 
-  const stats = useMemo(() => ({
-    totalChallenges: challenges.length,
-  }), [challenges]);
+  const stats = useMemo(
+    () => ({
+      totalChallenges: challenges.length,
+    }),
+    [challenges],
+  );
 
   return {
     challenges,

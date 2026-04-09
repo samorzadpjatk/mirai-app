@@ -1,10 +1,8 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { useStore } from "zustand";
-import {
-  judgementStore,
-} from "./judgementStores";
+import { judgementStore } from "./judgementStores";
 import type { ReviewStatus, Submission } from "./judgementStores";
 
 /**
@@ -13,7 +11,10 @@ import type { ReviewStatus, Submission } from "./judgementStores";
  *
  * Can be called with explicit params or without args (reads from store).
  */
-export function useJudgement(explicitTripId?: string, explicitChallengeId?: string) {
+export function useJudgement(
+  explicitTripId?: string,
+  explicitChallengeId?: string,
+) {
   const trpc = useTRPC();
   const storeTripId = useStore(judgementStore, (s) => s.tripId);
   const storeChallengeId = useStore(judgementStore, (s) => s.challengeId);
@@ -23,21 +24,33 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
   const tripId = explicitTripId ?? storeTripId;
   const challengeId = explicitChallengeId ?? storeChallengeId;
 
-  const submissionsQuery = useQuery(trpc.challengeSubmission.getByChallenge.queryOptions({
-    tripId,
-    challengeId,
-  }, { enabled: !!tripId && !!challengeId }));
+  const submissionsQuery = useQuery(
+    trpc.challengeSubmission.getByChallenge.queryOptions(
+      {
+        tripId,
+        challengeId,
+      },
+      { enabled: !!tripId && !!challengeId },
+    ),
+  );
 
-  const challengeQuery = useQuery(trpc.challenge.getById.queryOptions({
-    id: challengeId,
-    tripId,
-  }, { enabled: !!tripId && !!challengeId }));
+  const challengeQuery = useQuery(
+    trpc.challenge.getById.queryOptions(
+      {
+        id: challengeId,
+        tripId,
+      },
+      { enabled: !!tripId && !!challengeId },
+    ),
+  );
 
-  const reviewMutation = useMutation(trpc.challengeSubmission.review.mutationOptions({
-    onError: (error) => {
-      console.error(error);
-    },
-  }));
+  const reviewMutation = useMutation(
+    trpc.challengeSubmission.review.mutationOptions({
+      onError: (error) => {
+        console.error(error);
+      },
+    }),
+  );
 
   const submissions = submissionsQuery.data;
   const challenge = challengeQuery.data;
@@ -48,8 +61,7 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
     if (!submissions) return dismissedIds;
     return dismissedIds.filter((id) =>
       submissions.some(
-        (submission) =>
-          submission.id === id && submission.status === "PENDING",
+        (submission) => submission.id === id && submission.status === "PENDING",
       ),
     );
   }, [dismissedIds, submissions]);
@@ -74,7 +86,6 @@ export function useJudgement(explicitTripId?: string, explicitChallengeId?: stri
 
   const currentSubmission = pendingSubmissions[0] ?? null;
   const nextSubmission = pendingSubmissions[1] ?? null;
-
 
   const reviewCurrent = useCallback(
     (status: ReviewStatus, rejectionReason?: string, ranking?: 1 | 2 | 3) => {

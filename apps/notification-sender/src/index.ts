@@ -1,6 +1,6 @@
-import { createSupabaseClient as createClient } from "@mirai-app/supabase";
-import type { RealtimePostgresInsertPayload } from "@mirai-app/supabase";
-import { getTRPCClient } from "@mirai-app/trpc/client";
+import { createSupabaseClient as createClient } from "@repo/frameworks/supabase";
+import type { RealtimePostgresInsertPayload } from "@repo/frameworks/supabase";
+import { getTRPCClient } from "@repo/frameworks/trpc/client";
 
 interface NotificationRow {
   id: string;

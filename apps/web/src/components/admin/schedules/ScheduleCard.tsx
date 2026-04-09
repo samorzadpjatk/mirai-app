@@ -2,7 +2,7 @@
 
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
-import type { NotificationSchedule } from "@mirai-app/trpc/hooks";
+import type { NotificationSchedule } from "@repo/frameworks/trpc/hooks";
 
 interface ScheduleCardProps {
   schedule: NotificationSchedule;

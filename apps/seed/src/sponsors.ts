@@ -1,11 +1,14 @@
-import { createDb } from "@mirai-app/db";
-import type { Sponsor, TripSponsor } from "@mirai-app/db";
+import { createPrismaClient } from "@repo/frameworks/prisma";
+import type { Sponsor, TripSponsor } from "@repo/frameworks/prisma";
 import type { SeedEnv, SponsorConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
 
-export const loadSponsorConfigs = async (envRoot: string, sponsorsPath: string): Promise<SponsorConfig[]> => {
+export const loadSponsorConfigs = async (
+  envRoot: string,
+  sponsorsPath: string,
+): Promise<SponsorConfig[]> => {
   const sponsorConfigPath = joinPath(envRoot, sponsorsPath);
   const content = await readTextFile(sponsorConfigPath);
   const parsed = yaml.parse(content) as SponsorConfig[];
@@ -16,7 +19,7 @@ export const seedSponsors = async (
   databaseUrl: string,
   tripId: string,
   seedEnv: SeedEnv,
-  sponsorConfigs: SponsorConfig[]
+  sponsorConfigs: SponsorConfig[],
 ): Promise<void> => {
   const db = createDb(databaseUrl);
 

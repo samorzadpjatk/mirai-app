@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { createSupabaseClient } from "@mirai-app/supabase";
+import { createSupabaseClient } from "@repo/frameworks/supabase";
 import { createTRPCUntypedClient, httpBatchLink } from "@trpc/client";
 import { env } from "./lib/env";
 
@@ -69,7 +69,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (pathname !== "/login") {
     const roleFromDb = await getDbRole(token);
-    const role = roleFromDb ?? (data.user.app_metadata?.role as string | undefined);
+    const role =
+      roleFromDb ?? (data.user.app_metadata?.role as string | undefined);
 
     console.log("[Middleware] roleFromDb:", roleFromDb);
     console.log(

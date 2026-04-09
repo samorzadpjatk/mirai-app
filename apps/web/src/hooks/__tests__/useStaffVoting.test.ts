@@ -4,7 +4,7 @@ import { describe, test, expect, beforeEach } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { useStaffVoting, type VotingSubmission } from "../admin/useStaffVoting";
 
-describe("useStaffVoting", () => {
+describe("[UNIT] useStaffVoting", () => {
   const createMockSubmission = (
     overrides: Partial<VotingSubmission> = {},
   ): VotingSubmission => ({

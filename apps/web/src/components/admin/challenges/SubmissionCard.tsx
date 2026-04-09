@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPCClient } from "@repo/frameworks/trpc/client";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import { Modal } from "../../ui/Modal";

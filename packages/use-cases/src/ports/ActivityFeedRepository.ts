@@ -1,0 +1,115 @@
+import type { ActivityFeed, ActivityReaction, ActivityId } from "@repo/domain";
+
+/**
+ * ActivityFeedRepository Port
+ *
+ * This interface defines what operations the application needs
+ * from any activity feed repository implementation.
+ *
+ * Implementations (in adapters layer):
+ * - PrismaActivityFeedRepository: Uses Prisma ORM
+ * - InMemoryActivityFeedRepository: For testing
+ */
+export interface ActivityFeedRepository {
+  /**
+   * Find activity by ID
+   * @returns ActivityFeed or null if not found
+   */
+  findById(id: ActivityId): Promise<ActivityFeed | null>;
+
+  /**
+   * Find activities by trip ID with pagination
+   * @param tripId - The trip ID to filter by
+   * @param options - Pagination and filtering options
+   */
+  findByTripId(
+    tripId: string,
+    options?: {
+      limit?: number;
+      cursor?: { id: string; createdAt: Date; isPinned: boolean } | null;
+      includeHidden?: boolean;
+    },
+  ): Promise<{
+    activities: ActivityFeed[];
+    nextCursor: { id: string; createdAt: Date; isPinned: boolean } | null;
+    hasMore: boolean;
+  }>;
+
+  /**
+   * Get activities with offset pagination (legacy support)
+   * @param tripId - The trip ID to filter by
+   * @param options - Page-based pagination options
+   */
+  findByTripIdPaged(
+    tripId: string,
+    options: {
+      page: number;
+      pageSize: number;
+      includeHidden?: boolean;
+    },
+  ): Promise<{
+    activities: ActivityFeed[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasMore: boolean;
+  }>;
+
+  /**
+   * Create a new activity
+   */
+  create(activity: ActivityFeed): Promise<ActivityFeed>;
+
+  /**
+   * Update an activity
+   */
+  update(activity: ActivityFeed): Promise<ActivityFeed>;
+
+  /**
+   * Delete an activity
+   */
+  delete(id: ActivityId): Promise<void>;
+
+  /**
+   * Check if activity exists
+   */
+  exists(id: ActivityId): Promise<boolean>;
+
+  /**
+   * Find reactions for an activity
+   */
+  findReactionsByActivityId(
+    activityId: ActivityId,
+  ): Promise<ActivityReaction[]>;
+
+  /**
+   * Find user's reactions for an activity
+   */
+  findUserReactions(
+    activityId: ActivityId,
+    userId: string,
+  ): Promise<ActivityReaction[]>;
+
+  /**
+   * Add a reaction to an activity
+   */
+  addReaction(reaction: ActivityReaction): Promise<ActivityReaction>;
+
+  /**
+   * Remove a reaction from an activity
+   */
+  removeReaction(
+    activityId: ActivityId,
+    userId: string,
+    reactionType: string,
+  ): Promise<void>;
+
+  /**
+   * Get reaction counts for an activity
+   */
+  getReactionCounts(activityId: ActivityId): Promise<{
+    total: number;
+    counts: { heart: number; fire: number; clap: number; star: number };
+  }>;
+}

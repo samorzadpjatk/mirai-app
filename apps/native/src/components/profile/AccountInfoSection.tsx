@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@mirai-app/trpc/client";
+import { useTRPC } from "@repo/frameworks/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 
 export function AccountInfoSection() {
@@ -24,7 +24,6 @@ export function AccountInfoSection() {
             <Text style={styles.infoValue}>{email}</Text>
           </View>
         </View>
-
       </View>
     </View>
   );

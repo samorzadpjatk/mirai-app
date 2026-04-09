@@ -27,7 +27,7 @@ beforeEach(() => {
   mockDismiss.mockClear();
 });
 
-describe("appToast.success", () => {
+describe("[UNIT] appToast.success", () => {
   test("calls toast.success with message", () => {
     appToast.success("Operation successful!");
 

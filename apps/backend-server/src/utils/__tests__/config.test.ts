@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 
-describe("config.ts", () => {
+describe("[UNIT] config.ts", () => {
   // Set env vars before any tests run
   beforeAll(() => {
     process.env.TRPC_SERVER_PORT = "3001";

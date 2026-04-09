@@ -1,4 +1,0 @@
-[test]
-preload = ["../../happydom.ts"]
-coverageThreshold = { lines = 0.80, branches = 0.75 }
-coveragePathIgnorePatterns = ["src/prisma/lib/**", "src/**/*.generated.ts"]

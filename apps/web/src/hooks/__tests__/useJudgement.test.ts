@@ -57,7 +57,7 @@ mock.module("@tanstack/react-query", () => ({
 }));
 
 // Mock tRPC client
-mock.module("@mirai-app/trpc/client", () => ({
+mock.module("@repo/frameworks/trpc/client", () => ({
   useTRPCClient: () => ({
     challenge: {
       getById: {
@@ -78,7 +78,7 @@ mock.module("@mirai-app/trpc/client", () => ({
   }),
 }));
 
-describe("useJudgement", () => {
+describe("[UNIT] useJudgement", () => {
   beforeEach(() => {
     mockInvalidateQueries.mockClear();
     mockChallengeData = undefined;

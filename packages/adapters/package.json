@@ -1,0 +1,75 @@
+{
+  "name": "@repo/adapters",
+  "version": "0.1.0",
+  "description": "Adapters layer - interface adapters, depends on domain and use-cases",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./controllers/*": {
+      "types": "./dist/controllers/*.d.ts",
+      "default": "./dist/controllers/*.js"
+    },
+    "./auth": {
+      "types": "./dist/controllers/auth/index.d.ts",
+      "default": "./src/controllers/auth/index.ts"
+    },
+    "./auth/authServer": {
+      "types": "./dist/controllers/auth/authServer.d.ts",
+      "default": "./src/controllers/auth/authServer.ts"
+    },
+    "./gateways/*": {
+      "types": "./dist/gateways/*.d.ts",
+      "default": "./dist/gateways/*.js"
+    },
+    "./mappers/*": {
+      "types": "./dist/mappers/*.d.ts",
+      "default": "./dist/mappers/*.js"
+    },
+    "./api/*": {
+      "types": "./dist/api/*.d.ts",
+      "default": "./dist/api/*.js"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "default": "./src/api/index.ts"
+    },
+    "./services/*": {
+      "types": "./dist/services/*.d.ts",
+      "default": "./dist/services/*.js"
+    },
+    "./utils/*": {
+      "types": "./dist/utils/*.d.ts",
+      "default": "./dist/utils/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage",
+    "test:unit": "bun test -t '\\[UNIT\\]'",
+    "test:integration": "bun test -t '\\[INTEGRATION\\]'",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "format:check": "prettier --check src/",
+    "format:write": "prettier --write src/"
+  },
+  "dependencies": {
+    "@repo/domain": "workspace:*",
+    "@repo/use-cases": "workspace:*",
+    "@repo/frameworks": "workspace:*",
+    "@mirai-app/shared": "workspace:*",
+    "@trpc/server": "^11.10.0",
+    "expo-server-sdk": "^3.14.0",
+    "superjson": "^2.2.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  },
+  "// note": "Depends on domain and use-cases - implements their interfaces"
+}

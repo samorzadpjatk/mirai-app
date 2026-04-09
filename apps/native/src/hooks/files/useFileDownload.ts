@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
-import { useTRPCClient } from "@mirai-app/trpc/client";
+import { useTRPCClient } from "@repo/frameworks/trpc/client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 
@@ -32,12 +32,18 @@ const toDownloadResult = (file: File, fileName: string): DownloadResult => ({
   totalBytes: file.size,
 });
 
-const buildCacheFileName = async (storagePath: string, url: string): Promise<string> => {
+const buildCacheFileName = async (
+  storagePath: string,
+  url: string,
+): Promise<string> => {
   const sanitizedUrl = url.split("?")[0] ?? url;
   const ext = sanitizedUrl.split(".").pop();
 
   // Use a stable hash so cache key doesn't rely on unsafe characters
-  const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, storagePath);
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    storagePath,
+  );
 
   if (ext) {
     return `${hash}.${ext}`;
@@ -46,7 +52,9 @@ const buildCacheFileName = async (storagePath: string, url: string): Promise<str
   return hash;
 };
 
-const buildCacheFileNameFromStoragePath = async (storagePath: string): Promise<string> => {
+const buildCacheFileNameFromStoragePath = async (
+  storagePath: string,
+): Promise<string> => {
   const ext = storagePath.split(".").pop();
   const hash = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
@@ -60,7 +68,9 @@ const buildCacheFileNameFromStoragePath = async (storagePath: string): Promise<s
   return hash;
 };
 
-export const deleteCachedDownload = async (storagePath: string): Promise<void> => {
+export const deleteCachedDownload = async (
+  storagePath: string,
+): Promise<void> => {
   const cachedFileName = await buildCacheFileNameFromStoragePath(storagePath);
   const destinationDir = new Directory(Paths.cache, "downloads");
   const targetFile = new File(destinationDir, cachedFileName);
@@ -163,7 +173,10 @@ export const useFileDownload = () => {
           signedUrl = response.signedUrl;
         }
 
-        const cachedFileName = await buildCacheFileName(input.storagePath, signedUrl);
+        const cachedFileName = await buildCacheFileName(
+          input.storagePath,
+          signedUrl,
+        );
         const targetFile = new File(destinationDir, cachedFileName);
 
         // Backward compatibility: older cache entries can use URL-derived extension.
@@ -203,15 +216,22 @@ export const useFileDownload = () => {
               try {
                 if (targetFile.exists) targetFile.delete();
               } catch (deleteErr) {
-                console.warn("[Download] Failed to delete existing target file", deleteErr);
+                console.warn(
+                  "[Download] Failed to delete existing target file",
+                  deleteErr,
+                );
               }
               try {
                 return await File.downloadFileAsync(signedUrl, targetFile);
               } catch (retryErr) {
                 const retryMessage =
-                  retryErr instanceof Error ? retryErr.message : String(retryErr);
+                  retryErr instanceof Error
+                    ? retryErr.message
+                    : String(retryErr);
                 if (
-                  retryMessage.toLowerCase().includes("destination already exists") &&
+                  retryMessage
+                    .toLowerCase()
+                    .includes("destination already exists") &&
                   targetFile.exists
                 ) {
                   // Another parallel download already wrote the same file.
