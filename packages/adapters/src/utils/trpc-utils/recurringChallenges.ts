@@ -1,4 +1,7 @@
-import { type Prisma } from "@mirai-app/frameworks/prisma";
+import type {
+  TransactionClient,
+  ChallengeSelect,
+} from "../../types/prisma-types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -97,7 +100,7 @@ interface RecurringTemplate {
   isRecurring: boolean;
 }
 
-const recurringTemplateSelect: Prisma.ChallengeSelect = {
+const recurringTemplateSelect: ChallengeSelect = {
   id: true,
   tripId: true,
   name: true,
@@ -130,7 +133,7 @@ const shouldGenerateFromTemplate = (template: RecurringTemplate) =>
   (template.status === "VISIBLE" || template.status === "ACTIVE");
 
 export const ensureRecurringInstanceForTemplate = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   template: RecurringTemplate;
   now?: Date;
 }) => {
@@ -213,7 +216,7 @@ export const ensureRecurringInstanceForTemplate = async (params: {
 };
 
 export const precreateRecurringInstancesForTemplate = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   template: RecurringTemplate;
   now?: Date;
 }) => {
@@ -303,7 +306,7 @@ export const precreateRecurringInstancesForTemplate = async (params: {
 };
 
 export const ensureRecurringInstancesForTrip = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   tripId: string;
   now?: Date;
 }) => {
@@ -330,7 +333,7 @@ export const ensureRecurringInstancesForTrip = async (params: {
 };
 
 export const resolveRecurringChallengeIdForTrip = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   tripId: string;
   challengeId: string;
   now?: Date;

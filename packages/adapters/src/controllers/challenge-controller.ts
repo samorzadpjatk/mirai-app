@@ -10,8 +10,11 @@ import {
   type UpdateChallengeStatusInput,
   getUseCaseErrorMessage,
 } from "@mirai-app/use-cases";
-import { ChallengeStatus, SubmissionType, ScoringCategory } from "@mirai-app/domain";
-import { Effect } from "effect";
+import {
+  ChallengeStatus,
+  SubmissionType,
+  ScoringCategory,
+} from "@mirai-app/domain";
 
 /**
  * Input validation schemas for challenge controller
@@ -204,9 +207,7 @@ export class ChallengeController {
 
     const useCase = new GetChallengeUseCase(this.challengeRepository);
     try {
-      const data = await Effect.runPromise(
-        useCase.execute({ challengeId: parsed.data.id }),
-      );
+      const data = await useCase.execute({ challengeId: parsed.data.id });
       return { success: true, data };
     } catch (error) {
       return { success: false, error: getUseCaseErrorMessage(error) };
@@ -291,30 +292,28 @@ export class ChallengeController {
 
     const useCase = new CreateChallengeUseCase(this.challengeRepository);
     try {
-      const data = await Effect.runPromise(
-        useCase.execute({
-          tripId: parsed.data.tripId,
-          name: parsed.data.name,
-          description: parsed.data.description,
-          image: parsed.data.image,
-          submissionType: parsed.data.submissionType as SubmissionType,
-          scoringCategory: parsed.data.scoringCategory as ScoringCategory,
-          isRecurring: parsed.data.isRecurring,
-          dailyStartTime: parsed.data.dailyStartTime,
-          dailyEndTime: parsed.data.dailyEndTime,
-          basePoints: parsed.data.basePoints,
-          firstPlacePoints: parsed.data.firstPlacePoints,
-          secondPlacePoints: parsed.data.secondPlacePoints,
-          thirdPlacePoints: parsed.data.thirdPlacePoints,
-          status: parsed.data.status as ChallengeStatus,
-          startTime: parsed.data.startTime,
-          endTime: parsed.data.endTime,
-          targetLatitude: parsed.data.targetLatitude,
-          targetLongitude: parsed.data.targetLongitude,
-          expectedValue: parsed.data.expectedValue,
-          autoApprove: parsed.data.autoApprove,
-        }),
-      );
+      const data = await useCase.execute({
+        tripId: parsed.data.tripId,
+        name: parsed.data.name,
+        description: parsed.data.description,
+        image: parsed.data.image,
+        submissionType: parsed.data.submissionType as SubmissionType,
+        scoringCategory: parsed.data.scoringCategory as ScoringCategory,
+        isRecurring: parsed.data.isRecurring,
+        dailyStartTime: parsed.data.dailyStartTime,
+        dailyEndTime: parsed.data.dailyEndTime,
+        basePoints: parsed.data.basePoints,
+        firstPlacePoints: parsed.data.firstPlacePoints,
+        secondPlacePoints: parsed.data.secondPlacePoints,
+        thirdPlacePoints: parsed.data.thirdPlacePoints,
+        status: parsed.data.status as ChallengeStatus,
+        startTime: parsed.data.startTime,
+        endTime: parsed.data.endTime,
+        targetLatitude: parsed.data.targetLatitude,
+        targetLongitude: parsed.data.targetLongitude,
+        expectedValue: parsed.data.expectedValue,
+        autoApprove: parsed.data.autoApprove,
+      });
       return { success: true, data };
     } catch (error) {
       return { success: false, error: getUseCaseErrorMessage(error) };

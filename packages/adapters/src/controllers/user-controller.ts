@@ -9,7 +9,6 @@ import {
   getUseCaseErrorMessage,
 } from "@mirai-app/use-cases";
 import { UserRole } from "@mirai-app/domain";
-import { Effect } from "effect";
 
 /**
  * Input validation schemas for user controller
@@ -101,9 +100,7 @@ export class UserController {
 
     const useCase = new GetUserUseCase(this.userRepository);
     try {
-      const data = await Effect.runPromise(
-        useCase.execute({ userId: parsed.data.id }),
-      );
+      const data = await useCase.execute({ userId: parsed.data.id });
       return { success: true, data };
     } catch (error) {
       return { success: false, error: getUseCaseErrorMessage(error) };
@@ -139,14 +136,12 @@ export class UserController {
 
     const useCase = new CreateUserUseCase(this.userRepository);
     try {
-      const data = await Effect.runPromise(
-        useCase.execute({
-          authUserId: parsed.data.authUserId,
-          firstName: parsed.data.firstName,
-          lastName: parsed.data.lastName,
-          role: parsed.data.role as UserRole,
-        }),
-      );
+      const data = await useCase.execute({
+        authUserId: parsed.data.authUserId,
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        role: parsed.data.role as UserRole,
+      });
       return { success: true, data };
     } catch (error) {
       return { success: false, error: getUseCaseErrorMessage(error) };
@@ -182,14 +177,12 @@ export class UserController {
 
     const useCase = new UpdateUserUseCase(this.userRepository);
     try {
-      const data = await Effect.runPromise(
-        useCase.execute({
-          userId: parsed.data.userId,
-          firstName: parsed.data.firstName,
-          lastName: parsed.data.lastName,
-          hasAvatar: parsed.data.hasAvatar,
-        }),
-      );
+      const data = await useCase.execute({
+        userId: parsed.data.userId,
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        hasAvatar: parsed.data.hasAvatar,
+      });
       return { success: true, data };
     } catch (error) {
       return { success: false, error: getUseCaseErrorMessage(error) };

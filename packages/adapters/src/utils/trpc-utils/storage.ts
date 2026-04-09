@@ -2,7 +2,7 @@ import {
   STANDARD_BUCKETS,
   normalizeStoragePath,
   normalizeBucketName,
-} from "@mirai-app/shared";
+} from "../storage-helpers";
 
 const SUPABASE_OBJECT_PREFIXES = new Set(["public", "sign", "authenticated"]);
 

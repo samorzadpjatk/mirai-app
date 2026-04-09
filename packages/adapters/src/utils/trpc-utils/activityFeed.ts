@@ -1,4 +1,8 @@
-import { type Prisma } from "@mirai-app/frameworks/prisma";
+import type {
+  TransactionClient,
+  ChallengeSelect,
+  ChallengeWhereInput,
+} from "../../types/prisma-types";
 
 const HOUR_MS = 60 * 60 * 1000;
 const DEFAULT_PEER_VOTING_DURATION_HOURS = 24;
@@ -55,7 +59,7 @@ type RankSnapshot = Map<
 >;
 
 const loadChallengeForFeed = async (
-  tx: Prisma.TransactionClient,
+  tx: TransactionClient,
   challengeId: string,
 ): Promise<ChallengeForFeed | null> => {
   const challenge = await tx.challenge.findUnique({
@@ -95,7 +99,7 @@ const formatSubmissionDeadline = (value: Date | null) => {
 };
 
 const createChallengeEventActivity = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   challenge: ChallengeForFeed;
   eventType: ChallengeEventType;
   createdByAdmin?: string | null;
@@ -181,7 +185,7 @@ const resolvePodiumPoints = (
 };
 
 const resolveCoinTransactionActorId = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   createdByAdmin?: string | null;
 }) => {
   if (params.createdByAdmin) {
@@ -211,7 +215,7 @@ const resolveCoinTransactionActorId = async (params: {
 };
 
 export const createChallengeCompletionWithWinnersById = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   challengeId: string;
   createdByAdmin?: string | null;
 }) => {
@@ -411,7 +415,7 @@ export const createChallengeCompletionWithWinnersById = async (params: {
 };
 
 export const createChallengeStatusActivityById = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   challengeId: string;
   eventType: ChallengeEventType;
   createdByAdmin?: string | null;
@@ -428,7 +432,7 @@ export const createChallengeStatusActivityById = async (params: {
 };
 
 export const createChallengeStatusActivityFromTransition = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   challengeId: string;
   previousStatus:
     | "HIDDEN"
@@ -483,8 +487,8 @@ export const createChallengeStatusActivityFromTransition = async (params: {
 };
 
 export const promoteVisibleChallengesToActiveWithFeed = async (params: {
-  tx: Prisma.TransactionClient;
-  where?: Prisma.ChallengeWhereInput;
+  tx: TransactionClient;
+  where?: ChallengeWhereInput;
   createdByAdmin?: string | null;
 }) => {
   const now = new Date();
@@ -534,8 +538,8 @@ export const promoteVisibleChallengesToActiveWithFeed = async (params: {
 
 export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed =
   async (params: {
-    tx: Prisma.TransactionClient;
-    where?: Prisma.ChallengeWhereInput;
+    tx: TransactionClient;
+    where?: ChallengeWhereInput;
     createdByAdmin?: string | null;
   }) => {
     const now = new Date();
@@ -602,8 +606,8 @@ export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed =
   };
 
 export const finalizeVotingChallengesToCompletedWithFeed = async (params: {
-  tx: Prisma.TransactionClient;
-  where?: Prisma.ChallengeWhereInput;
+  tx: TransactionClient;
+  where?: ChallengeWhereInput;
   createdByAdmin?: string | null;
 }) => {
   const now = new Date();
@@ -648,7 +652,7 @@ export const finalizeVotingChallengesToCompletedWithFeed = async (params: {
 };
 
 export const captureTripRankingSnapshot = async (
-  tx: Prisma.TransactionClient,
+  tx: TransactionClient,
   tripId: string,
 ): Promise<RankSnapshot> => {
   const groups = await tx.group.findMany({
@@ -679,7 +683,7 @@ export const captureTripRankingSnapshot = async (
 };
 
 export const createRankChangeActivities = async (params: {
-  tx: Prisma.TransactionClient;
+  tx: TransactionClient;
   tripId: string;
   previousSnapshot: RankSnapshot;
   createdByAdmin?: string | null;
