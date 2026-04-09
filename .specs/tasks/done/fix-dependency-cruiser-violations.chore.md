@@ -39,7 +39,7 @@ This task fixes the configuration to:
 
 - [x] **[Prisma models excluded]**: Internal model files don't trigger orphan warnings
   - Given: Files in `packages/frameworks/src/prisma/lib/models/` exist
-  - When: `.dependency-cruiser.cjs` has pattern exclusion for model files
+  - When: `.dependency-cruiser.mjs` has pattern exclusion for model files
   - Then: No orphan warnings for any Prisma model files
 
 - [x] **[Entry points excluded]**: App entry files don't trigger orphan warnings
@@ -76,7 +76,7 @@ This task fixes the configuration to:
 This is a **configuration-only fix** requiring two coordinated changes:
 
 1. **Package Export Configuration**: Add explicit subpath exports to `packages/frameworks/package.json` for `@mirai-app/frameworks/prisma` and `@mirai-app/frameworks/supabase` (without wildcards)
-2. **Dependency-Cruiser Exclusions**: Update `.dependency-cruiser.cjs` to exclude legitimate orphan patterns
+2. **Dependency-Cruiser Exclusions**: Update `.dependency-cruiser.mjs` to exclude legitimate orphan patterns
 
 ### Key Architectural Decisions
 
@@ -116,7 +116,7 @@ pathNot: [
 | #   | File                               | Change Type | Description                             |
 | --- | ---------------------------------- | ----------- | --------------------------------------- |
 | 1   | `packages/frameworks/package.json` | MODIFY      | Add `./prisma` and `./supabase` exports |
-| 2   | `.dependency-cruiser.cjs`          | MODIFY      | Update `no-orphans` rule exclusions     |
+| 2   | `.dependency-cruiser.mjs`          | MODIFY      | Update `no-orphans` rule exclusions     |
 
 ### References
 
@@ -247,11 +247,11 @@ pathNot: [
 #### Step 3.1: Add Prisma Model Exclusions [DONE]
 
 **Goal**: Eliminate orphan warnings for prisma model files
-**Output**: Updated .dependency-cruiser.cjs
+**Output**: Updated .dependency-cruiser.mjs
 
 **Subtasks**:
 
-- [x] Read current `no-orphans` rule in .dependency-cruiser.cjs
+- [x] Read current `no-orphans` rule in .dependency-cruiser.mjs
 - [x] Add pattern: `packages/frameworks/src/prisma/lib/models/.*\.ts$`
 - [x] Add pattern: `packages/frameworks/src/prisma/lib/models\.ts$` (barrel file)
 - [x] Run dependency-cruiser and verify model warnings eliminated
@@ -277,7 +277,7 @@ pathNot: [
 #### Step 3.2: Add Entry Point Exclusions [DONE]
 
 **Goal**: Eliminate orphan warnings for app entry points
-**Output**: Updated .dependency-cruiser.cjs
+**Output**: Updated .dependency-cruiser.mjs
 
 **Subtasks**:
 
@@ -301,7 +301,7 @@ pathNot: [
 #### Step 3.3: Add Component and Route Exclusions [DONE]
 
 **Goal**: Eliminate orphan warnings for React components and route files
-**Output**: Updated .dependency-cruiser.cjs
+**Output**: Updated .dependency-cruiser.mjs
 
 **Subtasks**:
 
@@ -385,7 +385,7 @@ This implementation is organized into **two parallel tracks**:
 #### Track B: Warning Reduction (Independent)
 
 **Steps**: 3.1 → 3.2 → 3.3  
-**File**: `.dependency-cruiser.cjs`  
+**File**: `.dependency-cruiser.mjs`  
 **Time**: ~15-20 minutes  
 **Priority**: MEDIUM  
 **Note**: Can run in parallel with Track A (different files)

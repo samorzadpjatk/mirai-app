@@ -263,7 +263,7 @@ After refactoring, run these commands to verify:
 
 ```bash
 # Check for any remaining cyclic dependencies
-bunx dependency-cruiser --validate .dependency-cruiser.cjs .
+bunx dependency-cruiser --validate .dependency-cruiser.mjs .
 
 # Check for any remaining @frameworks imports in adapters
 grep -r "from.*@mirai-app/frameworks/prisma" packages/adapters/src --include="*.ts"

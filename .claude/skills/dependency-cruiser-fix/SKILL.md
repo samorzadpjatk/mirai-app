@@ -18,7 +18,7 @@
 
 ```bash
 # Run validation and see errors
-bunx dependency-cruiser --validate .dependency-cruiser.cjs .
+bunx dependency-cruiser --validate .dependency-cruiser.mjs .
 
 # Run with long output format
 bunx dependency-cruiser --validate --output-type err-long .
@@ -70,7 +70,7 @@ Check the exporting package's `package.json`:
 Add exclusions for known unresolvable patterns:
 
 ```javascript
-// .dependency-cruiser.cjs
+// .dependency-cruiser.mjs
 {
   name: "not-to-unresolvable",
   from: {
@@ -129,7 +129,7 @@ rm packages/frameworks/src/prisma/lib/models/UnusedModel.ts
 
 #### Option 2: Add to Exclusions
 
-Update `.dependency-cruiser.cjs` to exclude legitimate orphans:
+Update `.dependency-cruiser.mjs` to exclude legitimate orphans:
 
 ```javascript
 {
@@ -181,7 +181,7 @@ Ensure all workspace packages have proper `exports` in their `package.json`.
 Native app uses `~/*` aliases. These need dependency-cruiser exclusions:
 
 ```javascript
-// .dependency-cruiser.cjs
+// .dependency-cruiser.mjs
 {
   name: "not-to-unresolvable",
   from: {
@@ -252,7 +252,7 @@ Always run dependency-cruiser in CI:
 ```yaml
 # .github/workflows/ci.yml
 - name: Validate Dependencies
-  run: bunx dependency-cruiser --validate .dependency-cruiser.cjs .
+  run: bunx dependency-cruiser --validate .dependency-cruiser.mjs .
 ```
 
 ---

@@ -96,7 +96,7 @@ These files define Prisma model TypeScript types. They are imported by other mod
 - User.ts, UserAgent.ts, UserEvent.ts, UserPost.ts
 - models.ts (barrel export file)
 
-**Solution**: Add to `.dependency-cruiser.cjs` exclusions:
+**Solution**: Add to `.dependency-cruiser.mjs` exclusions:
 
 ```javascript
 pathNot: ["packages/frameworks/src/prisma/lib/models/.*\\.ts$"];
@@ -160,7 +160,7 @@ pathNot: [
 
 | File                      | Reason                        |
 | ------------------------- | ----------------------------- |
-| `.dependency-cruiser.cjs` | The config file itself        |
+| `.dependency-cruiser.mjs` | The config file itself        |
 | `happydom.ts`             | Test environment setup        |
 | `commitlint.config.cjs`   | Git commit linting config     |
 | `metro.config.cjs`        | Metro bundler config (native) |
@@ -229,7 +229,7 @@ Database Layer (prisma models)
 ### Files to Modify
 
 1. **packages/frameworks/package.json** - Add exports field
-2. **.dependency-cruiser.cjs** - Update orphan exclusions
+2. **.dependency-cruiser.mjs** - Update orphan exclusions
 3. **packages/frameworks/src/index.ts** - May need to re-export models
 
 ### Verification Steps

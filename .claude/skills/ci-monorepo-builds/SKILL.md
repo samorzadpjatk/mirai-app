@@ -126,7 +126,7 @@ Cache compiled output for incremental builds:
 3. **Prevention**: Configure dependency-cruiser rules:
 
 ```javascript
-// .dependency-cruiser.cjs
+// .dependency-cruiser.mjs
 module.exports = {
   forbidden: [
     {

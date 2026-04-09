@@ -4,8 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "turbo run build",
-    "build:packages": "turbo run build --filter='./packages/*'",
     "dev": "turbo run dev",
     "dev:backend": "turbo run dev --filter=@mirai-app/backend-server",
     "dev:notification-sender": "turbo run dev --filter=@mirai-app/notification-sender",
@@ -22,9 +20,9 @@
     "test:unit": "turbo run test:unit",
     "test:integration": "turbo run test:integration",
     "test:db": "turbo run test",
-    "depcruise": "bunx dependency-cruiser --validate .dependency-cruiser.cjs .",
-    "depcruise:check": "bunx dependency-cruiser --validate .dependency-cruiser.cjs . --output-type err-long",
-    "depcruise:graph": "bunx dependency-cruiser --validate .dependency-cruiser.cjs . --output-type dot --output-to dependency-graph.dot && dot -T svg dependency-graph.dot -o dependency-graph.svg"
+    "depcruise": "bunx dependency-cruiser --validate .dependency-cruiser.mjs .",
+    "depcruise:check": "bunx dependency-cruiser --validate .dependency-cruiser.mjs . --output-type err-long",
+    "depcruise:graph": "bunx dependency-cruiser --validate .dependency-cruiser.mjs . --output-type dot --output-to dependency-graph.dot && dot -T svg dependency-graph.dot -o dependency-graph.svg"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.28.6",

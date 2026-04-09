@@ -689,7 +689,7 @@ Provides practical guidance on navigating the Clean Architecture layers during i
 
 ```
 # New/Updated Files
-.dependency-cruiser.cjs          # Layer dependency rules
+.dependency-cruiser.mjs          # Layer dependency rules
 turbo.json                       # Add DDD-aware pipeline
 bunfig.toml                      # Verify coverage thresholds
 .github/workflows/ci.yml         # Add layer enforcement check
@@ -713,7 +713,7 @@ Automated enforcement of the Dependency Rule is critical to Clean Architecture s
 
 **Success Criteria:**
 
-- [ ] `.dependency-cruiser.cjs` exists with layer rules
+- [ ] `.dependency-cruiser.mjs` exists with layer rules
 - [ ] Rule: `packages/domain/` cannot import from outside itself
 - [ ] Rule: `packages/use-cases/` can only import from `packages/domain/`
 - [ ] Rule: `packages/adapters/` can import from domain + use-cases
@@ -737,7 +737,7 @@ Automated enforcement of the Dependency Rule is critical to Clean Architecture s
 
 | Criterion                 | Weight | Description                                                                             |
 | ------------------------- | ------ | --------------------------------------------------------------------------------------- |
-| Configuration Correctness | 0.35   | `.dependency-cruiser.cjs` has all layer rules correctly defined                         |
+| Configuration Correctness | 0.35   | `.dependency-cruiser.mjs` has all layer rules correctly defined                         |
 | CI Integration            | 0.25   | CI workflow includes `depcruise` check                                                  |
 | Rule Coverage             | 0.25   | All 5 layer dependency rules configured (domain, use-cases, adapters, frameworks, apps) |
 | Coverage Thresholds       | 0.15   | `bunfig.toml` has correct coverage thresholds (80% line, 75% branch, 80% function)      |

@@ -465,7 +465,7 @@ export function createUserRepository() {
 
 - `bun test` passes with no failures
 - `bun run build` succeeds with no errors
-- `bunx dependency-cruiser --validate .dependency-cruiser.cjs .` passes
+- `bunx dependency-cruiser --validate .dependency-cruiser.mjs .` passes
 - `grep -r "from.*@mirai-app/frameworks/prisma" packages/adapters/src` returns empty (except type imports if any)
 
 **Subtasks**:

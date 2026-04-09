@@ -746,7 +746,7 @@ Remove empty legacy packages and update build configuration.
    - Remove references to removed packages in task dependencies
    - Consolidate build pipelines
 
-4. Update `.dependency-cruiser.cjs` (if needed):
+4. Update `.dependency-cruiser.mjs` (if needed):
    - Remove rules for deleted packages
 
 **Success Criteria:**
