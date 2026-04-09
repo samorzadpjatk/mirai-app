@@ -1,4 +1,4 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import { CreateChallengeUseCase } from "./CreateChallenge";
 import type { CreateChallengeInput } from "./CreateChallenge";
 import {
@@ -7,16 +7,13 @@ import {
   SubmissionType,
   ScoringCategory,
 } from "@mirai-app/domain";
-import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import { createTestContainer, TYPES } from "@mirai-app/frameworks/di";
-import { asValue, type AwilixContainer } from "awilix";
-import { Effect } from "effect";
+import { InMemoryChallengeRepository } from "@mirai-app/adapters/test-utils";
 
 async function runAsResult<T>(
-  effect: Effect.Effect<T, Error>,
+  fn: () => Promise<T>,
 ): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
   try {
-    const value = await Effect.runPromise(effect);
+    const value = await fn();
     return { kind: "ok", value };
   } catch (error) {
     return {
@@ -27,10 +24,12 @@ async function runAsResult<T>(
 }
 
 describe("[UNIT] CreateChallengeUseCase", () => {
-  let container: AwilixContainer;
+  let repo: InMemoryChallengeRepository;
+  let useCase: CreateChallengeUseCase;
 
   beforeEach(() => {
-    container = createTestContainer();
+    repo = new InMemoryChallengeRepository();
+    useCase = new CreateChallengeUseCase(repo);
   });
 
   // Helper to create a valid challenge input
@@ -66,35 +65,9 @@ describe("[UNIT] CreateChallengeUseCase", () => {
     it("should create challenge with valid input", async () => {
       // Arrange
       const input = createValidInput();
-      const mockChallenge = createChallengeFromInput(input);
-      const mockRepo: ChallengeRepository = {
-        create: mock(() => Promise.resolve(mockChallenge)),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findBySubmissionType: mock(() => Promise.resolve([])),
-        findByScoringCategory: mock(() => Promise.resolve([])),
-        findActive: mock(() => Promise.resolve([])),
-        findOpenForSubmission: mock(() => Promise.resolve([])),
-        findRecurring: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockChallenge)),
-        updateStatus: mock(() => Promise.resolve(mockChallenge)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
-
-      const challengeRepo = container.resolve<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new CreateChallengeUseCase(challengeRepo);
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await runAsResult(() => useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -107,7 +80,11 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         expect(result.value.status).toBe("HIDDEN");
         expect(result.value.basePoints).toBe(100);
       }
-      expect(mockRepo.create).toHaveBeenCalled();
+
+      // Verify challenge was actually stored
+      const stored = await repo.findByTripId("trip-123");
+      expect(stored).toHaveLength(1);
+      expect(stored[0]?.name).toBe("Test Challenge");
     });
 
     it("should use HIDDEN as default status when not provided", async () => {
@@ -119,73 +96,22 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         scoringCategory: ScoringCategory.SPEED,
         // status not provided
       };
-      const mockChallenge = createChallengeFromInput({
-        ...input,
-        basePoints: 50,
-      });
-      const mockRepo: ChallengeRepository = {
-        create: mock(() => Promise.resolve(mockChallenge)),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findBySubmissionType: mock(() => Promise.resolve([])),
-        findByScoringCategory: mock(() => Promise.resolve([])),
-        findActive: mock(() => Promise.resolve([])),
-        findOpenForSubmission: mock(() => Promise.resolve([])),
-        findRecurring: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockChallenge)),
-        updateStatus: mock(() => Promise.resolve(mockChallenge)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
-
-      const challengeRepo = container.resolve<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new CreateChallengeUseCase(challengeRepo);
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await runAsResult(() => useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
         expect(result.value.status).toBe("HIDDEN");
       }
+
+      // Verify stored challenge has HIDDEN status
+      const stored = await repo.findByTripId("trip-456");
+      expect(stored[0]?.status).toBe(ChallengeStatus.HIDDEN);
     });
 
     it("should return error when name is empty", async () => {
-      // Arrange
-      const mockRepo: ChallengeRepository = {
-        create: mock(() => Promise.resolve({} as Challenge)),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findBySubmissionType: mock(() => Promise.resolve([])),
-        findByScoringCategory: mock(() => Promise.resolve([])),
-        findActive: mock(() => Promise.resolve([])),
-        findOpenForSubmission: mock(() => Promise.resolve([])),
-        findRecurring: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve({} as Challenge)),
-        updateStatus: mock(() => Promise.resolve({} as Challenge)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
-
-      const challengeRepo = container.resolve<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new CreateChallengeUseCase(challengeRepo);
       const input: CreateChallengeInput = {
         tripId: "trip-123",
         name: "", // Empty name
@@ -194,43 +120,20 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await runAsResult(() => useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
         expect(result.error).toContain("name");
       }
-      expect(mockRepo.create).not.toHaveBeenCalled();
+
+      // Verify no challenge was stored
+      const stored = await repo.findAll();
+      expect(stored).toHaveLength(0);
     });
 
     it("should return error when tripId is empty", async () => {
-      // Arrange
-      const mockRepo: ChallengeRepository = {
-        create: mock(() => Promise.resolve({} as Challenge)),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findBySubmissionType: mock(() => Promise.resolve([])),
-        findByScoringCategory: mock(() => Promise.resolve([])),
-        findActive: mock(() => Promise.resolve([])),
-        findOpenForSubmission: mock(() => Promise.resolve([])),
-        findRecurring: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve({} as Challenge)),
-        updateStatus: mock(() => Promise.resolve({} as Challenge)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
-
-      const challengeRepo = container.resolve<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new CreateChallengeUseCase(challengeRepo);
       const input: CreateChallengeInput = {
         tripId: "", // Empty tripId
         name: "Test Challenge",
@@ -239,43 +142,20 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await runAsResult(() => useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
         expect(result.error).toContain("tripId");
       }
-      expect(mockRepo.create).not.toHaveBeenCalled();
+
+      // Verify no challenge was stored
+      const stored = await repo.findAll();
+      expect(stored).toHaveLength(0);
     });
 
     it("should return error when basePoints is negative", async () => {
-      // Arrange
-      const mockRepo: ChallengeRepository = {
-        create: mock(() => Promise.resolve({} as Challenge)),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findBySubmissionType: mock(() => Promise.resolve([])),
-        findByScoringCategory: mock(() => Promise.resolve([])),
-        findActive: mock(() => Promise.resolve([])),
-        findOpenForSubmission: mock(() => Promise.resolve([])),
-        findRecurring: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve({} as Challenge)),
-        updateStatus: mock(() => Promise.resolve({} as Challenge)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
-
-      const challengeRepo = container.resolve<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new CreateChallengeUseCase(challengeRepo);
       const input: CreateChallengeInput = {
         tripId: "trip-123",
         name: "Test Challenge",
@@ -285,14 +165,17 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await runAsResult(() => useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
         expect(result.error).toContain("basePoints");
       }
-      expect(mockRepo.create).not.toHaveBeenCalled();
+
+      // Verify no challenge was stored
+      const stored = await repo.findAll();
+      expect(stored).toHaveLength(0);
     });
 
     it("should create challenge with location submission type", async () => {
@@ -306,35 +189,9 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         targetLongitude: 21.0122,
         basePoints: 200,
       };
-      const mockChallenge = createChallengeFromInput(input);
-      const mockRepo: ChallengeRepository = {
-        create: mock(() => Promise.resolve(mockChallenge)),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findBySubmissionType: mock(() => Promise.resolve([])),
-        findByScoringCategory: mock(() => Promise.resolve([])),
-        findActive: mock(() => Promise.resolve([])),
-        findOpenForSubmission: mock(() => Promise.resolve([])),
-        findRecurring: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockChallenge)),
-        updateStatus: mock(() => Promise.resolve(mockChallenge)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
-
-      const challengeRepo = container.resolve<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new CreateChallengeUseCase(challengeRepo);
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await runAsResult(() => useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -342,6 +199,11 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         expect(result.value.submissionType).toBe("LOCATION");
         expect(result.value.scoringCategory).toBe("SPEED");
       }
+
+      // Verify stored challenge
+      const stored = await repo.findByTripId("trip-loc");
+      expect(stored).toHaveLength(1);
+      expect(stored[0]?.submissionType).toBe(SubmissionType.LOCATION);
     });
 
     it("should create challenge with peer voting scoring category", async () => {
@@ -356,41 +218,20 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         thirdPlacePoints: 100,
         basePoints: 50,
       };
-      const mockChallenge = createChallengeFromInput(input);
-      const mockRepo: ChallengeRepository = {
-        create: mock(() => Promise.resolve(mockChallenge)),
-        findById: mock(() => Promise.resolve(null)),
-        findByTripId: mock(() => Promise.resolve([])),
-        findByStatus: mock(() => Promise.resolve([])),
-        findByTripIdAndStatus: mock(() => Promise.resolve([])),
-        findBySubmissionType: mock(() => Promise.resolve([])),
-        findByScoringCategory: mock(() => Promise.resolve([])),
-        findActive: mock(() => Promise.resolve([])),
-        findOpenForSubmission: mock(() => Promise.resolve([])),
-        findRecurring: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockChallenge)),
-        updateStatus: mock(() => Promise.resolve(mockChallenge)),
-        delete: mock(() => Promise.resolve()),
-        exists: mock(() => Promise.resolve(false)),
-        countByTripId: mock(() => Promise.resolve(0)),
-      };
-
-      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
-
-      const challengeRepo = container.resolve<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new CreateChallengeUseCase(challengeRepo);
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await runAsResult(() => useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
         expect(result.value.scoringCategory).toBe("PEER_VOTING");
       }
+
+      // Verify stored challenge
+      const stored = await repo.findByTripId("trip-vote");
+      expect(stored).toHaveLength(1);
+      expect(stored[0]?.scoringCategory).toBe(ScoringCategory.PEER_VOTING);
     });
   });
 });

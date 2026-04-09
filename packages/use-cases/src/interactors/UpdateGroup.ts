@@ -1,11 +1,9 @@
-import { Effect } from "effect";
 import type { GroupRepository } from "../ports/GroupRepository";
 import type { Group } from "@mirai-app/domain";
 import {
   UseCaseNotFoundError,
   UseCaseRepositoryError,
   UseCaseValidationError,
-  type UseCaseError,
 } from "../errors";
 
 /**
@@ -59,84 +57,77 @@ export interface UpdateGroupOutput {
 export class UpdateGroupUseCase {
   constructor(private groupRepository: GroupRepository) {}
 
-  execute(
-    input: UpdateGroupInput,
-  ): Effect.Effect<UpdateGroupOutput, UseCaseError> {
-    const groupRepository = this.groupRepository;
-    const toOutput = this.toOutput.bind(this);
+  async execute(input: UpdateGroupInput): Promise<UpdateGroupOutput> {
+    // Load group
+    let group: Group | null;
+    try {
+      group = await this.groupRepository.findById(input.groupId);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "UpdateGroup.findById",
+        message: "Failed to load group",
+        cause,
+      });
+    }
 
-    return Effect.gen(function* () {
-      const group = yield* Effect.tryPromise({
-        try: () => groupRepository.findById(input.groupId),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "UpdateGroup.findById",
-            message: "Failed to load group",
-            cause,
-          }),
+    if (!group) {
+      throw new UseCaseNotFoundError({
+        entity: "Group",
+        message: "Group not found",
+      });
+    }
+
+    if (group.isDeleted()) {
+      throw new UseCaseValidationError({
+        field: "status",
+        message: "Cannot update a deleted group",
+      });
+    }
+
+    let updatedGroup: Group = group;
+
+    // Update details if provided
+    if (
+      input.name !== undefined ||
+      input.description !== undefined ||
+      input.image !== undefined
+    ) {
+      const detailsResult = updatedGroup.updateDetails({
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
+        ...(input.image !== undefined && { image: input.image }),
       });
 
-      if (!group) {
-        return yield* Effect.fail(
-          new UseCaseNotFoundError({
-            entity: "Group",
-            message: "Group not found",
-          }),
-        );
-      }
-
-      if (group.isDeleted()) {
-        return yield* Effect.fail(
-          new UseCaseValidationError({
-            field: "status",
-            message: "Cannot update a deleted group",
-          }),
-        );
-      }
-
-      let updatedGroup: Group = group;
-
-      if (
-        input.name !== undefined ||
-        input.description !== undefined ||
-        input.image !== undefined
-      ) {
-        const detailsResult = updatedGroup.updateDetails({
-          ...(input.name !== undefined && { name: input.name }),
-          ...(input.description !== undefined && {
-            description: input.description,
-          }),
-          ...(input.image !== undefined && { image: input.image }),
+      if (detailsResult.kind === "err") {
+        throw new UseCaseValidationError({
+          field: "group",
+          message: detailsResult.error,
         });
-
-        if (detailsResult.kind === "err") {
-          return yield* Effect.fail(
-            new UseCaseValidationError({
-              field: "group",
-              message: detailsResult.error,
-            }),
-          );
-        }
-
-        updatedGroup = detailsResult.value;
       }
 
-      if (input.organizerId !== undefined) {
-        updatedGroup = updatedGroup.changeOrganizer(input.organizerId);
-      }
+      updatedGroup = detailsResult.value;
+    }
 
-      const saved = yield* Effect.tryPromise({
-        try: () => groupRepository.update(updatedGroup),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "UpdateGroup.update",
-            message: "Failed to update group",
-            cause,
-          }),
+    // Update organizer if provided
+    if (input.organizerId !== undefined) {
+      updatedGroup = updatedGroup.changeOrganizer(input.organizerId);
+    }
+
+    // Save updated group
+    let saved: Group;
+    try {
+      saved = await this.groupRepository.update(updatedGroup);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "UpdateGroup.update",
+        message: "Failed to update group",
+        cause,
       });
+    }
 
-      return toOutput(saved);
-    });
+    return this.toOutput(saved);
   }
 
   private toOutput(group: Group): UpdateGroupOutput {

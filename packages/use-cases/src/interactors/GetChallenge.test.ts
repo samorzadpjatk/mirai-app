@@ -1,4 +1,4 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { GetChallengeUseCase } from "./GetChallenge";
 import type { GetChallengeInput } from "./GetChallenge";
 import {
@@ -8,31 +8,8 @@ import {
   ScoringCategory,
 } from "@mirai-app/domain";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import { createTestContainer } from "@mirai-app/frameworks/di";
-import type { AwilixContainer } from "awilix";
-import { Effect } from "effect";
-
-async function runAsResult<T>(
-  effect: Effect.Effect<T, Error>,
-): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
-  try {
-    const value = await Effect.runPromise(effect);
-    return { kind: "ok", value };
-  } catch (error) {
-    return {
-      kind: "err",
-      error: error instanceof Error ? error.message : "Unexpected error",
-    };
-  }
-}
 
 describe("[UNIT] GetChallengeUseCase", () => {
-  let container: AwilixContainer;
-
-  beforeEach(() => {
-    container = createTestContainer();
-  });
-
   // Helper to create a valid challenge
   const createValidChallenge = (
     overrides?: Partial<{ id: string; name: string; status: ChallengeStatus }>,
@@ -86,22 +63,19 @@ describe("[UNIT] GetChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("challenge-456");
-        expect(result.value.name).toBe("Photo Challenge");
-        expect(result.value.tripId).toBe("trip-123");
-        expect(result.value.status).toBe("ACTIVE");
-        expect(result.value.basePoints).toBe(100);
-        expect(result.value.isActive).toBe(true);
-        expect(result.value.submissionType).toBe("IMAGE");
-        expect(result.value.scoringCategory).toBe("UNLIMITED");
-        expect(result.value.requiresLocation).toBe(false);
-        expect(result.value.requiresQRCode).toBe(false);
-      }
+      expect(result.id).toBe("challenge-456");
+      expect(result.name).toBe("Photo Challenge");
+      expect(result.tripId).toBe("trip-123");
+      expect(result.status).toBe("ACTIVE");
+      expect(result.basePoints).toBe(100);
+      expect(result.isActive).toBe(true);
+      expect(result.submissionType).toBe("IMAGE");
+      expect(result.scoringCategory).toBe("UNLIMITED");
+      expect(result.requiresLocation).toBe(false);
+      expect(result.requiresQRCode).toBe(false);
       expect(mockRepo.findById).toHaveBeenCalledWith("challenge-456");
     });
 
@@ -131,14 +105,10 @@ describe("[UNIT] GetChallengeUseCase", () => {
         challengeId: "non-existent-id",
       };
 
-      // Act
-      const result = await runAsResult(useCase.execute(input));
-
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Challenge not found");
-      }
+      // Act & Assert
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Challenge not found",
+      );
       expect(mockRepo.findById).toHaveBeenCalledWith("non-existent-id");
     });
 
@@ -184,16 +154,13 @@ describe("[UNIT] GetChallengeUseCase", () => {
       };
 
       // Act
-      const result2 = await runAsResult(useCase.execute(input));
+      const result2 = await useCase.execute(input);
 
       // Assert
-      expect(result2.kind).toBe("ok");
-      if (result2.kind === "ok") {
-        expect(result2.value.submissionType).toBe("IMAGE_LOCATION");
-        expect(result2.value.requiresLocation).toBe(true);
-        expect(result2.value.targetLatitude).toBe(52.2297);
-        expect(result2.value.targetLongitude).toBe(21.0122);
-      }
+      expect(result2.submissionType).toBe("IMAGE_LOCATION");
+      expect(result2.requiresLocation).toBe(true);
+      expect(result2.targetLatitude).toBe(52.2297);
+      expect(result2.targetLongitude).toBe(21.0122);
     });
 
     it("should return challenge with QR code requirements for QR_CODE type", async () => {
@@ -237,15 +204,12 @@ describe("[UNIT] GetChallengeUseCase", () => {
       };
 
       // Act
-      const result2 = await runAsResult(useCase.execute(input));
+      const result2 = await useCase.execute(input);
 
       // Assert
-      expect(result2.kind).toBe("ok");
-      if (result2.kind === "ok") {
-        expect(result2.value.submissionType).toBe("QR_CODE");
-        expect(result2.value.requiresQRCode).toBe(true);
-        expect(result2.value.expectedValue).toBe("secret-qr-code");
-      }
+      expect(result2.submissionType).toBe("QR_CODE");
+      expect(result2.requiresQRCode).toBe(true);
+      expect(result2.expectedValue).toBe("secret-qr-code");
     });
 
     it("should return challenge with voting phase info for PEER_VOTING category", async () => {
@@ -289,14 +253,11 @@ describe("[UNIT] GetChallengeUseCase", () => {
       };
 
       // Act
-      const result2 = await runAsResult(useCase.execute(input));
+      const result2 = await useCase.execute(input);
 
       // Assert
-      expect(result2.kind).toBe("ok");
-      if (result2.kind === "ok") {
-        expect(result2.value.scoringCategory).toBe("PEER_VOTING");
-        expect(result2.value.hasVotingPhase).toBe(true);
-      }
+      expect(result2.scoringCategory).toBe("PEER_VOTING");
+      expect(result2.hasVotingPhase).toBe(true);
     });
 
     it("should return hidden challenge with correct status", async () => {
@@ -331,19 +292,18 @@ describe("[UNIT] GetChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.status).toBe("HIDDEN");
-        expect(result.value.isActive).toBe(false);
-      }
+      expect(result.status).toBe("HIDDEN");
+      expect(result.isActive).toBe(false);
     });
 
-    it("should support container-based resolution", async () => {
+    it("should work with different repository implementations", async () => {
       // Arrange
-      const mockChallenge = createValidChallenge({ id: "challenge-container" });
+      const mockChallenge = createValidChallenge({
+        id: "challenge-different-repo",
+      });
       const mockRepo: ChallengeRepository = {
         create: mock(() => Promise.resolve(mockChallenge)),
         findById: mock(() => Promise.resolve(mockChallenge)),
@@ -363,32 +323,18 @@ describe("[UNIT] GetChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(1)),
       };
 
-      // Register in container
-      container.register({
-        challengeRepository: {
-          resolve: () => mockRepo,
-          lifetime: "SINGLETON",
-        } as any,
-      });
-
-      // Create use case with resolved repository
-      const challengeRepo = container.resolve<ChallengeRepository>(
-        "challengeRepository",
-      );
-      const useCase = new GetChallengeUseCase(challengeRepo);
+      // Create use case with mock repository
+      const useCase = new GetChallengeUseCase(mockRepo);
 
       const input: GetChallengeInput = {
-        challengeId: "challenge-container",
+        challengeId: "challenge-different-repo",
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("challenge-container");
-      }
+      expect(result.id).toBe("challenge-different-repo");
     });
   });
 });

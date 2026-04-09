@@ -1,33 +1,10 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { GetUserUseCase } from "./GetUser";
 import type { GetUserInput } from "./GetUser";
 import { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "../ports/UserRepository";
-import { createTestContainer } from "@mirai-app/frameworks/di";
-import type { AwilixContainer } from "awilix";
-import { Effect } from "effect";
-
-async function runAsResult<T>(
-  effect: Effect.Effect<T, Error>,
-): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
-  try {
-    const value = await Effect.runPromise(effect);
-    return { kind: "ok", value };
-  } catch (error) {
-    return {
-      kind: "err",
-      error: error instanceof Error ? error.message : "Unexpected error",
-    };
-  }
-}
 
 describe("[UNIT] GetUserUseCase", () => {
-  let container: AwilixContainer;
-
-  beforeEach(() => {
-    container = createTestContainer();
-  });
-
   // Helper to create a valid user
   const createValidUser = (
     overrides?: Partial<{
@@ -77,19 +54,16 @@ describe("[UNIT] GetUserUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("user-456");
-        expect(result.value.authUserId).toBe("auth-456");
-        expect(result.value.firstName).toBe("Jane");
-        expect(result.value.lastName).toBe("Smith");
-        expect(result.value.fullName).toBe("Jane Smith");
-        expect(result.value.role).toBe("USER");
-        expect(result.value.hasAvatar).toBe(false);
-      }
+      expect(result.id).toBe("user-456");
+      expect(result.authUserId).toBe("auth-456");
+      expect(result.firstName).toBe("Jane");
+      expect(result.lastName).toBe("Smith");
+      expect(result.fullName).toBe("Jane Smith");
+      expect(result.role).toBe("USER");
+      expect(result.hasAvatar).toBe(false);
       expect(mockRepo.findById).toHaveBeenCalledWith("user-456");
     });
 
@@ -111,14 +85,8 @@ describe("[UNIT] GetUserUseCase", () => {
         userId: "non-existent-id",
       };
 
-      // Act
-      const result = await runAsResult(useCase.execute(input));
-
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("User not found");
-      }
+      // Act & Assert
+      await expect(useCase.execute(input)).rejects.toThrow("User not found");
       expect(mockRepo.findById).toHaveBeenCalledWith("non-existent-id");
     });
 
@@ -142,30 +110,27 @@ describe("[UNIT] GetUserUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("user-789");
-        expect(result.value.lastSeenOn).toBeNull();
-        expect(result.value.createdAt).toBeInstanceOf(Date);
-      }
+      expect(result.id).toBe("user-789");
+      expect(result.lastSeenOn).toBeNull();
+      expect(result.createdAt).toBeInstanceOf(Date);
     });
 
     it("should return user with empty full name when both names are empty", async () => {
       // Arrange
-      const result = User.create({
+      const userResult = User.create({
         id: "user-empty",
         authUserId: "auth-empty",
         firstName: "",
         lastName: "",
         role: UserRole.USER,
       });
-      if (result.kind === "err") {
-        throw new Error(`Failed to create test user: ${result.error}`);
+      if (userResult.kind === "err") {
+        throw new Error(`Failed to create test user: ${userResult.error}`);
       }
-      const mockUser = result.value;
+      const mockUser = userResult.value;
 
       const mockRepo: UserRepository = {
         existsByAuthUserId: mock(() => Promise.resolve(false)),
@@ -184,18 +149,15 @@ describe("[UNIT] GetUserUseCase", () => {
       };
 
       // Act
-      const result2 = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result2.kind).toBe("ok");
-      if (result2.kind === "ok") {
-        expect(result2.value.fullName).toBe("Unknown");
-      }
+      expect(result.fullName).toBe("Unknown");
     });
 
-    it("should support container-based resolution", async () => {
+    it("should work with different repository implementations", async () => {
       // Arrange
-      const mockUser = createValidUser({ id: "user-container" });
+      const mockUser = createValidUser({ id: "user-different-repo" });
       const mockRepo: UserRepository = {
         existsByAuthUserId: mock(() => Promise.resolve(false)),
         create: mock(() => Promise.resolve(mockUser)),
@@ -207,27 +169,18 @@ describe("[UNIT] GetUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      // Register in container using the factory pattern
-      container.register({
-        userRepository: { resolve: () => mockRepo } as any,
-      });
-
-      // Create use case from container - use manual instantiation with resolved repo
-      const userRepo = container.resolve<UserRepository>("userRepository");
-      const useCase = new GetUserUseCase(userRepo);
+      // Create use case with the mock repository
+      const useCase = new GetUserUseCase(mockRepo);
 
       const input: GetUserInput = {
-        userId: "user-container",
+        userId: "user-different-repo",
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.id).toBe("user-container");
-      }
+      expect(result.id).toBe("user-different-repo");
     });
   });
 });

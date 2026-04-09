@@ -1,11 +1,6 @@
-import { Effect } from "effect";
 import type { UserRepository } from "../ports/UserRepository";
 import type { User } from "@mirai-app/domain";
-import {
-  UseCaseNotFoundError,
-  UseCaseRepositoryError,
-  type UseCaseError,
-} from "../errors";
+import { UseCaseNotFoundError, UseCaseRepositoryError } from "../errors";
 
 /**
  * Input for GetUser use case
@@ -50,32 +45,26 @@ export interface GetUserOutput {
 export class GetUserUseCase {
   constructor(private userRepository: UserRepository) {}
 
-  execute(input: GetUserInput): Effect.Effect<GetUserOutput, UseCaseError> {
-    const userRepository = this.userRepository;
-    const toOutput = this.toOutput.bind(this);
-
-    return Effect.gen(function* () {
-      const user = yield* Effect.tryPromise({
-        try: () => userRepository.findById(input.userId),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "GetUser.findById",
-            message: "Failed to load user",
-            cause,
-          }),
+  async execute(input: GetUserInput): Promise<GetUserOutput> {
+    let user: User | null;
+    try {
+      user = await this.userRepository.findById(input.userId);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "GetUser.findById",
+        message: "Failed to load user",
+        cause,
       });
+    }
 
-      if (!user) {
-        return yield* Effect.fail(
-          new UseCaseNotFoundError({
-            entity: "User",
-            message: "User not found",
-          }),
-        );
-      }
+    if (!user) {
+      throw new UseCaseNotFoundError({
+        entity: "User",
+        message: "User not found",
+      });
+    }
 
-      return toOutput(user);
-    });
+    return this.toOutput(user);
   }
 
   private toOutput(user: User): GetUserOutput {

@@ -1,11 +1,9 @@
-import { Effect } from "effect";
 import { Group, GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "../ports/GroupRepository";
 import {
   UseCaseConflictError,
   UseCaseRepositoryError,
   UseCaseValidationError,
-  type UseCaseError,
 } from "../errors";
 
 /**
@@ -60,67 +58,63 @@ export interface CreateGroupOutput {
 export class CreateGroupUseCase {
   constructor(private groupRepository: GroupRepository) {}
 
-  execute(
-    input: CreateGroupInput,
-  ): Effect.Effect<CreateGroupOutput, UseCaseError> {
-    const groupRepository = this.groupRepository;
-    const toOutput = this.toOutput.bind(this);
-
-    return Effect.gen(function* () {
-      const existingGroup = yield* Effect.tryPromise({
-        try: () => groupRepository.findByCode(input.code),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "CreateGroup.findByCode",
-            message: "Failed to check group code uniqueness",
-            cause,
-          }),
+  async execute(input: CreateGroupInput): Promise<CreateGroupOutput> {
+    // Check if group code already exists
+    let existingGroup: import("@mirai-app/domain").Group | null;
+    try {
+      existingGroup = await this.groupRepository.findByCode(input.code);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "CreateGroup.findByCode",
+        message: "Failed to check group code uniqueness",
+        cause,
       });
+    }
 
-      if (existingGroup) {
-        return yield* Effect.fail(
-          new UseCaseConflictError({
-            entity: "Group",
-            message: "Group code already exists",
-          }),
-        );
-      }
-
-      const groupResult = Group.create({
-        tripId: input.tripId,
-        name: input.name,
-        description: input.description ?? null,
-        image: input.image ?? null,
-        organizerId: input.organizerId,
-        code: input.code,
-        coins: input.coins ?? 0,
-        status: input.status ?? GroupStatus.ACTIVE,
+    if (existingGroup) {
+      throw new UseCaseConflictError({
+        entity: "Group",
+        message: "Group code already exists",
       });
+    }
 
-      if (groupResult.kind === "err") {
-        return yield* Effect.fail(
-          new UseCaseValidationError({
-            field: "group",
-            message: groupResult.error,
-          }),
-        );
-      }
-
-      const saved = yield* Effect.tryPromise({
-        try: () => groupRepository.create(groupResult.value),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "CreateGroup.create",
-            message: "Failed to create group",
-            cause,
-          }),
-      });
-
-      return toOutput(saved);
+    // Create domain entity
+    const groupResult = Group.create({
+      tripId: input.tripId,
+      name: input.name,
+      description: input.description ?? null,
+      image: input.image ?? null,
+      organizerId: input.organizerId,
+      code: input.code,
+      coins: input.coins ?? 0,
+      status: input.status ?? GroupStatus.ACTIVE,
     });
+
+    if (groupResult.kind === "err") {
+      throw new UseCaseValidationError({
+        field: "group",
+        message: groupResult.error,
+      });
+    }
+
+    // Save to repository
+    let saved: import("@mirai-app/domain").Group;
+    try {
+      saved = await this.groupRepository.create(groupResult.value);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "CreateGroup.create",
+        message: "Failed to create group",
+        cause,
+      });
+    }
+
+    return this.toOutput(saved);
   }
 
-  private toOutput(group: Group): CreateGroupOutput {
+  private toOutput(
+    group: import("@mirai-app/domain").Group,
+  ): CreateGroupOutput {
     return {
       id: group.id,
       tripId: group.tripId,

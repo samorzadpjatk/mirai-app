@@ -1,11 +1,9 @@
-import { Effect } from "effect";
 import { ChallengeVote, validateVoteSet } from "@mirai-app/domain";
 import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
 import {
   UseCaseConflictError,
   UseCaseValidationError,
   UseCaseRepositoryError,
-  type UseCaseError,
 } from "../errors";
 
 /**
@@ -75,121 +73,107 @@ export interface SubmitVotesOutput {
 export class SubmitVotesUseCase {
   constructor(private voteRepository: ChallengeVoteRepository) {}
 
-  execute(
-    input: SubmitVotesInput,
-  ): Effect.Effect<SubmitVotesOutput, UseCaseError> {
-    const voteRepository = this.voteRepository;
-    const toOutput = this.toOutput.bind(this);
-
-    return Effect.gen(function* () {
-      // Validate input
-      if (!input.challengeId || input.challengeId.trim() === "") {
-        return yield* Effect.fail(
-          new UseCaseValidationError({
-            field: "challengeId",
-            message: "challengeId is required",
-          }),
-        );
-      }
-
-      if (!input.voterId || input.voterId.trim() === "") {
-        return yield* Effect.fail(
-          new UseCaseValidationError({
-            field: "voterId",
-            message: "voterId is required",
-          }),
-        );
-      }
-
-      if (!input.votes || input.votes.length === 0) {
-        return yield* Effect.fail(
-          new UseCaseValidationError({
-            field: "votes",
-            message: "at least one vote is required",
-          }),
-        );
-      }
-
-      // Check if voter has already voted
-      const hasVoted = yield* Effect.tryPromise({
-        try: () => voteRepository.hasVoted(input.challengeId, input.voterId),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "SubmitVotes.hasVoted",
-            message: "Failed to check if user has voted",
-            cause,
-          }),
+  async execute(input: SubmitVotesInput): Promise<SubmitVotesOutput> {
+    // Validate input
+    if (!input.challengeId || input.challengeId.trim() === "") {
+      throw new UseCaseValidationError({
+        field: "challengeId",
+        message: "challengeId is required",
       });
+    }
 
-      if (hasVoted) {
-        return yield* Effect.fail(
-          new UseCaseConflictError({
-            entity: "Vote",
-            message: "You have already voted in this challenge",
-          }),
-        );
-      }
+    if (!input.voterId || input.voterId.trim() === "") {
+      throw new UseCaseValidationError({
+        field: "voterId",
+        message: "voterId is required",
+      });
+    }
 
-      // Validate vote set (pure validation - no async)
-      const validation = validateVoteSet(
-        input.votes.map((v) => ({
-          submissionId: v.submissionId,
-          position: v.position,
-        })),
-        input.requiredPositions,
+    if (!input.votes || input.votes.length === 0) {
+      throw new UseCaseValidationError({
+        field: "votes",
+        message: "at least one vote is required",
+      });
+    }
+
+    // Check if voter has already voted
+    let hasVoted: boolean;
+    try {
+      hasVoted = await this.voteRepository.hasVoted(
+        input.challengeId,
+        input.voterId,
       );
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "SubmitVotes.hasVoted",
+        message: "Failed to check if user has voted",
+        cause,
+      });
+    }
 
-      if (!validation.isValid) {
-        return yield* Effect.fail(
-          new UseCaseValidationError({
-            field: "votes",
-            message: validation.error ?? "Invalid vote set",
-          }),
-        );
-      }
+    if (hasVoted) {
+      throw new UseCaseConflictError({
+        entity: "Vote",
+        message: "You have already voted in this challenge",
+      });
+    }
 
-      // Create domain entities
-      const voteEntities: ChallengeVote[] = [];
-      for (const voteInput of input.votes) {
-        const voteResult = ChallengeVote.create({
-          challengeId: input.challengeId,
-          submissionId: voteInput.submissionId,
-          voterId: input.voterId,
-          position: voteInput.position,
-          ...(voteInput.points !== undefined && { points: voteInput.points }),
-          ...(voteInput.normalizedWeight !== undefined && {
-            weight: voteInput.normalizedWeight,
-          }),
-        });
+    // Validate vote set (pure validation - no async)
+    const validation = validateVoteSet(
+      input.votes.map((v) => ({
+        submissionId: v.submissionId,
+        position: v.position,
+      })),
+      input.requiredPositions,
+    );
 
-        if (voteResult.kind === "err") {
-          return yield* Effect.fail(
-            new UseCaseValidationError({
-              field: "vote",
-              message: `Failed to create vote: ${voteResult.error}`,
-            }),
-          );
-        }
+    if (!validation.isValid) {
+      throw new UseCaseValidationError({
+        field: "votes",
+        message: validation.error ?? "Invalid vote set",
+      });
+    }
 
-        voteEntities.push(voteResult.value);
-      }
-
-      // Persist votes
-      const savedVotes = yield* Effect.tryPromise({
-        try: () => voteRepository.createMany(voteEntities),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "SubmitVotes.createMany",
-            message: "Failed to save votes",
-            cause,
-          }),
+    // Create domain entities
+    const voteEntities: ChallengeVote[] = [];
+    for (const voteInput of input.votes) {
+      const voteResult = ChallengeVote.create({
+        challengeId: input.challengeId,
+        submissionId: voteInput.submissionId,
+        voterId: input.voterId,
+        position: voteInput.position,
+        ...(voteInput.points !== undefined && { points: voteInput.points }),
+        ...(voteInput.normalizedWeight !== undefined && {
+          weight: voteInput.normalizedWeight,
+        }),
       });
 
-      return {
-        votes: savedVotes.map((v) => toOutput(v)),
-        totalVotesCast: savedVotes.length,
-      };
-    });
+      if (voteResult.kind === "err") {
+        throw new UseCaseValidationError({
+          field: "vote",
+          message: `Failed to create vote: ${voteResult.error}`,
+        });
+      }
+
+      voteEntities.push(voteResult.value);
+    }
+
+    // Persist votes
+    let savedVotes: ChallengeVote[];
+    try {
+      savedVotes = await this.voteRepository.createMany(voteEntities);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "SubmitVotes.createMany",
+        message: "Failed to save votes",
+        cause,
+      });
+    }
+
+    return {
+      votes: savedVotes.map((v) => this.toOutput(v)),
+      totalVotesCast: savedVotes.length,
+    };
   }
 
   private toOutput(vote: ChallengeVote): VoteOutput {

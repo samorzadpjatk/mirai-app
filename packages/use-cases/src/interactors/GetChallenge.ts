@@ -1,11 +1,6 @@
-import { Effect } from "effect";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
 import type { Challenge } from "@mirai-app/domain";
-import {
-  UseCaseNotFoundError,
-  UseCaseRepositoryError,
-  type UseCaseError,
-} from "../errors";
+import { UseCaseNotFoundError, UseCaseRepositoryError } from "../errors";
 
 /**
  * Input for GetChallenge use case
@@ -63,34 +58,27 @@ export interface GetChallengeOutput {
 export class GetChallengeUseCase {
   constructor(private challengeRepository: ChallengeRepository) {}
 
-  execute(
-    input: GetChallengeInput,
-  ): Effect.Effect<GetChallengeOutput, UseCaseError> {
-    const challengeRepository = this.challengeRepository;
-    const toOutput = this.toOutput.bind(this);
-
-    return Effect.gen(function* () {
-      const challenge = yield* Effect.tryPromise({
-        try: () => challengeRepository.findById(input.challengeId),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "GetChallenge.findById",
-            message: "Failed to load challenge",
-            cause,
-          }),
+  async execute(input: GetChallengeInput): Promise<GetChallengeOutput> {
+    // Load challenge
+    let challenge: Challenge | null;
+    try {
+      challenge = await this.challengeRepository.findById(input.challengeId);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "GetChallenge.findById",
+        message: "Failed to load challenge",
+        cause,
       });
+    }
 
-      if (!challenge) {
-        return yield* Effect.fail(
-          new UseCaseNotFoundError({
-            entity: "Challenge",
-            message: "Challenge not found",
-          }),
-        );
-      }
+    if (!challenge) {
+      throw new UseCaseNotFoundError({
+        entity: "Challenge",
+        message: "Challenge not found",
+      });
+    }
 
-      return toOutput(challenge);
-    });
+    return this.toOutput(challenge);
   }
 
   private toOutput(challenge: Challenge): GetChallengeOutput {

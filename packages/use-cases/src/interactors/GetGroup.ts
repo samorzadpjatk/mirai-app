@@ -1,11 +1,6 @@
-import { Effect } from "effect";
 import type { GroupRepository } from "../ports/GroupRepository";
 import type { Group } from "@mirai-app/domain";
-import {
-  UseCaseNotFoundError,
-  UseCaseRepositoryError,
-  type UseCaseError,
-} from "../errors";
+import { UseCaseNotFoundError, UseCaseRepositoryError } from "../errors";
 
 /**
  * Input for GetGroup use case
@@ -54,32 +49,27 @@ export interface GetGroupOutput {
 export class GetGroupUseCase {
   constructor(private groupRepository: GroupRepository) {}
 
-  execute(input: GetGroupInput): Effect.Effect<GetGroupOutput, UseCaseError> {
-    const groupRepository = this.groupRepository;
-    const toOutput = this.toOutput.bind(this);
-
-    return Effect.gen(function* () {
-      const group = yield* Effect.tryPromise({
-        try: () => groupRepository.findById(input.groupId),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "GetGroup.findById",
-            message: "Failed to load group",
-            cause,
-          }),
+  async execute(input: GetGroupInput): Promise<GetGroupOutput> {
+    // Load group
+    let group: Group | null;
+    try {
+      group = await this.groupRepository.findById(input.groupId);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "GetGroup.findById",
+        message: "Failed to load group",
+        cause,
       });
+    }
 
-      if (!group) {
-        return yield* Effect.fail(
-          new UseCaseNotFoundError({
-            entity: "Group",
-            message: "Group not found",
-          }),
-        );
-      }
+    if (!group) {
+      throw new UseCaseNotFoundError({
+        entity: "Group",
+        message: "Group not found",
+      });
+    }
 
-      return toOutput(group);
-    });
+    return this.toOutput(group);
   }
 
   private toOutput(group: Group): GetGroupOutput {

@@ -4,21 +4,6 @@ import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
-import { Effect } from "effect";
-
-async function runAsResult<T>(
-  effect: Effect.Effect<T, Error>,
-): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
-  try {
-    const value = await Effect.runPromise(effect);
-    return { kind: "ok", value };
-  } catch (error) {
-    return {
-      kind: "err",
-      error: error instanceof Error ? error.message : "Unexpected error",
-    };
-  }
-}
 
 describe("[UNIT] RemoveCoinsUseCase", () => {
   let mockRepo: CoinTransactionRepository;
@@ -61,13 +46,10 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await runAsResult(useCase.execute(input));
+    const result = await useCase.execute(input);
 
-    expect(result.kind).toBe("ok");
-    if (result.kind === "ok") {
-      expect(result.value.transaction.amount).toBe(-100); // Negative for removal
-      expect(result.value.transaction.groupId).toBe("group-1");
-    }
+    expect(result.transaction.amount).toBe(-100); // Negative for removal
+    expect(result.transaction.groupId).toBe("group-1");
   });
 
   it("should return error when group not found", async () => {
@@ -80,12 +62,7 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await runAsResult(useCase.execute(input));
-
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("Group not found");
-    }
+    await expect(useCase.execute(input)).rejects.toThrow("Group not found");
   });
 
   it("should return error when group has insufficient balance", async () => {
@@ -100,12 +77,9 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await runAsResult(useCase.execute(input));
-
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("not have enough coins");
-    }
+    await expect(useCase.execute(input)).rejects.toThrow(
+      "not have enough coins",
+    );
   });
 
   it("should return error when group is deleted", async () => {
@@ -120,12 +94,7 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await runAsResult(useCase.execute(input));
-
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("deleted");
-    }
+    await expect(useCase.execute(input)).rejects.toThrow("deleted");
   });
 
   it("should create transaction with negative amount", async () => {
@@ -148,7 +117,7 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    await runAsResult(useCase.execute(input));
+    await useCase.execute(input);
 
     expect(createMock).toHaveBeenCalledWith(
       expect.objectContaining({

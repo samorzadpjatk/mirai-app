@@ -1,40 +1,24 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import { CreateUserUseCase } from "./CreateUser";
 import type { CreateUserInput } from "./CreateUser";
-import { User, UserRole, ok, err } from "@mirai-app/domain";
-import type { Result } from "@mirai-app/domain";
-import type { UserRepository } from "../ports/UserRepository";
-import { createTestContainer } from "@mirai-app/frameworks/di";
-import type { AwilixContainer } from "awilix";
-import { Effect } from "effect";
-
-async function runAsResult<T>(
-  effect: Effect.Effect<T, Error>,
-): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
-  try {
-    const value = await Effect.runPromise(effect);
-    return { kind: "ok", value };
-  } catch (error) {
-    return {
-      kind: "err",
-      error: error instanceof Error ? error.message : "Unexpected error",
-    };
-  }
-}
+import { User, UserRole } from "@mirai-app/domain";
+import { InMemoryUserRepository } from "@mirai-app/adapters/test-utils";
 
 describe("[UNIT] CreateUserUseCase", () => {
-  let container: AwilixContainer;
+  let repo: InMemoryUserRepository;
+  let useCase: CreateUserUseCase;
 
   beforeEach(() => {
-    container = createTestContainer();
+    repo = new InMemoryUserRepository();
+    useCase = new CreateUserUseCase(repo);
   });
 
   // Helper to create a valid user
-  const createValidUser = (): User => {
+  const createValidUser = (overrides?: Partial<CreateUserInput>): User => {
     const result = User.create({
-      authUserId: "auth-123",
-      firstName: "John",
-      lastName: "Doe",
+      authUserId: overrides?.authUserId ?? "auth-123",
+      firstName: overrides?.firstName ?? "John",
+      lastName: overrides?.lastName ?? "Doe",
       role: UserRole.USER,
     });
     if (result.kind === "err") {
@@ -46,19 +30,6 @@ describe("[UNIT] CreateUserUseCase", () => {
   describe("execute", () => {
     it("should create user with valid input", async () => {
       // Arrange
-      const mockUser = createValidUser();
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(mockUser)),
-        findById: mock(() => Promise.resolve(null)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockUser)),
-        delete: mock(() => Promise.resolve()),
-      };
-
-      const useCase = new CreateUserUseCase(mockRepo);
       const input: CreateUserInput = {
         authUserId: "auth-123",
         firstName: "John",
@@ -67,35 +38,26 @@ describe("[UNIT] CreateUserUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.authUserId).toBe("auth-123");
-        expect(result.value.firstName).toBe("John");
-        expect(result.value.lastName).toBe("Doe");
-        expect(result.value.role).toBe("USER");
-        expect(result.value.fullName).toBe("John Doe");
-      }
-      expect(mockRepo.existsByAuthUserId).toHaveBeenCalledWith("auth-123");
-      expect(mockRepo.create).toHaveBeenCalled();
+      expect(result.authUserId).toBe("auth-123");
+      expect(result.firstName).toBe("John");
+      expect(result.lastName).toBe("Doe");
+      expect(result.role).toBe("USER");
+      expect(result.fullName).toBe("John Doe");
+
+      // Verify user was actually stored
+      const stored = await repo.findByAuthUserId("auth-123");
+      expect(stored).not.toBeNull();
+      expect(stored?.authUserId).toBe("auth-123");
     });
 
     it("should return error when user already exists with authUserId", async () => {
-      // Arrange
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(true)),
-        create: mock(() => Promise.resolve(createValidUser())),
-        findById: mock(() => Promise.resolve(null)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(createValidUser())),
-        delete: mock(() => Promise.resolve()),
-      };
+      // Arrange - seed existing user
+      const existingUser = createValidUser({ authUserId: "auth-existing" });
+      await repo.create(existingUser);
 
-      const useCase = new CreateUserUseCase(mockRepo);
       const input: CreateUserInput = {
         authUserId: "auth-existing",
         firstName: "Jane",
@@ -103,32 +65,15 @@ describe("[UNIT] CreateUserUseCase", () => {
         role: UserRole.USER,
       };
 
-      // Act
-      const result = await runAsResult(useCase.execute(input));
+      // Act & Assert
+      await expect(useCase.execute(input)).rejects.toThrow("already exists");
 
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("already exists");
-      }
-      expect(mockRepo.existsByAuthUserId).toHaveBeenCalledWith("auth-existing");
-      expect(mockRepo.create).not.toHaveBeenCalled();
+      // Verify create was not called again
+      const users = await repo.findAll();
+      expect(users).toHaveLength(1);
     });
 
     it("should return error when domain validation fails for invalid name", async () => {
-      // Arrange
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(createValidUser())),
-        findById: mock(() => Promise.resolve(null)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(createValidUser())),
-        delete: mock(() => Promise.resolve()),
-      };
-
-      const useCase = new CreateUserUseCase(mockRepo);
       const input: CreateUserInput = {
         authUserId: "auth-456",
         firstName: "A", // Too short (less than 2 chars when trimmed)
@@ -136,31 +81,15 @@ describe("[UNIT] CreateUserUseCase", () => {
         role: UserRole.USER,
       };
 
-      // Act
-      const result = await runAsResult(useCase.execute(input));
+      // Act & Assert
+      await expect(useCase.execute(input)).rejects.toThrow("firstName");
 
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("firstName");
-      }
-      expect(mockRepo.create).not.toHaveBeenCalled();
+      // Verify no user was stored
+      const stored = await repo.findByAuthUserId("auth-456");
+      expect(stored).toBeNull();
     });
 
     it("should return error when domain validation fails for empty authUserId", async () => {
-      // Arrange
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(createValidUser())),
-        findById: mock(() => Promise.resolve(null)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(createValidUser())),
-        delete: mock(() => Promise.resolve()),
-      };
-
-      const useCase = new CreateUserUseCase(mockRepo);
       const input: CreateUserInput = {
         authUserId: "", // Empty
         firstName: "John",
@@ -168,32 +97,15 @@ describe("[UNIT] CreateUserUseCase", () => {
         role: UserRole.USER,
       };
 
-      // Act
-      const result = await runAsResult(useCase.execute(input));
+      // Act & Assert
+      await expect(useCase.execute(input)).rejects.toThrow("authUserId");
 
-      // Assert
-      expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("authUserId");
-      }
-      expect(mockRepo.create).not.toHaveBeenCalled();
+      // Verify no user was stored
+      const users = await repo.findAll();
+      expect(users).toHaveLength(0);
     });
 
     it("should use default USER role when role not provided", async () => {
-      // Arrange
-      const mockUser = createValidUser();
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock(() => Promise.resolve(mockUser)),
-        findById: mock(() => Promise.resolve(null)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock(() => Promise.resolve(mockUser)),
-        delete: mock(() => Promise.resolve()),
-      };
-
-      const useCase = new CreateUserUseCase(mockRepo);
       const input: CreateUserInput = {
         authUserId: "auth-789",
         firstName: "Bob",
@@ -202,60 +114,41 @@ describe("[UNIT] CreateUserUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.role).toBe("USER");
-      }
+      expect(result.role).toBe("USER");
+
+      // Verify stored user has USER role
+      const stored = await repo.findByAuthUserId("auth-789");
+      expect(stored?.role).toBe(UserRole.USER);
     });
 
-    it("should support container-based resolution", async () => {
-      // Arrange
-      const containerUser = User.create({
-        authUserId: "auth-container",
-        firstName: "Container",
-        lastName: "User",
-        role: UserRole.USER,
-      }).value as User;
-      const mockRepo: UserRepository = {
-        existsByAuthUserId: mock(() => Promise.resolve(false)),
-        create: mock((user) => Promise.resolve(user)),
-        findById: mock(() => Promise.resolve(null)),
-        findByAuthUserId: mock(() => Promise.resolve(null)),
-        findByRole: mock(() => Promise.resolve([])),
-        findAll: mock(() => Promise.resolve([])),
-        update: mock((user) => Promise.resolve(user)),
-        delete: mock(() => Promise.resolve()),
-      };
-
-      // Register in container using the factory pattern
-      container.register({
-        userRepository: { resolve: () => mockRepo } as any,
-      });
-
-      // Create use case from container - use manual instantiation with resolved repo
-      const userRepo = container.resolve<UserRepository>("userRepository");
-      const useCase = new CreateUserUseCase(userRepo);
+    it("should work with different repository implementations", async () => {
+      // This test verifies the use case works with any UserRepository
+      // by using the in-memory implementation
+      const differentRepo = new InMemoryUserRepository();
+      const differentUseCase = new CreateUserUseCase(differentRepo);
 
       const input: CreateUserInput = {
-        authUserId: "auth-container",
-        firstName: "Container",
-        lastName: "User",
+        authUserId: "auth-different-repo",
+        firstName: "Different",
+        lastName: "Repo",
       };
 
       // Act
-      const result = await runAsResult(useCase.execute(input));
+      const result = await differentUseCase.execute(input);
 
       // Assert
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.authUserId).toBe("auth-container");
-        expect(result.value.firstName).toBe("Container");
-        expect(result.value.lastName).toBe("User");
-      }
-      expect(mockRepo.create).toHaveBeenCalled();
+      expect(result.authUserId).toBe("auth-different-repo");
+      expect(result.firstName).toBe("Different");
+      expect(result.lastName).toBe("Repo");
+
+      // Verify data was stored in the different repository
+      const stored = await differentRepo.findByAuthUserId(
+        "auth-different-repo",
+      );
+      expect(stored).not.toBeNull();
     });
   });
 });

@@ -1,11 +1,9 @@
-import { Effect } from "effect";
 import type { UserRepository } from "../ports/UserRepository";
 import type { User } from "@mirai-app/domain";
 import {
   UseCaseNotFoundError,
   UseCaseRepositoryError,
   UseCaseValidationError,
-  type UseCaseError,
 } from "../errors";
 
 /**
@@ -53,68 +51,63 @@ export interface UpdateUserOutput {
 export class UpdateUserUseCase {
   constructor(private userRepository: UserRepository) {}
 
-  execute(
-    input: UpdateUserInput,
-  ): Effect.Effect<UpdateUserOutput, UseCaseError> {
-    const userRepository = this.userRepository;
-    const toOutput = this.toOutput.bind(this);
+  async execute(input: UpdateUserInput): Promise<UpdateUserOutput> {
+    // Load user
+    let user: User | null;
+    try {
+      user = await this.userRepository.findById(input.userId);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "UpdateUser.findById",
+        message: "Failed to load user",
+        cause,
+      });
+    }
 
-    return Effect.gen(function* () {
-      const user = yield* Effect.tryPromise({
-        try: () => userRepository.findById(input.userId),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "UpdateUser.findById",
-            message: "Failed to load user",
-            cause,
-          }),
+    if (!user) {
+      throw new UseCaseNotFoundError({
+        entity: "User",
+        message: "User not found",
+      });
+    }
+
+    let updatedUser: User = user;
+
+    // Update name if provided
+    if (input.firstName !== undefined || input.lastName !== undefined) {
+      const nameResult = updatedUser.updateName({
+        firstName: input.firstName ?? user.firstName,
+        lastName: input.lastName ?? user.lastName,
       });
 
-      if (!user) {
-        return yield* Effect.fail(
-          new UseCaseNotFoundError({
-            entity: "User",
-            message: "User not found",
-          }),
-        );
-      }
-
-      let updatedUser: User = user;
-
-      if (input.firstName !== undefined || input.lastName !== undefined) {
-        const nameResult = updatedUser.updateName({
-          firstName: input.firstName ?? user.firstName,
-          lastName: input.lastName ?? user.lastName,
+      if (nameResult.kind === "err") {
+        throw new UseCaseValidationError({
+          field: "name",
+          message: nameResult.error,
         });
-
-        if (nameResult.kind === "err") {
-          return yield* Effect.fail(
-            new UseCaseValidationError({
-              field: "name",
-              message: nameResult.error,
-            }),
-          );
-        }
-
-        updatedUser = nameResult.value;
       }
 
-      if (input.hasAvatar !== undefined) {
-        updatedUser = updatedUser.setAvatar(input.hasAvatar);
-      }
+      updatedUser = nameResult.value;
+    }
 
-      const saved = yield* Effect.tryPromise({
-        try: () => userRepository.update(updatedUser),
-        catch: (cause) =>
-          new UseCaseRepositoryError({
-            operation: "UpdateUser.update",
-            message: "Failed to update user",
-            cause,
-          }),
+    // Update avatar if provided
+    if (input.hasAvatar !== undefined) {
+      updatedUser = updatedUser.setAvatar(input.hasAvatar);
+    }
+
+    // Save updated user
+    let saved: User;
+    try {
+      saved = await this.userRepository.update(updatedUser);
+    } catch (cause) {
+      throw new UseCaseRepositoryError({
+        operation: "UpdateUser.update",
+        message: "Failed to update user",
+        cause,
       });
+    }
 
-      return toOutput(saved);
-    });
+    return this.toOutput(saved);
   }
 
   private toOutput(user: User): UpdateUserOutput {

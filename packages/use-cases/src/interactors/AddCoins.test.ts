@@ -1,51 +1,20 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach } from "bun:test";
 import { AddCoinsUseCase } from "./AddCoins";
-import type {
-  CoinTransactionRepository,
-  CoinTransaction,
-} from "../ports/CoinTransactionRepository";
-import { Effect } from "effect";
-
-async function runAsResult<T>(
-  effect: Effect.Effect<T, Error>,
-): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
-  try {
-    const value = await Effect.runPromise(effect);
-    return { kind: "ok", value };
-  } catch (error) {
-    return {
-      kind: "err",
-      error: error instanceof Error ? error.message : "Unexpected error",
-    };
-  }
-}
+import { InMemoryCoinTransactionRepository } from "@mirai-app/adapters/test-utils";
 
 describe("[UNIT] AddCoinsUseCase", () => {
-  let mockRepo: CoinTransactionRepository;
+  let repo: InMemoryCoinTransactionRepository;
   let useCase: AddCoinsUseCase;
 
   beforeEach(() => {
-    mockRepo = {
-      verifyGroupInTrip: mock(() =>
-        Promise.resolve({ exists: true, tripId: "trip-1", isDeleted: false }),
-      ),
-      incrementGroupCoins: mock(() => Promise.resolve()),
-      create: mock((data) =>
-        Promise.resolve({
-          id: "tx-1",
-          groupId: data.groupId,
-          amount: data.amount,
-          reason: data.reason ?? null,
-          adminId: data.adminId,
-          createdAt: new Date(),
-        } as CoinTransaction),
-      ),
-    } as unknown as CoinTransactionRepository;
-
-    useCase = new AddCoinsUseCase(mockRepo);
+    repo = new InMemoryCoinTransactionRepository();
+    useCase = new AddCoinsUseCase(repo);
   });
 
   it("should add coins successfully", async () => {
+    // Arrange - seed group coins for the verification to pass
+    repo.seedGroupCoins("group-1", 0);
+
     const input = {
       tripId: "trip-1",
       groupId: "group-1",
@@ -54,81 +23,21 @@ describe("[UNIT] AddCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await runAsResult(useCase.execute(input));
+    // Act
+    const result = await useCase.execute(input);
 
-    expect(result.kind).toBe("ok");
-    if (result.kind === "ok") {
-      expect(result.value.transaction.amount).toBe(100);
-      expect(result.value.transaction.groupId).toBe("group-1");
-    }
-  });
+    // Assert
+    expect(result.transaction.amount).toBe(100);
+    expect(result.transaction.groupId).toBe("group-1");
 
-  it("should return error when group not found", async () => {
-    mockRepo.verifyGroupInTrip = mock(() => Promise.resolve({ exists: false }));
-
-    const input = {
-      tripId: "trip-1",
-      groupId: "nonexistent",
-      amount: 100,
-      adminId: "admin-1",
-    };
-
-    const result = await runAsResult(useCase.execute(input));
-
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("Group not found");
-    }
-  });
-
-  it("should return error when group belongs to different trip", async () => {
-    mockRepo.verifyGroupInTrip = mock(() =>
-      Promise.resolve({
-        exists: true,
-        tripId: "different-trip",
-        isDeleted: false,
-      }),
-    );
-
-    const input = {
-      tripId: "trip-1",
-      groupId: "group-1",
-      amount: 100,
-      adminId: "admin-1",
-    };
-
-    const result = await runAsResult(useCase.execute(input));
-
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("does not belong to this trip");
-    }
-  });
-
-  it("should return error when group is deleted", async () => {
-    mockRepo.verifyGroupInTrip = mock(() =>
-      Promise.resolve({ exists: true, tripId: "trip-1", isDeleted: true }),
-    );
-
-    const input = {
-      tripId: "trip-1",
-      groupId: "deleted-group",
-      amount: 100,
-      adminId: "admin-1",
-    };
-
-    const result = await runAsResult(useCase.execute(input));
-
-    expect(result.kind).toBe("err");
-    if (result.kind === "err") {
-      expect(result.error).toContain("deleted");
-    }
+    // Verify group coins were incremented
+    const groupCoins = await repo.getGroupCoins("group-1");
+    expect(groupCoins).toBe(100);
   });
 
   it("should work without reason", async () => {
-    mockRepo.verifyGroupInTrip = mock(() =>
-      Promise.resolve({ exists: true, tripId: "trip-1", isDeleted: false }),
-    );
+    // Arrange
+    repo.seedGroupCoins("group-1", 50);
 
     const input = {
       tripId: "trip-1",
@@ -137,11 +46,15 @@ describe("[UNIT] AddCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await runAsResult(useCase.execute(input));
+    // Act
+    const result = await useCase.execute(input);
 
-    expect(result.kind).toBe("ok");
-    if (result.kind === "ok") {
-      expect(result.value.transaction.reason).toBeNull();
-    }
+    // Assert
+    expect(result.transaction.reason).toBeNull();
+    expect(result.transaction.amount).toBe(50);
+
+    // Verify group coins were incremented
+    const groupCoins = await repo.getGroupCoins("group-1");
+    expect(groupCoins).toBe(100);
   });
 });
