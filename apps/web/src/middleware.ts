@@ -6,7 +6,6 @@ import { env } from "./lib/env";
 const PUBLIC_ROUTES = new Set(["/login"]);
 
 const getDbRole = async (accessToken: string): Promise<string | null> => {
-  console.log("[Middleware] trpcUrl:", env.trpcUrl);
   try {
     const trpcClient = createTRPCUntypedClient({
       links: [
@@ -20,7 +19,6 @@ const getDbRole = async (accessToken: string): Promise<string | null> => {
     });
 
     const me = await trpcClient.query("user.getMy");
-    console.log("[Middleware] user.getMy response:", me);
     // tRPC response with SuperJSON transformer has data in .json property
     const userData = (me as { json?: { role?: string } })?.json ?? me;
     if (
@@ -71,13 +69,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const roleFromDb = await getDbRole(token);
     const role =
       roleFromDb ?? (data.user.app_metadata?.role as string | undefined);
-
-    console.log("[Middleware] roleFromDb:", roleFromDb);
-    console.log(
-      "[Middleware] app_metadata.role:",
-      data.user.app_metadata?.role,
-    );
-    console.log("[Middleware] final role:", role);
 
     if (typeof role !== "string" || role.toUpperCase() !== "ADMIN") {
       console.error("[Middleware] Forbidden: role is not ADMIN");
