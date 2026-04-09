@@ -2,15 +2,18 @@
  * Storage Controller
  *
  * tRPC-ready controller wrapping StorageController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { StorageController } from "../../controllers/storage-controller";
+import { requireAuth } from "../controller-helpers";
 
 export const storageController = {
-  createUploadUrl: protectedProcedure
+  createUploadUrl: publicProcedure
     .input(
       z.object({
         storagePath: z.string().min(1),
@@ -18,6 +21,9 @@ export const storageController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const controller = new StorageController(ctx.supabase);
       const result = await controller.createUploadUrl({
         storagePath: input.storagePath,
@@ -33,7 +39,7 @@ export const storageController = {
       return result.data;
     }),
 
-  createDownloadUrl: protectedProcedure
+  createDownloadUrl: publicProcedure
     .input(
       z.object({
         storagePath: z.string().min(1),
@@ -46,6 +52,9 @@ export const storageController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const controller = new StorageController(ctx.supabase);
       const result = await controller.createDownloadUrl({
         storagePath: input.storagePath,
@@ -61,13 +70,16 @@ export const storageController = {
       return result.data;
     }),
 
-  createPublicUrl: protectedProcedure
+  createPublicUrl: publicProcedure
     .input(
       z.object({
         storagePath: z.string().min(1),
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const controller = new StorageController(ctx.supabase);
       const result = await controller.createPublicUrl({
         storagePath: input.storagePath,

@@ -2,13 +2,16 @@
  * Submission Report Controller
  *
  * tRPC-ready controller wrapping SubmissionReportController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, moderatorProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { SubmissionReportController } from "../../controllers/submissionReport-controller";
 import { PrismaSubmissionReportRepository } from "../../gateways/PrismaSubmissionReportRepository";
+import { requireAuth, requireModerator } from "../controller-helpers";
 
 async function buildAuthEmailLookup(
   supabase: {
@@ -40,7 +43,7 @@ function resolveAuthEmail(
 }
 
 export const submissionReportController = {
-  create: protectedProcedure
+  create: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -50,6 +53,9 @@ export const submissionReportController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Verify trip not ended
       const trip = await ctx.db.trip.findUnique({
         where: { id: input.tripId },
@@ -76,7 +82,7 @@ export const submissionReportController = {
       const participant = await ctx.db.tripParticipant.findUnique({
         where: {
           userId_tripId: {
-            userId: ctx.dbUser.id,
+            userId: authContext.userId,
             tripId: input.tripId,
           },
         },
@@ -162,9 +168,12 @@ export const submissionReportController = {
       };
     }),
 
-  getBySubmission: moderatorProcedure
+  getBySubmission: publicProcedure
     .input(z.object({ submissionId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaSubmissionReportRepository(ctx.db);
       const controller = new SubmissionReportController(repo);
       const result = await controller.getBySubmission({

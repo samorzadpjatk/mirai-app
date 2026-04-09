@@ -2,15 +2,18 @@
  * Trip Controller
  *
  * tRPC-ready controller wrapping TripController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, adminProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { TripController } from "../../controllers/trip-controller";
+import { requireAuth, requireAdmin } from "../controller-helpers";
 
 export const tripController = {
-  getAll: protectedProcedure
+  getAll: publicProcedure
     .input(
       z
         .object({
@@ -24,6 +27,9 @@ export const tripController = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       // Using DI container to resolve TripController - no manual instantiation needed
       const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.list({
@@ -35,11 +41,13 @@ export const tripController = {
         throw new TRPCError({ code: "BAD_REQUEST", message: result.error });
       }
 
-      // Filter trips where user is a participant
+      // Filter trips where user is a participant - use authContext.userId
       const userTrips = [];
       for (const trip of result.data) {
         const participant = await ctx.db.tripParticipant.findUnique({
-          where: { userId_tripId: { userId: ctx.dbUser.id, tripId: trip.id } },
+          where: {
+            userId_tripId: { userId: authContext.userId, tripId: trip.id },
+          },
         });
         if (participant) {
           userTrips.push(trip);
@@ -57,9 +65,12 @@ export const tripController = {
       };
     }),
 
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       // Using DI container to resolve TripController - no manual instantiation needed
       const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.getById({ id: input.id });
@@ -75,9 +86,12 @@ export const tripController = {
       return result.data;
     }),
 
-  getByIdAdmin: adminProcedure
+  getByIdAdmin: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       // Using DI container to resolve TripController - no manual instantiation needed
       const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.getById({ id: input.id });
@@ -93,7 +107,7 @@ export const tripController = {
       return result.data;
     }),
 
-  create: adminProcedure
+  create: publicProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -104,6 +118,9 @@ export const tripController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       // Using DI container to resolve TripController - no manual instantiation needed
       const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.create({
@@ -121,7 +138,7 @@ export const tripController = {
       return result.data;
     }),
 
-  update: adminProcedure
+  update: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -133,6 +150,9 @@ export const tripController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       // Using DI container to resolve TripController - no manual instantiation needed
       const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.update({
@@ -150,9 +170,12 @@ export const tripController = {
       return result.data;
     }),
 
-  delete: adminProcedure
+  delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       // Using DI container to resolve TripController - no manual instantiation needed
       const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.delete({ id: input.id });

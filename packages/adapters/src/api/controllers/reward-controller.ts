@@ -2,28 +2,46 @@
  * Reward Controller
  *
  * tRPC-ready controller wrapping RewardController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, moderatorProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { RewardController } from "../../controllers/reward-controller";
 import {
   PrismaRewardRepository,
   PrismaRewardPurchaseRepository,
 } from "../../gateways/PrismaRewardRepository";
+import { PrismaTripPointsCalculator } from "../../services/PrismaTripPointsCalculator";
+import { PrismaGroupCoinsService } from "../../services/PrismaGroupCoinsService";
+import { PrismaTripAccessChecker } from "../../services/PrismaTripAccessChecker";
+import { requireAuth, requireModerator } from "../controller-helpers";
 
 // Helper to create reward controller with dependencies
 const createRewardController = (ctx: { db: unknown }) => {
   const rewardRepo = new PrismaRewardRepository(ctx.db);
   const purchaseRepo = new PrismaRewardPurchaseRepository(ctx.db);
-  return new RewardController(rewardRepo, purchaseRepo);
+  const pointsCalculator = new PrismaTripPointsCalculator(ctx.db);
+  const coinsService = new PrismaGroupCoinsService(ctx.db);
+  const accessChecker = new PrismaTripAccessChecker(ctx.db);
+  return new RewardController(
+    rewardRepo,
+    purchaseRepo,
+    pointsCalculator,
+    coinsService,
+    accessChecker,
+  );
 };
 
 export const rewardController = {
-  getByTrip: protectedProcedure
+  getByTrip: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
 
       const result = await controller.getByTrip({
@@ -39,7 +57,7 @@ export const rewardController = {
       return result.data;
     }),
 
-  getByTripAdmin: moderatorProcedure
+  getByTripAdmin: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -52,6 +70,9 @@ export const rewardController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const result = await controller.getByTripAdmin({
         tripId: input.tripId,
@@ -67,9 +88,12 @@ export const rewardController = {
       return result.data;
     }),
 
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
 
       const result = await controller.getById({ rewardId: input.id });
@@ -83,7 +107,7 @@ export const rewardController = {
       return result.data;
     }),
 
-  create: moderatorProcedure
+  create: publicProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -97,6 +121,9 @@ export const rewardController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const images =
         input.images && input.images.length > 0
@@ -113,8 +140,8 @@ export const rewardController = {
         images,
         isHidden: input.isHidden,
         tripId: input.tripId,
-        createdById: ctx.dbUser.id,
-        creatorRole: ctx.dbUser.role,
+        createdById: authContext.userId,
+        creatorRole: authContext.role,
       });
 
       if (!result.success) {
@@ -126,7 +153,7 @@ export const rewardController = {
       return result.data;
     }),
 
-  update: moderatorProcedure
+  update: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -139,6 +166,9 @@ export const rewardController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const images =
         input.images !== undefined
@@ -169,7 +199,7 @@ export const rewardController = {
       return result.data;
     }),
 
-  setHidden: moderatorProcedure
+  setHidden: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -177,6 +207,9 @@ export const rewardController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const result = await controller.setHidden({
         rewardId: input.id,
@@ -194,9 +227,12 @@ export const rewardController = {
       return result.data;
     }),
 
-  delete: moderatorProcedure
+  delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const result = await controller.delete({ rewardId: input.id });
 
@@ -211,7 +247,7 @@ export const rewardController = {
       return result.data;
     }),
 
-  purchase: protectedProcedure
+  purchase: publicProcedure
     .input(
       z.object({
         rewardId: z.string(),
@@ -219,11 +255,14 @@ export const rewardController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const result = await controller.purchase({
         rewardId: input.rewardId,
         quantity: input.quantity,
-        userId: ctx.dbUser.id,
+        userId: authContext.userId,
       });
 
       if (!result.success) {
@@ -239,7 +278,7 @@ export const rewardController = {
       return result.data;
     }),
 
-  updateMyPurchaseStatus: protectedProcedure
+  updateMyPurchaseStatus: publicProcedure
     .input(
       z.object({
         purchaseId: z.string(),
@@ -247,11 +286,14 @@ export const rewardController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const result = await controller.updateMyPurchaseStatus({
         purchaseId: input.purchaseId,
         status: input.status,
-        userId: ctx.dbUser.id,
+        userId: authContext.userId,
       });
 
       if (!result.success) {
@@ -263,7 +305,7 @@ export const rewardController = {
       return result.data;
     }),
 
-  updatePurchaseStatus: moderatorProcedure
+  updatePurchaseStatus: publicProcedure
     .input(
       z.object({
         purchaseId: z.string(),
@@ -278,11 +320,14 @@ export const rewardController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const result = await controller.updatePurchaseStatus({
         purchaseId: input.purchaseId,
         status: input.status,
-        updatedById: ctx.dbUser.id,
+        updatedById: authContext.userId,
         collectionMethod: input.collectionMethod,
       });
 
@@ -297,7 +342,7 @@ export const rewardController = {
       return result.data;
     }),
 
-  getPurchaseHistory: protectedProcedure
+  getPurchaseHistory: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -310,10 +355,15 @@ export const rewardController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      const authContext = await requireAuth(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const result = await controller.getPurchaseHistory({
-        userId: ctx.dbUser.id,
+        userId: authContext.userId,
         tripId: input.tripId,
+        isStaff:
+          authContext.role === "ADMIN" || authContext.role === "MODERATOR",
         pagination: input.pagination,
       });
 
@@ -326,9 +376,12 @@ export const rewardController = {
       return result.data;
     }),
 
-  getTotalAvailablePoints: moderatorProcedure
+  getTotalAvailablePoints: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const controller = createRewardController(ctx);
       const result = await controller.getTotalAvailablePoints({
         tripId: input.tripId,

@@ -2,16 +2,19 @@
  * Notification Schedule Controller
  *
  * tRPC-ready controller wrapping NotificationScheduleController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { moderatorProcedure, adminProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { NotificationScheduleController } from "../../controllers/notification-schedule-controller";
 import { PrismaNotificationScheduleRepository } from "../../gateways/PrismaNotificationScheduleRepository";
+import { requireAdmin, requireModerator } from "../controller-helpers";
 
 export const notificationScheduleController = {
-  getAll: moderatorProcedure
+  getAll: publicProcedure
     .input(
       z.object({
         pagination: z
@@ -41,6 +44,9 @@ export const notificationScheduleController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.getAll({
@@ -57,9 +63,12 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  getById: moderatorProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.getById({ id: input.id });
@@ -75,7 +84,7 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  create: adminProcedure
+  create: publicProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -98,6 +107,9 @@ export const notificationScheduleController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.create(input);
@@ -111,7 +123,7 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  update: adminProcedure
+  update: publicProcedure
     .input(
       z.object({
         id: z.string().uuid(),
@@ -127,6 +139,9 @@ export const notificationScheduleController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.update(input);
@@ -142,9 +157,12 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  delete: adminProcedure
+  delete: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.delete({ id: input.id });
@@ -160,9 +178,12 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  toggleActive: adminProcedure
+  toggleActive: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.toggleActive({ id: input.id });
@@ -178,9 +199,12 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  duplicate: adminProcedure
+  duplicate: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.duplicate({ id: input.id });
@@ -196,9 +220,12 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  bulkToggleActive: adminProcedure
+  bulkToggleActive: publicProcedure
     .input(z.object({ ids: z.array(z.string().uuid()) }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.bulkToggleActive({ ids: input.ids });
@@ -212,9 +239,12 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  bulkDelete: adminProcedure
+  bulkDelete: publicProcedure
     .input(z.object({ ids: z.array(z.string().uuid()) }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.bulkDelete({ ids: input.ids });
@@ -228,7 +258,7 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  getActive: moderatorProcedure
+  getActive: publicProcedure
     .input(
       z.object({
         tripId: z.string().optional(),
@@ -244,6 +274,9 @@ export const notificationScheduleController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.getActive({
@@ -260,7 +293,7 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  getUpcoming: moderatorProcedure
+  getUpcoming: publicProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(100).default(50),
@@ -268,6 +301,9 @@ export const notificationScheduleController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.getUpcoming({
@@ -284,7 +320,7 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  updateLastRun: moderatorProcedure
+  updateLastRun: publicProcedure
     .input(
       z.object({
         id: z.string().uuid(),
@@ -294,6 +330,9 @@ export const notificationScheduleController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.updateLastRun(input);
@@ -309,7 +348,7 @@ export const notificationScheduleController = {
       return result.data;
     }),
 
-  getExecutionHistory: moderatorProcedure
+  getExecutionHistory: publicProcedure
     .input(
       z.object({
         scheduleId: z.string().uuid(),
@@ -322,6 +361,9 @@ export const notificationScheduleController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require moderator or admin role
+      await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationScheduleRepository(ctx.db);
       const controller = new NotificationScheduleController(repo);
       const result = await controller.getExecutionHistory({

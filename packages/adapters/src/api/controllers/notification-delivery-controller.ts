@@ -2,13 +2,16 @@
  * Notification Delivery Controller
  *
  * tRPC-ready controller wrapping NotificationDeliveryController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { adminProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { NotificationDeliveryController } from "../../controllers/notification-delivery-controller";
 import { PrismaNotificationDeliveryRepository } from "../../gateways/PrismaNotificationDeliveryRepository";
+import { requireAdmin } from "../controller-helpers";
 import {
   GetDeliveriesUseCase,
   GetDeliveryByNotificationIdUseCase,
@@ -28,7 +31,7 @@ const createNotificationDeliveryController = (ctx: { db: unknown }) => {
 };
 
 export const notificationDeliveryController = {
-  getDeliveries: adminProcedure
+  getDeliveries: publicProcedure
     .input(
       z
         .object({
@@ -45,6 +48,9 @@ export const notificationDeliveryController = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const controller = createNotificationDeliveryController(ctx);
       const result = await controller.getDeliveries({
         tripId: input?.tripId,
@@ -65,7 +71,7 @@ export const notificationDeliveryController = {
       return result.data;
     }),
 
-  getDeliveryByNotificationId: adminProcedure
+  getDeliveryByNotificationId: publicProcedure
     .input(
       z.object({
         notificationId: z.string(),
@@ -73,6 +79,9 @@ export const notificationDeliveryController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const controller = createNotificationDeliveryController(ctx);
       const result = await controller.getDeliveryByNotificationId({
         notificationId: input.notificationId,
@@ -91,7 +100,7 @@ export const notificationDeliveryController = {
       return result.data;
     }),
 
-  getDeliveryStats: adminProcedure
+  getDeliveryStats: publicProcedure
     .input(
       z
         .object({
@@ -103,6 +112,9 @@ export const notificationDeliveryController = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const controller = createNotificationDeliveryController(ctx);
       const result = await controller.getDeliveryStats({
         tripId: input?.tripId,
@@ -120,7 +132,7 @@ export const notificationDeliveryController = {
       return result.data;
     }),
 
-  getFailedDeliveries: adminProcedure
+  getFailedDeliveries: publicProcedure
     .input(
       z
         .object({
@@ -131,6 +143,9 @@ export const notificationDeliveryController = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const controller = createNotificationDeliveryController(ctx);
       const result = await controller.getFailedDeliveries({
         tripId: input?.tripId,

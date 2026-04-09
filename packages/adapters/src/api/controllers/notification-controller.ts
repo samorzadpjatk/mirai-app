@@ -2,20 +2,23 @@
  * Notification Controller
  *
  * tRPC-ready controller wrapping NotificationController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  protectedProcedure,
-  moderatorProcedure,
-  adminProcedure,
-} from "../trpc";
+import { publicProcedure } from "../trpc";
 import { NotificationController } from "../../controllers/notification-controller";
 import { PrismaNotificationRepository } from "../../gateways/PrismaNotificationRepository";
+import {
+  requireAuth,
+  requireAdmin,
+  requireModerator,
+} from "../controller-helpers";
 
 export const notificationController = {
-  getAllMy: protectedProcedure
+  getAllMy: publicProcedure
     .input(
       z.object({
         page: z.number().min(1).default(1),
@@ -23,6 +26,9 @@ export const notificationController = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      // Require authentication
+      await requireAuth(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationRepository(ctx.db);
       const controller = new NotificationController(repo);
       const result = await controller.list({
@@ -44,7 +50,7 @@ export const notificationController = {
       };
     }),
 
-  getAll: adminProcedure
+  getAll: publicProcedure
     .input(
       z
         .object({
@@ -59,6 +65,9 @@ export const notificationController = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationRepository(ctx.db);
       const controller = new NotificationController(repo);
 
@@ -97,7 +106,7 @@ export const notificationController = {
       };
     }),
 
-  create: moderatorProcedure
+  create: publicProcedure
     .input(
       z.object({
         title: z.string().min(1),
@@ -108,11 +117,14 @@ export const notificationController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require moderator role
+      const authContext = await requireModerator(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationRepository(ctx.db);
       const controller = new NotificationController(repo);
       const result = await controller.create({
         ...input,
-        createdById: ctx.dbUser.id,
+        createdById: authContext.userId,
         scheduledFor: null,
       });
 
@@ -122,7 +134,7 @@ export const notificationController = {
       return result.data;
     }),
 
-  update: adminProcedure
+  update: publicProcedure
     .input(
       z.object({
         notificationId: z.string(),
@@ -133,6 +145,9 @@ export const notificationController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationRepository(ctx.db);
       const controller = new NotificationController(repo);
       const result = await controller.update({
@@ -149,7 +164,7 @@ export const notificationController = {
       return result.data;
     }),
 
-  updateStatus: adminProcedure
+  updateStatus: publicProcedure
     .input(
       z.object({
         notificationId: z.string(),
@@ -157,6 +172,9 @@ export const notificationController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationRepository(ctx.db);
       const controller = new NotificationController(repo);
       const result = await controller.updateStatus({
@@ -170,9 +188,12 @@ export const notificationController = {
       return result.data;
     }),
 
-  delete: adminProcedure
+  delete: publicProcedure
     .input(z.object({ notificationId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repo = new PrismaNotificationRepository(ctx.db);
       const controller = new NotificationController(repo);
       const result = await controller.delete({ id: input.notificationId });

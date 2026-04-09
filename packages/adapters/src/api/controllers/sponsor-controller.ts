@@ -2,13 +2,16 @@
  * Sponsor Controller
  *
  * tRPC-ready controller wrapping SponsorController with proper procedure types.
+ * Auth is handled at the controller level - uses publicProcedure and extracts
+ * token from HTTP headers.
  */
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { publicProcedure, adminProcedure } from "../trpc";
+import { publicProcedure } from "../trpc";
 import { SponsorController } from "../../controllers/sponsor-controller";
 import { PrismaSponsorRepository } from "../../gateways/PrismaSponsorRepository";
+import { requireAdmin } from "../controller-helpers";
 
 export const sponsorController = {
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -64,7 +67,7 @@ export const sponsorController = {
       return result.data;
     }),
 
-  create: adminProcedure
+  create: publicProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -77,6 +80,9 @@ export const sponsorController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
@@ -89,7 +95,7 @@ export const sponsorController = {
       return result.data;
     }),
 
-  update: adminProcedure
+  update: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -103,6 +109,9 @@ export const sponsorController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
@@ -123,9 +132,12 @@ export const sponsorController = {
       return result.data;
     }),
 
-  delete: adminProcedure
+  delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
@@ -143,7 +155,7 @@ export const sponsorController = {
       return result.data;
     }),
 
-  addToTrip: adminProcedure
+  addToTrip: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -151,6 +163,9 @@ export const sponsorController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
@@ -171,7 +186,7 @@ export const sponsorController = {
       return result.data;
     }),
 
-  removeFromTrip: adminProcedure
+  removeFromTrip: publicProcedure
     .input(
       z.object({
         tripId: z.string(),
@@ -179,6 +194,9 @@ export const sponsorController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Require admin role
+      await requireAdmin(ctx.headers, ctx.di);
+
       const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
