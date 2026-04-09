@@ -20,9 +20,9 @@ describe("useChallengeDetails", () => {
     expect(useChallengeDetails).toBeDefined();
     expect(typeof useChallengeDetails).toBe("function");
   });
-  test("hook accepts challengeId parameter", async () => {
+  test("hook accepts challengeId and tripId parameters", async () => {
     const { useChallengeDetails } = await import("../useChallengeDetails");
-    expect(useChallengeDetails.length).toBe(1);
+    expect(useChallengeDetails.length).toBe(2);
   });
 });
 
@@ -32,8 +32,8 @@ describe("useChallengeCapture", () => {
     expect(useChallengeCapture).toBeDefined();
     expect(typeof useChallengeCapture).toBe("function");
   });
-  test("hook accepts tripId and challengeId parameters", async () => {
+  test("hook accepts options object parameter", async () => {
     const { useChallengeCapture } = await import("../useChallengeCapture");
-    expect(useChallengeCapture.length).toBe(2);
+    expect(useChallengeCapture.length).toBe(1);
   });
 });

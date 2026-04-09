@@ -37,7 +37,15 @@ export const watchPositionAsync = jest.fn((options, callback) => {
   });
 });
 
-export const LocationAccuracy = {
+export const hasStartedLocationUpdatesAsync = jest.fn(() =>
+  Promise.resolve(false),
+);
+
+export const startLocationUpdatesAsync = jest.fn(() => Promise.resolve());
+
+export const stopLocationUpdatesAsync = jest.fn(() => Promise.resolve());
+
+export const Accuracy = {
   Lowest: 1,
   Low: 2,
   Balanced: 3,
@@ -46,6 +54,9 @@ export const LocationAccuracy = {
   BestForNavigation: 6,
 };
 
+// Also export as LocationAccuracy for backward compatibility
+export const LocationAccuracy = Accuracy;
+
 export const LocationActivityType = {
   Other: 1,
   AutomotiveNavigation: 2,
@@ -53,6 +64,9 @@ export const LocationActivityType = {
   OtherNavigation: 4,
   Airborne: 5,
 };
+
+// Also export as ActivityType for consistency
+export const ActivityType = LocationActivityType;
 
 export const PermissionStatus = {
   GRANTED: "granted",
@@ -67,7 +81,12 @@ export default {
   getBackgroundPermissionsAsync,
   getCurrentPositionAsync,
   watchPositionAsync,
+  hasStartedLocationUpdatesAsync,
+  startLocationUpdatesAsync,
+  stopLocationUpdatesAsync,
+  Accuracy,
   LocationAccuracy,
+  ActivityType,
   LocationActivityType,
   PermissionStatus,
 };

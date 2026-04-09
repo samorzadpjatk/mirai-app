@@ -82,14 +82,6 @@ export default function TripInfoScreen() {
       const infopackResource = getResource("INFOPACK");
 
       // Note: File existence checking will be handled by the download hook's cache mechanism
-      console.log(
-        "PDF Map resource:",
-        pdfMapResource ? "available" : "not found",
-      );
-      console.log(
-        "Infopack resource:",
-        infopackResource ? "available" : "not found",
-      );
     }
   }, [isLoading, getResource]);
 
@@ -484,8 +476,8 @@ export default function TripInfoScreen() {
               trustAllCerts={false}
               minScale={1}
               maxScale={8}
-              onLoadComplete={(numberOfPages) => {
-                console.log(`PDF loaded with ${numberOfPages} pages`);
+              onLoadComplete={() => {
+                // PDF loaded successfully
               }}
               onError={(error) => {
                 console.error("PDF Error:", error);

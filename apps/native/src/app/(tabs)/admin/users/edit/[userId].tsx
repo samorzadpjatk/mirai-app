@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +15,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { FormField, ThemedTextInput, DateTimePickerModal } from "~/components/common/ui";
+import {
+  FormField,
+  ThemedTextInput,
+  DateTimePickerModal,
+} from "~/components/common/ui";
 
 export default function AdminEditUserScreen() {
   const router = useRouter();
@@ -17,12 +28,18 @@ export default function AdminEditUserScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ userId: string; tripId?: string }>();
   const userId = params.userId;
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId =
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
   const { data: user, isLoading } = useQuery(
-    trpc.user.getById.queryOptions({ id: userId }, {
-      enabled: !!userId,
-    })
+    trpc.user.getById.queryOptions(
+      { id: userId },
+      {
+        enabled: !!userId,
+      },
+    ),
   );
 
   const { data: participant } = useQuery(
@@ -30,23 +47,28 @@ export default function AdminEditUserScreen() {
       { id: userId, tripId },
       {
         enabled: Boolean(userId && tripId),
-      }
-    )
+      },
+    ),
   );
 
   const { data: groupsResponse, error: groupsError } = useQuery(
-    trpc.group.getAll.queryOptions({ tripId, pagination: { limit: 100, offset: 0 } }, {
-      enabled: Boolean(tripId),
-    })
+    trpc.group.getAll.queryOptions(
+      { tripId, pagination: { limit: 100, offset: 0 } },
+      {
+        enabled: Boolean(tripId),
+      },
+    ),
   );
   const groups = groupsResponse?.groups ?? [];
-  console.debug('EditUser groups debug', { tripId, groupsResponse, groups, groupsError });
-
 
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
-  const [wristNumber, setWristNumber] = useState(participant?.trips?.[0]?.wristNumber ?? "");
-  const [houseNumber, setHouseNumber] = useState(participant?.trips?.[0]?.houseNumber ?? "");
+  const [wristNumber, setWristNumber] = useState(
+    participant?.trips?.[0]?.wristNumber ?? "",
+  );
+  const [houseNumber, setHouseNumber] = useState(
+    participant?.trips?.[0]?.houseNumber ?? "",
+  );
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(() => {
     const participantTrip = participant?.trips?.[0];
     return participantTrip?.group?.id ?? null;
@@ -148,7 +170,10 @@ export default function AdminEditUserScreen() {
           queryKey: [["user", "getAll"], { input: { tripId } }],
         });
         await queryClient.invalidateQueries({
-          queryKey: [["user", "getTripParticipant"], { input: { userId, tripId } }],
+          queryKey: [
+            ["user", "getTripParticipant"],
+            { input: { userId, tripId } },
+          ],
         });
         await queryClient.invalidateQueries({
           queryKey: [["user", "getById"], { input: { id: userId } }],
@@ -158,10 +183,9 @@ export default function AdminEditUserScreen() {
       onError: (error) => {
         Alert.alert("Error", `Failed to assign group: ${error.message}`);
       },
-    })
+    }),
   );
 
-  
   const handleSave = async () => {
     if (!user || !userId) return;
 
@@ -181,13 +205,26 @@ export default function AdminEditUserScreen() {
           lastName: trimmedLastName,
         }),
         wristNumber.trim()
-          ? updateWristNumberMutation.mutateAsync({ userId, tripId, wristNumber })
+          ? updateWristNumberMutation.mutateAsync({
+              userId,
+              tripId,
+              wristNumber,
+            })
           : Promise.resolve(),
         houseNumber.trim()
-          ? updateHouseNumberMutation.mutateAsync({ userId, tripId, houseNumber })
+          ? updateHouseNumberMutation.mutateAsync({
+              userId,
+              tripId,
+              houseNumber,
+            })
           : Promise.resolve(),
-        selectedGroupId && selectedGroupId !== (participant?.trips?.[0]?.group?.id ?? null)
-          ? assignToGroupMutation.mutateAsync({ userId, groupId: selectedGroupId, tripId })
+        selectedGroupId &&
+        selectedGroupId !== (participant?.trips?.[0]?.group?.id ?? null)
+          ? assignToGroupMutation.mutateAsync({
+              userId,
+              groupId: selectedGroupId,
+              tripId,
+            })
           : Promise.resolve(),
       ]);
 
@@ -206,13 +243,15 @@ export default function AdminEditUserScreen() {
         text: "Ban",
         style: "destructive",
         onPress: () => {
-          banUserMutation.mutateAsync({
-            userId,
-            bannedUntilMs: banUntil.getTime(),
-            reason: banReason.trim(),
-          }).catch(() => {
-            // Error handling is done in the mutation
-          });
+          banUserMutation
+            .mutateAsync({
+              userId,
+              bannedUntilMs: banUntil.getTime(),
+              reason: banReason.trim(),
+            })
+            .catch(() => {
+              // Error handling is done in the mutation
+            });
         },
       },
     ]);
@@ -235,7 +274,11 @@ export default function AdminEditUserScreen() {
     ]);
   };
 
-  const isSaving = updateNameMutation.isPending || updateWristNumberMutation.isPending || updateHouseNumberMutation.isPending || assignToGroupMutation.isPending;
+  const isSaving =
+    updateNameMutation.isPending ||
+    updateWristNumberMutation.isPending ||
+    updateHouseNumberMutation.isPending ||
+    assignToGroupMutation.isPending;
   const isBanReady = banUntil != null && banUntil > new Date();
   const banLabel = banUntil
     ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
@@ -263,7 +306,10 @@ export default function AdminEditUserScreen() {
     <View
       style={[
         styles.container,
-        { paddingTop: spacing.xl, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        {
+          paddingTop: spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
       ]}
     >
       <StatusBar style="light" />
@@ -330,11 +376,19 @@ export default function AdminEditUserScreen() {
                 return (
                   <TouchableOpacity
                     key={group.id}
-                    style={[styles.groupOption, isSelected && styles.groupOptionSelected]}
+                    style={[
+                      styles.groupOption,
+                      isSelected && styles.groupOptionSelected,
+                    ]}
                     onPress={() => setSelectedGroupId(group.id)}
                     disabled={assignToGroupMutation.isPending}
                   >
-                    <Text style={[styles.groupOptionText, isSelected && styles.groupOptionTextSelected]}>
+                    <Text
+                      style={[
+                        styles.groupOptionText,
+                        isSelected && styles.groupOptionTextSelected,
+                      ]}
+                    >
                       {group.name}
                     </Text>
                   </TouchableOpacity>
@@ -355,9 +409,14 @@ export default function AdminEditUserScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Temporary Ban</Text>
-          <Text style={styles.sectionHint}>Pick a date and time to ban until</Text>
+          <Text style={styles.sectionHint}>
+            Pick a date and time to ban until
+          </Text>
 
-          <TouchableOpacity style={styles.banPickerButton} onPress={() => setIsBanPickerOpen(true)}>
+          <TouchableOpacity
+            style={styles.banPickerButton}
+            onPress={() => setIsBanPickerOpen(true)}
+          >
             <Text style={styles.banPickerButtonText}>{banLabel}</Text>
           </TouchableOpacity>
 
@@ -373,7 +432,8 @@ export default function AdminEditUserScreen() {
           <TouchableOpacity
             style={[
               styles.banButton,
-              (!isBanReady || banUserMutation.isPending) && styles.dangerButtonDisabled,
+              (!isBanReady || banUserMutation.isPending) &&
+                styles.dangerButtonDisabled,
             ]}
             onPress={handleBan}
             disabled={!isBanReady || banUserMutation.isPending}
