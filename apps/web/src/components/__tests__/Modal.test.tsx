@@ -1,10 +1,13 @@
 /// <reference lib="dom" />
 
-import { describe, test, expect } from "bun:test";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, test, expect, afterEach } from "bun:test";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { Modal } from "../ui/Modal";
 
 describe("Modal", () => {
+  afterEach(() => {
+    cleanup();
+  });
   test("renders nothing when isOpen is false", () => {
     const { container } = render(
       <Modal isOpen={false} onClose={() => {}}>

@@ -1,10 +1,13 @@
 /// <reference lib="dom" />
 
-import { describe, test, expect } from "bun:test";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, test, expect, afterEach } from "bun:test";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { Select } from "../ui/Select";
 
 describe("Select", () => {
+  afterEach(() => {
+    cleanup();
+  });
   const defaultOptions = [
     { value: "option1", label: "Option 1" },
     { value: "option2", label: "Option 2" },

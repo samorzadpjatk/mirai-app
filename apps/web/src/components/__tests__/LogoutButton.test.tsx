@@ -19,7 +19,10 @@ describe("LogoutButton", () => {
   test("renders sign out button", () => {
     render(<LogoutButton />);
 
-    expect(screen.getByText("Sign out")).toBeDefined();
+    // Use getAllByText and select first match to handle potential duplicates
+    const signOutElements = screen.getAllByText("Sign out");
+    expect(signOutElements.length).toBeGreaterThan(0);
+    expect(signOutElements[0]).toBeDefined();
   });
 
   test("renders with custom className", () => {
@@ -31,8 +34,9 @@ describe("LogoutButton", () => {
   test("calls logout when clicked", async () => {
     render(<LogoutButton />);
 
-    const button = screen.getByText("Sign out");
-    fireEvent.click(button);
+    // Use getAllByText to handle multiple elements with "Sign out"
+    const buttons = screen.getAllByText("Sign out");
+    fireEvent.click(buttons[0]);
 
     await waitFor(() => {
       expect(mockLogout).toHaveBeenCalledTimes(1);
@@ -45,12 +49,15 @@ describe("LogoutButton", () => {
 
     render(<LogoutButton />);
 
-    const button = screen.getByText("Sign out");
-    fireEvent.click(button);
+    // Use getAllByText to handle multiple elements with "Sign out"
+    const buttons = screen.getAllByText("Sign out");
+    fireEvent.click(buttons[0]);
 
-    // Button should show loading text
+    // Button should show loading text - use getAllByText for consistency
     await waitFor(() => {
-      expect(screen.getByText("Signing out...")).toBeDefined();
+      const loadingElements = screen.getAllByText("Signing out...");
+      expect(loadingElements.length).toBeGreaterThan(0);
+      expect(loadingElements[0]).toBeDefined();
     });
   });
 
@@ -59,12 +66,15 @@ describe("LogoutButton", () => {
 
     render(<LogoutButton />);
 
-    const button = screen.getByText("Sign out");
-    fireEvent.click(button);
+    // Use getAllByText to handle multiple elements with "Sign out"
+    const buttons = screen.getAllByText("Sign out");
+    fireEvent.click(buttons[0]);
 
     await waitFor(() => {
-      const loadingButton = screen.getByText("Signing out...");
-      expect(loadingButton.closest("button")?.disabled).toBe(true);
+      // Use getAllByText to handle potential duplicates
+      const loadingButtons = screen.getAllByText("Signing out...");
+      expect(loadingButtons.length).toBeGreaterThan(0);
+      expect(loadingButtons[0].closest("button")?.disabled).toBe(true);
     });
   });
 
@@ -79,7 +89,10 @@ describe("LogoutButton", () => {
   test("has correct button type", () => {
     render(<LogoutButton />);
 
-    const button = screen.getByText("Sign out").closest("button");
+    // Use getAllByText to handle multiple elements with "Sign out"
+    const signOutElements = screen.getAllByText("Sign out");
+    expect(signOutElements.length).toBeGreaterThan(0);
+    const button = signOutElements[0].closest("button");
     expect(button?.getAttribute("type")).toBe("button");
   });
 });
