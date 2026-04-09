@@ -135,11 +135,14 @@ describe("[INTEGRATION] challenge router", () => {
   };
 
   beforeEach(() => {
+    const headers = new Headers();
+    headers.set("Authorization", "Bearer test-token");
+
     const db = createMockDb();
     mockCtx = {
       db,
       supabase: createMockSupabase(),
-      headers: new Headers(),
+      headers,
       accessToken: "test-token",
       dbUser: {
         id: "admin-1",
@@ -152,6 +155,31 @@ describe("[INTEGRATION] challenge router", () => {
       di: {
         container: {} as any,
         resolve: <T>(token: string): T => {
+          if (token === "authenticateUserUseCase") {
+            return {
+              execute: mock(() =>
+                Promise.resolve({
+                  kind: "ok" as const,
+                  value: {
+                    userId: "admin-1",
+                    authUserId: "auth-admin-1",
+                    role: "ADMIN",
+                    email: "admin@example.com",
+                  },
+                }),
+              ),
+            } as unknown as T;
+          }
+          if (token === "authorizeAdminUseCase") {
+            return {
+              execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+            } as unknown as T;
+          }
+          if (token === "authorizeModeratorUseCase") {
+            return {
+              execute: mock(() => ({ kind: "ok" as const, value: undefined })),
+            } as unknown as T;
+          }
           // Mock controller resolution for ChallengeController
           if (token === "challengeController") {
             return {
