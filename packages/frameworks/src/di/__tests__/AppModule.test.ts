@@ -22,6 +22,28 @@ import {
 } from "../AppModule";
 
 // =============================================================================
+// Test Helpers
+// =============================================================================
+
+/**
+ * Resolve a module import, handling lazy-loaded factory functions
+ */
+function resolveModule(
+  mod: StaticModule<unknown> | (() => StaticModule<unknown>),
+): StaticModule<unknown> {
+  return typeof mod === "function" ? mod() : mod;
+}
+
+/**
+ * Get module names from imports, resolving lazy-loaded modules
+ */
+function getImportNames(
+  imports: Array<StaticModule<unknown> | (() => StaticModule<unknown>)>,
+): string[] {
+  return imports.map((mod) => resolveModule(mod).name);
+}
+
+// =============================================================================
 // Test Suite
 // =============================================================================
 
@@ -69,26 +91,28 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
   // ==========================================================================
 
   describe("Module Imports", () => {
-    test("imports contain expected placeholder modules", () => {
-      const moduleNames = AppModule.imports.map((mod) => mod.name);
+    test("imports contain expected modules", () => {
+      const moduleNames = getImportNames(AppModule.imports);
 
       expect(moduleNames).toContain("RepositoryModule");
       expect(moduleNames).toContain("UseCaseModule");
       expect(moduleNames).toContain("ControllerModule");
     });
 
-    test("imports have correct count", () => {
-      expect(AppModule.imports.length).toBe(3);
+    test("imports have correct count (4 modules: Repository, UseCase, AuthUseCase, Controller)", () => {
+      expect(AppModule.imports.length).toBe(4);
     });
 
     test("all imports are StaticModules", () => {
       for (const mod of AppModule.imports) {
-        expect(mod).toHaveProperty("name");
-        expect(mod).toHaveProperty("providers");
-        expect(mod).toHaveProperty("exports");
-        expect(typeof mod.name).toBe("string");
-        expect(typeof mod.providers).toBe("object");
-        expect(Array.isArray(mod.exports)).toBe(true);
+        // Resolve lazy-loaded modules for property checking
+        const resolvedMod = resolveModule(mod);
+        expect(resolvedMod).toHaveProperty("name");
+        expect(resolvedMod).toHaveProperty("providers");
+        expect(resolvedMod).toHaveProperty("exports");
+        expect(typeof resolvedMod.name).toBe("string");
+        expect(typeof resolvedMod.providers).toBe("object");
+        expect(Array.isArray(resolvedMod.exports)).toBe(true);
       }
     });
 
@@ -97,14 +121,19 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
       expect(firstModule?.name).toBe("RepositoryModule");
     });
 
-    test("UseCaseModule is second import", () => {
+    test("UseCaseModule is second import (core use cases)", () => {
       const secondModule = AppModule.imports[1];
       expect(secondModule?.name).toBe("UseCaseModule");
     });
 
-    test("ControllerModule is third import", () => {
+    test("AuthUseCaseModule is third import (auth/telemetry)", () => {
       const thirdModule = AppModule.imports[2];
-      expect(thirdModule?.name).toBe("ControllerModule");
+      expect(thirdModule?.name).toBe("UseCaseModule");
+    });
+
+    test("ControllerModule is fourth import", () => {
+      const fourthModule = resolveModule(AppModule.imports[3]!);
+      expect(fourthModule.name).toBe("ControllerModule");
     });
   });
 
@@ -243,10 +272,10 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
       expect(hasModule("SomeOtherModule")).toBe(false);
     });
 
-    test("getRegisteredModules returns all module names", () => {
+    test("getRegisteredModules returns all 4 module names", () => {
       const modules = getRegisteredModules();
 
-      expect(modules).toHaveLength(3);
+      expect(modules).toHaveLength(4);
       expect(modules).toContain("RepositoryModule");
       expect(modules).toContain("UseCaseModule");
       expect(modules).toContain("ControllerModule");
@@ -256,7 +285,7 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
       const status = getModuleStatus();
 
       expect(status.rootModule).toBe("AppModule");
-      expect(status.imports).toHaveLength(3);
+      expect(status.imports).toHaveLength(4);
       expect(typeof status.providerCount).toBe("number");
       expect(typeof status.exportCount).toBe("number");
     });
@@ -294,13 +323,15 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
 
     test("placeholder modules are valid StaticModules", () => {
       for (const mod of AppModule.imports) {
+        // Resolve lazy-loaded modules for property checking
+        const resolvedMod = resolveModule(mod);
         // Each import should be a valid StaticModule
-        expect(mod.name).toBeDefined();
-        expect(typeof mod.name).toBe("string");
-        expect(mod.providers).toBeDefined();
-        expect(typeof mod.providers).toBe("object");
-        expect(mod.exports).toBeDefined();
-        expect(Array.isArray(mod.exports)).toBe(true);
+        expect(resolvedMod.name).toBeDefined();
+        expect(typeof resolvedMod.name).toBe("string");
+        expect(resolvedMod.providers).toBeDefined();
+        expect(typeof resolvedMod.providers).toBe("object");
+        expect(resolvedMod.exports).toBeDefined();
+        expect(Array.isArray(resolvedMod.exports)).toBe(true);
       }
     });
   });
@@ -326,9 +357,9 @@ describe("[UNIT] AppModule (Root Application Module)", () => {
     });
 
     test("AppModule has unidirectional import pattern", () => {
-      // Import order: Repository -> UseCase -> Controller
+      // Import order: Repository -> UseCase -> AuthUseCase -> Controller
       // This follows Clean Architecture dependency direction
-      const moduleNames = AppModule.imports.map((mod) => mod.name);
+      const moduleNames = getImportNames(AppModule.imports);
 
       // Lower level modules should come first
       const repositoryIndex = moduleNames.indexOf("RepositoryModule");
