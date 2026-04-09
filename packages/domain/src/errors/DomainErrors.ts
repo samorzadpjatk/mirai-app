@@ -8,6 +8,27 @@
  * @module DomainErrors
  */
 
+/**
+ * Error class for unauthorized access
+ * Can be used with `new UnauthorizedError({ resource, action, userId })`
+ */
+export class UnauthorizedError extends Error {
+  readonly _tag = "UnauthorizedError" as const;
+  readonly code = "UNAUTHORIZED" as const;
+  readonly resource: string;
+  readonly action: string;
+  readonly userId: string;
+
+  constructor(params: { resource: string; action: string; userId: string }) {
+    super(
+      `User '${params.userId}' is not authorized to ${params.action} ${params.resource}`,
+    );
+    this.resource = params.resource;
+    this.action = params.action;
+    this.userId = params.userId;
+  }
+}
+
 export const AppError = {
   entityNotFound: (p: { entity: string; id: string }) => ({
     _tag: "EntityNotFoundError" as const,
@@ -24,14 +45,8 @@ export const AppError = {
     message: `Validation failed for '${p.field}': ${p.message}`,
   }),
 
-  unauthorized: (p: { resource: string; action: string; userId: string }) => ({
-    _tag: "UnauthorizedError" as const,
-    code: "UNAUTHORIZED" as const,
-    resource: p.resource,
-    action: p.action,
-    userId: p.userId,
-    message: `User '${p.userId}' is not authorized to ${p.action} ${p.resource}`,
-  }),
+  unauthorized: (p: { resource: string; action: string; userId: string }) =>
+    new UnauthorizedError(p),
 
   conflict: (p: { resource: string; message: string }) => ({
     _tag: "ConflictError" as const,
@@ -88,7 +103,7 @@ export const AppError = {
 
 export type EntityNotFoundError = ReturnType<typeof AppError.entityNotFound>;
 export type ValidationError = ReturnType<typeof AppError.validation>;
-export type UnauthorizedError = ReturnType<typeof AppError.unauthorized>;
+// UnauthorizedError is now a class above, not a type alias
 export type ConflictError = ReturnType<typeof AppError.conflict>;
 export type InvariantError = ReturnType<typeof AppError.invariant>;
 export type InvalidStateError = ReturnType<typeof AppError.invalidState>;

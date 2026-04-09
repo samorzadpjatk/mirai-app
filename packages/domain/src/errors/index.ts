@@ -5,15 +5,16 @@
  */
 
 export {
-  // Base error classes
-  EntityNotFoundError,
-  ValidationError,
+  // Error class (value export)
   UnauthorizedError,
-  ConflictError,
-  InvariantError,
-  InvalidStateError,
-  ResourceUnavailableError,
-  QuotaExceededError,
+  // Error types (type-only exports)
+  type EntityNotFoundError,
+  type ValidationError,
+  type ConflictError,
+  type InvariantError,
+  type InvalidStateError,
+  type ResourceUnavailableError,
+  type QuotaExceededError,
   // Union type
   type DomainError,
   // Utility functions
