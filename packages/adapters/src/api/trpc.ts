@@ -1,24 +1,17 @@
 /**
- * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
- * 1. You want to modify request context (see Part 1).
- * 2. You want to create a new middleware or type of procedure (see Part 3).
+ * tRPC Server Configuration
  *
- * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
- * need to use are documented accordingly near the end.
+ * This file contains the minimal tRPC setup with ZERO auth awareness.
+ * All authentication and authorization is handled at the controller level.
+ *
+ * TL;DR - This file now only handles transport concerns. No business logic,
+ * no auth middleware, no role checking. Just tRPC infrastructure.
  */
 
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import {
-  requireAdmin,
-  requireAuth,
-  requireModerator,
-  AuthenticationError,
-  AuthorizationError,
-} from "../controllers/auth/authServer";
-import { TRPCError } from "@trpc/server";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 import type { AwilixContainer, RequestScope } from "@mirai-app/frameworks/di";
@@ -27,91 +20,6 @@ import {
   getContainer,
   isContainerInitialized,
 } from "@mirai-app/frameworks/di";
-
-const getAccessTokenFromHeaders = (headers: Headers): string | null => {
-  const authorization =
-    headers.get("authorization") ?? headers.get("Authorization");
-  if (!authorization) {
-    return null;
-  }
-
-  const [scheme, token] = authorization.split(" ");
-  if (scheme?.toLowerCase() !== "bearer" || !token) {
-    return null;
-  }
-
-  return token.trim();
-};
-
-const getAccessToken = (
-  headers: Headers,
-  connectionParams?: Record<string, string>,
-): string | null => {
-  // First try to get token from Authorization header
-  const headerToken = getAccessTokenFromHeaders(headers);
-  if (headerToken) {
-    return headerToken;
-  }
-
-  // Try connectionParams (sent as first WebSocket message)
-  if (connectionParams && "authorization" in connectionParams) {
-    const token = connectionParams.authorization;
-    if (token && token.trim().length > 0) {
-      return token.trim();
-    }
-  }
-
-  // Fallback: check for authorization query parameter (WebSocket upgrade workaround)
-  // This is used because WebSocket connections via browser/React Native don't support custom headers
-  const urlString = headers.get("x-original-url");
-  if (urlString) {
-    try {
-      // Handle both absolute URLs and relative URLs (WebSocket connections)
-      let url: URL;
-      if (
-        urlString.startsWith("http://") ||
-        urlString.startsWith("https://") ||
-        urlString.startsWith("ws://") ||
-        urlString.startsWith("wss://")
-      ) {
-        // Absolute URL
-        url = new URL(urlString);
-      } else {
-        // Relative URL - construct absolute URL for parsing
-        // Use a dummy base URL since we only care about parsing query params
-        url = new URL(urlString, "http://localhost");
-      }
-
-      const authParam = url.searchParams.get("authorization");
-      if (authParam) {
-        const [scheme, token] = authParam.split(" ");
-        if (scheme?.toLowerCase() === "bearer" && token?.trim()) {
-          return token.trim();
-        }
-      }
-    } catch {
-      // URL parsing failed, continue to return null
-    }
-  }
-
-  return null;
-};
-
-const getPlatformFromUserAgent = (
-  userAgent: string | null,
-): "ios" | "android" | null => {
-  if (!userAgent) return null;
-
-  // iOS User Agent pattern: MIRAI/21 CFNetwork/3860.300.31 Darwin/25.2.0
-  const iosPattern = /^MIRAI\/\d+ CFNetwork\/[\d.]+ Darwin\/[\d.]+$/;
-
-  // Android User Agent pattern: okhttp/4.12.0
-  const androidPattern = /^okhttp\/[\d.]+$/;
-
-  if (iosPattern.test(userAgent)) return "ios";
-  if (androidPattern.test(userAgent)) return "android";
-  return null;
-};
 
 /**
  * Dependency Injection Context
@@ -126,7 +34,7 @@ const getPlatformFromUserAgent = (
  *
  * ```typescript
  * export const userRouter = createTRPCRouter({
- *   getById: protectedProcedure
+ *   getById: publicProcedure
  *     .input(z.object({ id: z.string() }))
  *     .query(async ({ ctx, input }) => {
  *       const controller = ctx.di.container.resolve("userController");
@@ -186,11 +94,27 @@ export interface DIContext {
   scope: RequestScope;
 }
 
+/**
+ * tRPC Context - Transport Layer Only
+ *
+ * Contains ONLY transport-related data:
+ * - Database connection (framework infrastructure)
+ * - Supabase client (framework infrastructure)
+ * - HTTP headers (raw transport data)
+ * - DI container (dependency resolution infrastructure)
+ *
+ * NO AUTH DATA HERE. No user, no token, no roles.
+ * Auth is handled at the controller level via use cases.
+ */
 export interface TRPCContext {
+  /** Prisma database client */
   db: PrismaClient;
+
+  /** Supabase client for auth/storage */
   supabase: SupabaseClient;
+
+  /** Raw HTTP headers from the request */
   headers: Headers;
-  accessToken: string | null;
 
   /**
    * Dependency injection context
@@ -207,28 +131,29 @@ export interface TRPCContext {
   di: DIContext;
 }
 
-// Supabase client is now passed via context parameter to maintain Clean Architecture
-// and avoid runtime imports from frameworks layer.
+/**
+ * Generate a unique request ID
+ *
+ * Creates a unique identifier for tracking requests across logs and metrics.
+ * Format: req-{timestamp}-{random}
+ *
+ * @returns Unique request identifier
+ */
+function generateRequestId(): string {
+  return `req-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}
 
 /**
- * 1. CONTEXT
+ * Create tRPC Context
  *
- * This section defines the "contexts" that are available in the backend API.
+ * This helper generates the "internals" for a tRPC context. The API handler
+ * and RSC clients each wrap this and provide the required context.
  *
- * These allow you to access things when processing a request, like the database, the session, etc.
- *
- * This helper generates the "internals" for a tRPC context. The API handler and RSC clients each
- * wrap this and provides the required context.
- *
- * The database client is now received via context creation instead of importing and
- * creating it directly. This removes the cyclic dependency between adapters and frameworks.
- *
- * The Supabase client is also received via context parameter, maintaining Clean Architecture
- * by avoiding runtime imports from the frameworks layer.
+ * The database client and Supabase client are received via context parameters,
+ * maintaining Clean Architecture by avoiding runtime imports from frameworks.
  *
  * Dependency injection is integrated via DIContext, which provides a request-scoped
- * container that inherits from the root container. This enables resolving controllers,
- * repositories, and use cases without manual instantiation.
+ * container that inherits from the root container.
  *
  * @see https://trpc.io/docs/server/context
  */
@@ -244,25 +169,21 @@ export const createTRPCContext = (opts: {
     headers.set(key, value);
   }
 
-  const accessToken = getAccessToken(headers, opts.connectionParams);
-
   // =============================================================================
   // Dependency Injection Context Creation
   // =============================================================================
 
   let diContext: DIContext;
 
-  // Check if container is initialized (will be true in production, false during tests without setup)
+  // Check if container is initialized
   if (isContainerInitialized()) {
     // Create request-scoped container with PrismaClient registration
     const scope = createRequestScope({
       prisma: opts.db,
       requestId: generateRequestId(),
-      userContext: null, // Will be populated by protectedProcedure middleware
       values: {
         // Additional request-scoped values can be added here
         supabase: opts.supabase,
-        accessToken: accessToken,
       },
     });
 
@@ -273,14 +194,12 @@ export const createTRPCContext = (opts: {
     };
   } else {
     // Fallback for tests or when container is not initialized
-    // Create a minimal DI context that throws on resolution attempts
     const fallbackContainer = {
       resolve: <T>(): T => {
         throw new Error(
           "DI container not initialized. Call initializeContainer([AppModule]) before resolving dependencies.",
         );
       },
-      // Minimal container-like interface for fallback
       registrations: {},
     } as unknown as AwilixContainer;
 
@@ -305,17 +224,15 @@ export const createTRPCContext = (opts: {
     db: opts.db,
     supabase: opts.supabase,
     headers,
-    accessToken,
     di: diContext,
   };
 };
 
 /**
- * 2. INITIALIZATION
+ * Initialize tRPC
  *
- * This is where the tRPC API is initialized, connecting the context and transformer. We also parse
- * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
- * errors on the backend.
+ * This is where the tRPC API is initialized, connecting the context and transformer.
+ * We parse ZodErrors to get typesafety on the frontend if validation fails.
  */
 const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
@@ -331,50 +248,6 @@ const t = initTRPC.context<TRPCContext>().create({
   },
 });
 
-// Global middleware for request telemetry
-const mobileAppMiddleware = t.middleware(async ({ ctx, next, path }) => {
-  const userAgent =
-    ctx.headers.get("user-agent") ?? ctx.headers.get("User-Agent");
-
-  const platform = getPlatformFromUserAgent(userAgent);
-
-  // Log user agent for update rollout analysis
-  try {
-    // Try to extract user ID from auth token for better tracking
-    let userId = null;
-    if (ctx.accessToken) {
-      try {
-        // This is a lightweight way to get user ID without full validation
-        // since we're just logging, not authenticating here
-        const { data } = await ctx.supabase.auth.getUser(ctx.accessToken);
-        userId = data.user?.id ?? null;
-      } catch {
-        // Ignore auth errors for logging purposes
-      }
-    }
-
-    if (userAgent && platform) {
-      // Log to database asynchronously (fire and forget)
-      void ctx.db.userAgent
-        .create({
-          data: {
-            userAgent,
-            platform,
-            userId,
-            endpoint: path,
-          },
-        })
-        .catch(() => {
-          // Silently ignore logging errors to not block the request
-        });
-    }
-  } catch {
-    // Silently ignore telemetry errors to not block the request
-  }
-
-  return next();
-});
-
 /**
  * Create a server-side caller.
  *
@@ -383,132 +256,17 @@ const mobileAppMiddleware = t.middleware(async ({ ctx, next, path }) => {
 export const createCallerFactory = t.createCallerFactory;
 
 /**
- * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
- *
- * These are the pieces you use to build your tRPC API. You should import these a lot in the
- * "/src/server/api/routers" directory.
- */
-
-/**
- * This is how you create new routers and sub-routers in your tRPC API.
+ * Create a tRPC router.
  *
  * @see https://trpc.io/docs/router
  */
 export const createTRPCRouter = t.router;
 
 /**
- * Base procedure
- * All procedures pass through shared telemetry middleware.
- */
-const baseProcedure = t.procedure.use(mobileAppMiddleware);
-
-/**
- * Public (unauthenticated) procedure
+ * Public procedure - the ONLY procedure type
  *
- * This is the base piece you use to build new queries and mutations on your tRPC API. It does not
- * guarantee that a user querying is authorized, but you can still access user session data if they
- * are logged in.
- */
-export const publicProcedure = baseProcedure;
-
-/**
- * Protected (authenticated) procedure
- *
- * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user` is not null.
+ * ALL routes use this. Auth is handled at the controller level, not in tRPC middleware.
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
-  try {
-    const { user, dbUser } = await requireAuth(
-      ctx.db,
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-
-    return next({
-      ctx: {
-        user,
-        dbUser,
-      },
-    });
-  } catch (err) {
-    if (err instanceof AuthenticationError) {
-      throw new TRPCError({ code: "UNAUTHORIZED", message: err.message });
-    }
-    throw err;
-  }
-});
-
-/**
- * Admin (authenticated) procedure
- *
- * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees the caller has the required role.
- *
- * @see https://trpc.io/docs/procedures
- */
-export const moderatorProcedure = baseProcedure.use(async ({ ctx, next }) => {
-  try {
-    const dbUser = await requireModerator(
-      ctx.db,
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-    return next({
-      ctx: {
-        dbUser,
-      },
-    });
-  } catch (err) {
-    if (err instanceof AuthenticationError) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
-    if (err instanceof AuthorizationError) {
-      throw new TRPCError({ code: "FORBIDDEN" });
-    }
-    throw err;
-  }
-});
-
-export const mobileAppProcedure = t.procedure.use(mobileAppMiddleware);
-
-export const adminProcedure = baseProcedure.use(async ({ ctx, next }) => {
-  try {
-    const dbUser = await requireAdmin(
-      ctx.db,
-      ctx.supabase,
-      ctx.accessToken ?? undefined,
-    );
-    return next({
-      ctx: {
-        dbUser,
-      },
-    });
-  } catch (err) {
-    if (err instanceof AuthenticationError) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
-    if (err instanceof AuthorizationError) {
-      throw new TRPCError({ code: "FORBIDDEN" });
-    }
-    throw err;
-  }
-});
-
-// =============================================================================
-// Utility Functions
-// =============================================================================
-
-/**
- * Generate a unique request ID
- *
- * Creates a unique identifier for tracking requests across logs and metrics.
- * Format: req-{timestamp}-{random}
- *
- * @returns Unique request identifier
- */
-function generateRequestId(): string {
-  return `req-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-}
+export const publicProcedure = t.procedure;
