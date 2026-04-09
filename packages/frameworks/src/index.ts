@@ -26,10 +26,10 @@
  *
  * ### tRPC Server Configuration
  * ```typescript
- * import { createTRPCRouter, protectedProcedure } from "@mirai-app/frameworks/trpc/server";
+ * import { createTRPCRouter, publicProcedure } from "@mirai-app/frameworks/trpc/server";
  *
  * export const myRouter = createTRPCRouter({
- *   get: protectedProcedure.query(async ({ ctx }) => {
+ *   get: publicProcedure.query(async ({ ctx }) => {
  *     return ctx.db.user.findMany();
  *   }),
  * });
@@ -77,8 +77,6 @@ export {
   createCallerFactory,
   baseProcedure,
   publicProcedure,
-  protectedProcedure,
-  adminProcedure,
   getPlatformFromUserAgent,
   getAccessTokenFromHeaders,
   type TRPCContext,
