@@ -3,16 +3,16 @@
  */
 
 describe("useCommunityFeed", () => {
-  test("module exports useCommunityFeed function", async () => {
-    const { useCommunityFeed } = await import("../useCommunityFeed");
+  test("module exports useCommunityFeed function", () => {
+    const { useCommunityFeed } = require("../useCommunityFeed");
     expect(useCommunityFeed).toBeDefined();
     expect(typeof useCommunityFeed).toBe("function");
   });
 });
 
 describe("useCommunityActivityData", () => {
-  test("module exports useCommunityActivityData function", async () => {
-    const { useCommunityActivityData } = await import("../useCommunityActivityData");
+  test("module exports useCommunityActivityData function", () => {
+    const { useCommunityActivityData } = require("../useCommunityActivityData");
     expect(useCommunityActivityData).toBeDefined();
     expect(typeof useCommunityActivityData).toBe("function");
   });
