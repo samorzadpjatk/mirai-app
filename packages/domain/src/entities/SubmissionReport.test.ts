@@ -5,6 +5,7 @@ import {
   groupReportsBySubmission,
 } from "./SubmissionReport";
 import { ReportId } from "../value-objects/ReportId";
+import { isSuccess, isError } from "../utils/result";
 
 describe("[UNIT] SubmissionReport", () => {
   describe("create", () => {
@@ -15,8 +16,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(result.isSuccess()).toBe(true);
-      if (result.isSuccess()) {
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
         expect(result.value.submissionId).toBe("sub-123");
         expect(result.value.reporterId).toBe("reporter-456");
         expect(result.value.reason.value).toBe("INAPPROPRIATE");
@@ -33,8 +34,8 @@ describe("[UNIT] SubmissionReport", () => {
         details: "The submission is fake",
       });
 
-      expect(result.isSuccess()).toBe(true);
-      if (result.isSuccess()) {
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
         expect(result.value.details).toBe("The submission is fake");
         expect(result.value.hasDetails()).toBe(true);
       }
@@ -48,8 +49,8 @@ describe("[UNIT] SubmissionReport", () => {
         details: "  Some details here  ",
       });
 
-      expect(result.isSuccess()).toBe(true);
-      if (result.isSuccess()) {
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
         expect(result.value.details).toBe("Some details here");
       }
     });
@@ -62,8 +63,8 @@ describe("[UNIT] SubmissionReport", () => {
         details: "   ",
       });
 
-      expect(result.isSuccess()).toBe(true);
-      if (result.isSuccess()) {
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
         expect(result.value.details).toBeNull();
         expect(result.value.hasDetails()).toBe(false);
       }
@@ -76,8 +77,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(result.isError()).toBe(true);
-      if (result.isError()) {
+      expect(isError(result)).toBe(true);
+      if (isError(result)) {
         expect(result.error).toContain("submissionId");
       }
     });
@@ -89,8 +90,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(result.isError()).toBe(true);
-      if (result.isError()) {
+      expect(isError(result)).toBe(true);
+      if (isError(result)) {
         expect(result.error).toContain("reporterId");
       }
     });
@@ -102,8 +103,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "",
       });
 
-      expect(result.isError()).toBe(true);
-      if (result.isError()) {
+      expect(isError(result)).toBe(true);
+      if (isError(result)) {
         expect(result.error).toContain("reason");
       }
     });
@@ -117,8 +118,8 @@ describe("[UNIT] SubmissionReport", () => {
         details: longDetails,
       });
 
-      expect(result.isError()).toBe(true);
-      if (result.isError()) {
+      expect(isError(result)).toBe(true);
+      if (isError(result)) {
         expect(result.error).toContain("2000");
       }
     });
@@ -130,8 +131,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "Custom long reason here",
       });
 
-      expect(result.isSuccess()).toBe(true);
-      if (result.isSuccess()) {
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
         expect(result.value.reason.value).toBe("CUSTOM LONG REASON HERE");
       }
     });
@@ -143,8 +144,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "AB",
       });
 
-      expect(result.isError()).toBe(true);
-      if (result.isError()) {
+      expect(isError(result)).toBe(true);
+      if (isError(result)) {
         expect(result.error).toContain("3 characters");
       }
     });
@@ -158,8 +159,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(result.isSuccess()).toBe(true);
-      if (result.isSuccess()) {
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
         expect(result.value.id).toBe(id);
       }
     });
@@ -171,8 +172,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(result.isSuccess()).toBe(true);
-      if (result.isSuccess()) {
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
         expect(result.value.id).toBeDefined();
         expect(typeof result.value.id).toBe("string");
       }
@@ -187,8 +188,8 @@ describe("[UNIT] SubmissionReport", () => {
         createdAt,
       });
 
-      expect(result.isSuccess()).toBe(true);
-      if (result.isSuccess()) {
+      expect(isSuccess(result)).toBe(true);
+      if (isSuccess(result)) {
         expect(result.value.createdAt).toEqual(createdAt);
       }
     });
@@ -202,8 +203,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         expect(report.value.isForSubmission("sub-123")).toBe(true);
         expect(report.value.isForSubmission("sub-456")).toBe(false);
       }
@@ -218,8 +219,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         expect(report.value.isFiledBy("reporter-456")).toBe(true);
         expect(report.value.isFiledBy("reporter-789")).toBe(false);
       }
@@ -234,8 +235,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         expect(report.value.hasReporterInfo()).toBe(false);
       }
     });
@@ -256,8 +257,8 @@ describe("[UNIT] SubmissionReport", () => {
         },
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         expect(report.value.hasReporterInfo()).toBe(true);
       }
     });
@@ -271,8 +272,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         const reporter = {
           reporterId: "reporter-456",
           participantId: "part-789",
@@ -307,8 +308,8 @@ describe("[UNIT] SubmissionReport", () => {
         },
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         const updated = report.value.withReporterEmail("john@example.com");
 
         expect(updated.reporter?.email).toBe("john@example.com");
@@ -322,8 +323,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         const updated = report.value.withReporterEmail("john@example.com");
         expect(updated).toBe(report.value);
       }
@@ -347,8 +348,8 @@ describe("[UNIT] SubmissionReport", () => {
           reason: input,
         });
 
-        expect(report.isSuccess()).toBe(true);
-        if (report.isSuccess()) {
+        expect(isSuccess(report)).toBe(true);
+        if (isSuccess(report)) {
           expect(report.value.getReasonDisplay()).toBe(expected);
         }
       }
@@ -361,8 +362,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "CUSTOM REASON HERE",
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         expect(report.value.getReasonDisplay()).toBe("CUSTOM REASON HERE");
       }
     });
@@ -376,8 +377,8 @@ describe("[UNIT] SubmissionReport", () => {
         reason: "INAPPROPRIATE",
       });
 
-      expect(report.isSuccess()).toBe(true);
-      if (report.isSuccess()) {
+      expect(isSuccess(report)).toBe(true);
+      if (isSuccess(report)) {
         expect(report.value.matchesReason("inappropriate")).toBe(true);
         expect(report.value.matchesReason("INAPPROPRIATE")).toBe(true);
         expect(report.value.matchesReason("cheating")).toBe(false);
@@ -418,7 +419,7 @@ describe("[UNIT] calculateReportStatistics", () => {
     ];
 
     const validReports = reports
-      .filter((r) => r.isSuccess())
+      .filter((r) => isSuccess(r))
       .map((r) => r.value!);
     const stats = calculateReportStatistics(validReports);
 
@@ -453,7 +454,7 @@ describe("[UNIT] groupReportsBySubmission", () => {
     ];
 
     const validReports = reports
-      .filter((r) => r.isSuccess())
+      .filter((r) => isSuccess(r))
       .map((r) => r.value!);
     const grouped = groupReportsBySubmission(validReports);
 

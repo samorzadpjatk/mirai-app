@@ -1,12 +1,12 @@
 import { describe, it, expect } from "bun:test";
 import {
   ActivityFeed,
-  ActivityReaction,
   REACTION_TYPES,
   emptyReactionCounts,
   type ActivityType,
   type ReactionType,
 } from "./ActivityFeed";
+import { ActivityReaction } from "./ActivityReaction";
 import { ActivityId } from "../value-objects/ActivityId";
 
 describe("[UNIT] ActivityFeed Entity", () => {
@@ -582,7 +582,7 @@ describe("ActivityReaction Entity", () => {
     });
   });
 
-  describe("ActivityReaction.getUniqueKey", () => {
+  describe("ActivityReaction.getCompositeId", () => {
     it("should generate unique key for reaction", () => {
       const activityId = ActivityId.generate();
       const result = ActivityReaction.create({
@@ -593,7 +593,7 @@ describe("ActivityReaction Entity", () => {
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
-        const key = result.value.getUniqueKey();
+        const key = result.value.getCompositeId();
         expect(key).toContain(activityId);
         expect(key).toContain("user-123");
         expect(key).toContain("heart");
@@ -601,7 +601,7 @@ describe("ActivityReaction Entity", () => {
     });
   });
 
-  describe("ActivityReaction.isType", () => {
+  describe("ActivityReaction.isOfType", () => {
     it("should check if reaction is of specific type", () => {
       const activityId = ActivityId.generate();
       const result = ActivityReaction.create({
@@ -612,8 +612,8 @@ describe("ActivityReaction Entity", () => {
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
-        expect(result.value.isType("fire")).toBe(true);
-        expect(result.value.isType("heart")).toBe(false);
+        expect(result.value.isOfType("fire")).toBe(true);
+        expect(result.value.isOfType("heart")).toBe(false);
       }
     });
   });

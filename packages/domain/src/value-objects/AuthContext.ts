@@ -15,7 +15,7 @@
 
 import type { UserId } from "./UserId";
 import { UserRole } from "../enums/UserRole";
-import { ValidationError } from "../errors/DomainErrors";
+import { AppError, type ValidationError } from "../errors/DomainErrors";
 import { Result, ok, err } from "../types/Result";
 
 /**
@@ -70,7 +70,7 @@ export class AuthContext {
     // Validate userId is provided
     if (!props.userId) {
       return err(
-        new ValidationError({
+        AppError.validation({
           field: "userId",
           message: "UserId is required",
         }),
@@ -80,7 +80,7 @@ export class AuthContext {
     // Validate role is a valid UserRole
     if (!Object.values(UserRole).includes(props.role)) {
       return err(
-        new ValidationError({
+        AppError.validation({
           field: "role",
           message: `Invalid role: ${props.role}`,
         }),
@@ -90,7 +90,7 @@ export class AuthContext {
     // Validate authenticatedAt is a valid Date
     if (!(props.authenticatedAt instanceof Date)) {
       return err(
-        new ValidationError({
+        AppError.validation({
           field: "authenticatedAt",
           message: "authenticatedAt must be a valid Date",
         }),
@@ -100,7 +100,7 @@ export class AuthContext {
     // Validate authenticatedAt is not in the future
     if (props.authenticatedAt.getTime() > Date.now()) {
       return err(
-        new ValidationError({
+        AppError.validation({
           field: "authenticatedAt",
           message: "authenticatedAt cannot be in the future",
         }),
@@ -111,7 +111,7 @@ export class AuthContext {
     if (props.sessionId !== undefined) {
       if (typeof props.sessionId !== "string") {
         return err(
-          new ValidationError({
+          AppError.validation({
             field: "sessionId",
             message: "sessionId must be a string",
           }),
@@ -120,7 +120,7 @@ export class AuthContext {
 
       if (props.sessionId.trim().length === 0) {
         return err(
-          new ValidationError({
+          AppError.validation({
             field: "sessionId",
             message: "sessionId cannot be empty",
           }),

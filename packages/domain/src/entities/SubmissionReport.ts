@@ -1,5 +1,5 @@
 import type { Result } from "../utils/result";
-import { ok, err, ResultWrapper } from "../utils/result";
+import { ok, err } from "../utils/result";
 import type { ReportId } from "../value-objects/ReportId";
 import { ReportReason } from "../value-objects/ReportReason";
 
@@ -45,21 +45,21 @@ export class SubmissionReport {
     details?: string | null;
     createdAt?: Date;
     reporter?: ReporterInfo | null;
-  }): ResultWrapper<SubmissionReport, string> {
+  }): Result<SubmissionReport, string> {
     // Validate submissionId
     if (!props.submissionId || props.submissionId.trim() === "") {
-      return new ResultWrapper(err("submissionId is required"));
+      return err("submissionId is required");
     }
 
     // Validate reporterId
     if (!props.reporterId || props.reporterId.trim() === "") {
-      return new ResultWrapper(err("reporterId is required"));
+      return err("reporterId is required");
     }
 
     // Validate and create reason
     const reasonResult = ReportReason.create(props.reason);
     if (reasonResult.kind === "err") {
-      return new ResultWrapper(err(`Invalid reason: ${reasonResult.error}`));
+      return err(`Invalid reason: ${reasonResult.error}`);
     }
 
     // Validate details (optional, but must not be empty if provided)
@@ -68,9 +68,7 @@ export class SubmissionReport {
       const trimmed = props.details.trim();
       if (trimmed.length > 0) {
         if (trimmed.length > 2000) {
-          return new ResultWrapper(
-            err("details must be at most 2000 characters"),
-          );
+          return err("details must be at most 2000 characters");
         }
         details = trimmed;
       }
@@ -84,17 +82,15 @@ export class SubmissionReport {
       id = crypto.randomUUID() as ReportId;
     }
 
-    return new ResultWrapper(
-      ok(
-        new SubmissionReport(
-          id,
-          props.submissionId.trim(),
-          props.reporterId.trim(),
-          reasonResult.value,
-          details,
-          props.createdAt ?? new Date(),
-          props.reporter ?? null,
-        ),
+    return ok(
+      new SubmissionReport(
+        id,
+        props.submissionId.trim(),
+        props.reporterId.trim(),
+        reasonResult.value,
+        details,
+        props.createdAt ?? new Date(),
+        props.reporter ?? null,
       ),
     );
   }

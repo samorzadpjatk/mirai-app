@@ -23,7 +23,6 @@ export {
   all,
   zip2,
   zip3,
-  ResultWrapper,
 } from "./utils/result";
 
 // Validation utilities

@@ -14,7 +14,6 @@ import {
   all,
   zip2,
   zip3,
-  ResultWrapper,
 } from "./result";
 
 describe("[UNIT] result utilities", () => {
@@ -191,36 +190,6 @@ describe("[UNIT] result utilities", () => {
     it("should combine three success results", () => {
       const result = zip3(ok(1), ok(true), ok("three"));
       expect(unwrap(result)).toEqual([1, true, "three"]);
-    });
-  });
-
-  describe("ResultWrapper", () => {
-    it("should provide object-oriented interface", () => {
-      const wrapper = new ResultWrapper(ok(42));
-      expect(wrapper.isSuccess()).toBe(true);
-      expect(wrapper.isError()).toBe(false);
-      expect(wrapper.value).toBe(42);
-    });
-
-    it("should map values", () => {
-      const wrapper = new ResultWrapper(ok(42));
-      const mapped = wrapper.map((x) => x * 2);
-      expect(mapped.value).toBe(84);
-    });
-
-    it("should flatMap results", () => {
-      const wrapper = new ResultWrapper(ok(42));
-      const chained = wrapper.flatMap((x) => new ResultWrapper(ok(x * 2)));
-      expect(chained.value).toBe(84);
-    });
-
-    it("should match both cases", () => {
-      const wrapper = new ResultWrapper(ok(42));
-      const value = wrapper.match(
-        (x) => `success: ${x}`,
-        (e) => `error: ${e}`,
-      );
-      expect(value).toBe("success: 42");
     });
   });
 });
