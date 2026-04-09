@@ -57,6 +57,8 @@ export const judgementStore = createStore<JudgementStore>()((set, get) => ({
 }));
 
 // Hooks for accessing judgement store
-export function useJudgementStore<T>(selector: (state: JudgementStore) => T): T {
+export function useJudgementStore<T>(
+  selector: (state: JudgementStore) => T,
+): T {
   return useStore(judgementStore, selector);
 }

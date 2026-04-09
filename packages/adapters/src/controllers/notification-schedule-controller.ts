@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { NotificationScheduleRepository } from "@repo/use-cases";
+import type { NotificationScheduleRepository } from "@mirai-app/use-cases";
 import {
   GetNotificationSchedulesUseCase,
   GetNotificationScheduleByIdUseCase,
@@ -14,8 +14,8 @@ import {
   GetUpcomingNotificationSchedulesUseCase,
   UpdateNotificationScheduleLastRunUseCase,
   GetNotificationScheduleExecutionHistoryUseCase,
-} from "@repo/use-cases";
-import { NotificationScheduleType } from "@repo/domain";
+} from "@mirai-app/use-cases";
+import { NotificationScheduleType } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for notification schedule controller
@@ -344,9 +344,7 @@ export class NotificationScheduleController {
   /**
    * Delete a notification schedule
    */
-  async delete(
-    input: unknown,
-  ): Promise<
+  async delete(input: unknown): Promise<
     ControllerResult<{
       success: boolean;
       message: string;

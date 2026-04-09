@@ -3,8 +3,8 @@ import type {
   ChallengeSubmission,
   SubmissionId,
   SubmissionStatus,
-} from "@repo/use-cases";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
+} from "@mirai-app/use-cases";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,

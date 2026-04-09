@@ -7,7 +7,7 @@ import {
   ThemedTextInput,
   DateTimePickerModal,
 } from "~/components/common/ui";
-import type { User } from "@repo/frameworks/trpc/hooks";
+import type { User } from "@mirai-app/frameworks/trpc/hooks";
 
 interface EditUserModalProps {
   visible: boolean;

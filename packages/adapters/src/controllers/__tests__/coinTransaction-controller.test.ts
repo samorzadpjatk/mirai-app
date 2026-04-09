@@ -6,8 +6,8 @@ import type {
   GetCoinTransactionsUseCase,
   GetCoinQuickStatsUseCase,
   GetCoinAdditionalInsightsUseCase,
-} from "@repo/use-cases";
-import { ok, err } from "@repo/domain";
+} from "@mirai-app/use-cases";
+import { ok, err } from "@mirai-app/domain";
 
 describe("[UNIT] CoinTransactionController", () => {
   let controller: CoinTransactionController;

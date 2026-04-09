@@ -6,7 +6,7 @@ import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminGroups } from "@repo/frameworks/trpc/hooks";
+import { useAdminGroups } from "@mirai-app/frameworks/trpc/hooks";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
 export function CreateGroupForm() {

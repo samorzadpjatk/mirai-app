@@ -1,6 +1,6 @@
-import type { ActivityFeedRepository } from "@repo/use-cases";
-import type { ActivityFeed, ActivityReaction, ActivityId } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { ActivityFeedRepository } from "@mirai-app/use-cases";
+import type { ActivityFeed, ActivityReaction, ActivityId } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 import {
   BasePrismaRepository,
   type EntityMapper,
@@ -62,6 +62,38 @@ const ActivityFeedMapperAdapter: EntityMapper<
   toPrismaUpdate: ActivityFeedMapper.toPrismaUpdate,
 };
 
+const ACTIVITY_FEED_INCLUDE = {
+  submissionActivity: {
+    include: {
+      submission: true,
+      challenge: true,
+      group: true,
+    },
+  },
+  challengeActivity: {
+    include: {
+      challenge: true,
+    },
+  },
+  rankChangeActivity: {
+    include: {
+      group: true,
+    },
+  },
+  userPost: {
+    include: {
+      author: {
+        include: {
+          user: true,
+          group: true,
+        },
+      },
+    },
+  },
+  admin: true,
+  hiddenBy: true,
+} as const;
+
 /**
  * PrismaActivityFeedRepository
  *
@@ -91,37 +123,7 @@ export class PrismaActivityFeedRepository
   async findById(id: ActivityId): Promise<ActivityFeed | null> {
     const record = await this.model.findUnique({
       where: { id },
-      include: {
-        submissionActivity: {
-          include: {
-            submission: true,
-            challenge: true,
-            group: true,
-          },
-        },
-        challengeActivity: {
-          include: {
-            challenge: true,
-          },
-        },
-        rankChangeActivity: {
-          include: {
-            group: true,
-          },
-        },
-        userPost: {
-          include: {
-            author: {
-              include: {
-                user: true,
-                group: true,
-              },
-            },
-          },
-        },
-        admin: true,
-        hiddenBy: true,
-      },
+      include: ACTIVITY_FEED_INCLUDE,
     });
 
     if (!record) {
@@ -190,37 +192,7 @@ export class PrismaActivityFeedRepository
       where,
       take: limit + 1,
       orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }, { id: "desc" }],
-      include: {
-        submissionActivity: {
-          include: {
-            submission: true,
-            challenge: true,
-            group: true,
-          },
-        },
-        challengeActivity: {
-          include: {
-            challenge: true,
-          },
-        },
-        rankChangeActivity: {
-          include: {
-            group: true,
-          },
-        },
-        userPost: {
-          include: {
-            author: {
-              include: {
-                user: true,
-                group: true,
-              },
-            },
-          },
-        },
-        admin: true,
-        hiddenBy: true,
-      },
+      include: ACTIVITY_FEED_INCLUDE,
     });
 
     const hasMore = records.length > limit;
@@ -270,37 +242,7 @@ export class PrismaActivityFeedRepository
         take: pageSize,
         skip: (page - 1) * pageSize,
         orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }, { id: "desc" }],
-        include: {
-          submissionActivity: {
-            include: {
-              submission: true,
-              challenge: true,
-              group: true,
-            },
-          },
-          challengeActivity: {
-            include: {
-              challenge: true,
-            },
-          },
-          rankChangeActivity: {
-            include: {
-              group: true,
-            },
-          },
-          userPost: {
-            include: {
-              author: {
-                include: {
-                  user: true,
-                  group: true,
-                },
-              },
-            },
-          },
-          admin: true,
-          hiddenBy: true,
-        },
+        include: ACTIVITY_FEED_INCLUDE,
       }),
     ]);
 
@@ -319,37 +261,7 @@ export class PrismaActivityFeedRepository
   async create(activity: ActivityFeed): Promise<ActivityFeed> {
     const record = await this.model.create({
       data: this.mapper.toPrismaCreate(activity),
-      include: {
-        submissionActivity: {
-          include: {
-            submission: true,
-            challenge: true,
-            group: true,
-          },
-        },
-        challengeActivity: {
-          include: {
-            challenge: true,
-          },
-        },
-        rankChangeActivity: {
-          include: {
-            group: true,
-          },
-        },
-        userPost: {
-          include: {
-            author: {
-              include: {
-                user: true,
-                group: true,
-              },
-            },
-          },
-        },
-        admin: true,
-        hiddenBy: true,
-      },
+      include: ACTIVITY_FEED_INCLUDE,
     });
 
     return this.mapper.toDomain(record);
@@ -359,37 +271,7 @@ export class PrismaActivityFeedRepository
     const record = await this.model.update({
       where: { id: activity.id },
       data: this.mapper.toPrismaUpdate(activity),
-      include: {
-        submissionActivity: {
-          include: {
-            submission: true,
-            challenge: true,
-            group: true,
-          },
-        },
-        challengeActivity: {
-          include: {
-            challenge: true,
-          },
-        },
-        rankChangeActivity: {
-          include: {
-            group: true,
-          },
-        },
-        userPost: {
-          include: {
-            author: {
-              include: {
-                user: true,
-                group: true,
-              },
-            },
-          },
-        },
-        admin: true,
-        hiddenBy: true,
-      },
+      include: ACTIVITY_FEED_INCLUDE,
     });
 
     return this.mapper.toDomain(record);

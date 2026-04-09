@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useAuth } from "@repo/frameworks/auth/client";
+import { useAuth } from "@mirai-app/frameworks/auth/client";
 import LoadingScreen from "../../../components/LoadingScreen";
 import { useSelectedTrip, useTrips } from "~/hooks/trips";
 import TripDetailsScreen from "./details";

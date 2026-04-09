@@ -1,7 +1,7 @@
-import type { Result } from "@repo/domain";
-import { ok, err, ChallengeStatus } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err, ChallengeStatus } from "@mirai-app/domain";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import type { Challenge } from "@repo/domain";
+import type { Challenge } from "@mirai-app/domain";
 
 /**
  * Input for UpdateChallengeStatus use case

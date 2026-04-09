@@ -1,4 +1,4 @@
-import type { SubmissionReport } from "@repo/domain";
+import type { SubmissionReport } from "@mirai-app/domain";
 
 /**
  * SubmissionReportRepository Port

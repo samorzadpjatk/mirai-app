@@ -5,7 +5,7 @@ import {
   Notification,
   NotificationStatus,
   NotificationPriority,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 import type { NotificationRepository } from "../ports/NotificationRepository";
 
 describe("[UNIT] GetNotificationUseCase", () => {

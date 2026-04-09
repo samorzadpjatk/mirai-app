@@ -21,13 +21,10 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@repo/domain": ["../domain/src/index.ts"],
-      "@repo/use-cases": ["../use-cases/src/index.ts"]
-    },
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+      "@mirai-app/domain": ["../domain/src/index.ts"],
+      "@mirai-app/use-cases": ["../use-cases/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../domain" }, { "path": "../use-cases" }]
+  "exclude": ["node_modules", "dist"]
 }

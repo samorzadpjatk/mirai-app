@@ -1,5 +1,5 @@
-import type { Result } from "@repo/domain";
-import { ok, err, type Location } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err, type Location } from "@mirai-app/domain";
 import type { LocationRepository } from "../ports/LocationRepository";
 
 /**
@@ -47,7 +47,7 @@ export class UpdateSharingSettingsUseCase {
 
     if (!location) {
       // Create new location if none exists
-      const { Location } = await import("@repo/domain");
+      const { Location } = await import("@mirai-app/domain");
       const createResult = Location.create({
         userId: input.userId,
         isSharingLocation: input.isSharingLocation,

@@ -7,7 +7,7 @@
  * ## Usage
  *
  * ```typescript
- * import { createCoinService } from "@repo/frameworks/factories";
+ * import { createCoinService } from "@mirai-app/frameworks/factories";
  *
  * const coinService = await createCoinService(prisma, coinRepo, addCoinsUC, removeCoinsUC);
  * const result = await coinService.addCoinsWithActivity({...});
@@ -54,7 +54,7 @@ export async function createCoinTransactionService(
   prisma: Prisma.TransactionClient | PrismaClient,
   controller: CoinTransactionController,
 ): Promise<CoinTransactionService> {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   return new adapters.PrismaCoinTransactionService(prisma, controller as any);
 }
 
@@ -74,7 +74,7 @@ export async function createCoinService(
   removeCoinsUseCase: RemoveCoinsUseCase,
   rankingActivityService?: RankingActivityService,
 ): Promise<CoinService> {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   const rankingService =
     rankingActivityService ??
     new adapters.PrismaRankingActivityService(prisma as any);
@@ -95,7 +95,7 @@ export async function createCoinService(
 export async function createRankingActivityService(
   prisma: PrismaClient,
 ): Promise<RankingActivityService> {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   return new adapters.PrismaRankingActivityService(prisma);
 }
 
@@ -107,7 +107,7 @@ export async function createRankingActivityService(
 export async function createNotificationSenderService(
   prisma: PrismaClient,
 ): Promise<NotificationSenderService> {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   return new adapters.PrismaNotificationSenderService(prisma);
 }
 
@@ -119,7 +119,7 @@ export async function createNotificationSenderService(
 export async function createTripPointsCalculator(
   prisma: PrismaClient,
 ): Promise<TripPointsCalculator> {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   return new adapters.PrismaTripPointsCalculator(prisma);
 }
 
@@ -131,7 +131,7 @@ export async function createTripPointsCalculator(
 export async function createTripAccessChecker(
   prisma: PrismaClient,
 ): Promise<TripAccessChecker> {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   return new adapters.PrismaTripAccessChecker(prisma);
 }
 
@@ -143,7 +143,7 @@ export async function createTripAccessChecker(
 export async function createGroupCoinsService(
   prisma: PrismaClient,
 ): Promise<GroupCoinsService> {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   return new adapters.PrismaGroupCoinsService(prisma);
 }
 
@@ -157,8 +157,8 @@ export async function createGroupCoinsService(
  * ```
  */
 export async function getNotificationService(): Promise<
-  typeof import("@repo/adapters").NotificationService
+  typeof import("@mirai-app/adapters").NotificationService
 > {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   return adapters.NotificationService;
 }

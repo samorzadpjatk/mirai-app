@@ -5,7 +5,7 @@ import {
   ensureRecurringInstancesForTrip,
   resolveRecurringChallengeIdForTrip,
 } from "../recurringChallenges";
-import type { Prisma } from "@repo/frameworks/prisma";
+import type { Prisma } from "@mirai-app/frameworks/prisma";
 
 const createMockTx = () => {
   return {

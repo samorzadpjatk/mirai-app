@@ -1,5 +1,5 @@
-import { createPrismaClient } from "@repo/frameworks/prisma";
-import type { Sponsor, TripSponsor } from "@repo/frameworks/prisma";
+import { createPrismaClient } from "@mirai-app/frameworks/prisma";
+import type { Sponsor, TripSponsor } from "@mirai-app/frameworks/prisma";
 import type { SeedEnv, SponsorConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";

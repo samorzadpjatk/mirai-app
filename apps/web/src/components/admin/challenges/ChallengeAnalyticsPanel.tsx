@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@repo/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
 import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";

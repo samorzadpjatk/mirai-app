@@ -20,7 +20,7 @@ module.exports = {
       },
     },
 
-    // Use-cases layer: Only domain dependencies (including @repo/domain)
+    // Use-cases layer: Only domain dependencies (including @mirai-app/domain)
     {
       name: "use-case-dependencies",
       comment: "Use cases can only depend on domain layer",
@@ -30,18 +30,18 @@ module.exports = {
         pathNot: "\\.test\\.ts$",
       },
       to: {
-        pathNot: "^packages/(domain|use-cases)|@repo/domain|bun:test|@types",
+        pathNot: "^packages/(domain|use-cases)|@mirai-app/domain|bun:test|@types",
         dependencyTypesNot: ["npm-dev"],
       },
     },
 
     // Adapters layer: Domain, use-cases, and validation libraries (zod)
-    // Exception: @repo/frameworks/di is allowed for DI container types (TYPES)
-    // This is necessary for @provide and @inject decorators to work with service identifiers
+    // Exception: @mirai-app/frameworks/di is allowed for DI container types
+    // Required for container.resolve() access and type definitions
     {
       name: "adapter-dependencies",
       comment:
-        "Adapters can depend on domain, use-cases layers, and validation libraries (zod). Exception: @repo/frameworks/di for DI types.",
+        "Adapters can depend on domain, use-cases layers, and validation libraries (zod). Exception: @mirai-app/frameworks/di for DI container types.",
       severity: "error",
       from: {
         path: "^packages/adapters/src",
@@ -49,7 +49,7 @@ module.exports = {
       },
       to: {
         pathNot:
-          "^packages/(domain|use-cases|adapters)|@repo/(domain|use-cases)|@repo/frameworks/di|zod|bun:test|@types",
+          "^packages/(domain|use-cases|adapters)|@mirai-app/(domain|use-cases)|@mirai-app/frameworks/di|zod|bun:test|@types",
         dependencyTypesNot: ["npm-dev"],
       },
     },
@@ -67,7 +67,7 @@ module.exports = {
       },
       to: {
         pathNot:
-          "^packages/(domain|use-cases|adapters|frameworks)|@repo/(domain|use-cases|adapters)|@mirai-app/|bun:test|@types",
+          "^packages/(domain|use-cases|adapters|frameworks)|@mirai-app/(domain|use-cases|adapters)|@mirai-app/|bun:test|@types",
         dependencyTypesNot: ["npm-dev"],
       },
     },
@@ -76,14 +76,14 @@ module.exports = {
     {
       name: "app-no-direct-domain",
       comment:
-        "Apps must not import domain or use-cases directly. Access through @repo/frameworks or @repo/adapters.",
+        "Apps must not import domain or use-cases directly. Access through @mirai-app/frameworks or @mirai-app/adapters.",
       severity: "error",
       from: {
         path: "^apps/",
         pathNot: "\\.test\\.ts$",
       },
       to: {
-        path: "^packages/(domain|use-cases)|^@repo/(domain|use-cases)$",
+        path: "^packages/(domain|use-cases)|^@mirai-app/(domain|use-cases)$",
       },
     },
 
@@ -204,10 +204,10 @@ module.exports = {
           "^packages/(use-cases|adapters|frameworks)/src",
           "^apps/native/src", // ~/* path aliases documented as tech debt
           "^apps/web/src", // @mirai-app/* workspace imports documented as tech debt
-          "^packages/frameworks/src", // @mirai-app/* imports during migration to @repo/frameworks
-          "^apps/seed", // @repo/frameworks/* imports - exports configured but dist not built - auto-added by fix-dependency-cruiser task
-          "^apps/notification-sender", // @repo/frameworks/* imports - exports configured but dist not built - auto-added by fix-dependency-cruiser task
-          "^apps/backend-server", // @repo/frameworks/* imports - exports configured but dist not built - auto-added by fix-dependency-cruiser task
+          "^packages/frameworks/src", // @mirai-app/* imports during migration to @mirai-app/frameworks
+          "^apps/seed", // @mirai-app/frameworks/* imports - exports configured but dist not built - auto-added by fix-dependency-cruiser task
+          "^apps/notification-sender", // @mirai-app/frameworks/* imports - exports configured but dist not built - auto-added by fix-dependency-cruiser task
+          "^apps/backend-server", // @mirai-app/frameworks/* imports - exports configured but dist not built - auto-added by fix-dependency-cruiser task
         ],
       },
       to: {
@@ -215,7 +215,7 @@ module.exports = {
         // Exclude known virtual modules and workspace patterns
         pathNot: [
           "^astro:", // Astro virtual modules
-          "^~", // Native app path alias (tech debt: migrate to @repo/)
+          "^~", // Native app path alias (tech debt: migrate to @mirai-app/)
           "^@mirai-app/", // Workspace packages that resolve at build time
         ],
       },

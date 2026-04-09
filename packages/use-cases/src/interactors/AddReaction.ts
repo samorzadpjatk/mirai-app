@@ -1,5 +1,5 @@
-import type { Result, ActivityId, ReactionType } from "@repo/domain";
-import { ok, err, ActivityReaction, emptyReactionCounts } from "@repo/domain";
+import type { Result, ActivityId, ReactionType } from "@mirai-app/domain";
+import { ok, err, ActivityReaction, emptyReactionCounts } from "@mirai-app/domain";
 import type { ActivityFeedRepository } from "../ports/ActivityFeedRepository";
 
 /**

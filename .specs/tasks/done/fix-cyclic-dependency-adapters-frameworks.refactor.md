@@ -14,9 +14,9 @@ Fix cyclic dependency between adapters and frameworks packages that prevents bui
 
 The codebase currently has a cyclic dependency between the `adapters` and `frameworks` packages that violates Clean Architecture principles:
 
-1. **adapters imports from frameworks (33 occurrences)**: The adapters layer imports `PrismaClient` and Prisma types from `@repo/frameworks/prisma`. According to Clean Architecture, the adapters layer should NOT depend on the frameworks layer.
+1. **adapters imports from frameworks (33 occurrences)**: The adapters layer imports `PrismaClient` and Prisma types from `@mirai-app/frameworks/prisma`. According to Clean Architecture, the adapters layer should NOT depend on the frameworks layer.
 
-2. **frameworks imports from adapters (3 occurrences)**: The frameworks layer imports `AppRouter` type and auth utilities from `@repo/adapters`. This direction is actually correct per Clean Architecture (outer → inner), but the reverse dependency creates a cycle.
+2. **frameworks imports from adapters (3 occurrences)**: The frameworks layer imports `AppRouter` type and auth utilities from `@mirai-app/adapters`. This direction is actually correct per Clean Architecture (outer → inner), but the reverse dependency creates a cycle.
 
 ### Why This Matters
 
@@ -51,7 +51,7 @@ When complete, the adapters package will have zero runtime dependencies on the f
 ### Scenario 1: No Runtime Dependencies on Frameworks
 
 **Given** the adapters package source code
-**When** analyzing imports from `@repo/frameworks/prisma`
+**When** analyzing imports from `@mirai-app/frameworks/prisma`
 **Then** there should be zero runtime (non-type) imports
 **And** the dependency-cruiser validation should pass with no violations
 
@@ -87,7 +87,7 @@ When complete, the adapters package will have zero runtime dependencies on the f
 
 ### In-Scope
 
-1. **All 33 files in adapters** that import from `@repo/frameworks/prisma`:
+1. **All 33 files in adapters** that import from `@mirai-app/frameworks/prisma`:
    - 15 repository files in `src/gateways/`
    - 7 service files in `src/services/`
    - 1 auth controller in `src/controllers/auth/`
@@ -294,7 +294,7 @@ export function createUserRepository() {
 
 - Base class accepts `PrismaClient` in constructor
 - All existing repositories can still extend the base class (temporarily with any type)
-- No imports from `@repo/frameworks/prisma` in base class
+- No imports from `@mirai-app/frameworks/prisma` in base class
 
 **Subtasks**:
 
@@ -319,7 +319,7 @@ export function createUserRepository() {
 **Success Criteria**:
 
 - All repositories compile with new BasePrismaRepository
-- All repositories removed from `@repo/frameworks/prisma` imports
+- All repositories removed from `@mirai-app/frameworks/prisma` imports
 - Factory functions can create all repositories
 
 **Subtasks**:
@@ -440,7 +440,7 @@ export function createUserRepository() {
 
 - All utility functions compile without framework imports
 - All tests pass with new dependency structure
-- No remaining imports from `@repo/frameworks/prisma` in adapters
+- No remaining imports from `@mirai-app/frameworks/prisma` in adapters
 
 **Subtasks**:
 
@@ -466,7 +466,7 @@ export function createUserRepository() {
 - `bun test` passes with no failures
 - `bun run build` succeeds with no errors
 - `bunx dependency-cruiser --validate .dependency-cruiser.cjs .` passes
-- `grep -r "from.*@repo/frameworks/prisma" packages/adapters/src` returns empty (except type imports if any)
+- `grep -r "from.*@mirai-app/frameworks/prisma" packages/adapters/src` returns empty (except type imports if any)
 
 **Subtasks**:
 
@@ -501,7 +501,7 @@ export function createUserRepository() {
 
 ### Definition of Done
 
-- [ ] All 33 files in adapters no longer import from `@repo/frameworks/prisma` (runtime)
+- [ ] All 33 files in adapters no longer import from `@mirai-app/frameworks/prisma` (runtime)
 - [ ] 3 factory files created in frameworks and exported
 - [ ] BasePrismaRepository uses constructor injection
 - [ ] All 15 repositories use constructor injection

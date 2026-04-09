@@ -1,6 +1,6 @@
-import type { TripRepository } from "@repo/use-cases";
-import { Trip, TripStatus } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
+import type { TripRepository } from "@mirai-app/use-cases";
+import { Trip, TripStatus } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,

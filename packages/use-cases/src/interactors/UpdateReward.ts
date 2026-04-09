@@ -1,5 +1,5 @@
-import type { Result } from "@repo/domain";
-import { ok, err, type RewardId } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err, type RewardId } from "@mirai-app/domain";
 import type { RewardRepository } from "../ports/RewardRepository";
 
 /**
@@ -76,7 +76,7 @@ export class UpdateRewardUseCase {
     return ok(this.toOutput(saved));
   }
 
-  private toOutput(reward: import("@repo/domain").Reward): UpdateRewardOutput {
+  private toOutput(reward: import("@mirai-app/domain").Reward): UpdateRewardOutput {
     return {
       id: reward.id,
       name: reward.name,

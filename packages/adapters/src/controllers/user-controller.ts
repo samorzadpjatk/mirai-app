@@ -1,13 +1,15 @@
 import { z } from "zod";
-import type { UserRepository } from "@repo/use-cases";
+import type { UserRepository } from "@mirai-app/use-cases";
 import {
   GetUserUseCase,
   CreateUserUseCase,
   UpdateUserUseCase,
   type CreateUserInput,
   type UpdateUserInput,
-} from "@repo/use-cases";
-import { UserRole } from "@repo/domain";
+  getUseCaseErrorMessage,
+} from "@mirai-app/use-cases";
+import { UserRole } from "@mirai-app/domain";
+import { Effect } from "effect";
 
 /**
  * Input validation schemas for user controller
@@ -98,13 +100,14 @@ export class UserController {
     }
 
     const useCase = new GetUserUseCase(this.userRepository);
-    const result = await useCase.execute({ userId: parsed.data.id });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const data = await Effect.runPromise(
+        useCase.execute({ userId: parsed.data.id }),
+      );
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: getUseCaseErrorMessage(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -135,18 +138,19 @@ export class UserController {
     }
 
     const useCase = new CreateUserUseCase(this.userRepository);
-    const result = await useCase.execute({
-      authUserId: parsed.data.authUserId,
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      role: parsed.data.role as UserRole,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const data = await Effect.runPromise(
+        useCase.execute({
+          authUserId: parsed.data.authUserId,
+          firstName: parsed.data.firstName,
+          lastName: parsed.data.lastName,
+          role: parsed.data.role as UserRole,
+        }),
+      );
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: getUseCaseErrorMessage(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -177,18 +181,19 @@ export class UserController {
     }
 
     const useCase = new UpdateUserUseCase(this.userRepository);
-    const result = await useCase.execute({
-      userId: parsed.data.userId,
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      hasAvatar: parsed.data.hasAvatar,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const data = await Effect.runPromise(
+        useCase.execute({
+          userId: parsed.data.userId,
+          firstName: parsed.data.firstName,
+          lastName: parsed.data.lastName,
+          hasAvatar: parsed.data.hasAvatar,
+        }),
+      );
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: getUseCaseErrorMessage(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**

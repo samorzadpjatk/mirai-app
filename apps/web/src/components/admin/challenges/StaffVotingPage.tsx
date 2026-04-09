@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPCClient } from "@repo/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
 import { appToast } from "../../../lib/toast";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";

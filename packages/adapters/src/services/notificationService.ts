@@ -1,5 +1,5 @@
 import { executeWithRetry } from "../utils/trpc-utils/resilience";
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 import {
   Expo,
   type ExpoPushMessage,

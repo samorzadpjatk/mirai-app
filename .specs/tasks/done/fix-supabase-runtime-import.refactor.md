@@ -5,7 +5,7 @@ type: refactor
 
 ## Initial User Prompt
 
-Fix the remaining runtime import from @repo/frameworks/supabase in packages/adapters/src/api/trpc.ts to complete the cyclic dependency fix
+Fix the remaining runtime import from @mirai-app/frameworks/supabase in packages/adapters/src/api/trpc.ts to complete the cyclic dependency fix
 
 ## Description
 
@@ -14,7 +14,7 @@ Fix the remaining runtime import from @repo/frameworks/supabase in packages/adap
 The tRPC context file (`packages/adapters/src/api/trpc.ts`) still has **one runtime import** from frameworks:
 
 ```typescript
-import { createSupabaseClient } from "@repo/frameworks/supabase";
+import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 ```
 
 This import is used to create the Supabase client within the adapters layer, which violates Clean Architecture principles. The adapters layer should receive dependencies via injection rather than importing them directly.
@@ -65,7 +65,7 @@ Target (Clean):
 
 ## Acceptance Criteria
 
-- [ ] **No runtime imports**: trpc.ts has no runtime imports from @repo/frameworks/supabase
+- [ ] **No runtime imports**: trpc.ts has no runtime imports from @mirai-app/frameworks/supabase
 - [ ] **Context receives supabase**: createTRPCContext accepts supabase client via parameter
 - [ ] **Type-only imports**: Only type imports remain from frameworks/supabase
 - [ ] **Backend updated**: backend-server creates and injects Supabase client
@@ -147,13 +147,13 @@ export const createTRPCContext = (opts: {
 import {
   createSupabaseClient,
   type SupabaseClient,
-} from "@repo/frameworks/supabase";
+} from "@mirai-app/frameworks/supabase";
 ```
 
 **Change:**
 
 ```typescript
-import type { SupabaseClient } from "@repo/frameworks/supabase";
+import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 ```
 
 **Success Criteria:**
@@ -172,7 +172,7 @@ import type { SupabaseClient } from "@repo/frameworks/supabase";
 **Add:**
 
 ```typescript
-import { createSupabaseClient } from "@repo/frameworks/supabase";
+import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 
 // In context creation:
 const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
@@ -215,7 +215,7 @@ If any factory creates tRPC context, it needs updating to pass supabase.
 **Command:**
 
 ```bash
-grep -r "from.*@repo/frameworks/supabase" packages/adapters/src --include="*.ts" | grep -v "import type"
+grep -r "from.*@mirai-app/frameworks/supabase" packages/adapters/src --include="*.ts" | grep -v "import type"
 ```
 
 **Expected:** Empty result (no runtime imports)

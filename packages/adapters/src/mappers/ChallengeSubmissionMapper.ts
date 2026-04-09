@@ -4,7 +4,7 @@ import {
   type GroupInfo,
   type ReviewerInfo,
   type ChallengeInfo,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * Prisma ChallengeSubmission record type

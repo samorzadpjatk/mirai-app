@@ -1,5 +1,5 @@
 /**
- * @repo/frameworks - Frameworks Layer Exports
+ * @mirai-app/frameworks - Frameworks Layer Exports
  *
  * This package contains framework-specific configuration.
  * It is the outermost layer and can depend on all inner layers.
@@ -26,7 +26,7 @@
  *
  * ### tRPC Server Configuration
  * ```typescript
- * import { createTRPCRouter, protectedProcedure } from "@repo/frameworks/trpc/server";
+ * import { createTRPCRouter, protectedProcedure } from "@mirai-app/frameworks/trpc/server";
  *
  * export const myRouter = createTRPCRouter({
  *   get: protectedProcedure.query(async ({ ctx }) => {
@@ -37,7 +37,7 @@
  *
  * ### tRPC Client Configuration
  * ```typescript
- * import { getTRPCClient } from "@repo/frameworks/trpc/client";
+ * import { getTRPCClient } from "@mirai-app/frameworks/trpc/client";
  *
  * const { client, cleanup } = getTRPCClient(
  *   "https://api.example.com/trpc",
@@ -48,14 +48,14 @@
  *
  * ### Prisma Client
  * ```typescript
- * import { createPrismaClient } from "@repo/frameworks/prisma/client";
+ * import { createPrismaClient } from "@mirai-app/frameworks/prisma/client";
  *
  * const prisma = createPrismaClient(process.env.DATABASE_URL);
  * ```
  *
  * ### Supabase Client
  * ```typescript
- * import { createSupabaseClient } from "@repo/frameworks/supabase/client";
+ * import { createSupabaseClient } from "@mirai-app/frameworks/supabase/client";
  *
  * const supabase = createSupabaseClient(
  *   process.env.SUPABASE_URL,
@@ -198,11 +198,11 @@ export {
 // Re-export Inner Layers (for convenience)
 // =============================================================================
 
-// NOTE: Re-exports from @repo/domain, @repo/use-cases, and @repo/adapters
+// NOTE: Re-exports from @mirai-app/domain, @mirai-app/use-cases, and @mirai-app/adapters
 // are available via their respective packages. Import directly:
 //
 // ```typescript
-// import { User, Challenge } from "@repo/domain";
-// import { CreateUserUseCase } from "@repo/use-cases";
-// import { UserController } from "@repo/adapters";
+// import { User, Challenge } from "@mirai-app/domain";
+// import { CreateUserUseCase } from "@mirai-app/use-cases";
+// import { UserController } from "@mirai-app/adapters";
 // ```

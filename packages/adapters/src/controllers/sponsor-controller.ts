@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { SponsorRepository } from "@repo/use-cases";
+import type { SponsorRepository } from "@mirai-app/use-cases";
 import {
   CreateSponsorUseCase,
   GetSponsorUseCase,
@@ -13,7 +13,7 @@ import {
   type ListSponsorsInput,
   type LinkSponsorToTripInput,
   type UnlinkSponsorFromTripInput,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for sponsor controller

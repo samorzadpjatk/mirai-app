@@ -650,7 +650,8 @@ export function createMockUserModule() {
 
    ```typescript
    // Bad - domain should be framework-agnostic
-   @provide(TYPES.UserService)
+   // Historical: Decorator pattern not used in this codebase
+   @provide(TYPES.UserService)  // Not applicable - we use awilix-modular
    class User { ... }
    ```
 

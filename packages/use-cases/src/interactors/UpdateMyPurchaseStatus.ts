@@ -1,10 +1,10 @@
-import type { Result, RewardPurchaseStatus } from "@repo/domain";
+import type { Result, RewardPurchaseStatus } from "@mirai-app/domain";
 import {
   ok,
   err,
   canTransitionPurchaseStatus,
   REWARD_PURCHASE_STATUSES,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 import type {
   RewardRepository,
   RewardPurchaseRepository,

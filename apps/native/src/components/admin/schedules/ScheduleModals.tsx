@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import { colors, spacing, typography } from "~/styles";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import type { NotificationSchedule } from "@repo/frameworks/trpc/hooks";
+import type { NotificationSchedule } from "@mirai-app/frameworks/trpc/hooks";
 
 interface CreateScheduleModalProps {
   visible: boolean;

@@ -226,6 +226,230 @@ Sequential (dependent):
 
 ---
 
+## Dependency Injection (DI) Patterns
+
+The Mirai App uses **awilix-modular** for dependency injection - a decorator-free, zero-configuration DI framework.
+
+### Quick Reference
+
+```typescript
+// In router: Resolve controller from container
+const controller = ctx.container.resolve("userController");
+
+// In test: Create isolated container
+const container = createTestContainer();
+container.register({
+  userRepository: asClass(InMemoryUserRepository).singleton(),
+});
+```
+
+### Key Benefits
+
+1. **No tsconfig changes needed** - Works with existing TypeScript config
+2. **No decorators required** - No `@injectable`, `@inject` annotations
+3. **Automatic type inference** - No manual service identifiers
+4. **Module-based organization** - NestJS-like `@Module()` pattern
+
+### Container Resolution in Routers
+
+```typescript
+// apps/backend-server/src/routers/user.ts
+export const userRouter = createTRPCRouter({
+  getById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Resolve from request-scoped container
+      const controller = ctx.container.resolve("userController");
+      return controller.getById(input);
+    }),
+
+  create: protectedProcedure
+    .input(CreateUserInput.schema)
+    .mutation(async ({ ctx, input }) => {
+      const controller = ctx.container.resolve("userController");
+      const result = await controller.create(input);
+
+      if (result.isError()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: result.error });
+      }
+
+      return result.value;
+    }),
+});
+```
+
+### Creating a New Repository with DI
+
+```typescript
+// 1. Create repository
+// packages/adapters/src/gateways/PrismaMyEntityRepository.ts
+export class PrismaMyEntityRepository implements MyEntityRepository {
+  constructor(private prisma: PrismaClient) {}
+  // ... implementation
+}
+
+// 2. Add to RepositoryModule
+// packages/adapters/src/modules/RepositoryModule.ts
+export const REPOSITORY_TOKENS = {
+  // ... existing
+  MyEntityRepository: "myEntityRepository",
+} as const;
+
+export const RepositoryModule = createStaticModule({
+  providers: {
+    // ... existing
+    [REPOSITORY_TOKENS.MyEntityRepository]: PrismaMyEntityRepository,
+  },
+  exports: [
+    // ... existing
+    REPOSITORY_TOKENS.MyEntityRepository,
+  ],
+});
+
+// 3. Update ModuleDeps interface
+export interface RepositoryModuleDeps {
+  // ... existing
+  [REPOSITORY_TOKENS.MyEntityRepository]: MyEntityRepository;
+}
+
+// 4. Re-export
+export { PrismaMyEntityRepository } from "../gateways/PrismaMyEntityRepository";
+```
+
+### Testing with DI Container
+
+```typescript
+// packages/use-cases/src/interactors/CreateMyEntity.test.ts
+import { describe, it, expect, beforeEach } from "bun:test";
+import { createTestContainer } from "@mirai-app/frameworks/di";
+import { asClass } from "awilix";
+import { InMemoryMyEntityRepository } from "./mocks/InMemoryMyEntityRepository";
+import { CreateMyEntityUseCase } from "./CreateMyEntity";
+
+describe("CreateMyEntityUseCase", () => {
+  let container: AwilixContainer;
+
+  beforeEach(() => {
+    container = createTestContainer();
+    // Override with mock implementation
+    container.register({
+      myEntityRepository: asClass(InMemoryMyEntityRepository).singleton(),
+    });
+  });
+
+  it("should create entity", async () => {
+    // Seed mock data
+    const mockRepo =
+      container.resolve<MyEntityRepository>("myEntityRepository");
+    await mockRepo.seed({ id: "123", name: "Test" });
+
+    // Resolve use case with auto-wired dependencies
+    const useCase = container.resolve(CreateMyEntityUseCase);
+    const result = await useCase.execute({ name: "Test" });
+
+    expect(result.isSuccess()).toBe(true);
+  });
+});
+```
+
+### Module Structure Pattern
+
+```typescript
+// packages/adapters/src/modules/ControllerModule.ts
+import { createStaticModule, type StaticModule } from "awilix-modular";
+import { Lifetime } from "awilix";
+
+// Define tokens
+export const CONTROLLER_TOKENS = {
+  UserController: "userController",
+} as const;
+
+// Define module
+export const ControllerModule: StaticModule = createStaticModule({
+  name: "ControllerModule",
+  imports: [RepositoryModule], // Import dependencies
+  providers: {
+    [CONTROLLER_TOKENS.UserController]: {
+      factory: (cradle) => new UserController(cradle.userRepository),
+      lifetime: Lifetime.SCOPED, // New instance per request
+    },
+  },
+  exports: [CONTROLLER_TOKENS.UserController],
+});
+
+// Export Deps interface for injection
+export interface ControllerModuleDeps {
+  [CONTROLLER_TOKENS.UserController]: UserController;
+  // ... other dependencies
+}
+```
+
+### Scope Strategy
+
+| Scope         | Use For                | Lifetime               |
+| ------------- | ---------------------- | ---------------------- |
+| **SINGLETON** | Repositories, services | One instance for app   |
+| **SCOPED**    | Controllers, use cases | One per request        |
+| **TRANSIENT** | Utilities, factories   | New instance each time |
+
+```typescript
+// Repository: Singleton (stateless, thread-safe)
+providers: {
+  userRepository: {
+    factory: (cradle) => new PrismaUserRepository(cradle.prisma),
+    lifetime: Lifetime.SINGLETON,
+  },
+}
+
+// Controller: Scoped (request-scoped)
+providers: {
+  userController: {
+    factory: (cradle) => new UserController(cradle.userRepository),
+    lifetime: Lifetime.SCOPED,
+  },
+}
+```
+
+### DI Troubleshooting
+
+**Issue: "Container not initialized"**
+
+```typescript
+// Ensure initialization before use
+import { initializeContainer, AppModule } from "@mirai-app/frameworks/di";
+initializeContainer([AppModule]);
+```
+
+**Issue: "Service not found"**
+
+```typescript
+// Check exports array
+exports: ["myService"]; // Must export!
+
+// Check parent module imports
+imports: [MyModule]; // Must import!
+```
+
+**Issue: Type inference not working**
+
+```typescript
+// Use explicit type annotation
+const repo = container.resolve<UserRepository>("userRepository");
+
+// Or use ModuleDeps interface
+class MyService {
+  constructor(private deps: RepositoryModuleDeps) {}
+}
+```
+
+### DI Documentation References
+
+- [Full DI Guide](../../packages/frameworks/src/di/README.md)
+- [DI Quick Start Cheat Sheet](../../.specs/templates/di-quick-start.md)
+- [DI Migration Guide](../../.specs/templates/di-migration-guide.md)
+
+---
+
 ## Common Patterns
 
 ### Creating a New Entity (DDD Flow)
@@ -546,80 +770,32 @@ If stuck on:
 ---
 
 **Last Updated:** 2026-04-09
-**Version:** 1.0.1
+**Version:** 1.0.2
 
 ---
 
-## Kaizen Improvements Log
+## Recent Kaizen Improvements
 
-Recent continuous improvements applied to the codebase:
+### Repository Standardization ✅
 
-### PDCA Cycle 1: Repository Port Exports ✅
+**Completed:** 2026-04-09  
+**Status:** 13 of 16 repositories standardized (81% - exceeded 60% target)
 
-**Date:** 2026-04-09  
-**Problem:** 15 repository interface orphan warnings  
-**Solution:** Added missing exports, updated dependency-cruiser config  
-**Result:** 0 port orphan warnings, improved discoverability
+**Key Results:**
 
-### PDCA Cycle 2: BasePrismaRepository Pattern ✅
-
-**Date:** 2026-04-09  
-**Problem:** 16 repositories with duplicated CRUD code  
-**Solution:** Created `BasePrismaRepository` base class  
-**Result:** 69% code reduction potential, PrismaUserRepository refactored as pilot
-
-### PDCA Cycle 3: Parallel Repository Refactoring ✅
-
-**Date:** 2026-04-09  
-**Method:** Parallel SADD execution (3 subagents)  
-**Repositories:** PrismaChallengeRepository, PrismaTripRepository, PrismaGroupRepository  
-**Result:** 3 repositories refactored in 45 minutes, all quality gates passed  
-**Documentation:** See `packages/adapters/PDCA-CYCLE-3-RESULTS.md`
-
-### PDCA Cycle 4: Next Batch + Smart Exclusions ✅
-
-**Date:** 2026-04-09  
-**Method:** Parallel SADD execution (4 subagents)  
-**Repositories:** PrismaNotificationRepository, PrismaLocationRepository, PrismaChallengeSubmissionRepository  
-**Intentionally Retained:** PrismaActivityFeedRepository (complex polymorphic requirements)  
-**Result:** 3 repositories refactored (272 lines removed), 1 appropriately excluded  
-**Key Learning:** Not all repositories fit the pattern - quality > forced consistency  
-**Documentation:** See `packages/adapters/PDCA-CYCLE-4-RESULTS.md`
-
-### PDCA Cycle 5: Complete Repository Standardization ✅
-
-**Date:** 2026-04-09  
-**Method:** Parallel SADD execution with requirement grouping (6 implementations + 6 judges)  
-**Batch 1 (Simple):** PrismaSponsorRepository, PrismaSubmissionReportRepository, PrismaChallengeVoteRepository  
-**Batch 2 (Medium):** PrismaRewardRepository, PrismaCoinTransactionRepository, PrismaNotificationDeliveryRepository  
-**Result:** 6 repositories refactored, 540+ lines of CRUD boilerplate eliminated, 100% quality gate pass rate (avg 4.83/5.0)  
-**Milestone:** 81% pattern coverage achieved (13/16 repositories) - **exceeded 60% target**  
-**New Mappers Created:** CoinTransactionMapper.ts, NotificationDeliveryMapper.ts  
-**Key Learning:** Legitimate pattern variations identified (CRUD overrides for includes, private prisma property for advanced features, dual-entity patterns)  
-**Documentation:** See `packages/adapters/PDCA-CYCLE-5-RESULTS.md`
-
-### Current Status
-
-- **13 of 16** repositories standardized (**81%** - target exceeded!)
-- **540+ lines** of duplicated CRUD boilerplate eliminated
-- **34%** average code reduction per repository (higher for simple repos)
-- **0** new dependency violations
-- **2** repositories identified as unsuitable (ActivityFeed permanently excluded, NotificationSchedule deferred to Cycle 6)
-- Pattern is now **institutional standard** for Mirai App
+- 540+ lines of duplicated CRUD boilerplate eliminated
+- 34% average code reduction per repository
+- Pattern institutionalized via `BasePrismaRepository` base class
 - Pattern documented in `packages/adapters/README.md`
 - Refactoring guide: `packages/adapters/REPOSITORY_REFACTORING.md`
 
-### Next Kaizen Opportunities
+**Intentionally Excluded:**
 
-- **Cycle 6:** Refactor PrismaNotificationScheduleRepository (high complexity, 2-week dedicated cycle)
-- Create code generation tooling for new repositories (pattern is now standardized)
-- Add unit tests for new mappers (CoinTransactionMapper, NotificationDeliveryMapper)
-- Address test coverage gaps in refactored repositories
-- Optimize CI pipeline speed
-- Consider repository code generator: `bun run generate:repository <EntityName>`
+- `PrismaActivityFeedRepository` (complex polymorphic requirements)
+- `PrismaNotificationScheduleRepository` (deferred to dedicated cycle)
 
-See full PDCA results:
+**Next Opportunities:**
 
-- Cycle 3: `packages/adapters/PDCA-CYCLE-3-RESULTS.md`
-- Cycle 4: `packages/adapters/PDCA-CYCLE-4-RESULTS.md`
-- Cycle 5: `packages/adapters/PDCA-CYCLE-5-RESULTS.md`
+- Complete NotificationSchedule refactoring
+- Create repository code generator
+- Address test coverage gaps

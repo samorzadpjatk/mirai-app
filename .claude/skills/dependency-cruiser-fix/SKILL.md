@@ -51,7 +51,7 @@ Check the exporting package's `package.json`:
 
 ```json
 {
-  "name": "@repo/frameworks",
+  "name": "@mirai-app/frameworks",
   "exports": {
     "./prisma": {
       "types": "./src/prisma/index.ts",
@@ -97,7 +97,7 @@ Update imports to use correct paths:
 
 ```typescript
 // ❌ Before (unresolvable)
-import { prisma } from "@repo/frameworks/prisma";
+import { prisma } from "@mirai-app/frameworks/prisma";
 
 // ✅ After (fix by ensuring package exports)
 // Or update to relative path if package not yet configured:
@@ -170,8 +170,8 @@ export * from "./prisma/lib/models";
 
 ```typescript
 // Import from workspace packages
-import { User } from "@repo/domain";
-import { CreateUserUseCase } from "@repo/use-cases";
+import { User } from "@mirai-app/domain";
+import { CreateUserUseCase } from "@mirai-app/use-cases";
 ```
 
 Ensure all workspace packages have proper `exports` in their `package.json`.
@@ -196,7 +196,7 @@ Native app uses `~/*` aliases. These need dependency-cruiser exclusions:
 
 ### Legacy Migration
 
-During package consolidation from legacy names (`@mirai-app/*`) to new names (`@repo/*`), temporary exclusions may be needed:
+During package consolidation from legacy names (`@mirai-app/*`) to new names (`@mirai-app/*`), temporary exclusions may be needed:
 
 ```javascript
 // Allow legacy imports during migration
@@ -239,7 +239,7 @@ When adding exclusions for known issues, add comments:
 ```javascript
 {
   name: "not-to-unresolvable",
-  comment: "Allow path aliases in native app - tech debt: migrate to @repo/",
+  comment: "Allow path aliases in native app - tech debt: migrate to @mirai-app/",
   from: { pathNot: "^apps/native/src" },
   to: { pathNot: "^~" },
 }

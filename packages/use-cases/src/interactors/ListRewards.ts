@@ -1,5 +1,5 @@
-import type { Result } from "@repo/domain";
-import { ok, CoinAmount } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, CoinAmount } from "@mirai-app/domain";
 import type {
   RewardRepository,
   TripPointsCalculator,

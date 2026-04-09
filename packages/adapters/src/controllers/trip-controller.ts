@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { TripRepository } from "@repo/use-cases";
-import { Trip, TripStatus } from "@repo/domain";
+import type { TripRepository } from "@mirai-app/use-cases";
+import { Trip, TripStatus } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for trip controller

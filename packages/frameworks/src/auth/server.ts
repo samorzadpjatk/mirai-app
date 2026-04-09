@@ -8,7 +8,7 @@ export type {
 export type { AuthUser } from "../../stores/authStore";
 
 // NOTE: Server-side auth functions (AuthServer, getServerUser, etc.)
-// are available from @repo/adapters/auth/authServer
+// are available from @mirai-app/adapters/auth/authServer
 // Import directly from adapters to avoid cyclic dependency:
 //
-// import { AuthServer, getServerUser } from "@repo/adapters/auth/authServer";
+// import { AuthServer, getServerUser } from "@mirai-app/adapters/auth/authServer";

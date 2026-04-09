@@ -1,5 +1,5 @@
-import type { Result, RewardId } from "@repo/domain";
-import { ok, err, RewardPurchase, CoinAmount } from "@repo/domain";
+import { Effect } from "effect";
+import { RewardPurchase, CoinAmount } from "@mirai-app/domain";
 import type {
   RewardRepository,
   RewardPurchaseRepository,
@@ -7,6 +7,13 @@ import type {
   GroupCoinsService,
   TripAccessChecker,
 } from "../ports/RewardRepository";
+import {
+  UseCaseNotFoundError,
+  UseCaseConflictError,
+  UseCaseRepositoryError,
+  type UseCaseError,
+} from "../errors";
+import type { RewardId } from "@mirai-app/domain";
 
 /**
  * Input for PurchaseReward use case
@@ -48,6 +55,24 @@ export interface PurchaseRewardOutput {
  * - Deducts coins from group
  * - Creates purchase record
  * - Creates coin transaction record
+ *
+ * ## Constructor Injection Pattern
+ *
+ * This use case supports both manual instantiation and DI container injection:
+ *
+ * ```typescript
+ * // Manual instantiation (backward compatible)
+ * const useCase = new PurchaseRewardUseCase(
+ *   rewardRepo,
+ *   purchaseRepo,
+ *   pointsCalc,
+ *   coinsService,
+ *   accessChecker
+ * );
+ *
+ * // DI container injection (awilix-modular)
+ * const useCase = container.resolve("purchaseRewardUseCase");
+ * ```
  */
 export class PurchaseRewardUseCase {
   constructor(
@@ -58,78 +83,167 @@ export class PurchaseRewardUseCase {
     private accessChecker: TripAccessChecker,
   ) {}
 
-  async execute(
+  execute(
     input: PurchaseRewardInput,
-  ): Promise<Result<PurchaseRewardOutput, string>> {
-    // Find the reward
-    const reward = await this.rewardRepository.findById(input.rewardId);
-    if (!reward) {
-      return err("Reward not found");
-    }
+  ): Effect.Effect<PurchaseRewardOutput, UseCaseError> {
+    const rewardRepository = this.rewardRepository;
+    const purchaseRepository = this.purchaseRepository;
+    const pointsCalculator = this.pointsCalculator;
+    const coinsService = this.coinsService;
+    const accessChecker = this.accessChecker;
 
-    // Check if trip has ended
-    const hasEnded = await this.accessChecker.hasTripEnded(reward.tripId);
-    if (hasEnded) {
-      return err("Cannot purchase rewards for ended trips");
-    }
+    return Effect.gen(function* () {
+      // Find the reward
+      const reward = yield* Effect.tryPromise({
+        try: () => rewardRepository.findById(input.rewardId),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.findById",
+            message: "Failed to load reward",
+            cause,
+          }),
+      });
 
-    // Check if reward is hidden
-    if (reward.isHidden) {
-      return err("Reward is hidden");
-    }
+      if (!reward) {
+        return yield* Effect.fail(
+          new UseCaseNotFoundError({
+            entity: "Reward",
+            message: "Reward not found",
+          }),
+        );
+      }
 
-    // Check if sufficient quantity is available
-    if (!reward.canPurchaseQuantity(input.quantity)) {
-      return err(
-        `Not enough rewards available (requested: ${input.quantity}, available: ${reward.availableQuantity})`,
-      );
-    }
+      // Check if trip has ended
+      const hasEnded = yield* Effect.tryPromise({
+        try: () => accessChecker.hasTripEnded(reward.tripId),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.hasTripEnded",
+            message: "Failed to check trip status",
+            cause,
+          }),
+      });
 
-    // Verify user is a group leader for this trip
-    const leaderCheck = await this.accessChecker.isGroupLeader(
-      input.userId,
-      reward.tripId,
-    );
+      if (hasEnded) {
+        return yield* Effect.fail(
+          new UseCaseConflictError({
+            entity: "Trip",
+            message: "Cannot purchase rewards for ended trips",
+          }),
+        );
+      }
 
-    if (!leaderCheck.isLeader || !leaderCheck.groupId) {
-      return err("Only group leaders can purchase rewards");
-    }
+      // Check if reward is hidden
+      if (reward.isHidden) {
+        return yield* Effect.fail(
+          new UseCaseConflictError({
+            entity: "Reward",
+            message: "Reward is hidden",
+          }),
+        );
+      }
 
-    // Calculate dynamic coin cost
-    const totalPoints =
-      await this.pointsCalculator.calculateTotalAvailablePoints(reward.tripId);
-    const totalCost = reward.calculateTotalCost(input.quantity, totalPoints);
+      // Check if sufficient quantity is available
+      if (!reward.canPurchaseQuantity(input.quantity)) {
+        return yield* Effect.fail(
+          new UseCaseConflictError({
+            entity: "Reward",
+            message: `Not enough rewards available (requested: ${input.quantity}, available: ${reward.availableQuantity})`,
+          }),
+        );
+      }
 
-    // Check if group has enough coins
-    const groupCoins = await this.coinsService.getBalance(leaderCheck.groupId);
-    const groupCoinsAmount = CoinAmount.unsafeCreate(groupCoins);
+      // Verify user is a group leader for this trip
+      const leaderCheck = yield* Effect.tryPromise({
+        try: () => accessChecker.isGroupLeader(input.userId, reward.tripId),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.isGroupLeader",
+            message: "Failed to check leader status",
+            cause,
+          }),
+      });
 
-    if (!groupCoinsAmount.isGreaterThanOrEqual(totalCost)) {
-      return err(
-        `Not enough coins (need: ${totalCost.toNumber()}, have: ${groupCoins})`,
-      );
-    }
+      if (!leaderCheck.isLeader || !leaderCheck.groupId) {
+        return yield* Effect.fail(
+          new UseCaseConflictError({
+            entity: "User",
+            message: "Only group leaders can purchase rewards",
+          }),
+        );
+      }
 
-    // Execute the purchase as a transaction
-    try {
+      // Calculate dynamic coin cost
+      const totalPoints = yield* Effect.tryPromise({
+        try: () =>
+          pointsCalculator.calculateTotalAvailablePoints(reward.tripId),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.calculateTotalAvailablePoints",
+            message: "Failed to calculate points",
+            cause,
+          }),
+      });
+
+      const totalCost = reward.calculateTotalCost(input.quantity, totalPoints);
+
+      // Check if group has enough coins
+      const groupCoins = yield* Effect.tryPromise({
+        try: () => coinsService.getBalance(leaderCheck.groupId!),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.getBalance",
+            message: "Failed to get group coins",
+            cause,
+          }),
+      });
+
+      const groupCoinsAmount = CoinAmount.unsafeCreate(groupCoins);
+
+      if (!groupCoinsAmount.isGreaterThanOrEqual(totalCost)) {
+        return yield* Effect.fail(
+          new UseCaseConflictError({
+            entity: "Coins",
+            message: `Not enough coins (need: ${totalCost.toNumber()}, have: ${groupCoins})`,
+          }),
+        );
+      }
+
+      // Execute the purchase steps
+
       // 1. Decrement reward quantity
-      const updatedReward = await this.rewardRepository.decrementQuantity(
-        input.rewardId,
-        input.quantity,
-      );
+      const updatedReward = yield* Effect.tryPromise({
+        try: () =>
+          rewardRepository.decrementQuantity(input.rewardId, input.quantity),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.decrementQuantity",
+            message: "Failed to decrement reward quantity",
+            cause,
+          }),
+      });
 
       // 2. Deduct coins from group
-      await this.coinsService.deductCoins(
-        leaderCheck.groupId,
-        totalCost.toNumber(),
-        `Claimed ${input.quantity}x ${reward.name}`,
-        input.userId,
-      );
+      yield* Effect.tryPromise({
+        try: () =>
+          coinsService.deductCoins(
+            leaderCheck.groupId!,
+            totalCost.toNumber(),
+            `Claimed ${input.quantity}x ${reward.name}`,
+            input.userId,
+          ),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.deductCoins",
+            message: "Failed to deduct coins",
+            cause,
+          }),
+      });
 
       // 3. Create purchase record
       const purchaseResult = RewardPurchase.create({
         rewardId: input.rewardId,
-        groupId: leaderCheck.groupId,
+        groupId: leaderCheck.groupId!,
         quantity: input.quantity,
         totalCost: totalCost.toNumber(),
         purchasedById: input.userId,
@@ -138,33 +252,47 @@ export class PurchaseRewardUseCase {
 
       if (purchaseResult.kind === "err") {
         // This shouldn't happen since we validated everything
-        return err(`Failed to create purchase: ${purchaseResult.error}`);
+        return yield* Effect.fail(
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.createPurchase",
+            message: `Failed to create purchase: ${purchaseResult.error}`,
+            cause: purchaseResult.error,
+          }),
+        );
       }
 
-      const savedPurchase = await this.purchaseRepository.create(
-        purchaseResult.value,
-      );
+      const savedPurchase = yield* Effect.tryPromise({
+        try: () => purchaseRepository.create(purchaseResult.value),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.savePurchase",
+            message: "Failed to save purchase",
+            cause,
+          }),
+      });
 
       // 4. Get remaining group coins
-      const remainingCoins = await this.coinsService.getBalance(
-        leaderCheck.groupId,
-      );
+      const remainingCoins = yield* Effect.tryPromise({
+        try: () => coinsService.getBalance(leaderCheck.groupId!),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "PurchaseReward.getRemainingBalance",
+            message: "Failed to get remaining balance",
+            cause,
+          }),
+      });
 
-      return ok({
+      return {
         purchaseId: savedPurchase.id,
         rewardId: reward.id,
-        groupId: leaderCheck.groupId,
+        groupId: leaderCheck.groupId!,
         quantity: input.quantity,
         totalCost: totalCost.toNumber(),
         status: savedPurchase.status,
         purchasedAt: savedPurchase.purchasedAt,
         remainingGroupCoins: remainingCoins,
         remainingRewardQuantity: updatedReward.availableQuantity,
-      });
-    } catch (error) {
-      return err(
-        `Purchase failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    }
+      };
+    });
   }
 }

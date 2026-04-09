@@ -2,8 +2,8 @@ import type {
   Result,
   NotificationScheduleFilter,
   PaginationOptions,
-} from "@repo/domain";
-import { ok, err, NotificationSchedule } from "@repo/domain";
+} from "@mirai-app/domain";
+import { ok, err, NotificationSchedule } from "@mirai-app/domain";
 import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
 
 /**

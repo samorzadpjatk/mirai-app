@@ -1,6 +1,6 @@
-import type { LocationRepository } from "@repo/use-cases";
-import type { Location, LocationId } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
+import type { LocationRepository } from "@mirai-app/use-cases";
+import type { Location, LocationId } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,

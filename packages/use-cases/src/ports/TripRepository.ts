@@ -1,4 +1,4 @@
-import type { Trip, TripStatus } from "@repo/domain";
+import type { Trip, TripStatus } from "@mirai-app/domain";
 
 /**
  * TripRepository Port

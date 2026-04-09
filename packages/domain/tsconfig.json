@@ -20,9 +20,7 @@
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
     "lib": ["ESNext"],
-    "target": "ESNext",
-    "composite": true,
-    "noEmit": false
+    "target": "ESNext"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

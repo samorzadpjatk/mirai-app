@@ -21,17 +21,6 @@ const createWsClient = (
   wsUrl: string,
   authorizationToken?: string,
 ): ReturnType<typeof createWSClient> => {
-  console.log(
-    "[WS Client] Creating WebSocket client with token:",
-    authorizationToken ? "YES" : "NO",
-  );
-  if (authorizationToken) {
-    console.log(
-      "[WS Client] Token preview:",
-      authorizationToken.substring(0, 20) + "...",
-    );
-  }
-
   // For browser/React Native, we need to add auth via URL since WebSocket doesn't support custom headers
   // The Fastify adapter will parse the Authorization header from the upgrade request
   const wsUrlWithAuth = authorizationToken

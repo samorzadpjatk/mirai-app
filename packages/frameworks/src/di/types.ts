@@ -2,33 +2,27 @@
  * Service Identifiers for Dependency Injection
  *
  * This module defines all injection tokens (symbols) used throughout the application
- * for InversifyJS dependency injection. All symbols use Symbol.for() for cross-realm
+ * for dependency injection. All symbols use Symbol.for() for cross-realm
  * compatibility, ensuring symbols remain identical across different JavaScript realms
  * (main thread, workers, iframes, etc.).
  *
  * ## Usage
  *
- * ### Binding a Service with @provide Decorator
+ * ### Registering a Service in Awilix
  *
  * ```typescript
- * import { provide } from "@inversifyjs/binding-decorators";
+ * import { asClass } from "awilix";
  * import { TYPES } from "./types";
  *
- * @provide(TYPES.UserRepository)
- * class PrismaUserRepository implements UserRepository {
- *   constructor(@inject(TYPES.PrismaClient) private prisma: PrismaClient) {}
- * }
+ * container.register(TYPES.UserRepository, asClass(PrismaUserRepository));
  * ```
  *
- * ### Injecting a Service
+ * ### Resolving a Service
  *
  * ```typescript
- * import { inject } from "inversify";
  * import { TYPES } from "./types";
  *
- * class UserController {
- *   constructor(@inject(TYPES.UserRepository) private repo: UserRepository) {}
- * }
+ * const repo = container.resolve<UserRepository>(TYPES.UserRepository);
  * ```
  *
  * ## Naming Conventions
@@ -270,12 +264,8 @@ const USER_CONTEXT_SYMBOL: unique symbol = Symbol.for("UserContext");
  * @example
  * ```typescript
  * import { TYPES } from "./types";
- * import { provide } from "@inversifyjs/binding-decorators";
  *
- * @provide(TYPES.UserRepository)
- * class PrismaUserRepository implements UserRepository {
- *   // ...
- * }
+ * container.register(TYPES.UserRepository, asClass(PrismaUserRepository));
  * ```
  */
 export const TYPES = {

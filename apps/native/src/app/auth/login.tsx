@@ -9,16 +9,16 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
-import { useLoginForm } from "@repo/frameworks/auth/client";
+import { useLoginForm } from "@mirai-app/frameworks/auth/client";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import Logo from "../../components/Logo";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@repo/frameworks/auth/client";
+import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { useState } from "react";
-import { useSupabaseClient } from "@repo/frameworks/supabase/react";
-import { getTRPCClient } from "@repo/frameworks/trpc/client";
+import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
+import { getTRPCClient } from "@mirai-app/frameworks/trpc/client";
 import {
   PRIVACY_POLICY_PUBLIC_URL,
   TRPC_HTTP_URL,

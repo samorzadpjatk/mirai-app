@@ -1,6 +1,6 @@
-import type { ChallengeVoteRepository } from "@repo/use-cases";
-import type { ChallengeVote } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
+import type { ChallengeVoteRepository } from "@mirai-app/use-cases";
+import type { ChallengeVote } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,

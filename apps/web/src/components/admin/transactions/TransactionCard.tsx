@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { TransactionItem } from "@repo/frameworks/trpc/hooks";
+import type { TransactionItem } from "@mirai-app/frameworks/trpc/hooks";
 
 interface TransactionCardProps {
   transaction: TransactionItem;

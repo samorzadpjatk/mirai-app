@@ -18,9 +18,10 @@
 2. [SDD Conventions](#sdd-conventions)
 3. [TDD Conventions](#tdd-conventions)
 4. [DDD Conventions](#ddd-conventions)
-5. [SADD Conventions](#sadd-conventions)
-6. [Kaizen Conventions](#kaizen-conventions)
-7. [Code Style Guide](#code-style-guide)
+5. [DI Container Conventions](#di-container-conventions-packages-frameworkssrcdi)
+6. [SADD Conventions](#sadd-conventions)
+7. [Kaizen Conventions](#kaizen-conventions)
+8. [Code Style Guide](#code-style-guide)
 
 ---
 
@@ -259,7 +260,7 @@ Enforced in CI via `bunfig.toml`:
 // Use mock.module() for module mocking
 import { mock } from "bun:test";
 
-mock.module("@repo/db", () => ({
+mock.module("@mirai-app/db", () => ({
   prisma: mockPrisma,
 }));
 ```
@@ -268,7 +269,7 @@ mock.module("@repo/db", () => ({
 
 ```typescript
 // Use __mocks__/ directory for manual mocks
-// apps/native/__mocks__/@repo/db.ts
+// apps/native/__mocks__/@mirai-app/db.ts
 export const prisma = mockPrisma;
 ```
 
@@ -439,7 +440,7 @@ export interface UserRepository {
 
 // packages/use-cases/src/interactors/CreateUser.ts
 import { UserRepository } from "../ports/UserRepository";
-import { User } from "@repo/domain";
+import { User } from "@mirai-app/domain";
 
 export class CreateUserUseCase {
   constructor(private userRepo: UserRepository) {}
@@ -488,8 +489,8 @@ export class CreateUserUseCase {
 
 ```typescript
 // packages/adapters/src/gateways/PrismaUserRepository.ts
-import { UserRepository } from "@repo/use-cases";
-import { User } from "@repo/domain";
+import { UserRepository } from "@mirai-app/use-cases";
+import { User } from "@mirai-app/domain";
 
 export class PrismaUserRepository implements UserRepository {
   constructor(private prisma: PrismaClient) {}
@@ -541,6 +542,113 @@ export const userRouter = createTRPCRouter({
 2. Depends on all inner layers
 3. NO business logic
 4. Configuration and setup only
+
+### DI Container Conventions (`packages/frameworks/src/di/`)
+
+**Responsibility:** Dependency injection infrastructure using awilix-modular
+
+**Contents:**
+
+- `container.ts` - Root container and initialization
+- `AppModule.ts` - Root module composing all sub-modules
+- `scope.ts` - Request-scoped container utilities
+- `types.ts` - Service identifiers (TYPES)
+- `test-container.ts` - Testing utilities
+
+**Key Principles:**
+
+1. **No DI-specific tsconfig changes required** - Works with standard compiler settings
+2. **Constructor-based injection** - No DI annotations required in classes
+3. **Module-based organization** - Static modules via `createStaticModule()`
+4. **Automatic type inference** - No manual service identifiers
+
+**Container Hierarchy:**
+
+```
+Root Container (singletons)
+    └── Request Scope (per-request instances)
+            └── Child Scopes (if needed)
+```
+
+**Module Structure:**
+
+```typescript
+// Example: RepositoryModule
+export const RepositoryModule = createStaticModule({
+  name: "RepositoryModule",
+  imports: [], // Parent modules
+  providers: {
+    // Class provider (auto-injected)
+    userRepository: PrismaUserRepository,
+
+    // Factory provider (custom construction)
+    userController: {
+      factory: (cradle) => new UserController(cradle.userRepository),
+      lifetime: Lifetime.SCOPED,
+    },
+  },
+  exports: ["userRepository", "userController"],
+});
+```
+
+**Container Usage in tRPC:**
+
+```typescript
+// tRPC context includes request-scoped container
+export const createTRPCContext = async (opts) => {
+  const { db } = await createContextData(opts);
+
+  // Create request scope with PrismaClient
+  const scope = createRequestScope({
+    prisma: db,
+    requestId: generateRequestId(),
+  });
+
+  return {
+    db,
+    container: scope.container, // Available in all procedures
+  };
+};
+
+// Router uses container to resolve controllers
+export const userRouter = createTRPCRouter({
+  getById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const controller = ctx.container.resolve("userController");
+      return controller.getById(input);
+    }),
+});
+```
+
+**Lifetime Scopes:**
+
+| Scope         | Use For                | Pattern              |
+| ------------- | ---------------------- | -------------------- |
+| **SINGLETON** | Repositories, services | One instance for app |
+| **SCOPED**    | Controllers, use cases | One per request      |
+| **TRANSIENT** | Factories, utilities   | New each time        |
+
+**Testing with Container:**
+
+```typescript
+// Create isolated test container
+const container = createTestContainer();
+
+// Override with mock
+container.register({
+  userRepository: asClass(InMemoryUserRepository).singleton(),
+});
+
+// Resolve with mocked dependencies
+const useCase = container.resolve(GetUserUseCase);
+```
+
+**DI Reference Documentation:**
+
+- [Full DI Guide](./packages/frameworks/src/di/README.md)
+- [DI Quick Start](./.specs/templates/di-quick-start.md)
+- [DI Migration Guide](./.specs/templates/di-migration-guide.md)
 
 ### Dependency Rule
 
@@ -897,8 +1005,8 @@ import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
 
 // 2. Inner layer dependencies (domain first)
-import { User } from "@repo/domain";
-import { UserRepository } from "@repo/use-cases";
+import { User } from "@mirai-app/domain";
+import { UserRepository } from "@mirai-app/use-cases";
 
 // 3. Same layer dependencies
 import { UserMapper } from "./mappers/UserMapper";

@@ -1,9 +1,14 @@
-import type { Result } from "@repo/domain";
-import { ok, err } from "@repo/domain";
+import { Effect } from "effect";
 import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
+import {
+  UseCaseNotFoundError,
+  UseCaseConflictError,
+  UseCaseRepositoryError,
+  type UseCaseError,
+} from "../errors";
 
 /**
  * Input for AddCoins use case
@@ -28,46 +33,93 @@ export interface AddCoinsOutput {
  *
  * Adds coins to a group within a trip.
  * Validates that the group exists and belongs to the trip.
+ *
+ * ## Constructor Injection Pattern
+ *
+ * This use case supports both manual instantiation and DI container injection:
+ *
+ * ```typescript
+ * // Manual instantiation (backward compatible)
+ * const useCase = new AddCoinsUseCase(coinRepo);
+ *
+ * // DI container injection (awilix-modular)
+ * const useCase = container.resolve("addCoinsUseCase");
+ * ```
  */
 export class AddCoinsUseCase {
   constructor(private coinRepo: CoinTransactionRepository) {}
 
-  async execute(input: AddCoinsInput): Promise<Result<AddCoinsOutput, string>> {
-    try {
+  execute(input: AddCoinsInput): Effect.Effect<AddCoinsOutput, UseCaseError> {
+    const coinRepo = this.coinRepo;
+
+    return Effect.gen(function* () {
       // Verify group belongs to trip and is not deleted
-      const groupCheck = await this.coinRepo.verifyGroupInTrip(
-        input.groupId,
-        input.tripId,
-      );
+      const groupCheck = yield* Effect.tryPromise({
+        try: () => coinRepo.verifyGroupInTrip(input.groupId, input.tripId),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "AddCoins.verifyGroupInTrip",
+            message: "Failed to verify group",
+            cause,
+          }),
+      });
 
       if (!groupCheck.exists) {
-        return err("Group not found");
+        return yield* Effect.fail(
+          new UseCaseNotFoundError({
+            entity: "Group",
+            message: "Group not found",
+          }),
+        );
       }
 
       if (groupCheck.tripId !== input.tripId) {
-        return err("Group does not belong to this trip");
+        return yield* Effect.fail(
+          new UseCaseConflictError({
+            entity: "Group",
+            message: "Group does not belong to this trip",
+          }),
+        );
       }
 
       if (groupCheck.isDeleted) {
-        return err("Group has been deleted");
+        return yield* Effect.fail(
+          new UseCaseConflictError({
+            entity: "Group",
+            message: "Group has been deleted",
+          }),
+        );
       }
 
       // Increment group coins
-      await this.coinRepo.incrementGroupCoins(input.groupId, input.amount);
-
-      // Create transaction record
-      const transaction = await this.coinRepo.create({
-        groupId: input.groupId,
-        amount: input.amount,
-        ...(input.reason !== undefined && { reason: input.reason }),
-        adminId: input.adminId,
+      yield* Effect.tryPromise({
+        try: () => coinRepo.incrementGroupCoins(input.groupId, input.amount),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "AddCoins.incrementGroupCoins",
+            message: "Failed to increment group coins",
+            cause,
+          }),
       });
 
-      return ok({ transaction });
-    } catch (error) {
-      return err(
-        `Failed to add coins: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+      // Create transaction record
+      const transaction = yield* Effect.tryPromise({
+        try: () =>
+          coinRepo.create({
+            groupId: input.groupId,
+            amount: input.amount,
+            ...(input.reason !== undefined && { reason: input.reason }),
+            adminId: input.adminId,
+          }),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "AddCoins.create",
+            message: "Failed to create transaction",
+            cause,
+          }),
+      });
+
+      return { transaction };
+    });
   }
 }

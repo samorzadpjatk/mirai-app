@@ -6,7 +6,7 @@ export type {
   SupabaseUser,
   RealtimePostgresChangesPayload,
   RealtimeChannel,
-  RealtimePostgresInsertPayload
+  RealtimePostgresInsertPayload,
 } from "./types";
 
 export { REALTIME_CHANNEL_STATES } from "./types";

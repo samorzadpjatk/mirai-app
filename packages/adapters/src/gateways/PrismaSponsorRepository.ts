@@ -1,6 +1,6 @@
-import type { SponsorRepository } from "@repo/use-cases";
-import type { Sponsor } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
+import type { SponsorRepository } from "@mirai-app/use-cases";
+import type { Sponsor } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,

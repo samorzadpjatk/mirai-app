@@ -1,8 +1,8 @@
-# @repo/use-cases - Use Cases Layer
+# @mirai-app/use-cases - Use Cases Layer
 
 > **Application layer of Clean Architecture - Orchestrates domain entities**
 >
-> Depends only on @repo/domain (innermost layer)
+> Depends only on @mirai-app/domain (innermost layer)
 
 ## Purpose
 
@@ -15,7 +15,7 @@ The use cases layer contains:
 
 ## Rules
 
-1. **Only Domain Dependency**: Can only import from `@repo/domain`
+1. **Only Domain Dependency**: Can only import from `@mirai-app/domain`
 2. **No Framework Knowledge**: No knowledge of UI, database, or frameworks
 3. **Orchestration Only**: Coordinates domain entities, doesn't contain business rules
 4. **Repository Interfaces**: Defines what repositories must do (adapters implement)
@@ -45,7 +45,7 @@ src/
 
 ```typescript
 // ports/UserRepository.ts
-import type { User } from "@repo/domain";
+import type { User } from "@mirai-app/domain";
 
 export interface UserRepository {
   create(user: User): Promise<User>;
@@ -74,7 +74,7 @@ export class CreateUserInput {
 
 ```typescript
 // dto/output/UserDTO.ts
-import type { User } from "@repo/domain";
+import type { User } from "@mirai-app/domain";
 
 export class UserDTO {
   constructor(
@@ -92,7 +92,7 @@ export class UserDTO {
 
 ```typescript
 // interactors/CreateUser.ts
-import { ok, err, type Result } from "@repo/domain";
+import { ok, err, type Result } from "@mirai-app/domain";
 import type { UserRepository } from "../ports/UserRepository";
 import { CreateUserInput } from "../dto/input/CreateUserInput";
 import { UserDTO } from "../dto/output/UserDTO";

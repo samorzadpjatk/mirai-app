@@ -1,18 +1,31 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { UpdateUserUseCase } from "./UpdateUser";
 import type { UpdateUserInput } from "./UpdateUser";
-import { User, UserRole } from "@repo/domain";
+import { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "../ports/UserRepository";
-import { createTestContainer, TYPES } from "@repo/frameworks/di";
-import type { Container } from "inversify";
+import { createTestContainer } from "@mirai-app/frameworks/di";
+import type { AwilixContainer } from "awilix";
+import { Effect } from "effect";
+
+async function runAsResult<T>(
+  effect: Effect.Effect<T, Error>,
+): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
+  try {
+    const value = await Effect.runPromise(effect);
+    return { kind: "ok", value };
+  } catch (error) {
+    return {
+      kind: "err",
+      error: error instanceof Error ? error.message : "Unexpected error",
+    };
+  }
+}
 
 describe("[UNIT] UpdateUserUseCase", () => {
-  let container: Container;
+  let container: AwilixContainer;
 
   beforeEach(() => {
     container = createTestContainer();
-    // Bind use case to container
-    container.bind(UpdateUserUseCase).toSelf();
   });
 
   // Helper to create a valid user
@@ -61,9 +74,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const useCase = container.get(UpdateUserUseCase);
+      const useCase = new UpdateUserUseCase(mockRepo);
       const input: UpdateUserInput = {
         userId: "user-456",
         firstName: "Jane",
@@ -71,7 +82,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -109,9 +120,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const useCase = container.get(UpdateUserUseCase);
+      const useCase = new UpdateUserUseCase(mockRepo);
       const input: UpdateUserInput = {
         userId: "user-789",
         firstName: "NewFirst",
@@ -119,7 +128,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -154,9 +163,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const useCase = container.get(UpdateUserUseCase);
+      const useCase = new UpdateUserUseCase(mockRepo);
       const input: UpdateUserInput = {
         userId: "user-abc",
         lastName: "NewLast",
@@ -164,7 +171,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -193,16 +200,14 @@ describe("[UNIT] UpdateUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const useCase = container.get(UpdateUserUseCase);
+      const useCase = new UpdateUserUseCase(mockRepo);
       const input: UpdateUserInput = {
         userId: "user-avatar",
         hasAvatar: true,
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -224,16 +229,14 @@ describe("[UNIT] UpdateUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const useCase = container.get(UpdateUserUseCase);
+      const useCase = new UpdateUserUseCase(mockRepo);
       const input: UpdateUserInput = {
         userId: "non-existent",
         firstName: "NewName",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
@@ -259,9 +262,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const useCase = container.get(UpdateUserUseCase);
+      const useCase = new UpdateUserUseCase(mockRepo);
       const input: UpdateUserInput = {
         userId: "user-invalid",
         firstName: "A", // Too short
@@ -269,7 +270,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
@@ -294,9 +295,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const useCase = container.get(UpdateUserUseCase);
+      const useCase = new UpdateUserUseCase(mockRepo);
       const input: UpdateUserInput = {
         userId: "user-digits",
         firstName: "John123",
@@ -304,7 +303,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
@@ -342,9 +341,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const useCase = container.get(UpdateUserUseCase);
+      const useCase = new UpdateUserUseCase(mockRepo);
       const input: UpdateUserInput = {
         userId: "user-multi",
         firstName: "New",
@@ -353,7 +350,7 @@ describe("[UNIT] UpdateUserUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -363,6 +360,56 @@ describe("[UNIT] UpdateUserUseCase", () => {
         expect(result.value.fullName).toBe("New Person");
         expect(result.value.hasAvatar).toBe(true);
       }
+    });
+
+    it("should support container-based resolution", async () => {
+      // Arrange
+      const existingUser = createValidUser({ id: "user-container" });
+      const updatedUser = existingUser.updateName({
+        firstName: "Updated",
+        lastName: "User",
+      });
+      if (updatedUser.kind === "err") {
+        throw new Error(`Failed to update user: ${updatedUser.error}`);
+      }
+
+      const mockRepo: UserRepository = {
+        existsByAuthUserId: mock(() => Promise.resolve(false)),
+        create: mock(() => Promise.resolve(existingUser)),
+        findById: mock(() => Promise.resolve(existingUser)),
+        findByAuthUserId: mock(() => Promise.resolve(null)),
+        findByRole: mock(() => Promise.resolve([])),
+        findAll: mock(() => Promise.resolve([])),
+        update: mock(() => Promise.resolve(updatedUser.value)),
+        delete: mock(() => Promise.resolve()),
+      };
+
+      // Register in container using the factory pattern
+      container.register({
+        userRepository: { resolve: () => mockRepo } as any,
+      });
+
+      // Create use case from container - use manual instantiation with resolved repo
+      const userRepo = container.resolve<UserRepository>("userRepository");
+      const useCase = new UpdateUserUseCase(userRepo);
+
+      const input: UpdateUserInput = {
+        userId: "user-container",
+        firstName: "Updated",
+        lastName: "User",
+      };
+
+      // Act
+      const result = await runAsResult(useCase.execute(input));
+
+      // Assert
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.firstName).toBe("Updated");
+        expect(result.value.lastName).toBe("User");
+      }
+      expect(mockRepo.findById).toHaveBeenCalledWith("user-container");
+      expect(mockRepo.update).toHaveBeenCalled();
     });
   });
 });

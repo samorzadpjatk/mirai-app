@@ -95,10 +95,7 @@ const parseChallenge = (value: unknown): Challenge | null => {
       typeof value.scoringCategory === "string"
         ? value.scoringCategory
         : "standard",
-    icon:
-      typeof (value).icon === "string"
-        ? ((value).icon)
-        : "star",
+    icon: typeof value.icon === "string" ? value.icon : "star",
     participantGroupsCount:
       typeof value.participantGroupsCount === "number"
         ? value.participantGroupsCount

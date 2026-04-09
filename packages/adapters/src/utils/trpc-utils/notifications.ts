@@ -1,6 +1,6 @@
-import type { Prisma } from "@repo/frameworks/prisma";
+import type { Prisma } from "@mirai-app/frameworks/prisma";
 import { TRPCError } from "@trpc/server";
-import { NotificationService } from "../services/notificationService";
+import { NotificationService } from "../../services/notificationService";
 import { executeWithRetry } from "./resilience";
 
 export interface SendNotificationInput {

@@ -1,7 +1,7 @@
 import { View, ScrollView, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { useAuth } from "@repo/frameworks/auth/client";
+import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelectedTrip, useTripDetails } from "~/hooks/trips";
 import LoadingScreen from "../../../components/LoadingScreen";

@@ -1,13 +1,13 @@
 import { z } from "zod";
-import type { ActivityFeedRepository } from "@repo/use-cases";
+import type { ActivityFeedRepository } from "@mirai-app/use-cases";
 import {
   GetActivityFeedUseCase,
   CreateActivityUseCase,
   AddReactionUseCase,
   type CreateActivityInput,
   type AddReactionInput,
-} from "@repo/use-cases";
-import type { ActivityId, ReactionType } from "@repo/domain";
+} from "@mirai-app/use-cases";
+import type { ActivityId, ReactionType } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for activity feed controller

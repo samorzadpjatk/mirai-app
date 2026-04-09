@@ -1,11 +1,11 @@
 import { z } from "zod";
-import type { SubmissionReportRepository } from "@repo/use-cases";
+import type { SubmissionReportRepository } from "@mirai-app/use-cases";
 import {
   CreateReportUseCase,
   GetReportsUseCase,
   type CreateReportInput,
   type GetReportsInput,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for submission report controller

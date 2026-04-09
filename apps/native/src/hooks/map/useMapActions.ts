@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@repo/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
 
 export function useMapActions() {
   const trpc = useTRPC();

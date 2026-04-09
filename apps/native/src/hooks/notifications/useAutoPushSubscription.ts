@@ -2,9 +2,9 @@ import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@repo/frameworks/trpc/client";
-import { invalidateNotificationQueries } from "@repo/frameworks/trpc/client/query";
-import { useAuth } from "@repo/frameworks/auth/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { invalidateNotificationQueries } from "@mirai-app/frameworks/trpc/client/query";
+import { useAuth } from "@mirai-app/frameworks/auth/client";
 
 function resolveProjectId(): string | undefined {
   const expoConfigExtra = (Constants.expoConfig?.extra ?? null) as unknown;

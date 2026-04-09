@@ -39,7 +39,7 @@ async function getPrismaConstructor(): Promise<
  *
  * @example
  * ```typescript
- * import { createPrismaClient } from "@repo/frameworks/prisma/client";
+ * import { createPrismaClient } from "@mirai-app/frameworks/prisma/client";
  *
  * const prisma = await createPrismaClient(process.env.DATABASE_URL);
  *

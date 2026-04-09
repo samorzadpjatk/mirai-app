@@ -62,12 +62,12 @@ mock.module("fastify", () => ({
   }),
 }));
 
-mock.module("@repo/adapters", () => ({
+mock.module("@mirai-app/adapters", () => ({
   appRouter: {},
   createTRPCContext: () => ({}),
 }));
 
-mock.module("@repo/frameworks/supabase", () => ({
+mock.module("@mirai-app/frameworks/supabase", () => ({
   createSupabaseClient: () => ({}),
 }));
 

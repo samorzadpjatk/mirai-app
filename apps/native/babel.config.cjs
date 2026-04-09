@@ -8,7 +8,9 @@ module.exports = function (api) {
         ? [["@babel/preset-env", { targets: { node: "current" } }]]
         : []),
       "@babel/preset-typescript",
-      ...(isTest ? ["@babel/preset-react"] : ["nativewind/babel"]),
+      ...(isTest
+        ? [["@babel/preset-react", { runtime: "automatic" }]]
+        : ["nativewind/babel"]),
     ],
     plugins: ["react-native-worklets/plugin"],
   };

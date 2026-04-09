@@ -258,22 +258,22 @@ The monorepo currently has a **mixed-concerns architecture** with business logic
 
 ```json
 // packages/domain/package.json - ZERO dependencies
-{ "name": "@repo/domain", "dependencies": {} }
+{ "name": "@mirai-app/domain", "dependencies": {} }
 
 // packages/use-cases/package.json - Only domain
-{ "name": "@repo/use-cases", "dependencies": { "@repo/domain": "workspace:*" } }
+{ "name": "@mirai-app/use-cases", "dependencies": { "@mirai-app/domain": "workspace:*" } }
 
 // packages/adapters/package.json - Domain + Use Cases
-{ "name": "@repo/adapters", "dependencies": {
-  "@repo/domain": "workspace:*",
-  "@repo/use-cases": "workspace:*"
+{ "name": "@mirai-app/adapters", "dependencies": {
+  "@mirai-app/domain": "workspace:*",
+  "@mirai-app/use-cases": "workspace:*"
 } }
 
 // packages/frameworks/package.json - All inner layers
-{ "name": "@repo/frameworks", "dependencies": {
-  "@repo/domain": "workspace:*",
-  "@repo/use-cases": "workspace:*",
-  "@repo/adapters": "workspace:*"
+{ "name": "@mirai-app/frameworks", "dependencies": {
+  "@mirai-app/domain": "workspace:*",
+  "@mirai-app/use-cases": "workspace:*",
+  "@mirai-app/adapters": "workspace:*"
 } }
 ```
 
@@ -865,7 +865,7 @@ Domain layer is the innermost circle of Clean Architecture. Contains entities, v
 
 - [ ] `packages/domain/` directory exists with structure above
 - [ ] `packages/domain/package.json` has zero `dependencies`
-- [ ] `packages/domain/package.json` has `name: "@repo/domain"`
+- [ ] `packages/domain/package.json` has `name: "@mirai-app/domain"`
 - [ ] `Result<T,E>` type implemented in `src/utils/result.ts`
 - [ ] README.md explains domain layer purity requirements
 - [ ] dependency-cruiser configured for domain layer rules
@@ -902,7 +902,7 @@ Domain layer is the innermost circle of Clean Architecture. Contains entities, v
 
 ```
 packages/use-cases/
-├── package.json              # Only depends on @repo/domain
+├── package.json              # Only depends on @mirai-app/domain
 ├── tsconfig.json
 ├── README.md                 # Use case patterns
 └── src/
@@ -926,14 +926,14 @@ Use Cases layer (Application layer) orchestrates domain entities to fulfill appl
 **TDD Cycle for This Step:**
 
 - **Red:** Write test that verifies use-cases only imports from domain
-- **Green:** Create package.json with single dependency: `@repo/domain`
+- **Green:** Create package.json with single dependency: `@mirai-app/domain`
 - **Refactor:** Add example port interface in `ports/` directory
 
 **Success Criteria:**
 
 - [ ] `packages/use-cases/` directory exists with structure above
-- [ ] `packages/use-cases/package.json` depends only on `@repo/domain`
-- [ ] `packages/use-cases/package.json` has `name: "@repo/use-cases"`
+- [ ] `packages/use-cases/package.json` depends only on `@mirai-app/domain`
+- [ ] `packages/use-cases/package.json` has `name: "@mirai-app/use-cases"`
 - [ ] README.md explains use case layer responsibilities
 - [ ] Example repository port interface defined
 
@@ -950,7 +950,7 @@ Use Cases layer (Application layer) orchestrates domain entities to fulfill appl
 
 | Criterion              | Weight | Description                                                                                  |
 | ---------------------- | ------ | -------------------------------------------------------------------------------------------- |
-| Dependency Rule        | 0.30   | Package only depends on `@repo/domain` (verified in package.json)                            |
+| Dependency Rule        | 0.30   | Package only depends on `@mirai-app/domain` (verified in package.json)                            |
 | Port Interface Pattern | 0.25   | Repository interface pattern established in `ports/` directory                               |
 | Directory Structure    | 0.25   | Correct structure (ports/, interactors/, dto/input/, dto/output/, errors/)                   |
 | Documentation          | 0.20   | README.md clearly explains use case layer responsibilities and ports vs adapters distinction |
@@ -996,8 +996,8 @@ Interface Adapters layer converts data from use cases to formats suitable for ex
 **Success Criteria:**
 
 - [ ] `packages/adapters/` directory exists with structure above
-- [ ] `packages/adapters/package.json` depends on `@repo/domain` and `@repo/use-cases`
-- [ ] `packages/adapters/package.json` has `name: "@repo/adapters"`
+- [ ] `packages/adapters/package.json` depends on `@mirai-app/domain` and `@mirai-app/use-cases`
+- [ ] `packages/adapters/package.json` has `name: "@mirai-app/adapters"`
 - [ ] README.md explains controller/gateway/presenter responsibilities
 - [ ] Example mapper in `mappers/` showing conversion pattern
 
@@ -1014,7 +1014,7 @@ Interface Adapters layer converts data from use cases to formats suitable for ex
 
 | Criterion           | Weight | Description                                                              |
 | ------------------- | ------ | ------------------------------------------------------------------------ |
-| Dependency Rule     | 0.25   | Package depends only on `@repo/domain` and `@repo/use-cases`             |
+| Dependency Rule     | 0.25   | Package depends only on `@mirai-app/domain` and `@mirai-app/use-cases`             |
 | Directory Structure | 0.25   | Correct structure (controllers/, gateways/, presenters/, mappers/)       |
 | No Business Logic   | 0.30   | Adapters contain only adaptation code, no domain business logic          |
 | Documentation       | 0.20   | README.md explains controller/gateway/presenter responsibilities clearly |
@@ -1064,7 +1064,7 @@ Frameworks & Drivers layer contains tools and frameworks (tRPC, Prisma, Supabase
 
 - [ ] `packages/frameworks/` directory exists with structure above
 - [ ] `packages/frameworks/package.json` depends on domain, use-cases, and adapters
-- [ ] `packages/frameworks/package.json` has `name: "@repo/frameworks"`
+- [ ] `packages/frameworks/package.json` has `name: "@mirai-app/frameworks"`
 - [ ] tRPC configuration extracted from `packages/trpc/`
 - [ ] Prisma client configuration extracted from `packages/db/`
 - [ ] README.md explains framework layer is for "config only"

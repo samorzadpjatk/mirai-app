@@ -8,7 +8,7 @@ import { useTrip } from "../../../contexts/TripContext";
 import {
   useAdminTransactions,
   type TransactionItem,
-} from "@repo/frameworks/trpc/hooks";
+} from "@mirai-app/frameworks/trpc/hooks";
 import { TransactionsFilters } from "./TransactionsFilters";
 import { TransactionCard } from "./TransactionCard";
 

@@ -14,7 +14,7 @@ const mockMutate = mock(() =>
   }),
 );
 
-mock.module("@repo/frameworks/trpc/client", () => ({
+mock.module("@mirai-app/frameworks/trpc/client", () => ({
   useTRPCClient: () => ({
     storage: {
       createUploadUrl: {
@@ -28,7 +28,7 @@ mock.module("@repo/frameworks/trpc/client", () => ({
   }),
 }));
 
-mock.module("@repo/frameworks/auth/client", () => ({
+mock.module("@mirai-app/frameworks/auth/client", () => ({
   authStore: {
     getState: () => ({
       session: { access_token: "mock-access-token" },

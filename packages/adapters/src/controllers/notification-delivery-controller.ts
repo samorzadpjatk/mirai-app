@@ -4,7 +4,7 @@ import type {
   GetDeliveryByNotificationIdUseCase,
   GetDeliveryStatsUseCase,
   GetFailedDeliveriesUseCase,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for notification delivery controller

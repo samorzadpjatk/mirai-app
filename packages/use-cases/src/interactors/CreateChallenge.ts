@@ -1,15 +1,16 @@
-import type { Result } from "@repo/domain";
+import { Effect } from "effect";
 import {
-  ok,
-  err,
   Challenge,
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import { inject, injectable } from "inversify";
-import { TYPES } from "@repo/frameworks/di";
+import {
+  UseCaseRepositoryError,
+  UseCaseValidationError,
+  type UseCaseError,
+} from "../errors";
 
 /**
  * Input for CreateChallenge use case
@@ -57,71 +58,95 @@ export interface CreateChallengeOutput {
  *
  * Creates a new challenge.
  * Returns error if validation fails.
+ *
+ * ## Constructor Injection Pattern
+ *
+ * This use case supports both manual instantiation and DI container injection:
+ *
+ * ```typescript
+ * // Manual instantiation (backward compatible)
+ * const useCase = new CreateChallengeUseCase(challengeRepository);
+ *
+ * // DI container injection (awilix-modular)
+ * const useCase = container.resolve("createChallengeUseCase");
+ * ```
  */
-@injectable()
 export class CreateChallengeUseCase {
-  constructor(
-    @inject(TYPES.ChallengeRepository)
-    private challengeRepository: ChallengeRepository,
-  ) {}
+  constructor(private challengeRepository: ChallengeRepository) {}
 
-  async execute(
+  execute(
     input: CreateChallengeInput,
-  ): Promise<Result<CreateChallengeOutput, string>> {
-    // Create domain entity
-    const challengeResult = Challenge.create({
-      tripId: input.tripId,
-      name: input.name,
-      ...(input.description !== undefined && {
-        description: input.description,
-      }),
-      ...(input.image !== undefined && { image: input.image }),
-      submissionType: input.submissionType,
-      scoringCategory: input.scoringCategory,
-      ...(input.isRecurring !== undefined && {
-        isRecurring: input.isRecurring,
-      }),
-      ...(input.dailyStartTime !== undefined && {
-        dailyStartTime: input.dailyStartTime,
-      }),
-      ...(input.dailyEndTime !== undefined && {
-        dailyEndTime: input.dailyEndTime,
-      }),
-      ...(input.basePoints !== undefined && { basePoints: input.basePoints }),
-      ...(input.firstPlacePoints !== undefined && {
-        firstPlacePoints: input.firstPlacePoints,
-      }),
-      ...(input.secondPlacePoints !== undefined && {
-        secondPlacePoints: input.secondPlacePoints,
-      }),
-      ...(input.thirdPlacePoints !== undefined && {
-        thirdPlacePoints: input.thirdPlacePoints,
-      }),
-      status: input.status ?? ChallengeStatus.HIDDEN,
-      ...(input.startTime !== undefined && { startTime: input.startTime }),
-      ...(input.endTime !== undefined && { endTime: input.endTime }),
-      ...(input.targetLatitude !== undefined && {
-        targetLatitude: input.targetLatitude,
-      }),
-      ...(input.targetLongitude !== undefined && {
-        targetLongitude: input.targetLongitude,
-      }),
-      ...(input.expectedValue !== undefined && {
-        expectedValue: input.expectedValue,
-      }),
-      ...(input.autoApprove !== undefined && {
-        autoApprove: input.autoApprove,
-      }),
+  ): Effect.Effect<CreateChallengeOutput, UseCaseError> {
+    const challengeRepository = this.challengeRepository;
+    const toOutput = this.toOutput.bind(this);
+
+    return Effect.gen(function* () {
+      const challengeResult = Challenge.create({
+        tripId: input.tripId,
+        name: input.name,
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
+        ...(input.image !== undefined && { image: input.image }),
+        submissionType: input.submissionType,
+        scoringCategory: input.scoringCategory,
+        ...(input.isRecurring !== undefined && {
+          isRecurring: input.isRecurring,
+        }),
+        ...(input.dailyStartTime !== undefined && {
+          dailyStartTime: input.dailyStartTime,
+        }),
+        ...(input.dailyEndTime !== undefined && {
+          dailyEndTime: input.dailyEndTime,
+        }),
+        ...(input.basePoints !== undefined && { basePoints: input.basePoints }),
+        ...(input.firstPlacePoints !== undefined && {
+          firstPlacePoints: input.firstPlacePoints,
+        }),
+        ...(input.secondPlacePoints !== undefined && {
+          secondPlacePoints: input.secondPlacePoints,
+        }),
+        ...(input.thirdPlacePoints !== undefined && {
+          thirdPlacePoints: input.thirdPlacePoints,
+        }),
+        status: input.status ?? ChallengeStatus.HIDDEN,
+        ...(input.startTime !== undefined && { startTime: input.startTime }),
+        ...(input.endTime !== undefined && { endTime: input.endTime }),
+        ...(input.targetLatitude !== undefined && {
+          targetLatitude: input.targetLatitude,
+        }),
+        ...(input.targetLongitude !== undefined && {
+          targetLongitude: input.targetLongitude,
+        }),
+        ...(input.expectedValue !== undefined && {
+          expectedValue: input.expectedValue,
+        }),
+        ...(input.autoApprove !== undefined && {
+          autoApprove: input.autoApprove,
+        }),
+      });
+
+      if (challengeResult.kind === "err") {
+        return yield* Effect.fail(
+          new UseCaseValidationError({
+            field: "challenge",
+            message: challengeResult.error,
+          }),
+        );
+      }
+
+      const saved = yield* Effect.tryPromise({
+        try: () => challengeRepository.create(challengeResult.value),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "CreateChallenge.create",
+            message: "Failed to create challenge",
+            cause,
+          }),
+      });
+
+      return toOutput(saved);
     });
-
-    if (challengeResult.kind === "err") {
-      return err(challengeResult.error);
-    }
-
-    // Persist challenge
-    const saved = await this.challengeRepository.create(challengeResult.value);
-
-    return ok(this.toOutput(saved));
   }
 
   private toOutput(challenge: Challenge): CreateChallengeOutput {

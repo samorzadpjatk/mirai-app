@@ -82,9 +82,9 @@ coverageThreshold = { lines = 0.80, branches = 0.75, functions = 0.80 }
 
 | Package                          | Test Script            | Notes                                   |
 | -------------------------------- | ---------------------- | --------------------------------------- |
-| `@repo/domain`                   | `bun test`             | Pure unit tests                         |
-| `@repo/use-cases`                | `bun test`             | Unit tests with mocks                   |
-| `@repo/adapters`                 | `bun test`             | Mix of unit and integration-style tests |
+| `@mirai-app/domain`                   | `bun test`             | Pure unit tests                         |
+| `@mirai-app/use-cases`                | `bun test`             | Unit tests with mocks                   |
+| `@mirai-app/adapters`                 | `bun test`             | Mix of unit and integration-style tests |
 | `@mirai-app/db`                  | `bun test` + `test:db` | Requires Docker/database                |
 | `@mirai-app/trpc`                | `bun test`             | API/router tests                        |
 | `@mirai-app/auth`                | `bun test`             | Auth logic tests                        |
@@ -336,8 +336,8 @@ These tests:
 
 **Packages that are 100% unit tests:**
 
-- `@repo/domain` (12 files)
-- `@repo/use-cases` (8 files)
+- `@mirai-app/domain` (12 files)
+- `@mirai-app/use-cases` (8 files)
 - `packages/shared` (4 files)
 - `packages/auth` (1 file)
 - `apps/backend-server` (3 files)

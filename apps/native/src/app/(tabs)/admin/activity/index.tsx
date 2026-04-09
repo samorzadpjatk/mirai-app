@@ -15,7 +15,7 @@ import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@repo/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
 import { FilterChip, FilterChipRow, EmptyState, ThemedTextInput } from "~/components/common/ui";
 import { AdminActivityCard } from "~/components/admin/activity/AdminActivityCard";
 

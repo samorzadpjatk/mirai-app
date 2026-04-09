@@ -1,6 +1,6 @@
 "use client";
 
-import { APIProvider } from "@repo/frameworks/trpc/client";
+import { APIProvider } from "@mirai-app/frameworks/trpc/client";
 import { AuthProvider } from "../AuthProvider";
 import { TripProvider } from "../../contexts/TripContext";
 import { Header } from "../Header";

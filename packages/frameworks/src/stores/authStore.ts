@@ -103,8 +103,7 @@ const fetchAndSetUser = async (
   try {
     const user = await _onUserFetch(authUserId);
     set({ user, isAuthenticated: !!user, isLoading: false });
-  } catch (error) {
-    console.error("[AuthStore] Failed to fetch user:", error);
+  } catch {
     set({ isLoading: false });
   }
 };

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@repo/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
 
 export function useGroupDetails(groupId?: string | null) {
   const trpc = useTRPC();

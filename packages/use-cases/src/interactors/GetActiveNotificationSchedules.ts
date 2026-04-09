@@ -1,5 +1,5 @@
-import type { Result } from "@repo/domain";
-import { ok } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok } from "@mirai-app/domain";
 import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
 
@@ -35,7 +35,7 @@ export class GetActiveNotificationSchedulesUseCase {
   }
 
   private toOutput(
-    schedule: import("@repo/domain").NotificationSchedule,
+    schedule: import("@mirai-app/domain").NotificationSchedule,
     now: Date,
   ): NotificationScheduleOutput {
     return {

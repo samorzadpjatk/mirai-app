@@ -161,7 +161,7 @@ Error: Cannot find module '@trpc/server'
 **Action:**
 
 - Verify import statements are correct
-- Check if imports should be from @repo/trpc instead
+- Check if imports should be from @mirai-app/trpc instead
 - Update imports if needed
 
 **Success Criteria:**

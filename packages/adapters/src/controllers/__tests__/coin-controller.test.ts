@@ -1,7 +1,7 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { CoinController } from "../coin-controller";
-import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@repo/use-cases";
-import { ok, err } from "@repo/domain";
+import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
+import { ok, err } from "@mirai-app/domain";
 
 describe("[UNIT] CoinController", () => {
   let mockAddCoinsUseCase: AddCoinsUseCase;

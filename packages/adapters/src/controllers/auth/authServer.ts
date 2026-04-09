@@ -1,5 +1,5 @@
-import type { SupabaseClient, SupabaseUser } from "@repo/frameworks/supabase";
-import type { User, Role, PrismaClient } from "@repo/frameworks/prisma";
+import type { SupabaseClient, SupabaseUser } from "@mirai-app/frameworks/supabase";
+import type { User, Role, PrismaClient } from "@mirai-app/frameworks/prisma";
 import type { AuthUser } from "@mirai-app/shared";
 
 interface MinimalBuffer {
@@ -46,10 +46,8 @@ export function decodeJwtPayload<
       return JSON.parse(decoded) as T;
     }
 
-    console.error("Unable to decode JWT payload: missing base64 decoder");
     return null;
-  } catch (error) {
-    console.error("Error decoding JWT payload:", error);
+  } catch {
     return null;
   }
 }
@@ -104,7 +102,6 @@ export async function getAuthServerUser(
   } = response;
 
   if (error) {
-    console.error("Error occurred while fetching user:", error);
     return null;
   }
 
@@ -122,9 +119,6 @@ export async function getAuthServerSession(
     } = await supabase.auth.getUser(accessToken);
 
     if (error || !user) {
-      if (error) {
-        console.error("Error occurred while fetching user from token:", error);
-      }
       return null;
     }
 
@@ -147,7 +141,6 @@ export async function getAuthServerSession(
   } = await supabase.auth.getSession();
 
   if (error) {
-    console.error("Error occurred while fetching session:", error);
     return null;
   }
 

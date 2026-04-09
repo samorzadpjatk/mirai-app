@@ -19,8 +19,8 @@ import type { TRPCRouterRecord } from "@trpc/server";
  *
  * @example
  * ```typescript
- * import { createNamespaceRouter } from "@repo/frameworks/trpc/router-factory";
- * import { protectedProcedure } from "@repo/frameworks/trpc/server";
+ * import { createNamespaceRouter } from "@mirai-app/frameworks/trpc/router-factory";
+ * import { protectedProcedure } from "@mirai-app/frameworks/trpc/server";
  * import { z } from "zod";
  *
  * export const userRouter = createNamespaceRouter("user", {
@@ -41,7 +41,7 @@ export function createNamespaceRouter<T extends TRPCRouterRecord>(
   name: string,
   routes: T,
 ): ReturnType<typeof createTRPCRouter<T>> {
-  console.log(`[Router Factory] Creating router: ${name}`);
+  void name; // Name used for potential future debugging/logging
   return createTRPCRouter(routes);
 }
 
@@ -192,6 +192,5 @@ export function validateRouterConfig<T extends TRPCRouterRecord>(
     throw new Error(`Router name "${config.name}" is reserved`);
   }
 
-  console.log(`[Router Factory] Validated router: ${config.name}`);
   return config;
 }

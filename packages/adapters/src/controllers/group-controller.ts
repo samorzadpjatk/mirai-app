@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { GroupRepository } from "@repo/use-cases";
-import { Group, GroupStatus } from "@repo/domain";
+import type { GroupRepository } from "@mirai-app/use-cases";
+import { Group, GroupStatus } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for group controller

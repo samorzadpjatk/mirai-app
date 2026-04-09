@@ -50,7 +50,18 @@ jobs:
           node-version: 24
 
       - name: Install Bun
+        id: bun
         uses: oven-sh/setup-bun@v1
+
+      - name: Restore Bun dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ steps.bun.outputs.bun-version }}-${{ hashFiles('bun.lock') }}
 
       - name: Install dependencies
         run: bun install
@@ -85,7 +96,18 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Bun
+        id: bun
         uses: oven-sh/setup-bun@v1
+
+      - name: Restore Bun dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ steps.bun.outputs.bun-version }}-${{ hashFiles('bun.lock') }}
 
       - name: Install dependencies
         run: bun install
@@ -103,7 +125,18 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Bun
+        id: bun
         uses: oven-sh/setup-bun@v1
+
+      - name: Restore Bun dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ steps.bun.outputs.bun-version }}-${{ hashFiles('bun.lock') }}
 
       - name: Install dependencies
         run: bun install
@@ -121,7 +154,18 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install Bun
+        id: bun
         uses: oven-sh/setup-bun@v1
+
+      - name: Restore Bun dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ steps.bun.outputs.bun-version }}-${{ hashFiles('bun.lock') }}
 
       - name: Install dependencies
         run: bun install
@@ -152,7 +196,18 @@ jobs:
           node-version: 24
 
       - name: Install Bun
+        id: bun
         uses: oven-sh/setup-bun@v1
+
+      - name: Restore Bun dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ steps.bun.outputs.bun-version }}-${{ hashFiles('bun.lock') }}
 
       - name: Install dependencies
         run: bun install
@@ -160,4 +215,4 @@ jobs:
       - name: Run Jest tests for native app
         working-directory: apps/native
         run: |
-          ./node_modules/.bin/jest --coverage --coverageReporters=text-summary --silent || true
+          ./node_modules/.bin/jest --coverage --coverageReporters=text-summary --silent

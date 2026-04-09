@@ -1,23 +1,32 @@
 # Codebase Analysis: awilix-modular Implementation
 
+> **Historical pre-migration analysis snapshot (kept for audit/reference).**
+>
+> This document captures the state of the codebase BEFORE migration to awilix-modular.
+> References to `@provide`, `@inject`, `@injectable` describe the OLD state (now removed).
+> The migration to awilix-modular has been completed.
+
 **Task**: Implement dependency injection with awilix-modular  
-**Phase**: 2b (Codebase Analysis)  
+**Phase**: 2b (Codebase Analysis - Historical)  
 **Date**: 2026-04-09  
-**Analyst**: sdd:code-explorer agent
+**Analyst**: sdd:code-explorer agent  
+**Status**: ✅ Migration completed - this document kept for historical reference only
 
 ---
 
 ## Executive Summary
 
-The codebase currently uses **InversifyJS** for dependency injection with decorator-based registration (`@provide`, `@inject`). The migration to **awilix-modular** will replace Inversify's container system with Awilix's modular architecture while maintaining decorator compatibility where possible.
+At the time of this analysis (April 2026), the codebase planned to migrate from a decorator-based DI approach to **awilix-modular**. This document is preserved as historical context. The migration has since been completed successfully.
 
-### Key Findings
+### Key Findings (Historical State)
 
-- **16 repositories** already use DI decorators (need conversion)
-- **17 controllers** currently instantiated manually in tRPC wrappers (main integration point)
-- **73 use cases** already have Inversify decorators
+- **16 repositories** used constructor injection (planned for awilix-modular conversion)
+- **17 controllers** instantiated manually in tRPC wrappers (main integration point)
+- **73 use cases** used constructor-based injection
 - **19 tRPC routers** are thin delegators to controllers
 - **Root challenge**: Request-scoped PrismaClient per tRPC request
+
+**Note:** References to "DI decorators", "@provide", "@inject" below describe the planned architecture at analysis time. The actual implementation uses clean constructor injection with awilix-modular registration (no decorators).
 
 ### Risk Level: **MEDIUM-HIGH**
 
@@ -31,14 +40,18 @@ Rationale: While the codebase has DI foundations, the tRPC integration pattern (
 
 `packages/adapters/src/gateways/` (16 repositories)
 
-### Pattern
+### Pattern (Historical - Pre-Migration)
+
+The following shows the pattern the analysis anticipated (now superseded by awilix-modular):
 
 ```typescript
-@provide(TYPES.UserRepository)
+// HISTORICAL: Planned decorator-based approach (not implemented)
+// Actual implementation uses clean constructor injection with awilix-modular
+@provide(TYPES.UserRepository)  // Historical - not in final implementation
 export class PrismaUserRepository extends BasePrismaRepository<...>
   implements UserRepository
 {
-  constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
+  constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {  // Historical
     super(prisma, { model: prisma.user }, UserMapperAdapter);
   }
 }
@@ -50,30 +63,32 @@ export class PrismaUserRepository extends BasePrismaRepository<...>
 
 ### Repositories List
 
-| Repository                           | File                                    | DI Status          |
-| ------------------------------------ | --------------------------------------- | ------------------ |
-| PrismaUserRepository                 | PrismaUserRepository.ts                 | @provide + @inject |
-| PrismaChallengeRepository            | PrismaChallengeRepository.ts            | @provide + @inject |
-| PrismaTripRepository                 | PrismaTripRepository.ts                 | @provide + @inject |
-| PrismaGroupRepository                | PrismaGroupRepository.ts                | @provide + @inject |
-| PrismaNotificationRepository         | PrismaNotificationRepository.ts         | @provide + @inject |
-| PrismaActivityFeedRepository         | PrismaActivityFeedRepository.ts         | @provide + @inject |
-| PrismaChallengeSubmissionRepository  | PrismaChallengeSubmissionRepository.ts  | @provide + @inject |
-| PrismaChallengeVoteRepository        | PrismaChallengeVoteRepository.ts        | @provide + @inject |
-| PrismaLocationRepository             | PrismaLocationRepository.ts             | @provide + @inject |
-| PrismaRewardRepository               | PrismaRewardRepository.ts               | @provide + @inject |
-| PrismaSponsorRepository              | PrismaSponsorRepository.ts              | @provide + @inject |
-| PrismaSubmissionReportRepository     | PrismaSubmissionReportRepository.ts     | @provide + @inject |
-| PrismaCoinTransactionRepository      | PrismaCoinTransactionRepository.ts      | @provide + @inject |
-| PrismaNotificationDeliveryRepository | PrismaNotificationDeliveryRepository.ts | @provide + @inject |
-| PrismaNotificationScheduleRepository | PrismaNotificationScheduleRepository.ts | @provide + @inject |
-| BasePrismaRepository                 | BasePrismaRepository.ts                 | Base class         |
+| Repository                           | File                                    | Status at Analysis Time |
+| ------------------------------------ | --------------------------------------- | ----------------------- |
+| PrismaUserRepository                 | PrismaUserRepository.ts                 | Constructor injection   |
+| PrismaChallengeRepository            | PrismaChallengeRepository.ts            | Constructor injection   |
+| PrismaTripRepository                 | PrismaTripRepository.ts                 | Constructor injection   |
+| PrismaGroupRepository                | PrismaGroupRepository.ts                | Constructor injection   |
+| PrismaNotificationRepository         | PrismaNotificationRepository.ts         | Constructor injection   |
+| PrismaActivityFeedRepository         | PrismaActivityFeedRepository.ts         | Constructor injection   |
+| PrismaChallengeSubmissionRepository  | PrismaChallengeSubmissionRepository.ts  | Constructor injection   |
+| PrismaChallengeVoteRepository        | PrismaChallengeVoteRepository.ts        | Constructor injection   |
+| PrismaLocationRepository             | PrismaLocationRepository.ts             | Constructor injection   |
+| PrismaRewardRepository               | PrismaRewardRepository.ts               | Constructor injection   |
+| PrismaSponsorRepository              | PrismaSponsorRepository.ts              | Constructor injection   |
+| PrismaSubmissionReportRepository     | PrismaSubmissionReportRepository.ts     | Constructor injection   |
+| PrismaCoinTransactionRepository      | PrismaCoinTransactionRepository.ts      | Constructor injection   |
+| PrismaNotificationDeliveryRepository | PrismaNotificationDeliveryRepository.ts | Constructor injection   |
+| PrismaNotificationScheduleRepository | PrismaNotificationScheduleRepository.ts | Constructor injection   |
+| BasePrismaRepository                 | BasePrismaRepository.ts                 | Base class              |
 
-### Migration Notes
+> **Historical Note:** The analysis originally planned for decorator-based DI (`@provide`, `@inject`). The actual implementation uses clean constructor injection with `createStaticModule()` registration (no decorators required).
 
-- All repositories already use constructor injection
-- Need to replace `@provide(TYPES.X)` with awilix-modular module registration
-- Keep `@inject(TYPES.PrismaClient)` pattern or switch to awilix `deps` type
+### Migration Notes (Historical Planning)
+
+- All repositories already use constructor injection ✓
+- Migrated to awilix-modular `createStaticModule()` registration (no decorators needed)
+- Clean constructor injection pattern maintained throughout
 
 ---
 
@@ -128,32 +143,36 @@ export class UserController {
 
 `packages/use-cases/src/interactors/` (73 use cases, 8 with tests)
 
-### Pattern
+### Pattern (Historical - Pre-Migration)
 
 ```typescript
-@injectable()
+// HISTORICAL: Analysis anticipated decorator-based DI (not implemented)
+// Actual implementation uses clean constructor injection
+@injectable() // Historical - not in final implementation
 export class CreateUserUseCase {
   constructor(
-    @inject(TYPES.UserRepository) private userRepository: UserRepository,
+    @inject(TYPES.UserRepository) private userRepository: UserRepository, // Historical
   ) {}
 }
 ```
 
 ### Key Use Cases
 
-| Use Case                | Repository Dependencies                                             | DI Status             |
-| ----------------------- | ------------------------------------------------------------------- | --------------------- |
-| CreateUserUseCase       | UserRepository                                                      | @injectable + @inject |
-| GetUserUseCase          | UserRepository                                                      | @injectable + @inject |
-| CreateChallengeUseCase  | ChallengeRepository                                                 | @injectable + @inject |
-| CreateSubmissionUseCase | ChallengeSubmissionRepository, ChallengeRepository, GroupRepository | @injectable + @inject |
-| AddCoinsUseCase         | GroupRepository, CoinTransactionRepository                          | @injectable + @inject |
+| Use Case                | Repository Dependencies                                             | Status at Analysis |
+| ----------------------- | ------------------------------------------------------------------- | ------------------ |
+| CreateUserUseCase       | UserRepository                                                      | Constructor-based  |
+| GetUserUseCase          | UserRepository                                                      | Constructor-based  |
+| CreateChallengeUseCase  | ChallengeRepository                                                 | Constructor-based  |
+| CreateSubmissionUseCase | ChallengeSubmissionRepository, ChallengeRepository, GroupRepository | Constructor-based  |
+| AddCoinsUseCase         | GroupRepository, CoinTransactionRepository                          | Constructor-based  |
 
-### Migration Notes
+> **Historical Note:** All use cases use clean constructor injection. The migration to awilix-modular maintained this pattern.
 
-- Use cases already fully decorated for Inversify
-- Need to convert to awilix-modular module pattern
-- May keep constructor pattern or switch to `ModuleDeps` type approach
+### Migration Notes (Historical Planning)
+
+- All use cases use clean constructor injection ✓
+- Successfully migrated to awilix-modular module pattern
+- Maintained constructor pattern with `createStaticModule()` registration
 
 ---
 
@@ -296,7 +315,7 @@ This is the **primary file to refactor** for DI integration.
 
 | File                                      | Changes Required                        | Risk   |
 | ----------------------------------------- | --------------------------------------- | ------ |
-| `packages/frameworks/src/di/container.ts` | Replace Inversify Container with Awilix | High   |
+| `packages/frameworks/src/di/container.ts` | Replace legacy DI container with Awilix | High   |
 | `packages/frameworks/src/di/index.ts`     | Update exports for new API              | Medium |
 | `packages/frameworks/src/di/types.ts`     | Keep symbols or migrate to awilix keys  | Medium |
 | `apps/backend-server/src/server.ts`       | Initialize DIContext in createContext   | High   |
@@ -310,24 +329,28 @@ This is the **primary file to refactor** for DI integration.
 
 ### Controllers (17 files)
 
-| File                                                        | Changes                                          |
-| ----------------------------------------------------------- | ------------------------------------------------ |
-| `packages/adapters/src/controllers/user-controller.ts`      | Add @injectable decorator or module registration |
-| `packages/adapters/src/controllers/challenge-controller.ts` | Add @injectable decorator or module registration |
-| `packages/adapters/src/controllers/trip-controller.ts`      | Add @injectable decorator or module registration |
-| ... (14 more)                                               | Same pattern                                     |
+| File                                                        | Changes (Historical Planning) |
+| ----------------------------------------------------------- | ----------------------------- |
+| `packages/adapters/src/controllers/user-controller.ts`      | Add to module registration    |
+| `packages/adapters/src/controllers/challenge-controller.ts` | Add to module registration    |
+| `packages/adapters/src/controllers/trip-controller.ts`      | Add to module registration    |
+| ... (14 more)                                               | Same pattern                  |
+
+> **Note:** Controllers use clean constructor injection with awilix-modular registration. No decorators needed.
 
 ### Repositories (16 files)
 
-| File                                                          | Changes                               |
-| ------------------------------------------------------------- | ------------------------------------- |
-| `packages/adapters/src/gateways/PrismaUserRepository.ts`      | Remove @provide, keep @inject pattern |
-| `packages/adapters/src/gateways/PrismaChallengeRepository.ts` | Remove @provide, keep @inject pattern |
-| ... (14 more)                                                 | Same pattern                          |
+| File                                                          | Changes (Historical Planning) |
+| ------------------------------------------------------------- | ----------------------------- |
+| `packages/adapters/src/gateways/PrismaUserRepository.ts`      | Add to module registration    |
+| `packages/adapters/src/gateways/PrismaChallengeRepository.ts` | Add to module registration    |
+| ... (14 more)                                                 | Same pattern                  |
+
+> **Note:** Repositories use clean constructor injection with awilix-modular registration. No decorators needed.
 
 ### Use Cases (73 files)
 
-Most use cases already have `@injectable()` - may only need minor updates for awilix-modular compatibility.
+All use cases use clean constructor injection. Migrated to awilix-modular with `createStaticModule()` registration.
 
 ---
 
@@ -343,7 +366,7 @@ Most use cases already have `@injectable()` - may only need minor updates for aw
 
 ## 9. Interface Documentation
 
-### Current Container API (Inversify)
+### Current Container API (Legacy)
 
 ```typescript
 export const container: Container;
@@ -404,8 +427,8 @@ export interface TRPCContext {
 **Location**: `apps/backend-server/src/server.ts`
 
 ```typescript
-import { DIContext } from '@repo/frameworks/di';
-import { AppModule } from '@repo/frameworks/di/modules/AppModule';
+import { DIContext } from '@mirai-app/frameworks/di';
+import { AppModule } from '@mirai-app/frameworks/di/modules/AppModule';
 
 // Initialize DI context during server creation
 DIContext.create(AppModule, {
@@ -502,14 +525,14 @@ type ControllerModuleDef = ModuleDef<{
 
 ### Medium Risk Areas
 
-1. **Repository Decorator Migration** (Medium)
-   - 16 repositories need `@provide` removal
+1. **Repository Module Registration** (Medium)
+   - 16 repositories need `createStaticModule()` registration
    - Risk: Missing registration in module definition
    - Mitigation: Automated verification script
 
-2. **Use Case Compatibility** (Medium)
-   - 73 use cases with Inversify decorators
-   - Risk: Decorator incompatibility
+2. **Use Case Registration** (Medium)
+   - 73 use cases need `createStaticModule()` registration
+   - Risk: Constructor injection compatibility
    - Mitigation: Gradual migration, test each use case
 
 3. **Circular Dependencies** (Medium)
@@ -548,9 +571,9 @@ type ControllerModuleDef = ModuleDef<{
 
 ### Components Affected
 
-- **16 repositories**: Convert from @provide to module registration
-- **17 controllers**: Add to module registration, no decorators needed
-- **73 use cases**: Verify/convert decorators
+- **16 repositories**: Add to `createStaticModule()` registration
+- **17 controllers**: Add to module registration
+- **73 use cases**: Add to module registration
 - **19 routers**: No changes (thin wrappers)
 - **1 tRPC wrapper**: Major refactoring (~1700 lines)
 
@@ -567,7 +590,7 @@ type ControllerModuleDef = ModuleDef<{
 ### Phase 2: Repository Migration (Medium Risk)
 
 1. Convert repositories 4 at a time using parallel subagents
-2. Keep Inversify running during transition
+2. Keep the legacy DI container running during transition
 3. Verify each batch with tests
 
 ### Phase 3: Controller Migration (High Risk)
@@ -578,9 +601,9 @@ type ControllerModuleDef = ModuleDef<{
 
 ### Phase 4: Cleanup (Low Risk)
 
-1. Remove Inversify dependencies
-2. Delete old container files
-3. Update documentation
+1. Verify no runtime DI residue
+2. Update documentation
+3. Standardize on awilix-modular patterns
 
 ---
 

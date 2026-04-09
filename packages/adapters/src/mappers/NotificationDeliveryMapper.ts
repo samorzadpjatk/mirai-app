@@ -1,4 +1,4 @@
-import type { NotificationDelivery, DeliveryStatus } from "@repo/use-cases";
+import type { NotificationDelivery, DeliveryStatus } from "@mirai-app/use-cases";
 
 /**
  * Prisma NotificationDelivery record type

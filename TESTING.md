@@ -485,7 +485,7 @@ Adapter tests use **real dependencies** (integration tests):
 ```typescript
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { PrismaUserRepository } from "./PrismaUserRepository";
-import { User } from "@repo/domain";
+import { User } from "@mirai-app/domain";
 
 describe("PrismaUserRepository (Adapter)", () => {
   let repository: PrismaUserRepository;

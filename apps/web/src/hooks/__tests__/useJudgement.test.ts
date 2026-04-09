@@ -57,7 +57,7 @@ mock.module("@tanstack/react-query", () => ({
 }));
 
 // Mock tRPC client
-mock.module("@repo/frameworks/trpc/client", () => ({
+mock.module("@mirai-app/frameworks/trpc/client", () => ({
   useTRPCClient: () => ({
     challenge: {
       getById: {

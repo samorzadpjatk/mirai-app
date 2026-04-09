@@ -27,7 +27,7 @@
     "test:unit": "bun test"
   },
   "dependencies": {
-    "@repo/frameworks": "workspace:*",
+    "@mirai-app/frameworks": "workspace:*",
     "csv-parse": "^6.1.0",
     "yaml": "^2.8.1"
   },

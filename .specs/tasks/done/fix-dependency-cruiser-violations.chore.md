@@ -8,13 +8,13 @@ Fix dependency-cruiser violations including unresolvable imports and orphan warn
 
 ## Description
 
-After consolidating legacy packages into the new `@repo/*` structure, dependency-cruiser validation is reporting **11 unresolvable import errors** and **67 orphan warnings**. These violations are blocking the CI pipeline and creating noise that obscures real issues.
+After consolidating legacy packages into the new `@mirai-app/*` structure, dependency-cruiser validation is reporting **11 unresolvable import errors** and **67 orphan warnings**. These violations are blocking the CI pipeline and creating noise that obscures real issues.
 
-The unresolvable errors occur because `packages/frameworks` lacks proper `exports` configuration for sub-modules like `@repo/frameworks/prisma` and `@repo/frameworks/supabase`. The orphan warnings are primarily false positives - legitimate entry points, configuration files, and internal model files that aren't meant to be imported by other modules.
+The unresolvable errors occur because `packages/frameworks` lacks proper `exports` configuration for sub-modules like `@mirai-app/frameworks/prisma` and `@mirai-app/frameworks/supabase`. The orphan warnings are primarily false positives - legitimate entry points, configuration files, and internal model files that aren't meant to be imported by other modules.
 
 This task fixes the configuration to:
 
-1. Add proper package exports so apps can resolve `@repo/frameworks/*` imports
+1. Add proper package exports so apps can resolve `@mirai-app/frameworks/*` imports
 2. Update dependency-cruiser exclusions to suppress false-positive orphan warnings
 3. Achieve clean validation with zero errors and minimal warnings
 
@@ -32,8 +32,8 @@ This task fixes the configuration to:
 
 ### Functional Requirements
 
-- [x] **[Package exports configured]**: All @repo/frameworks/\* imports resolve correctly
-  - Given: Apps import from `@repo/frameworks/prisma`, `@repo/frameworks/supabase`, `@repo/frameworks/trpc/client`
+- [x] **[Package exports configured]**: All @mirai-app/frameworks/\* imports resolve correctly
+  - Given: Apps import from `@mirai-app/frameworks/prisma`, `@mirai-app/frameworks/supabase`, `@mirai-app/frameworks/trpc/client`
   - When: `packages/frameworks/package.json` has proper exports field
   - Then: `bunx dependency-cruiser --validate .` shows zero unresolvable errors
 
@@ -75,14 +75,14 @@ This task fixes the configuration to:
 
 This is a **configuration-only fix** requiring two coordinated changes:
 
-1. **Package Export Configuration**: Add explicit subpath exports to `packages/frameworks/package.json` for `@repo/frameworks/prisma` and `@repo/frameworks/supabase` (without wildcards)
+1. **Package Export Configuration**: Add explicit subpath exports to `packages/frameworks/package.json` for `@mirai-app/frameworks/prisma` and `@mirai-app/frameworks/supabase` (without wildcards)
 2. **Dependency-Cruiser Exclusions**: Update `.dependency-cruiser.cjs` to exclude legitimate orphan patterns
 
 ### Key Architectural Decisions
 
 #### Decision 1: Add Specific Exports (Not Just Wildcards)
 
-**Rationale**: Existing wildcard exports (`./prisma/*`) don't match bare imports like `@repo/frameworks/prisma`. Node.js module resolution requires explicit exports for both patterns.
+**Rationale**: Existing wildcard exports (`./prisma/*`) don't match bare imports like `@mirai-app/frameworks/prisma`. Node.js module resolution requires explicit exports for both patterns.
 
 **Implementation**:
 
@@ -154,7 +154,7 @@ pathNot: [
 
 #### Step 2.1: Add Package Exports for Prisma [DONE]
 
-**Goal**: Fix unresolvable imports for `@repo/frameworks/prisma`
+**Goal**: Fix unresolvable imports for `@mirai-app/frameworks/prisma`
 **Output**: Updated packages/frameworks/package.json
 
 **Subtasks**:
@@ -188,7 +188,7 @@ pathNot: [
 
 #### Step 2.2: Add Package Exports for Supabase [DONE]
 
-**Goal**: Fix unresolvable imports for `@repo/frameworks/supabase`
+**Goal**: Fix unresolvable imports for `@mirai-app/frameworks/supabase`
 **Output**: Updated packages/frameworks/package.json
 
 **Subtasks**:

@@ -7,7 +7,7 @@
  * ## Usage
  *
  * ```typescript
- * import { createUserRepository } from "@repo/frameworks/factories";
+ * import { createUserRepository } from "@mirai-app/frameworks/factories";
  *
  * const userRepo = await createUserRepository();
  * const users = await userRepo.findAll();
@@ -77,7 +77,7 @@ export async function createUserRepository(
   prisma?: PrismaClient,
 ): Promise<UserRepository> {
   return getOrCreate("user", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -92,7 +92,7 @@ export async function createTripRepository(
   prisma?: PrismaClient,
 ): Promise<TripRepository> {
   return getOrCreate("trip", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -107,7 +107,7 @@ export async function createChallengeRepository(
   prisma?: PrismaClient,
 ): Promise<ChallengeRepository> {
   return getOrCreate("challenge", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -122,7 +122,7 @@ export async function createGroupRepository(
   prisma?: PrismaClient,
 ): Promise<GroupRepository> {
   return getOrCreate("group", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -137,7 +137,7 @@ export async function createRewardRepository(
   prisma?: PrismaClient,
 ): Promise<RewardRepository> {
   return getOrCreate("reward", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -152,7 +152,7 @@ export async function createNotificationRepository(
   prisma?: PrismaClient,
 ): Promise<NotificationRepository> {
   return getOrCreate("notification", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -167,7 +167,7 @@ export async function createChallengeSubmissionRepository(
   prisma?: PrismaClient,
 ): Promise<ChallengeSubmissionRepository> {
   return getOrCreate("challengeSubmission", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -182,7 +182,7 @@ export async function createSponsorRepository(
   prisma?: PrismaClient,
 ): Promise<SponsorRepository> {
   return getOrCreate("sponsor", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -197,7 +197,7 @@ export async function createLocationRepository(
   prisma?: PrismaClient,
 ): Promise<LocationRepository> {
   return getOrCreate("location", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -212,7 +212,7 @@ export async function createChallengeVoteRepository(
   prisma?: PrismaClient,
 ): Promise<ChallengeVoteRepository> {
   return getOrCreate("challengeVote", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -227,7 +227,7 @@ export async function createSubmissionReportRepository(
   prisma?: PrismaClient,
 ): Promise<SubmissionReportRepository> {
   return getOrCreate("submissionReport", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -242,7 +242,7 @@ export async function createCoinTransactionRepository(
   prisma?: PrismaClient,
 ): Promise<CoinTransactionRepository> {
   return getOrCreate("coinTransaction", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -257,7 +257,7 @@ export async function createNotificationDeliveryRepository(
   prisma?: PrismaClient,
 ): Promise<NotificationDeliveryRepository> {
   return getOrCreate("notificationDelivery", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -272,7 +272,7 @@ export async function createNotificationScheduleRepository(
   prisma?: PrismaClient,
 ): Promise<NotificationScheduleRepository> {
   return getOrCreate("notificationSchedule", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));
@@ -287,7 +287,7 @@ export async function createActivityFeedRepository(
   prisma?: PrismaClient,
 ): Promise<ActivityFeedRepository> {
   return getOrCreate("activityFeed", async () => {
-    const adapters = await import("@repo/adapters");
+    const adapters = await import("@mirai-app/adapters");
     const { createPrismaClient } = await import("../prisma/client");
     const db =
       prisma ?? (await createPrismaClient(process.env.DATABASE_URL ?? ""));

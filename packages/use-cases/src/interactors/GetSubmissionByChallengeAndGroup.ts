@@ -1,5 +1,5 @@
-import type { Result } from "@repo/domain";
-import { ok, err, SubmissionId } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err, SubmissionId } from "@mirai-app/domain";
 import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
 
 /**

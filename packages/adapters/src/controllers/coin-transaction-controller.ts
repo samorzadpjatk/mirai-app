@@ -5,7 +5,7 @@ import type {
   GetCoinTransactionsUseCase,
   GetCoinQuickStatsUseCase,
   GetCoinAdditionalInsightsUseCase,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for coin transaction controller

@@ -3,7 +3,7 @@ import type {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * ChallengeRepository Port

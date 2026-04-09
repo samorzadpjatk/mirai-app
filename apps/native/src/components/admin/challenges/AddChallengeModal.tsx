@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTrips } from "~/hooks/trips";
-import { useAdminChallenges } from "@repo/frameworks/trpc/hooks";
+import { useAdminChallenges } from "@mirai-app/frameworks/trpc/hooks";
 import { colors, spacing } from "~/styles";
 import {
   LocationPicker,

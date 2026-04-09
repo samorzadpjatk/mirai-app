@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { UserMapper } from "../mappers/UserMapper";
-import { User, UserRole } from "@repo/domain";
+import { User, UserRole } from "@mirai-app/domain";
 
 describe("[UNIT] UserMapper", () => {
   // Sample Prisma user records

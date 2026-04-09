@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, typography } from "~/styles";
 import { AdminModal, AdminModalButton } from "../AdminModal";
-import type { User, Group } from "@repo/frameworks/trpc/hooks";
+import type { User, Group } from "@mirai-app/frameworks/trpc/hooks";
 
 interface GroupAssignmentModalProps {
   visible: boolean;

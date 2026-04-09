@@ -1,4 +1,4 @@
-import { Sponsor, SponsorId } from "@repo/domain";
+import { Sponsor, SponsorId } from "@mirai-app/domain";
 
 /**
  * SponsorMapper

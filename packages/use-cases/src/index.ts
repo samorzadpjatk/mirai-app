@@ -1,8 +1,8 @@
 /**
- * @repo/use-cases - Use Cases Layer Exports
+ * @mirai-app/use-cases - Use Cases Layer Exports
  *
  * This package contains application orchestration logic.
- * It depends only on @repo/domain (innermost layer).
+ * It depends only on @mirai-app/domain (innermost layer).
  */
 
 // =============================================================================
@@ -12,7 +12,7 @@
 // They may show as "orphan" in dependency-cruiser because the static analyzer
 // cannot trace imports through the package barrel. They ARE used by:
 // - Interactors within this package (constructor injection)
-// - Repository implementations in @repo/adapters
+// - Repository implementations in @mirai-app/adapters
 // =============================================================================
 export type { UserRepository } from "./ports/UserRepository";
 export type { ChallengeRepository } from "./ports/ChallengeRepository";
@@ -54,6 +54,15 @@ export type {
   NotificationScheduleExecutionRecord,
 } from "./ports/NotificationScheduleRepository";
 
+export {
+  UseCaseNotFoundError,
+  UseCaseConflictError,
+  UseCaseValidationError,
+  UseCaseRepositoryError,
+  type UseCaseError,
+  getUseCaseErrorMessage,
+} from "./errors";
+
 // Interactors (Use Case Implementations)
 export {
   GetUserUseCase,
@@ -91,6 +100,23 @@ export {
   type UpdateChallengeStatusInput,
   type UpdateChallengeStatusOutput,
 } from "./interactors/UpdateChallengeStatus";
+
+// Group Domain Use Cases
+export {
+  GetGroupUseCase,
+  type GetGroupInput,
+  type GetGroupOutput,
+} from "./interactors/GetGroup";
+export {
+  CreateGroupUseCase,
+  type CreateGroupInput,
+  type CreateGroupOutput,
+} from "./interactors/CreateGroup";
+export {
+  UpdateGroupUseCase,
+  type UpdateGroupInput,
+  type UpdateGroupOutput,
+} from "./interactors/UpdateGroup";
 
 export {
   GetNotificationUseCase,
@@ -476,7 +502,20 @@ export {
   DEFAULT_PAGINATION,
 } from "./utils/pagination";
 
-// Re-export domain types for convenience
-export type { Result } from "@repo/domain";
+// =============================================================================
+// Modules (Dependency Injection)
+// =============================================================================
+export {
+  UseCaseModule,
+  USE_CASE_TOKENS,
+  type UseCaseModuleDef,
+  type UseCaseModuleDeps,
+  type UseCaseToken,
+} from "./modules/UseCaseModule";
 
-export { ok, err } from "@repo/domain";
+// =============================================================================
+// Re-export domain types for convenience
+// =============================================================================
+export type { Result } from "@mirai-app/domain";
+
+export { ok, err } from "@mirai-app/domain";

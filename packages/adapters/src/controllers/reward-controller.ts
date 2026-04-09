@@ -5,7 +5,7 @@ import type {
   TripPointsCalculator,
   GroupCoinsService,
   TripAccessChecker,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 import {
   GetRewardUseCase,
   CreateRewardUseCase,
@@ -18,7 +18,7 @@ import {
   UpdateMyPurchaseStatusUseCase,
   GetPurchaseHistoryUseCase,
   UserRole,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for reward controller
@@ -133,7 +133,7 @@ export class RewardController {
   async getById(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@repo/use-cases").GetRewardOutput }
+    | { success: true; data: import("@mirai-app/use-cases").GetRewardOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.getById.safeParse(input);
@@ -146,7 +146,7 @@ export class RewardController {
 
     const useCase = new GetRewardUseCase(this.rewardRepository);
     const result = await useCase.execute({
-      rewardId: parsed.data.id as import("@repo/domain").RewardId,
+      rewardId: parsed.data.id as import("@mirai-app/domain").RewardId,
     });
 
     if (result.kind === "err") {
@@ -162,7 +162,7 @@ export class RewardController {
   async getByTrip(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@repo/use-cases").ListRewardsOutput }
+    | { success: true; data: import("@mirai-app/use-cases").ListRewardsOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.getByTrip.safeParse(input);
@@ -195,7 +195,7 @@ export class RewardController {
   async getByTripAdmin(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@repo/use-cases").ListRewardsOutput }
+    | { success: true; data: import("@mirai-app/use-cases").ListRewardsOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.getByTripAdmin.safeParse(input);
@@ -229,7 +229,7 @@ export class RewardController {
   async create(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@repo/use-cases").CreateRewardOutput }
+    | { success: true; data: import("@mirai-app/use-cases").CreateRewardOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.create.safeParse(input);
@@ -269,7 +269,7 @@ export class RewardController {
   async update(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@repo/use-cases").UpdateRewardOutput }
+    | { success: true; data: import("@mirai-app/use-cases").UpdateRewardOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.update.safeParse(input);
@@ -282,7 +282,7 @@ export class RewardController {
 
     const useCase = new UpdateRewardUseCase(this.rewardRepository);
     const result = await useCase.execute({
-      rewardId: parsed.data.rewardId as import("@repo/domain").RewardId,
+      rewardId: parsed.data.rewardId as import("@mirai-app/domain").RewardId,
       name: parsed.data.name,
       description: parsed.data.description,
       availableQuantity: parsed.data.availableQuantity,
@@ -303,7 +303,7 @@ export class RewardController {
   async setHidden(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@repo/use-cases").SetRewardHiddenOutput }
+    | { success: true; data: import("@mirai-app/use-cases").SetRewardHiddenOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.setHidden.safeParse(input);
@@ -316,7 +316,7 @@ export class RewardController {
 
     const useCase = new SetRewardHiddenUseCase(this.rewardRepository);
     const result = await useCase.execute({
-      rewardId: parsed.data.rewardId as import("@repo/domain").RewardId,
+      rewardId: parsed.data.rewardId as import("@mirai-app/domain").RewardId,
       isHidden: parsed.data.isHidden,
     });
 
@@ -333,7 +333,7 @@ export class RewardController {
   async delete(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@repo/use-cases").DeleteRewardOutput }
+    | { success: true; data: import("@mirai-app/use-cases").DeleteRewardOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.delete.safeParse(input);
@@ -346,7 +346,7 @@ export class RewardController {
 
     const useCase = new DeleteRewardUseCase(this.rewardRepository);
     const result = await useCase.execute({
-      rewardId: parsed.data.rewardId as import("@repo/domain").RewardId,
+      rewardId: parsed.data.rewardId as import("@mirai-app/domain").RewardId,
     });
 
     if (result.kind === "err") {
@@ -362,7 +362,7 @@ export class RewardController {
   async purchase(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@repo/use-cases").PurchaseRewardOutput }
+    | { success: true; data: import("@mirai-app/use-cases").PurchaseRewardOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.purchase.safeParse(input);
@@ -381,7 +381,7 @@ export class RewardController {
       this.accessChecker,
     );
     const result = await useCase.execute({
-      rewardId: parsed.data.rewardId as import("@repo/domain").RewardId,
+      rewardId: parsed.data.rewardId as import("@mirai-app/domain").RewardId,
       quantity: parsed.data.quantity,
       userId: parsed.data.userId,
     });
@@ -396,12 +396,10 @@ export class RewardController {
   /**
    * Update purchase status (admin/staff only)
    */
-  async updatePurchaseStatus(
-    input: unknown,
-  ): Promise<
+  async updatePurchaseStatus(input: unknown): Promise<
     | {
         success: true;
-        data: import("@repo/use-cases").UpdatePurchaseStatusOutput;
+        data: import("@mirai-app/use-cases").UpdatePurchaseStatusOutput;
       }
     | { success: false; error: string }
   > {
@@ -422,7 +420,7 @@ export class RewardController {
     const result = await useCase.execute({
       purchaseId: parsed.data.purchaseId,
       newStatus: parsed.data
-        .status as import("@repo/domain").RewardPurchaseStatus,
+        .status as import("@mirai-app/domain").RewardPurchaseStatus,
       updatedById: parsed.data.updatedById,
       collectionMethod: parsed.data.collectionMethod,
     });
@@ -437,12 +435,10 @@ export class RewardController {
   /**
    * Update my purchase status (group leader only - limited transitions)
    */
-  async updateMyPurchaseStatus(
-    input: unknown,
-  ): Promise<
+  async updateMyPurchaseStatus(input: unknown): Promise<
     | {
         success: true;
-        data: import("@repo/use-cases").UpdateMyPurchaseStatusOutput;
+        data: import("@mirai-app/use-cases").UpdateMyPurchaseStatusOutput;
       }
     | { success: false; error: string }
   > {
@@ -476,12 +472,10 @@ export class RewardController {
   /**
    * Get purchase history for a trip
    */
-  async getPurchaseHistory(
-    input: unknown,
-  ): Promise<
+  async getPurchaseHistory(input: unknown): Promise<
     | {
         success: true;
-        data: import("@repo/use-cases").GetPurchaseHistoryOutput;
+        data: import("@mirai-app/use-cases").GetPurchaseHistoryOutput;
       }
     | { success: false; error: string }
   > {

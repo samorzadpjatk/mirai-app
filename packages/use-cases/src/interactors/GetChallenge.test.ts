@@ -6,13 +6,28 @@ import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import { createTestContainer, TYPES } from "@repo/frameworks/di";
-import type { Container } from "inversify";
+import { createTestContainer } from "@mirai-app/frameworks/di";
+import type { AwilixContainer } from "awilix";
+import { Effect } from "effect";
+
+async function runAsResult<T>(
+  effect: Effect.Effect<T, Error>,
+): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
+  try {
+    const value = await Effect.runPromise(effect);
+    return { kind: "ok", value };
+  } catch (error) {
+    return {
+      kind: "err",
+      error: error instanceof Error ? error.message : "Unexpected error",
+    };
+  }
+}
 
 describe("[UNIT] GetChallengeUseCase", () => {
-  let container: Container;
+  let container: AwilixContainer;
 
   beforeEach(() => {
     container = createTestContainer();
@@ -64,18 +79,14 @@ describe("[UNIT] GetChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(1)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
-
-      const challengeRepo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new GetChallengeUseCase(challengeRepo);
+      // Manual instantiation (backward compatible)
+      const useCase = new GetChallengeUseCase(mockRepo);
       const input: GetChallengeInput = {
         challengeId: "challenge-456",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -115,18 +126,13 @@ describe("[UNIT] GetChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(0)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
-
-      const challengeRepo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new GetChallengeUseCase(challengeRepo);
+      const useCase = new GetChallengeUseCase(mockRepo);
       const input: GetChallengeInput = {
         challengeId: "non-existent-id",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
@@ -172,18 +178,13 @@ describe("[UNIT] GetChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(1)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
-
-      const challengeRepo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new GetChallengeUseCase(challengeRepo);
+      const useCase = new GetChallengeUseCase(mockRepo);
       const input: GetChallengeInput = {
         challengeId: "challenge-loc",
       };
 
       // Act
-      const result2 = await useCase.execute(input);
+      const result2 = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result2.kind).toBe("ok");
@@ -230,18 +231,13 @@ describe("[UNIT] GetChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(1)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
-
-      const challengeRepo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new GetChallengeUseCase(challengeRepo);
+      const useCase = new GetChallengeUseCase(mockRepo);
       const input: GetChallengeInput = {
         challengeId: "challenge-qr",
       };
 
       // Act
-      const result2 = await useCase.execute(input);
+      const result2 = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result2.kind).toBe("ok");
@@ -287,18 +283,13 @@ describe("[UNIT] GetChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(1)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
-
-      const challengeRepo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new GetChallengeUseCase(challengeRepo);
+      const useCase = new GetChallengeUseCase(mockRepo);
       const input: GetChallengeInput = {
         challengeId: "challenge-vote",
       };
 
       // Act
-      const result2 = await useCase.execute(input);
+      const result2 = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result2.kind).toBe("ok");
@@ -334,24 +325,69 @@ describe("[UNIT] GetChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(1)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
-
-      const challengeRepo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
-      );
-      const useCase = new GetChallengeUseCase(challengeRepo);
+      const useCase = new GetChallengeUseCase(mockRepo);
       const input: GetChallengeInput = {
         challengeId: "challenge-hidden",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
         expect(result.value.status).toBe("HIDDEN");
         expect(result.value.isActive).toBe(false);
+      }
+    });
+
+    it("should support container-based resolution", async () => {
+      // Arrange
+      const mockChallenge = createValidChallenge({ id: "challenge-container" });
+      const mockRepo: ChallengeRepository = {
+        create: mock(() => Promise.resolve(mockChallenge)),
+        findById: mock(() => Promise.resolve(mockChallenge)),
+        findByTripId: mock(() => Promise.resolve([])),
+        findByStatus: mock(() => Promise.resolve([])),
+        findByTripIdAndStatus: mock(() => Promise.resolve([])),
+        findBySubmissionType: mock(() => Promise.resolve([])),
+        findByScoringCategory: mock(() => Promise.resolve([])),
+        findActive: mock(() => Promise.resolve([])),
+        findOpenForSubmission: mock(() => Promise.resolve([])),
+        findRecurring: mock(() => Promise.resolve([])),
+        findAll: mock(() => Promise.resolve([])),
+        update: mock(() => Promise.resolve(mockChallenge)),
+        updateStatus: mock(() => Promise.resolve(mockChallenge)),
+        delete: mock(() => Promise.resolve()),
+        exists: mock(() => Promise.resolve(true)),
+        countByTripId: mock(() => Promise.resolve(1)),
+      };
+
+      // Register in container
+      container.register({
+        challengeRepository: {
+          resolve: () => mockRepo,
+          lifetime: "SINGLETON",
+        } as any,
+      });
+
+      // Create use case with resolved repository
+      const challengeRepo = container.resolve<ChallengeRepository>(
+        "challengeRepository",
+      );
+      const useCase = new GetChallengeUseCase(challengeRepo);
+
+      const input: GetChallengeInput = {
+        challengeId: "challenge-container",
+      };
+
+      // Act
+      const result = await runAsResult(useCase.execute(input));
+
+      // Assert
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("challenge-container");
       }
     });
   });

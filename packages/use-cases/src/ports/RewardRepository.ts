@@ -1,4 +1,4 @@
-import type { Reward, RewardPurchase, RewardId } from "@repo/domain";
+import type { Reward, RewardPurchase, RewardId } from "@mirai-app/domain";
 
 /**
  * Pagination options for list queries

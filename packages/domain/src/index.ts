@@ -1,5 +1,5 @@
 /**
- * @repo/domain - Domain Layer Exports
+ * @mirai-app/domain - Domain Layer Exports
  *
  * This package contains pure business logic with ZERO external dependencies.
  * All exports are pure TypeScript/JavaScript - no frameworks, no I/O.

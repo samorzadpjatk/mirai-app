@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "~/styles";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import type { Group, User } from "@repo/frameworks/trpc/hooks";
+import type { Group, User } from "@mirai-app/frameworks/trpc/hooks";
 
 interface CreateGroupModalProps {
   visible: boolean;

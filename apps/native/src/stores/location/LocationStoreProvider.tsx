@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@repo/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
 import { Alert } from "react-native";
 import { locationStore, setLocationServerUpdater } from "./locationStore";
 

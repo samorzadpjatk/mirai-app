@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { LocationRepository } from "@repo/use-cases";
+import type { LocationRepository } from "@mirai-app/use-cases";
 import {
   GetLocationUseCase,
   CreateLocationUseCase,
@@ -14,7 +14,7 @@ import {
   type UpdateSharingSettingsInput,
   type AddSharingUserInput,
   type RemoveSharingUserInput,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for location controller

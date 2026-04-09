@@ -4,7 +4,7 @@ import {
   RewardId,
   CoinAmount,
   type RewardPurchaseStatus,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * RewardMapper

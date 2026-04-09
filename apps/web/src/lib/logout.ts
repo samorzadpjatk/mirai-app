@@ -1,4 +1,4 @@
-import { authStore } from "@repo/frameworks/auth/client";
+import { authStore } from "@mirai-app/frameworks/auth/client";
 import { supabase } from "./supabase";
 
 /**

@@ -11,7 +11,7 @@ import {
   useAdminActivity,
   type ActivityType,
   type AdminActivity,
-} from "@repo/frameworks/trpc/hooks";
+} from "@mirai-app/frameworks/trpc/hooks";
 import { AdminActivityCard } from "./AdminActivityCard";
 import { useTrip } from "../../../contexts/TripContext";
 

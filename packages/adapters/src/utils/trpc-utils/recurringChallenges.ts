@@ -1,4 +1,4 @@
-import { type Prisma } from "@repo/frameworks/prisma";
+import { type Prisma } from "@mirai-app/frameworks/prisma";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -78,7 +78,13 @@ interface RecurringTemplate {
   firstPlacePoints: number | null;
   secondPlacePoints: number | null;
   thirdPlacePoints: number | null;
-  status: "HIDDEN" | "VISIBLE" | "ACTIVE" | "VOTING_PHASE" | "COMPLETED" | "CANCELLED";
+  status:
+    | "HIDDEN"
+    | "VISIBLE"
+    | "ACTIVE"
+    | "VOTING_PHASE"
+    | "COMPLETED"
+    | "CANCELLED";
   startTime: Date | null;
   endTime: Date | null;
   dailyStartTime: string | null;
@@ -156,7 +162,8 @@ export const ensureRecurringInstanceForTemplate = async (params: {
     return null;
   }
 
-  const dayIndex = Math.floor((today.getTime() - anchorDay.getTime()) / DAY_MS) + 1;
+  const dayIndex =
+    Math.floor((today.getTime() - anchorDay.getTime()) / DAY_MS) + 1;
   const instanceName = toInstanceName(template.name, dayIndex);
 
   const existing = await params.tx.challenge.findFirst({
@@ -216,7 +223,9 @@ export const precreateRecurringInstancesForTemplate = async (params: {
   }
 
   const anchorDay = startOfDay(template.startTime ?? template.createdAt);
-  const endDay = startOfDay(template.endTime ?? template.startTime ?? template.createdAt);
+  const endDay = startOfDay(
+    template.endTime ?? template.startTime ?? template.createdAt,
+  );
   if (endDay.getTime() < anchorDay.getTime()) {
     return [];
   }
@@ -251,7 +260,11 @@ export const precreateRecurringInstancesForTemplate = async (params: {
     });
 
     if (existing) {
-      results.push({ id: existing.id, status: existing.status, created: false });
+      results.push({
+        id: existing.id,
+        status: existing.status,
+        created: false,
+      });
       continue;
     }
 

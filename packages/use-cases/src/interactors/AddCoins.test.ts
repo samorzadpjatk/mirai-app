@@ -4,7 +4,21 @@ import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
-import { ok, err } from "@repo/domain";
+import { Effect } from "effect";
+
+async function runAsResult<T>(
+  effect: Effect.Effect<T, Error>,
+): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
+  try {
+    const value = await Effect.runPromise(effect);
+    return { kind: "ok", value };
+  } catch (error) {
+    return {
+      kind: "err",
+      error: error instanceof Error ? error.message : "Unexpected error",
+    };
+  }
+}
 
 describe("[UNIT] AddCoinsUseCase", () => {
   let mockRepo: CoinTransactionRepository;
@@ -40,7 +54,7 @@ describe("[UNIT] AddCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("ok");
     if (result.kind === "ok") {
@@ -59,7 +73,7 @@ describe("[UNIT] AddCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("err");
     if (result.kind === "err") {
@@ -83,7 +97,7 @@ describe("[UNIT] AddCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("err");
     if (result.kind === "err") {
@@ -103,7 +117,7 @@ describe("[UNIT] AddCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("err");
     if (result.kind === "err") {
@@ -123,7 +137,7 @@ describe("[UNIT] AddCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("ok");
     if (result.kind === "ok") {

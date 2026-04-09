@@ -1,10 +1,10 @@
 import { TRPCError } from "@trpc/server";
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 
 /**
  * Ensures that a trip has not ended (beyond the 24-hour grace period).
  * Throws a FORBIDDEN error if the trip has ended.
- * 
+ *
  * @param db - Prisma client instance
  * @param tripId - The ID of the trip to check
  * @throws {TRPCError} - If trip has ended
@@ -41,7 +41,7 @@ export async function ensureTripNotEnded(
 /**
  * Resolves tripId from a groupId and ensures the trip has not ended.
  * This is a convenience function for mutations that receive groupId instead of tripId.
- * 
+ *
  * @param db - Prisma client instance
  * @param groupId - The ID of the group to look up the trip for
  * @returns {Promise<string>} - The tripId
@@ -65,6 +65,6 @@ export async function ensureTripNotEndedByGroupId(
 
   // Ensure the trip hasn't ended
   await ensureTripNotEnded(db, group.tripId);
-  
+
   return group.tripId;
 }

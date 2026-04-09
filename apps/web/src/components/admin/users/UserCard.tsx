@@ -1,6 +1,6 @@
 "use client";
 
-import type { AdminUser } from "@repo/frameworks/trpc/hooks";
+import type { AdminUser } from "@mirai-app/frameworks/trpc/hooks";
 import { Card } from "../../ui/Card";
 
 interface UserCardProps {

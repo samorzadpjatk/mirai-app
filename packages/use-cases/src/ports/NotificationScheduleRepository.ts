@@ -4,7 +4,7 @@ import type {
   NotificationScheduleFilter,
   PaginationOptions,
   PaginatedResult,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * Record of a notification schedule execution

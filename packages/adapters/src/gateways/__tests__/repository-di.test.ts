@@ -1,17 +1,19 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
-import { TYPES, createTestContainer } from "@repo/frameworks/di";
+import {
+  createContainer,
+  asValue,
+  asFunction,
+  type AwilixContainer,
+} from "awilix";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import type {
   UserRepository,
   ChallengeRepository,
   GroupRepository,
-} from "@repo/use-cases";
-
-// Import repositories to trigger @provide decorator registration
-// The decorators are evaluated at import time, registering with buildProviderModule
-import "../PrismaUserRepository";
-import "../PrismaChallengeRepository";
-import "../PrismaGroupRepository";
+} from "@mirai-app/use-cases";
+import { PrismaUserRepository } from "../PrismaUserRepository";
+import { PrismaChallengeRepository } from "../PrismaChallengeRepository";
+import { PrismaGroupRepository } from "../PrismaGroupRepository";
 
 // Mock PrismaClient for testing
 const createMockPrismaClient = (): PrismaClient => {
@@ -19,28 +21,40 @@ const createMockPrismaClient = (): PrismaClient => {
     user: {
       findUnique: () => Promise.resolve(null),
       findMany: () => Promise.resolve([]),
-      create: () => Promise.resolve({}),
-      update: () => Promise.resolve({}),
-      delete: () => Promise.resolve({}),
+      create: () => Promise.resolve({ id: "test-user-id" }),
+      update: () => Promise.resolve({ id: "test-user-id" }),
+      delete: () => Promise.resolve({ id: "test-user-id" }),
       count: () => Promise.resolve(0),
     },
     challenge: {
       findUnique: () => Promise.resolve(null),
       findMany: () => Promise.resolve([]),
-      create: () => Promise.resolve({}),
-      update: () => Promise.resolve({}),
-      delete: () => Promise.resolve({}),
+      create: () => Promise.resolve({ id: "test-challenge-id" }),
+      update: () => Promise.resolve({ id: "test-challenge-id" }),
+      delete: () => Promise.resolve({ id: "test-challenge-id" }),
       count: () => Promise.resolve(0),
     },
     group: {
       findUnique: () => Promise.resolve(null),
       findMany: () => Promise.resolve([]),
-      create: () => Promise.resolve({}),
-      update: () => Promise.resolve({}),
-      delete: () => Promise.resolve({}),
+      create: () => Promise.resolve({ id: "test-group-id" }),
+      update: () => Promise.resolve({ id: "test-group-id" }),
+      delete: () => Promise.resolve({ id: "test-group-id" }),
       count: () => Promise.resolve(0),
     },
+    $connect: () => Promise.resolve(),
+    $disconnect: () => Promise.resolve(),
   } as unknown as PrismaClient;
+};
+
+/**
+ * Create test container with CLASSIC injection mode
+ * (avoids PROXY mode issues with property access)
+ */
+const createClassicTestContainer = (): AwilixContainer => {
+  return createContainer({
+    injectionMode: "CLASSIC",
+  });
 };
 
 /**
@@ -48,70 +62,87 @@ const createMockPrismaClient = (): PrismaClient => {
  *
  * These tests verify that the pilot repositories (PrismaUserRepository,
  * PrismaChallengeRepository, PrismaGroupRepository) can be resolved from
- * the InversifyJS container with PrismaClient injected via @inject decorator.
+ * the awilix container with PrismaClient injected.
  *
- * This validates the DI setup from Step 5 of the InversifyJS implementation.
+ * This validates the DI setup with awilix-modular.
+ *
  */
 describe("[INTEGRATION] Repository DI Resolution", () => {
-  let container: ReturnType<typeof createTestContainer>;
+  let container: AwilixContainer;
   let mockPrisma: PrismaClient;
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
-    container = createTestContainer();
 
-    // Bind mock PrismaClient to container
-    container.bind(TYPES.PrismaClient).toConstantValue(mockPrisma);
+    // Create container with CLASSIC injection mode to avoid PROXY issues
+    container = createClassicTestContainer();
+
+    // Register mock PrismaClient
+    container.register({
+      prisma: asValue(mockPrisma),
+    });
+
+    // Register the pilot repositories using factory functions with closure over mockPrisma
+    container.register({
+      userRepository: asFunction(
+        () => new PrismaUserRepository(mockPrisma),
+      ).singleton(),
+      challengeRepository: asFunction(
+        () => new PrismaChallengeRepository(mockPrisma),
+      ).singleton(),
+      groupRepository: asFunction(
+        () => new PrismaGroupRepository(mockPrisma),
+      ).singleton(),
+    });
   });
 
   describe("PrismaUserRepository", () => {
-    test("resolves from container with TYPES.UserRepository", () => {
-      const repo = container.get<UserRepository>(TYPES.UserRepository);
+    test("resolves from container with userRepository token", () => {
+      const repo = container.resolve<UserRepository>("userRepository");
 
       expect(repo).toBeDefined();
+      expect(repo).toBeInstanceOf(PrismaUserRepository);
     });
 
     test("resolved repository has PrismaClient injected", async () => {
-      const repo = container.get<UserRepository>(TYPES.UserRepository);
+      const repo = container.resolve<UserRepository>("userRepository");
 
-      // Verify the repository can use PrismaClient (injected via @inject)
-      // This should not throw, confirming injection worked
       const result = await repo.findById("test-id");
       expect(result).toBeNull();
     });
   });
 
   describe("PrismaChallengeRepository", () => {
-    test("resolves from container with TYPES.ChallengeRepository", () => {
-      const repo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
+    test("resolves from container with challengeRepository token", () => {
+      const repo = container.resolve<ChallengeRepository>(
+        "challengeRepository",
       );
 
       expect(repo).toBeDefined();
+      expect(repo).toBeInstanceOf(PrismaChallengeRepository);
     });
 
     test("resolved repository has PrismaClient injected", async () => {
-      const repo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
+      const repo = container.resolve<ChallengeRepository>(
+        "challengeRepository",
       );
 
-      // Verify the repository can use PrismaClient
       const result = await repo.findById("test-id");
       expect(result).toBeNull();
     });
   });
 
   describe("PrismaGroupRepository", () => {
-    test("resolves from container with TYPES.GroupRepository", () => {
-      const repo = container.get<GroupRepository>(TYPES.GroupRepository);
+    test("resolves from container with groupRepository token", () => {
+      const repo = container.resolve<GroupRepository>("groupRepository");
 
       expect(repo).toBeDefined();
+      expect(repo).toBeInstanceOf(PrismaGroupRepository);
     });
 
     test("resolved repository has PrismaClient injected", async () => {
-      const repo = container.get<GroupRepository>(TYPES.GroupRepository);
+      const repo = container.resolve<GroupRepository>("groupRepository");
 
-      // Verify the repository can use PrismaClient
       const result = await repo.findById("test-id");
       expect(result).toBeNull();
     });
@@ -119,33 +150,28 @@ describe("[INTEGRATION] Repository DI Resolution", () => {
 
   describe("Backward Compatibility", () => {
     test("PrismaUserRepository can still be instantiated manually", async () => {
-      const { PrismaUserRepository } = await import("../PrismaUserRepository");
-
       const repo = new PrismaUserRepository(mockPrisma);
 
       expect(repo).toBeDefined();
+      expect(repo).toBeInstanceOf(PrismaUserRepository);
       const result = await repo.findById("test-id");
       expect(result).toBeNull();
     });
 
     test("PrismaChallengeRepository can still be instantiated manually", async () => {
-      const { PrismaChallengeRepository } =
-        await import("../PrismaChallengeRepository");
-
       const repo = new PrismaChallengeRepository(mockPrisma);
 
       expect(repo).toBeDefined();
+      expect(repo).toBeInstanceOf(PrismaChallengeRepository);
       const result = await repo.findById("test-id");
       expect(result).toBeNull();
     });
 
     test("PrismaGroupRepository can still be instantiated manually", async () => {
-      const { PrismaGroupRepository } =
-        await import("../PrismaGroupRepository");
-
       const repo = new PrismaGroupRepository(mockPrisma);
 
       expect(repo).toBeDefined();
+      expect(repo).toBeInstanceOf(PrismaGroupRepository);
       const result = await repo.findById("test-id");
       expect(result).toBeNull();
     });
@@ -153,11 +179,11 @@ describe("[INTEGRATION] Repository DI Resolution", () => {
 
   describe("Multiple Repository Resolution", () => {
     test("can resolve all three repositories from same container", () => {
-      const userRepo = container.get<UserRepository>(TYPES.UserRepository);
-      const challengeRepo = container.get<ChallengeRepository>(
-        TYPES.ChallengeRepository,
+      const userRepo = container.resolve<UserRepository>("userRepository");
+      const challengeRepo = container.resolve<ChallengeRepository>(
+        "challengeRepository",
       );
-      const groupRepo = container.get<GroupRepository>(TYPES.GroupRepository);
+      const groupRepo = container.resolve<GroupRepository>("groupRepository");
 
       expect(userRepo).toBeDefined();
       expect(challengeRepo).toBeDefined();
@@ -165,23 +191,27 @@ describe("[INTEGRATION] Repository DI Resolution", () => {
     });
 
     test("repositories share the same PrismaClient instance", async () => {
-      // Create a mock that tracks calls
       let callCount = 0;
-      const trackingMock = {
-        ...mockPrisma,
-        user: {
-          ...mockPrisma.user,
-          findUnique: () => {
-            callCount++;
-            return Promise.resolve(null);
-          },
+      const trackingMock = createMockPrismaClient();
+      trackingMock.user = {
+        ...trackingMock.user,
+        findUnique: () => {
+          callCount++;
+          return Promise.resolve(null);
         },
-      } as unknown as PrismaClient;
+      };
 
-      const testContainer = createTestContainer();
-      testContainer.bind(TYPES.PrismaClient).toConstantValue(trackingMock);
+      const testContainer = createClassicTestContainer();
+      testContainer.register({
+        prisma: asValue(trackingMock),
+      });
+      testContainer.register({
+        userRepository: asFunction(
+          () => new PrismaUserRepository(trackingMock),
+        ).singleton(),
+      });
 
-      const userRepo = testContainer.get<UserRepository>(TYPES.UserRepository);
+      const userRepo = testContainer.resolve<UserRepository>("userRepository");
 
       await userRepo.findById("test-id");
       expect(callCount).toBe(1);

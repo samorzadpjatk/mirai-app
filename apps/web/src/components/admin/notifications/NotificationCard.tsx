@@ -2,7 +2,7 @@
 
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
-import type { AdminNotification } from "@repo/frameworks/trpc/hooks";
+import type { AdminNotification } from "@mirai-app/frameworks/trpc/hooks";
 
 interface NotificationCardProps {
   notification: AdminNotification;

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 
 /**
  * Calculates total available points for a trip based on challenge configurations

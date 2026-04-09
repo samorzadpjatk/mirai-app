@@ -1,11 +1,6 @@
-import "reflect-metadata";
-
-import type { UserRepository } from "@repo/use-cases";
-import type { User, UserRole } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
-import { TYPES } from "@repo/frameworks/di";
-import { provide } from "@inversifyjs/binding-decorators";
-import { inject } from "inversify";
+import type { UserRepository } from "@mirai-app/use-cases";
+import type { User, UserRole } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,
@@ -63,19 +58,19 @@ const UserMapperAdapter: EntityMapper<
  * Implements the UserRepository port using Prisma ORM.
  * Uses BasePrismaRepository for standard CRUD operations.
  *
- * Auto-registered with InversifyJS via @provide decorator.
+ * Compatible with awilix-modular dependency injection.
+ * Registered in RepositoryModule with singleton lifetime.
  *
  * @example
  * ```typescript
- * // With DI container
- * const userRepo = container.get<UserRepository>(TYPES.UserRepository);
+ * // With DI container (awilix-modular)
+ * const userRepo = container.resolve("userRepository");
  *
  * // Manual instantiation (backward-compatible)
  * const userRepo = new PrismaUserRepository(prisma);
  * const user = await userRepo.findById("user-123");
  * ```
  */
-@provide(TYPES.UserRepository)
 export class PrismaUserRepository
   extends BasePrismaRepository<
     User,
@@ -85,7 +80,12 @@ export class PrismaUserRepository
   >
   implements UserRepository
 {
-  constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
+  /**
+   * Creates a new PrismaUserRepository
+   *
+   * @param prisma - PrismaClient instance (injected by awilix or passed manually)
+   */
+  constructor(prisma: PrismaClient) {
     super(prisma, { model: prisma.user }, UserMapperAdapter);
   }
 

@@ -71,7 +71,7 @@ const t = initTRPC.context<TRPCContext>().create({
  *
  * @example
  * ```typescript
- * import { createTRPCRouter, protectedProcedure } from "@repo/frameworks/trpc/server";
+ * import { createTRPCRouter, protectedProcedure } from "@mirai-app/frameworks/trpc/server";
  *
  * export const userRouter = createTRPCRouter({
  *   get: protectedProcedure
@@ -92,8 +92,8 @@ export const createTRPCRouter = t.router;
  *
  * @example
  * ```typescript
- * import { createCallerFactory } from "@repo/frameworks/trpc/server";
- * import { appRouter } from "@repo/adapters";
+ * import { createCallerFactory } from "@mirai-app/frameworks/trpc/server";
+ * import { appRouter } from "@mirai-app/adapters";
  *
  * const createCaller = createCallerFactory(appRouter);
  * const caller = createCaller({

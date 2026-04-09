@@ -1,11 +1,11 @@
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 import type {
   CoinTransactionRepository,
   CoinTransaction,
   CoinTransactionFilters,
   PaginationOptions,
   MostActiveAdminStat,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 import {
   BasePrismaRepository,
   type EntityMapper,

@@ -32,7 +32,7 @@ import {
   FilterChipRow,
   TripPickerModal,
 } from "~/components/common/ui";
-import { useAuth } from "@repo/frameworks/auth/client";
+import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { useTripBackgroundImageDownload } from "~/hooks/trips/useTripBackgroundImageDownload";
 import { Logo } from "~/components";
 

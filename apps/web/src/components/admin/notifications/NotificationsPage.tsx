@@ -10,7 +10,7 @@ import { appToast } from "../../../lib/toast";
 import {
   useAdminNotifications,
   type NotificationStatus,
-} from "@repo/frameworks/trpc/hooks";
+} from "@mirai-app/frameworks/trpc/hooks";
 import { NotificationCard } from "./NotificationCard";
 import { useTrip } from "../../../contexts/TripContext";
 export function NotificationsPage() {

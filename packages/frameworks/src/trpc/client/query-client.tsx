@@ -9,9 +9,9 @@ import {
 } from "@tanstack/react-query";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { getTRPCClient } from "./vanilia";
-import type { AppRouter } from "@repo/adapters/api/root";
+import type { AppRouter } from "@mirai-app/adapters/api/root";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useSession, useAuth } from "@repo/frameworks/auth/client";
+import { useSession, useAuth } from "@mirai-app/frameworks/auth/client";
 import { TRPCContext } from "./react";
 
 function makeQueryClient() {

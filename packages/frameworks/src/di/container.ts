@@ -1,72 +1,231 @@
 /**
  * DI Container Configuration
  *
- * Central InversifyJS container for dependency injection across the application.
- * Uses binding-decorators for auto-registration of @provide decorated classes.
+ * Central awilix-modular container for dependency injection across the application.
+ * Uses modular organization with createStaticModule and createDynamicModule for
+ * clean separation of concerns.
  *
  * ## Architecture
  *
  * The container hierarchy supports:
  * - Root container: Shared singletons (database, external clients)
- * - Child containers: Request-scoped dependencies
+ * - Scoped containers: Request-scoped dependencies
+ *
+ * ## Benefits over Inversify
+ *
+ * - No experimentalDecorators or emitDecoratorMetadata needed
+ * - No reflect-metadata dependency required
+ * - Automatic type inference - no manual service identifiers needed
+ * - Module-based organization similar to NestJS
  *
  * ## Usage
  *
  * ```typescript
- * import { container, createChildContainer } from "@repo/frameworks/di";
+ * import { container, createChildContainer } from "@mirai-app/frameworks/di";
  *
  * // Get service from root container
- * const service = container.get<MyService>(TYPES.MyService);
+ * const service = container.resolve("myService");
  *
  * // Create request-scoped child container
  * const requestContainer = createChildContainer();
- * requestContainer.bind(TYPES.RequestId).toConstantValue(requestId);
+ * requestContainer.register({ requestId: asValue(requestId) });
  * ```
  */
 
-import { Container } from "inversify";
-import { buildProviderModule } from "@inversifyjs/binding-decorators";
-import "reflect-metadata";
+import {
+  createContainer,
+  type AwilixContainer,
+  asClass,
+  asValue,
+  asFunction,
+  Lifetime,
+} from "awilix";
+import {
+  createStaticModule,
+  createDynamicModule,
+  type StaticModule,
+} from "awilix-modular";
+
+// =============================================================================
+// Container Creation
+// =============================================================================
 
 /**
- * Root Inversify container
+ * Root Awilix container
  *
- * Configured with buildProviderModule() to auto-load all classes
- * decorated with @provide from @inversifyjs/binding-decorators
+ * Configured as the base container for the application.
+ * Modules are registered here to provide shared singletons.
  */
-export const container = new Container({
-  defaultScope: "Singleton",
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let rootContainer: AwilixContainer<any> | null = null;
+
+// =============================================================================
+// Container Initialization
+// =============================================================================
 
 /**
- * Initialize the container with provider module
+ * Initialize the container with modules
  *
- * This loads all @provide decorated classes automatically.
+ * This creates the root container and loads all registered modules.
  * Must be called before resolving any dependencies.
+ *
+ * @param modules - Array of static modules to load
+ * @returns The initialized container
+ *
+ * @example
+ * ```typescript
+ * import { initializeContainer } from "@mirai-app/frameworks/di";
+ * import { RepositoryModule } from "@mirai-app/adapters/modules/RepositoryModule";
+ * import { ControllerModule } from "@mirai-app/adapters/modules/ControllerModule";
+ *
+ * const container = initializeContainer([RepositoryModule, ControllerModule]);
+ * ```
  */
-export function initializeContainer(): void {
-  // Load all @provide decorated providers
-  container.load(buildProviderModule());
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function initializeContainer(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  modules: Array<StaticModule<any>> = [],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): AwilixContainer<any> {
+  rootContainer = createContainer({
+    injectionMode: "PROXY",
+  });
+
+  // Register all module providers with the container
+  for (const mod of modules) {
+    registerModule(rootContainer, mod);
+  }
+
+  return rootContainer;
 }
+
+/**
+ * Register a module's providers with the container
+ *
+ * @param container - Target container
+ * @param module - Module to register
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function registerModule(
+  container: AwilixContainer,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mod: StaticModule<any>,
+): void {
+  const providers = mod.providers;
+
+  // Guard against undefined providers (empty module placeholders)
+  if (!providers) {
+    return;
+  }
+
+  // Register all providers
+  for (const [key, provider] of Object.entries(providers)) {
+    if (typeof provider === "function") {
+      // Class provider - register as singleton by default
+      container.register(
+        key,
+        asClass(provider as new (...args: unknown[]) => unknown).singleton(),
+      );
+    } else if (provider && typeof provider === "object") {
+      // Object provider configuration
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const config = provider as any;
+
+      if ("useValue" in config) {
+        container.register(key, asValue(config.useValue));
+      } else if (
+        "useClass" in config &&
+        typeof config.useClass === "function"
+      ) {
+        container.register(key, asClass(config.useClass).singleton());
+      } else if (
+        "useFactory" in config &&
+        typeof config.useFactory === "function"
+      ) {
+        // Factory with dependency injection
+        // Use asFunction for lazy evaluation with access to container cradle
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        container.register(key, (cradle: any) => config.useFactory(cradle));
+      }
+    }
+  }
+}
+
+// =============================================================================
+// Container Access
+// =============================================================================
+
+/**
+ * Get the root container
+ *
+ * Throws if container hasn't been initialized.
+ *
+ * @returns The root AwilixContainer
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getContainer(): AwilixContainer<any> {
+  if (!rootContainer) {
+    throw new Error(
+      "Container not initialized. Call initializeContainer() first.",
+    );
+  }
+  return rootContainer;
+}
+
+/**
+ * Exported container reference
+ *
+ * Note: Accessing this before initialization will throw.
+ * Use getContainer() or initializeContainer() for safe access.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const container: AwilixContainer<any> = new Proxy(
+  {} as AwilixContainer,
+  {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get(_: unknown, prop: keyof AwilixContainer) {
+      if (!rootContainer) {
+        throw new Error(
+          "Container not initialized. Call initializeContainer() first.",
+        );
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const value = (rootContainer as any)[prop];
+      return typeof value === "function" ? value.bind(rootContainer) : value;
+    },
+  },
+);
+
+// =============================================================================
+// Child Container Creation
+// =============================================================================
 
 /**
  * Create a child container for request scoping
  *
- * Child containers inherit bindings from parent but can override
- * with request-specific values (e.g., request IDs, user context).
+ * Child containers inherit registrations from parent but can override
+ * with request-specific values (e.g., request IDs, user context, PrismaClient).
  *
  * @param parent - Parent container (defaults to root container)
- * @returns New child container
+ * @returns New scoped container
  *
  * @example
  * ```typescript
  * const requestContainer = createChildContainer();
- * requestContainer.bind(TYPES.PrismaClient).toConstantValue(prisma);
- * const controller = requestContainer.get(TYPES.UserController);
+ * requestContainer.register({
+ *   prisma: asValue(prisma),
+ *   requestId: asValue(requestId),
+ * });
+ * const controller = requestContainer.resolve("userController");
  * ```
  */
-export function createChildContainer(parent: Container = container): Container {
-  return new Container({ parent });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createChildContainer(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parent: AwilixContainer<any> = getContainer(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): AwilixContainer<any> {
+  return parent.createScope();
 }
 
 /**
@@ -74,45 +233,76 @@ export function createChildContainer(parent: Container = container): Container {
  *
  * Useful for unit tests to avoid polluting the root container.
  *
- * @returns New isolated container with provider module loaded
+ * @returns New isolated container
  *
  * @example
  * ```typescript
  * const testContainer = createTestContainer();
- * testContainer.bind(TYPES.MockRepo).to(MockRepository);
- * const useCase = testContainer.get(TYPES.MyUseCase);
+ * testContainer.register({
+ *   userRepository: asClass(InMemoryUserRepository).singleton(),
+ * });
+ * const useCase = testContainer.resolve("getUserUseCase");
  * ```
  */
-export function createTestContainer(): Container {
-  const testContainer = new Container({
-    defaultScope: "Transient",
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createTestContainer(): AwilixContainer<any> {
+  const testContainer = createContainer({
+    injectionMode: "PROXY",
   });
-  testContainer.load(buildProviderModule());
   return testContainer;
 }
+
+// =============================================================================
+// Container State Management
+// =============================================================================
 
 /**
  * Check if container has been initialized
  *
- * @returns True if provider module has been loaded
+ * @returns True if initializeContainer has been called
  */
 export function isContainerInitialized(): boolean {
-  // Check if we can get any bound service count
-  // This is a heuristic - inversify doesn't expose a direct "isLoaded" API
-  try {
-    // Attempt to check if buildProviderModule was loaded
-    // by checking internal state through service resolution attempt
-    return true; // Simplified - we track initialization via initializeContainer() call
-  } catch {
-    return false;
-  }
+  return rootContainer !== null;
 }
 
 /**
  * Reset the container (useful for testing)
  *
- * Unbinds all services and requires re-initialization.
+ * Clears the root container and DI context.
+ * Requires re-initialization before next use.
  */
 export function resetContainer(): void {
-  container.unbindAll();
+  rootContainer = null;
 }
+
+// =============================================================================
+// Module Helpers
+// =============================================================================
+
+/**
+ * Re-export createStaticModule for module creation
+ *
+ * @example
+ * ```typescript
+ * export const RepositoryModule = createStaticModule({
+ *   name: "RepositoryModule",
+ *   providers: {
+ *     userRepository: PrismaUserRepository,
+ *   },
+ *   exports: ["userRepository"],
+ * });
+ * ```
+ */
+export { createStaticModule, createDynamicModule };
+
+/**
+ * Export awilix lifetime helpers
+ */
+export { asClass, asValue, Lifetime };
+
+// =============================================================================
+// Type Exports
+// =============================================================================
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type { AwilixContainer, StaticModule };

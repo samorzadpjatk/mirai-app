@@ -1,14 +1,14 @@
 import { z } from "zod";
-import type { NotificationRepository } from "@repo/use-cases";
+import type { NotificationRepository } from "@mirai-app/use-cases";
 import {
   GetNotificationUseCase,
   type GetNotificationInput,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 import {
   NotificationStatus,
   NotificationPriority,
   Notification,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * Input validation schemas for notification controller

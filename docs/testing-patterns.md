@@ -1,6 +1,6 @@
 # Testing Patterns Guide
 
-This document captures the established testing patterns for the Mirai App monorepo, based on the test coverage spike implementation.
+This document captures the established testing patterns for the Mirai App monorepo. Use these as templates when adding new tests.
 
 ## Overview
 
@@ -120,6 +120,29 @@ describe("fastifyHeadersToFetchHeaders", () => {
 });
 ```
 
+### tRPC Mocking
+
+```typescript
+import { describe, expect, test, mock } from "bun:test";
+
+mock.module("@mirai-app/trpc/client", () => ({
+  useTRPC: () => ({
+    group: {
+      getAll: {
+        queryOptions: () => ({ queryKey: ["groups"] }),
+      },
+    },
+  }),
+  useTRPCClient: () => ({
+    group: {
+      getAll: {
+        query: mock(() => Promise.resolve({ groups: [], pagination: {} })),
+      },
+    },
+  }),
+}));
+```
+
 ### Fastify-Specific Pattern
 
 For Fastify request types, use the indexed access type:
@@ -214,7 +237,7 @@ Add the DOM types reference to test files:
 /// <reference lib="dom" />
 ```
 
-### renderHook from React Testing Library
+### Example
 
 ```typescript
 import { renderHook } from "@testing-library/react";
@@ -284,6 +307,88 @@ test("hook includes SSR safety check", () => {
 });
 ```
 
+## Pattern 5: Zustand Store Testing
+
+**Use for**: Zustand state management
+
+**Example**: Testing auth store
+
+### Key Principles
+
+- Zustand stores can be tested directly (no React needed)
+- Use `store.setState()` to reset between tests
+- Use `store.getState()` to read current state
+- Mock external dependencies (Supabase, etc.) before testing actions
+
+### Example
+
+```typescript
+import { describe, expect, test, beforeEach } from "bun:test";
+import { authStore } from "../stores/authStore";
+
+describe("authStore", () => {
+  beforeEach(() => {
+    // Reset store state before each test
+    authStore.setState({
+      user: null,
+      session: null,
+      isLoading: false,
+      isAuthenticated: false,
+    });
+  });
+
+  test("sets user", () => {
+    const mockUser = { id: "1", email: "test@example.com", role: "USER" };
+
+    authStore.getState().setUser(mockUser);
+
+    expect(authStore.getState().user).toEqual(mockUser);
+    expect(authStore.getState().isAuthenticated).toBe(true);
+  });
+});
+```
+
+## Pattern 6: Fastify Testing
+
+**Use for**: Fastify server utilities
+
+### Key Principles
+
+- Mock Fastify types at the type level only
+- Test with realistic header objects
+- Verify both success and edge cases (undefined, arrays)
+
+### Example
+
+```typescript
+import { describe, expect, test } from "bun:test";
+import { fastifyHeadersToFetchHeaders } from "../headers";
+
+describe("fastifyHeadersToFetchHeaders", () => {
+  test("converts simple headers", () => {
+    const fastifyHeaders = {
+      "content-type": "application/json",
+      "x-custom": "value",
+    };
+
+    const result = fastifyHeadersToFetchHeaders(fastifyHeaders);
+
+    expect(result.get("content-type")).toBe("application/json");
+    expect(result.get("x-custom")).toBe("value");
+  });
+
+  test("handles array headers", () => {
+    const fastifyHeaders = {
+      "set-cookie": ["session=abc", "user=john"],
+    };
+
+    const result = fastifyHeadersToFetchHeaders(fastifyHeaders);
+
+    expect(result.getAll("set-cookie")).toEqual(["session=abc", "user=john"]);
+  });
+});
+```
+
 ## Bun-Specific Behaviors
 
 ### Buffer vs btoa()
@@ -331,16 +436,6 @@ test('renders component', () => {
 });
 ```
 
-For hooks, use `renderHook` from `@testing-library/react`:
-
-```typescript
-import { renderHook } from "@testing-library/react";
-import { useMyHook } from "../hooks/useMyHook";
-
-const { result } = renderHook(() => useMyHook());
-expect(result.current).toBe(expectedValue);
-```
-
 ### Mock Function Differences
 
 Bun's `mock()` from `bun:test`:
@@ -367,6 +462,8 @@ expect(myMock).toHaveBeenCalledWith("arg");
 | React hooks      | @testing-library/react   | `useActiveTripId.ts` |
 | React components | @testing-library/react   | Component tests      |
 | Console output   | spyOn with mockRestore   | All patterns         |
+| Zustand stores   | Direct store testing     | `authStore.ts`       |
+| Fastify utils    | Type-level mocking       | `headers.ts`         |
 
 ### Directory Structure
 
@@ -376,6 +473,33 @@ src/
     myUtil.ts
     __tests__/
       myUtil.test.ts  <- Test file location
+```
+
+### File Organization
+
+```
+src/
+  utils/
+    myUtil.ts
+    __tests__/
+      myUtil.test.ts  <- Place tests in __tests__ subdirectories
+  hooks/
+    useMyHook.ts
+    __tests__/
+      useMyHook.test.ts
+```
+
+### Import Conventions
+
+```typescript
+// Test imports use bun:test
+import { describe, expect, test, mock } from "bun:test";
+
+// Source imports use relative paths
+import { myFunction } from "../myUtil";
+
+// External mocks use mock.module
+mock.module("@mirai-app/trpc/client", () => ({ ... }));
 ```
 
 ### Running Tests
@@ -394,9 +518,42 @@ bun test --coverage
 bun test -t "formatBytes"
 ```
 
+## Coverage Checklist
+
+Before submitting tests, verify:
+
+- [ ] 80%+ line coverage for the file
+- [ ] Edge cases handled (null, undefined, empty, error paths)
+- [ ] No production code changes (tests only)
+- [ ] Tests run with `bun test`
+- [ ] No `console.log` left in tests
+
+## Troubleshooting
+
+**"Cannot find module" errors:**
+
+- Use relative imports in tests: `import { fn } from "../file"`
+- Check that `__tests__` directory is at the right level
+
+**Happy DOM not working:**
+
+- Verify `happydom.ts` is being preloaded in `bunfig.toml`
+- Check that `bun test` is being run from the correct directory
+
+**Mock not being applied:**
+
+- `mock.module()` must be at the top level, not inside tests
+- The mock is hoisted, so it applies to all imports in the file
+
+**Async test failures:**
+
+- Bun doesn't have Jest's fake timers
+- Use real async/await with short timeouts
+- Consider restructuring code to be more testable
+
 ## Next Steps for Full Coverage
 
-Based on this spike, apply these patterns to:
+Apply these patterns to:
 
 1. **All hooks in `apps/native/src/hooks/`** (47 files) - will need Jest setup for native
 2. **All stores in `packages/shared/src/stores/`** (4 files)

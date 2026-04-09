@@ -23,20 +23,20 @@ This analysis identifies all files affected by dependency-cruiser violations aft
 
 ### Error Distribution
 
-All 11 errors are related to **@repo/frameworks** package imports that cannot be resolved.
+All 11 errors are related to **@mirai-app/frameworks** package imports that cannot be resolved.
 
 #### Affected Files
 
 | #   | File                                    | Import Path                    | Package  | Issue                 |
 | --- | --------------------------------------- | ------------------------------ | -------- | --------------------- |
-| 1   | `apps/seed/index.ts`                    | `@repo/frameworks/prisma`      | prisma   | Export not configured |
-| 2   | `apps/seed/src/config/db.ts`            | `@repo/frameworks/prisma`      | prisma   | Export not configured |
-| 3   | `apps/seed/src/config/supabase.ts`      | `@repo/frameworks/supabase`    | supabase | Export not configured |
-| 4   | `apps/seed/src/rewards.ts`              | `@repo/frameworks/prisma`      | prisma   | Export not configured |
-| 5   | `apps/seed/src/sponsors.ts`             | `@repo/frameworks/prisma`      | prisma   | Export not configured |
-| 6   | `apps/seed/src/tripInfo.ts`             | `@repo/frameworks/prisma`      | prisma   | Export not configured |
-| 7   | `apps/notification-sender/src/index.ts` | `@repo/frameworks/trpc/client` | trpc     | Export not configured |
-| 8   | `apps/notification-sender/src/index.ts` | `@repo/frameworks/supabase`    | supabase | Export not configured |
+| 1   | `apps/seed/index.ts`                    | `@mirai-app/frameworks/prisma`      | prisma   | Export not configured |
+| 2   | `apps/seed/src/config/db.ts`            | `@mirai-app/frameworks/prisma`      | prisma   | Export not configured |
+| 3   | `apps/seed/src/config/supabase.ts`      | `@mirai-app/frameworks/supabase`    | supabase | Export not configured |
+| 4   | `apps/seed/src/rewards.ts`              | `@mirai-app/frameworks/prisma`      | prisma   | Export not configured |
+| 5   | `apps/seed/src/sponsors.ts`             | `@mirai-app/frameworks/prisma`      | prisma   | Export not configured |
+| 6   | `apps/seed/src/tripInfo.ts`             | `@mirai-app/frameworks/prisma`      | prisma   | Export not configured |
+| 7   | `apps/notification-sender/src/index.ts` | `@mirai-app/frameworks/trpc/client` | trpc     | Export not configured |
+| 8   | `apps/notification-sender/src/index.ts` | `@mirai-app/frameworks/supabase`    | supabase | Export not configured |
 
 **Note**: apps/notification-sender has 2 errors in one file.
 
@@ -252,10 +252,10 @@ bunx dependency-cruiser --validate . 2>&1 | grep -c "warn no-orphans"
 
 ### 1. Package Export Configuration
 
-The fix requires updating package.json exports which affects how other packages import from `@repo/frameworks`. All imports like:
+The fix requires updating package.json exports which affects how other packages import from `@mirai-app/frameworks`. All imports like:
 
 ```typescript
-import { prisma } from "@repo/frameworks/prisma";
+import { prisma } from "@mirai-app/frameworks/prisma";
 ```
 
 Will start working correctly once exports are configured.
@@ -293,14 +293,14 @@ This fix follows the same pattern as the existing exclusions for:
 ### Unresolvable Errors (11)
 
 ```
-apps/seed/index.ts → @repo/frameworks/prisma
-apps/seed/src/config/db.ts → @repo/frameworks/prisma
-apps/seed/src/config/supabase.ts → @repo/frameworks/supabase
-apps/seed/src/rewards.ts → @repo/frameworks/prisma
-apps/seed/src/sponsors.ts → @repo/frameworks/prisma
-apps/seed/src/tripInfo.ts → @repo/frameworks/prisma
-apps/notification-sender/src/index.ts → @repo/frameworks/trpc/client
-apps/notification-sender/src/index.ts → @repo/frameworks/supabase
+apps/seed/index.ts → @mirai-app/frameworks/prisma
+apps/seed/src/config/db.ts → @mirai-app/frameworks/prisma
+apps/seed/src/config/supabase.ts → @mirai-app/frameworks/supabase
+apps/seed/src/rewards.ts → @mirai-app/frameworks/prisma
+apps/seed/src/sponsors.ts → @mirai-app/frameworks/prisma
+apps/seed/src/tripInfo.ts → @mirai-app/frameworks/prisma
+apps/notification-sender/src/index.ts → @mirai-app/frameworks/trpc/client
+apps/notification-sender/src/index.ts → @mirai-app/frameworks/supabase
 ```
 
 ### Orphan Warnings by Category

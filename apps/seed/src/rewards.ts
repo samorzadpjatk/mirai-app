@@ -1,7 +1,7 @@
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";
 import { joinPath } from "./utils/path";
-import { createPrismaClient } from "@repo/frameworks/prisma";
+import { createPrismaClient } from "@mirai-app/frameworks/prisma";
 import { env } from "./config/env";
 import type { RewardConfig, AuthUserByEmail } from "./types";
 

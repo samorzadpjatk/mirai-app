@@ -1,4 +1,4 @@
-import { type Prisma } from "@repo/frameworks/prisma";
+import { type Prisma } from "@mirai-app/frameworks/prisma";
 
 const HOUR_MS = 60 * 60 * 1000;
 const DEFAULT_PEER_VOTING_DURATION_HOURS = 24;
@@ -532,19 +532,46 @@ export const promoteVisibleChallengesToActiveWithFeed = async (params: {
   return activatedIds;
 };
 
-export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed = async (
-  params: {
+export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed =
+  async (params: {
     tx: Prisma.TransactionClient;
     where?: Prisma.ChallengeWhereInput;
     createdByAdmin?: string | null;
-  },
-) => {
-  const now = new Date();
-  const toVoting = await params.tx.challenge.findMany({
-    where: {
-      AND: [
-        params.where ?? {},
-        {
+  }) => {
+    const now = new Date();
+    const toVoting = await params.tx.challenge.findMany({
+      where: {
+        AND: [
+          params.where ?? {},
+          {
+            status: "ACTIVE",
+            scoringCategory: "PEER_VOTING",
+            endTime: { lte: now },
+            submissions: {
+              some: {},
+              every: { status: { in: ["APPROVED", "REJECTED"] } },
+            },
+          },
+        ],
+      },
+      select: { id: true, votingStartTime: true, votingEndTime: true },
+    });
+
+    const votingIds: string[] = [];
+
+    for (const challenge of toVoting) {
+      const votingDurationHours = resolvePeerVotingDurationHours(
+        challenge.votingStartTime,
+        challenge.votingEndTime,
+      );
+      const votingStartTime = new Date();
+      const votingEndTime = new Date(
+        votingStartTime.getTime() + votingDurationHours * HOUR_MS,
+      );
+
+      const result = await params.tx.challenge.updateMany({
+        where: {
+          id: challenge.id,
           status: "ACTIVE",
           scoringCategory: "PEER_VOTING",
           endTime: { lte: now },
@@ -553,54 +580,26 @@ export const promoteActivePeerVotingChallengesToVotingPhaseWithFeed = async (
             every: { status: { in: ["APPROVED", "REJECTED"] } },
           },
         },
-      ],
-    },
-    select: { id: true, votingStartTime: true, votingEndTime: true },
-  });
-
-  const votingIds: string[] = [];
-
-  for (const challenge of toVoting) {
-    const votingDurationHours = resolvePeerVotingDurationHours(
-      challenge.votingStartTime,
-      challenge.votingEndTime,
-    );
-    const votingStartTime = new Date();
-    const votingEndTime = new Date(
-      votingStartTime.getTime() + votingDurationHours * HOUR_MS,
-    );
-
-    const result = await params.tx.challenge.updateMany({
-      where: {
-        id: challenge.id,
-        status: "ACTIVE",
-        scoringCategory: "PEER_VOTING",
-        endTime: { lte: now },
-        submissions: {
-          some: {},
-          every: { status: { in: ["APPROVED", "REJECTED"] } },
+        data: {
+          status: "VOTING_PHASE",
+          votingStartTime,
+          votingEndTime,
         },
-      },
-      data: {
-        status: "VOTING_PHASE",
-        votingStartTime,
-        votingEndTime,
-      },
-    });
-
-    if (result.count > 0) {
-      votingIds.push(challenge.id);
-      await createChallengeStatusActivityById({
-        tx: params.tx,
-        challengeId: challenge.id,
-        eventType: "voting_started",
-        createdByAdmin: params.createdByAdmin,
       });
-    }
-  }
 
-  return votingIds;
-};
+      if (result.count > 0) {
+        votingIds.push(challenge.id);
+        await createChallengeStatusActivityById({
+          tx: params.tx,
+          challengeId: challenge.id,
+          eventType: "voting_started",
+          createdByAdmin: params.createdByAdmin,
+        });
+      }
+    }
+
+    return votingIds;
+  };
 
 export const finalizeVotingChallengesToCompletedWithFeed = async (params: {
   tx: Prisma.TransactionClient;

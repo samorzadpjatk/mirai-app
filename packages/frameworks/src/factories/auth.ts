@@ -7,7 +7,7 @@
  * ## Usage
  *
  * ```typescript
- * import { createAuthServer } from "@repo/frameworks/factories";
+ * import { createAuthServer } from "@mirai-app/frameworks/factories";
  *
  * const authServer = await createAuthServer(prisma);
  * const { user, dbUser } = await authServer.requireAuth(supabase, accessToken);
@@ -49,6 +49,6 @@ type AuthServer = unknown;
 export async function createAuthServer(
   prisma: PrismaClient,
 ): Promise<AuthServer> {
-  const adapters = await import("@repo/adapters");
+  const adapters = await import("@mirai-app/adapters");
   return new adapters.AuthServer(prisma);
 }

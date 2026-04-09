@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ChallengeSubmissionRepository } from "@repo/use-cases";
+import type { ChallengeSubmissionRepository } from "@mirai-app/use-cases";
 import {
   CreateSubmissionUseCase,
   GetSubmissionUseCase,
@@ -9,8 +9,8 @@ import {
   ListSubmissionsByChallengeUseCase,
   type CreateSubmissionInput,
   type UpdateSubmissionInput,
-} from "@repo/use-cases";
-import { SubmissionId } from "@repo/domain";
+} from "@mirai-app/use-cases";
+import { SubmissionId } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for challenge submission controller

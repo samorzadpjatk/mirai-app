@@ -2,7 +2,7 @@ import {
   Notification,
   NotificationStatus,
   NotificationPriority,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * NotificationMapper

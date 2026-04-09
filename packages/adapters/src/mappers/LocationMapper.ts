@@ -1,4 +1,4 @@
-import { Location, SharingUserInfo, type LocationId } from "@repo/domain";
+import { Location, SharingUserInfo, type LocationId } from "@mirai-app/domain";
 
 /**
  * Prisma Location record type

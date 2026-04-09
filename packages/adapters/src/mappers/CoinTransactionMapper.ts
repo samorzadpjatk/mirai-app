@@ -1,4 +1,4 @@
-import type { CoinTransaction } from "@repo/use-cases";
+import type { CoinTransaction } from "@mirai-app/use-cases";
 
 // Prisma types (from generated client)
 type PrismaCoinTransaction = {

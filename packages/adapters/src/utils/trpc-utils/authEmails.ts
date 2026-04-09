@@ -1,4 +1,4 @@
-import type { SupabaseClient, SupabaseUser } from "@repo/frameworks/supabase";
+import type { SupabaseClient, SupabaseUser } from "@mirai-app/frameworks/supabase";
 
 interface SupabaseAdminMetadata {
   ban_reason?: string | null;

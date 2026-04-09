@@ -9,12 +9,12 @@ import type { useQueryClient } from "@tanstack/react-query";
  */
 export async function invalidateCascadingQueries(
   queryClient: ReturnType<typeof useQueryClient>,
-  queryGroups: string[][]
+  queryGroups: string[][],
 ) {
   await Promise.all(
-    queryGroups.map(group => 
-      queryClient.invalidateQueries({ queryKey: group })
-    )
+    queryGroups.map((group) =>
+      queryClient.invalidateQueries({ queryKey: group }),
+    ),
   );
 }
 
@@ -23,7 +23,7 @@ export async function invalidateCascadingQueries(
  */
 export async function invalidateWithPredicate(
   queryClient: ReturnType<typeof useQueryClient>,
-  predicate: (query: unknown) => boolean
+  predicate: (query: unknown) => boolean,
 ) {
   await queryClient.invalidateQueries({ predicate });
 }
@@ -32,20 +32,20 @@ export async function invalidateWithPredicate(
  * Common query invalidation groups for the app
  */
 export const QUERY_GROUPS = {
-  REWARDS: [['reward']] as string[][],
-  REWARDS_ADMIN: [['reward'], ['admin']] as string[][],
-  CHALLENGES: [['challenge']] as string[][],
-  CHALLENGE_SUBMISSIONS: [['challengeSubmission']] as string[][],
-  NOTIFICATIONS: [['notification'], ['notificationSchedule']] as string[][],
-  USER_DATA: [['user'], ['group']] as string[][],
-  TRIPS: [['trip']] as string[][],
-  ADMIN: [['admin']] as string[][],
-  GROUPS: [['group']] as string[][],
-  SCHEDULES: [['schedule'], ['notificationSchedule']] as string[][],
-  TRANSACTIONS: [['transaction'], ['coin']] as string[][],
-  JUDGEMENTS: [['judgement']] as string[][],
-  LOCATION: [['location']] as string[][],
-  MAP: [['map'], ['mapOverlay']] as string[][],
+  REWARDS: [["reward"]] as string[][],
+  REWARDS_ADMIN: [["reward"], ["admin"]] as string[][],
+  CHALLENGES: [["challenge"]] as string[][],
+  CHALLENGE_SUBMISSIONS: [["challengeSubmission"]] as string[][],
+  NOTIFICATIONS: [["notification"], ["notificationSchedule"]] as string[][],
+  USER_DATA: [["user"], ["group"]] as string[][],
+  TRIPS: [["trip"]] as string[][],
+  ADMIN: [["admin"]] as string[][],
+  GROUPS: [["group"]] as string[][],
+  SCHEDULES: [["schedule"], ["notificationSchedule"]] as string[][],
+  TRANSACTIONS: [["transaction"], ["coin"]] as string[][],
+  JUDGEMENTS: [["judgement"]] as string[][],
+  LOCATION: [["location"]] as string[][],
+  MAP: [["map"], ["mapOverlay"]] as string[][],
 } as const;
 
 /**
@@ -53,12 +53,12 @@ export const QUERY_GROUPS = {
  */
 export async function invalidateRewardQueries(
   queryClient: ReturnType<typeof useQueryClient>,
-  includeAdmin = false
+  includeAdmin = false,
 ) {
-  const groups = includeAdmin 
+  const groups = includeAdmin
     ? [QUERY_GROUPS.REWARDS_ADMIN.flat()]
     : [QUERY_GROUPS.REWARDS.flat()];
-  
+
   await invalidateCascadingQueries(queryClient, groups);
 }
 
@@ -66,7 +66,7 @@ export async function invalidateRewardQueries(
  * Helper for challenge-related cascading invalidation
  */
 export async function invalidateChallengeQueries(
-  queryClient: ReturnType<typeof useQueryClient>
+  queryClient: ReturnType<typeof useQueryClient>,
 ) {
   await invalidateCascadingQueries(queryClient, [
     ...QUERY_GROUPS.CHALLENGES,
@@ -79,12 +79,12 @@ export async function invalidateChallengeQueries(
  */
 export async function invalidateUserQueries(
   queryClient: ReturnType<typeof useQueryClient>,
-  includeGroups = true
+  includeGroups = true,
 ) {
-  const groups = includeGroups 
+  const groups = includeGroups
     ? [...QUERY_GROUPS.USER_DATA, ...QUERY_GROUPS.GROUPS]
     : QUERY_GROUPS.USER_DATA;
-  
+
   await invalidateCascadingQueries(queryClient, groups);
 }
 
@@ -93,12 +93,12 @@ export async function invalidateUserQueries(
  */
 export async function invalidateGroupQueries(
   queryClient: ReturnType<typeof useQueryClient>,
-  includeUsers = true
+  includeUsers = true,
 ) {
-  const groups = includeUsers 
+  const groups = includeUsers
     ? [...QUERY_GROUPS.GROUPS, ...QUERY_GROUPS.USER_DATA]
     : QUERY_GROUPS.GROUPS;
-  
+
   await invalidateCascadingQueries(queryClient, groups);
 }
 
@@ -107,10 +107,10 @@ export async function invalidateGroupQueries(
  */
 export async function invalidateAdminQueries(
   queryClient: ReturnType<typeof useQueryClient>,
-  domains?: (keyof Omit<typeof QUERY_GROUPS, 'REWARDS' | 'REWARDS_ADMIN'>)[]
+  domains?: (keyof Omit<typeof QUERY_GROUPS, "REWARDS" | "REWARDS_ADMIN">)[],
 ) {
-  const groups = domains 
-    ? domains.map(domain => QUERY_GROUPS[domain]).flat()
+  const groups = domains
+    ? domains.map((domain) => QUERY_GROUPS[domain]).flat()
     : [
         ...QUERY_GROUPS.ADMIN,
         ...QUERY_GROUPS.USER_DATA,
@@ -120,7 +120,7 @@ export async function invalidateAdminQueries(
         ...QUERY_GROUPS.SCHEDULES,
         ...QUERY_GROUPS.TRANSACTIONS,
       ];
-  
+
   await invalidateCascadingQueries(queryClient, groups);
 }
 
@@ -129,12 +129,12 @@ export async function invalidateAdminQueries(
  */
 export async function invalidateTransactionQueries(
   queryClient: ReturnType<typeof useQueryClient>,
-  includeGroups = true
+  includeGroups = true,
 ) {
-  const groups = includeGroups 
+  const groups = includeGroups
     ? [...QUERY_GROUPS.TRANSACTIONS, ...QUERY_GROUPS.GROUPS]
     : QUERY_GROUPS.TRANSACTIONS;
-  
+
   await invalidateCascadingQueries(queryClient, groups);
 }
 
@@ -143,12 +143,12 @@ export async function invalidateTransactionQueries(
  */
 export async function invalidateNotificationQueries(
   queryClient: ReturnType<typeof useQueryClient>,
-  includeSchedules = true
+  includeSchedules = true,
 ) {
-  const groups = includeSchedules 
+  const groups = includeSchedules
     ? QUERY_GROUPS.NOTIFICATIONS
-    : [['notification']];
-  
+    : [["notification"]];
+
   await invalidateCascadingQueries(queryClient, groups);
 }
 
@@ -156,7 +156,7 @@ export async function invalidateNotificationQueries(
  * Helper for location-related cascading invalidation
  */
 export async function invalidateLocationQueries(
-  queryClient: ReturnType<typeof useQueryClient>
+  queryClient: ReturnType<typeof useQueryClient>,
 ) {
   await invalidateCascadingQueries(queryClient, QUERY_GROUPS.LOCATION);
 }
@@ -165,7 +165,7 @@ export async function invalidateLocationQueries(
  * Helper for trip-related cascading invalidation
  */
 export async function invalidateTripQueries(
-  queryClient: ReturnType<typeof useQueryClient>
+  queryClient: ReturnType<typeof useQueryClient>,
 ) {
   await invalidateCascadingQueries(queryClient, QUERY_GROUPS.TRIPS);
 }
@@ -174,7 +174,7 @@ export async function invalidateTripQueries(
  * Helper for file-related cascading invalidation
  */
 export async function invalidateFileQueries(
-  queryClient: ReturnType<typeof useQueryClient>
+  queryClient: ReturnType<typeof useQueryClient>,
 ) {
-  await queryClient.invalidateQueries({ queryKey: ['file'] });
+  await queryClient.invalidateQueries({ queryKey: ["file"] });
 }

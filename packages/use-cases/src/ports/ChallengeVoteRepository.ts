@@ -1,4 +1,4 @@
-import type { ChallengeVote } from "@repo/domain";
+import type { ChallengeVote } from "@mirai-app/domain";
 
 /**
  * ChallengeVoteRepository Port

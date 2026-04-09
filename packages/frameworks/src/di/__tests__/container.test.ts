@@ -1,36 +1,31 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { Container } from "inversify";
-import { provide } from "@inversifyjs/binding-decorators";
-import "reflect-metadata";
+import {
+  createContainer,
+  asClass,
+  asValue,
+  type AwilixContainer,
+} from "awilix";
+import { createStaticModule } from "awilix-modular";
 
 import {
   container,
   initializeContainer,
+  getContainer,
   createChildContainer,
   createTestContainer,
+  isContainerInitialized,
   resetContainer,
+  asClass as exportAsClass,
+  asValue as exportAsValue,
+  Lifetime,
+  createStaticModule as exportCreateStaticModule,
+  createDynamicModule as exportCreateDynamicModule,
 } from "../container";
 
 // =============================================================================
-// Test Service Identifiers
+// Test Classes
 // =============================================================================
 
-const TEST_TYPES = {
-  TestService: Symbol.for("TestService"),
-  TestRepository: Symbol.for("TestRepository"),
-  ConfigValue: Symbol.for("ConfigValue"),
-  CounterService: Symbol.for("CounterService"),
-};
-
-// =============================================================================
-// Test Classes with @provide Decorator
-// =============================================================================
-
-/**
- * Simple service decorated with @provide
- * No constructor dependencies - works with Bun
- */
-@provide(TEST_TYPES.TestService)
 class TestService {
   private value = 42;
 
@@ -43,11 +38,6 @@ class TestService {
   }
 }
 
-/**
- * Repository pattern test class
- * No constructor dependencies - works with Bun
- */
-@provide(TEST_TYPES.TestRepository)
 class TestRepository {
   private data: string[] = [];
 
@@ -60,10 +50,6 @@ class TestRepository {
   }
 }
 
-/**
- * Counter service to demonstrate transient vs singleton
- */
-@provide(TEST_TYPES.CounterService)
 class CounterService {
   private count = 0;
 
@@ -78,69 +64,99 @@ class CounterService {
 }
 
 // =============================================================================
+// Test Module
+// =============================================================================
+
+const TestModule = createStaticModule({
+  name: "TestModule",
+  providers: {
+    testService: TestService,
+    testRepository: TestRepository,
+    counterService: CounterService,
+  },
+  exports: ["testService", "testRepository", "counterService"],
+});
+
+// =============================================================================
 // Test Suite
 // =============================================================================
 
-describe("[UNIT] DI Container", () => {
+describe("[UNIT] DI Container (awilix-modular)", () => {
   beforeEach(() => {
     resetContainer();
   });
 
   describe("Container Export", () => {
-    test("exports a configured Container instance", () => {
-      expect(container).toBeDefined();
-      expect(container).toBeInstanceOf(Container);
+    test("exports container proxy that throws before initialization", () => {
+      // Container is a proxy that throws before initialization
+      expect(() => container.resolve("anything")).toThrow(
+        "Container not initialized",
+      );
     });
 
-    test("container is empty before initialization", () => {
-      // Before initialization, no @provide classes are registered
-      // So getting a non-existent service should throw
-      expect(() => container.get(TEST_TYPES.TestService)).toThrow();
+    test("re-exports createStaticModule", () => {
+      expect(exportCreateStaticModule).toBeDefined();
+      expect(typeof exportCreateStaticModule).toBe("function");
+    });
+
+    test("re-exports createDynamicModule", () => {
+      expect(exportCreateDynamicModule).toBeDefined();
+      expect(typeof exportCreateDynamicModule).toBe("function");
+    });
+
+    test("re-exports asClass", () => {
+      expect(exportAsClass).toBeDefined();
+      expect(typeof exportAsClass).toBe("function");
+    });
+
+    test("re-exports asValue", () => {
+      expect(exportAsValue).toBeDefined();
+      expect(typeof exportAsValue).toBe("function");
+    });
+
+    test("re-exports Lifetime", () => {
+      expect(Lifetime).toBeDefined();
     });
   });
 
   describe("Container Initialization", () => {
-    test("initializeContainer loads buildProviderModule", () => {
-      initializeContainer();
+    test("initializeContainer creates and returns container", () => {
+      const result = initializeContainer();
 
-      // After initialization, @provide decorated classes should resolve
-      const service = container.get<TestService>(TEST_TYPES.TestService);
-      expect(service).toBeDefined();
-      expect(service).toBeInstanceOf(TestService);
+      expect(result).toBeDefined();
+      expect(result.resolve).toBeDefined();
+      expect(typeof result.resolve).toBe("function");
     });
 
-    test("can resolve @provide decorated class", () => {
-      initializeContainer();
+    test("getContainer returns same container after initialization", () => {
+      const initialized = initializeContainer();
+      const retrieved = getContainer();
 
-      const service = container.get<TestService>(TEST_TYPES.TestService);
+      expect(retrieved).toBe(initialized);
+    });
+
+    test("isContainerInitialized returns true after initialization", () => {
+      expect(isContainerInitialized()).toBe(false);
+      initializeContainer();
+      expect(isContainerInitialized()).toBe(true);
+    });
+
+    test("can resolve classes from registered modules", () => {
+      initializeContainer([TestModule]);
+
+      const service = getContainer().resolve<TestService>("testService");
+      expect(service).toBeDefined();
+      expect(service).toBeInstanceOf(TestService);
       expect(service.getValue()).toBe(42);
     });
 
-    test("resolves same instance for singleton scope (default)", () => {
-      initializeContainer();
+    test("can resolve multiple classes from module", () => {
+      initializeContainer([TestModule]);
 
-      const instance1 = container.get<TestService>(TEST_TYPES.TestService);
-      const instance2 = container.get<TestService>(TEST_TYPES.TestService);
-
-      expect(instance1).toBe(instance2);
-    });
-
-    test("singleton instances share state", () => {
-      initializeContainer();
-
-      const instance1 = container.get<TestService>(TEST_TYPES.TestService);
-      instance1.setValue(100);
-
-      const instance2 = container.get<TestService>(TEST_TYPES.TestService);
-      expect(instance2.getValue()).toBe(100);
-    });
-
-    test("can resolve multiple different @provide decorated classes", () => {
-      initializeContainer();
-
-      const service = container.get<TestService>(TEST_TYPES.TestService);
-      const repo = container.get<TestRepository>(TEST_TYPES.TestRepository);
-      const counter = container.get<CounterService>(TEST_TYPES.CounterService);
+      const container = getContainer();
+      const service = container.resolve<TestService>("testService");
+      const repo = container.resolve<TestRepository>("testRepository");
+      const counter = container.resolve<CounterService>("counterService");
 
       expect(service).toBeInstanceOf(TestService);
       expect(repo).toBeInstanceOf(TestRepository);
@@ -148,54 +164,75 @@ describe("[UNIT] DI Container", () => {
     });
   });
 
+  describe("Module Registration", () => {
+    test("createStaticModule creates a valid module", () => {
+      expect(TestModule).toBeDefined();
+      expect(TestModule.name).toBe("TestModule");
+      expect(TestModule.providers).toBeDefined();
+      expect(TestModule.exports).toBeDefined();
+    });
+
+    test("module exports contain expected keys", () => {
+      expect(TestModule.exports).toContain("testService");
+      expect(TestModule.exports).toContain("testRepository");
+      expect(TestModule.exports).toContain("counterService");
+    });
+  });
+
   describe("Child Container Creation", () => {
     test("createChildContainer returns new container", () => {
+      initializeContainer();
+
       const child = createChildContainer();
 
       expect(child).toBeDefined();
-      expect(child).toBeInstanceOf(Container);
-      expect(child).not.toBe(container);
+      expect(child.resolve).toBeDefined();
+      expect(child).not.toBe(getContainer());
     });
 
-    test("child container can override parent bindings", () => {
-      initializeContainer();
+    test("child container can override parent registrations", () => {
+      initializeContainer([TestModule]);
 
       const child = createChildContainer();
       const customService = new TestService();
       customService.setValue(999);
 
-      child.bind(TEST_TYPES.TestService).toConstantValue(customService);
+      child.register({
+        testService: asValue(customService),
+      });
 
-      const resolved = child.get<TestService>(TEST_TYPES.TestService);
+      const resolved = child.resolve<TestService>("testService");
       expect(resolved.getValue()).toBe(999);
     });
 
     test("child container inherits from parent", () => {
-      initializeContainer();
+      initializeContainer([TestModule]);
 
       const child = createChildContainer();
 
       // Should be able to resolve from parent
-      const service = child.get<TestService>(TEST_TYPES.TestService);
+      const service = child.resolve<TestService>("testService");
       expect(service).toBeDefined();
       expect(service.getValue()).toBe(42);
     });
 
-    test("child container bindings do not affect parent", () => {
-      initializeContainer();
+    test("child container registrations do not affect parent", () => {
+      initializeContainer([TestModule]);
 
       const child = createChildContainer();
-      child.bind(TEST_TYPES.ConfigValue).toConstantValue("child-value");
+      child.register({
+        configValue: asValue("child-value"),
+      });
 
       // Child should have the value
-      expect(child.get<string>(TEST_TYPES.ConfigValue)).toBe("child-value");
+      expect(child.resolve<string>("configValue")).toBe("child-value");
 
       // Parent should not have it
-      expect(() => container.get(TEST_TYPES.ConfigValue)).toThrow();
+      expect(() => getContainer().resolve("configValue")).toThrow();
     });
 
     test("child container can have multiple overrides", () => {
-      initializeContainer();
+      initializeContainer([TestModule]);
 
       const child = createChildContainer();
 
@@ -206,12 +243,14 @@ describe("[UNIT] DI Container", () => {
       const customRepo = new TestRepository();
       customRepo.add("preloaded");
 
-      child.bind(TEST_TYPES.TestService).toConstantValue(customService);
-      child.bind(TEST_TYPES.TestRepository).toConstantValue(customRepo);
+      child.register({
+        testService: asValue(customService),
+        testRepository: asValue(customRepo),
+      });
 
       // Verify overrides work
-      const resolvedService = child.get<TestService>(TEST_TYPES.TestService);
-      const resolvedRepo = child.get<TestRepository>(TEST_TYPES.TestRepository);
+      const resolvedService = child.resolve<TestService>("testService");
+      const resolvedRepo = child.resolve<TestRepository>("testRepository");
 
       expect(resolvedService.getValue()).toBe(111);
       expect(resolvedRepo.getAll()).toEqual(["preloaded"]);
@@ -223,104 +262,97 @@ describe("[UNIT] DI Container", () => {
       const testContainer = createTestContainer();
 
       expect(testContainer).toBeDefined();
-      expect(testContainer).toBeInstanceOf(Container);
-    });
-
-    test("test container has provider module loaded", () => {
-      const testContainer = createTestContainer();
-
-      const service = testContainer.get<TestService>(TEST_TYPES.TestService);
-      expect(service).toBeDefined();
-      expect(service).toBeInstanceOf(TestService);
+      expect(testContainer.resolve).toBeDefined();
+      expect(typeof testContainer.resolve).toBe("function");
     });
 
     test("test container is isolated from root container", () => {
+      initializeContainer([TestModule]);
+
       const testContainer = createTestContainer();
 
       // Modify test container
       const customService = new TestService();
       customService.setValue(123);
-      testContainer
-        .rebind(TEST_TYPES.TestService)
-        .toConstantValue(customService);
+      testContainer.register({
+        testService: asValue(customService),
+      });
 
-      // Root container should still have original
-      initializeContainer();
-      const rootService = container.get<TestService>(TEST_TYPES.TestService);
-      expect(rootService.getValue()).toBe(42);
+      // Test container should have custom value
+      const testService = testContainer.resolve<TestService>("testService");
+      expect(testService.getValue()).toBe(123);
+
+      // Root container should not be affected (but also doesn't have testService)
+      // since we didn't register it there
+      expect(() => getContainer().resolve("testService")).not.toThrow();
     });
 
-    test("test container can resolve all @provide classes", () => {
+    test("test container can register and resolve classes", () => {
       const testContainer = createTestContainer();
 
-      const service = testContainer.get<TestService>(TEST_TYPES.TestService);
-      const repo = testContainer.get<TestRepository>(TEST_TYPES.TestRepository);
-      const counter = testContainer.get<CounterService>(
-        TEST_TYPES.CounterService,
-      );
+      testContainer.register({
+        testService: asClass(TestService).singleton(),
+        testRepository: asClass(TestRepository).singleton(),
+      });
+
+      const service = testContainer.resolve<TestService>("testService");
+      const repo = testContainer.resolve<TestRepository>("testRepository");
 
       expect(service).toBeDefined();
       expect(repo).toBeDefined();
-      expect(counter).toBeDefined();
+      expect(service).toBeInstanceOf(TestService);
+      expect(repo).toBeInstanceOf(TestRepository);
     });
   });
 
   describe("Reset Container", () => {
-    test("resetContainer clears all bindings", () => {
+    test("resetContainer clears initialization state", () => {
       initializeContainer();
+      expect(isContainerInitialized()).toBe(true);
 
-      // Verify it works
-      const service = container.get<TestService>(TEST_TYPES.TestService);
-      expect(service).toBeDefined();
-
-      // Reset
       resetContainer();
 
-      // Should throw now
-      expect(() => container.get(TEST_TYPES.TestService)).toThrow();
+      expect(isContainerInitialized()).toBe(false);
+    });
+
+    test("getContainer throws after reset", () => {
+      initializeContainer();
+      resetContainer();
+
+      expect(() => getContainer()).toThrow("Container not initialized");
     });
 
     test("can reinitialize after reset", () => {
-      initializeContainer();
+      initializeContainer([TestModule]);
       resetContainer();
-      initializeContainer();
+      initializeContainer([TestModule]);
 
-      const service = container.get<TestService>(TEST_TYPES.TestService);
+      const service = getContainer().resolve<TestService>("testService");
       expect(service).toBeDefined();
-    });
-
-    test("reset clears all registered services", () => {
-      initializeContainer();
-
-      // Use multiple services
-      container.get<TestService>(TEST_TYPES.TestService);
-      container.get<TestRepository>(TEST_TYPES.TestRepository);
-      container.get<CounterService>(TEST_TYPES.CounterService);
-
-      resetContainer();
-
-      // All should throw
-      expect(() => container.get(TEST_TYPES.TestService)).toThrow();
-      expect(() => container.get(TEST_TYPES.TestRepository)).toThrow();
-      expect(() => container.get(TEST_TYPES.CounterService)).toThrow();
     });
   });
 
   describe("Service Functionality", () => {
-    test("@provide decorated service methods work correctly", () => {
-      initializeContainer();
+    test("resolved service methods work correctly", () => {
+      const testContainer = createTestContainer();
+      testContainer.register({
+        testService: asClass(TestService).singleton(),
+      });
 
-      const service = container.get<TestService>(TEST_TYPES.TestService);
+      const service = testContainer.resolve<TestService>("testService");
 
       expect(service.getValue()).toBe(42);
       service.setValue(100);
       expect(service.getValue()).toBe(100);
     });
 
-    test("@provide decorated repository methods work correctly", () => {
-      initializeContainer();
+    test("resolved repository methods work correctly", () => {
+      const testContainer = createTestContainer();
+      testContainer.register({
+        testRepository: asClass(TestRepository).singleton(),
+      });
 
-      const repo = container.get<TestRepository>(TEST_TYPES.TestRepository);
+      const repo = testContainer.resolve<TestRepository>("testRepository");
 
       repo.add("item-1");
       repo.add("item-2");
@@ -329,17 +361,34 @@ describe("[UNIT] DI Container", () => {
     });
 
     test("singleton scope preserves state across resolutions", () => {
-      initializeContainer();
+      const testContainer = createTestContainer();
+      testContainer.register({
+        counterService: asClass(CounterService).singleton(),
+      });
 
-      const counter1 = container.get<CounterService>(TEST_TYPES.CounterService);
+      const counter1 = testContainer.resolve<CounterService>("counterService");
       counter1.increment();
       counter1.increment();
 
-      const counter2 = container.get<CounterService>(TEST_TYPES.CounterService);
+      const counter2 = testContainer.resolve<CounterService>("counterService");
       expect(counter2.getCount()).toBe(2);
 
       counter2.increment();
       expect(counter1.getCount()).toBe(3);
+    });
+
+    test("transient scope creates new instances", () => {
+      const testContainer = createTestContainer();
+      testContainer.register({
+        counterService: asClass(CounterService).transient(),
+      });
+
+      const counter1 = testContainer.resolve<CounterService>("counterService");
+      counter1.increment();
+      counter1.increment();
+
+      const counter2 = testContainer.resolve<CounterService>("counterService");
+      expect(counter2.getCount()).toBe(0); // Fresh instance
     });
   });
 
@@ -352,20 +401,39 @@ describe("[UNIT] DI Container", () => {
       expect(import.meta.url).toContain("frameworks/src/di");
     });
 
-    test("container can resolve classes from any layer", () => {
+    test("container can resolve classes from modules", () => {
       // The container doesn't care which layer the class comes from
-      // It just manages instantiation
+      // It just manages instantiation through modules
 
-      initializeContainer();
+      initializeContainer([TestModule]);
 
       // Simulating resolution of different layer classes
-      const service = container.get<TestService>(TEST_TYPES.TestService);
-      const repo = container.get<TestRepository>(TEST_TYPES.TestRepository);
-      const counter = container.get<CounterService>(TEST_TYPES.CounterService);
+      const service = getContainer().resolve<TestService>("testService");
+      const repo = getContainer().resolve<TestRepository>("testRepository");
+      const counter = getContainer().resolve<CounterService>("counterService");
 
       expect(service).toBeDefined();
       expect(repo).toBeDefined();
       expect(counter).toBeDefined();
+    });
+  });
+
+  describe("No reflect-metadata requirement", () => {
+    test("works without reflect-metadata import", () => {
+      // This test verifies awilix-modular doesn't need reflect-metadata
+      // Unlike Inversify which requires: import "reflect-metadata";
+
+      const testContainer = createContainer({
+        injectionMode: "PROXY",
+      });
+
+      testContainer.register({
+        testService: asClass(TestService),
+      });
+
+      const service = testContainer.resolve<TestService>("testService");
+      expect(service).toBeDefined();
+      expect(service.getValue()).toBe(42);
     });
   });
 });

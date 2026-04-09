@@ -1,4 +1,4 @@
-import type { ActivityFeed, ActivityReaction, ActivityId } from "@repo/domain";
+import type { ActivityFeed, ActivityReaction, ActivityId } from "@mirai-app/domain";
 
 /**
  * ActivityFeedRepository Port

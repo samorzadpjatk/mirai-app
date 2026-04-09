@@ -5,10 +5,11 @@ import {
   type FastifyTRPCPluginOptions,
 } from "@trpc/server/adapters/fastify";
 import fastify, { type FastifyRequest } from "fastify";
-import { type AppRouter, appRouter, createTRPCContext } from "@repo/adapters";
-import { createDb } from "@repo/frameworks/prisma";
-import { createSupabaseClient } from "@repo/frameworks/supabase";
+import { type AppRouter, appRouter, createTRPCContext } from "@mirai-app/adapters";
+import { createDb } from "@mirai-app/frameworks/prisma";
+import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import { fastifyHeadersToFetchHeaders } from "./utils/headers";
+import { initializeContainer, AppModule } from "@mirai-app/frameworks/di";
 
 export interface ServerOptions {
   dev?: boolean;
@@ -23,6 +24,22 @@ export function createServer(opts: ServerOptions) {
   const prefix = opts.prefix ?? "/trpc";
   const host = opts.host ?? "127.0.0.1";
   const server = fastify({ logger: dev });
+
+  // =============================================================================
+  // Initialize Dependency Injection Container
+  // =============================================================================
+  // Initialize the awilix-modular container with AppModule before setting up
+  // tRPC routes. This makes all registered services (repositories, use cases,
+  // controllers) available for request-scoped resolution.
+  try {
+    initializeContainer([AppModule]);
+    console.log("[DI] Container initialized successfully with AppModule");
+  } catch (error) {
+    console.error("[DI] Failed to initialize container:", error);
+    throw new Error(
+      "Container initialization failed. Ensure AppModule is properly configured.",
+    );
+  }
 
   if (dev) {
     void server.register(cors, {

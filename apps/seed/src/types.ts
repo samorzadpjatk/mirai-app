@@ -1,4 +1,4 @@
-import type { SupabaseUser } from "@repo/frameworks/supabase";
+import type { SupabaseUser } from "@mirai-app/frameworks/supabase";
 
 export type SeedEnv = "dev" | "prod";
 

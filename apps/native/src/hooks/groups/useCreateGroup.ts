@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@repo/frameworks/trpc/client";
-import { invalidateGroupQueries } from "@repo/frameworks/trpc/client/query";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { invalidateGroupQueries } from "@mirai-app/frameworks/trpc/client/query";
 
 export function useCreateGroup(tripId?: string | null) {
   const trpc = useTRPC();

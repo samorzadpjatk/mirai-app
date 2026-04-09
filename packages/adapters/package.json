@@ -1,12 +1,12 @@
 {
-  "name": "@repo/adapters",
+  "name": "@mirai-app/adapters",
   "version": "0.1.0",
   "description": "Adapters layer - interface adapters, depends on domain and use-cases",
   "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "default": "./src/index.ts"
     },
     "./controllers/*": {
       "types": "./dist/controllers/*.d.ts",
@@ -43,6 +43,14 @@
     "./utils/*": {
       "types": "./dist/utils/*.d.ts",
       "default": "./dist/utils/*.js"
+    },
+    "./modules": {
+      "types": "./dist/modules/RepositoryModule.d.ts",
+      "default": "./src/modules/RepositoryModule.ts"
+    },
+    "./modules/*": {
+      "types": "./dist/modules/*.d.ts",
+      "default": "./src/modules/*.ts"
     }
   },
   "scripts": {
@@ -58,9 +66,9 @@
     "format:write": "prettier --write src/"
   },
   "dependencies": {
-    "@repo/domain": "workspace:*",
-    "@repo/use-cases": "workspace:*",
-    "@repo/frameworks": "workspace:*",
+    "@mirai-app/domain": "workspace:*",
+    "@mirai-app/use-cases": "workspace:*",
+    "@mirai-app/frameworks": "workspace:*",
     "@mirai-app/shared": "workspace:*",
     "@trpc/server": "^11.10.0",
     "expo-server-sdk": "^3.14.0",

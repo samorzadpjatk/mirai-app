@@ -2,7 +2,7 @@ import type {
   Notification,
   NotificationStatus,
   NotificationPriority,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * NotificationRepository Port

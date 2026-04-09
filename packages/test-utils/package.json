@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/frameworks": "workspace:*"
+    "@mirai-app/frameworks": "workspace:*"
   },
   "peerDependencies": {
     "bun": ">=1.0"

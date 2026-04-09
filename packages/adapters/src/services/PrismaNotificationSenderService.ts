@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@repo/frameworks/prisma";
+import type { Prisma, PrismaClient } from "@mirai-app/frameworks/prisma";
 
 /**
  * PrismaNotificationSenderService

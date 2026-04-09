@@ -1,5 +1,5 @@
-import { authStore, type AuthUser } from "@repo/frameworks/auth/client";
-import { getTRPCClient } from "@repo/frameworks/trpc/client";
+import { authStore, type AuthUser } from "@mirai-app/frameworks/auth/client";
+import { getTRPCClient } from "@mirai-app/frameworks/trpc/client";
 import { supabase } from "./supabase";
 import { env } from "./env";
 

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 
 /**
  * Manages group coin balance and transactions

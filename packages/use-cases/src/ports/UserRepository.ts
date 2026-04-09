@@ -1,4 +1,4 @@
-import type { User, UserRole } from "@repo/domain";
+import type { User, UserRole } from "@mirai-app/domain";
 
 /**
  * UserRepository Port

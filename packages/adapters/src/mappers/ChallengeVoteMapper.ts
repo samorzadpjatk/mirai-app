@@ -3,7 +3,7 @@ import {
   ChallengeVoteId,
   VotePosition,
   VoteWeight,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * ChallengeVoteMapper

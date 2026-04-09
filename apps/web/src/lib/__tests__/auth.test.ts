@@ -13,7 +13,7 @@ const mockGetUser = mock(() =>
   Promise.resolve({ data: { user: null }, error: null }),
 );
 
-mock.module("@repo/frameworks/trpc/client", () => ({
+mock.module("@mirai-app/frameworks/trpc/client", () => ({
   getTRPCClient: () => ({
     client: {
       user: {
@@ -36,7 +36,7 @@ mock.module("../supabase", () => ({
 
 // Import after mocks
 import { onAuthUserFetch, checkIsAdminUser } from "../auth";
-import { authStore } from "@repo/frameworks/auth/client";
+import { authStore } from "@mirai-app/frameworks/auth/client";
 
 // Reset authStore before each test
 const resetAuthStore = () => {

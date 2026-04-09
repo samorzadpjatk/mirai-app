@@ -1,4 +1,4 @@
-import { Trip, TripStatus } from "@repo/domain";
+import { Trip, TripStatus } from "@mirai-app/domain";
 
 /**
  * TripMapper

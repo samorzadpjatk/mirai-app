@@ -1,13 +1,28 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { GetUserUseCase } from "./GetUser";
 import type { GetUserInput } from "./GetUser";
-import { User, UserRole } from "@repo/domain";
+import { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "../ports/UserRepository";
-import { createTestContainer, TYPES } from "@repo/frameworks/di";
-import type { Container } from "inversify";
+import { createTestContainer } from "@mirai-app/frameworks/di";
+import type { AwilixContainer } from "awilix";
+import { Effect } from "effect";
+
+async function runAsResult<T>(
+  effect: Effect.Effect<T, Error>,
+): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
+  try {
+    const value = await Effect.runPromise(effect);
+    return { kind: "ok", value };
+  } catch (error) {
+    return {
+      kind: "err",
+      error: error instanceof Error ? error.message : "Unexpected error",
+    };
+  }
+}
 
 describe("[UNIT] GetUserUseCase", () => {
-  let container: Container;
+  let container: AwilixContainer;
 
   beforeEach(() => {
     container = createTestContainer();
@@ -55,18 +70,14 @@ describe("[UNIT] GetUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      // Bind mock repository to container
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      // Get repository from container and manually instantiate use case
-      const userRepo = container.get<UserRepository>(TYPES.UserRepository);
-      const useCase = new GetUserUseCase(userRepo);
+      // Manual instantiation (backward compatible)
+      const useCase = new GetUserUseCase(mockRepo);
       const input: GetUserInput = {
         userId: "user-456",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -95,16 +106,13 @@ describe("[UNIT] GetUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const userRepo = container.get<UserRepository>(TYPES.UserRepository);
-      const useCase = new GetUserUseCase(userRepo);
+      const useCase = new GetUserUseCase(mockRepo);
       const input: GetUserInput = {
         userId: "non-existent-id",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
@@ -128,16 +136,13 @@ describe("[UNIT] GetUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const userRepo = container.get<UserRepository>(TYPES.UserRepository);
-      const useCase = new GetUserUseCase(userRepo);
+      const useCase = new GetUserUseCase(mockRepo);
       const input: GetUserInput = {
         userId: "user-789",
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -173,21 +178,55 @@ describe("[UNIT] GetUserUseCase", () => {
         delete: mock(() => Promise.resolve()),
       };
 
-      container.bind(TYPES.UserRepository).toConstantValue(mockRepo);
-
-      const userRepo = container.get<UserRepository>(TYPES.UserRepository);
-      const useCase = new GetUserUseCase(userRepo);
+      const useCase = new GetUserUseCase(mockRepo);
       const input: GetUserInput = {
         userId: "user-empty",
       };
 
       // Act
-      const result2 = await useCase.execute(input);
+      const result2 = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result2.kind).toBe("ok");
       if (result2.kind === "ok") {
         expect(result2.value.fullName).toBe("Unknown");
+      }
+    });
+
+    it("should support container-based resolution", async () => {
+      // Arrange
+      const mockUser = createValidUser({ id: "user-container" });
+      const mockRepo: UserRepository = {
+        existsByAuthUserId: mock(() => Promise.resolve(false)),
+        create: mock(() => Promise.resolve(mockUser)),
+        findById: mock(() => Promise.resolve(mockUser)),
+        findByAuthUserId: mock(() => Promise.resolve(null)),
+        findByRole: mock(() => Promise.resolve([])),
+        findAll: mock(() => Promise.resolve([])),
+        update: mock(() => Promise.resolve(mockUser)),
+        delete: mock(() => Promise.resolve()),
+      };
+
+      // Register in container using the factory pattern
+      container.register({
+        userRepository: { resolve: () => mockRepo } as any,
+      });
+
+      // Create use case from container - use manual instantiation with resolved repo
+      const userRepo = container.resolve<UserRepository>("userRepository");
+      const useCase = new GetUserUseCase(userRepo);
+
+      const input: GetUserInput = {
+        userId: "user-container",
+      };
+
+      // Act
+      const result = await runAsResult(useCase.execute(input));
+
+      // Assert
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("user-container");
       }
     });
   });

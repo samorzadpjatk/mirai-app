@@ -6,8 +6,6 @@ export default function createBaseSupabaseClient(
   anonKey: string,
   options?: SupabaseClientOptions,
 ): SupabaseClient {
-  console.log(`[Supabase] Creating client with URL: ${url}`);
-
   return createClient(url, anonKey, {
     auth: {
       autoRefreshToken: true,

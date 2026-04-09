@@ -1,5 +1,5 @@
-import type { Result } from "@repo/domain";
-import { ok, err, ChallengeVote, calculateVoteStats } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err, ChallengeVote, calculateVoteStats } from "@mirai-app/domain";
 import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
 
 /**

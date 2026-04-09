@@ -1,9 +1,9 @@
-import { createPrismaClient } from "@repo/frameworks/prisma";
+import { createPrismaClient } from "@mirai-app/frameworks/prisma";
 import type {
   TripResource,
   TripInsurance,
   TripInsuranceStep,
-} from "@repo/frameworks/prisma";
+} from "@mirai-app/frameworks/prisma";
 import type { SeedEnv, TripInfoConfig } from "./types";
 import yaml from "yaml";
 import { readTextFile } from "./utils/fs";

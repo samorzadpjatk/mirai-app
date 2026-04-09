@@ -3,7 +3,7 @@ import {
   PurchaseRewardUseCase,
   type PurchaseRewardInput,
 } from "./PurchaseReward";
-import { Reward, RewardPurchase, UserRole, CoinAmount } from "@repo/domain";
+import { Reward, RewardPurchase, UserRole, CoinAmount } from "@mirai-app/domain";
 import type {
   RewardRepository,
   RewardPurchaseRepository,
@@ -11,6 +11,21 @@ import type {
   GroupCoinsService,
   TripAccessChecker,
 } from "../ports/RewardRepository";
+import { Effect } from "effect";
+
+async function runAsResult<T>(
+  effect: Effect.Effect<T, Error>,
+): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
+  try {
+    const value = await Effect.runPromise(effect);
+    return { kind: "ok", value };
+  } catch (error) {
+    return {
+      kind: "err",
+      error: error instanceof Error ? error.message : "Unexpected error",
+    };
+  }
+}
 
 // Helper to unwrap Result
 const unwrap = <T, E>(
@@ -146,7 +161,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
@@ -255,12 +270,12 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
 
       const input: PurchaseRewardInput = {
         rewardId:
-          "nonexistent-id" as unknown as import("@repo/domain").RewardId,
+          "nonexistent-id" as unknown as import("@mirai-app/domain").RewardId,
         quantity: 2,
         userId: "user-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
@@ -366,7 +381,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
@@ -472,7 +487,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
@@ -578,7 +593,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
         userId: "user-123",
       };
 
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {

@@ -1,4 +1,4 @@
-import { Group, GroupStatus } from "@repo/domain";
+import { Group, GroupStatus } from "@mirai-app/domain";
 
 /**
  * GroupMapper

@@ -1,5 +1,5 @@
-import type { Result } from "@repo/domain";
-import { ok, err, type RewardId } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err, type RewardId } from "@mirai-app/domain";
 import type { RewardRepository } from "../ports/RewardRepository";
 
 /**

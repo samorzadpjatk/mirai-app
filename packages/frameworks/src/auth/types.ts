@@ -1,4 +1,4 @@
-import type { SupabaseSession } from "@repo/frameworks/supabase";
+import type { SupabaseSession } from "@mirai-app/frameworks/supabase";
 import type { AuthUser } from "../stores/authStore";
 
 export interface DatabaseUser {

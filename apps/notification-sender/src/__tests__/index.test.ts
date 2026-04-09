@@ -47,7 +47,7 @@ const originalConsoleError = console.error;
 const originalProcessOn = process.on;
 const originalProcessExit = process.exit;
 
-mock.module("@repo/frameworks/supabase", () => ({
+mock.module("@mirai-app/frameworks/supabase", () => ({
   createSupabaseClient: () => ({
     channel: () => mockChannel,
     removeChannel: mockRemoveChannel,
@@ -55,7 +55,7 @@ mock.module("@repo/frameworks/supabase", () => ({
   RealtimePostgresInsertPayload: class {},
 }));
 
-mock.module("@repo/frameworks/trpc/client", () => ({
+mock.module("@mirai-app/frameworks/trpc/client", () => ({
   getTRPCClient: () => ({
     client: {
       notificationSender: {
@@ -127,7 +127,7 @@ describe("[UNIT] notification-sender index", () => {
   });
 
   test("Supabase client can be created with realtime options", async () => {
-    const { createSupabaseClient } = await import("@repo/frameworks/supabase");
+    const { createSupabaseClient } = await import("@mirai-app/frameworks/supabase");
     const client = createSupabaseClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -140,7 +140,7 @@ describe("[UNIT] notification-sender index", () => {
   });
 
   test("tRPC client can be created", async () => {
-    const { getTRPCClient } = await import("@repo/frameworks/trpc/client");
+    const { getTRPCClient } = await import("@mirai-app/frameworks/trpc/client");
     const { client, cleanup } = getTRPCClient(
       `http://${process.env.TRPC_HOST}/api/trpc`,
       `ws://${process.env.TRPC_HOST}/api/trpc`,
@@ -157,7 +157,7 @@ describe("[UNIT] notification-sender index", () => {
   });
 
   test("notification delivery flow methods exist", async () => {
-    const { getTRPCClient } = await import("@repo/frameworks/trpc/client");
+    const { getTRPCClient } = await import("@mirai-app/frameworks/trpc/client");
     const { client } = getTRPCClient(
       `http://${process.env.TRPC_HOST}/api/trpc`,
       `ws://${process.env.TRPC_HOST}/api/trpc`,
@@ -219,7 +219,7 @@ describe("[UNIT] Environment Variable Validation", () => {
 
 describe("[UNIT] Notification INSERT Event Handler", () => {
   test("channel.on is available for postgres_changes", async () => {
-    const { createSupabaseClient } = await import("@repo/frameworks/supabase");
+    const { createSupabaseClient } = await import("@mirai-app/frameworks/supabase");
     const client = createSupabaseClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -233,7 +233,7 @@ describe("[UNIT] Notification INSERT Event Handler", () => {
   });
 
   test("subscribe is called on channel", async () => {
-    const { createSupabaseClient } = await import("@repo/frameworks/supabase");
+    const { createSupabaseClient } = await import("@mirai-app/frameworks/supabase");
     const client = createSupabaseClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -405,7 +405,7 @@ describe("[UNIT] Graceful Shutdown (SIGINT)", () => {
 
   test("SIGINT handler removes channel and cleans up when called", async () => {
     // Test that the mocked removeChannel and cleanup work correctly
-    const { createSupabaseClient } = await import("@repo/frameworks/supabase");
+    const { createSupabaseClient } = await import("@mirai-app/frameworks/supabase");
     const client = createSupabaseClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,

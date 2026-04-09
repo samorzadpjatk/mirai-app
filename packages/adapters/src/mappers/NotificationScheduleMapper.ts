@@ -1,4 +1,4 @@
-import { NotificationSchedule, NotificationScheduleType } from "@repo/domain";
+import { NotificationSchedule, NotificationScheduleType } from "@mirai-app/domain";
 
 /**
  * NotificationScheduleMapper

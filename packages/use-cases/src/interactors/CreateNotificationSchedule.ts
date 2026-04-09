@@ -1,10 +1,10 @@
-import type { Result } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
 import {
   ok,
   err,
   NotificationSchedule,
   NotificationScheduleType,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 import type { NotificationScheduleRepository } from "../ports/NotificationScheduleRepository";
 import type { NotificationScheduleOutput } from "./GetNotificationSchedules";
 

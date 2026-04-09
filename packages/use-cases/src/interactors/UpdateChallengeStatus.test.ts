@@ -8,7 +8,7 @@ import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
 
 describe("[UNIT] UpdateChallengeStatusUseCase", () => {

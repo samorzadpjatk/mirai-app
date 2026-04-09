@@ -1,6 +1,6 @@
-import type { Prisma } from "@repo/frameworks/prisma";
+import type { Prisma } from "@mirai-app/frameworks/prisma";
 import type { PrismaCoinTransactionRepository } from "../gateways/PrismaCoinTransactionRepository";
-import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@repo/use-cases";
+import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
 import {
   PrismaRankingActivityService,
   type RankSnapshot,

@@ -1,6 +1,6 @@
-import type { SubmissionReportRepository } from "@repo/use-cases";
-import type { SubmissionReport } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { SubmissionReportRepository } from "@mirai-app/use-cases";
+import type { SubmissionReport } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 import {
   BasePrismaRepository,
   type EntityMapper,

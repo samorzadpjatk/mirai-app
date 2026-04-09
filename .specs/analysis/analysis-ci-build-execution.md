@@ -21,8 +21,8 @@ adapters ──depends on──> frameworks
 
 **Evidence:**
 
-- `packages/adapters/package.json` line 63: `"@repo/frameworks": "workspace:*"`
-- `packages/frameworks/package.json` line 77: `"@repo/adapters": "workspace:*"`
+- `packages/adapters/package.json` line 63: `"@mirai-app/frameworks": "workspace:*"`
+- `packages/frameworks/package.json` line 77: `"@mirai-app/adapters": "workspace:*"`
 
 ---
 
@@ -141,7 +141,7 @@ All packages have build scripts:
 **Option A: Remove frameworks dependency from adapters**
 
 - Edit `packages/adapters/package.json`
-- Remove `"@repo/frameworks": "workspace:*"`
+- Remove `"@mirai-app/frameworks": "workspace:*"`
 - Audit and refactor any code importing from frameworks
 
 **Option B: Reorganize shared code**

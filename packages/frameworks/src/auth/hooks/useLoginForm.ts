@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import { useAuth } from "../store/authHooks";
@@ -44,7 +44,9 @@ export function useLoginForm(): UseLoginFormResult {
       // We don't navigate here — email/OTP flow will sign the user in when they complete the link/code.
       setIsSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send login email");
+      setError(
+        err instanceof Error ? err.message : "Failed to send login email",
+      );
     } finally {
       setIsLoading(false);
     }

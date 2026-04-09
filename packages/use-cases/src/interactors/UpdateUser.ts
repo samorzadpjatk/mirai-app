@@ -1,9 +1,12 @@
-import type { Result } from "@repo/domain";
-import { ok, err } from "@repo/domain";
+import { Effect } from "effect";
 import type { UserRepository } from "../ports/UserRepository";
-import type { User } from "@repo/domain";
-import { inject, injectable } from "inversify";
-import { TYPES } from "@repo/frameworks/di";
+import type { User } from "@mirai-app/domain";
+import {
+  UseCaseNotFoundError,
+  UseCaseRepositoryError,
+  UseCaseValidationError,
+  type UseCaseError,
+} from "../errors";
 
 /**
  * Input for UpdateUser use case
@@ -34,48 +37,84 @@ export interface UpdateUserOutput {
  *
  * Updates a user's profile information.
  * Returns error if user not found or validation fails.
+ *
+ * ## Constructor Injection Pattern
+ *
+ * This use case supports both manual instantiation and DI container injection:
+ *
+ * ```typescript
+ * // Manual instantiation (backward compatible)
+ * const useCase = new UpdateUserUseCase(userRepository);
+ *
+ * // DI container injection (awilix-modular)
+ * const useCase = container.resolve("updateUserUseCase");
+ * ```
  */
-@injectable()
 export class UpdateUserUseCase {
-  constructor(
-    @inject(TYPES.UserRepository) private userRepository: UserRepository,
-  ) {}
+  constructor(private userRepository: UserRepository) {}
 
-  async execute(
+  execute(
     input: UpdateUserInput,
-  ): Promise<Result<UpdateUserOutput, string>> {
-    // Find existing user
-    const user = await this.userRepository.findById(input.userId);
-    if (!user) {
-      return err("User not found");
-    }
+  ): Effect.Effect<UpdateUserOutput, UseCaseError> {
+    const userRepository = this.userRepository;
+    const toOutput = this.toOutput.bind(this);
 
-    // Apply updates
-    let updatedUser: User = user;
-
-    // Update name if provided
-    if (input.firstName !== undefined || input.lastName !== undefined) {
-      const nameResult = updatedUser.updateName({
-        firstName: input.firstName ?? user.firstName,
-        lastName: input.lastName ?? user.lastName,
+    return Effect.gen(function* () {
+      const user = yield* Effect.tryPromise({
+        try: () => userRepository.findById(input.userId),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "UpdateUser.findById",
+            message: "Failed to load user",
+            cause,
+          }),
       });
 
-      if (nameResult.kind === "err") {
-        return err(nameResult.error);
+      if (!user) {
+        return yield* Effect.fail(
+          new UseCaseNotFoundError({
+            entity: "User",
+            message: "User not found",
+          }),
+        );
       }
 
-      updatedUser = nameResult.value;
-    }
+      let updatedUser: User = user;
 
-    // Update avatar status if provided
-    if (input.hasAvatar !== undefined) {
-      updatedUser = updatedUser.setAvatar(input.hasAvatar);
-    }
+      if (input.firstName !== undefined || input.lastName !== undefined) {
+        const nameResult = updatedUser.updateName({
+          firstName: input.firstName ?? user.firstName,
+          lastName: input.lastName ?? user.lastName,
+        });
 
-    // Persist changes
-    const saved = await this.userRepository.update(updatedUser);
+        if (nameResult.kind === "err") {
+          return yield* Effect.fail(
+            new UseCaseValidationError({
+              field: "name",
+              message: nameResult.error,
+            }),
+          );
+        }
 
-    return ok(this.toOutput(saved));
+        updatedUser = nameResult.value;
+      }
+
+      if (input.hasAvatar !== undefined) {
+        updatedUser = updatedUser.setAvatar(input.hasAvatar);
+      }
+
+      const saved = yield* Effect.tryPromise({
+        try: () => userRepository.update(updatedUser),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "UpdateUser.update",
+            message: "Failed to update user",
+            cause,
+          }),
+      });
+
+      return toOutput(saved);
+    });
   }
 
   private toOutput(user: User): UpdateUserOutput {

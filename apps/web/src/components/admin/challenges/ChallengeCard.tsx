@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { Challenge } from "@repo/frameworks/trpc/hooks";
+import type { Challenge } from "@mirai-app/frameworks/trpc/hooks";
 
 interface ChallengeCardProps {
   challenge: Challenge;

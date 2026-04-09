@@ -1,8 +1,12 @@
-import type { Result } from "@repo/domain";
-import { ok, err, User, UserRole } from "@repo/domain";
+import { Effect } from "effect";
+import { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "../ports/UserRepository";
-import { inject, injectable } from "inversify";
-import { TYPES } from "@repo/frameworks/di";
+import {
+  UseCaseConflictError,
+  UseCaseRepositoryError,
+  UseCaseValidationError,
+  type UseCaseError,
+} from "../errors";
 
 /**
  * Input for CreateUser use case
@@ -33,40 +37,76 @@ export interface CreateUserOutput {
  *
  * Creates a new user in the system.
  * Returns error if user with same authUserId already exists.
+ *
+ * ## Constructor Injection Pattern
+ *
+ * This use case supports both manual instantiation and DI container injection:
+ *
+ * ```typescript
+ * // Manual instantiation (backward compatible)
+ * const useCase = new CreateUserUseCase(userRepository);
+ *
+ * // DI container injection (awilix-modular)
+ * const useCase = container.resolve("createUserUseCase");
+ * ```
  */
-@injectable()
 export class CreateUserUseCase {
-  constructor(
-    @inject(TYPES.UserRepository) private userRepository: UserRepository,
-  ) {}
+  constructor(private userRepository: UserRepository) {}
 
-  async execute(
+  execute(
     input: CreateUserInput,
-  ): Promise<Result<CreateUserOutput, string>> {
-    // Check if user already exists
-    const exists = await this.userRepository.existsByAuthUserId(
-      input.authUserId,
-    );
-    if (exists) {
-      return err("User already exists with this authUserId");
-    }
+  ): Effect.Effect<CreateUserOutput, UseCaseError> {
+    const userRepository = this.userRepository;
+    const toOutput = this.toOutput.bind(this);
 
-    // Create domain entity
-    const userResult = User.create({
-      authUserId: input.authUserId,
-      firstName: input.firstName,
-      lastName: input.lastName,
-      role: input.role ?? UserRole.USER,
+    return Effect.gen(function* () {
+      const exists = yield* Effect.tryPromise({
+        try: () => userRepository.existsByAuthUserId(input.authUserId),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "CreateUser.existsByAuthUserId",
+            message: "Failed to check user uniqueness",
+            cause,
+          }),
+      });
+
+      if (exists) {
+        return yield* Effect.fail(
+          new UseCaseConflictError({
+            entity: "User",
+            message: "User already exists with this authUserId",
+          }),
+        );
+      }
+
+      const userResult = User.create({
+        authUserId: input.authUserId,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        role: input.role ?? UserRole.USER,
+      });
+
+      if (userResult.kind === "err") {
+        return yield* Effect.fail(
+          new UseCaseValidationError({
+            field: "user",
+            message: userResult.error,
+          }),
+        );
+      }
+
+      const saved = yield* Effect.tryPromise({
+        try: () => userRepository.create(userResult.value),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "CreateUser.create",
+            message: "Failed to create user",
+            cause,
+          }),
+      });
+
+      return toOutput(saved);
     });
-
-    if (userResult.kind === "err") {
-      return err(userResult.error);
-    }
-
-    // Persist user
-    const saved = await this.userRepository.create(userResult.value);
-
-    return ok(this.toOutput(saved));
   }
 
   private toOutput(user: User): CreateUserOutput {

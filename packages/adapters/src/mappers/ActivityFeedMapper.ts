@@ -11,7 +11,7 @@ import {
   type RankChangeActivityMetadata,
   type UserPostMetadata,
   type AdminInfo,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * ActivityFeedMapper

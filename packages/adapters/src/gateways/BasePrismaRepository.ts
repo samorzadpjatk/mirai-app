@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 
 /**
  * Generic mapper interface for domain-prisma conversions

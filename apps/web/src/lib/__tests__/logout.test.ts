@@ -8,7 +8,7 @@ let locationHref = "";
 const mockSignOut = mock(() => Promise.resolve());
 const mockSupabaseSignOut = mock(() => Promise.resolve());
 
-mock.module("@repo/frameworks/auth/client", () => ({
+mock.module("@mirai-app/frameworks/auth/client", () => ({
   authStore: {
     getState: () => ({
       signOut: mockSignOut,

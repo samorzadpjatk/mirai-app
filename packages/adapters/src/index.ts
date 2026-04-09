@@ -1,9 +1,29 @@
 /**
- * @repo/adapters - Adapters Layer Exports
+ * @mirai-app/adapters - Adapters Layer Exports
  *
  * This package contains interface adapters that bridge use cases to external frameworks.
- * Depends on @repo/domain and @repo/use-cases.
+ * Depends on @mirai-app/domain and @mirai-app/use-cases.
  */
+
+// =============================================================================
+// Modules (Dependency Injection)
+// =============================================================================
+
+export {
+  RepositoryModule,
+  REPOSITORY_TOKENS,
+  type RepositoryModuleDeps,
+  type RepositoryModuleDef,
+  type RepositoryToken,
+} from "./modules/RepositoryModule";
+
+export {
+  ControllerModule,
+  CONTROLLER_TOKENS,
+  type ControllerModuleDeps,
+  type ControllerModuleDef,
+  type ControllerToken,
+} from "./modules/ControllerModule";
 
 // Controllers (tRPC routers, API endpoints)
 export { UserController } from "./controllers/user-controller";
@@ -74,6 +94,7 @@ export {
   adminProcedure,
   mobileAppProcedure,
   type TRPCContext,
+  type DIContext,
 } from "./api/trpc";
 export { appRouter, createCaller, type AppRouter } from "./api/root";
 
@@ -152,7 +173,7 @@ export type {
   Sponsor,
   SponsorId,
   TripSponsorId,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 export type {
   UserRepository,
   GetUserUseCase,
@@ -224,4 +245,4 @@ export type {
   ListSponsorsUseCase,
   LinkSponsorToTripUseCase,
   UnlinkSponsorFromTripUseCase,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";

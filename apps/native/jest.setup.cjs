@@ -55,25 +55,37 @@ jest.mock("react-native/Libraries/Alert/Alert", () => ({
 
 // Mock react-native main exports
 jest.mock("react-native", () => ({
-  ...jest.requireActual("react-native/Libraries/Utilities/Platform"),
   Platform: {
     OS: "ios",
     select: jest.fn((obj) => obj.ios),
     Version: 16,
+    isPad: false,
+    isTV: false,
+    isTesting: false,
   },
   Alert: {
     alert: jest.fn(),
     prompt: jest.fn(),
   },
-  View: jest.fn(() => null),
-  Text: jest.fn(() => null),
-  TouchableOpacity: jest.fn(() => null),
-  ScrollView: jest.fn(() => null),
-  ActivityIndicator: jest.fn(() => null),
-  Image: jest.fn(() => null),
-  TextInput: jest.fn(() => null),
+  View: "View",
+  Text: "Text",
+  TouchableOpacity: "TouchableOpacity",
+  ScrollView: "ScrollView",
+  ActivityIndicator: "ActivityIndicator",
+  Image: "Image",
+  TextInput: "TextInput",
   StyleSheet: {
     create: jest.fn((styles) => styles),
+    flatten: jest.fn((style) => style),
+  },
+  Dimensions: {
+    get: jest.fn(() => ({ width: 375, height: 812 })),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  },
+  PixelRatio: {
+    get: jest.fn(() => 2),
+    roundToNearestPixel: jest.fn((val) => val),
   },
 }));
 
@@ -336,8 +348,8 @@ jest.mock("expo-router", () => ({
   },
 }));
 
-// Mock @mirai-app/supabase to avoid JSX transform issues
-jest.mock("@mirai-app/supabase", () => ({
+// Mock @mirai-app/frameworks/supabase to avoid JSX transform issues
+jest.mock("@mirai-app/frameworks/supabase", () => ({
   createSupabaseClient: jest.fn(() => ({
     auth: {
       getSession: jest.fn(() =>
@@ -358,8 +370,8 @@ jest.mock("@mirai-app/supabase", () => ({
   RealtimePostgresInsertPayload: class {},
 }));
 
-// Mock @mirai-app/auth to avoid JSX transform issues
-jest.mock("@mirai-app/auth", () => ({
+// Mock @mirai-app/frameworks/auth to avoid JSX transform issues
+jest.mock("@mirai-app/frameworks/auth", () => ({
   AuthStoreProvider: jest.fn(({ children }) => children),
   useAuthStore: jest.fn(() => ({
     session: null,

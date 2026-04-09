@@ -21,12 +21,9 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@repo/domain": ["../domain/src/index.ts"]
-    },
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+      "@mirai-app/domain": ["../domain/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../domain" }]
+  "exclude": ["node_modules", "dist"]
 }

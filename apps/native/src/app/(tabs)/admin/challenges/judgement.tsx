@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@repo/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JudgementContent } from '~/components/judgement/JudgementContent';

@@ -6,7 +6,7 @@ import {
   captureTripRankingSnapshot,
   createRankChangeActivities,
 } from "../activityFeed";
-import type { Prisma } from "@repo/frameworks/prisma";
+import type { Prisma } from "@mirai-app/frameworks/prisma";
 
 const createMockTx = () => {
   return {

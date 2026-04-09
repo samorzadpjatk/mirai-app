@@ -1,7 +1,7 @@
 "use client";
 
 import { LogoutButton } from "./LogoutButton";
-import { useAuth } from "@repo/frameworks/auth/client";
+import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { IoChevronBack } from "react-icons/io5";
 import { TripSelector } from "./TripSelector";
 

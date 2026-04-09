@@ -1,6 +1,6 @@
 import { describe, test, expect, mock, spyOn } from "bun:test";
-import type { SupabaseUser, SupabaseClient } from "@repo/frameworks/supabase";
-import type { User, Role, PrismaClient } from "@repo/frameworks/prisma";
+import type { SupabaseUser, SupabaseClient } from "@mirai-app/frameworks/supabase";
+import type { User, Role, PrismaClient } from "@mirai-app/frameworks/prisma";
 import {
   decodeJwtPayload,
   hasRequiredRole,

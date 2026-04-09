@@ -12,7 +12,7 @@ type: feature
 >
 > **Phase 1b (Apps Migration):** ✅ COMPLETE
 >
-> - All apps updated to use `@repo/frameworks/*` imports
+> - All apps updated to use `@mirai-app/frameworks/*` imports
 > - All apps' package.json updated with new dependencies
 >
 > **Phase 2 (Package Consolidation):** ⏳ PENDING
@@ -94,10 +94,10 @@ The 6 legacy packages represent architectural leakage:
 - [ ] `packages/auth/` client logic moved to `packages/frameworks/src/auth/`
 - [ ] `packages/shared/src/stores/` moved to `packages/frameworks/src/stores/`
 - [ ] `packages/shared/src/storage/` moved to `packages/frameworks/src/storage/`
-- [ ] All imports updated from `@mirai-app/db` to `@repo/frameworks/prisma`
-- [ ] All imports updated from `@mirai-app/supabase` to `@repo/frameworks/supabase`
-- [ ] All imports updated from `@mirai-app/trpc` to `@repo/adapters` or `@repo/frameworks/trpc`
-- [ ] All imports updated from `@mirai-app/auth` to `@repo/adapters` or `@repo/frameworks/auth`
+- [ ] All imports updated from `@mirai-app/db` to `@mirai-app/frameworks/prisma`
+- [ ] All imports updated from `@mirai-app/supabase` to `@mirai-app/frameworks/supabase`
+- [ ] All imports updated from `@mirai-app/trpc` to `@mirai-app/adapters` or `@mirai-app/frameworks/trpc`
+- [ ] All imports updated from `@mirai-app/auth` to `@mirai-app/adapters` or `@mirai-app/frameworks/auth`
 - [ ] Legacy package directories removed
 - [ ] Build passes (`bun run build`)
 - [ ] Tests pass (`bun run test:unit` and `bun run test:integration`)
@@ -261,11 +261,11 @@ packages/
 
 | From                  | To                                         | Locations                                |
 | --------------------- | ------------------------------------------ | ---------------------------------------- |
-| `@mirai-app/db`       | `@repo/frameworks/prisma`                  | adapters, frameworks, trpc, auth, apps   |
-| `@mirai-app/supabase` | `@repo/frameworks/supabase`                | auth, trpc, apps                         |
-| `@mirai-app/trpc`     | `@repo/adapters` / `@repo/frameworks/trpc` | web, native, notification-sender         |
-| `@mirai-app/auth`     | `@repo/adapters` / `@repo/frameworks/auth` | web, native                              |
-| `@mirai-app/shared`   | `@repo/shared`                             | (keep as-is, just remove stores/storage) |
+| `@mirai-app/db`       | `@mirai-app/frameworks/prisma`                  | adapters, frameworks, trpc, auth, apps   |
+| `@mirai-app/supabase` | `@mirai-app/frameworks/supabase`                | auth, trpc, apps                         |
+| `@mirai-app/trpc`     | `@mirai-app/adapters` / `@mirai-app/frameworks/trpc` | web, native, notification-sender         |
+| `@mirai-app/auth`     | `@mirai-app/adapters` / `@mirai-app/frameworks/auth` | web, native                              |
+| `@mirai-app/shared`   | `@mirai-app/shared`                             | (keep as-is, just remove stores/storage) |
 
 ## Implementation Process
 
@@ -675,16 +675,16 @@ Update all imports from legacy packages to new consolidated locations.
 
 | Old Import                         | New Import                                                                   |
 | ---------------------------------- | ---------------------------------------------------------------------------- |
-| `from "@mirai-app/db"`             | `from "@repo/frameworks/prisma"`                                             |
-| `from "@mirai-app/supabase"`       | `from "@repo/frameworks/supabase"`                                           |
-| `from "@mirai-app/supabase/react"` | `from "@repo/frameworks/supabase/react"`                                     |
-| `from "@mirai-app/trpc"`           | `from "@repo/adapters"` (routers) or `from "@repo/frameworks/trpc"` (client) |
-| `from "@mirai-app/trpc/client"`    | `from "@repo/frameworks/trpc/client"`                                        |
-| `from "@mirai-app/auth"`           | `from "@repo/adapters/controllers/auth"` (server)                            |
-| `from "@mirai-app/auth/client"`    | `from "@repo/frameworks/auth/client"`                                        |
-| `from "@mirai-app/auth/server"`    | `from "@repo/frameworks/auth/server"`                                        |
-| `from "@mirai-app/shared/stores"`  | `from "@repo/frameworks/stores"`                                             |
-| `from "@mirai-app/shared/storage"` | `from "@repo/frameworks/storage"`                                            |
+| `from "@mirai-app/db"`             | `from "@mirai-app/frameworks/prisma"`                                             |
+| `from "@mirai-app/supabase"`       | `from "@mirai-app/frameworks/supabase"`                                           |
+| `from "@mirai-app/supabase/react"` | `from "@mirai-app/frameworks/supabase/react"`                                     |
+| `from "@mirai-app/trpc"`           | `from "@mirai-app/adapters"` (routers) or `from "@mirai-app/frameworks/trpc"` (client) |
+| `from "@mirai-app/trpc/client"`    | `from "@mirai-app/frameworks/trpc/client"`                                        |
+| `from "@mirai-app/auth"`           | `from "@mirai-app/adapters/controllers/auth"` (server)                            |
+| `from "@mirai-app/auth/client"`    | `from "@mirai-app/frameworks/auth/client"`                                        |
+| `from "@mirai-app/auth/server"`    | `from "@mirai-app/frameworks/auth/server"`                                        |
+| `from "@mirai-app/shared/stores"`  | `from "@mirai-app/frameworks/stores"`                                             |
+| `from "@mirai-app/shared/storage"` | `from "@mirai-app/frameworks/storage"`                                            |
 
 **Files to Update:**
 
@@ -811,10 +811,10 @@ Remove empty legacy packages and update build configuration.
 | All 4 legacy packages consolidated and removed | ✅ PASS    | `packages/` contains only: adapters, domain, frameworks, shared, test-utils, use-cases. No db, supabase, trpc, or auth directories exist.                                          |
 | Shared package cleaned up                      | ✅ PASS    | `packages/shared/src/` only contains: design-tokens/, tripInfo/. No stores/ or storage/ directories.                                                                               |
 | All imports updated across codebase            | ✅ PASS    | Grepped for `@mirai-app/(db\|supabase\|trpc\|auth)` - only 1 result: a comment in mock file. Grepped for `@mirai-app/shared/(stores\|storage)` - no results.                       |
-| Build passes                                   | ⚠️ BLOCKED | `bun run build` fails with cyclic dependency: `@repo/adapters` ↔ `@repo/frameworks`. This is a PRE-EXISTING issue as documented in task file line 24.                              |
+| Build passes                                   | ⚠️ BLOCKED | `bun run build` fails with cyclic dependency: `@mirai-app/adapters` ↔ `@mirai-app/frameworks`. This is a PRE-EXISTING issue as documented in task file line 24.                              |
 | Unit tests pass                                | ⚠️ BLOCKED | Same cyclic dependency blocks test execution. Not caused by consolidation work.                                                                                                    |
 | Integration tests pass                         | ⚠️ BLOCKED | Same cyclic dependency blocks test execution. Not caused by consolidation work.                                                                                                    |
-| dependency-cruiser passes                      | ❌ FAIL    | 11 unresolvable import errors (apps referencing @repo/frameworks/\* and @repo/adapters). These are likely due to packages not being built. Also 62 orphan warnings (pre-existing). |
+| dependency-cruiser passes                      | ❌ FAIL    | 11 unresolvable import errors (apps referencing @mirai-app/frameworks/\* and @mirai-app/adapters). These are likely due to packages not being built. Also 62 orphan warnings (pre-existing). |
 | Only 5 packages remain                         | ✅ PASS    | 6 packages remain: domain, use-cases, adapters, frameworks, shared, test-utils. Note: task says "5 packages" but lists 6 names - test-utils is a support package per spec.         |
 | Clean Architecture dependency rules            | ❌ FAIL    | Cyclic dependency detected: adapters imports frameworks (37 imports of Prisma/Supabase), frameworks imports adapters (6 imports of AppRouter/authServer).                          |
 | Documentation updated                          | ✅ PASS    | CLAUDE.md already shows correct architecture with consolidated packages.                                                                                                           |
@@ -840,10 +840,10 @@ Remove empty legacy packages and update build configuration.
 
 **Files involved:**
 
-- `packages/adapters/package.json` depends on `@repo/frameworks`
-- `packages/frameworks/package.json` depends on `@repo/adapters`
-- `packages/frameworks/src/trpc/client/*.ts` imports from `@repo/adapters/api/root`
-- `packages/frameworks/src/auth/server.ts` imports from `@repo/adapters/auth/authServer`
+- `packages/adapters/package.json` depends on `@mirai-app/frameworks`
+- `packages/frameworks/package.json` depends on `@mirai-app/adapters`
+- `packages/frameworks/src/trpc/client/*.ts` imports from `@mirai-app/adapters/api/root`
+- `packages/frameworks/src/auth/server.ts` imports from `@mirai-app/adapters/auth/authServer`
 
 **Suggested Resolution:**
 Per the task file blocker note (line 24), this requires architectural decisions:
@@ -854,15 +854,15 @@ Per the task file blocker note (line 24), this requires architectural decisions:
 
 #### 2. dependency-cruiser Unresolvable Imports
 
-**Problem:** Apps cannot resolve `@repo/frameworks/*` and `@repo/adapters` imports.
+**Problem:** Apps cannot resolve `@mirai-app/frameworks/*` and `@mirai-app/adapters` imports.
 
 **Likely Cause:** Packages haven't been built since consolidation, so dist/ directories don't exist.
 
 **Evidence:**
 
 ```
-error not-to-unresolvable: apps/seed/src/tripInfo.ts → @repo/frameworks/prisma
-error not-to-unresolvable: apps/backend-server/src/server.ts → @repo/adapters
+error not-to-unresolvable: apps/seed/src/tripInfo.ts → @mirai-app/frameworks/prisma
+error not-to-unresolvable: apps/backend-server/src/server.ts → @mirai-app/adapters
 ```
 
 **Resolution:** Build packages first, then re-run dependency-cruiser.

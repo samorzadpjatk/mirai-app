@@ -10,7 +10,7 @@
  *   createUserRepository,
  *   createCoinService,
  *   getNotificationService,
- * } from "@repo/frameworks/factories";
+ * } from "@mirai-app/frameworks/factories";
  *
  * // Create repository (async factory)
  * const userRepo = await createUserRepository();

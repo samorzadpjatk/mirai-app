@@ -1,5 +1,5 @@
 {
-  "name": "@repo/domain",
+  "name": "@mirai-app/domain",
   "version": "0.1.0",
   "description": "Domain layer - pure business logic, zero external dependencies",
   "type": "module",

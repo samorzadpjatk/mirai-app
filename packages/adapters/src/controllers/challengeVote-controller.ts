@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ChallengeVoteRepository } from "@repo/use-cases";
+import type { ChallengeVoteRepository } from "@mirai-app/use-cases";
 import {
   GetMyVotesUseCase,
   GetVotesByChallengeUseCase,
@@ -12,7 +12,7 @@ import {
   type ChallengeVoteDTO,
   type SubmissionVoteCount,
   type AdminVotingInfo,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for challenge vote controller

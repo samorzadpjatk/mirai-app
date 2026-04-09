@@ -13,7 +13,7 @@ import { appToast } from "../../../lib/toast";
 import {
   useAdminSchedules,
   type NotificationSchedule,
-} from "@repo/frameworks/trpc/hooks";
+} from "@mirai-app/frameworks/trpc/hooks";
 import { useTrip } from "../../../contexts/TripContext";
 import { ScheduleCard } from "./ScheduleCard";
 

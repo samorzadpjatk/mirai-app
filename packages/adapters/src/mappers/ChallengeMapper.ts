@@ -3,7 +3,7 @@ import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 /**
  * ChallengeMapper

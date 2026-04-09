@@ -6,7 +6,7 @@ import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
 import { ProfileActionsSection } from "~/components/profile/ProfileActionsSection";
 import { ProfileHeader } from "~/components/profile/ProfileHeader";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useTRPC } from "@repo/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 

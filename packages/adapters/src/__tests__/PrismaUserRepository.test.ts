@@ -1,6 +1,6 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { PrismaUserRepository } from "../gateways/PrismaUserRepository";
-import { User, UserRole } from "@repo/domain";
+import { User, UserRole } from "@mirai-app/domain";
 
 describe("[INTEGRATION] PrismaUserRepository", () => {
   // Create mock Prisma client

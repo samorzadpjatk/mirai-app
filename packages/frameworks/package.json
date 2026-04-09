@@ -1,5 +1,5 @@
 {
-  "name": "@repo/frameworks",
+  "name": "@mirai-app/frameworks",
   "version": "0.1.0",
   "description": "Frameworks layer - technical configuration, outermost layer",
   "type": "module",
@@ -84,8 +84,9 @@
     "format:write": "prettier --write src/"
   },
   "dependencies": {
-    "@repo/domain": "workspace:*",
-    "@repo/use-cases": "workspace:*",
+    "@mirai-app/domain": "workspace:*",
+    "@mirai-app/use-cases": "workspace:*",
+    "@mirai-app/adapters": "workspace:*",
     "@trpc/server": "^11.10.0",
     "@trpc/client": "^11.10.0",
     "@trpc/tanstack-react-query": "^11.10.0",

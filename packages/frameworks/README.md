@@ -1,4 +1,4 @@
-# @repo/frameworks - Frameworks Layer
+# @mirai-app/frameworks - Frameworks Layer
 
 > **Frameworks & Drivers layer of Clean Architecture - Technical configuration**
 >

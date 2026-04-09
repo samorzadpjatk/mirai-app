@@ -1,6 +1,6 @@
 import { describe, expect, test, mock } from "bun:test";
 import { sendNotification, sendRankingUpdate } from "../notifications";
-import type { Prisma } from "@repo/frameworks/prisma";
+import type { Prisma } from "@mirai-app/frameworks/prisma";
 
 const createMockTx = () => {
   return {

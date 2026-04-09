@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { createSupabaseClient } from "@repo/frameworks/supabase";
+import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import { createTRPCUntypedClient, httpBatchLink } from "@trpc/client";
 import { env } from "./lib/env";
 

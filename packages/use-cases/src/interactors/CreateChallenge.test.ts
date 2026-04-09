@@ -6,13 +6,28 @@ import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import { createTestContainer, TYPES } from "@repo/frameworks/di";
-import type { Container } from "inversify";
+import { createTestContainer, TYPES } from "@mirai-app/frameworks/di";
+import { asValue, type AwilixContainer } from "awilix";
+import { Effect } from "effect";
+
+async function runAsResult<T>(
+  effect: Effect.Effect<T, Error>,
+): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
+  try {
+    const value = await Effect.runPromise(effect);
+    return { kind: "ok", value };
+  } catch (error) {
+    return {
+      kind: "err",
+      error: error instanceof Error ? error.message : "Unexpected error",
+    };
+  }
+}
 
 describe("[UNIT] CreateChallengeUseCase", () => {
-  let container: Container;
+  let container: AwilixContainer;
 
   beforeEach(() => {
     container = createTestContainer();
@@ -71,15 +86,15 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(0)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
+      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
 
-      const challengeRepo = container.get<ChallengeRepository>(
+      const challengeRepo = container.resolve<ChallengeRepository>(
         TYPES.ChallengeRepository,
       );
       const useCase = new CreateChallengeUseCase(challengeRepo);
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -127,15 +142,15 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(0)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
+      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
 
-      const challengeRepo = container.get<ChallengeRepository>(
+      const challengeRepo = container.resolve<ChallengeRepository>(
         TYPES.ChallengeRepository,
       );
       const useCase = new CreateChallengeUseCase(challengeRepo);
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -165,9 +180,9 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(0)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
+      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
 
-      const challengeRepo = container.get<ChallengeRepository>(
+      const challengeRepo = container.resolve<ChallengeRepository>(
         TYPES.ChallengeRepository,
       );
       const useCase = new CreateChallengeUseCase(challengeRepo);
@@ -179,7 +194,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
@@ -210,9 +225,9 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(0)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
+      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
 
-      const challengeRepo = container.get<ChallengeRepository>(
+      const challengeRepo = container.resolve<ChallengeRepository>(
         TYPES.ChallengeRepository,
       );
       const useCase = new CreateChallengeUseCase(challengeRepo);
@@ -224,7 +239,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
@@ -255,9 +270,9 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(0)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
+      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
 
-      const challengeRepo = container.get<ChallengeRepository>(
+      const challengeRepo = container.resolve<ChallengeRepository>(
         TYPES.ChallengeRepository,
       );
       const useCase = new CreateChallengeUseCase(challengeRepo);
@@ -270,7 +285,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("err");
@@ -311,15 +326,15 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(0)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
+      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
 
-      const challengeRepo = container.get<ChallengeRepository>(
+      const challengeRepo = container.resolve<ChallengeRepository>(
         TYPES.ChallengeRepository,
       );
       const useCase = new CreateChallengeUseCase(challengeRepo);
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -361,15 +376,15 @@ describe("[UNIT] CreateChallengeUseCase", () => {
         countByTripId: mock(() => Promise.resolve(0)),
       };
 
-      container.bind(TYPES.ChallengeRepository).toConstantValue(mockRepo);
+      container.register(TYPES.ChallengeRepository, asValue(mockRepo));
 
-      const challengeRepo = container.get<ChallengeRepository>(
+      const challengeRepo = container.resolve<ChallengeRepository>(
         TYPES.ChallengeRepository,
       );
       const useCase = new CreateChallengeUseCase(challengeRepo);
 
       // Act
-      const result = await useCase.execute(input);
+      const result = await runAsResult(useCase.execute(input));
 
       // Assert
       expect(result.kind).toBe("ok");

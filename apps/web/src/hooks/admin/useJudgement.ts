@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPCClient } from "@repo/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
 
 type ChallengeStatus =
   | "HIDDEN"

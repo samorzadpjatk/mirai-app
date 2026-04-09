@@ -6,7 +6,7 @@ import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminUsers, type UserSearchField } from "@repo/frameworks/trpc/hooks";
+import { useAdminUsers, type UserSearchField } from "@mirai-app/frameworks/trpc/hooks";
 import { UserCard } from "./UserCard";
 import { useTrip } from "../../../contexts/TripContext";
 

@@ -25,25 +25,25 @@ These files import `PrismaClient` for database operations:
 
 | #   | File                                                   | Import Statement                                                        | Usage                          |
 | --- | ------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------ |
-| 1   | `src/gateways/PrismaUserRepository.ts`                 | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 2   | `src/gateways/PrismaTripRepository.ts`                 | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 3   | `src/gateways/PrismaChallengeRepository.ts`            | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 4   | `src/gateways/PrismaGroupRepository.ts`                | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 5   | `src/gateways/PrismaRewardRepository.ts`               | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 6   | `src/gateways/PrismaNotificationRepository.ts`         | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 7   | `src/gateways/PrismaChallengeSubmissionRepository.ts`  | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 8   | `src/gateways/PrismaSponsorRepository.ts`              | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 9   | `src/gateways/PrismaLocationRepository.ts`             | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 10  | `src/gateways/PrismaChallengeVoteRepository.ts`        | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 11  | `src/gateways/PrismaSubmissionReportRepository.ts`     | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Repository database operations |
-| 12  | `src/gateways/PrismaCoinTransactionRepository.ts`      | `import type { PrismaClient } from "@repo/frameworks/prisma"`           | Repository database operations |
-| 13  | `src/gateways/PrismaNotificationDeliveryRepository.ts` | `import type { PrismaClient } from "@repo/frameworks/prisma"`           | Repository database operations |
-| 14  | `src/gateways/BasePrismaRepository.ts`                 | `import type { PrismaClient } from "@repo/frameworks/prisma/client"`    | Base class for repositories    |
-| 15  | `src/api/trpc.ts`                                      | `import { createDb, type PrismaClient } from "@repo/frameworks/prisma"` | tRPC context creation          |
-| 16  | `src/utils/repository-factory.ts`                      | `import type { PrismaClient } from "@repo/frameworks/prisma"`           | Factory function               |
-| 17  | `src/services/PrismaTripAccessChecker.ts`              | `import type { PrismaClient } from "@repo/frameworks/prisma"`           | Service logic                  |
-| 18  | `src/services/PrismaGroupCoinsService.ts`              | `import type { PrismaClient } from "@repo/frameworks/prisma"`           | Service logic                  |
-| 19  | `src/utils/trpc-utils/tripGuards.ts`                   | `import type { PrismaClient } from "@repo/frameworks/prisma"`           | tRPC utility functions         |
+| 1   | `src/gateways/PrismaUserRepository.ts`                 | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 2   | `src/gateways/PrismaTripRepository.ts`                 | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 3   | `src/gateways/PrismaChallengeRepository.ts`            | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 4   | `src/gateways/PrismaGroupRepository.ts`                | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 5   | `src/gateways/PrismaRewardRepository.ts`               | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 6   | `src/gateways/PrismaNotificationRepository.ts`         | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 7   | `src/gateways/PrismaChallengeSubmissionRepository.ts`  | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 8   | `src/gateways/PrismaSponsorRepository.ts`              | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 9   | `src/gateways/PrismaLocationRepository.ts`             | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 10  | `src/gateways/PrismaChallengeVoteRepository.ts`        | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 11  | `src/gateways/PrismaSubmissionReportRepository.ts`     | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Repository database operations |
+| 12  | `src/gateways/PrismaCoinTransactionRepository.ts`      | `import type { PrismaClient } from "@mirai-app/frameworks/prisma"`           | Repository database operations |
+| 13  | `src/gateways/PrismaNotificationDeliveryRepository.ts` | `import type { PrismaClient } from "@mirai-app/frameworks/prisma"`           | Repository database operations |
+| 14  | `src/gateways/BasePrismaRepository.ts`                 | `import type { PrismaClient } from "@mirai-app/frameworks/prisma/client"`    | Base class for repositories    |
+| 15  | `src/api/trpc.ts`                                      | `import { createDb, type PrismaClient } from "@mirai-app/frameworks/prisma"` | tRPC context creation          |
+| 16  | `src/utils/repository-factory.ts`                      | `import type { PrismaClient } from "@mirai-app/frameworks/prisma"`           | Factory function               |
+| 17  | `src/services/PrismaTripAccessChecker.ts`              | `import type { PrismaClient } from "@mirai-app/frameworks/prisma"`           | Service logic                  |
+| 18  | `src/services/PrismaGroupCoinsService.ts`              | `import type { PrismaClient } from "@mirai-app/frameworks/prisma"`           | Service logic                  |
+| 19  | `src/utils/trpc-utils/tripGuards.ts`                   | `import type { PrismaClient } from "@mirai-app/frameworks/prisma"`           | tRPC utility functions         |
 
 ### Category 2: Prisma Namespace Types (9 files)
 
@@ -51,15 +51,15 @@ These files import `Prisma` namespace for types:
 
 | #   | File                                              | Import Statement                                              | Usage            |
 | --- | ------------------------------------------------- | ------------------------------------------------------------- | ---------------- |
-| 1   | `src/services/PrismaCoinTransactionService.ts`    | `import type { Prisma } from "@repo/frameworks/prisma"`       | Type definitions |
-| 2   | `src/services/PrismaCoinService.ts`               | `import type { Prisma } from "@repo/frameworks/prisma"`       | Type definitions |
-| 3   | `src/services/PrismaRankingActivityService.ts`    | `import type { Prisma } from "@repo/frameworks/prisma"`       | Type definitions |
-| 4   | `src/services/PrismaNotificationSenderService.ts` | `import type { Prisma } from "@repo/frameworks/prisma"`       | Type definitions |
-| 5   | `src/services/notificationService.ts`             | `import { type PrismaClient } from "@repo/frameworks/prisma"` | Service logic    |
-| 6   | `src/services/PrismaTripPointsCalculator.ts`      | `import type { PrismaClient } from "@repo/frameworks/prisma"` | Service logic    |
-| 7   | `src/utils/trpc-utils/notifications.ts`           | `import type { Prisma } from "@repo/frameworks/prisma"`       | tRPC utilities   |
-| 8   | `src/utils/trpc-utils/recurringChallenges.ts`     | `import { type Prisma } from "@repo/frameworks/prisma"`       | tRPC utilities   |
-| 9   | `src/utils/trpc-utils/activityFeed.ts`            | `import { type Prisma } from "@repo/frameworks/prisma"`       | tRPC utilities   |
+| 1   | `src/services/PrismaCoinTransactionService.ts`    | `import type { Prisma } from "@mirai-app/frameworks/prisma"`       | Type definitions |
+| 2   | `src/services/PrismaCoinService.ts`               | `import type { Prisma } from "@mirai-app/frameworks/prisma"`       | Type definitions |
+| 3   | `src/services/PrismaRankingActivityService.ts`    | `import type { Prisma } from "@mirai-app/frameworks/prisma"`       | Type definitions |
+| 4   | `src/services/PrismaNotificationSenderService.ts` | `import type { Prisma } from "@mirai-app/frameworks/prisma"`       | Type definitions |
+| 5   | `src/services/notificationService.ts`             | `import { type PrismaClient } from "@mirai-app/frameworks/prisma"` | Service logic    |
+| 6   | `src/services/PrismaTripPointsCalculator.ts`      | `import type { PrismaClient } from "@mirai-app/frameworks/prisma"` | Service logic    |
+| 7   | `src/utils/trpc-utils/notifications.ts`           | `import type { Prisma } from "@mirai-app/frameworks/prisma"`       | tRPC utilities   |
+| 8   | `src/utils/trpc-utils/recurringChallenges.ts`     | `import { type Prisma } from "@mirai-app/frameworks/prisma"`       | tRPC utilities   |
+| 9   | `src/utils/trpc-utils/activityFeed.ts`            | `import { type Prisma } from "@mirai-app/frameworks/prisma"`       | tRPC utilities   |
 
 ### Category 3: Prisma Model Types (3 files)
 
@@ -67,9 +67,9 @@ These files import User, Role, and other model types:
 
 | #   | File                                                | Import Statement                                                          | Usage          |
 | --- | --------------------------------------------------- | ------------------------------------------------------------------------- | -------------- |
-| 1   | `src/controllers/auth/authServer.ts`                | `import type { User, Role, PrismaClient } from "@repo/frameworks/prisma"` | Auth logic     |
-| 2   | `src/controllers/auth/__tests__/authServer.test.ts` | `import type { User, Role, PrismaClient } from "@repo/frameworks/prisma"` | Test mocks     |
-| 3   | `src/utils/trpc-utils/__tests__/*.test.ts`          | `import type { Prisma } from "@repo/frameworks/prisma"`                   | Test utilities |
+| 1   | `src/controllers/auth/authServer.ts`                | `import type { User, Role, PrismaClient } from "@mirai-app/frameworks/prisma"` | Auth logic     |
+| 2   | `src/controllers/auth/__tests__/authServer.test.ts` | `import type { User, Role, PrismaClient } from "@mirai-app/frameworks/prisma"` | Test mocks     |
+| 3   | `src/utils/trpc-utils/__tests__/*.test.ts`          | `import type { Prisma } from "@mirai-app/frameworks/prisma"`                   | Test utilities |
 
 ### Category 4: Test File Imports (3 files)
 
@@ -77,17 +77,17 @@ Test files with additional Prisma imports:
 
 | #   | File                                                         | Import Statement                                        |
 | --- | ------------------------------------------------------------ | ------------------------------------------------------- |
-| 1   | `src/utils/trpc-utils/__tests__/notifications.test.ts`       | `import type { Prisma } from "@repo/frameworks/prisma"` |
-| 2   | `src/utils/trpc-utils/__tests__/recurringChallenges.test.ts` | `import type { Prisma } from "@repo/frameworks/prisma"` |
-| 3   | `src/utils/trpc-utils/__tests__/activityFeed.test.ts`        | `import type { Prisma } from "@repo/frameworks/prisma"` |
+| 1   | `src/utils/trpc-utils/__tests__/notifications.test.ts`       | `import type { Prisma } from "@mirai-app/frameworks/prisma"` |
+| 2   | `src/utils/trpc-utils/__tests__/recurringChallenges.test.ts` | `import type { Prisma } from "@mirai-app/frameworks/prisma"` |
+| 3   | `src/utils/trpc-utils/__tests__/activityFeed.test.ts`        | `import type { Prisma } from "@mirai-app/frameworks/prisma"` |
 
 ## Imports: frameworks → adapters (3 total)
 
 | #   | File                         | Import Statement                                           | Usage                |
 | --- | ---------------------------- | ---------------------------------------------------------- | -------------------- |
-| 1   | `src/trpc/client/react.ts`   | `import type { AppRouter } from "@repo/adapters/api/root"` | React hooks for tRPC |
-| 2   | `src/trpc/client/vanilia.ts` | `import type { AppRouter } from "@repo/adapters/api/root"` | Vanilla tRPC client  |
-| 3   | `src/auth/server.ts`         | `from "@repo/adapters/auth/authServer"` (multiple exports) | Server-side auth     |
+| 1   | `src/trpc/client/react.ts`   | `import type { AppRouter } from "@mirai-app/adapters/api/root"` | React hooks for tRPC |
+| 2   | `src/trpc/client/vanilia.ts` | `import type { AppRouter } from "@mirai-app/adapters/api/root"` | Vanilla tRPC client  |
+| 3   | `src/auth/server.ts`         | `from "@mirai-app/adapters/auth/authServer"` (multiple exports) | Server-side auth     |
 
 **Note**: These imports are actually **CORRECT** according to Clean Architecture! Frameworks (outer layer) importing from Adapters (inner layer) follows the dependency rule.
 
@@ -266,7 +266,7 @@ After refactoring, run these commands to verify:
 bunx dependency-cruiser --validate .dependency-cruiser.cjs .
 
 # Check for any remaining @frameworks imports in adapters
-grep -r "from.*@repo/frameworks/prisma" packages/adapters/src --include="*.ts"
+grep -r "from.*@mirai-app/frameworks/prisma" packages/adapters/src --include="*.ts"
 # Should return empty (or only type imports if acceptable)
 
 # Run tests

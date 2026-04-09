@@ -1,4 +1,4 @@
-import type { Result } from "@repo/domain";
+import type { Result } from "@mirai-app/domain";
 
 /**
  * Error code types for controller responses

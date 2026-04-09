@@ -19,8 +19,14 @@ import {
   AuthorizationError,
 } from "../controllers/auth/authServer";
 import { TRPCError } from "@trpc/server";
-import type { SupabaseClient } from "@repo/frameworks/supabase";
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
+import type { AwilixContainer, RequestScope } from "@mirai-app/frameworks/di";
+import {
+  createRequestScope,
+  getContainer,
+  isContainerInitialized,
+} from "@mirai-app/frameworks/di";
 
 const getAccessTokenFromHeaders = (headers: Headers): string | null => {
   const authorization =
@@ -44,25 +50,13 @@ const getAccessToken = (
   // First try to get token from Authorization header
   const headerToken = getAccessTokenFromHeaders(headers);
   if (headerToken) {
-    console.log("[Auth] Token found in headers");
     return headerToken;
   }
-
-  console.log(
-    "[Auth] Checking connectionParams:",
-    JSON.stringify(connectionParams),
-  );
 
   // Try connectionParams (sent as first WebSocket message)
   if (connectionParams && "authorization" in connectionParams) {
     const token = connectionParams.authorization;
-    console.log(
-      "[Auth] authorization in connectionParams:",
-      token ? "EXISTS" : "MISSING",
-    );
-
     if (token && token.trim().length > 0) {
-      console.log("[Auth] Token found in connectionParams");
       return token.trim();
     }
   }
@@ -92,16 +86,14 @@ const getAccessToken = (
       if (authParam) {
         const [scheme, token] = authParam.split(" ");
         if (scheme?.toLowerCase() === "bearer" && token?.trim()) {
-          console.log("[Auth] Token found in URL query params");
           return token.trim();
         }
       }
-    } catch (err) {
-      console.error("[Auth] Failed to parse URL:", err);
+    } catch {
+      // URL parsing failed, continue to return null
     }
   }
 
-  console.log("[Auth] No token found");
   return null;
 };
 
@@ -121,11 +113,98 @@ const getPlatformFromUserAgent = (
   return null;
 };
 
+/**
+ * Dependency Injection Context
+ *
+ * Provides request-scoped container access for dependency resolution in tRPC procedures.
+ * The container is created fresh for each request and inherits from the root container,
+ * ensuring all module registrations (repositories, use cases, controllers) are available.
+ *
+ * ## Usage
+ *
+ * ### Resolving Controllers
+ *
+ * ```typescript
+ * export const userRouter = createTRPCRouter({
+ *   getById: protectedProcedure
+ *     .input(z.object({ id: z.string() }))
+ *     .query(async ({ ctx, input }) => {
+ *       const controller = ctx.di.container.resolve("userController");
+ *       return controller.getById(input);
+ *     }),
+ * });
+ * ```
+ *
+ * ### Resolving Repositories Directly
+ *
+ * ```typescript
+ * const userRepo = ctx.di.container.resolve("userRepository");
+ * const user = await userRepo.findById(id);
+ * ```
+ *
+ * ## Container Lifecycle
+ *
+ * - **Request-scoped**: New container created per request
+ * - **PrismaClient registration**: Each request's PrismaClient is registered
+ * - **Inheritance**: Child container inherits all root container registrations
+ * - **Cleanup**: Container disposal happens automatically after request completion
+ *
+ * @see https://github.com/jeffijoe/awilix#scopes
+ */
+export interface DIContext {
+  /**
+   * Request-scoped Awilix container
+   *
+   * Use this to resolve dependencies registered in modules:
+   * - RepositoryModule: userRepository, tripRepository, etc.
+   * - UseCaseModule: getUserUseCase, createUserUseCase, etc.
+   * - ControllerModule: userController, tripController, etc.
+   */
+  container: AwilixContainer;
+
+  /**
+   * Resolve a dependency from the container
+   *
+   * Type-safe helper for resolving services by token name.
+   *
+   * @param token - Service identifier (e.g., "userRepository", "userController")
+   * @returns The resolved service
+   *
+   * @example
+   * ```typescript
+   * const controller = ctx.di.resolve("userController");
+   * const user = await controller.getById({ id: "123" });
+   * ```
+   */
+  resolve: <T>(token: string) => T;
+
+  /**
+   * Request scope metadata
+   *
+   * Contains the request ID and disposal function for the scope.
+   */
+  scope: RequestScope;
+}
+
 export interface TRPCContext {
   db: PrismaClient;
   supabase: SupabaseClient;
   headers: Headers;
   accessToken: string | null;
+
+  /**
+   * Dependency injection context
+   *
+   * Provides request-scoped container for resolving controllers, repositories,
+   * and use cases. Created fresh for each request with PrismaClient bound.
+   *
+   * @example
+   * ```typescript
+   * const controller = ctx.di.container.resolve("userController");
+   * return controller.getById(input);
+   * ```
+   */
+  di: DIContext;
 }
 
 // Supabase client is now passed via context parameter to maintain Clean Architecture
@@ -147,6 +226,10 @@ export interface TRPCContext {
  * The Supabase client is also received via context parameter, maintaining Clean Architecture
  * by avoiding runtime imports from the frameworks layer.
  *
+ * Dependency injection is integrated via DIContext, which provides a request-scoped
+ * container that inherits from the root container. This enables resolving controllers,
+ * repositories, and use cases without manual instantiation.
+ *
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = (opts: {
@@ -162,16 +245,68 @@ export const createTRPCContext = (opts: {
   }
 
   const accessToken = getAccessToken(headers, opts.connectionParams);
-  console.log(
-    "Creating tRPC context with access token:",
-    accessToken ? "YES" : "NO",
-  );
+
+  // =============================================================================
+  // Dependency Injection Context Creation
+  // =============================================================================
+
+  let diContext: DIContext;
+
+  // Check if container is initialized (will be true in production, false during tests without setup)
+  if (isContainerInitialized()) {
+    // Create request-scoped container with PrismaClient registration
+    const scope = createRequestScope({
+      prisma: opts.db,
+      requestId: generateRequestId(),
+      userContext: null, // Will be populated by protectedProcedure middleware
+      values: {
+        // Additional request-scoped values can be added here
+        supabase: opts.supabase,
+        accessToken: accessToken,
+      },
+    });
+
+    diContext = {
+      container: scope.container,
+      resolve: <T>(token: string): T => scope.container.resolve<T>(token),
+      scope,
+    };
+  } else {
+    // Fallback for tests or when container is not initialized
+    // Create a minimal DI context that throws on resolution attempts
+    const fallbackContainer = {
+      resolve: <T>(): T => {
+        throw new Error(
+          "DI container not initialized. Call initializeContainer([AppModule]) before resolving dependencies.",
+        );
+      },
+      // Minimal container-like interface for fallback
+      registrations: {},
+    } as unknown as AwilixContainer;
+
+    diContext = {
+      container: fallbackContainer,
+      resolve: <T>(): T => {
+        throw new Error(
+          "DI container not initialized. Call initializeContainer([AppModule]) before resolving dependencies.",
+        );
+      },
+      scope: {
+        container: fallbackContainer,
+        requestId: "fallback",
+        dispose: () => {
+          // No-op for fallback
+        },
+      } as RequestScope,
+    };
+  }
 
   return {
     db: opts.db,
     supabase: opts.supabase,
     headers,
     accessToken,
+    di: diContext,
   };
 };
 
@@ -202,7 +337,6 @@ const mobileAppMiddleware = t.middleware(async ({ ctx, next, path }) => {
     ctx.headers.get("user-agent") ?? ctx.headers.get("User-Agent");
 
   const platform = getPlatformFromUserAgent(userAgent);
-  console.log("[Telemetry] User-Agent:", userAgent, "Platform:", platform);
 
   // Log user agent for update rollout analysis
   try {
@@ -214,9 +348,8 @@ const mobileAppMiddleware = t.middleware(async ({ ctx, next, path }) => {
         // since we're just logging, not authenticating here
         const { data } = await ctx.supabase.auth.getUser(ctx.accessToken);
         userId = data.user?.id ?? null;
-      } catch (error) {
+      } catch {
         // Ignore auth errors for logging purposes
-        console.log("[UserAgent Logging] Could not extract user ID:", error);
       }
     }
 
@@ -231,13 +364,12 @@ const mobileAppMiddleware = t.middleware(async ({ ctx, next, path }) => {
             endpoint: path,
           },
         })
-        .catch((error: unknown) => {
-          // Log errors but don't block the request
-          console.error("[UserAgent Logging] Failed to log user agent:", error);
+        .catch(() => {
+          // Silently ignore logging errors to not block the request
         });
     }
-  } catch (error) {
-    console.error("[UserAgent Logging] Unexpected error:", error);
+  } catch {
+    // Silently ignore telemetry errors to not block the request
   }
 
   return next();
@@ -289,16 +421,12 @@ export const publicProcedure = baseProcedure;
  */
 export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
   try {
-    console.log("[Auth] Protected procedure called, checking auth...");
-    console.log("[Auth] Access token present:", ctx.accessToken ? "YES" : "NO");
-
     const { user, dbUser } = await requireAuth(
       ctx.db,
       ctx.supabase,
       ctx.accessToken ?? undefined,
     );
 
-    console.log("[Auth] Auth successful for user:", user?.id || "unknown");
     return next({
       ctx: {
         user,
@@ -306,9 +434,7 @@ export const protectedProcedure = baseProcedure.use(async ({ ctx, next }) => {
       },
     });
   } catch (err) {
-    console.error("[Auth] Auth failed:", err);
     if (err instanceof AuthenticationError) {
-      console.log("[Auth] Throwing UNAUTHORIZED error");
       throw new TRPCError({ code: "UNAUTHORIZED", message: err.message });
     }
     throw err;
@@ -370,3 +496,19 @@ export const adminProcedure = baseProcedure.use(async ({ ctx, next }) => {
     throw err;
   }
 });
+
+// =============================================================================
+// Utility Functions
+// =============================================================================
+
+/**
+ * Generate a unique request ID
+ *
+ * Creates a unique identifier for tracking requests across logs and metrics.
+ * Format: req-{timestamp}-{random}
+ *
+ * @returns Unique request identifier
+ */
+function generateRequestId(): string {
+  return `req-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}

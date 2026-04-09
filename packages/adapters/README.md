@@ -1,8 +1,8 @@
-# @repo/adapters - Adapters Layer
+# @mirai-app/adapters - Adapters Layer
 
 > **Interface Adapters layer of Clean Architecture - Bridge to external frameworks**
 >
-> Depends on @repo/domain and @repo/use-cases
+> Depends on @mirai-app/domain and @mirai-app/use-cases
 
 ## Purpose
 
@@ -46,9 +46,9 @@ For repositories with standard CRUD operations, extend the base class:
 
 ```typescript
 // gateways/PrismaUserRepository.ts
-import type { UserRepository } from "@repo/use-cases";
-import type { User, UserRole } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
+import type { UserRepository } from "@mirai-app/use-cases";
+import type { User, UserRole } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,
@@ -100,8 +100,8 @@ For repositories with highly custom needs, implement manually:
 
 ```typescript
 // gateways/PrismaCustomRepository.ts
-import type { CustomRepository } from "@repo/use-cases";
-import type { Custom } from "@repo/domain";
+import type { CustomRepository } from "@mirai-app/use-cases";
+import type { Custom } from "@mirai-app/domain";
 import { CustomMapper } from "../mappers/CustomMapper";
 
 export class PrismaCustomRepository implements CustomRepository {
@@ -126,7 +126,7 @@ Use this only when the base class doesn't fit your needs.
 
 ```typescript
 // mappers/UserMapper.ts
-import { User } from "@repo/domain";
+import { User } from "@mirai-app/domain";
 import type { PrismaUser } from "@prisma/client";
 
 export class UserMapper {
@@ -161,8 +161,8 @@ export class UserMapper {
 // controllers/user-controller.ts
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, createTRPCRouter } from "@repo/frameworks/trpc";
-import { CreateUserUseCase } from "@repo/use-cases";
+import { protectedProcedure, createTRPCRouter } from "@mirai-app/frameworks/trpc";
+import { CreateUserUseCase } from "@mirai-app/use-cases";
 import { PrismaUserRepository } from "../gateways/PrismaUserRepository";
 
 // Input validation schema

@@ -1,16 +1,11 @@
-import "reflect-metadata";
-
-import type { ChallengeRepository } from "@repo/use-cases";
+import type { ChallengeRepository } from "@mirai-app/use-cases";
 import type {
   Challenge,
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
-} from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
-import { TYPES } from "@repo/frameworks/di";
-import { provide } from "@inversifyjs/binding-decorators";
-import { inject } from "inversify";
+} from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,
@@ -116,19 +111,19 @@ const ChallengeMapperAdapter: EntityMapper<
  * Implements the ChallengeRepository port using Prisma ORM.
  * Uses BasePrismaRepository for standard CRUD operations.
  *
- * Auto-registered with InversifyJS via @provide decorator.
+ * Compatible with awilix-modular dependency injection.
+ * Registered in RepositoryModule with singleton lifetime.
  *
  * @example
  * ```typescript
- * // With DI container
- * const challengeRepo = container.get<ChallengeRepository>(TYPES.ChallengeRepository);
+ * // With DI container (awilix-modular)
+ * const challengeRepo = container.resolve("challengeRepository");
  *
  * // Manual instantiation (backward-compatible)
  * const challengeRepo = new PrismaChallengeRepository(prisma);
  * const challenge = await challengeRepo.findById("challenge-123");
  * ```
  */
-@provide(TYPES.ChallengeRepository)
 export class PrismaChallengeRepository
   extends BasePrismaRepository<
     Challenge,
@@ -138,7 +133,12 @@ export class PrismaChallengeRepository
   >
   implements ChallengeRepository
 {
-  constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
+  /**
+   * Creates a new PrismaChallengeRepository
+   *
+   * @param prisma - PrismaClient instance (injected by awilix or passed manually)
+   */
+  constructor(prisma: PrismaClient) {
     super(prisma, { model: prisma.challenge }, ChallengeMapperAdapter);
   }
 

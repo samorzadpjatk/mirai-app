@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import { File } from "expo-file-system";
-import { useTRPCClient } from "@repo/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
-import { useSupabaseClient } from "@repo/frameworks/supabase/react";
+import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 

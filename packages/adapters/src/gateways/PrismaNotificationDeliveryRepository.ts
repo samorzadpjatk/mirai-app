@@ -1,11 +1,11 @@
-import type { PrismaClient } from "@repo/frameworks/prisma";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 import type {
   NotificationDeliveryRepository,
   NotificationDelivery,
   DeliveryFilters,
   PaginationOptions,
   DeliveryStats,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 import {
   BasePrismaRepository,
   type EntityMapper,

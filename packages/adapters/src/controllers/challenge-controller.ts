@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ChallengeRepository } from "@repo/use-cases";
+import type { ChallengeRepository } from "@mirai-app/use-cases";
 import {
   GetChallengeUseCase,
   CreateChallengeUseCase,
@@ -8,8 +8,10 @@ import {
   type CreateChallengeInput,
   type UpdateChallengeInput,
   type UpdateChallengeStatusInput,
-} from "@repo/use-cases";
-import { ChallengeStatus, SubmissionType, ScoringCategory } from "@repo/domain";
+  getUseCaseErrorMessage,
+} from "@mirai-app/use-cases";
+import { ChallengeStatus, SubmissionType, ScoringCategory } from "@mirai-app/domain";
+import { Effect } from "effect";
 
 /**
  * Input validation schemas for challenge controller
@@ -201,13 +203,14 @@ export class ChallengeController {
     }
 
     const useCase = new GetChallengeUseCase(this.challengeRepository);
-    const result = await useCase.execute({ challengeId: parsed.data.id });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const data = await Effect.runPromise(
+        useCase.execute({ challengeId: parsed.data.id }),
+      );
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: getUseCaseErrorMessage(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**
@@ -287,34 +290,35 @@ export class ChallengeController {
     }
 
     const useCase = new CreateChallengeUseCase(this.challengeRepository);
-    const result = await useCase.execute({
-      tripId: parsed.data.tripId,
-      name: parsed.data.name,
-      description: parsed.data.description,
-      image: parsed.data.image,
-      submissionType: parsed.data.submissionType as SubmissionType,
-      scoringCategory: parsed.data.scoringCategory as ScoringCategory,
-      isRecurring: parsed.data.isRecurring,
-      dailyStartTime: parsed.data.dailyStartTime,
-      dailyEndTime: parsed.data.dailyEndTime,
-      basePoints: parsed.data.basePoints,
-      firstPlacePoints: parsed.data.firstPlacePoints,
-      secondPlacePoints: parsed.data.secondPlacePoints,
-      thirdPlacePoints: parsed.data.thirdPlacePoints,
-      status: parsed.data.status as ChallengeStatus,
-      startTime: parsed.data.startTime,
-      endTime: parsed.data.endTime,
-      targetLatitude: parsed.data.targetLatitude,
-      targetLongitude: parsed.data.targetLongitude,
-      expectedValue: parsed.data.expectedValue,
-      autoApprove: parsed.data.autoApprove,
-    });
-
-    if (result.kind === "err") {
-      return { success: false, error: result.error };
+    try {
+      const data = await Effect.runPromise(
+        useCase.execute({
+          tripId: parsed.data.tripId,
+          name: parsed.data.name,
+          description: parsed.data.description,
+          image: parsed.data.image,
+          submissionType: parsed.data.submissionType as SubmissionType,
+          scoringCategory: parsed.data.scoringCategory as ScoringCategory,
+          isRecurring: parsed.data.isRecurring,
+          dailyStartTime: parsed.data.dailyStartTime,
+          dailyEndTime: parsed.data.dailyEndTime,
+          basePoints: parsed.data.basePoints,
+          firstPlacePoints: parsed.data.firstPlacePoints,
+          secondPlacePoints: parsed.data.secondPlacePoints,
+          thirdPlacePoints: parsed.data.thirdPlacePoints,
+          status: parsed.data.status as ChallengeStatus,
+          startTime: parsed.data.startTime,
+          endTime: parsed.data.endTime,
+          targetLatitude: parsed.data.targetLatitude,
+          targetLongitude: parsed.data.targetLongitude,
+          expectedValue: parsed.data.expectedValue,
+          autoApprove: parsed.data.autoApprove,
+        }),
+      );
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: getUseCaseErrorMessage(error) };
     }
-
-    return { success: true, data: result.value };
   }
 
   /**

@@ -13,15 +13,50 @@ module.exports = {
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
 
   // Module name mapper for path aliases (~/* maps to src/*)
+  // Note: Jest doesn't support package.json exports, so we map subpaths explicitly
   moduleNameMapper: {
     "^~/(.*)$": "<rootDir>/src/$1",
-    "^@mirai-app/trpc$": "<rootDir>/../../packages/trpc/src",
-    "^@mirai-app/trpc/client$": "<rootDir>/../../packages/trpc/src/client",
-    "^@mirai-app/trpc/client/query$":
-      "<rootDir>/../../packages/trpc/src/client/query",
-    "^@mirai-app/supabase$": "<rootDir>/../../packages/supabase/src",
-    "^@mirai-app/auth$": "<rootDir>/../../packages/auth/src",
-    "^@mirai-app/shared$": "<rootDir>/../../packages/shared/index",
+    // Mock superjson to avoid ESM issues
+    "^superjson$": "<rootDir>/__mocks__/superjson.ts",
+    // Frameworks package subpaths
+    "^@mirai-app/frameworks$":
+      "<rootDir>/../../packages/frameworks/src/index.ts",
+    "^@mirai-app/frameworks/supabase$":
+      "<rootDir>/../../packages/frameworks/src/supabase/index.ts",
+    "^@mirai-app/frameworks/supabase/(.*)$":
+      "<rootDir>/../../packages/frameworks/src/supabase/$1",
+    "^@mirai-app/frameworks/prisma$":
+      "<rootDir>/../../packages/frameworks/src/prisma/index.ts",
+    "^@mirai-app/frameworks/prisma/(.*)$":
+      "<rootDir>/../../packages/frameworks/src/prisma/$1",
+    "^@mirai-app/frameworks/trpc/(.*)$":
+      "<rootDir>/../../packages/frameworks/src/trpc/$1",
+    "^@mirai-app/frameworks/auth$":
+      "<rootDir>/../../packages/frameworks/src/auth/index.ts",
+    "^@mirai-app/frameworks/auth/(.*)$":
+      "<rootDir>/../../packages/frameworks/src/auth/$1",
+    "^@mirai-app/frameworks/stores$":
+      "<rootDir>/../../packages/frameworks/src/stores/index.ts",
+    "^@mirai-app/frameworks/stores/(.*)$":
+      "<rootDir>/../../packages/frameworks/src/stores/$1",
+    "^@mirai-app/frameworks/storage$":
+      "<rootDir>/../../packages/frameworks/src/storage/index.ts",
+    "^@mirai-app/frameworks/di$":
+      "<rootDir>/../../packages/frameworks/src/di/index.ts",
+    // Fix internal relative imports in frameworks package
+    "^../../stores/authStore$":
+      "<rootDir>/../../packages/frameworks/src/stores/authStore.ts",
+    // Other packages
+    "^@mirai-app/adapters$": "<rootDir>/../../packages/adapters/src/index.ts",
+    "^@mirai-app/adapters/(.*)$": "<rootDir>/../../packages/adapters/src/$1",
+    "^@mirai-app/domain$": "<rootDir>/../../packages/domain/src/index.ts",
+    "^@mirai-app/domain/(.*)$": "<rootDir>/../../packages/domain/src/$1",
+    "^@mirai-app/shared$": "<rootDir>/../../packages/shared/index.ts",
+    "^@mirai-app/shared/(.*)$": "<rootDir>/../../packages/shared/src/$1",
+    "^@mirai-app/test-utils$":
+      "<rootDir>/../../packages/test-utils/src/index.ts",
+    "^@mirai-app/use-cases$": "<rootDir>/../../packages/use-cases/src/index.ts",
+    "^@mirai-app/use-cases/(.*)$": "<rootDir>/../../packages/use-cases/src/$1",
   },
 
   // Setup files to run after Jest is initialized
@@ -33,8 +68,9 @@ module.exports = {
   },
 
   // Files to ignore during transformation
+  // NOTE: superjson and react-native must be transformed as they use ESM
   transformIgnorePatterns: [
-    "/node_modules/(?!(expo|@expo|react-native|@react-native|@react-navigation|@tanstack)/)",
+    "/node_modules/(?!(expo|@expo|react-native|@react-native|@react-navigation|@tanstack|superjson|zustand)/)",
   ],
 
   // Coverage configuration

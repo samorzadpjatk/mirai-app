@@ -5,7 +5,7 @@ import {
   ChallengeStatus,
   SubmissionType,
   ScoringCategory,
-} from "@repo/domain";
+} from "@mirai-app/domain";
 
 describe("[UNIT] ChallengeMapper", () => {
   // Sample Prisma challenge records

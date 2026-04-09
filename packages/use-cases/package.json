@@ -1,5 +1,5 @@
 {
-  "name": "@repo/use-cases",
+  "name": "@mirai-app/use-cases",
   "version": "0.1.0",
   "description": "Use cases layer - application orchestration, depends only on domain",
   "type": "module",
@@ -19,6 +19,10 @@
     "./dto/*": {
       "types": "./dist/dto/*.d.ts",
       "default": "./dist/dto/*.js"
+    },
+    "./errors/*": {
+      "types": "./dist/errors/*.d.ts",
+      "default": "./dist/errors/*.js"
     }
   },
   "scripts": {
@@ -33,13 +37,13 @@
     "format:write": "prettier --write src/"
   },
   "dependencies": {
-    "@repo/domain": "workspace:*",
-    "@repo/frameworks": "workspace:*",
-    "inversify": "^8.0.0"
+    "@mirai-app/domain": "workspace:*",
+    "@mirai-app/frameworks": "workspace:*",
+    "effect": "^3.18.4"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5.9.3"
   },
-  "// note": "Only depends on @repo/domain - innermost layer"
+  "// note": "Only depends on @mirai-app/domain - innermost layer"
 }

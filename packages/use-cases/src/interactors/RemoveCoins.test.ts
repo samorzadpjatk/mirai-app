@@ -4,6 +4,21 @@ import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
+import { Effect } from "effect";
+
+async function runAsResult<T>(
+  effect: Effect.Effect<T, Error>,
+): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
+  try {
+    const value = await Effect.runPromise(effect);
+    return { kind: "ok", value };
+  } catch (error) {
+    return {
+      kind: "err",
+      error: error instanceof Error ? error.message : "Unexpected error",
+    };
+  }
+}
 
 describe("[UNIT] RemoveCoinsUseCase", () => {
   let mockRepo: CoinTransactionRepository;
@@ -46,7 +61,7 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("ok");
     if (result.kind === "ok") {
@@ -65,7 +80,7 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("err");
     if (result.kind === "err") {
@@ -85,7 +100,7 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("err");
     if (result.kind === "err") {
@@ -105,7 +120,7 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    const result = await useCase.execute(input);
+    const result = await runAsResult(useCase.execute(input));
 
     expect(result.kind).toBe("err");
     if (result.kind === "err") {
@@ -133,7 +148,7 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    await useCase.execute(input);
+    await runAsResult(useCase.execute(input));
 
     expect(createMock).toHaveBeenCalledWith(
       expect.objectContaining({

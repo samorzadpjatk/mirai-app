@@ -1,6 +1,6 @@
 import { describe, it, expect, mock } from "bun:test";
 import { CreateRewardUseCase, type CreateRewardInput } from "./CreateReward";
-import { Reward, UserRole, type Result } from "@repo/domain";
+import { Reward, UserRole, type Result } from "@mirai-app/domain";
 import type {
   RewardRepository,
   TripAccessChecker,

@@ -7,7 +7,7 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import {
   useAdminGroups,
   type AdminGroup as Group,
-} from "@repo/frameworks/trpc/hooks";
+} from "@mirai-app/frameworks/trpc/hooks";
 import { appToast } from "../../../lib/toast";
 
 interface GroupAssignmentModalProps {

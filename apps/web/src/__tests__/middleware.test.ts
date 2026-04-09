@@ -8,7 +8,7 @@ mock.module("astro:middleware", () => ({
 }));
 
 // Mock other dependencies
-mock.module("@repo/frameworks/supabase", () => ({
+mock.module("@mirai-app/frameworks/supabase", () => ({
   createSupabaseClient: () => ({
     auth: {
       getUser: mock(() =>

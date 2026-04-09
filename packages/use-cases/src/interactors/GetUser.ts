@@ -1,9 +1,11 @@
-import type { Result } from "@repo/domain";
-import { ok, err } from "@repo/domain";
+import { Effect } from "effect";
 import type { UserRepository } from "../ports/UserRepository";
-import type { User } from "@repo/domain";
-import { inject, injectable } from "inversify";
-import { TYPES } from "@repo/frameworks/di";
+import type { User } from "@mirai-app/domain";
+import {
+  UseCaseNotFoundError,
+  UseCaseRepositoryError,
+  type UseCaseError,
+} from "../errors";
 
 /**
  * Input for GetUser use case
@@ -32,21 +34,48 @@ export interface GetUserOutput {
  *
  * Retrieves a user by ID.
  * Returns error if user not found.
+ *
+ * ## Constructor Injection Pattern
+ *
+ * This use case supports both manual instantiation and DI container injection:
+ *
+ * ```typescript
+ * // Manual instantiation (backward compatible)
+ * const useCase = new GetUserUseCase(userRepository);
+ *
+ * // DI container injection (awilix-modular)
+ * const useCase = container.resolve("getUserUseCase");
+ * ```
  */
-@injectable()
 export class GetUserUseCase {
-  constructor(
-    @inject(TYPES.UserRepository) private userRepository: UserRepository,
-  ) {}
+  constructor(private userRepository: UserRepository) {}
 
-  async execute(input: GetUserInput): Promise<Result<GetUserOutput, string>> {
-    const user = await this.userRepository.findById(input.userId);
+  execute(input: GetUserInput): Effect.Effect<GetUserOutput, UseCaseError> {
+    const userRepository = this.userRepository;
+    const toOutput = this.toOutput.bind(this);
 
-    if (!user) {
-      return err("User not found");
-    }
+    return Effect.gen(function* () {
+      const user = yield* Effect.tryPromise({
+        try: () => userRepository.findById(input.userId),
+        catch: (cause) =>
+          new UseCaseRepositoryError({
+            operation: "GetUser.findById",
+            message: "Failed to load user",
+            cause,
+          }),
+      });
 
-    return ok(this.toOutput(user));
+      if (!user) {
+        return yield* Effect.fail(
+          new UseCaseNotFoundError({
+            entity: "User",
+            message: "User not found",
+          }),
+        );
+      }
+
+      return toOutput(user);
+    });
   }
 
   private toOutput(user: User): GetUserOutput {

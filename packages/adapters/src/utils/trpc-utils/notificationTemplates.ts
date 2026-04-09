@@ -64,36 +64,37 @@ const PLACEHOLDER_ALIASES: Record<keyof RankingTemplateValues, string[]> = {
   currentTime: [RANKING_TEMPLATE_PLACEHOLDERS.currentTime, "<godzina_teraz>"],
 };
 
-export const DAILY_RANKING_SCHEDULE_TEMPLATES: ScheduledNotificationTemplate[] = [
-  {
-    key: "daily_morning",
-    name: "Daily ranking update (07:30)",
-    hour: 7,
-    minute: 30,
-    notificationType: "custom",
-    notificationTitle: "Dzieeeeń dobry! Pobudka",
-    notificationBody:
-      `twoja grupa ${RANKING_TEMPLATE_PLACEHOLDERS.groupName} jest ` +
-      `${RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition} w rankingu. ` +
-      `Czeka na Was ${RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount} ` +
-      "wyzwań do wykonania. Powodzenia!",
-    notificationUrl: "/ranking",
-  },
-  {
-    key: "daily_evening",
-    name: "Daily ranking update (18:00)",
-    hour: 18,
-    minute: 0,
-    notificationType: "custom",
-    notificationTitle: "Dobry wieczór!",
-    notificationBody:
-      `twoja grupa ${RANKING_TEMPLATE_PLACEHOLDERS.groupName} jest ` +
-      `${RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition} w rankingu. ` +
-      `Czeka na Was ${RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount} ` +
-      "wyzwań do wykonania. Powodzenia!",
-    notificationUrl: "/ranking",
-  },
-];
+export const DAILY_RANKING_SCHEDULE_TEMPLATES: ScheduledNotificationTemplate[] =
+  [
+    {
+      key: "daily_morning",
+      name: "Daily ranking update (07:30)",
+      hour: 7,
+      minute: 30,
+      notificationType: "custom",
+      notificationTitle: "Dzieeeeń dobry! Pobudka",
+      notificationBody:
+        `twoja grupa ${RANKING_TEMPLATE_PLACEHOLDERS.groupName} jest ` +
+        `${RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition} w rankingu. ` +
+        `Czeka na Was ${RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount} ` +
+        "wyzwań do wykonania. Powodzenia!",
+      notificationUrl: "/ranking",
+    },
+    {
+      key: "daily_evening",
+      name: "Daily ranking update (18:00)",
+      hour: 18,
+      minute: 0,
+      notificationType: "custom",
+      notificationTitle: "Dobry wieczór!",
+      notificationBody:
+        `twoja grupa ${RANKING_TEMPLATE_PLACEHOLDERS.groupName} jest ` +
+        `${RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition} w rankingu. ` +
+        `Czeka na Was ${RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount} ` +
+        "wyzwań do wykonania. Powodzenia!",
+      notificationUrl: "/ranking",
+    },
+  ];
 
 export function getDailyRankingScheduleTemplate(
   key: ScheduledNotificationTemplate["key"],
@@ -109,7 +110,11 @@ export function getDailyRankingScheduleTemplate(
   return template;
 }
 
-function replaceAll(input: string, searchValue: string, replaceValue: string): string {
+function replaceAll(
+  input: string,
+  searchValue: string,
+  replaceValue: string,
+): string {
   return input.split(searchValue).join(replaceValue);
 }
 

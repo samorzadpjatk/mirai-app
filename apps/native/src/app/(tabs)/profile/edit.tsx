@@ -15,7 +15,7 @@ import { useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@repo/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileDownload, useFileUpload } from "~/hooks/files";

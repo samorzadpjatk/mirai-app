@@ -5,7 +5,6 @@
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": ".",
-    "composite": true,
     "types": ["node", "vitest", "ws"]
   },
   "include": ["src/**/*"],

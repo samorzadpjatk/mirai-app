@@ -1,5 +1,5 @@
-import { User, UserRole } from "@repo/domain";
-import type { UserRepository } from "@repo/use-cases";
+import { User, UserRole } from "@mirai-app/domain";
+import type { UserRepository } from "@mirai-app/use-cases";
 
 /**
  * UserMapper

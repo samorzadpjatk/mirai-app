@@ -3,7 +3,7 @@ import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@repo/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/trpc/client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";

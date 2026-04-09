@@ -8,9 +8,9 @@ import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
-import { useTRPCClient } from "@repo/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
-import { useAdminActivity } from "@repo/frameworks/trpc/hooks";
+import { useAdminActivity } from "@mirai-app/frameworks/trpc/hooks";
 import { useTrip } from "../../../contexts/TripContext";
 
 interface ActivityFormProps {

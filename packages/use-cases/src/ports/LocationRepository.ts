@@ -1,5 +1,5 @@
-import type { Location, SharingUserInfo } from "@repo/domain";
-import type { LocationId } from "@repo/domain";
+import type { Location, SharingUserInfo } from "@mirai-app/domain";
+import type { LocationId } from "@mirai-app/domain";
 
 /**
  * LocationRepository Port

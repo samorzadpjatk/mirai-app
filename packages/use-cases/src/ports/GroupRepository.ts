@@ -1,4 +1,4 @@
-import type { Group, GroupStatus } from "@repo/domain";
+import type { Group, GroupStatus } from "@mirai-app/domain";
 
 /**
  * GroupRepository Port

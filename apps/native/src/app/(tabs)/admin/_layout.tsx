@@ -1,5 +1,5 @@
 import { Redirect } from "expo-router";
-import { useAuth } from "@repo/frameworks/auth/client";
+import { useAuth } from "@mirai-app/frameworks/auth/client";
 
 export default function AdminLayout() {
   const { user } = useAuth();

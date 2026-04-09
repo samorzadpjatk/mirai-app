@@ -1,4 +1,4 @@
-# @repo/domain - Domain Layer
+# @mirai-app/domain - Domain Layer
 
 > **Innermost layer of Clean Architecture - Pure business logic**
 >
@@ -44,8 +44,8 @@ src/
 
 ```typescript
 // Creating an entity
-import { User } from "@repo/domain";
-import { Email } from "@repo/domain/value-objects/Email";
+import { User } from "@mirai-app/domain";
+import { Email } from "@mirai-app/domain/value-objects/Email";
 
 const result = User.create({ email: "user@example.com" });
 
@@ -79,7 +79,7 @@ describe("User", () => {
 Always use `Result<T,E>` for operations that can fail:
 
 ```typescript
-import { Result, ok, err } from "@repo/domain/utils/result";
+import { Result, ok, err } from "@mirai-app/domain/utils/result";
 
 function validateEmail(input: string): Result<Email, string> {
   if (!input.includes("@")) {

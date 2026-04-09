@@ -1,12 +1,12 @@
-import type { NotificationScheduleRepository } from "@repo/use-cases";
+import type { NotificationScheduleRepository } from "@mirai-app/use-cases";
 import type {
   NotificationSchedule,
   NotificationScheduleType,
   NotificationScheduleFilter,
   PaginationOptions,
   PaginatedResult,
-} from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma";
+} from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 import {
   BasePrismaRepository,
   type EntityMapper,
@@ -92,15 +92,12 @@ export class PrismaNotificationScheduleRepository
   >
   implements NotificationScheduleRepository
 {
-  private prisma: PrismaClient;
-
   constructor(prisma: PrismaClient) {
     super(
       prisma,
       { model: prisma.notificationSchedule },
       NotificationScheduleMapperAdapter,
     );
-    this.prisma = prisma;
   }
 
   /**
@@ -239,25 +236,6 @@ export class PrismaNotificationScheduleRepository
   }
 
   /**
-   * Update schedule
-   */
-  async update(schedule: NotificationSchedule): Promise<NotificationSchedule> {
-    const record = await this.model.update({
-      where: { id: schedule.id },
-      data: this.mapper.toPrismaUpdate(schedule),
-    });
-
-    return this.mapper.toDomain(record);
-  }
-
-  /**
-   * Delete schedule
-   */
-  async delete(id: string): Promise<void> {
-    await this.model.delete({ where: { id } });
-  }
-
-  /**
    * Delete multiple schedules
    */
   async deleteMany(ids: string[]): Promise<number> {
@@ -266,14 +244,6 @@ export class PrismaNotificationScheduleRepository
     });
 
     return result.count;
-  }
-
-  /**
-   * Check if schedule exists
-   */
-  async exists(id: string): Promise<boolean> {
-    const count = await this.model.count({ where: { id } });
-    return count > 0;
   }
 
   /**

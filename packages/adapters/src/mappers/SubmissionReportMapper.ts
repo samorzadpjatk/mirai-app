@@ -1,6 +1,6 @@
-import { SubmissionReport, ReporterInfo } from "@repo/domain";
-import { ReportId } from "@repo/domain";
-import { ReportReason } from "@repo/domain";
+import { SubmissionReport, ReporterInfo } from "@mirai-app/domain";
+import { ReportId } from "@mirai-app/domain";
+import { ReportReason } from "@mirai-app/domain";
 
 /**
  * SubmissionReportMapper

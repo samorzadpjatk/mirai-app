@@ -1,4 +1,4 @@
-import type { Sponsor } from "@repo/domain";
+import type { Sponsor } from "@mirai-app/domain";
 
 /**
  * SponsorRepository

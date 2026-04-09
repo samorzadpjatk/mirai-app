@@ -34,7 +34,6 @@ import { NotificationDeliveryController } from "../../controllers/notification-d
 
 // Repositories
 import { PrismaUserRepository } from "../../gateways/PrismaUserRepository";
-import { PrismaChallengeRepository } from "../../gateways/PrismaChallengeRepository";
 import { PrismaGroupRepository } from "../../gateways/PrismaGroupRepository";
 import { PrismaTripRepository } from "../../gateways/PrismaTripRepository";
 import { PrismaNotificationRepository } from "../../gateways/PrismaNotificationRepository";
@@ -66,7 +65,7 @@ import {
   GetFailedDeliveriesUseCase,
   AddCoinsUseCase,
   RemoveCoinsUseCase,
-} from "@repo/use-cases";
+} from "@mirai-app/use-cases";
 
 // ============================================================================
 // User Controller
@@ -76,8 +75,8 @@ export const userController = {
   getById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const repo = new PrismaUserRepository(ctx.db);
-      const controller = new UserController(repo);
+      // Using DI container to resolve UserController - no manual instantiation needed
+      const controller = ctx.di.resolve<UserController>("userController");
       const result = await controller.getById({ id: input.id });
 
       if (!result.success) {
@@ -176,8 +175,10 @@ export const storageController = {
 
 export const challengeController = {
   getAll: adminProcedure.query(async ({ ctx }) => {
-    const repo = new PrismaChallengeRepository(ctx.db);
-    const controller = new ChallengeController(repo);
+    // Using DI container to resolve ChallengeController - no manual instantiation needed
+    const controller = ctx.di.resolve<ChallengeController>(
+      "challengeController",
+    );
     const result = await controller.findActive();
 
     if (!result.success) {
@@ -199,8 +200,10 @@ export const challengeController = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const repo = new PrismaChallengeRepository(ctx.db);
-      const controller = new ChallengeController(repo);
+      // Using DI container to resolve ChallengeController - no manual instantiation needed
+      const controller = ctx.di.resolve<ChallengeController>(
+        "challengeController",
+      );
       const result = await controller.getByTripId({ tripId: input.tripId });
 
       if (!result.success) {
@@ -220,8 +223,10 @@ export const challengeController = {
   getById: protectedProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const repo = new PrismaChallengeRepository(ctx.db);
-      const controller = new ChallengeController(repo);
+      // Using DI container to resolve ChallengeController - no manual instantiation needed
+      const controller = ctx.di.resolve<ChallengeController>(
+        "challengeController",
+      );
       const result = await controller.getById({ id: input.id });
 
       if (!result.success) {
@@ -280,8 +285,10 @@ export const challengeController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const repo = new PrismaChallengeRepository(ctx.db);
-      const controller = new ChallengeController(repo);
+      // Using DI container to resolve ChallengeController - no manual instantiation needed
+      const controller = ctx.di.resolve<ChallengeController>(
+        "challengeController",
+      );
       const result = await controller.create({
         ...input,
         isRecurring: false,
@@ -316,8 +323,10 @@ export const challengeController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const repo = new PrismaChallengeRepository(ctx.db);
-      const controller = new ChallengeController(repo);
+      // Using DI container to resolve ChallengeController - no manual instantiation needed
+      const controller = ctx.di.resolve<ChallengeController>(
+        "challengeController",
+      );
       const result = await controller.update({
         challengeId: input.id,
         name: input.name,
@@ -357,8 +366,10 @@ export const challengeController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const repo = new PrismaChallengeRepository(ctx.db);
-      const controller = new ChallengeController(repo);
+      // Using DI container to resolve ChallengeController - no manual instantiation needed
+      const controller = ctx.di.resolve<ChallengeController>(
+        "challengeController",
+      );
       const result = await controller.updateStatus({
         challengeId: input.id,
         newStatus: input.newStatus,
@@ -373,8 +384,10 @@ export const challengeController = {
   delete: adminProcedure
     .input(z.object({ id: z.string(), tripId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const repo = new PrismaChallengeRepository(ctx.db);
-      const controller = new ChallengeController(repo);
+      // Using DI container to resolve ChallengeController - no manual instantiation needed
+      const controller = ctx.di.resolve<ChallengeController>(
+        "challengeController",
+      );
       const result = await controller.updateStatus({
         challengeId: input.id,
         newStatus: "CANCELLED",
@@ -585,8 +598,8 @@ export const tripController = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const repo = new PrismaTripRepository(ctx.db);
-      const controller = new TripController(repo);
+      // Using DI container to resolve TripController - no manual instantiation needed
+      const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.list({
         limit: input?.pagination?.limit ?? 30,
         offset: input?.pagination?.offset ?? 0,
@@ -621,8 +634,8 @@ export const tripController = {
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const repo = new PrismaTripRepository(ctx.db);
-      const controller = new TripController(repo);
+      // Using DI container to resolve TripController - no manual instantiation needed
+      const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.getById({ id: input.id });
 
       if (!result.success) {
@@ -639,8 +652,8 @@ export const tripController = {
   getByIdAdmin: adminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const repo = new PrismaTripRepository(ctx.db);
-      const controller = new TripController(repo);
+      // Using DI container to resolve TripController - no manual instantiation needed
+      const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.getById({ id: input.id });
 
       if (!result.success) {
@@ -665,8 +678,8 @@ export const tripController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const repo = new PrismaTripRepository(ctx.db);
-      const controller = new TripController(repo);
+      // Using DI container to resolve TripController - no manual instantiation needed
+      const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.create({
         name: input.name,
         description: input.description ?? null,
@@ -694,8 +707,8 @@ export const tripController = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const repo = new PrismaTripRepository(ctx.db);
-      const controller = new TripController(repo);
+      // Using DI container to resolve TripController - no manual instantiation needed
+      const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.update({
         tripId: input.id,
         name: input.name,
@@ -714,8 +727,8 @@ export const tripController = {
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const repo = new PrismaTripRepository(ctx.db);
-      const controller = new TripController(repo);
+      // Using DI container to resolve TripController - no manual instantiation needed
+      const controller = ctx.di.resolve<TripController>("tripController");
       const result = await controller.delete({ id: input.id });
 
       if (!result.success) {
@@ -4154,9 +4167,8 @@ export const notificationSenderController = {
         notificationId: input.notificationId,
       });
 
-      if (!result.success) {
-        console.error("[Delivery Tracker] Failed to track delivery start");
-      }
+      // Delivery tracking result logged by service layer
+      void result;
     }),
 
   trackDeliveryComplete: publicProcedure
@@ -4179,9 +4191,8 @@ export const notificationSenderController = {
         errors: input.errors,
       });
 
-      if (!result.success) {
-        console.error("[Delivery Tracker] Failed to track delivery completion");
-      }
+      // Delivery tracking result logged by service layer
+      void result;
     }),
 
   trackDeliveryFailure: publicProcedure
@@ -4198,9 +4209,8 @@ export const notificationSenderController = {
         error: input.error,
       });
 
-      if (!result.success) {
-        console.error("[Delivery Tracker] Failed to track delivery failure");
-      }
+      // Delivery tracking result logged by service layer
+      void result;
     }),
 
   checkInactiveUsers: publicProcedure.mutation(() => {

@@ -1,11 +1,6 @@
-import "reflect-metadata";
-
-import type { GroupRepository } from "@repo/use-cases";
-import { Group, GroupStatus } from "@repo/domain";
-import type { PrismaClient } from "@repo/frameworks/prisma/client";
-import { TYPES } from "@repo/frameworks/di";
-import { provide } from "@inversifyjs/binding-decorators";
-import { inject } from "inversify";
+import type { GroupRepository } from "@mirai-app/use-cases";
+import { Group, GroupStatus } from "@mirai-app/domain";
+import type { PrismaClient } from "@mirai-app/frameworks/prisma/client";
 import {
   BasePrismaRepository,
   type EntityMapper,
@@ -69,19 +64,19 @@ const GroupMapperAdapter: EntityMapper<
  * Implements the GroupRepository port using Prisma ORM.
  * Uses BasePrismaRepository for standard CRUD operations.
  *
- * Auto-registered with InversifyJS via @provide decorator.
+ * Compatible with awilix-modular dependency injection.
+ * Registered in RepositoryModule with singleton lifetime.
  *
  * @example
  * ```typescript
- * // With DI container
- * const groupRepo = container.get<GroupRepository>(TYPES.GroupRepository);
+ * // With DI container (awilix-modular)
+ * const groupRepo = container.resolve("groupRepository");
  *
  * // Manual instantiation (backward-compatible)
  * const groupRepo = new PrismaGroupRepository(prisma);
  * const group = await groupRepo.findById("group-123");
  * ```
  */
-@provide(TYPES.GroupRepository)
 export class PrismaGroupRepository
   extends BasePrismaRepository<
     Group,
@@ -91,7 +86,12 @@ export class PrismaGroupRepository
   >
   implements GroupRepository
 {
-  constructor(@inject(TYPES.PrismaClient) prisma: PrismaClient) {
+  /**
+   * Creates a new PrismaGroupRepository
+   *
+   * @param prisma - PrismaClient instance (injected by awilix or passed manually)
+   */
+  constructor(prisma: PrismaClient) {
     super(prisma, { model: prisma.group }, GroupMapperAdapter);
   }
 
