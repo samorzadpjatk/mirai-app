@@ -1,6 +1,6 @@
 import type { Group, GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Group Repository for Testing

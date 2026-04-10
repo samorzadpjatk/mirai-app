@@ -1,6 +1,6 @@
 import type { ChallengeVote, ChallengeVoteId } from "@mirai-app/domain";
 import type { ChallengeVoteRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory ChallengeVote Repository for Testing

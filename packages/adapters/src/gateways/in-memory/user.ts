@@ -1,6 +1,6 @@
 import type { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory User Repository for Testing

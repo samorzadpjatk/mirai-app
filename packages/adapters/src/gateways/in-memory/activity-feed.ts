@@ -4,7 +4,7 @@ import type {
   ActivityId,
 } from "@mirai-app/domain";
 import type { ActivityFeedRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Activity Feed Repository for Testing

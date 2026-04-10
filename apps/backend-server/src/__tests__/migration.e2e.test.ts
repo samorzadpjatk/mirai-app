@@ -37,7 +37,7 @@ import {
 import {
   InMemoryUserRepository,
   InMemoryNotificationRepository,
-} from "@mirai-app/adapters/test-utils";
+} from "@mirai-app/adapters/gateways/in-memory";
 import { EventBus } from "@mirai-app/adapters";
 import {
   User,

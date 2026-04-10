@@ -13,7 +13,7 @@ import {
 } from "@mirai-app/frameworks/drizzle/schema/notificationDelivery";
 import { notifications } from "@mirai-app/frameworks/drizzle/schema/notification";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
-import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../base/repository";
 import { NotificationScheduleDrizzleMapper } from "../../mappers/drizzle/notification-schedule";
 
 /**

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { AddCoinsUseCase } from "./AddCoins";
-import { InMemoryCoinTransactionRepository } from "@mirai-app/adapters/test-utils";
+import { InMemoryCoinTransactionRepository } from "@mirai-app/adapters/gateways/in-memory";
 
 describe("[UNIT] AddCoinsUseCase", () => {
   let repo: InMemoryCoinTransactionRepository;

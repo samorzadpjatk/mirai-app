@@ -1,5 +1,5 @@
 import type { SubmissionReport, ReporterInfo } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/BaseDrizzleRepository";
+import type { DrizzleEntityMapper } from "../gateways/base/repository";
 import type { submissionReports } from "@mirai-app/frameworks/drizzle/schema/submissionReport";
 
 /**

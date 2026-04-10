@@ -1,7 +1,7 @@
 import type { Location, SharingUserInfo } from "@mirai-app/domain";
 import type { LocationId } from "@mirai-app/domain";
 import type { LocationRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Location Repository for Testing

@@ -25,4 +25,4 @@ export {
   isAdapterError,
   getAdapterErrorMessage,
   getAdapterErrorCode,
-} from "./AdapterErrors";
+} from "./adapter-errors";

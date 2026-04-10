@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { CreateUserUseCase } from "./CreateUser";
 import type { CreateUserInput } from "./CreateUser";
 import { User, UserRole } from "@mirai-app/domain";
-import { InMemoryUserRepository } from "@mirai-app/adapters/test-utils";
+import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
 
 describe("[UNIT] CreateUserUseCase", () => {
   let repo: InMemoryUserRepository;

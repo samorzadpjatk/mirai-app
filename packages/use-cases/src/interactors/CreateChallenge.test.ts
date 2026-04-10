@@ -7,7 +7,7 @@ import {
   SubmissionType,
   ScoringCategory,
 } from "@mirai-app/domain";
-import { InMemoryChallengeRepository } from "@mirai-app/adapters/test-utils";
+import { InMemoryChallengeRepository } from "@mirai-app/adapters/gateways/in-memory";
 
 async function runAsResult<T>(
   fn: () => Promise<T>,

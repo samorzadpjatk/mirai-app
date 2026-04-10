@@ -1,6 +1,6 @@
 import type { Trip, TripStatus } from "@mirai-app/domain";
 import type { TripRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Trip Repository for Testing

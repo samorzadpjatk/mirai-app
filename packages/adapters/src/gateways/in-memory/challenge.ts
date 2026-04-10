@@ -5,7 +5,7 @@ import type {
   SubmissionType,
 } from "@mirai-app/domain";
 import type { ChallengeRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Challenge Repository for Testing

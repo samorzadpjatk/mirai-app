@@ -7,7 +7,7 @@ import {
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { Group, type GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "@mirai-app/use-cases";
-import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../base/repository";
 import { GroupDrizzleMapper } from "../../mappers/drizzle/group";
 
 /**

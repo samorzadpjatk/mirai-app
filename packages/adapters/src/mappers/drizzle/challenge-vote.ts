@@ -1,5 +1,5 @@
 import type { ChallengeVote } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/BaseDrizzleRepository";
+import type { DrizzleEntityMapper } from "../gateways/base/repository";
 import type { challengeVotes } from "@mirai-app/frameworks/drizzle/schema/challenge";
 
 /**

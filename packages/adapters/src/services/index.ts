@@ -7,20 +7,20 @@
 // =============================================================================
 // Drizzle ORM Services (Current)
 // =============================================================================
-export { DrizzleTripPointsCalculator } from "./DrizzleTripPointsCalculator";
-export { DrizzleGroupCoinsService } from "./DrizzleGroupCoinsService";
+export { DrizzleTripPointsCalculator } from "./trip-points";
+export { DrizzleGroupCoinsService } from "./group-coins";
 export {
   DrizzleTripAccessChecker,
   type GroupLeaderCheckResult as DrizzleGroupLeaderCheckResult,
-} from "./DrizzleTripAccessChecker";
+} from "./trip-access";
 export {
   DrizzleRankingActivityService,
   type RankSnapshot as DrizzleRankSnapshot,
-} from "./DrizzleRankingActivityService";
-export { DrizzleCoinTransactionService } from "./DrizzleCoinTransactionService";
-export { DrizzleCoinService } from "./DrizzleCoinService";
-export { DrizzleRewardService } from "./DrizzleRewardService";
-export { DrizzleNotificationSenderService } from "./DrizzleNotificationSenderService";
+} from "./ranking-activity";
+export { DrizzleCoinTransactionService } from "./coin-transaction";
+export { DrizzleCoinService } from "./coin";
+export { DrizzleRewardService } from "./reward";
+export { DrizzleNotificationSenderService } from "./notification-sender";
 
 // =============================================================================
 // Real-Time Architecture Services

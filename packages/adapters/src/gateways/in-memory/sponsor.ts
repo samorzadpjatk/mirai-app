@@ -1,6 +1,6 @@
 import type { Sponsor } from "@mirai-app/domain";
 import type { SponsorRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Sponsor Repository for Testing

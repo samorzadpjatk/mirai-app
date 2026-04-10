@@ -9,11 +9,11 @@
 // Base Repository Classes
 // =============================================================================
 export { BasePrismaRepository } from "./BasePrismaRepository";
-export { BaseDrizzleRepository } from "./BaseDrizzleRepository";
+export { BaseDrizzleRepository } from "./base/repository";
 export type {
   DrizzleEntityMapper,
   DrizzleRepositoryConfig,
-} from "./BaseDrizzleRepository";
+} from "./base/repository";
 
 // =============================================================================
 // Prisma ORM Repositories (Legacy)
@@ -40,6 +40,29 @@ export { DrizzleNotificationScheduleRepository } from "./drizzle/DrizzleNotifica
 export { DrizzleSponsorRepository } from "./drizzle/DrizzleSponsorRepository";
 export { DrizzleSubmissionReportRepository } from "./drizzle/DrizzleSubmissionReportRepository";
 export { DrizzleTelemetryAdapter } from "./drizzle/DrizzleTelemetryAdapter";
+
+// =============================================================================
+// In-Memory Repositories (Phase 2: Testing Infrastructure)
+// =============================================================================
+export { InMemoryRepository } from "./in-memory/base";
+export { InMemoryUserRepository } from "./in-memory/user";
+export { InMemoryGroupRepository } from "./in-memory/group";
+export { InMemoryTripRepository } from "./in-memory/trip";
+export { InMemoryChallengeRepository } from "./in-memory/challenge";
+export { InMemoryChallengeSubmissionRepository } from "./in-memory/challenge-submission";
+export { InMemoryChallengeVoteRepository } from "./in-memory/challenge-vote";
+export { InMemoryLocationRepository } from "./in-memory/location";
+export { InMemoryNotificationRepository } from "./in-memory/notification";
+export { InMemoryNotificationScheduleRepository } from "./in-memory/notification-schedule";
+export { InMemoryNotificationDeliveryRepository } from "./in-memory/notification-delivery";
+export {
+  InMemoryRewardRepository,
+  InMemoryRewardPurchaseRepository,
+} from "./in-memory/reward";
+export { InMemorySponsorRepository } from "./in-memory/sponsor";
+export { InMemoryCoinTransactionRepository } from "./in-memory/coin-transaction";
+export { InMemoryActivityFeedRepository } from "./in-memory/activity-feed";
+export { InMemorySubmissionReportRepository } from "./in-memory/submission-report";
 
 // =============================================================================
 // Auth Adapters (Phase 0: Supabase-Agnostic Architecture)

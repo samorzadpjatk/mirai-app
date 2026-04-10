@@ -21,7 +21,7 @@ import { honoConfig } from "../../config/hono-config";
 import { createTestContainer, PORT_TOKENS } from "@mirai-app/frameworks/di";
 import { asClass } from "awilix";
 import { InMemoryAuthAdapter } from "@mirai-app/adapters";
-import { InMemoryUserRepository } from "@mirai-app/adapters/test-utils";
+import { InMemoryUserRepository } from "@mirai-app/adapters/gateways/in-memory";
 import { User, UserRole, UserId } from "@mirai-app/domain";
 import type { AwilixContainer } from "awilix";
 

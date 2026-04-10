@@ -17,7 +17,7 @@ import type {
   RewardRepository,
   RewardPurchaseRepository,
 } from "@mirai-app/use-cases";
-import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../base/repository";
 import {
   RewardDrizzleMapper,
   RewardPurchaseDrizzleMapper,

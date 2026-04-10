@@ -8,7 +8,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { eq, and, gt, lt, gte, lte, sql, inArray } from "drizzle-orm";
 import { Event } from "@mirai-app/domain";
 import type { EventRepository } from "@mirai-app/use-cases";
-import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../base/repository";
 import { EventDrizzleMapper } from "../../mappers/drizzle/event";
 
 /**

@@ -11,6 +11,7 @@
     "./auth/authServer": "./src/controllers/auth/authServer.ts",
     "./gateways": "./src/gateways/index.ts",
     "./gateways/*": "./src/gateways/*.ts",
+    "./gateways/in-memory": "./src/gateways/in-memory/index.ts",
     "./mappers/*": "./src/mappers/*.ts",
     "./api/*": "./src/api/*.ts",
     "./api": "./src/api/index.ts",
@@ -19,8 +20,7 @@
     "./modules": "./src/modules/RepositoryModule.ts",
     "./modules/*": "./src/modules/*.ts",
     "./errors": "./src/errors/index.ts",
-    "./layers": "./src/layers/index.ts",
-    "./test-utils": "./src/test-utils/index.ts"
+    "./layers": "./src/layers/index.ts"
   },
   "scripts": {
     "test": "bun test",

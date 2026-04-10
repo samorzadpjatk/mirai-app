@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { createStaticModule, type StaticModule } from "awilix-modular";
-import { NotificationService } from "@mirai-app/adapters/services/notificationService";
+import { NotificationService } from "@mirai-app/adapters/services/notification-service";
 
 import {
   initializeContainer,

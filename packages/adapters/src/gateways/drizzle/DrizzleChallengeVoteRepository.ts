@@ -3,7 +3,7 @@ import type { ChallengeVote } from "@mirai-app/domain";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { challengeVotes } from "@mirai-app/frameworks/drizzle/schema/challenge";
 import { eq, and, asc, sql } from "drizzle-orm";
-import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../base/repository";
 import { ChallengeVoteDrizzleMapper } from "../../mappers/drizzle/challenge-vote";
 
 /**

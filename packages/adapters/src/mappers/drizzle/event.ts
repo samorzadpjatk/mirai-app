@@ -1,5 +1,5 @@
 import { Event } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../../gateways/BaseDrizzleRepository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   events,
   EventSelect,

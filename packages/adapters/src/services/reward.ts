@@ -1,6 +1,6 @@
-import type { DrizzleTripAccessChecker } from "./DrizzleTripAccessChecker";
-import type { DrizzleTripPointsCalculator } from "./DrizzleTripPointsCalculator";
-import type { RewardController } from "../controllers/reward-controller";
+import type { DrizzleTripAccessChecker } from "./trip-access";
+import type { DrizzleTripPointsCalculator } from "./trip-points";
+import type { RewardController } from "../controllers/reward";
 
 /**
  * DrizzleRewardService

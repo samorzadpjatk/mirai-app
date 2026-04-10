@@ -14,7 +14,7 @@ import { EventBus } from "@mirai-app/adapters";
 import {
   InMemoryUserRepository,
   InMemoryTripRepository,
-} from "@mirai-app/adapters/test-utils";
+} from "@mirai-app/adapters/gateways/in-memory";
 import { User, UserRole, UserId } from "@mirai-app/domain";
 import { graphql } from "graphql";
 import { schema } from "../graphql/schema";

@@ -9,7 +9,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { coinTransactions } from "@mirai-app/frameworks/drizzle/schema/coinTransaction";
 import { groups } from "@mirai-app/frameworks/drizzle/schema/group";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../base/repository";
 import { CoinTransactionDrizzleMapper } from "../../mappers/drizzle/coin-transaction";
 
 /**

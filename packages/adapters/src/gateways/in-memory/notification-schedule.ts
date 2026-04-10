@@ -9,7 +9,7 @@ import type {
   NotificationScheduleRepository,
   NotificationScheduleExecutionRecord,
 } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Notification Schedule Repository for Testing

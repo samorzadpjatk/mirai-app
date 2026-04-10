@@ -1,6 +1,6 @@
 import type { SubmissionReport } from "@mirai-app/domain";
 import type { SubmissionReportRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Submission Report Repository for Testing

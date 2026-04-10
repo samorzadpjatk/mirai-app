@@ -6,7 +6,7 @@ import type {
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { challengeSubmissions } from "@mirai-app/frameworks/drizzle/schema/challenge";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
-import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../base/repository";
 import { ChallengeSubmissionDrizzleMapper } from "../../mappers/drizzle/challenge-submission";
 
 /**

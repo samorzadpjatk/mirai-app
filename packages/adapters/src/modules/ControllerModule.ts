@@ -4,24 +4,24 @@
 
 import { createStaticModule, type StaticModule } from "awilix-modular";
 import { Lifetime } from "awilix";
-import { UserController } from "../controllers/user-controller";
-import { TripController } from "../controllers/trip-controller";
-import { ChallengeController } from "../controllers/challenge-controller";
-import { GroupController } from "../controllers/group-controller";
-import { NotificationController } from "../controllers/notification-controller";
-import { ActivityFeedController } from "../controllers/activityFeed-controller";
-import { ChallengeSubmissionController } from "../controllers/challengeSubmission-controller";
-import { ChallengeVoteController } from "../controllers/challengeVote-controller";
-import { LocationController } from "../controllers/location-controller";
-import { RewardController } from "../controllers/reward-controller";
-import { SponsorController } from "../controllers/sponsor-controller";
-import { SubmissionReportController } from "../controllers/submissionReport-controller";
-import { NotificationScheduleController } from "../controllers/notification-schedule-controller";
-import { NotificationDeliveryController } from "../controllers/notification-delivery-controller";
-import { CoinController } from "../controllers/coin-controller";
-import { CoinTransactionController } from "../controllers/coin-transaction-controller";
-import { StorageController } from "../controllers/storage-controller";
-import { NotificationService } from "../services/notificationService";
+import { UserController } from "../controllers/user";
+import { TripController } from "../controllers/trip";
+import { ChallengeController } from "../controllers/challenge";
+import { GroupController } from "../controllers/group";
+import { NotificationController } from "../controllers/notification";
+import { ActivityFeedController } from "../controllers/activity-feed";
+import { ChallengeSubmissionController } from "../controllers/challenge-submission";
+import { ChallengeVoteController } from "../controllers/challenge-vote";
+import { LocationController } from "../controllers/location";
+import { RewardController } from "../controllers/reward";
+import { SponsorController } from "../controllers/sponsor";
+import { SubmissionReportController } from "../controllers/submission-report";
+import { NotificationScheduleController } from "../controllers/notification-schedule";
+import { NotificationDeliveryController } from "../controllers/notification-delivery";
+import { CoinController } from "../controllers/coin";
+import { CoinTransactionController } from "../controllers/coin-transaction";
+import { StorageController } from "../controllers/storage";
+import { NotificationService } from "../services/notification-service";
 import type {
   UserRepository,
   TripRepository,
@@ -237,21 +237,21 @@ export const ControllerModule: StaticModule<ControllerModuleDef> =
     ],
   });
 
-export { UserController } from "../controllers/user-controller";
-export { TripController } from "../controllers/trip-controller";
-export { ChallengeController } from "../controllers/challenge-controller";
-export { GroupController } from "../controllers/group-controller";
-export { NotificationController } from "../controllers/notification-controller";
-export { ActivityFeedController } from "../controllers/activityFeed-controller";
-export { ChallengeSubmissionController } from "../controllers/challengeSubmission-controller";
-export { ChallengeVoteController } from "../controllers/challengeVote-controller";
-export { LocationController } from "../controllers/location-controller";
-export { RewardController } from "../controllers/reward-controller";
-export { SponsorController } from "../controllers/sponsor-controller";
-export { SubmissionReportController } from "../controllers/submissionReport-controller";
-export { NotificationScheduleController } from "../controllers/notification-schedule-controller";
-export { NotificationDeliveryController } from "../controllers/notification-delivery-controller";
-export { CoinController } from "../controllers/coin-controller";
-export { CoinTransactionController } from "../controllers/coin-transaction-controller";
-export { StorageController } from "../controllers/storage-controller";
-export { NotificationService } from "../services/notificationService";
+export { UserController } from "../controllers/user";
+export { TripController } from "../controllers/trip";
+export { ChallengeController } from "../controllers/challenge";
+export { GroupController } from "../controllers/group";
+export { NotificationController } from "../controllers/notification";
+export { ActivityFeedController } from "../controllers/activity-feed";
+export { ChallengeSubmissionController } from "../controllers/challenge-submission";
+export { ChallengeVoteController } from "../controllers/challenge-vote";
+export { LocationController } from "../controllers/location";
+export { RewardController } from "../controllers/reward";
+export { SponsorController } from "../controllers/sponsor";
+export { SubmissionReportController } from "../controllers/submission-report";
+export { NotificationScheduleController } from "../controllers/notification-schedule";
+export { NotificationDeliveryController } from "../controllers/notification-delivery";
+export { CoinController } from "../controllers/coin";
+export { CoinTransactionController } from "../controllers/coin-transaction";
+export { StorageController } from "../controllers/storage";
+export { NotificationService } from "../services/notification-service";

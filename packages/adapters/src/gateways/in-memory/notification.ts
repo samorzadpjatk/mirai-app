@@ -1,7 +1,7 @@
 import type { Notification } from "@mirai-app/domain";
 import { NotificationStatus, NotificationPriority } from "@mirai-app/domain";
 import type { NotificationRepository } from "@mirai-app/use-cases";
-import { InMemoryRepository } from "./InMemoryRepository";
+import { InMemoryRepository } from "./base";
 
 /**
  * In-Memory Notification Repository for Testing

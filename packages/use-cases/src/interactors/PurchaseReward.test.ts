@@ -14,7 +14,7 @@ import type {
 import {
   InMemoryRewardRepository,
   InMemoryRewardPurchaseRepository,
-} from "@mirai-app/adapters/test-utils";
+} from "@mirai-app/adapters/gateways/in-memory";
 
 // Simple in-memory implementations for testing
 class InMemoryTripPointsCalculator implements TripPointsCalculator {

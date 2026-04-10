@@ -3,7 +3,7 @@ import { coinTransactions } from "@mirai-app/frameworks/drizzle/schema/coinTrans
 import { groups } from "@mirai-app/frameworks/drizzle/schema/group";
 import { eq, sql } from "drizzle-orm";
 import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
-import type { DrizzleRankingActivityService } from "./DrizzleRankingActivityService";
+import type { DrizzleRankingActivityService } from "./ranking-activity";
 
 /**
  * DrizzleCoinService

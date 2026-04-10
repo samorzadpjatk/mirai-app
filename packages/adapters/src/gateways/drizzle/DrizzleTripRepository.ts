@@ -7,7 +7,7 @@ import {
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { Trip, type TripStatus } from "@mirai-app/domain";
 import type { TripRepository } from "@mirai-app/use-cases";
-import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../base/repository";
 import { TripDrizzleMapper } from "../../mappers/drizzle/trip";
 
 /**

@@ -2,7 +2,7 @@ import type {
   NotificationSchedule,
   NotificationScheduleType,
 } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/BaseDrizzleRepository";
+import type { DrizzleEntityMapper } from "../gateways/base/repository";
 import type { notificationSchedules } from "@mirai-app/frameworks/drizzle/schema/notificationDelivery";
 
 /**

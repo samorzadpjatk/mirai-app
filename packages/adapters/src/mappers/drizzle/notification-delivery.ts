@@ -2,7 +2,7 @@ import type {
   NotificationDelivery,
   DeliveryStatus,
 } from "@mirai-app/use-cases";
-import type { DrizzleEntityMapper } from "../gateways/BaseDrizzleRepository";
+import type { DrizzleEntityMapper } from "../gateways/base/repository";
 import type { notificationDeliveries } from "@mirai-app/frameworks/drizzle/schema/notificationDelivery";
 
 /**
