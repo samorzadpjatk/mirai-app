@@ -1,6 +1,12 @@
 import { useCallback, useMemo } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useGetChallengeSubmissionsQuery,
+  useUpdateChallengeSubmissionMutation,
+  GetChallengeSubmissionsDocument,
+  type ChallengeSubmission,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { useStore } from "zustand";
 import { judgementStore } from "./judgementStores";
 import type { ReviewStatus, Submission } from "./judgementStores";
@@ -15,7 +21,7 @@ export function useJudgement(
   explicitTripId?: string,
   explicitChallengeId?: string,
 ) {
-  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const storeTripId = useStore(judgementStore, (s) => s.tripId);
   const storeChallengeId = useStore(judgementStore, (s) => s.challengeId);
   const dismissedIds = useStore(judgementStore, (s) => s.dismissedIds);
@@ -24,35 +30,60 @@ export function useJudgement(
   const tripId = explicitTripId ?? storeTripId;
   const challengeId = explicitChallengeId ?? storeChallengeId;
 
-  const submissionsQuery = useQuery(
-    trpc.challengeSubmission.getByChallenge.queryOptions(
-      {
-        tripId,
-        challengeId,
-      },
-      { enabled: !!tripId && !!challengeId },
-    ),
+  // GraphQL query for challenge submissions
+  const submissionsQuery = useGetChallengeSubmissionsQuery(
+    graphqlClient,
+    {
+      challengeId: challengeId ?? "",
+      limit: 100,
+      offset: 0,
+    },
+    { enabled: !!tripId && !!challengeId },
   );
 
-  const challengeQuery = useQuery(
-    trpc.challenge.getById.queryOptions(
-      {
-        id: challengeId,
-        tripId,
-      },
-      { enabled: !!tripId && !!challengeId },
-    ),
-  );
+  // Get challenge details using direct request (no generated hook available)
+  const challengeQuery = useQuery({
+    queryKey: ["GetChallenge", challengeId, tripId],
+    queryFn: async () => {
+      if (!challengeId || !tripId) return null;
+      // Using graphqlClient.request for operations without generated hooks
+      const result = await graphqlClient.request<{
+        challenge: {
+          id: string;
+          name: string;
+          scoringCategory: string;
+        };
+      }>(
+        `
+        query GetChallenge($id: ID!, $tripId: ID!) {
+          challenge(id: $id, tripId: $tripId) {
+            id
+            name
+            scoringCategory
+          }
+        }
+        `,
+        { id: challengeId, tripId },
+      );
+      return result.challenge;
+    },
+    enabled: !!tripId && !!challengeId,
+  });
 
-  const reviewMutation = useMutation(
-    trpc.challengeSubmission.review.mutationOptions({
-      onError: (error) => {
-        console.error(error);
-      },
-    }),
-  );
+  // GraphQL mutation for reviewing submissions
+  const reviewMutation = useUpdateChallengeSubmissionMutation(graphqlClient, {
+    onError: (error: Error) => {
+      console.error(error);
+    },
+    onSuccess: async () => {
+      // Invalidate and refetch submissions
+      await queryClient.invalidateQueries({
+        queryKey: ["GetChallengeSubmissions", { challengeId }],
+      });
+    },
+  });
 
-  const submissions = submissionsQuery.data;
+  const submissions = submissionsQuery.data?.challengeSubmissions?.submissions;
   const challenge = challengeQuery.data;
   const submissionsLoading = submissionsQuery.isLoading;
   const challengeLoading = challengeQuery.isLoading;
@@ -61,25 +92,47 @@ export function useJudgement(
     if (!submissions) return dismissedIds;
     return dismissedIds.filter((id) =>
       submissions.some(
-        (submission) => submission.id === id && submission.status === "PENDING",
+        (submission: ChallengeSubmission) =>
+          submission.id === id && submission.status === "PENDING",
       ),
     );
   }, [dismissedIds, submissions]);
 
   const pendingSubmissions: Submission[] = useMemo(() => {
-    return (submissions ?? [])
-      .filter((submission) => submission.status === "PENDING")
+    if (!submissions) return [];
+    return submissions
       .filter(
-        (submission) => !activeDismissedIds.includes(submission.id),
-      ) as Submission[];
+        (submission: ChallengeSubmission) => submission.status === "PENDING",
+      )
+      .filter(
+        (submission: ChallengeSubmission) =>
+          !activeDismissedIds.includes(submission.id),
+      )
+      .map((submission: ChallengeSubmission) => ({
+        id: submission.id,
+        status: submission.status,
+        imageIds: submission.imageIds ?? [],
+        videoId: submission.videoId ?? null,
+        textContent: submission.textContent ?? null,
+        latitude: submission.latitude ?? null,
+        longitude: submission.longitude ?? null,
+        createdAt: submission.createdAt,
+        group: {
+          id: submission.group?.id ?? "",
+          name: submission.group?.name ?? "",
+          description: submission.group?.description ?? null,
+          image: submission.group?.image ?? null,
+        },
+      }));
   }, [submissions, activeDismissedIds]);
 
   const stats = useMemo(() => {
-    const approved = (submissions ?? []).filter(
-      (submission) => submission.status === "APPROVED",
+    if (!submissions) return { approved: 0, rejected: 0 };
+    const approved = submissions.filter(
+      (submission: ChallengeSubmission) => submission.status === "APPROVED",
     ).length;
-    const rejected = (submissions ?? []).filter(
-      (submission) => submission.status === "REJECTED",
+    const rejected = submissions.filter(
+      (submission: ChallengeSubmission) => submission.status === "REJECTED",
     ).length;
     return { approved, rejected };
   }, [submissions]);
@@ -93,12 +146,18 @@ export function useJudgement(
       const normalizedRejectionReason = rejectionReason?.trim();
       if (status === "REJECTED" && !normalizedRejectionReason) return;
       addDismissedId(currentSubmission.id);
+
+      // Map to GraphQL reviewAction
+      const reviewAction = status === "APPROVED" ? "APPROVE" : "REJECT";
+
       reviewMutation.mutate({
-        id: currentSubmission.id,
-        status,
-        rejectionReason:
-          status === "REJECTED" ? normalizedRejectionReason : undefined,
-        ranking: status === "APPROVED" ? ranking : undefined,
+        input: {
+          submissionId: currentSubmission.id,
+          reviewAction,
+          rejectionReason:
+            status === "REJECTED" ? normalizedRejectionReason : undefined,
+          ranking: status === "APPROVED" ? ranking : undefined,
+        },
       });
     },
     [currentSubmission, reviewMutation, addDismissedId],
