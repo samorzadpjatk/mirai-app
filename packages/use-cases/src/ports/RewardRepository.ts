@@ -26,7 +26,7 @@ export interface PaginatedResult<T> {
  * from any reward repository implementation.
  *
  * Implementations (in adapters layer):
- * - PrismaRewardRepository: Uses Prisma ORM
+ * - DrizzleRewardRepository: Uses Drizzle ORM
  * - InMemoryRewardRepository: For testing
  */
 export interface RewardRepository {

@@ -10,7 +10,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 import { SubmissionReportController } from "../../controllers/submissionReport-controller";
-import { PrismaSubmissionReportRepository } from "../../gateways/PrismaSubmissionReportRepository";
+import { REPOSITORY_TOKENS } from "../../.../modules/RepositoryModule";
 import { requireAuth, requireModerator } from "../controller-helpers";
 
 async function buildAuthEmailLookup(
@@ -109,7 +109,7 @@ export const submissionReportController = {
       }
 
       // Create report using controller
-      const repo = new PrismaSubmissionReportRepository(ctx.db);
+      const repo = ctx.di.resolve(REPOSITORY_TOKENS.SubmissionReportRepository);
       const controller = new SubmissionReportController(repo);
       const result = await controller.create(
         {
@@ -174,7 +174,7 @@ export const submissionReportController = {
       // Require moderator or admin role
       await requireModerator(ctx.headers, ctx.di);
 
-      const repo = new PrismaSubmissionReportRepository(ctx.db);
+      const repo = ctx.di.resolve(REPOSITORY_TOKENS.SubmissionReportRepository);
       const controller = new SubmissionReportController(repo);
       const result = await controller.getBySubmission({
         submissionId: input.submissionId,

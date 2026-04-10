@@ -21,8 +21,16 @@ import { builder } from "../builder";
  * - user(id: ID!): User
  * - users(limit: Int, offset: Int): [User!]!
  * - me: User
+ * - challengeSubmission(id: ID!): ChallengeSubmission
+ * - challengeSubmissionByChallengeAndGroup(challengeId: ID!, groupId: ID!): ChallengeSubmission
+ * - challengeSubmissions(challengeId: ID!, ...): ChallengeSubmissionListResult
+ * - activitiesByTrip(input: GetByTripInput!): ActivityFeedResult!
+ * - activitiesByTripModeration(input: GetByTripModerationInput!): ActivityFeedModerationResult!
+ * - activity(id: ID!): Activity
  */
 import "../resolvers/User";
+import "../resolvers/challengeSubmission";
+import "../resolvers/activityFeed";
 
 // =============================================================================
 // Query Type Extension (if needed)

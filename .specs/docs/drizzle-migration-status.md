@@ -88,7 +88,7 @@ All except EventRepository exist:
 - `packages/adapters/src/gateways/prisma/PrismaTripRepository.ts`
 - `packages/adapters/src/gateways/prisma/PrismaGroupRepository.ts`
 - `packages/adapters/src/gateways/prisma/PrismaChallengeRepository.ts`
-- `packages/adapters/src/gateways/prisma/PrismaChallengeSubmissionRepository.ts`
+- ~~`packages/adapters/src/gateways/prisma/PrismaChallengeSubmissionRepository.ts`~~ (REMOVED - Drizzle migration complete)
 - `packages/adapters/src/gateways/prisma/PrismaChallengeVoteRepository.ts`
 - `packages/adapters/src/gateways/prisma/PrismaLocationRepository.ts`
 - `packages/adapters/src/gateways/prisma/PrismaActivityFeedRepository.ts`

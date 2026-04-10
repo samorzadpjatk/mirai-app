@@ -14,25 +14,11 @@ import { UserDrizzleMapper } from "../../mappers/drizzle/UserDrizzleMapper";
  * DrizzleUserRepository
  *
  * Repository implementation using Drizzle ORM for User entity.
- * This is the Phase 1 migration target for replacing PrismaUserRepository.
- *
- * Migration Strategy:
- * 1. Run alongside PrismaUserRepository (dual-ORM coexistence)
- * 2. Validate reads match between both implementations
- * 3. Switch writes to Drizzle after validation period
- * 4. Remove PrismaUserRepository after 48-hour stability
- *
- * Rollback: Instant via DI container reconfiguration
  *
  * @example
  * ```typescript
- * // DI Container Configuration (Phase 1)
  * const container = createContainer({
- *   // Use Drizzle repository
  *   userRepository: asFunction(() => new DrizzleUserRepository(db)).singleton(),
- *
- *   // Or use Prisma repository (rollback option)
- *   // userRepository: asFunction(() => new PrismaUserRepository(prisma)).singleton(),
  * });
  * ```
  */

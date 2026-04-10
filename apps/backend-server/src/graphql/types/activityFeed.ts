@@ -919,37 +919,4 @@ export const HiddenActivityResultType = builder.objectType(
 // Export
 // =============================================================================
 
-export {
-  ReactionTypeEnum,
-  ActivityTypeEnum,
-  ChallengeEventTypeEnum,
-  ActivityType,
-  ActivityAdminType,
-  ActivityCursorType,
-  PaginationInfoType,
-  ModerationPaginationInfoType,
-  ActivityFeedResultType,
-  ActivityFeedModerationResultType,
-  ReactionCountsType,
-  ReactionsSummaryType,
-  ToggleReactionResultType,
-  DeleteActivityResultType,
-  HiddenActivityResultType,
-  ActivityCursorInput,
-  GetByTripInput,
-  GetByTripModerationInput,
-  GetByIdInput,
-  CreateCustomActivityInput,
-  CreateUserPostInput,
-  CreateSubmissionActivityInput,
-  CreateChallengeActivityInput,
-  CreateRankChangeActivityInput,
-  UpdateActivityInput,
-  SetPinnedInput,
-  HideActivityInput,
-  UnhideActivityInput,
-  ToggleReactionInput,
-  DeleteActivityInput,
-};
-
-export default ActivityType;
+export { ActivityType as default };

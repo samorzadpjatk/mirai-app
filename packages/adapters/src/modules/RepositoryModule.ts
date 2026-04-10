@@ -37,7 +37,7 @@
  * | `rewardPurchaseRepository` | PrismaRewardPurchaseRepository | DrizzleRewardPurchaseRepository | RewardPurchaseRepository |
  * | `coinTransactionRepository` | PrismaCoinTransactionRepository | DrizzleCoinTransactionRepository | CoinTransactionRepository |
  * | `notificationDeliveryRepository` | PrismaNotificationDeliveryRepository | DrizzleNotificationDeliveryRepository | NotificationDeliveryRepository |
- * | `notificationScheduleRepository` | PrismaNotificationScheduleRepository | DrizzleNotificationScheduleRepository | NotificationScheduleRepository |
+ * | `notificationScheduleRepository` | DrizzleNotificationScheduleRepository | DrizzleNotificationScheduleRepository | NotificationScheduleRepository |
  * | `eventRepository` | PrismaEventRepository | DrizzleEventRepository | EventRepository |
  *
  * ## Usage
@@ -97,7 +97,7 @@ import {
 } from "../gateways/PrismaRewardRepository";
 import { PrismaCoinTransactionRepository } from "../gateways/PrismaCoinTransactionRepository";
 import { PrismaNotificationDeliveryRepository } from "../gateways/PrismaNotificationDeliveryRepository";
-import { PrismaNotificationScheduleRepository } from "../gateways/PrismaNotificationScheduleRepository";
+import { DrizzleNotificationScheduleRepository } from "../gateways/DrizzleNotificationScheduleRepository";
 import { PrismaEventRepository } from "../gateways/prisma/PrismaEventRepository";
 
 // =============================================================================
@@ -345,7 +345,7 @@ export interface RepositoryModuleDef {
       | typeof PrismaNotificationDeliveryRepository
       | typeof DrizzleNotificationDeliveryRepository;
     [REPOSITORY_TOKENS.NotificationScheduleRepository]:
-      | typeof PrismaNotificationScheduleRepository
+      | typeof DrizzleNotificationScheduleRepository
       | typeof DrizzleNotificationScheduleRepository;
     [REPOSITORY_TOKENS.EventRepository]:
       | typeof PrismaEventRepository
@@ -437,7 +437,7 @@ function createNotificationDeliveryRepository(
 function createNotificationScheduleRepository(
   cradle: Cradle,
 ): NotificationScheduleRepository {
-  return new PrismaNotificationScheduleRepository(cradle.prisma);
+  return new DrizzleNotificationScheduleRepository(cradle.prisma);
 }
 
 // =============================================================================
@@ -499,7 +499,7 @@ export const RepositoryModule: StaticModule<RepositoryModuleDef> =
         : PrismaNotificationDeliveryRepository,
       [REPOSITORY_TOKENS.NotificationScheduleRepository]: USE_DRIZZLE
         ? DrizzleNotificationScheduleRepository
-        : PrismaNotificationScheduleRepository,
+        : DrizzleNotificationScheduleRepository,
 
       // Challenge & submission repositories
       [REPOSITORY_TOKENS.ChallengeSubmissionRepository]: USE_DRIZZLE
@@ -590,7 +590,7 @@ export {
 } from "../gateways/PrismaRewardRepository";
 export { PrismaCoinTransactionRepository } from "../gateways/PrismaCoinTransactionRepository";
 export { PrismaNotificationDeliveryRepository } from "../gateways/PrismaNotificationDeliveryRepository";
-export { PrismaNotificationScheduleRepository } from "../gateways/PrismaNotificationScheduleRepository";
+export { DrizzleNotificationScheduleRepository } from "../gateways/DrizzleNotificationScheduleRepository";
 export { PrismaEventRepository } from "../gateways/prisma/PrismaEventRepository";
 
 // Drizzle Repositories

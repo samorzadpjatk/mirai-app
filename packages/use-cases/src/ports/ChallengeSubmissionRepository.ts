@@ -11,7 +11,7 @@ import type {
  * from any challenge submission repository implementation.
  *
  * Implementations (in adapters layer):
- * - PrismaChallengeSubmissionRepository: Uses Prisma ORM
+ * - DrizzleChallengeSubmissionRepository: Uses Prisma ORM
  * - InMemoryChallengeSubmissionRepository: For testing
  */
 export interface ChallengeSubmissionRepository {

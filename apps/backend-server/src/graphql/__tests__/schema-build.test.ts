@@ -55,11 +55,28 @@ describe("[UNIT] GraphQL Schema Build", () => {
     expect(queryType).toBeDefined();
   });
 
+  it("should verify ChallengeSubmission type imports work", async () => {
+    // Test that ChallengeSubmission type registers without errors
+    const challengeSubmissionModule =
+      await import("../types/challengeSubmission");
+    expect(challengeSubmissionModule).toBeDefined();
+    expect(challengeSubmissionModule.ChallengeSubmissionType).toBeDefined();
+  });
+
+  it("should verify ChallengeSubmission resolver imports work", async () => {
+    // Test that ChallengeSubmission resolver imports without errors
+    const challengeSubmissionResolver =
+      await import("../resolvers/challengeSubmission");
+    expect(challengeSubmissionResolver).toBeDefined();
+  });
+
   it("should build schema successfully", async () => {
     // Import all modules and build schema
     const { builder } = await import("../builder");
     await import("../types/User");
     await import("../resolvers/User");
+    await import("../types/challengeSubmission");
+    await import("../resolvers/challengeSubmission");
     await import("../types/Query");
 
     // Build schema
@@ -69,6 +86,7 @@ describe("[UNIT] GraphQL Schema Build", () => {
     // Verify schema has expected types
     const typeMap = schema.getTypeMap();
     expect(typeMap.User).toBeDefined();
+    expect(typeMap.ChallengeSubmission).toBeDefined();
     expect(typeMap.Query).toBeDefined();
     expect(typeMap.Mutation).toBeDefined();
   });

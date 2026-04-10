@@ -10,7 +10,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 import { ActivityFeedController } from "../../controllers/activityFeed-controller";
-import { PrismaActivityFeedRepository } from "../../gateways/PrismaActivityFeedRepository";
+import { DrizzleActivityFeedRepository } from "../../gateways/drizzle/DrizzleActivityFeedRepository";
 import {
   requireAuth,
   requireAdmin,
@@ -54,7 +54,7 @@ export const activityFeedController = {
         });
       }
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
 
       // Use cursor pagination if provided, otherwise use page-based
@@ -108,7 +108,7 @@ export const activityFeedController = {
         });
       }
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
 
       // Use page-based pagination for moderation view
       const result = await repo.findByTripIdPaged(input.tripId, {
@@ -161,7 +161,7 @@ export const activityFeedController = {
       // Require moderator or admin role
       await requireModerator(ctx.headers, ctx.di);
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.getById({ id: input.id });
 
@@ -204,7 +204,7 @@ export const activityFeedController = {
         });
       }
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.createCustom({
         ...input,
@@ -253,7 +253,7 @@ export const activityFeedController = {
         });
       }
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.createUserPost({
         tripId: input.tripId,
@@ -324,7 +324,7 @@ export const activityFeedController = {
         });
       }
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.createSubmission({
         tripId: input.tripId,
@@ -403,7 +403,7 @@ export const activityFeedController = {
         });
       }
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.createChallengeEvent({
         tripId: input.tripId,
@@ -466,7 +466,7 @@ export const activityFeedController = {
         });
       }
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.createRankChange({
         tripId: input.tripId,
@@ -503,7 +503,7 @@ export const activityFeedController = {
       // Require moderator or admin role
       await requireModerator(ctx.headers, ctx.di);
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.update({
         activityId: input.activityId,
@@ -530,7 +530,7 @@ export const activityFeedController = {
       // Require moderator or admin role
       await requireModerator(ctx.headers, ctx.di);
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.setPinned({
         activityId: input.activityId,
@@ -555,7 +555,7 @@ export const activityFeedController = {
       // Require moderator or admin role
       const authContext = await requireModerator(ctx.headers, ctx.di);
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.hide({
         activityId: input.activityId,
@@ -576,7 +576,7 @@ export const activityFeedController = {
       // Require moderator or admin role
       await requireModerator(ctx.headers, ctx.di);
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.unhide({
         activityId: input.activityId,
@@ -600,7 +600,7 @@ export const activityFeedController = {
       // Require authentication
       const authContext = await requireAuth(ctx.headers, ctx.di);
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.toggleReaction({
         activityId: input.activityId,
@@ -628,7 +628,7 @@ export const activityFeedController = {
       // Require admin role
       await requireAdmin(ctx.headers, ctx.di);
 
-      const repo = new PrismaActivityFeedRepository(ctx.db);
+      const repo = new DrizzleActivityFeedRepository(ctx.db);
       const controller = new ActivityFeedController(repo);
       const result = await controller.delete({
         activityId: input.activityId,

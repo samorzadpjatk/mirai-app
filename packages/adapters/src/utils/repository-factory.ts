@@ -12,7 +12,7 @@ export interface RepositoryFactory {
  * Creates a repository instance with Prisma client
  *
  * @example
- * const repo = createRepository(ctx.db, PrismaUserRepository);
+ * const repo = createRepository(ctx.db, DrizzleUserRepository);
  * const controller = new UserController(repo);
  */
 export function createRepository<T>(
@@ -50,7 +50,7 @@ export type ControllerFactory<T> = (db: PrismaClient) => T;
  *
  * @example
  * const userControllerFactory = createControllerFactory(
- *   PrismaUserRepository,
+ *   DrizzleUserRepository,
  *   UserController,
  *   [GetUserUseCase, CreateUserUseCase, UpdateUserUseCase]
  * );

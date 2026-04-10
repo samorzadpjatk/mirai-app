@@ -44,6 +44,7 @@ import { builder } from "./builder";
  * The order doesn't matter as Pothos resolves type references lazily.
  */
 import "./types/User";
+import "./types/activityFeed";
 
 /**
  * Import Query type and resolvers
@@ -52,6 +53,8 @@ import "./types/User";
  * - user(id: ID!): User
  * - users(limit: Int, offset: Int): [User!]!
  * - me: User
+ * - activitiesByTrip(input: GetByTripInput!): ActivityFeedResult!
+ * - activity(id: ID!): Activity
  */
 import "./types/Query";
 

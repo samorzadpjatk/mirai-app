@@ -50,17 +50,10 @@ export {
   type EntityMapper,
   type PrismaModelDelegate,
 } from "./gateways/BasePrismaRepository";
-export { PrismaUserRepository } from "./gateways/prisma/PrismaUserRepository";
-export { PrismaTripRepository } from "./gateways/prisma/PrismaTripRepository";
 export { PrismaNotificationRepository } from "./gateways/prisma/PrismaNotificationRepository";
 export { PrismaActivityFeedRepository } from "./gateways/prisma/PrismaActivityFeedRepository";
-export {
-  PrismaRewardRepository,
-  PrismaRewardPurchaseRepository,
-} from "./gateways/prisma/PrismaRewardRepository";
 export { PrismaNotificationScheduleRepository } from "./gateways/prisma/PrismaNotificationScheduleRepository";
 export { PrismaChallengeVoteRepository } from "./gateways/prisma/PrismaChallengeVoteRepository";
-export { PrismaSubmissionReportRepository } from "./gateways/prisma/PrismaSubmissionReportRepository";
 
 // =============================================================================
 // Phase 0: Supabase-Agnostic Architecture Adapters
