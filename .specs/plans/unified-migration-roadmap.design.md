@@ -12,7 +12,6 @@ Four phases replace five plans. Phase 0 establishes provider-agnostic ports. Pha
 - Plan 2 (Prisma to Drizzle Migration) → **Phase 1**
 - Plans 1 + 4 (Remove Supabase Realtime + Platform-Agnostic Notifications) → **Phase 2**
 - Plan 5 (Hono + GraphQL + Pothos) → **Phase 3**
-- Plan 6 (Microservices Migration) → Excluded per requirements
 
 ## Phase 0: Foundation (Supabase-Agnostic Architecture)
 
@@ -232,7 +231,7 @@ Both plans share the same goal: move notification delivery and location streamin
 │  │         NotificationDeliveryService                     │  │
 │  │  • Listens to NotificationCreated events                │  │
 │  │  • Queries push subscriptions                           │  │
-│  │  • Sends via FCM/APNs                                   │  │
+│  │  • Sends via Expo server SDK                            │  │
 │  │  • Updates delivery status                                │  │
 │  └─────────────────────────────────────────────────────────┘  │
 │                                                                │
@@ -251,7 +250,7 @@ Both plans share the same goal: move notification delivery and location streamin
 
 2. **ConnectionManager** – Manages WebSocket connections for location streaming. Tracks which friends are online, broadcasts location updates, handles disconnections gracefully.
 
-3. **NotificationDeliveryService** – Event handler that orchestrates push delivery. Receives `NotificationCreated`, fetches recipient tokens, calls FCM/APNs, records results.
+3. **NotificationDeliveryService** – Event handler that orchestrates push delivery. Receives `NotificationCreated`, fetches recipient tokens, calls Expo server SDK, records results.
 
 4. **LocationController** – New tRPC subscription `getFriendsLocationsStream` using `RealtimePort` (from Phase 0) for transport abstraction.
 
@@ -267,7 +266,7 @@ Both plans share the same goal: move notification delivery and location streamin
 1. Use case creates notification and calls `eventBus.publish(new NotificationCreated(...))`
 2. `NotificationDeliveryService` (handler) receives event
 3. Service queries `PushSubscriptionRepository` for tokens
-4. Service sends via FCM/APNs
+4. Service sends via Expo server SDK
 5. Service updates delivery status via `TrackDeliveryCompleteUseCase`
 
 **Eliminated Components:**
