@@ -113,6 +113,9 @@ export * from "./value-objects/ReportReason";
 export * from "./value-objects/AuthContext";
 // export * from "./value-objects/Email";
 
+// Domain Events (Phase 2: Real-Time Architecture)
+export * from "./events";
+
 // Types (Domain-specific type exports - file exists at src/types/Result.ts)
 // Note: Result type and most functions are already exported from utils/result
 // The types/Result.ts file provides the same API for specific domain usage

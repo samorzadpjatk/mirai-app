@@ -102,6 +102,36 @@ export {
   type RankSnapshot,
 } from "./services/PrismaRankingActivityService";
 
+// =============================================================================
+// Phase 2: Real-Time Architecture (In-Process Services)
+// =============================================================================
+
+// EventBus for domain event pub/sub
+export {
+  EventBus,
+  globalEventBus,
+  type EventHandler,
+  type EventSubscription,
+} from "./services/EventBus";
+
+// ConnectionManager for WebSocket connection tracking
+export {
+  ConnectionManager,
+  type ConnectionInfo,
+  type BroadcastLocation,
+} from "./services/ConnectionManager";
+
+// LocationStreamingService for real-time location broadcasts
+export { LocationStreamingService } from "./services/LocationStreamingService";
+
+// NotificationDeliveryService for push notifications
+export {
+  NotificationDeliveryService,
+  type PushSubscription,
+  type PushSubscriptionRepository,
+  type DeliveryResult,
+} from "./services/NotificationDeliveryService";
+
 // tRPC API (Server-side)
 export {
   createTRPCContext,
