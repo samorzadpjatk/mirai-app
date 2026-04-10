@@ -23,8 +23,7 @@
     "format:write": "prettier --write src/"
   },
   "dependencies": {
-    "@mirai-app/domain": "workspace:*",
-    "effect": "^3.18.4"
+    "@mirai-app/domain": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest",

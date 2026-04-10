@@ -35,7 +35,6 @@
   "dependencies": {
     "@mirai-app/domain": "workspace:*",
     "@mirai-app/use-cases": "workspace:*",
-    "effect": "^3.18.4",
     "expo-server-sdk": "^3.14.0",
     "zod": "^3.22.4"
   },
