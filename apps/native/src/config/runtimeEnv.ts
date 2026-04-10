@@ -15,12 +15,12 @@ export const SUPABASE_ANON_KEY = getEnvString(
   "SUPABASE_ANON_KEY",
 );
 
-export const TRPC_HTTP_URL = getEnvString(
-  process.env.EXPO_PUBLIC_TRPC_API_URL,
-  "TRPC_HTTP_URL",
+export const GRAPHQL_HTTP_URL = getEnvString(
+  process.env.EXPO_PUBLIC_GRAPHQL_URL,
+  "GRAPHQL_HTTP_URL",
 );
 
-export const TRPC_WS_URL = TRPC_HTTP_URL.replace(/^http/, "ws");
+export const GRAPHQL_WS_URL = GRAPHQL_HTTP_URL.replace(/^http/, "ws");
 
 export const PRIVACY_POLICY_PUBLIC_URL = getEnvString(
   process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL,
