@@ -2,8 +2,12 @@ import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCreateUserMutation } from "@mirai-app/graphql-types";
+import { useClient, useMutation } from "urql";
+import {
+  CreateUserDocument,
+  GetUsersDocument,
+  type CreateUserInput,
+} from "@mirai-app/graphql-types/urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -12,7 +16,7 @@ import { FormField, ThemedTextInput } from "~/components/common/ui";
 
 export default function AdminCreateUserScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const client = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId =
@@ -24,23 +28,10 @@ export default function AdminCreateUserScreen() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
 
-  // GraphQL mutation for creating user
-  const createUserMutation = useCreateUserMutation({
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["users"] });
-      Alert.alert("Success", "User created successfully.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
-    },
-    onError: (error) => {
-      Alert.alert("Error", `Failed to create user: ${error.message}`);
-    },
-  });
+  // GraphQL mutation for creating user using generated document
+  const [{ fetching: isPending }, createUser] = useMutation(CreateUserDocument);
 
-  const handleSubmit: () => void = () => {
+  const handleSubmit = async () => {
     const trimmedFirstName = firstName.trim();
     const trimmedLastName = lastName.trim();
     const trimmedEmail = email.trim();
@@ -55,14 +46,37 @@ export default function AdminCreateUserScreen() {
       return;
     }
 
-    void createUserMutation.mutateAsync({
-      input: {
-        firstName: trimmedFirstName,
-        lastName: trimmedLastName,
-        email: trimmedEmail,
-        tripId,
-      },
-    });
+    try {
+      const result = await createUser({
+        input: {
+          firstName: trimmedFirstName,
+          lastName: trimmedLastName,
+          email: trimmedEmail,
+          tripId,
+        } as CreateUserInput,
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate users query cache
+      await client.invalidate(GetUsersDocument, {
+        limit: 100,
+        offset: 0,
+      });
+
+      Alert.alert("Success", "User created successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create user";
+      Alert.alert("Error", errorMessage);
+    }
   };
 
   const isValid =
@@ -123,9 +137,9 @@ export default function AdminCreateUserScreen() {
 
         <PrimaryLoadingButton
           label="Create User"
-          isLoading={createUserMutation.isPending}
+          isLoading={isPending}
           onPress={handleSubmit}
-          disabled={!isValid || createUserMutation.isPending}
+          disabled={!isValid || isPending}
         />
       </ScrollView>
     </View>

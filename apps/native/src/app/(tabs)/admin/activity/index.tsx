@@ -10,16 +10,14 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetActivitiesByTripModerationQuery,
-  useGetCurrentUserQuery,
-  useSetActivityPinnedMutation,
-  useHideActivityMutation,
-  useUnhideActivityMutation,
-  useDeleteActivityMutation,
+  GetActivitiesByTripModerationDocument,
+  GetCurrentUserDocument,
+  SetActivityPinnedDocument,
+  HideActivityDocument,
+  UnhideActivityDocument,
+  DeleteActivityDocument,
   ActivityType,
 } from "@mirai-app/graphql-types";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -48,23 +46,9 @@ const activityTypeFilters: { label: string; value: "all" | ActivityType }[] = [
 // This maintains backward compatibility with AdminActivityCard interface
 const getActivityGroupName = () => "";
 
-// Create GraphQL client with auth token from SecureStore
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:3000/graphql";
-  const token = await SecureStore.getItemAsync("token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
-
 export default function AdminActivityScreen() {
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
   const router = useRouter();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId =
@@ -74,84 +58,87 @@ export default function AdminActivityScreen() {
 
   const [selectedType, setSelectedType] = useState<"all" | ActivityType>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  // Initialize GraphQL client
-  React.useEffect(() => {
-    void createGraphQLClient().then(setClient);
-  }, []);
 
   // Get current user query
-  const { data: currentUserData } = useGetCurrentUserQuery(
-    client ?? new GraphQLClient(""),
-    {},
-    { enabled: !!client },
-  );
+  const [{ data: currentUserData }] = useQuery({
+    query: GetCurrentUserDocument,
+    pause: false,
+  });
 
   // Get activities by trip moderation query
-  const { data, isLoading, isRefetching, refetch } =
-    useGetActivitiesByTripModerationQuery(
-      client ?? new GraphQLClient(""),
-      { tripId, page: 1, perPage: 100 },
-      { enabled: !!client && Boolean(tripId) },
-    );
+  const [{ data, fetching: isLoading, error: queryError }, reexecuteQuery] =
+    useQuery({
+      query: GetActivitiesByTripModerationDocument,
+      variables: { tripId, page: 1, perPage: 100 },
+      pause: !tripId,
+    });
 
   const invalidateFeed = useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: [
-        "GetActivitiesByTripModeration",
-        { tripId, page: 1, perPage: 100 },
-      ],
+    await urqlClient.invalidate(GetActivitiesByTripModerationDocument, {
+      tripId,
+      page: 1,
+      perPage: 100,
     });
-  }, [queryClient, tripId]);
+  }, [urqlClient, tripId]);
 
   // Mutations
-  const pinMutation = useSetActivityPinnedMutation(
-    client ?? new GraphQLClient(""),
-    {
-      onSuccess: invalidateFeed,
-      onError: (error) =>
-        Alert.alert(
-          "Error",
-          error instanceof Error ? error.message : "Pin update failed.",
-        ),
+  const [, pinMutation] = useMutation(SetActivityPinnedDocument);
+  const [, hideMutation] = useMutation(HideActivityDocument);
+  const [, unhideMutation] = useMutation(UnhideActivityDocument);
+  const [, deleteMutation] = useMutation(DeleteActivityDocument);
+
+  const handlePin = useCallback(
+    async (activity: { id: string; isPinned: boolean }) => {
+      const result = await pinMutation({
+        id: activity.id,
+        isPinned: !activity.isPinned,
+      });
+      if (result.error) {
+        Alert.alert("Error", result.error.message || "Pin update failed.");
+      } else {
+        await invalidateFeed();
+      }
     },
+    [pinMutation, invalidateFeed],
   );
 
-  const hideMutation = useHideActivityMutation(
-    client ?? new GraphQLClient(""),
-    {
-      onSuccess: invalidateFeed,
-      onError: (error) =>
+  const handleHide = useCallback(
+    async (activity: { id: string; isHidden: boolean }) => {
+      const result = activity.isHidden
+        ? await unhideMutation({ id: activity.id })
+        : await hideMutation({ id: activity.id });
+      if (result.error) {
         Alert.alert(
           "Error",
-          error instanceof Error ? error.message : "Hide failed.",
-        ),
+          result.error.message ||
+            (activity.isHidden ? "Unhide failed." : "Hide failed."),
+        );
+      } else {
+        await invalidateFeed();
+      }
     },
+    [hideMutation, unhideMutation, invalidateFeed],
   );
 
-  const unhideMutation = useUnhideActivityMutation(
-    client ?? new GraphQLClient(""),
-    {
-      onSuccess: invalidateFeed,
-      onError: (error) =>
-        Alert.alert(
-          "Error",
-          error instanceof Error ? error.message : "Unhide failed.",
-        ),
+  const handleDelete = useCallback(
+    (activity: { id: string }) => {
+      Alert.alert("Delete activity", "Are you sure?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const result = await deleteMutation({ id: activity.id });
+            if (result.error) {
+              Alert.alert("Error", result.error.message || "Delete failed.");
+            } else {
+              await invalidateFeed();
+            }
+          },
+        },
+      ]);
     },
-  );
-
-  const deleteMutation = useDeleteActivityMutation(
-    client ?? new GraphQLClient(""),
-    {
-      onSuccess: invalidateFeed,
-      onError: (error) =>
-        Alert.alert(
-          "Error",
-          error instanceof Error ? error.message : "Delete failed.",
-        ),
-    },
+    [deleteMutation, invalidateFeed],
   );
 
   const activities = data?.activitiesByTripModeration?.activities ?? [];
@@ -170,11 +157,8 @@ export default function AdminActivityScreen() {
     });
   }, [activities, searchTerm, selectedType]);
 
-  const isBusy =
-    pinMutation.isPending ||
-    hideMutation.isPending ||
-    unhideMutation.isPending ||
-    deleteMutation.isPending;
+  // Check if any mutation is in progress
+  const [mutationInProgress, setMutationInProgress] = useState(false);
 
   const canDelete = currentUserData?.me?.role === "ADMIN";
 
@@ -192,31 +176,41 @@ export default function AdminActivityScreen() {
     });
   };
 
-  const handlePin = async (activity: (typeof activities)[0]) => {
-    await pinMutation.mutateAsync({
-      id: activity.id,
-      isPinned: !activity.isPinned,
-    });
-  };
+  const wrappedHandlePin = useCallback(
+    async (activity: (typeof activities)[0]) => {
+      setMutationInProgress(true);
+      try {
+        await handlePin(activity);
+      } finally {
+        setMutationInProgress(false);
+      }
+    },
+    [handlePin],
+  );
 
-  const handleHide = async (activity: (typeof activities)[0]) => {
-    if (activity.isHidden) {
-      await unhideMutation.mutateAsync({ id: activity.id });
-    } else {
-      await hideMutation.mutateAsync({ id: activity.id });
-    }
-  };
+  const wrappedHandleHide = useCallback(
+    async (activity: (typeof activities)[0]) => {
+      setMutationInProgress(true);
+      try {
+        await handleHide(activity);
+      } finally {
+        setMutationInProgress(false);
+      }
+    },
+    [handleHide],
+  );
 
-  const handleDelete = (activity: (typeof activities)[0]) => {
-    Alert.alert("Delete activity", "Are you sure?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => deleteMutation.mutate({ id: activity.id }),
-      },
-    ]);
-  };
+  const wrappedHandleDelete = useCallback(
+    (activity: (typeof activities)[0]) => {
+      handleDelete(activity);
+    },
+    [handleDelete],
+  );
+
+  // Show query error if present
+  if (queryError) {
+    console.error("Query error:", queryError);
+  }
 
   if (!tripId) {
     return (
@@ -272,9 +266,9 @@ export default function AdminActivityScreen() {
           keyExtractor={(item) => item.id}
           refreshControl={
             <RefreshControl
-              refreshing={isRefetching}
+              refreshing={isLoading}
               onRefresh={() => {
-                void refetch();
+                void reexecuteQuery({ requestPolicy: "network-only" });
               }}
               tintColor={colors.primary}
             />
@@ -292,11 +286,11 @@ export default function AdminActivityScreen() {
             <AdminActivityCard
               item={item}
               canDelete={canDelete}
-              isBusy={isBusy}
+              isBusy={mutationInProgress}
               onEdit={handleEditActivity}
-              onPin={handlePin}
-              onHide={handleHide}
-              onDelete={handleDelete}
+              onPin={wrappedHandlePin}
+              onHide={wrappedHandleHide}
+              onDelete={wrappedHandleDelete}
             />
           )}
         />

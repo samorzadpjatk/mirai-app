@@ -2,12 +2,13 @@ import React from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetChallengeQuery,
-  useUpdateChallengeMutation,
-} from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
+  GetChallengeDocument,
+  UpdateChallengeDocument,
+  type Challenge,
+  type UpdateChallengeInput,
+} from "@mirai-app/graphql-types/urql";
 import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { ChallengeFormFields } from "~/components/admin/challenges/ChallengeFormFields";
@@ -18,10 +19,50 @@ import {
   toVotingDurationHours,
 } from "~/components/admin/challenges/challengeFormConstants";
 
+// Type aliases for mutation input
+interface FormattedUpdateInput {
+  id: string;
+  tripId: string;
+  name?: string;
+  description?: string | null;
+  image?: string | null;
+  submissionType?:
+    | "IMAGE"
+    | "VIDEO"
+    | "TEXT"
+    | "IMAGE_LOCATION"
+    | "LOCATION"
+    | "QR_CODE";
+  scoringCategory?: "SPEED" | "UNLIMITED" | "JUDGED_STAFF" | "PEER_VOTING";
+  isRecurring?: boolean;
+  dailyStartTime?: string | null;
+  dailyEndTime?: string | null;
+  recurringDays?: number | null;
+  basePoints?: number | null;
+  firstPlacePoints?: number | null;
+  secondPlacePoints?: number | null;
+  thirdPlacePoints?: number | null;
+  status?:
+    | "HIDDEN"
+    | "VISIBLE"
+    | "ACTIVE"
+    | "VOTING_PHASE"
+    | "COMPLETED"
+    | "CANCELLED";
+  startTime?: string | null;
+  endTime?: string | null;
+  votingDurationHours?: number | null;
+  targetLatitude?: number | null;
+  targetLongitude?: number | null;
+  qrCodeValue?: string | null;
+  textExpectedPhrase?: string | null;
+  autoApprove?: boolean;
+}
+
 export default function EditChallengeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const queryClient = useQueryClient();
+  const client = useClient();
 
   const tripId =
     typeof params.tripId === "string"
@@ -30,14 +71,14 @@ export default function EditChallengeScreen() {
   const challengeId =
     typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
 
-  // GraphQL query for challenge details
-  const challengeQuery = useGetChallengeQuery(
-    graphqlClient,
-    { id: challengeId, tripId },
-    { enabled: Boolean(challengeId) && Boolean(tripId) },
-  );
+  // urql query for challenge details using generated document
+  const [{ data: challengeData, fetching: isChallengeLoading }] = useQuery({
+    query: GetChallengeDocument,
+    variables: { id: challengeId, tripId },
+    pause: !Boolean(challengeId) || !Boolean(tripId),
+  });
 
-  const { data: challenge, isLoading: isChallengeLoading } = challengeQuery;
+  const challenge = challengeData?.challenge;
 
   const formState = useChallengeForm({
     tripId,
@@ -53,28 +94,8 @@ export default function EditChallengeScreen() {
     initializeFormFromChallenge(challenge);
   }
 
-  // GraphQL mutation for updating challenge
-  const updateChallengeMutation = useUpdateChallengeMutation(graphqlClient, {
-    onSuccess: () => {
-      Alert.alert("Saved", "Challenge updated successfully.", [
-        {
-          text: "OK",
-          onPress: () => {
-            void queryClient.invalidateQueries({
-              queryKey: ["GetChallenge", { id: challengeId, tripId }],
-            });
-            router.replace({
-              pathname: "/admin/challenges",
-              params: { tripId },
-            });
-          },
-        },
-      ]);
-    },
-    onError: (error: Error) => {
-      Alert.alert("Error", `Failed to update challenge: ${error.message}`);
-    },
-  });
+  // urql mutation for updating challenge using generated document
+  const [, updateChallenge] = useMutation(UpdateChallengeDocument);
 
   const handleSave = async () => {
     if (!validateForm()) return;
@@ -114,12 +135,12 @@ export default function EditChallengeScreen() {
         : undefined;
 
     try {
-      await updateChallengeMutation.mutateAsync({
+      const formattedInput: FormattedUpdateInput = {
         id: challengeId,
         tripId,
         name: form.title.trim(),
-        description: form.description.trim() || undefined,
-        image: imageToPersist,
+        description: form.description.trim() || null,
+        image: imageToPersist ?? null,
         submissionType: form.submissionType as
           | "IMAGE"
           | "VIDEO"
@@ -134,24 +155,24 @@ export default function EditChallengeScreen() {
           | "PEER_VOTING",
         isRecurring: form.isRecurring,
         dailyStartTime: form.isRecurring
-          ? formState.formatTime(form.dailyStartTime) || undefined
-          : undefined,
+          ? formState.formatTime(form.dailyStartTime) || null
+          : null,
         dailyEndTime: form.isRecurring
-          ? formState.formatTime(form.dailyEndTime) || undefined
-          : undefined,
+          ? formState.formatTime(form.dailyEndTime) || null
+          : null,
         recurringDays: form.isRecurring
           ? toOptionalInt(form.recurringDays)
-          : undefined,
+          : null,
         basePoints: toOptionalInt(form.basePoints),
         firstPlacePoints: formState.showPodiumPoints
           ? toOptionalInt(form.firstPlacePoints)
-          : undefined,
+          : null,
         secondPlacePoints: formState.showPodiumPoints
           ? toOptionalInt(form.secondPlacePoints)
-          : undefined,
+          : null,
         thirdPlacePoints: formState.showPodiumPoints
           ? toOptionalInt(form.thirdPlacePoints)
-          : undefined,
+          : null,
         status: form.status as
           | "HIDDEN"
           | "VISIBLE"
@@ -159,36 +180,60 @@ export default function EditChallengeScreen() {
           | "VOTING_PHASE"
           | "COMPLETED"
           | "CANCELLED",
-        startTime: !form.isRecurring
-          ? formatIso(form.startTime) || undefined
-          : undefined,
-        endTime: !form.isRecurring
-          ? formatIso(form.endTime) || undefined
-          : undefined,
+        startTime: !form.isRecurring ? formatIso(form.startTime) || null : null,
+        endTime: !form.isRecurring ? formatIso(form.endTime) || null : null,
         votingDurationHours: formState.isPeerVoting
           ? toVotingDurationHours(
               form.votingDurationValue,
               form.votingDurationUnit,
             )
-          : undefined,
-        targetLatitude: normalizedTargetLatitude,
-        targetLongitude: normalizedTargetLongitude,
+          : null,
+        targetLatitude: normalizedTargetLatitude ?? null,
+        targetLongitude: normalizedTargetLongitude ?? null,
         qrCodeValue:
           form.submissionType === "QR_CODE"
-            ? form.qrCodeValue.trim() || undefined
-            : undefined,
+            ? form.qrCodeValue.trim() || null
+            : null,
         textExpectedPhrase:
           form.submissionType === "TEXT"
-            ? form.textExpectedPhrase.trim() || undefined
-            : undefined,
+            ? form.textExpectedPhrase.trim() || null
+            : null,
         autoApprove: formState.isAutoApproveForced
           ? true
           : formState.isAutoApproveDisabled
             ? false
             : form.autoApprove,
+      };
+
+      const result = await updateChallenge({
+        input: formattedInput as UpdateChallengeInput,
       });
-    } catch {
-      // onError already handles user-facing message; swallow to prevent unhandled rejections.
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate the challenge query cache
+      await client.invalidate(GetChallengeDocument, {
+        id: challengeId,
+        tripId,
+      });
+
+      Alert.alert("Saved", "Challenge updated successfully.", [
+        {
+          text: "OK",
+          onPress: () => {
+            router.replace({
+              pathname: "/admin/challenges",
+              params: { tripId },
+            });
+          },
+        },
+      ]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update challenge";
+      Alert.alert("Error", `Failed to update challenge: ${message}`);
     }
   };
 
@@ -215,7 +260,7 @@ export default function EditChallengeScreen() {
         formState={formState}
         onSave={handleSave}
         saveButtonText="Update Challenge"
-        isSaving={updateChallengeMutation.isPending}
+        isSaving={false}
         isNewChallenge={false}
       />
       <ChallengeFormModals formState={formState} />

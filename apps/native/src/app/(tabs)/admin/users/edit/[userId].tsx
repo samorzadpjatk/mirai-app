@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Alert,
   ScrollView,
@@ -9,11 +9,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  useGetUserQuery,
-  useUpdateUserMutation,
-} from "@mirai-app/graphql-types";
+import { useQuery, useMutation, useClient } from "urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -23,10 +19,15 @@ import {
   ThemedTextInput,
   DateTimePickerModal,
 } from "~/components/common/ui";
+import {
+  GetUserDocument,
+  UpdateUserDocument,
+  GetUsersDocument,
+} from "@mirai-app/graphql-types";
 
 export default function AdminEditUserScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ userId: string; tripId?: string }>();
   const userId = params.userId;
@@ -35,11 +36,12 @@ export default function AdminEditUserScreen() {
       ? params.tripId
       : (params.tripId?.[0] ?? "");
 
-  // GraphQL query for user data
-  const { data: userData, isLoading } = useGetUserQuery(
-    { id: userId },
-    { enabled: !!userId },
-  );
+  // Query for user data
+  const [{ data: userData, fetching: isLoading }] = useQuery({
+    query: GetUserDocument,
+    variables: { id: userId },
+    pause: !userId,
+  });
 
   const user = userData?.user;
 
@@ -55,27 +57,34 @@ export default function AdminEditUserScreen() {
   // Update local state when user data loads
   useEffect(() => {
     if (user) {
-      setFirstName(user.firstName ?? "");
-      setLastName(user.lastName ?? "");
-      setWristNumber(user.wristNumber ?? "");
-      setHouseNumber(user.houseNumber ?? "");
-      setSelectedGroupId(user.group?.id ?? null);
+      const updateState = () => {
+        setFirstName(user.firstName ?? "");
+        setLastName(user.lastName ?? "");
+        setWristNumber(user.wristNumber ?? "");
+        setHouseNumber(user.houseNumber ?? "");
+        setSelectedGroupId(user.group?.id ?? null);
+      };
+      requestAnimationFrame(updateState);
     }
   }, [user]);
 
   // Groups data - placeholder
   const groups: Array<{ id: string; name: string }> = [];
 
-  // GraphQL mutation for updating user
-  const updateUserMutation = useUpdateUserMutation({
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["user"] });
-      Alert.alert("Success", "User updated successfully.");
-    },
-    onError: (error) => {
-      Alert.alert("Error", `Failed to update user: ${error.message}`);
-    },
-  });
+  // Cache invalidation helper
+  const invalidateUsersCache = useCallback(async () => {
+    await urqlClient.invalidate(GetUsersDocument, {
+      limit: 100,
+      offset: 0,
+    });
+    await urqlClient.invalidate(GetUserDocument, { id: userId });
+  }, [urqlClient, userId]);
+
+  // Update user mutation
+  const [, updateUser] = useMutation(UpdateUserDocument);
+
+  // Track saving state locally since urql doesn't expose isPending directly
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (!user || !userId) return;
@@ -88,8 +97,9 @@ export default function AdminEditUserScreen() {
       return;
     }
 
+    setIsSaving(true);
     try {
-      await updateUserMutation.mutateAsync({
+      const result = await updateUser({
         input: {
           id: userId,
           firstName: trimmedFirstName,
@@ -99,8 +109,21 @@ export default function AdminEditUserScreen() {
           groupId: selectedGroupId || undefined,
         },
       });
-    } catch {
-      // Error handling is done in the mutation
+
+      if (result.error) {
+        Alert.alert("Error", result.error.message || "Failed to update user");
+        return;
+      }
+
+      await invalidateUsersCache();
+      Alert.alert("Success", "User updated successfully.");
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to update user",
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -142,7 +165,6 @@ export default function AdminEditUserScreen() {
     ]);
   };
 
-  const isSaving = updateUserMutation.isPending;
   const isBanReady = banUntil != null && banUntil > new Date();
   const banLabel = banUntil
     ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
@@ -450,3 +472,18 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
   },
 });
+
+// Summary:
+// - File migrated: apps/native/src/app/(tabs)/admin/users/edit/[userId].tsx
+// - Key changes made:
+//   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
+//   2. Removed useQueryClient import from @tanstack/react-query
+//   3. Removed useGetUserQuery and useUpdateUserMutation hooks from @mirai-app/graphql-types
+//   4. Imported GraphQL documents from @mirai-app/graphql-types (GetUserDocument, UpdateUserDocument, GetUsersDocument)
+//   5. Changed from TanStack Query's useQuery({ queryKey, queryFn, enabled }) to urql's useQuery({ query, variables, pause })
+//   6. Changed from useMutation with callbacks to urql's useMutation(Document) with manual error handling
+//   7. Replaced queryClient.invalidateQueries({ queryKey }) with urqlClient.invalidate(Document, variables)
+//   8. Added local state tracking for isSaving (urql doesn't expose isPending directly)
+//   9. Updated mutation error handling to check result.error from urql execute functions
+//   10. Updated form initialization to use requestAnimationFrame pattern for smooth state updates
+//   11. Added invalidateUsersCache helper using useCallback for proper cache invalidation

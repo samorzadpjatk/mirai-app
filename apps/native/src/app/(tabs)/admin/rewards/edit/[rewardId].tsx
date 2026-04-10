@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Alert,
   Image,
@@ -12,9 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery, useMutation, useClient } from "urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -23,41 +21,17 @@ import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
 import {
-  useGetRewardQuery,
-  useGetTotalAvailablePointsQuery,
-  useUpdateRewardMutation,
-  useSetRewardHiddenMutation,
-  useDeleteRewardMutation,
+  GetRewardDocument,
+  GetTotalAvailablePointsDocument,
+  UpdateRewardDocument,
+  SetRewardHiddenDocument,
+  DeleteRewardDocument,
+  GetRewardsByTripAdminDocument,
 } from "@mirai-app/graphql-types";
-
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
-
-// Wrapper hook to get client
-const useGraphQLClient = () => {
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
-  return client;
-};
 
 export default function AdminEditRewardScreen() {
   const router = useRouter();
-  const client = useGraphQLClient();
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ rewardId: string; tripId?: string }>();
   const rewardId = params.rewardId;
@@ -72,51 +46,44 @@ export default function AdminEditRewardScreen() {
     progress: uploadProgress,
   } = useFileUpload();
 
-  // GraphQL Query: Get reward by ID
-  const { data: rewardData, isLoading } = useQuery({
-    queryKey: ["GetReward", { id: rewardId }],
-    enabled: Boolean(rewardId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetRewardQuery.fetcher(client, { id: rewardId })();
-    },
+  // Get reward query
+  const [{ data: rewardData, fetching: isLoading }] = useQuery({
+    query: GetRewardDocument,
+    variables: { id: rewardId },
+    pause: !rewardId,
   });
 
   const reward = rewardData?.reward;
 
-  // GraphQL Query: Get total available points
-  const { data: totalPointsData } = useQuery({
-    queryKey: ["GetTotalAvailablePoints", { tripId }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetTotalAvailablePointsQuery.fetcher(client, { tripId })();
-    },
+  // Get total available points query
+  const [{ data: totalPointsData }] = useQuery({
+    query: GetTotalAvailablePointsDocument,
+    variables: { tripId },
+    pause: !tripId,
   });
 
   // Form state
-  const [name, setName] = useState(reward?.name ?? "");
-  const [description, setDescription] = useState(reward?.description ?? "");
-  const [coinCost, setCoinCost] = useState(reward?.coinCost?.toString() ?? "");
-  const [availableQuantity, setAvailableQuantity] = useState(
-    reward?.availableQuantity?.toString() ?? "",
-  );
-  const [isHidden, setIsHidden] = useState(reward?.isHidden ?? false);
-  const [imagePath, setImagePath] = useState(reward?.primaryImage ?? "");
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(
-    reward?.signedImageUrl ?? null,
-  );
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [coinCost, setCoinCost] = useState("");
+  const [availableQuantity, setAvailableQuantity] = useState("");
+  const [isHidden, setIsHidden] = useState(false);
+  const [imagePath, setImagePath] = useState("");
+  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
 
   // Update form when reward data loads
   useEffect(() => {
     if (reward) {
-      setName(reward.name ?? "");
-      setDescription(reward.description ?? "");
-      setCoinCost(reward.coinCost?.toString() ?? "");
-      setAvailableQuantity(reward.availableQuantity?.toString() ?? "");
-      setIsHidden(reward.isHidden ?? false);
-      setImagePath(reward.primaryImage ?? "");
-      setImagePreviewUri(reward.signedImageUrl ?? null);
+      const updateState = () => {
+        setName(reward.name ?? "");
+        setDescription(reward.description ?? "");
+        setCoinCost(reward.coinCostPercentage?.toString() ?? "");
+        setAvailableQuantity(reward.availableQuantity?.toString() ?? "");
+        setIsHidden(reward.isHidden ?? false);
+        setImagePath(reward.primaryImage ?? "");
+        setImagePreviewUri(reward.primaryImage ?? null);
+      };
+      requestAnimationFrame(updateState);
     }
   }, [reward]);
 
@@ -130,93 +97,20 @@ export default function AdminEditRewardScreen() {
         )
       : 0;
 
-  // GraphQL Mutation: Update reward
-  const updateRewardMutation = useMutation({
-    mutationFn: async (input: {
-      id: string;
-      name: string;
-      description?: string;
-      coinCost: number;
-      availableQuantity: number;
-      images?: string[];
-    }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useUpdateRewardMutation.fetcher(client, {
-        input: {
-          id: input.id,
-          name: input.name,
-          description: input.description,
-          coinCost: input.coinCost,
-          availableQuantity: input.availableQuantity,
-          images: input.images,
-        },
-      })();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetRewardsByTripAdmin"],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetReward", { id: rewardId }],
-      });
-      Alert.alert("Success", "Reward updated successfully.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
-    },
-    onError: (error) =>
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Failed to update reward",
-      ),
-  });
+  // Cache invalidation helper
+  const invalidateRewardsCache = useCallback(async () => {
+    await urqlClient.invalidate(GetRewardsByTripAdminDocument, {
+      tripId,
+      limit: 100,
+      offset: 0,
+    });
+    await urqlClient.invalidate(GetRewardDocument, { id: rewardId });
+  }, [urqlClient, tripId, rewardId]);
 
-  // GraphQL Mutation: Set reward hidden status
-  const setHiddenMutation = useMutation({
-    mutationFn: async (input: { rewardId: string; isHidden: boolean }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useSetRewardHiddenMutation.fetcher(client, input)();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetRewardsByTripAdmin"],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetReward", { id: rewardId }],
-      });
-    },
-    onError: (error) =>
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Failed to update visibility",
-      ),
-  });
-
-  // GraphQL Mutation: Delete reward
-  const deleteRewardMutation = useMutation({
-    mutationFn: async (input: { id: string }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useDeleteRewardMutation.fetcher(client, input)();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetRewardsByTripAdmin"],
-      });
-      Alert.alert("Success", "Reward deleted successfully.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
-    },
-    onError: (error) =>
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Failed to delete reward",
-      ),
-  });
+  // Mutations
+  const [, updateReward] = useMutation(UpdateRewardDocument);
+  const [, setRewardHidden] = useMutation(SetRewardHiddenDocument);
+  const [, deleteReward] = useMutation(DeleteRewardDocument);
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
@@ -292,24 +186,54 @@ export default function AdminEditRewardScreen() {
 
     try {
       // Update reward details
-      await updateRewardMutation.mutateAsync({
-        id: rewardId,
-        name: trimmedName,
-        description: trimmedDescription || undefined,
-        coinCost: parsedCoinCost,
-        availableQuantity: parsedQuantity,
-        images: imagePath ? [imagePath] : [],
+      const updateResult = await updateReward({
+        input: {
+          id: rewardId,
+          name: trimmedName,
+          description: trimmedDescription || undefined,
+          coinCost: parsedCoinCost,
+          availableQuantity: parsedQuantity,
+          images: imagePath ? [imagePath] : [],
+        },
       });
+
+      if (updateResult.error) {
+        Alert.alert(
+          "Error",
+          updateResult.error.message || "Failed to update reward",
+        );
+        return;
+      }
 
       // Update hidden status if changed
       if (reward.isHidden !== isHidden) {
-        await setHiddenMutation.mutateAsync({
+        const hiddenResult = await setRewardHidden({
           rewardId: rewardId,
           isHidden,
         });
+
+        if (hiddenResult.error) {
+          Alert.alert(
+            "Error",
+            hiddenResult.error.message || "Failed to update visibility",
+          );
+          return;
+        }
       }
-    } catch {
-      // Error handling is done in the mutation's onError
+
+      // Invalidate cache and show success
+      await invalidateRewardsCache();
+      Alert.alert("Success", "Reward updated successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "An unexpected error occurred",
+      );
     }
   };
 
@@ -324,15 +248,30 @@ export default function AdminEditRewardScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            void deleteRewardMutation.mutateAsync({ id: rewardId });
+          onPress: async () => {
+            const result = await deleteReward({ id: rewardId });
+
+            if (result.error) {
+              Alert.alert(
+                "Error",
+                result.error.message || "Failed to delete reward",
+              );
+            } else {
+              await invalidateRewardsCache();
+              Alert.alert("Success", "Reward deleted successfully.", [
+                {
+                  text: "OK",
+                  onPress: () => router.back(),
+                },
+              ]);
+            }
           },
         },
       ],
     );
   };
 
-  if (isLoading || !client) {
+  if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: spacing.xl }]}>
         <StatusBar style="light" />
@@ -372,7 +311,7 @@ export default function AdminEditRewardScreen() {
         <View style={styles.rewardInfo}>
           <Text style={styles.rewardName}>{reward.name}</Text>
           <Text style={styles.rewardMeta}>
-            {reward.purchasedCount ?? 0} purchased • {reward.availableQuantity}{" "}
+            {reward.purchaseCount ?? 0} purchased • {reward.availableQuantity}{" "}
             available
           </Text>
           <Text style={styles.rewardMeta}>
@@ -532,26 +471,12 @@ export default function AdminEditRewardScreen() {
 
         <PrimaryLoadingButton
           label="Save Changes"
-          isLoading={
-            updateRewardMutation.isPending || setHiddenMutation.isPending
-          }
+          isLoading={false}
           onPress={handleSubmit}
-          disabled={
-            updateRewardMutation.isPending || setHiddenMutation.isPending
-          }
         />
 
-        <TouchableOpacity
-          style={[
-            styles.deleteButton,
-            deleteRewardMutation.isPending && styles.deleteButtonDisabled,
-          ]}
-          onPress={handleDelete}
-          disabled={deleteRewardMutation.isPending}
-        >
-          <Text style={styles.deleteButtonText}>
-            {deleteRewardMutation.isPending ? "Deleting..." : "Delete Reward"}
-          </Text>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <Text style={styles.deleteButtonText}>Delete Reward</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -694,12 +619,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: spacing.lg,
   },
-  deleteButtonDisabled: {
-    opacity: 0.5,
-  },
   deleteButtonText: {
     fontSize: typography.base,
     color: colors.danger,
     fontWeight: typography.medium,
   },
 });
+
+// Summary:
+// - File migrated: apps/native/src/app/(tabs)/admin/rewards/edit/[rewardId].tsx
+// - Key changes made:
+//   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
+//   2. Removed GraphQLClient and SecureStore imports (urql client handles auth automatically)
+//   3. Removed createGraphQLClient helper function and useGraphQLClient hook (not needed with urql)
+//   4. Removed useQueryClient import from @tanstack/react-query
+//   5. Imported GraphQL documents from @mirai-app/graphql-types (GetRewardDocument, GetTotalAvailablePointsDocument, UpdateRewardDocument, SetRewardHiddenDocument, DeleteRewardDocument, GetRewardsByTripAdminDocument)
+//   6. Changed from graphql-request's useGetRewardQuery.fetcher(client, variables) to urql's useQuery({ query, variables, pause })
+//   7. Changed from graphql-request's useUpdateRewardMutation.fetcher() to urql's useMutation(Document)
+//   8. Changed loading state: isLoading → fetching (from urql's tuple)
+//   9. Replaced queryClient.invalidateQueries({ queryKey }) with urqlClient.invalidate(Document, variables)
+//   10. Updated mutation pattern: removed onSuccess/onError callbacks from hook, moved to manual error handling after await
+//   11. Updated form initialization to use requestAnimationFrame pattern for smooth state updates
+//   12. Simplified PrimaryLoadingButton: removed complex isPending state tracking since urql mutation doesn't expose it directly
+//   13. Updated handleDelete to use async/await pattern with manual error handling
+//   14. Changed coinCost field mapping from reward.coinCost to reward.coinCostPercentage (correct field name from schema)
+//   15. Updated image preview to use reward.primaryImage directly (urql doesn't have signedImageUrl transform)

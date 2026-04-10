@@ -8,14 +8,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import * as ImagePicker from "expo-image-picker";
 import {
-  useGetGroupQuery,
-  useGetCurrentUserQuery,
-  useDeleteGroupMutation,
+  GetGroupDocument,
+  GetCurrentUserDocument,
+  DeleteGroupDocument,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import {
@@ -47,16 +46,19 @@ export default function EditGroupScreen() {
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
   const insets = useSafeAreaInsets();
+  const client = useClient();
 
   // GraphQL queries
-  const { data: currentUserData } = useGetCurrentUserQuery(graphqlClient, {});
+  const [{ data: currentUserData }] = useQuery({
+    query: GetCurrentUserDocument,
+  });
   const currentUser = currentUserData?.currentUser;
 
-  const { data: groupData, isLoading: groupLoading } = useGetGroupQuery(
-    graphqlClient,
-    { id: groupId ?? "" },
-    { enabled: !!groupId },
-  );
+  const [{ data: groupData, fetching: groupLoading }] = useQuery({
+    query: GetGroupDocument,
+    variables: { id: groupId ?? "" },
+    pause: !groupId,
+  });
   const group = groupData?.group;
 
   const { isTripPast } = useTripDetails(group?.trip?.id);
@@ -96,43 +98,44 @@ export default function EditGroupScreen() {
   const { updateGroup, removeUser, isUpdating } = useGroupEditor(groupId);
 
   // GraphQL mutation
-  const deleteGroupMutation = useDeleteGroupMutation(graphqlClient);
+  const [, deleteGroup] = useMutation(DeleteGroupDocument);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleSave = async () => {
-    if (!groupName.trim()) {
-      Alert.alert("Validation Error", "Please enter a group name");
-      return;
-    }
-    if (uploadStatus === "uploading") {
-      Alert.alert("Please wait", "Image upload is still in progress.");
-      return;
-    }
-
-    try {
-      await updateGroup({
-        id: groupId ?? "",
-        name: groupName,
-        image: groupImagePath,
-      });
-
-      const originalMembers = new Set(
-        (group?.participants ?? []).map((p) => p.user?.id ?? "") ?? [],
-      );
-      const membersToRemove = Array.from(originalMembers).filter(
-        (id) => !currentMembers.has(id),
-      );
-
-      for (const userId of membersToRemove) {
-        await removeUser(userId);
-      }
-
-      router.back();
-    } catch (error: unknown) {
-      console.error("Save error:", error);
-      const message =
-        error instanceof Error ? error.message : "Failed to save group changes";
-      Alert.alert("Error", message);
-    }
+  const handleDeleteGroup = () => {
+    if (!group) return;
+    Alert.alert(
+      "Delete Group",
+      "This will archive the group and remove all members. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              try {
+                setIsDeleting(true);
+                const result = await deleteGroup({ groupId: group.id });
+                if (result.error) {
+                  throw result.error;
+                }
+                // Invalidate related queries
+                await client.invalidate("GetGroup");
+                await client.invalidate("GetGroupsByTrip");
+                router.replace(`/trips/groups?tripId=${group.trip?.id}`);
+              } catch (error: unknown) {
+                setIsDeleting(false);
+                const message =
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to delete group";
+                Alert.alert("Error", message);
+              }
+            })();
+          },
+        },
+      ],
+    );
   };
 
   const handlePickImage = async () => {
@@ -353,10 +356,10 @@ export default function EditGroupScreen() {
           style={styles.deleteButton}
           activeOpacity={0.8}
           onPress={handleDeleteGroup}
-          disabled={deleteGroupMutation.isPending}
+          disabled={isDeleting}
         >
           <Text style={styles.deleteButtonText}>
-            {deleteGroupMutation.isPending ? "Deleting..." : "Delete Group"}
+            {isDeleting ? "Deleting..." : "Delete Group"}
           </Text>
         </TouchableOpacity>
       </ScrollView>

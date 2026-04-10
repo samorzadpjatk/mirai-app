@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,68 +11,40 @@ import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import { colors, spacing, typography } from "../../../../styles";
 import {
-  useGetCoinTransactionsQuery,
+  GetCoinTransactionsDocument,
   type GetCoinTransactionsQuery,
 } from "@mirai-app/graphql-types";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { TransactionsFilters } from "~/components/admin/transactions/TransactionsFilters";
 import TransactionCard from "~/components/admin/transactions/TransactionCard";
 
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
-
 type TransactionItem = NonNullable<
   GetCoinTransactionsQuery["coinTransactions"]
->[number];
+>["transactions"][number];
 
-export default function AdminTransactionsScreen() {
-  const insets = useSafeAreaInsets();
-  const { tripId } = useLocalSearchParams<{ tripId?: string }>();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
-
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
-  // Query for coin transactions
-  const {
-    data: transactionsData,
-    isLoading,
-    isFetching: isRefetching,
-    refetch,
-  } = useQuery({
-    queryKey: ["GetCoinTransactions", { tripId }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetCoinTransactionsQuery.fetcher(client, {
-        tripId: tripId ?? "",
-        pagination: { limit: 50, offset: 0 },
-      })();
+// Custom hook for admin transactions
+const useAdminTransactions = (tripId: string) => {
+  const [
+    { data: transactionsData, fetching: isLoading, error },
+    refetchTransactions,
+  ] = useQuery({
+    query: GetCoinTransactionsDocument,
+    variables: {
+      tripId,
+      limit: 50,
+      offset: 0,
     },
+    pause: !tripId,
   });
 
-  const transactionsRaw =
-    (transactionsData as GetCoinTransactionsQuery | undefined)
-      ?.coinTransactions ?? [];
+  const data = transactionsData as GetCoinTransactionsQuery | undefined;
+
+  const transactionsRaw = useMemo(() => {
+    return data?.coinTransactions?.transactions ?? [];
+  }, [data]);
 
   // Transform transactions to match expected format
   const transactions = useMemo(() => {
@@ -100,7 +72,25 @@ export default function AdminTransactionsScreen() {
     return Array.from(groupMap.values());
   }, [transactions]);
 
-  const groupsLoading = isLoading;
+  return {
+    transactions,
+    groups,
+    isLoading,
+    isRefetching: isLoading,
+    refetchTransactions,
+    error,
+  };
+};
+
+export default function AdminTransactionsScreen() {
+  const insets = useSafeAreaInsets();
+  const { tripId } = useLocalSearchParams<{ tripId?: string }>();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
+
+  // Use the custom hook for all transaction operations
+  const { transactions, groups, isLoading, isRefetching, refetchTransactions } =
+    useAdminTransactions(tripId ?? "");
 
   const handleLoadMore = () => {
     // Pagination not implemented in this version
@@ -203,7 +193,7 @@ export default function AdminTransactionsScreen() {
         groups={groupOptions}
       />
 
-      {isLoading || groupsLoading || !client ? (
+      {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading transactions...</Text>
@@ -221,7 +211,7 @@ export default function AdminTransactionsScreen() {
             <RefreshControl
               refreshing={isRefetching && !isFetchingNextPage}
               onRefresh={() => {
-                void refetch();
+                void refetchTransactions({ requestPolicy: "network-only" });
               }}
               tintColor={colors.primary}
             />
@@ -296,3 +286,63 @@ const styles = StyleSheet.create({
     textAlign: "center" as const,
   },
 });
+
+/*
+## Summary of Migration from TanStack Query to urql
+
+### Changes Made:
+
+1. **Removed manual GraphQL client setup:**
+   - Removed: `import { GraphQLClient } from "graphql-request"`
+   - Removed: `import * as SecureStore from "expo-secure-store"`
+   - Removed: `createGraphQLClient` function and `client` state management
+   - Rationale: urql client is provided via context by the app's root provider
+
+2. **Updated imports:**
+   - Removed: `import { useQuery } from "@tanstack/react-query"`
+   - Removed: `import { useGetCoinTransactionsQuery } from "@mirai-app/graphql-types"`
+   - Added: `import { useQuery } from "urql"`
+   - Added: `import { GetCoinTransactionsDocument } from "@mirai-app/graphql-types"`
+
+3. **Extracted query logic into custom hook:**
+   - Created: `useAdminTransactions(tripId: string)` custom hook
+   - Moved query logic from inline `useQuery` to the custom hook
+   - Follows pattern established in other admin screens (coins, groups, users)
+
+4. **Updated query pattern:**
+   - Changed from TanStack Query's object-based options to urql's tuple return
+   - From: `const { data, isLoading, isFetching, refetch } = useQuery({ queryKey, queryFn, enabled })`
+   - To: `const [{ data, fetching }, refetch] = useQuery({ query, variables, pause })`
+   - Changed: `queryKey` → `query` property with Document constant
+   - Changed: `queryFn` → removed (urql handles execution)
+   - Changed: `enabled` → `pause` (inverse logic - `pause: !condition`)
+
+5. **Updated loading states:**
+   - Changed: `isLoading` → `fetching` (urql's loading state property)
+   - Changed: `isFetching` → `fetching` (urql uses single property for both)
+   - Removed conditional check for `!client` (urql handles client internally)
+
+6. **Updated refetch behavior:**
+   - Changed: `refetch()` → `refetch({ requestPolicy: "network-only" })`
+   - urql requires explicit request policy for network-only refetch
+
+7. **Type handling:**
+   - Updated to use `GetCoinTransactionsDocument` directly from graphql-types
+   - Maintained same TransactionItem type and data transformation logic
+
+### Key Differences from TanStack Query:
+
+| TanStack Query | urql |
+|----------------|------|
+| `useQuery({ queryKey, queryFn, enabled })` | `useQuery({ query, variables, pause })` |
+| Returns object: `{ data, isLoading, isFetching, refetch }` | Returns tuple: `[{ data, fetching }, refetch]` |
+| `isLoading` / `isFetching` separate | Single `fetching` property |
+| `enabled` boolean | `pause` boolean (inverted logic) |
+| `refetch()` | `refetch({ requestPolicy: "network-only" })` |
+| Manual client management | Client from React context |
+
+### Files Referenced for Pattern:
+- `apps/native/src/app/(tabs)/admin/coins/index.tsx` - Document import pattern
+- `apps/native/src/app/(tabs)/admin/groups/index.tsx` - Custom hook pattern
+- `apps/native/src/app/(tabs)/admin/users/index.tsx` - urql useQuery pattern
+*/

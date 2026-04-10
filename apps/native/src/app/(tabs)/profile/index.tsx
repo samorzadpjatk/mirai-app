@@ -6,21 +6,20 @@ import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
 import { ProfileActionsSection } from "~/components/profile/ProfileActionsSection";
 import { ProfileHeader } from "~/components/profile/ProfileHeader";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { useClient } from "urql";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const client = useClient();
 
   // Refresh profile data on focus
   useFocusEffect(
     useCallback(() => {
-      void queryClient.invalidateQueries({
-        queryKey: ["me"],
-      });
-    }, [queryClient]),
+      // Invalidate the current user query cache
+      void client.invalidate("GetCurrentUserQuery");
+    }, [client]),
   );
 
   return (

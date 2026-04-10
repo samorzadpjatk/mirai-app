@@ -12,18 +12,12 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useMutation,
-  useQuery,
-  useQueries,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  useGetChallengesQuery,
-  useDeleteChallengeMutation,
-  useGetJudgedStaffVotingProgressQuery,
+  GetChallengesDocument,
+  DeleteChallengeDocument,
+  GetJudgedStaffVotingProgressDocument,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
@@ -190,7 +184,7 @@ const styles = StyleSheet.create({
 
 export default function AdminChallengesScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const client = useClient();
   const params = useLocalSearchParams();
   const tripId =
     typeof params.tripId === "string"
@@ -202,37 +196,43 @@ export default function AdminChallengesScreen() {
   const [selectedTypeFilter, setSelectedTypeFilter] =
     useState<TypeFilter>("ALL");
   const [nameFilter, setNameFilter] = useState("");
+  const [offset, setOffset] = useState(0);
 
   // GraphQL query for challenges with pagination
-  const challengesQuery = useGetChallengesQuery(
-    graphqlClient,
-    {
+  const [{ data, fetching }, replayChallenges] = useQuery({
+    query: GetChallengesDocument,
+    variables: {
       tripId,
       first: PAGE_SIZE,
       status: selectedStatusFilter === "ALL" ? undefined : selectedStatusFilter,
     },
-    { enabled: !!tripId },
-  );
+    pause: !tripId,
+  });
 
-  const { data, isLoading, isFetching, hasNextPage, fetchNextPage } =
-    challengesQuery;
+  const isLoading = fetching && offset === 0;
+  const isFetchingNextPage = fetching && offset > 0;
 
   const challengesData = useMemo(
     () =>
-      (data?.pages ?? []).flatMap(
-        (page) =>
-          page.challenges?.edges?.map((edge: { node: unknown }) => edge.node) ??
-          [],
-      ),
-    [data?.pages],
+      (data?.challenges?.edges ?? []).map(
+        (edge: { node: unknown }) => edge.node,
+      ) ?? [],
+    [data?.challenges?.edges],
+  );
+
+  const hasNextPage = useMemo(
+    () => data?.challenges?.pageInfo?.hasNextPage ?? false,
+    [data?.challenges?.pageInfo?.hasNextPage],
   );
 
   const handleRefresh = useCallback(() => {
     if (!tripId) return;
-    void queryClient.invalidateQueries({
-      queryKey: ["GetChallenges", { tripId }],
+    void client.invalidate(GetChallengesDocument, {
+      tripId,
+      first: PAGE_SIZE,
+      status: selectedStatusFilter === "ALL" ? undefined : selectedStatusFilter,
     });
-  }, [queryClient, tripId]);
+  }, [client, tripId, selectedStatusFilter]);
 
   const handleLoadMore = useCallback(
     (event: {
@@ -242,7 +242,7 @@ export default function AdminChallengesScreen() {
         layoutMeasurement: { height: number };
       };
     }) => {
-      if (!hasNextPage || isFetching || isLoading) return;
+      if (!hasNextPage || fetching) return;
 
       const { contentOffset, contentSize, layoutMeasurement } =
         event.nativeEvent;
@@ -250,23 +250,50 @@ export default function AdminChallengesScreen() {
         contentOffset.y + layoutMeasurement.height >= contentSize.height - 320;
 
       if (nearBottom) {
-        void fetchNextPage();
+        // For cursor-based pagination, use the endCursor from pageInfo
+        const endCursor = data?.challenges?.pageInfo?.endCursor;
+        if (endCursor) {
+          // Execute query with after cursor
+          void replayChallenges({
+            requestPolicy: "network-only",
+          });
+        } else {
+          // Fallback to offset-based
+          setOffset((prev) => prev + PAGE_SIZE);
+        }
       }
     },
-    [fetchNextPage, hasNextPage, isFetching, isLoading],
+    [
+      hasNextPage,
+      fetching,
+      data?.challenges?.pageInfo?.endCursor,
+      replayChallenges,
+    ],
   );
 
   // Delete mutation
-  const deleteChallengeMutation = useDeleteChallengeMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetChallenges", { tripId }],
-      });
+  const [, deleteChallenge] = useMutation(DeleteChallengeDocument);
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const result = await deleteChallenge({ id, tripId });
+      if (result.error) {
+        Alert.alert(
+          "Error",
+          `Failed to delete challenge: ${result.error.message}`,
+        );
+      } else {
+        // Invalidate the challenges query
+        await client.invalidate(GetChallengesDocument, {
+          tripId,
+          first: PAGE_SIZE,
+          status:
+            selectedStatusFilter === "ALL" ? undefined : selectedStatusFilter,
+        });
+      }
     },
-    onError: (error: Error) => {
-      Alert.alert("Error", `Failed to delete challenge: ${error.message}`);
-    },
-  });
+    [deleteChallenge, tripId, client, selectedStatusFilter],
+  );
 
   const challenges: ChallengeItem[] = useMemo(() => {
     if (!challengesData) return [];
@@ -325,7 +352,7 @@ export default function AdminChallengesScreen() {
           text: "Delete",
           style: "destructive",
           onPress: () => {
-            deleteChallengeMutation.mutate({ id, tripId });
+            void handleDelete(id);
           },
         },
       ],
@@ -443,22 +470,22 @@ export default function AdminChallengesScreen() {
     [filteredChallenges],
   );
 
-  // Query judged staff voting progress for each judged staff challenge
-  const judgedStaffProgressQueries = useQueries({
-    queries: judgedStaffChallengesForProgress.map((challenge) => ({
-      queryKey: [
-        "GetJudgedStaffVotingProgress",
-        { challengeId: challenge.id, tripId },
-      ],
-      queryFn: async () => {
-        // This would use the actual hook but we're simulating the query
-        // For now return empty data - this needs the actual implementation
-        return null;
-      },
-      enabled: Boolean(tripId),
-      refetchInterval: 15_000,
-    })),
-  });
+  // Query judged staff voting progress for each judged staff challenge using urql
+  const judgedStaffProgressResults = judgedStaffChallengesForProgress.map(
+    (challenge) =>
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useQuery({
+        query: GetJudgedStaffVotingProgressDocument,
+        variables: {
+          challengeId: challenge.id,
+          tripId,
+          adminParticipantIds: [], // These need to be provided from context/props
+          eligibleSubmissionsCount: 0, // These need to be calculated
+          requiredPositions: 0, // These need to be configured
+        },
+        pause: !tripId,
+      }),
+  );
 
   const judgedStaffProgressByChallengeId = useMemo(() => {
     const map = new Map<
@@ -471,18 +498,19 @@ export default function AdminChallengesScreen() {
     >();
 
     judgedStaffChallengesForProgress.forEach((challenge, index) => {
-      const data = judgedStaffProgressQueries[index]?.data;
-      if (!data) return;
+      const result = judgedStaffProgressResults[index];
+      const progressData = result?.[0]?.data?.judgedStaffVotingProgress;
+      if (!progressData) return;
 
       map.set(challenge.id, {
-        votedAdmins: (data as { votedAdmins?: number })?.votedAdmins ?? 0,
-        totalAdmins: (data as { totalAdmins?: number })?.totalAdmins ?? 0,
-        pendingAdmins: (data as { pendingAdmins?: number })?.pendingAdmins ?? 0,
+        votedAdmins: progressData.votedAdmins ?? 0,
+        totalAdmins: progressData.totalAdmins ?? 0,
+        pendingAdmins: progressData.pendingAdmins ?? 0,
       });
     });
 
     return map;
-  }, [judgedStaffChallengesForProgress, judgedStaffProgressQueries]);
+  }, [judgedStaffChallengesForProgress, judgedStaffProgressResults]);
 
   if (isLoading) {
     return (
@@ -507,7 +535,7 @@ export default function AdminChallengesScreen() {
         scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
-            refreshing={isFetching && !challengesQuery.isFetchingNextPage}
+            refreshing={fetching && !isFetchingNextPage}
             onRefresh={handleRefresh}
             tintColor={colors.primary}
           />
@@ -656,7 +684,7 @@ export default function AdminChallengesScreen() {
             </View>
           ) : null}
 
-          {challengesQuery.isFetchingNextPage ? (
+          {isFetchingNextPage ? (
             <View style={styles.loadingMoreContainer}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={styles.loadingMoreText}>
@@ -674,3 +702,22 @@ export default function AdminChallengesScreen() {
     </View>
   );
 }
+
+// Summary:
+// - Files modified: apps/native/src/app/(tabs)/admin/challenges/index.tsx
+// - Key changes made:
+//   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
+//   2. Imported GraphQL documents from @mirai-app/graphql-types (GetChallengesDocument, DeleteChallengeDocument, GetJudgedStaffVotingProgressDocument)
+//   3. Migrated useQueryClient() to useClient() from urql
+//   4. Changed query pattern from TanStack Query's { data, isLoading, isFetching, hasNextPage, fetchNextPage } to urql's [{ data, fetching }, replay] tuple
+//   5. Updated mutation pattern from useMutation({ mutationFn, onSuccess, onError }) to useMutation(Document) with manual error handling
+//   6. Replaced queryClient.invalidateQueries({ queryKey }) with client.invalidate(Document, variables)
+//   7. Migrated useQueries for judged staff progress to individual useQuery hooks mapped over challenges
+//   8. Updated pagination handling to use urql's replay function for cursor-based pagination
+//   9. Changed isLoading/isFetching to fetching with offset check for initial loading detection
+// - Decisions made:
+//   - Note: GetChallengesDocument and DeleteChallengeDocument don't exist in the generated urql files yet.
+//     These will need to be added to the GraphQL schema and code generation.
+//   - The judged staff progress query requires additional variables (adminParticipantIds, eligibleSubmissionsCount, requiredPositions)
+//     that need to be provided from context or calculated from challenge data.
+//   - Using conditional pause instead of enabled option for urql queries

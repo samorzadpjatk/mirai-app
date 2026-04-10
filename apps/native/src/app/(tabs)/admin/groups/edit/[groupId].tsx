@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Alert,
   FlatList,
@@ -10,19 +10,18 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { Ionicons } from "@expo/vector-icons";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import {
-  useGetGroupQuery,
-  useGetUsersQuery,
-  useUpdateGroupMutation,
-  useDeleteGroupMutation,
+  GetGroupDocument,
+  GetUsersDocument,
+  UpdateGroupDocument,
+  DeleteGroupDocument,
+  GetGroupsByTripDocument,
   type GetGroupQuery,
   type GetUsersQuery,
 } from "@mirai-app/graphql-types";
@@ -34,22 +33,9 @@ interface OrganizerOption {
   email: string | null;
 }
 
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
-
 export default function AdminEditGroupScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ groupId: string; tripId?: string }>();
   const groupId = params.groupId;
@@ -58,106 +44,58 @@ export default function AdminEditGroupScreen() {
       ? params.tripId
       : (params.tripId?.[0] ?? "");
 
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
   // Query for group data
-  const { data: groupData, isLoading: groupLoading } = useQuery({
-    queryKey: ["GetGroup", { id: groupId }],
-    enabled: Boolean(groupId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetGroupQuery.fetcher(client, { id: groupId })();
-    },
+  const [{ data: groupData, fetching: groupLoading }] = useQuery({
+    query: GetGroupDocument,
+    variables: { id: groupId },
+    pause: !groupId,
   });
 
   const group = (groupData as GetGroupQuery | undefined)?.group;
 
   // Query for users
-  const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ["GetUsers", { limit: 100, offset: 0 }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetUsersQuery.fetcher(client, { limit: 100, offset: 0 })();
-    },
+  const [{ data: usersData, fetching: usersLoading }] = useQuery({
+    query: GetUsersDocument,
+    variables: { limit: 100, offset: 0 },
+    pause: !tripId,
   });
 
   const users = (usersData as GetUsersQuery | undefined)?.users ?? [];
 
   const [groupName, setGroupName] = useState(group?.name ?? "");
   const [selectedOrganizer, setSelectedOrganizer] =
-    useState<OrganizerOption | null>(group?.organizer ?? null);
+    useState<OrganizerOption | null>(null);
   const [userSearch, setUserSearch] = useState("");
 
   // Update local state when group data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (group) {
       setGroupName(group.name);
-      setSelectedOrganizer(group.organizer);
+      // Note: GetGroupDocument doesn't return organizer, only organizerId
+      setSelectedOrganizer(null);
     }
   }, [group]);
 
+  // Cache invalidation helper
+  const invalidateGroupsCache = useCallback(async () => {
+    await urqlClient.invalidate(GetGroupsByTripDocument, {
+      tripId: tripId || "",
+      pagination: { limit: 50, offset: 0 },
+    });
+    await urqlClient.invalidate(GetGroupDocument, { id: groupId });
+  }, [urqlClient, tripId, groupId]);
+
   // Update group mutation
-  const updateGroupMutation = useMutation({
-    mutationFn: async (input: {
-      id: string;
-      name?: string;
-      organizerId?: string | null;
-    }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useUpdateGroupMutation.fetcher(client, {
-        input: {
-          id: input.id,
-          name: input.name,
-          organizerId: input.organizerId ?? undefined,
-        },
-      })();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["GetGroupsByTrip"] });
-      await queryClient.invalidateQueries({ queryKey: ["GetGroup"] });
-      Alert.alert("Success", "Group updated successfully.");
-    },
-    onError: (error) => {
-      Alert.alert(
-        "Error",
-        `Failed to update group: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    },
-  });
+  const [, updateGroup] = useMutation(UpdateGroupDocument);
 
   // Delete group mutation
-  const deleteGroupMutation = useMutation({
-    mutationFn: async (input: { id: string }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useDeleteGroupMutation.fetcher(client, { id: input.id })();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["GetGroupsByTrip"] });
-      Alert.alert("Success", "Group deleted successfully.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
-    },
-    onError: (error) => {
-      Alert.alert(
-        "Error",
-        `Failed to delete group: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    },
-  });
+  const [, deleteGroup] = useMutation(DeleteGroupDocument);
 
   const handleSave = async () => {
     if (!group || !groupId) return;
 
     const trimmedGroupName = groupName.trim();
-    const effectiveTripId = tripId || group.trip?.id;
+    const effectiveTripId = tripId || group.tripId;
 
     if (!effectiveTripId) {
       Alert.alert(
@@ -173,24 +111,53 @@ export default function AdminEditGroupScreen() {
     }
 
     try {
-      await Promise.all([
-        trimmedGroupName !== group.name
-          ? updateGroupMutation.mutateAsync({
+      const promises: Promise<unknown>[] = [];
+
+      if (trimmedGroupName !== group.name) {
+        promises.push(
+          updateGroup({
+            input: {
               id: groupId,
               name: trimmedGroupName,
-            })
-          : Promise.resolve(),
-        selectedOrganizer?.id !== group.organizer?.id
-          ? updateGroupMutation.mutateAsync({
+            },
+          }),
+        );
+      }
+
+      if (selectedOrganizer?.id !== group.organizerId) {
+        promises.push(
+          updateGroup({
+            input: {
               id: groupId,
               organizerId: selectedOrganizer?.id ?? null,
-            })
-          : Promise.resolve(),
-      ]);
+            },
+          }),
+        );
+      }
 
+      const results = await Promise.all(promises);
+
+      // Check for errors in any mutation results
+      const hasError = results.some(
+        (result) =>
+          result &&
+          typeof result === "object" &&
+          "error" in result &&
+          result.error != null,
+      );
+
+      if (hasError) {
+        Alert.alert("Error", "Failed to update group.");
+        return;
+      }
+
+      await invalidateGroupsCache();
       Alert.alert("Success", "Group updated successfully.");
-    } catch {
-      // Error handling is done in the individual mutations
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        `Failed to update group: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   };
 
@@ -199,17 +166,36 @@ export default function AdminEditGroupScreen() {
 
     Alert.alert(
       "Delete Group",
-      `Are you sure you want to delete "${group.name}"? This action cannot be undone and will remove all members from the group.${group._count?.participants && group._count.participants > 0 ? `\n\n${group._count.participants} participants will be affected.` : ""}`,
+      `Are you sure you want to delete "${group.name}"? This action cannot be undone and will remove all members from the group.`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
             try {
-              deleteGroupMutation.mutate({ id: groupId });
-            } catch {
-              // Error handling is done in the mutation
+              const result = await deleteGroup({ id: groupId });
+
+              if (result.error) {
+                Alert.alert(
+                  "Error",
+                  `Failed to delete group: ${result.error.message}`,
+                );
+                return;
+              }
+
+              await invalidateGroupsCache();
+              Alert.alert("Success", "Group deleted successfully.", [
+                {
+                  text: "OK",
+                  onPress: () => router.back(),
+                },
+              ]);
+            } catch (error) {
+              Alert.alert(
+                "Error",
+                `Failed to delete group: ${error instanceof Error ? error.message : "Unknown error"}`,
+              );
             }
           },
         },
@@ -223,15 +209,28 @@ export default function AdminEditGroupScreen() {
 
     const fullName =
       `${user.firstName ?? ""} ${user.lastName ?? ""}`.toLowerCase();
-    const email = user.email?.toLowerCase() ?? "";
+    // Note: GetUsersDocument doesn't return email, only fullName
+    const searchText = user.fullName?.toLowerCase() ?? "";
 
     return (
-      fullName.includes(normalizedSearch) || email.includes(normalizedSearch)
+      fullName.includes(normalizedSearch) ||
+      searchText.includes(normalizedSearch)
     );
   });
 
-  const isLoading = groupLoading || usersLoading || !client;
-  const isSaving = updateGroupMutation.isPending;
+  const isLoading = groupLoading || usersLoading;
+
+  // Track saving state locally since urql doesn't expose isPending
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveWithLoading = async () => {
+    setIsSaving(true);
+    try {
+      await handleSave();
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -274,7 +273,8 @@ export default function AdminEditGroupScreen() {
 
           <View style={styles.groupInfo}>
             <Text style={styles.participantCount}>
-              {group._count?.participants ?? 0} participants
+              {/* Note: GetGroupDocument doesn't return _count */}
+              Group management
             </Text>
           </View>
 
@@ -286,7 +286,7 @@ export default function AdminEditGroupScreen() {
             <ThemedTextInput
               value={userSearch}
               onChangeText={setUserSearch}
-              placeholder="Search users by name or email..."
+              placeholder="Search users by name..."
               autoCorrect={false}
               autoCapitalize="none"
             />
@@ -302,7 +302,14 @@ export default function AdminEditGroupScreen() {
                 styles.userOption,
                 selectedOrganizer?.id === item.id && styles.userOptionSelected,
               ]}
-              onPress={() => setSelectedOrganizer(item)}
+              onPress={() =>
+                setSelectedOrganizer({
+                  id: item.id,
+                  firstName: item.firstName,
+                  lastName: item.lastName,
+                  email: null, // GetUsersDocument doesn't return email
+                })
+              }
             >
               <View style={styles.userOptionInfo}>
                 <Text
@@ -314,7 +321,7 @@ export default function AdminEditGroupScreen() {
                 >
                   {item.firstName} {item.lastName}
                 </Text>
-                <Text style={styles.userOptionEmail}>{item.email}</Text>
+                {/* Note: email is not available from GetUsersDocument */}
               </View>
               {selectedOrganizer?.id === item.id && (
                 <Ionicons name="checkmark" size={18} color={colors.primary} />
@@ -336,21 +343,12 @@ export default function AdminEditGroupScreen() {
           <PrimaryLoadingButton
             label="Save Changes"
             isLoading={isSaving}
-            onPress={handleSave}
+            onPress={handleSaveWithLoading}
             disabled={isSaving}
           />
 
-          <TouchableOpacity
-            style={[
-              styles.deleteButton,
-              deleteGroupMutation.isPending && styles.deleteButtonDisabled,
-            ]}
-            onPress={handleDelete}
-            disabled={deleteGroupMutation.isPending}
-          >
-            <Text style={styles.deleteButtonText}>
-              {deleteGroupMutation.isPending ? "Deleting..." : "Delete Group"}
-            </Text>
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteButtonText}>Delete Group</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -459,3 +457,19 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
   },
 });
+
+// Summary:
+// - File migrated: apps/native/src/app/(tabs)/admin/groups/edit/[groupId].tsx
+// - Key changes made:
+//   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
+//   2. Removed GraphQLClient and SecureStore imports (urql client handles auth automatically)
+//   3. Removed createGraphQLClient helper function (not needed with urql)
+//   4. Removed manual client state management (urql Provider handles this)
+//   5. Imported GraphQL documents from @mirai-app/graphql-types (GetGroupDocument, GetUsersDocument, UpdateGroupDocument, DeleteGroupDocument, GetGroupsByTripDocument)
+//   6. Migrated useQueryClient() to useClient() from urql
+//   7. Changed from TanStack Query's useQuery({ queryKey, queryFn, enabled }) to urql's useQuery({ query, variables, pause })
+//   8. Changed from useMutation with callbacks to urql's useMutation(Document) with manual error handling
+//   9. Replaced queryClient.invalidateQueries({ queryKey }) with urqlClient.invalidate(Document, variables)
+//   10. Added local state tracking for isSaving (urql doesn't expose isPending directly)
+//   11. Updated mutation error handling to check result.error from urql execute functions
+//   12. Adjusted for schema differences: GetGroupDocument returns organizerId (not organizer object), GetUsersDocument doesn't return email, GetGroupDocument doesn't return _count

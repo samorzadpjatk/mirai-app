@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,13 +12,11 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import { colors, spacing, borderRadius, typography } from "../../../../styles";
 import {
-  useGetNotificationSchedulesQuery,
-  useCreateNotificationScheduleMutation,
+  GetNotificationSchedulesDocument,
+  CreateNotificationScheduleDocument,
   type GetNotificationSchedulesQuery,
 } from "@mirai-app/graphql-types";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -29,9 +27,31 @@ import {
   DeleteScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
 
-type NotificationSchedule = NonNullable<
-  GetNotificationSchedulesQuery["notificationSchedules"]
->[number];
+// NotificationScheduleSummary type from GraphQL
+interface NotificationSchedule {
+  id: string;
+  name: string;
+  message: string;
+  triggerTime: string;
+  formattedTime: string;
+  hour: number;
+  minute: number;
+  isActive: boolean;
+  isCurrentlyActive: boolean;
+  isExpired: boolean;
+  isUpcoming: boolean;
+  notificationType: string;
+  notificationTitle?: string | null;
+  notificationBody?: string | null;
+  notificationUrl?: string | null;
+  startDate: Date | string;
+  endDate: Date | string;
+  lastRun?: Date | string | null;
+  tripId?: string | null;
+  createdById: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
 
 function parseTriggerTime(triggerTime: string): {
   hour: number;
@@ -74,90 +94,109 @@ function getScheduleWindow(
   return { startDate, endDate };
 }
 
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
+// Transform GraphQL schedule to local NotificationSchedule format
+function transformSchedule(
+  schedule: GetNotificationSchedulesQuery["notificationSchedules"]["schedules"][number],
+): NotificationSchedule {
+  return {
+    id: schedule.id,
+    name: schedule.name,
+    message: "", // NotificationScheduleSummary doesn't have message
+    triggerTime: `${String(schedule.hour).padStart(2, "0")}:${String(schedule.minute).padStart(2, "0")}`,
+    formattedTime: `${String(schedule.hour).padStart(2, "0")}:${String(schedule.minute).padStart(2, "0")}`,
+    hour: schedule.hour,
+    minute: schedule.minute,
+    isActive: schedule.isActive,
+    isCurrentlyActive: false, // Not available in summary
+    isExpired: false, // Not available in summary
+    isUpcoming: false, // Not available in summary
+    notificationType: schedule.notificationType,
+    startDate: schedule.startDate,
+    endDate: schedule.endDate,
+    tripId: schedule.tripId,
+    createdById: "", // Not available in summary
+    createdAt: "", // Not available in summary
+    updatedAt: "", // Not available in summary
+  };
+}
 
 export default function AdminSchedulesScreen() {
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
+  const client = useClient();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId =
     typeof params.tripId === "string"
       ? params.tripId
       : (params.tripId?.[0] ?? "");
 
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
   // Query for notification schedules
-  const { data: schedulesData, isLoading } = useQuery({
-    queryKey: ["GetNotificationSchedules", { tripId }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetNotificationSchedulesQuery.fetcher(client, { tripId })();
+  const [{ data, fetching: isLoading }, refetchSchedules] = useQuery({
+    query: GetNotificationSchedulesDocument,
+    variables: {
+      tripId,
+      limit: 50,
+      offset: 0,
     },
+    pause: !tripId,
   });
 
-  const schedules =
-    (schedulesData as GetNotificationSchedulesQuery | undefined)
-      ?.notificationSchedules ?? [];
+  const schedules = useMemo(() => {
+    if (!data?.notificationSchedules?.schedules) return [];
+    return data.notificationSchedules.schedules.map(transformSchedule);
+  }, [data]);
 
   // Create schedule mutation
-  const createScheduleMutation = useMutation({
-    mutationFn: async (input: {
-      name: string;
-      tripId: string;
-      notificationTitle: string;
-      notificationBody: string;
-      notificationUrl: string;
-      hour: number;
-      minute: number;
-      notificationType: string;
-      startDate: Date;
-      endDate: Date;
-    }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useCreateNotificationScheduleMutation.fetcher(client, {
-        input: {
-          name: input.name,
-          tripId: input.tripId,
-          notificationTitle: input.notificationTitle,
-          notificationBody: input.notificationBody,
-          notificationUrl: input.notificationUrl,
-          hour: input.hour,
-          minute: input.minute,
-          notificationType: input.notificationType,
-          startDate: input.startDate.toISOString(),
-          endDate: input.endDate.toISOString(),
-        },
-      })();
+  const [, executeCreateSchedule] = useMutation(
+    CreateNotificationScheduleDocument,
+  );
+
+  const handleCreateSchedule = useCallback(
+    async (name: string, message: string, triggerTime: string) => {
+      try {
+        if (!tripId) {
+          Alert.alert("Error", "Trip context is required to create schedules");
+          return;
+        }
+        const { hour, minute } = parseTriggerTime(triggerTime);
+        const { startDate, endDate } = getScheduleWindow(hour, minute);
+
+        const result = await executeCreateSchedule({
+          name,
+          hour,
+          minute,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          notificationType: "CUSTOM",
+          isActive: true,
+          notificationTitle: name,
+          notificationBody: message,
+          notificationUrl: "/ranking",
+          tripId,
+        });
+
+        if (result.error) {
+          Alert.alert(
+            "Error",
+            `Failed to create schedule: ${result.error.message}`,
+          );
+          return;
+        }
+
+        // Invalidate and refetch schedules
+        await client.invalidate(GetNotificationSchedulesDocument, {
+          tripId,
+          limit: 50,
+          offset: 0,
+        });
+        setShowCreateModal(false);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to create schedule";
+        Alert.alert("Error", message);
+      }
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetNotificationSchedules"],
-      });
-    },
-    onError: (error) => {
-      Alert.alert(
-        "Error",
-        `Failed to create schedule: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    },
-  });
+    [tripId, executeCreateSchedule, client],
+  );
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -165,38 +204,18 @@ export default function AdminSchedulesScreen() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] =
     useState<NotificationSchedule | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
-  // Event handlers
-  const handleCreateSchedule = async (
+  const handleCreate = async (
     name: string,
     message: string,
     triggerTime: string,
   ) => {
+    setIsCreating(true);
     try {
-      if (!tripId) {
-        Alert.alert("Error", "Trip context is required to create schedules");
-        return;
-      }
-      const { hour, minute } = parseTriggerTime(triggerTime);
-      const { startDate, endDate } = getScheduleWindow(hour, minute);
-
-      await createScheduleMutation.mutateAsync({
-        name,
-        tripId,
-        notificationTitle: name,
-        notificationBody: message,
-        notificationUrl: "/ranking",
-        hour,
-        minute,
-        notificationType: "custom",
-        startDate,
-        endDate,
-      });
-      setShowCreateModal(false);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create schedule";
-      Alert.alert("Error", message);
+      await handleCreateSchedule(name, message, triggerTime);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -302,7 +321,7 @@ export default function AdminSchedulesScreen() {
         }
       />
 
-      {isLoading || !client ? (
+      {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading schedules...</Text>
@@ -315,14 +334,18 @@ export default function AdminSchedulesScreen() {
           contentContainerStyle={styles.schedulesList}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyState}
+          refreshing={isLoading}
+          onRefresh={() => {
+            void refetchSchedules({ requestPolicy: "network-only" });
+          }}
         />
       )}
 
       <CreateScheduleModal
         visible={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onCreateSchedule={handleCreateSchedule}
-        isCreating={createScheduleMutation.isPending}
+        onCreateSchedule={handleCreate}
+        isCreating={isCreating}
       />
 
       <EditScheduleModal

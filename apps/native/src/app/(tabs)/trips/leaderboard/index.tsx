@@ -1,13 +1,12 @@
 import { useMemo } from "react";
 import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import {
-  useGetTripQuery,
-  useGetCurrentUserQuery,
-  useGetGroupRankingQuery,
+  GetTripDocument,
+  GetCurrentUserDocument,
+  GetGroupRankingDocument,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
@@ -23,21 +22,23 @@ export default function LeaderboardScreen() {
   const insets = useSafeAreaInsets();
 
   // GraphQL queries
-  const { data: tripData, isLoading: tripLoading } = useGetTripQuery(
-    graphqlClient,
-    { id: tripId ?? "" },
-    { enabled: !!tripId },
-  );
+  const [{ data: tripData, fetching: tripLoading }] = useQuery({
+    query: GetTripDocument,
+    variables: { id: tripId ?? "" },
+    pause: !tripId,
+  });
   const trip = tripData?.trip;
 
-  const { data: currentUserData } = useGetCurrentUserQuery(graphqlClient, {});
+  const [{ data: currentUserData }] = useQuery({
+    query: GetCurrentUserDocument,
+  });
   const currentUser = currentUserData?.currentUser;
 
-  const { data: rankingData } = useGetGroupRankingQuery(
-    graphqlClient,
-    { tripId: tripId ?? "" },
-    { enabled: !!tripId },
-  );
+  const [{ data: rankingData }] = useQuery({
+    query: GetGroupRankingDocument,
+    variables: { tripId: tripId ?? "" },
+    pause: !tripId,
+  });
 
   // Calculate rankings from GraphQL data
   const rankedGroups: RankedGroup[] = useMemo(() => {

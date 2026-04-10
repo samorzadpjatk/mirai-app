@@ -3,9 +3,7 @@ import { View, FlatList, ActivityIndicator, Text } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import { colors, spacing } from "~/styles";
 import {
   useGetUsersQuery,
@@ -25,17 +23,27 @@ type UserSearchField =
   | "houseNumber"
   | "groupName";
 
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
+// Custom hook for admin users
+const useAdminUsers = (tripId: string) => {
+  const [{ data, fetching: usersLoading, error }, refetchUsers] = useQuery({
+    query: useGetUsersQuery.document,
+    variables: { limit: 100, offset: 0 },
+    pause: !tripId,
+  });
+
+  const usersData = data as GetUsersQuery | undefined;
+
+  const usersRaw = useMemo(() => {
+    return (usersData?.users ?? []) as User[];
+  }, [usersData]);
+
+  return {
+    usersRaw,
+    usersLoading,
+    usersRefetching: usersLoading,
+    refetchUsers,
+    error,
+  };
 };
 
 export default function AdminUsersScreen() {
@@ -45,32 +53,13 @@ export default function AdminUsersScreen() {
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
 
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedField, setSelectedField] =
     useState<UserSearchField>("firstName");
 
-  // Query for users
-  const {
-    data: usersData,
-    isLoading: usersLoading,
-    isFetching: usersRefetching,
-    refetch: refetchUsers,
-  } = useQuery({
-    queryKey: ["GetUsers", { limit: 100, offset: 0 }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetUsersQuery.fetcher(client, { limit: 100, offset: 0 })();
-    },
-  });
-
-  const usersRaw = (usersData as GetUsersQuery | undefined)?.users ?? [];
+  // Use the custom hook for all user operations
+  const { usersRaw, usersLoading, usersRefetching, refetchUsers } =
+    useAdminUsers(tripId ?? "");
 
   // Filter users based on search term and field
   const users = useMemo(() => {
@@ -181,7 +170,7 @@ export default function AdminUsersScreen() {
         fields={fieldOptions}
       />
 
-      {usersLoading || !client ? (
+      {usersLoading ? (
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
@@ -205,7 +194,7 @@ export default function AdminUsersScreen() {
           onEndReachedThreshold={0.35}
           refreshing={usersRefetching && !usersFetchingNextPage}
           onRefresh={() => {
-            void refetchUsers();
+            void refetchUsers({ requestPolicy: "network-only" });
           }}
           ListEmptyComponent={
             <View
@@ -247,3 +236,56 @@ export default function AdminUsersScreen() {
     </View>
   );
 }
+
+/*
+## Summary of Migration from TanStack Query to urql
+
+### Changes Made:
+
+1. **Removed manual GraphQL client setup:**
+   - Removed: `graphql-request` GraphQLClient creation
+   - Removed: SecureStore token handling and client state management
+   - Removed: `createGraphQLClient` function and `client` state
+   - Rationale: urql client is provided via context by the app's root provider
+
+2. **Updated imports:**
+   - Removed: `import { GraphQLClient } from "graphql-request"`
+   - Removed: `import * as SecureStore from "expo-secure-store"`
+   - Removed: `import { useQuery } from "@tanstack/react-query"`
+   - Added: `import { useQuery } from "urql"`
+
+3. **Extracted query logic into custom hook:**
+   - Created: `useAdminUsers(tripId: string)` custom hook
+   - Moved query logic from inline `useQuery` to the custom hook
+   - Follows pattern established in other admin screens (groups, challenges, etc.)
+
+4. **Updated query pattern:**
+   - Changed from TanStack Query's object-based options to urql's tuple return
+   - From: `const { data, isLoading, isFetching, refetch } = useQuery({ queryKey, queryFn, enabled })`
+   - To: `const [{ data, fetching }, refetch] = useQuery({ query, variables, pause })`
+
+5. **Updated loading states:**
+   - Changed: `isLoading` → `fetching` (urql's loading state property)
+   - Changed: `isFetching` → `fetching` (urql uses single property for both)
+   - Updated conditional check from `usersLoading || !client` to just `usersLoading`
+
+6. **Updated refetch behavior:**
+   - Changed: `refetchUsers()` → `refetchUsers({ requestPolicy: "network-only" })`
+   - urql requires explicit request policy for network-only refetch
+
+### Key Differences from TanStack Query:
+
+| TanStack Query | urql |
+|----------------|------|
+| `useQuery({ queryKey, queryFn, enabled })` | `useQuery({ query, variables, pause })` |
+| Returns object: `{ data, isLoading, isFetching, refetch }` | Returns tuple: `[{ data, fetching }, refetch]` |
+| `isLoading` / `isFetching` separate | Single `fetching` property |
+| `enabled` boolean | `pause` boolean (inverted logic) |
+| `refetch()` | `refetch({ requestPolicy: "network-only" })` |
+| Manual client management | Client from React context |
+
+### Files Referenced for Pattern:
+- `apps/native/src/app/(tabs)/admin/groups/index.tsx` - Similar custom hook pattern
+- `apps/native/src/app/(tabs)/admin/challenges/index.tsx` - urql migration example
+- `apps/native/src/app/(tabs)/admin/rewards/index.tsx` - urql migration example
+*/

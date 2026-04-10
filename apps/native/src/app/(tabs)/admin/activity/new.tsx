@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Image,
@@ -12,35 +12,22 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useMutation, useClient } from "urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useCreateCustomActivityMutation } from "@mirai-app/graphql-types";
+import {
+  CreateCustomActivityDocument,
+  GetActivitiesByTripModerationDocument,
+} from "@mirai-app/graphql-types";
 import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 
-// Create GraphQL client with auth token from SecureStore
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:3000/graphql";
-  const token = await SecureStore.getItemAsync("token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
-
 export default function AdminCreateActivityScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId =
@@ -60,47 +47,17 @@ export default function AdminCreateActivityScreen() {
   const [isPinned, setIsPinned] = useState(false);
   const [imagePath, setImagePath] = useState("");
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  // Initialize GraphQL client
-  useEffect(() => {
-    void createGraphQLClient().then(setClient);
-  }, []);
 
   const invalidateFeed = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: [
-        "GetActivitiesByTripModeration",
-        { tripId, page: 1, perPage: 100 },
-      ],
+    await urqlClient.invalidate(GetActivitiesByTripModerationDocument, {
+      tripId,
+      page: 1,
+      perPage: 100,
     });
   };
 
-  const createCustomMutation = useCreateCustomActivityMutation(
-    client ?? new GraphQLClient(""),
-    {
-      onSuccess: async () => {
-        await invalidateFeed();
-        setTitle("");
-        setDescription("");
-        setIsPinned(false);
-        setImagePath("");
-        setImagePreviewUri(null);
-        resetUpload();
-        Alert.alert("Success", "Activity created successfully.", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
-      },
-      onError: (error) =>
-        Alert.alert(
-          "Error",
-          error instanceof Error ? error.message : "Create failed.",
-        ),
-    },
-  );
+  // GraphQL mutation using urql
+  const [, createCustomMutation] = useMutation(CreateCustomActivityDocument);
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
@@ -161,7 +118,7 @@ export default function AdminCreateActivityScreen() {
     }
 
     try {
-      await createCustomMutation.mutateAsync({
+      const result = await createCustomMutation({
         input: {
           tripId,
           title: trimmedTitle,
@@ -170,8 +127,31 @@ export default function AdminCreateActivityScreen() {
           isPinned,
         },
       });
-    } catch {
-      // Error handling is done in the mutation's onError
+
+      if (result.error) {
+        Alert.alert("Error", result.error.message || "Create failed.");
+        return;
+      }
+
+      // Success - invalidate cache and reset form
+      await invalidateFeed();
+      setTitle("");
+      setDescription("");
+      setIsPinned(false);
+      setImagePath("");
+      setImagePreviewUri(null);
+      resetUpload();
+      Alert.alert("Success", "Activity created successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Create failed.",
+      );
     }
   };
 
@@ -311,11 +291,9 @@ export default function AdminCreateActivityScreen() {
 
         <PrimaryLoadingButton
           label="Create Activity"
-          isLoading={createCustomMutation.isPending || isUploadingImage}
+          isLoading={isUploadingImage}
           onPress={handleSubmit}
-          disabled={
-            !title.trim() || createCustomMutation.isPending || isUploadingImage
-          }
+          disabled={!title.trim() || isUploadingImage}
         />
       </ScrollView>
     </View>

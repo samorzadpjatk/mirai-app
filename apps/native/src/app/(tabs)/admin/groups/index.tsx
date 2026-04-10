@@ -11,9 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import { colors, spacing, borderRadius, typography } from "../../../../styles";
 import {
   useGetGroupsByTripQuery,
@@ -22,19 +20,6 @@ import {
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
 import { GroupManagementCard } from "~/components/admin/groups/GroupManagementCard";
-
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
 
 // Group type from GraphQL
 interface Group {
@@ -52,27 +37,13 @@ interface Group {
 
 // Custom hook for admin groups
 const useAdminGroups = (tripId: string) => {
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
-  const {
-    data,
-    isLoading: groupsLoading,
-    isFetching: groupsRefetching,
-    refetch: refetchGroups,
-  } = useQuery({
-    queryKey: ["GetGroupsByTrip", { tripId }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetGroupsByTripQuery.fetcher(client, {
-        tripId,
-        pagination: { limit: 50, offset: 0 },
-      })();
+  const [{ data, fetching: groupsLoading, error }, refetchGroups] = useQuery({
+    query: useGetGroupsByTripQuery.document,
+    variables: {
+      tripId,
+      pagination: { limit: 50, offset: 0 },
     },
+    pause: !tripId,
   });
 
   const groupsData = data as GetGroupsByTripQuery | undefined;
@@ -98,12 +69,13 @@ const useAdminGroups = (tripId: string) => {
 
   return {
     groups,
-    groupsLoading: groupsLoading || !client,
-    groupsRefetching,
+    groupsLoading,
+    groupsRefetching: groupsLoading,
     groupsHasNextPage,
     groupsFetchingNextPage,
     fetchMoreGroups,
     refetchGroups,
+    error,
   };
 };
 
@@ -222,7 +194,7 @@ export default function AdminGroupsScreen() {
           onEndReachedThreshold={0.35}
           refreshing={groupsRefetching && !groupsFetchingNextPage}
           onRefresh={() => {
-            void refetchGroups();
+            void refetchGroups({ requestPolicy: "network-only" });
           }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>

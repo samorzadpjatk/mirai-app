@@ -10,10 +10,12 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useClient } from "urql";
 import {
-  useCreateNotificationMutation,
-  useGetAllGroupsQuery,
+  CreateNotificationDocument,
+  GetGroupsByTripDocument,
+  GetAllNotificationsDocument,
+  GetNotificationSchedulesDocument,
 } from "@mirai-app/graphql-types";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -112,7 +114,7 @@ const placeholderLegend = [
 
 export default function AdminCreateNotificationScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const client = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId =
@@ -130,33 +132,25 @@ export default function AdminCreateNotificationScreen() {
   );
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
 
-  // GraphQL query for groups
-  const { data: groupsData, isLoading: isLoadingGroups } = useGetAllGroupsQuery(
-    { tripId },
-    { enabled: !!tripId },
-  );
-
-  const groups = useMemo(() => groupsData?.groups ?? [], [groupsData]);
-
-  // GraphQL mutation for creating notifications
-  const createNotificationMutation = useCreateNotificationMutation({
-    onSuccess: async () => {
-      // Invalidate related queries
-      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      await queryClient.invalidateQueries({
-        queryKey: ["notificationSchedules"],
-      });
+  // GraphQL query for groups using urql
+  const [{ data: groupsData, fetching: isLoadingGroups }] = useQuery({
+    query: GetGroupsByTripDocument,
+    variables: {
+      tripId,
+      pagination: { limit: 100, offset: 0 },
     },
-    onError: (error) => {
-      console.error("Failed to create/send notification", error);
-      Alert.alert(
-        "Error",
-        "Operation failed. Check input values and try again.",
-      );
-    },
+    pause: !tripId,
   });
 
-  const isSubmitting = createNotificationMutation.isPending;
+  const groups = useMemo(
+    () => groupsData?.groupsByTrip?.groups ?? [],
+    [groupsData],
+  );
+
+  // GraphQL mutation for creating notifications using urql
+  const [, createNotification] = useMutation(CreateNotificationDocument);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedGroupName = useMemo(
     () => groups.find((group) => group.id === groupId)?.name,
@@ -187,9 +181,11 @@ export default function AdminCreateNotificationScreen() {
 
     const notificationUrl = buildNotificationUrl(audienceType, groupId);
 
+    setIsSubmitting(true);
+
     try {
       if (deliveryType === "instant") {
-        await createNotificationMutation.mutateAsync({
+        const result = await createNotification({
           input: {
             tripId,
             title: normalizedTitle,
@@ -198,6 +194,22 @@ export default function AdminCreateNotificationScreen() {
             audienceType: audienceType === "all" ? "ALL" : "GROUP",
             groupId: audienceType === "group" ? groupId : undefined,
           },
+        });
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        // Invalidate related queries
+        await client.invalidate(GetAllNotificationsDocument, {
+          tripId,
+          limit: 50,
+          offset: 0,
+        });
+        await client.invalidate(GetNotificationSchedulesDocument, {
+          tripId,
+          limit: 100,
+          offset: 0,
         });
 
         Alert.alert("Success", "Notification sent instantly.");
@@ -214,7 +226,7 @@ export default function AdminCreateNotificationScreen() {
       if (deliveryType === "recurring_daily") {
         const startDate = getNextDailyOccurrence(hour, minute);
 
-        await createNotificationMutation.mutateAsync({
+        const result = await createNotification({
           input: {
             tripId,
             title: normalizedTitle,
@@ -226,6 +238,22 @@ export default function AdminCreateNotificationScreen() {
             isRecurring: true,
             scheduleDate: startDate.toISOString(),
           },
+        });
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        // Invalidate related queries
+        await client.invalidate(GetAllNotificationsDocument, {
+          tripId,
+          limit: 50,
+          offset: 0,
+        });
+        await client.invalidate(GetNotificationSchedulesDocument, {
+          tripId,
+          limit: 100,
+          offset: 0,
         });
 
         Alert.alert("Success", "Recurring daily notification created.");
@@ -240,10 +268,11 @@ export default function AdminCreateNotificationScreen() {
           "Validation",
           "One-time schedule must be at least 5 minutes in the future.",
         );
+        setIsSubmitting(false);
         return;
       }
 
-      await createNotificationMutation.mutateAsync({
+      const result = await createNotification({
         input: {
           tripId,
           title: normalizedTitle,
@@ -257,6 +286,22 @@ export default function AdminCreateNotificationScreen() {
         },
       });
 
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate related queries
+      await client.invalidate(GetAllNotificationsDocument, {
+        tripId,
+        limit: 50,
+        offset: 0,
+      });
+      await client.invalidate(GetNotificationSchedulesDocument, {
+        tripId,
+        limit: 100,
+        offset: 0,
+      });
+
       Alert.alert("Success", "One-time scheduled notification created.");
       router.back();
     } catch (error) {
@@ -265,6 +310,8 @@ export default function AdminCreateNotificationScreen() {
         "Error",
         "Operation failed. Check input values and try again.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

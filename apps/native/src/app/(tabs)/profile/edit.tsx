@@ -14,10 +14,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetCurrentUserQuery,
-  useUpdateUserMutation,
+  GetCurrentUserDocument,
+  UpdateUserDocument,
 } from "@mirai-app/graphql-types";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -34,10 +34,12 @@ interface UploadAsset {
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
 
   // GraphQL query for current user
-  const { data: userData } = useGetCurrentUserQuery();
+  const [{ data: userData }] = useQuery({
+    query: GetCurrentUserDocument,
+  });
   const currentUser = userData?.me;
 
   const [firstName, setFirstName] = useState("");
@@ -105,18 +107,19 @@ export default function EditProfileScreen() {
   ]);
 
   // GraphQL mutation for updating profile
-  const updateProfileMutation = useUpdateUserMutation({
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["me"] });
-    },
-    onError: (error) => {
-      Alert.alert("Save Failed", error.message);
-    },
-  });
+  const [, updateProfileMutation] = useMutation(UpdateUserDocument);
+
+  // Cache invalidation helper
+  const invalidateUserCache = useCallback(async () => {
+    await urqlClient.invalidate(GetCurrentUserDocument);
+  }, [urqlClient]);
 
   const isUploading = uploadStatus === "uploading";
   const isDownloading = avatarStatus === "loading";
   const isBusy = isUploading || isDownloading || isPicking || isCameraOpen;
+
+  // Track saving state locally since urql doesn't expose isPending directly
+  const [isSaving, setIsSaving] = useState(false);
   const remoteAvatarUri = avatarFile?.uri
     ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt?.toString() ?? "")}`
     : null;
@@ -137,17 +140,25 @@ export default function EditProfileScreen() {
       });
 
       // Update user profile with hasAvatar flag
-      await updateProfileMutation.mutateAsync({
+      const result = await updateProfileMutation({
         input: {
           id: currentUser.id,
           hasAvatar: true,
         },
       });
+
+      if (result.error) {
+        Alert.alert("Upload Failed", result.error.message);
+        return;
+      }
+
+      await invalidateUserCache();
       await refreshAvatar(true);
     },
     [
       avatarStoragePath,
       currentUser?.id,
+      invalidateUserCache,
       refreshAvatar,
       resetUpload,
       updateProfileMutation,
@@ -271,20 +282,34 @@ export default function EditProfileScreen() {
     }
 
     try {
-      await updateProfileMutation.mutateAsync({
+      const result = await updateProfileMutation({
         input: {
           id: currentUser.id,
           firstName: trimmedFirstName,
           lastName: trimmedLastName,
         },
       });
+
+      if (result.error) {
+        Alert.alert("Save Failed", result.error.message);
+        return;
+      }
+
+      await invalidateUserCache();
       router.back();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to save profile";
       Alert.alert("Save Failed", message);
     }
-  }, [firstName, lastName, router, updateProfileMutation, currentUser?.id]);
+  }, [
+    firstName,
+    lastName,
+    router,
+    updateProfileMutation,
+    currentUser?.id,
+    invalidateUserCache,
+  ]);
 
   return (
     <View style={styles.container}>
@@ -362,7 +387,7 @@ export default function EditProfileScreen() {
             autoCapitalize="words"
             autoCorrect={false}
             maxLength={100}
-            editable={!updateProfileMutation.isPending}
+            editable={!isSaving}
           />
         </View>
 
@@ -377,21 +402,23 @@ export default function EditProfileScreen() {
             autoCapitalize="words"
             autoCorrect={false}
             maxLength={100}
-            editable={!updateProfileMutation.isPending}
+            editable={!isSaving}
           />
         </View>
 
         <TouchableOpacity
           style={[
             styles.saveButton,
-            (updateProfileMutation.isPending || isUploading) &&
-              styles.saveButtonDisabled,
+            (isSaving || isUploading) && styles.saveButtonDisabled,
           ]}
-          onPress={() => void handleSave()}
-          disabled={updateProfileMutation.isPending || isUploading}
+          onPress={() => {
+            setIsSaving(true);
+            void handleSave().finally(() => setIsSaving(false));
+          }}
+          disabled={isSaving || isUploading}
           activeOpacity={0.85}
         >
-          {updateProfileMutation.isPending ? (
+          {isSaving ? (
             <ActivityIndicator size="small" color={colors.white} />
           ) : (
             <Text style={styles.saveButtonText}>Save Changes</Text>
@@ -509,3 +536,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
   },
 });
+
+// Summary:
+// - File migrated: apps/native/src/app/(tabs)/profile/edit.tsx
+// - Key changes made:
+//   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
+//   2. Imported GraphQL documents from @mirai-app/graphql-types (GetCurrentUserDocument, UpdateUserDocument)
+//   3. Migrated useQueryClient() to useClient() from urql
+//   4. Changed from TanStack Query's useGetCurrentUserQuery() to urql's useQuery({ query: GetCurrentUserDocument })
+//   5. Changed from useUpdateUserMutation with callbacks to urql's useMutation(UpdateUserDocument) with manual error handling
+//   6. Replaced queryClient.invalidateQueries({ queryKey: ["me"] }) with urqlClient.invalidate(GetCurrentUserDocument)
+//   7. Added local state tracking for isSaving (urql doesn't expose isPending directly)
+//   8. Updated mutation error handling to check result.error from urql execute functions
+//   9. Updated loading state references: updateProfileMutation.isPending → isSaving
+// - Note: The file upload/download hooks (useFileUpload, useFileDownload) continue to work as they use graphqlClient.request directly

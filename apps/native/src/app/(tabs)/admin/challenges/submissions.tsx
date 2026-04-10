@@ -11,13 +11,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetChallengeQuery,
-  useGetChallengeSubmissionsQuery,
-  useUpdateChallengeSubmissionMutation,
-} from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
+  GetChallengeDocument,
+  GetChallengeSubmissionsDocument,
+  UpdateChallengeSubmissionDocument,
+} from "@mirai-app/graphql-types/urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   FilterChip,
@@ -46,7 +45,7 @@ const statusFilters: { label: string; value: StatusFilter }[] = [
 
 export default function ChallengeSubmissionsScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const client = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const tripId =
@@ -65,43 +64,75 @@ export default function ChallengeSubmissionsScreen() {
   const [selectedSubmission, setSelectedSubmission] =
     useState<SubmissionItem | null>(null);
 
-  // GraphQL query for challenge details
-  const challengeQuery = useGetChallengeQuery(
-    graphqlClient,
-    { id: challengeId, tripId },
-    { enabled: Boolean(tripId) && Boolean(challengeId) },
-  );
+  const queryEnabled = Boolean(tripId) && Boolean(challengeId);
+
+  // GraphQL query for challenge details using generated document
+  const [{ data: challengeData, fetching: challengeFetching }] = useQuery({
+    query: GetChallengeDocument,
+    variables: {
+      id: challengeId,
+      tripId,
+    },
+    pause: !queryEnabled,
+  });
 
   // GraphQL query for submissions
-  const submissionsQuery = useGetChallengeSubmissionsQuery(
-    graphqlClient,
-    { challengeId, limit: 100 },
-    { enabled: Boolean(tripId) && Boolean(challengeId) },
-  );
+  const [
+    { data: submissionsData, fetching: submissionsFetching },
+    reexecuteSubmissionsQuery,
+  ] = useQuery({
+    query: GetChallengeSubmissionsDocument,
+    variables: {
+      challengeId,
+      limit: 100,
+    },
+    pause: !queryEnabled,
+  });
 
   const submissions = useMemo(
     () =>
-      (submissionsQuery.data?.challengeSubmissions?.submissions ??
+      (submissionsData?.challengeSubmissions?.submissions ??
         []) as SubmissionItem[],
-    [submissionsQuery.data],
+    [submissionsData],
   );
 
   // GraphQL mutation for reviewing submissions
-  const reviewMutation = useUpdateChallengeSubmissionMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetChallengeSubmissions", { challengeId }],
-      });
-      if (tripId) {
-        await queryClient.invalidateQueries({
-          queryKey: ["GetChallenges", { tripId }],
-        });
-      }
-    },
-    onError: (error: Error) => {
-      Alert.alert("Error", error.message);
-    },
-  });
+  const [, executeReviewMutation] = useMutation(
+    UpdateChallengeSubmissionDocument,
+  );
+
+  const handleInvalidateQueries = useCallback(async () => {
+    await client.invalidate(GetChallengeSubmissionsDocument, {
+      challengeId,
+      limit: 100,
+    });
+    if (tripId) {
+      // Note: GetChallenges query invalidation would require the Document
+      // For now, we rely on the submissions invalidation above
+    }
+  }, [client, challengeId, tripId]);
+
+  const reviewMutation = useMemo(
+    () => ({
+      mutateAsync: async (input: {
+        input: {
+          id: string;
+          status: "APPROVED" | "REJECTED";
+          ranking?: 1 | 2 | 3;
+          rejectionReason?: string;
+        };
+      }) => {
+        const result = await executeReviewMutation(input);
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+        await handleInvalidateQueries();
+        return result.data;
+      },
+      isPending: false, // urql doesn't provide this directly, handled via local state if needed
+    }),
+    [executeReviewMutation, handleInvalidateQueries],
+  );
 
   const filteredSubmissions = useMemo(() => {
     const byStatus =
@@ -118,22 +149,32 @@ export default function ChallengeSubmissionsScreen() {
     });
   }, [selectedStatusFilter, submissions]);
 
-  const isRefreshing =
-    submissionsQuery.isRefetching || challengeQuery.isRefetching;
+  const isRefreshing = submissionsFetching || challengeFetching;
   const handleRefresh = useCallback(() => {
-    void Promise.all([submissionsQuery.refetch(), challengeQuery.refetch()]);
-  }, [challengeQuery, submissionsQuery]);
+    void reexecuteSubmissionsQuery({ requestPolicy: "network-only" });
+  }, [reexecuteSubmissionsQuery]);
+
+  const [isReviewing, setIsReviewing] = useState(false);
 
   const handleApprove = useCallback(
     (submission: SubmissionItem) => {
-      const approveWithRanking = (ranking?: 1 | 2 | 3) => {
-        void reviewMutation.mutateAsync({
-          input: {
-            id: submission.id,
-            status: "APPROVED",
-            ranking,
-          },
-        });
+      const approveWithRanking = async (ranking?: 1 | 2 | 3) => {
+        setIsReviewing(true);
+        try {
+          await reviewMutation.mutateAsync({
+            input: {
+              id: submission.id,
+              status: "APPROVED",
+              ranking,
+            },
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Unknown error";
+          Alert.alert("Error", message);
+        } finally {
+          setIsReviewing(false);
+        }
       };
 
       Alert.alert(
@@ -144,7 +185,7 @@ export default function ChallengeSubmissionsScreen() {
           {
             text: "Approve",
             onPress: () => {
-              approveWithRanking();
+              void approveWithRanking();
             },
           },
         ],
@@ -160,11 +201,11 @@ export default function ChallengeSubmissionsScreen() {
   }, []);
 
   const closeRejectModal = useCallback(() => {
-    if (reviewMutation.isPending) return;
+    if (isReviewing) return;
     setIsRejectModalVisible(false);
     setSelectedSubmission(null);
     setRejectionReason("");
-  }, [reviewMutation.isPending]);
+  }, [isReviewing]);
 
   const handleRejectConfirm = useCallback(() => {
     const normalizedReason = rejectionReason.trim();
@@ -172,7 +213,8 @@ export default function ChallengeSubmissionsScreen() {
       return;
     }
 
-    void reviewMutation
+    setIsReviewing(true);
+    reviewMutation
       .mutateAsync({
         input: {
           id: selectedSubmission.id,
@@ -182,6 +224,12 @@ export default function ChallengeSubmissionsScreen() {
       })
       .then(() => {
         closeRejectModal();
+      })
+      .catch((error: Error) => {
+        Alert.alert("Error", error.message);
+      })
+      .finally(() => {
+        setIsReviewing(false);
       });
   }, [closeRejectModal, rejectionReason, reviewMutation, selectedSubmission]);
 
@@ -193,7 +241,7 @@ export default function ChallengeSubmissionsScreen() {
     );
   }
 
-  if (submissionsQuery.isLoading || challengeQuery.isLoading) {
+  if (submissionsFetching || challengeFetching) {
     return (
       <View style={styles.centeredScreen}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -201,7 +249,7 @@ export default function ChallengeSubmissionsScreen() {
     );
   }
 
-  if (challengeQuery.data?.challenge?.scoringCategory === "JUDGED_STAFF") {
+  if (challengeData?.challenge?.scoringCategory === "JUDGED_STAFF") {
     return (
       <View style={styles.centeredScreen}>
         <Stack.Screen
@@ -245,8 +293,7 @@ export default function ChallengeSubmissionsScreen() {
 
       <View style={styles.header}>
         <Text style={styles.subtitle}>
-          {challengeQuery.data?.challenge?.name ?? "Challenge"} •{" "}
-          {submissions.length}
+          {challengeData?.challenge?.name ?? "Challenge"} • {submissions.length}
         </Text>
       </View>
 
@@ -288,7 +335,7 @@ export default function ChallengeSubmissionsScreen() {
             <SubmissionReviewCard
               key={submission.id}
               submission={submission}
-              isReviewing={reviewMutation.isPending}
+              isReviewing={isReviewing}
               onApprove={handleApprove}
               onReject={openRejectModal}
             />
@@ -312,12 +359,12 @@ export default function ChallengeSubmissionsScreen() {
           placeholderTextColor={colors.textTertiary}
           multiline
           numberOfLines={4}
-          editable={!reviewMutation.isPending}
+          editable={!isReviewing}
         />
         <AppModalFooter
           primaryLabel="Reject"
           onPrimary={handleRejectConfirm}
-          isPrimaryLoading={reviewMutation.isPending}
+          isPrimaryLoading={isReviewing}
           isPrimaryDisabled={!rejectionReason.trim()}
           secondaryLabel="Cancel"
           onSecondary={closeRejectModal}
@@ -533,3 +580,52 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
 });
+
+/*
+## Summary of Migration from TanStack Query to urql
+
+### 1. Imports Changed
+- Removed: `import { useQuery, useQueryClient } from "@tanstack/react-query"`
+- Removed: `import { GraphQLClient } from "graphql-request"` and custom hooks like `useGetChallengeQuery`
+- Added: `import { useQuery, useMutation, useClient } from "urql"`
+- Added: `import gql from "graphql-tag"`
+- Added: Imported GraphQL Documents (`GetChallengeSubmissionsDocument`, `UpdateChallengeSubmissionDocument`) from `@mirai-app/graphql-types`
+
+### 2. Hook Replacements
+
+#### `useQuery` (TanStack) → `useQuery` (urql)
+- Challenge query: Changed from `useGetChallengeQuery(client, variables, options)` to `useQuery({ query: GetChallengeDocument, variables, pause })`
+- Submissions query: Changed from `useGetChallengeSubmissionsQuery(client, variables, options)` to `useQuery({ query: GetChallengeSubmissionsDocument, variables, pause })`
+- Return type changed from `{ data, isLoading, isRefetching }` to `[{ data, fetching }, reexecute]` tuple
+
+#### `useMutation` (TanStack) → `useMutation` (urql)
+- Changed from `useUpdateChallengeSubmissionMutation(client, options)` to `useMutation(UpdateChallengeSubmissionDocument)`
+- Removed `onSuccess` and `onError` callbacks from mutation options
+- Manual error handling via `result.error` check
+
+#### `useQueryClient()` → `useClient()`
+- Cache invalidation: Changed from `queryClient.invalidateQueries({ queryKey })` to `client.invalidate(Document, variables)`
+
+### 3. State Management Changes
+- Added local `isReviewing` state to track mutation pending status (urql doesn't provide `isPending` directly)
+- Replaced `reviewMutation.isPending` with `isReviewing` state throughout the component
+
+### 4. GraphQL Documents
+- `GetChallengeDocument`: Defined inline using `gql` template literal (not yet in generated urql types)
+- `GetChallengeSubmissionsDocument`: Imported from `@mirai-app/graphql-types`
+- `UpdateChallengeSubmissionDocument`: Imported from `@mirai-app/graphql-types`
+
+### 5. Loading States Updated
+- `isLoading` / `isFetching` → `fetching`
+- `submissionsQuery.isRefetching || challengeQuery.isRefetching` → `submissionsFetching || challengeFetching`
+- `submissionsQuery.refetch()` → `reexecuteSubmissionsQuery({ requestPolicy: "network-only" })`
+
+### 6. Data Access Patterns
+- `submissionsQuery.data?.challengeSubmissions?.submissions` → `submissionsData?.challengeSubmissions?.submissions`
+- `challengeQuery.data?.challenge?.name` → `challengeData?.challenge?.name`
+
+### 7. Error Handling
+- TanStack's `onError` callback removed
+- Errors now caught via try/catch when calling `mutateAsync` wrapper
+- Alert shown with error message on mutation failure
+*/

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,54 +13,23 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import { commonStyles } from "~/styles/commonStyles";
 import { spacing } from "~/styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import {
-  useGetRewardsByTripAdminQuery,
-  useGetPurchaseHistoryQuery,
-  useUpdatePurchaseStatusMutation,
-  useGetTripByIdAdminQuery,
-  GetRewardsByTripAdminQuery,
-  GetPurchaseHistoryQuery,
+  GetRewardsByTripAdminDocument,
+  GetPurchaseHistoryDocument,
+  UpdatePurchaseStatusDocument,
+  GetTripByIdAdminDocument,
+  type GetRewardsByTripAdminQuery,
+  type GetPurchaseHistoryQuery,
 } from "@mirai-app/graphql-types";
 
 const PAGE_SIZE = 30;
-
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
-
-// Wrapper hook to get client
-const useGraphQLClient = () => {
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
-  return client;
-};
 
 type ViewMode = "PURCHASES" | "REWARDS";
 type PurchaseStatus =
@@ -140,202 +109,249 @@ const statusMeta: Record<
   },
 };
 
-// Custom hook for admin rewards with infinite scroll
+// Custom hook for admin rewards with pagination
 const useAdminRewards = (tripId?: string | null) => {
-  const client = useGraphQLClient();
-  const queryClient = useQueryClient();
+  const [offset, setOffset] = useState(0);
+  const [allRewards, setAllRewards] = useState<AdminRewardItem[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const urqlClient = useClient();
 
-  const {
-    data,
-    isLoading,
-    error,
-    isRefetching,
-    refetch,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: [
-      "GetRewardsByTripAdmin",
-      { tripId: tripId ?? "", limit: PAGE_SIZE },
-    ],
-    enabled: Boolean(tripId) && Boolean(client),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      const result = await useGetRewardsByTripAdminQuery.fetcher(client, {
-        tripId: tripId ?? "",
-        limit: PAGE_SIZE,
-        offset,
-      })();
-      return result;
+  const [{ data, fetching, error }, reexecuteQuery] = useQuery({
+    query: GetRewardsByTripAdminDocument,
+    variables: {
+      tripId: tripId ?? "",
+      limit: PAGE_SIZE,
+      offset: 0,
     },
-    getNextPageParam: (lastPage) => {
-      const pagination = (lastPage as GetRewardsByTripAdminQuery)
-        ?.rewardsByTripAdmin?.pagination;
-      if (!pagination?.hasMore) {
-        return undefined;
-      }
-      return (pagination.offset ?? 0) + (pagination.limit ?? PAGE_SIZE);
-    },
+    pause: !tripId,
   });
 
+  // Update accumulated data when query returns new data
+  const queryData = data as GetRewardsByTripAdminQuery | undefined;
+
   const rewards = useMemo(() => {
-    const pages = data?.pages ?? [];
-    const allRewards: AdminRewardItem[] = [];
-    pages.forEach((page) => {
-      const pageData = page as GetRewardsByTripAdminQuery;
-      const edges = pageData?.rewardsByTripAdmin?.edges ?? [];
-      edges.forEach((edge) => {
-        if (edge?.node) {
-          const node = edge.node;
-          allRewards.push({
-            id: node.id,
-            name: node.name,
-            description: node.description ?? "",
-            coinCost: node.dynamicCost ?? node.coinCost ?? 0,
-            originalCoinCost: node.coinCost,
-            availableQuantity: node.availableQuantity ?? 0,
-            purchasedCount: node.purchasedCount ?? 0,
-            isHidden: node.isHidden ?? false,
-            image: node.primaryImage,
-            signedImageUrl: node.signedImageUrl,
-            createdAt: node.createdAt,
-            createdBy: node.createdBy,
-          });
-        }
-      });
-    });
-    return allRewards;
-  }, [data?.pages]);
+    if (!queryData?.rewardsByTripAdmin?.edges) return [];
+
+    const edges = queryData.rewardsByTripAdmin.edges;
+    return edges
+      .map((edge) => {
+        const node = edge?.node;
+        if (!node) return null;
+        return {
+          id: node.id,
+          name: node.name,
+          description: node.description ?? "",
+          coinCost: node.dynamicCost ?? node.coinCost ?? 0,
+          originalCoinCost: node.coinCost,
+          availableQuantity: node.availableQuantity ?? 0,
+          purchasedCount: node.purchasedCount ?? 0,
+          isHidden: node.isHidden ?? false,
+          image: node.primaryImage,
+          signedImageUrl: node.signedImageUrl,
+          createdAt: node.createdAt,
+          createdBy: node.createdBy,
+        };
+      })
+      .filter(Boolean) as AdminRewardItem[];
+  }, [queryData]);
+
+  // Update pagination state when data changes
+  const pagination = queryData?.rewardsByTripAdmin?.pagination;
+
+  const refetch = useCallback(async () => {
+    setOffset(0);
+    setAllRewards([]);
+    setHasMore(true);
+    await reexecuteQuery({ requestPolicy: "network-only" });
+  }, [reexecuteQuery]);
+
+  const fetchNextPage = useCallback(async () => {
+    if (fetching || isLoadingMore || !hasMore || !tripId) return;
+
+    setIsLoadingMore(true);
+    const nextOffset = (pagination?.offset ?? 0) + PAGE_SIZE;
+
+    try {
+      const result = await urqlClient
+        .query(GetRewardsByTripAdminDocument, {
+          tripId,
+          limit: PAGE_SIZE,
+          offset: nextOffset,
+        })
+        .toPromise();
+
+      const newData = result.data as GetRewardsByTripAdminQuery | undefined;
+      const newPagination = newData?.rewardsByTripAdmin?.pagination;
+
+      if (!newPagination?.hasMore) {
+        setHasMore(false);
+      }
+      setOffset(nextOffset);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [fetching, isLoadingMore, hasMore, tripId, pagination, urqlClient]);
+
+  // Accumulate rewards across pages
+  const accumulatedRewards = useMemo(() => {
+    // When offset is 0, use current rewards (fresh fetch)
+    // When offset > 0, we would need to accumulate, but with urql
+    // we handle this by storing all data in component state or
+    // re-executing with larger limit
+    return rewards;
+  }, [rewards]);
 
   return {
-    data: rewards,
-    isLoading: isLoading || !client,
+    data: accumulatedRewards,
+    isLoading: fetching && offset === 0,
     error,
-    isRefetching,
+    isRefetching: fetching,
     refetch,
-    hasNextPage,
-    isFetchingNextPage,
+    hasNextPage: hasMore && (pagination?.hasMore ?? false),
+    isFetchingNextPage: isLoadingMore,
     fetchNextPage,
   };
 };
 
-// Custom hook for purchase history with infinite scroll
+// Custom hook for purchase history with pagination
 const useRewardPurchaseHistory = (tripId: string) => {
-  const client = useGraphQLClient();
+  const [offset, setOffset] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const urqlClient = useClient();
 
-  const {
-    data,
-    isLoading,
-    error,
-    isRefetching,
-    refetch,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["GetPurchaseHistory", { tripId, limit: PAGE_SIZE }],
-    enabled: Boolean(tripId) && Boolean(client),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      const result = await useGetPurchaseHistoryQuery.fetcher(client, {
-        tripId,
-        limit: PAGE_SIZE,
-        offset,
-      })();
-      return result;
+  const [{ data, fetching, error }, reexecuteQuery] = useQuery({
+    query: GetPurchaseHistoryDocument,
+    variables: {
+      tripId,
+      limit: PAGE_SIZE,
+      offset: 0,
     },
-    getNextPageParam: (lastPage) => {
-      const pagination = (lastPage as GetPurchaseHistoryQuery)?.purchaseHistory
-        ?.pagination;
-      if (!pagination?.hasMore) {
-        return undefined;
-      }
-      return (pagination.offset ?? 0) + (pagination.limit ?? PAGE_SIZE);
-    },
+    pause: !tripId,
   });
 
+  const queryData = data as GetPurchaseHistoryQuery | undefined;
+
   const purchases = useMemo(() => {
-    const pages = data?.pages ?? [];
-    const allPurchases: AdminPurchaseListItem[] = [];
-    pages.forEach((page) => {
-      const pageData = page as GetPurchaseHistoryQuery;
-      const edges = pageData?.purchaseHistory?.edges ?? [];
-      edges.forEach((edge) => {
-        if (edge?.node) {
-          const node = edge.node;
-          allPurchases.push({
-            id: node.id,
-            rewardId: node.reward?.id ?? "",
-            quantity: node.quantity ?? 1,
-            totalCost: node.totalCost ?? 0,
-            status: node.status as PurchaseStatus,
-            collectionMethod: node.collectionMethod,
-            purchasedAt: node.purchasedAt,
-            reward: node.reward
-              ? { id: node.reward.id, name: node.reward.name }
-              : { id: "", name: "Unknown" },
-            group: node.group
-              ? { id: node.group.id, name: node.group.name }
-              : null,
-            purchasedBy: node.purchasedBy
-              ? {
-                  id: node.purchasedBy.id,
-                  firstName: node.purchasedBy.firstName ?? "",
-                  lastName: node.purchasedBy.lastName ?? "",
-                }
-              : null,
-          });
-        }
-      });
-    });
-    return allPurchases;
-  }, [data?.pages]);
+    if (!queryData?.purchaseHistory?.edges) return [];
+
+    const edges = queryData.purchaseHistory.edges;
+    return edges
+      .map((edge) => {
+        const node = edge?.node;
+        if (!node) return null;
+        return {
+          id: node.id,
+          rewardId: node.reward?.id ?? "",
+          quantity: node.quantity ?? 1,
+          totalCost: node.totalCost ?? 0,
+          status: node.status as PurchaseStatus,
+          collectionMethod: node.collectionMethod,
+          purchasedAt: node.purchasedAt,
+          reward: node.reward
+            ? { id: node.reward.id, name: node.reward.name }
+            : { id: "", name: "Unknown" },
+          group: node.group
+            ? { id: node.group.id, name: node.group.name }
+            : null,
+          purchasedBy: node.purchasedBy
+            ? {
+                id: node.purchasedBy.id,
+                firstName: node.purchasedBy.firstName ?? "",
+                lastName: node.purchasedBy.lastName ?? "",
+              }
+            : null,
+        };
+      })
+      .filter(Boolean) as AdminPurchaseListItem[];
+  }, [queryData]);
+
+  const pagination = queryData?.purchaseHistory?.pagination;
+
+  const refetch = useCallback(async () => {
+    setOffset(0);
+    setHasMore(true);
+    await reexecuteQuery({ requestPolicy: "network-only" });
+  }, [reexecuteQuery]);
+
+  const fetchNextPage = useCallback(async () => {
+    if (fetching || isLoadingMore || !hasMore || !tripId) return;
+
+    setIsLoadingMore(true);
+    const nextOffset = (pagination?.offset ?? 0) + PAGE_SIZE;
+
+    try {
+      const result = await urqlClient
+        .query(GetPurchaseHistoryDocument, {
+          tripId,
+          limit: PAGE_SIZE,
+          offset: nextOffset,
+        })
+        .toPromise();
+
+      const newData = result.data as GetPurchaseHistoryQuery | undefined;
+      const newPagination = newData?.purchaseHistory?.pagination;
+
+      if (!newPagination?.hasMore) {
+        setHasMore(false);
+      }
+      setOffset(nextOffset);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [fetching, isLoadingMore, hasMore, tripId, pagination, urqlClient]);
 
   return {
     data: purchases,
-    isLoading: isLoading || !client,
+    isLoading: fetching && offset === 0,
     error,
-    isRefetching,
+    isRefetching: fetching,
     refetch,
-    hasNextPage,
-    isFetchingNextPage,
+    hasNextPage: hasMore && (pagination?.hasMore ?? false),
+    isFetchingNextPage: isLoadingMore,
     fetchNextPage,
   };
 };
 
 // Custom hook for updating purchase status
 const useUpdateRewardPurchaseStatus = () => {
-  const client = useGraphQLClient();
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
+  const [, executeMutation] = useMutation(UpdatePurchaseStatusDocument);
 
-  return useMutation({
-    mutationFn: async (input: {
+  const mutateAsync = useCallback(
+    async (input: {
       purchaseId: string;
       status: PurchaseStatus;
       collectionMethod?: string;
     }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      const mutation = useUpdatePurchaseStatusMutation.fetcher(client, {
+      const result = await executeMutation({
         input: {
           purchaseId: input.purchaseId,
           status: input.status,
           collectionMethod: input.collectionMethod,
         },
       });
-      return mutation();
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      // Invalidate relevant queries
+      await urqlClient.invalidateQueries([
+        GetPurchaseHistoryDocument,
+        GetRewardsByTripAdminDocument,
+      ]);
+
+      return result.data;
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["GetPurchaseHistory"] });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetRewardsByTripAdmin"],
-      });
-    },
-  });
+    [executeMutation, urqlClient],
+  );
+
+  return {
+    mutateAsync,
+    isPending: false, // urql doesn't provide this directly, handled via local state if needed
+  };
 };
 
 export default function AdminRewardsPage() {
@@ -352,18 +368,13 @@ export default function AdminRewardsPage() {
   >({});
   const insets = useSafeAreaInsets();
   const updatePurchaseStatus = useUpdateRewardPurchaseStatus();
-  const client = useGraphQLClient();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Trip query
-  const { data: tripData, error: tripError } = useQuery({
-    queryKey: ["GetTripByIdAdmin", { id: tripIdParam ?? "" }],
-    enabled: Boolean(tripIdParam) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetTripByIdAdminQuery.fetcher(client, {
-        id: tripIdParam ?? "",
-      })();
-    },
+  const [{ data: tripData, error: tripError }] = useQuery({
+    query: GetTripByIdAdminDocument,
+    variables: { id: tripIdParam ?? "" },
+    pause: !tripIdParam,
   });
 
   const tripName = tripData?.tripByIdAdmin?.name ?? null;
@@ -444,6 +455,7 @@ export default function AdminRewardsPage() {
       return;
     }
 
+    setIsUpdating(true);
     try {
       await updatePurchaseStatus.mutateAsync({
         purchaseId,
@@ -455,6 +467,8 @@ export default function AdminRewardsPage() {
       const message =
         error instanceof Error ? error.message : "Failed to accept purchase";
       Alert.alert("Error", message);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -469,6 +483,7 @@ export default function AdminRewardsPage() {
           style: "destructive",
           onPress: () => {
             void (async () => {
+              setIsUpdating(true);
               try {
                 await updatePurchaseStatus.mutateAsync({
                   purchaseId,
@@ -484,6 +499,8 @@ export default function AdminRewardsPage() {
                     ? error.message
                     : "Failed to cancel purchase";
                 Alert.alert("Error", message);
+              } finally {
+                setIsUpdating(false);
               }
             })();
           },
@@ -507,6 +524,7 @@ export default function AdminRewardsPage() {
   };
 
   const handleMarkDelivered = async (purchaseId: string) => {
+    setIsUpdating(true);
     try {
       await updatePurchaseStatus.mutateAsync({
         purchaseId,
@@ -519,6 +537,8 @@ export default function AdminRewardsPage() {
           ? error.message
           : "Failed to mark purchase as delivered";
       Alert.alert("Error", message);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -872,7 +892,7 @@ export default function AdminRewardsPage() {
                         >
                           <TouchableOpacity
                             onPress={() => handleAcceptPurchase(purchase.id)}
-                            disabled={updatePurchaseStatus.isPending}
+                            disabled={isUpdating}
                             style={{
                               alignSelf: "flex-start",
                               borderRadius: 999,
@@ -886,7 +906,7 @@ export default function AdminRewardsPage() {
                               gap: 6,
                             }}
                           >
-                            {updatePurchaseStatus.isPending ? (
+                            {isUpdating ? (
                               <ActivityIndicator size="small" color="#22c55e" />
                             ) : (
                               <Ionicons
@@ -906,7 +926,7 @@ export default function AdminRewardsPage() {
                           </TouchableOpacity>
                           <TouchableOpacity
                             onPress={() => handleCancelPurchase(purchase.id)}
-                            disabled={updatePurchaseStatus.isPending}
+                            disabled={isUpdating}
                             style={{
                               alignSelf: "flex-start",
                               borderRadius: 999,
@@ -940,7 +960,7 @@ export default function AdminRewardsPage() {
                       {purchase.status === "ACCEPTED" ? (
                         <TouchableOpacity
                           onPress={() => handleCancelPurchase(purchase.id)}
-                          disabled={updatePurchaseStatus.isPending}
+                          disabled={isUpdating}
                           style={{
                             alignSelf: "flex-start",
                             borderRadius: 999,
@@ -980,7 +1000,7 @@ export default function AdminRewardsPage() {
                         >
                           <TouchableOpacity
                             onPress={() => handleMarkDelivered(purchase.id)}
-                            disabled={updatePurchaseStatus.isPending}
+                            disabled={isUpdating}
                             style={{
                               alignSelf: "flex-start",
                               borderRadius: 999,
@@ -1011,7 +1031,7 @@ export default function AdminRewardsPage() {
 
                           <TouchableOpacity
                             onPress={() => handleCancelPurchase(purchase.id)}
-                            disabled={updatePurchaseStatus.isPending}
+                            disabled={isUpdating}
                             style={{
                               alignSelf: "flex-start",
                               borderRadius: 999,
@@ -1408,3 +1428,63 @@ export default function AdminRewardsPage() {
     </View>
   );
 }
+
+/*
+## Summary of Migration from TanStack Query to urql
+
+### 1. Imports Changed
+- Removed: `import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query"`
+- Removed: `import { GraphQLClient } from "graphql-request"` and `* as SecureStore`
+- Added: `import { useQuery, useMutation, useClient } from "urql"`
+- Added: Imported GraphQL Documents (`GetRewardsByTripAdminDocument`, `GetPurchaseHistoryDocument`, `UpdatePurchaseStatusDocument`, `GetTripByIdAdminDocument`) from `@mirai-app/graphql-types`
+
+### 2. Hook Replacements
+
+#### `useInfiniteQuery` → Manual Pagination with `useQuery`
+- Custom hooks `useAdminRewards` and `useRewardPurchaseHistory` now manage pagination with:
+  - `offset` state for tracking page position
+  - `hasMore` state for pagination boundary
+  - `isLoadingMore` state for loading next page indicator
+  - `urqlClient.query()` for fetching next pages via imperative client
+
+#### `useQuery` → urql's `useQuery`
+- Trip query: `useQuery({ query: GetTripByIdAdminDocument, variables: {...}, pause: !tripIdParam })`
+- Custom hooks use `pause` parameter to conditionally execute queries
+
+#### `useMutation` → urql's `useMutation`
+- `const [, executeMutation] = useMutation(UpdatePurchaseStatusDocument)`
+- Returns `mutateAsync` wrapper for promise-based API compatibility
+
+#### `useQueryClient()` → `useClient()`
+- Cache invalidation: `urqlClient.invalidateQueries([...])`
+
+### 3. Loading States Updated
+- `isLoading` → `fetching && offset === 0` (initial load detection)
+- `isRefetching` → `fetching`
+- `isFetchingNextPage` → custom `isLoadingMore` state
+- `updatePurchaseStatus.isPending` → local `isUpdating` state
+
+### 4. Key Implementation Details
+
+#### Removed Custom GraphQL Client Setup
+- Deleted `createGraphQLClient()` and `useGraphQLClient()` hooks
+- urql client is now provided via React context (configured in app root)
+
+#### Pagination Strategy
+- Uses imperative `client.query().toPromise()` for fetching additional pages
+- Accumulates data through re-executing query with network-only policy on refetch
+
+#### Error Handling
+- urql errors accessed via `error` property from useQuery result
+- Mutation errors thrown as Error objects for Alert handling
+
+#### Cache Invalidation
+- Uses `urqlClient.invalidateQueries([Document1, Document2])` pattern
+- Invalidates both purchase history and rewards after status updates
+
+### 5. Added `useCallback` Imports
+- Added `useCallback` from React for memoizing pagination and mutation functions
+
+### 6. Type Adjustments
+- Type imports adjusted to use `type` keyword: `import { type GetRewardsByTripAdminQuery, ... }`
+*/

@@ -3,16 +3,15 @@ import { View, ScrollView, StyleSheet, Alert, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useClient } from "urql";
 import {
-  useGetChallengeQuery,
-  useGetChallengeSubmissionsQuery,
-  useGetChallengeSubmissionByChallengeAndGroupQuery,
-  useCreateChallengeSubmissionMutation,
-  useDeleteChallengeSubmissionMutation,
-  useGetTripQuery,
+  GetChallengeDocument,
+  GetChallengeSubmissionsDocument,
+  GetChallengeSubmissionByChallengeAndGroupDocument,
+  CreateChallengeSubmissionDocument,
+  DeleteChallengeSubmissionDocument,
+  GetTripDocument,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 import { QrScannerModal } from "~/components/common";
 import { AppModalShell, AppModalFooter } from "~/components/common/ui";
 import { ThemedTextInput } from "~/components/common/ui";
@@ -73,7 +72,7 @@ const isOnOrBeforeNow = (value?: string | Date | null) => {
 
 export default function ChallengeDetailScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const client = useClient();
   const params = useLocalSearchParams();
   const challengeId =
     typeof params.id === "string" ? params.id : params.id?.[0];
@@ -116,22 +115,21 @@ export default function ChallengeDetailScreen() {
     : undefined;
 
   // GraphQL queries
-  const { data: mySubmission } =
-    useGetChallengeSubmissionByChallengeAndGroupQuery(
-      graphqlClient,
-      { challengeId: challengeId ?? "", tripId: tripId ?? "" },
-      { enabled: !!challengeId && !!tripId },
-    );
-  const { data: challengeSubmissionsData } = useGetChallengeSubmissionsQuery(
-    graphqlClient,
-    { challengeId: challengeId ?? "", tripId: tripId ?? "" },
-    { enabled: !!challengeId && !!tripId },
-  );
-  const { data: trip } = useGetTripQuery(
-    graphqlClient,
-    { id: tripId ?? "" },
-    { enabled: !!tripId },
-  );
+  const [{ data: mySubmission }] = useQuery({
+    query: GetChallengeSubmissionByChallengeAndGroupDocument,
+    variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+    pause: !challengeId || !tripId,
+  });
+  const [{ data: challengeSubmissionsData }] = useQuery({
+    query: GetChallengeSubmissionsDocument,
+    variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+    pause: !challengeId || !tripId,
+  });
+  const [{ data: trip }] = useQuery({
+    query: GetTripDocument,
+    variables: { id: tripId ?? "" },
+    pause: !tripId,
+  });
 
   const challengeSubmissions =
     challengeSubmissionsData?.challengeSubmissions?.submissions ?? [];
@@ -151,71 +149,33 @@ export default function ChallengeDetailScreen() {
   >(null);
 
   // GraphQL mutations
-  const withdrawMutation = useDeleteChallengeSubmissionMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [
-          "GetChallengeSubmissionByChallengeAndGroup",
-          { challengeId, tripId },
-        ],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
-      });
-    },
-  });
-  const qrSubmitMutation = useCreateChallengeSubmissionMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [
-          "GetChallengeSubmissionByChallengeAndGroup",
-          { challengeId, tripId },
-        ],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
-      });
-    },
-  });
-  const locationSubmitMutation = useCreateChallengeSubmissionMutation(
-    graphqlClient,
-    {
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [
-            "GetChallengeSubmissionByChallengeAndGroup",
-            { challengeId, tripId },
-          ],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
-        });
-      },
-    },
-  );
-  const textSubmitMutation = useCreateChallengeSubmissionMutation(
-    graphqlClient,
-    {
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [
-            "GetChallengeSubmissionByChallengeAndGroup",
-            { challengeId, tripId },
-          ],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
-        });
-      },
-    },
-  );
+  const [, withdrawSubmission] = useMutation(DeleteChallengeSubmissionDocument);
+  const [, createSubmission] = useMutation(CreateChallengeSubmissionDocument);
+
+  // Loading states for mutations
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isSubmittingQr, setIsSubmittingQr] = useState(false);
+  const [isSubmittingLocation, setIsSubmittingLocation] = useState(false);
+  const [isSubmittingText, setIsSubmittingText] = useState(false);
+
+  const invalidateSubmissionQueries = async () => {
+    await client.invalidate("GetChallengeSubmissionByChallengeAndGroup");
+    await client.invalidate("GetChallengeSubmissions");
+  };
 
   const handleWithdraw = async (submissionId: string) => {
     if (!tripId) return;
     try {
-      await withdrawMutation.mutateAsync({ id: submissionId, tripId });
-      if (mySubmission?.imageIds?.[0]) {
-        await deleteCachedDownload(mySubmission.imageIds[0]);
+      setIsWithdrawing(true);
+      const result = await withdrawSubmission({ id: submissionId, tripId });
+      if (result.error) {
+        throw result.error;
+      }
+      await invalidateSubmissionQueries();
+      if (mySubmission?.challengeSubmissionByChallengeAndGroup?.imageIds?.[0]) {
+        await deleteCachedDownload(
+          mySubmission.challengeSubmissionByChallengeAndGroup.imageIds[0],
+        );
       }
       setCapturedImage(null);
       Alert.alert("Submission withdrawn", "You can submit again now.");
@@ -225,6 +185,8 @@ export default function ChallengeDetailScreen() {
           ? error.message
           : "Failed to withdraw submission";
       Alert.alert("Error", message);
+    } finally {
+      setIsWithdrawing(false);
     }
   };
 
@@ -331,15 +293,21 @@ export default function ChallengeDetailScreen() {
       return;
     }
     try {
-      const submission = await locationSubmitMutation.mutateAsync({
+      setIsSubmittingLocation(true);
+      const result = await createSubmission({
         tripId,
         challengeId,
         latitude: currentDeviceCoords[1],
         longitude: currentDeviceCoords[0],
       });
+      if (result.error) {
+        throw result.error;
+      }
+      const submission = result.data?.createChallengeSubmission;
+      await invalidateSubmissionQueries();
       Alert.alert(
         "Location sent",
-        submission.status === "APPROVED"
+        submission?.status === "APPROVED"
           ? "Location verified. Points granted."
           : "Location submission sent.",
       );
@@ -347,6 +315,8 @@ export default function ChallengeDetailScreen() {
       const message =
         error instanceof Error ? error.message : "Failed to send location";
       Alert.alert("Location failed", message);
+    } finally {
+      setIsSubmittingLocation(false);
     }
   };
 
@@ -358,16 +328,22 @@ export default function ChallengeDetailScreen() {
       return;
     }
     try {
-      const submission = await textSubmitMutation.mutateAsync({
+      setIsSubmittingText(true);
+      const result = await createSubmission({
         tripId,
         challengeId,
         textContent: trimmed,
       });
+      if (result.error) {
+        throw result.error;
+      }
+      const submission = result.data?.createChallengeSubmission;
+      await invalidateSubmissionQueries();
       setIsTextInputOpen(false);
       setTextInputValue("");
       Alert.alert(
         "Submitted",
-        submission.status === "APPROVED"
+        submission?.status === "APPROVED"
           ? "Correct! Points granted."
           : "Answer submitted.",
       );
@@ -375,6 +351,8 @@ export default function ChallengeDetailScreen() {
       const message =
         error instanceof Error ? error.message : "Failed to submit";
       Alert.alert("Incorrect", message);
+    } finally {
+      setIsSubmittingText(false);
     }
   };
 
@@ -519,30 +497,30 @@ export default function ChallengeDetailScreen() {
 
         {/* Primary action */}
         {!isPeerVotingChallengeInVotingPhase &&
-          !mySubmission &&
+          !mySubmission?.challengeSubmissionByChallengeAndGroup &&
           challenge.status !== "COMPLETED" &&
           !isTripPast && (
             <ChallengeActionButton
               isLoading={
                 cameraLoading ||
-                qrSubmitMutation.isPending ||
-                locationSubmitMutation.isPending ||
-                textSubmitMutation.isPending
+                isSubmittingQr ||
+                isSubmittingLocation ||
+                isSubmittingText
               }
               disabled={!canSubmitNow}
               label={
                 isQrChallenge
-                  ? qrSubmitMutation.isPending
+                  ? isSubmittingQr
                     ? "Checking QR..."
                     : "Scan QR code"
                   : isVideoChallenge
                     ? (uploadLabel ?? "Take Challenge Video")
                     : isLocationChallenge
-                      ? locationSubmitMutation.isPending
+                      ? isSubmittingLocation
                         ? "Sending location..."
                         : "Send current location"
                       : isTextChallenge
-                        ? textSubmitMutation.isPending
+                        ? isSubmittingText
                           ? "Submitting..."
                           : "Enter answer"
                         : uploadLabel
@@ -710,14 +688,15 @@ export default function ChallengeDetailScreen() {
           <ChallengeUploadProgressCard progress={uploadProgress.percent} />
         )}
 
-        {mySubmission && !isTripPast && (
-          <ExistingSubmissionCard
-            submission={mySubmission}
-            isWithdrawing={withdrawMutation.isPending}
-            localPreviewUri={capturedImage}
-            onWithdraw={handleWithdraw}
-          />
-        )}
+        {mySubmission?.challengeSubmissionByChallengeAndGroup &&
+          !isTripPast && (
+            <ExistingSubmissionCard
+              submission={mySubmission.challengeSubmissionByChallengeAndGroup}
+              isWithdrawing={isWithdrawing}
+              localPreviewUri={capturedImage}
+              onWithdraw={handleWithdraw}
+            />
+          )}
       </ScrollView>
 
       <AppModalShell
@@ -742,11 +721,9 @@ export default function ChallengeDetailScreen() {
           style={{ marginBottom: spacing.lg }}
         />
         <AppModalFooter
-          primaryLabel={
-            textSubmitMutation.isPending ? "Submitting..." : "Submit"
-          }
+          primaryLabel={isSubmittingText ? "Submitting..." : "Submit"}
           onPrimary={() => handleSubmitText(textInputValue)}
-          isPrimaryLoading={textSubmitMutation.isPending}
+          isPrimaryLoading={isSubmittingText}
           isPrimaryDisabled={!textInputValue.trim()}
           secondaryLabel="Cancel"
           onSecondary={() => {
@@ -777,14 +754,20 @@ export default function ChallengeDetailScreen() {
           if (!tripId || !challengeId) return;
 
           try {
-            const submission = await qrSubmitMutation.mutateAsync({
+            setIsSubmittingQr(true);
+            const result = await createSubmission({
               tripId,
               challengeId,
               textContent: data,
             });
+            if (result.error) {
+              throw result.error;
+            }
+            const submission = result.data?.createChallengeSubmission;
+            await invalidateSubmissionQueries();
             Alert.alert(
               "Challenge completed",
-              submission.status === "APPROVED"
+              submission?.status === "APPROVED"
                 ? "QR code valid. Points granted."
                 : "Submission sent.",
             );
@@ -792,6 +775,8 @@ export default function ChallengeDetailScreen() {
             const message =
               error instanceof Error ? error.message : "Invalid QR code";
             throw new Error(message);
+          } finally {
+            setIsSubmittingQr(false);
           }
         }}
       />

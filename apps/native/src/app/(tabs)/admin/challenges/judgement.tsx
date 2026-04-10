@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   StatusBar,
@@ -7,25 +7,22 @@ import {
   View,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery } from "urql";
+import { GetChallengeDocument } from "@mirai-app/graphql-types/urql";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { JudgementContent } from "~/components/judgement/JudgementContent";
 import { viewStyles, textStyles } from "~/styles/judgement";
 
-const createGraphQLClient = () => {
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL ?? "http://localhost:4000/graphql",
-    {
-      headers: async () => {
-        const token = await SecureStore.getItemAsync("sb-access-token");
-        return token ? { Authorization: `Bearer ${token}` } : {};
-      },
-    },
-  );
-};
+interface ChallengeData {
+  challenge?: {
+    id: string;
+    name: string;
+    scoringCategory?: string;
+    endTime?: string;
+    status?: string;
+  };
+}
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -52,7 +49,6 @@ export default function ChallengeJudgementScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
 
   const tripId =
     typeof params.tripId === "string"
@@ -63,35 +59,14 @@ export default function ChallengeJudgementScreen() {
       ? params.challengeId
       : (params.challengeId?.[0] ?? "");
 
-  const challengeQuery = useQuery({
-    queryKey: ["challenge", "details", challengeId, tripId],
-    enabled: Boolean(tripId) && Boolean(challengeId),
-    queryFn: async () => {
-      const result = await graphqlClient.request<{
-        challenge?: {
-          id: string;
-          name: string;
-          scoringCategory?: string;
-          endTime?: string;
-          status?: string;
-        };
-      }>(
-        `
-        query GetChallenge($id: ID!, $tripId: ID!) {
-          challenge(id: $id, tripId: $tripId) {
-            id
-            name
-            scoringCategory
-            endTime
-            status
-          }
-        }
-        `,
-        { id: challengeId, tripId },
-      );
-      return parseChallenge(result.challenge);
-    },
+  // Use generated GetChallengeDocument
+  const [{ data, fetching: isLoading }] = useQuery({
+    query: GetChallengeDocument,
+    variables: { id: challengeId, tripId },
+    pause: !tripId || !challengeId,
   });
+
+  const challenge = parseChallenge(data?.challenge ?? null);
 
   if (!tripId || !challengeId) {
     return (
@@ -101,7 +76,7 @@ export default function ChallengeJudgementScreen() {
     );
   }
 
-  if (challengeQuery.isLoading) {
+  if (isLoading) {
     return (
       <View style={[viewStyles.container, viewStyles.centered]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -109,7 +84,7 @@ export default function ChallengeJudgementScreen() {
     );
   }
 
-  if (challengeQuery.data?.scoringCategory === "JUDGED_STAFF") {
+  if (challenge?.scoringCategory === "JUDGED_STAFF") {
     return (
       <View
         style={[

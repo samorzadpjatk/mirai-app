@@ -1,33 +1,18 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useClient, useMutation } from "urql";
+import { CreateGroupDocument } from "@mirai-app/graphql-types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { colors, spacing } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import { useCreateGroupMutation } from "@mirai-app/graphql-types";
-
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
 
 export default function AdminCreateGroupScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const client = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId =
@@ -35,40 +20,11 @@ export default function AdminCreateGroupScreen() {
       ? params.tripId
       : (params.tripId?.[0] ?? "");
 
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
   const [groupName, setGroupName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const createGroupMutation = useMutation({
-    mutationFn: async (input: { name: string; tripId: string }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useCreateGroupMutation.fetcher(client, {
-        input: {
-          name: input.name,
-          tripId: input.tripId,
-        },
-      })();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["GetGroupsByTrip"] });
-      Alert.alert("Success", "Group created successfully.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
-    },
-    onError: (error) => {
-      Alert.alert(
-        "Error",
-        `Failed to create group: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    },
-  });
+  // GraphQL mutation for creating group
+  const [, createGroup] = useMutation(CreateGroupDocument);
 
   const handleSubmit = async () => {
     const trimmedGroupName = groupName.trim();
@@ -84,14 +40,36 @@ export default function AdminCreateGroupScreen() {
     }
 
     try {
-      await createGroupMutation.mutateAsync({
-        name: trimmedGroupName,
-        tripId,
+      setIsCreating(true);
+      const result = await createGroup({
+        input: {
+          name: trimmedGroupName,
+          tripId,
+        },
       });
-    } catch {
-      // Error handling is done in the mutation's onError
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate related queries
+      await client.invalidate("GetGroupsByTrip");
+
+      Alert.alert("Success", "Group created successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      Alert.alert("Error", `Failed to create group: ${message}`);
+    } finally {
+      setIsCreating(false);
     }
   };
+
+  const isValid = groupName.trim().length > 0;
 
   return (
     <View
@@ -125,11 +103,9 @@ export default function AdminCreateGroupScreen() {
 
         <PrimaryLoadingButton
           label="Create Group"
-          isLoading={createGroupMutation.isPending}
+          isLoading={isCreating}
           onPress={handleSubmit}
-          disabled={
-            !groupName.trim() || createGroupMutation.isPending || !client
-          }
+          disabled={!isValid || isCreating}
         />
       </ScrollView>
     </View>

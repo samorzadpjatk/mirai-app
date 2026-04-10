@@ -9,15 +9,14 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetChallengeQuery,
-  useGetChallengeSubmissionsQuery,
-  useGetMyVotesQuery,
-  useSubmitVoteMutation,
-  useGetCurrentUserQuery,
+  GetChallengeDocument,
+  GetChallengeSubmissionsDocument,
+  GetMyVotesDocument,
+  SubmitVoteDocument,
+  GetCurrentUserDocument,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 import {
   borderRadius,
   colors,
@@ -176,7 +175,7 @@ function SubmissionImageCard({
 export default function ChallengePeerVotingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const queryClient = useQueryClient();
+  const client = useClient();
   const insets = useSafeAreaInsets();
 
   const challengeId =
@@ -185,25 +184,26 @@ export default function ChallengePeerVotingScreen() {
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
   // GraphQL queries
-  const { data: challenge, isLoading: isLoadingChallenge } =
-    useGetChallengeQuery(
-      graphqlClient,
-      { id: challengeId ?? "", tripId: tripId ?? "" },
-      { enabled: !!challengeId && !!tripId },
-    );
-  const { data: challengeSubmissionsData, isLoading: isLoadingSubmissions } =
-    useGetChallengeSubmissionsQuery(
-      graphqlClient,
-      { challengeId: challengeId ?? "", tripId: tripId ?? "" },
-      { enabled: !!challengeId && !!tripId },
-    );
-  const { data: myVotesData, isLoading: isLoadingVotes } = useGetMyVotesQuery(
-    graphqlClient,
-    { challengeId: challengeId ?? "", tripId: tripId ?? "" },
-    { enabled: !!challengeId && !!tripId },
-  );
-  const { data: currentUser, isLoading: isLoadingCurrentUser } =
-    useGetCurrentUserQuery(graphqlClient, {}, { enabled: !!tripId });
+  const [{ data: challenge, fetching: isLoadingChallenge }] = useQuery({
+    query: GetChallengeDocument,
+    variables: { id: challengeId ?? "", tripId: tripId ?? "" },
+    pause: !challengeId || !tripId,
+  });
+  const [{ data: challengeSubmissionsData, fetching: isLoadingSubmissions }] =
+    useQuery({
+      query: GetChallengeSubmissionsDocument,
+      variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+      pause: !challengeId || !tripId,
+    });
+  const [{ data: myVotesData, fetching: isLoadingVotes }] = useQuery({
+    query: GetMyVotesDocument,
+    variables: { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+    pause: !challengeId || !tripId,
+  });
+  const [{ data: currentUser, fetching: isLoadingCurrentUser }] = useQuery({
+    query: GetCurrentUserDocument,
+    pause: !tripId,
+  });
 
   const submissionsData =
     challengeSubmissionsData?.challengeSubmissions?.submissions ?? [];
@@ -224,7 +224,8 @@ export default function ChallengePeerVotingScreen() {
   }, [isTripPast, challengeId, tripId, router]);
 
   // GraphQL mutation
-  const submitVoteMutation = useSubmitVoteMutation(graphqlClient);
+  const [, submitVote] = useMutation(SubmitVoteDocument);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [phase, setPhase] = useState<VotingPhase>("comparing");
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
@@ -474,37 +475,35 @@ export default function ChallengePeerVotingScreen() {
     ].filter((vote) => Boolean(vote.submissionId));
 
     try {
+      setIsSubmitting(true);
       await Promise.all(
         votesPayload.map((vote) =>
-          submitVoteMutation
-            .mutateAsync({
-              tripId,
-              challengeId,
-              submissionId: vote.submissionId,
-              votePosition: vote.votePosition,
-              votePoints: vote.votePoints,
-            })
-            .catch((error) => {
-              if (isConflictError(error)) {
-                return null;
-              }
-              throw error;
-            }),
+          submitVote({
+            tripId,
+            challengeId,
+            submissionId: vote.submissionId,
+            votePosition: vote.votePosition,
+            votePoints: vote.votePoints,
+          }).catch((error) => {
+            if (isConflictError(error)) {
+              return null;
+            }
+            throw error;
+          }),
         ),
       );
 
-      await queryClient.invalidateQueries({
-        queryKey: ["GetMyVotes", { challengeId, tripId }],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
-      });
+      // Invalidate related queries
+      await client.invalidate("GetMyVotes");
+      await client.invalidate("GetChallengeSubmissions");
       navigateBackToChallenge();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to submit votes";
       setBlockedReason(message);
       setPhase("blocked");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -611,12 +610,10 @@ export default function ChallengePeerVotingScreen() {
               <TouchableOpacity
                 style={[styles.actionButton, styles.actionPrimary]}
                 onPress={() => void handleSubmitPodium()}
-                disabled={submitVoteMutation.isPending}
+                disabled={isSubmitting}
               >
                 <Text style={styles.actionPrimaryText}>
-                  {submitVoteMutation.isPending
-                    ? "Submitting..."
-                    : "Confirm Podium"}
+                  {isSubmitting ? "Submitting..." : "Confirm Podium"}
                 </Text>
               </TouchableOpacity>
             </View>

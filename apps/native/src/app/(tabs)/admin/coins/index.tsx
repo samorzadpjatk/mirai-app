@@ -9,42 +9,17 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import { colors, spacing, borderRadius, typography } from "~/styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupCard } from "~/components/admin/groups/GroupCard";
 import {
-  useGetGroupsByTripQuery,
-  useGetCoinQuickStatsQuery,
-  GetGroupsByTripQuery,
+  GetGroupsByTripDocument,
+  GetCoinQuickStatsDocument,
+  type GetGroupsByTripQuery,
+  type GetCoinQuickStatsQuery,
 } from "@mirai-app/graphql-types";
-
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
-
-// Wrapper hook to get client
-const useGraphQLClient = () => {
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
-  return client;
-};
 
 // Group type matching the expected structure
 interface Group {
@@ -59,30 +34,22 @@ interface Group {
 
 // Custom hook for admin coins - combines groups and stats
 export const useAdminCoins = (tripId: string) => {
-  const client = useGraphQLClient();
-
   // Query for groups by trip
-  const {
-    data: groupsData,
-    isLoading: groupsLoading,
-    error: groupsError,
-  } = useQuery({
-    queryKey: ["GetGroupsByTrip", { tripId }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetGroupsByTripQuery.fetcher(client, { tripId })();
-    },
-  });
+  const [{ data: groupsData, fetching: groupsLoading, error: groupsError }] =
+    useQuery({
+      query: GetGroupsByTripDocument,
+      variables: {
+        tripId,
+        pagination: { limit: 50, offset: 0 },
+      },
+      pause: !tripId,
+    });
 
   // Query for coin quick stats
-  const { data: statsData, isLoading: statsLoading } = useQuery({
-    queryKey: ["GetCoinQuickStats", { tripId }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetCoinQuickStatsQuery.fetcher(client, { tripId })();
-    },
+  const [{ data: statsData, fetching: statsLoading }] = useQuery({
+    query: GetCoinQuickStatsDocument,
+    variables: { tripId },
+    pause: !tripId,
   });
 
   // Transform groups data
@@ -100,24 +67,24 @@ export const useAdminCoins = (tripId: string) => {
   }, [groupsData]);
 
   // Stats from quick stats query
-  const stats = useMemo(
-    () => ({
-      totalCoins: statsData?.coinQuickStats?.totalCoins ?? 0,
-      totalGroups: statsData?.coinQuickStats?.totalGroups ?? groups.length,
+  const stats = useMemo(() => {
+    const statsQueryData = statsData as GetCoinQuickStatsQuery | undefined;
+    return {
+      totalCoins: statsQueryData?.coinQuickStats?.totalCoins ?? 0,
+      totalGroups: statsQueryData?.coinQuickStats?.totalGroups ?? groups.length,
       avgCoinsPerGroup:
-        statsData?.coinQuickStats?.averageCoinsPerGroup ??
+        statsQueryData?.coinQuickStats?.averageCoinsPerGroup ??
         (groups.length > 0
           ? Math.round(
               groups.reduce((sum, g) => sum + g.coins, 0) / groups.length,
             )
           : 0),
-    }),
-    [statsData, groups],
-  );
+    };
+  }, [statsData, groups]);
 
   return {
     groups,
-    groupsLoading: groupsLoading || !client,
+    groupsLoading: groupsLoading || statsLoading,
     groupsError,
     stats,
   };
@@ -444,3 +411,48 @@ export default function AdminCoinsScreen() {
     </View>
   );
 }
+
+/*
+## Summary
+
+### Migration from TanStack Query to urql
+
+**Changes made:**
+
+1. **Import changes:**
+   - Removed: `import { useQuery } from "@tanstack/react-query"`
+   - Removed: `import { GraphQLClient } from "graphql-request"`
+   - Removed: `import * as SecureStore from "expo-secure-store"`
+   - Removed: Manual `createGraphQLClient` and `useGraphQLClient` hooks
+   - Added: `import { useQuery } from "urql"`
+   - Updated graphql-types imports to use Document versions:
+     - `GetGroupsByTripDocument` (instead of `useGetGroupsByTripQuery`)
+     - `GetCoinQuickStatsDocument` (instead of `useGetCoinQuickStatsQuery`)
+     - Added proper type imports: `GetGroupsByTripQuery`, `GetCoinQuickStatsQuery`
+
+2. **Hook API changes:**
+   - TanStack: `const { data, isLoading, error } = useQuery({ queryKey, queryFn, enabled })`
+   - urql: `const [{ data, fetching, error }] = useQuery({ query, variables, pause })`
+   - Changed `isLoading` to `fetching` for loading state
+   - Changed `enabled` to `pause` (inverse logic - `pause: !condition`)
+   - Removed manual client setup (urql Provider handles auth)
+
+3. **Query structure changes:**
+   - Removed `queryKey` (urql handles caching via document)
+   - Removed `queryFn` (urql handles execution)
+   - Added `query` property with Document constant
+   - Added `variables` property for query parameters
+   - Added pagination parameters to groups query
+
+4. **Type handling:**
+   - Updated type assertions to use imported query types
+   - Maintained same Group interface and data transformation logic
+
+**Preserved functionality:**
+- All UI components and styling remain unchanged
+- Search functionality works identically
+- Navigation to add/remove coins screens preserved
+- Stats calculation and display unchanged
+- Loading states and empty states preserved
+- Error handling structure maintained
+*/

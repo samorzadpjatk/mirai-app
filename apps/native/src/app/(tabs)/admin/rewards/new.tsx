@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Alert,
   Image,
@@ -12,9 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery, useMutation, useClient } from "urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -23,38 +21,14 @@ import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
 import {
-  useGetTotalAvailablePointsQuery,
-  useCreateRewardMutation,
+  GetTotalAvailablePointsDocument,
+  CreateRewardDocument,
+  GetRewardsByTripAdminDocument,
 } from "@mirai-app/graphql-types";
-
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
-
-// Wrapper hook to get client
-const useGraphQLClient = () => {
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useMemo(() => {
-    createGraphQLClient().then(setClient);
-  }, []);
-
-  return client;
-};
 
 export default function AdminCreateRewardScreen() {
   const router = useRouter();
-  const client = useGraphQLClient();
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId =
@@ -63,13 +37,10 @@ export default function AdminCreateRewardScreen() {
       : (params.tripId?.[0] ?? "");
 
   // GraphQL Query: Get total available points
-  const { data: totalPointsData } = useQuery({
-    queryKey: ["GetTotalAvailablePoints", { tripId }],
-    enabled: Boolean(tripId) && Boolean(client),
-    queryFn: async () => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useGetTotalAvailablePointsQuery.fetcher(client, { tripId })();
-    },
+  const [{ data: totalPointsData }] = useQuery({
+    query: GetTotalAvailablePointsDocument,
+    variables: { tripId },
+    pause: !tripId,
   });
 
   const totalAvailablePoints =
@@ -89,6 +60,7 @@ export default function AdminCreateRewardScreen() {
   const [isHidden, setIsHidden] = useState(false);
   const [imagePath, setImagePath] = useState("");
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const calculatedCost =
     coinCost && totalAvailablePoints > 0
@@ -99,44 +71,16 @@ export default function AdminCreateRewardScreen() {
       : 0;
 
   // GraphQL Mutation: Create reward
-  const createRewardMutation = useMutation({
-    mutationFn: async (input: {
-      name: string;
-      description: string;
-      coinCost: number;
-      availableQuantity: number;
-      tripId: string;
-      images?: string[];
-      isHidden: boolean;
-    }) => {
-      if (!client) throw new Error("GraphQL client not initialized");
-      return useCreateRewardMutation.fetcher(client, { input })();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetRewardsByTripAdmin"],
-      });
-      setName("");
-      setDescription("");
-      setCoinCost("");
-      setAvailableQuantity("");
-      setIsHidden(false);
-      setImagePath("");
-      setImagePreviewUri(null);
-      resetUpload();
-      Alert.alert("Success", "Reward created successfully.", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
-    },
-    onError: (error) =>
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Failed to create reward",
-      ),
-  });
+  const [, createReward] = useMutation(CreateRewardDocument);
+
+  // Cache invalidation helper
+  const invalidateRewardsCache = useCallback(async () => {
+    await urqlClient.invalidate(GetRewardsByTripAdminDocument, {
+      tripId,
+      limit: 100,
+      offset: 0,
+    });
+  }, [urqlClient, tripId]);
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
@@ -218,18 +162,49 @@ export default function AdminCreateRewardScreen() {
       return;
     }
 
+    setIsCreating(true);
+
     try {
-      await createRewardMutation.mutateAsync({
-        name: trimmedName,
-        description: trimmedDescription,
-        coinCost: parsedCoinCost,
-        availableQuantity: parsedQuantity,
-        tripId,
-        images: imagePath ? [imagePath] : [],
-        isHidden,
+      const result = await createReward({
+        input: {
+          name: trimmedName,
+          description: trimmedDescription,
+          coinCost: parsedCoinCost,
+          availableQuantity: parsedQuantity,
+          tripId,
+          images: imagePath ? [imagePath] : [],
+          isHidden,
+        },
       });
-    } catch {
-      // Error handling is done in the mutation's onError
+
+      if (result.error) {
+        Alert.alert("Error", result.error.message || "Failed to create reward");
+        return;
+      }
+
+      // Success - invalidate cache and reset form
+      await invalidateRewardsCache();
+      setName("");
+      setDescription("");
+      setCoinCost("");
+      setAvailableQuantity("");
+      setIsHidden(false);
+      setImagePath("");
+      setImagePreviewUri(null);
+      resetUpload();
+      Alert.alert("Success", "Reward created successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to create reward",
+      );
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -407,17 +382,14 @@ export default function AdminCreateRewardScreen() {
 
         <PrimaryLoadingButton
           label="Create Reward"
-          isLoading={
-            createRewardMutation.isPending || isUploadingImage || !client
-          }
+          isLoading={isCreating || isUploadingImage}
           onPress={handleSubmit}
           disabled={
             !name.trim() ||
             !coinCost.trim() ||
             !availableQuantity.trim() ||
-            createRewardMutation.isPending ||
-            isUploadingImage ||
-            !client
+            isCreating ||
+            isUploadingImage
           }
         />
       </ScrollView>

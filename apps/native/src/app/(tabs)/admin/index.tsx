@@ -11,10 +11,8 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
-import { useGetTripsQuery } from "@mirai-app/graphql-types";
+import { useQuery } from "urql";
+import { GetTripsDocument } from "@mirai-app/graphql-types";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
 import { TripPickerModal } from "~/components/common/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -107,80 +105,33 @@ const tiles: TileType[] = [
   },
 ];
 
-// Create GraphQL client with auth token from SecureStore
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:3000/graphql";
-  const token = await SecureStore.getItemAsync("token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
-
 export default function AdminPanelScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isTripPickerOpen, setIsTripPickerOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
 
-  // Create GraphQL client instance
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  React.useEffect(() => {
-    void createGraphQLClient().then(setClient);
-  }, []);
-
-  // Use GraphQL query instead of tRPC
-  const {
-    data,
-    isLoading: tripsLoading,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["GetTrips", "infinite", PAGE_SIZE],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      if (!client) {
-        throw new Error("GraphQL client not initialized");
-      }
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      const result = await useGetTripsQuery.fetcher(client, {
-        limit: PAGE_SIZE,
-        offset,
-      })();
-      return {
-        trips: result.trips,
-        pagination: {
-          hasMore: result.trips.length === PAGE_SIZE,
-          offset,
-          limit: PAGE_SIZE,
-        },
-      };
-    },
-    getNextPageParam: (lastPage) => {
-      if (!lastPage?.pagination?.hasMore) {
-        return undefined;
-      }
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-    enabled: !!client,
+  // Use urql query with pagination
+  const [{ data, fetching: tripsLoading }] = useQuery({
+    query: GetTripsDocument,
+    variables: { limit: PAGE_SIZE, offset },
   });
 
-  const trips = useMemo(
-    () =>
-      (data?.pages ?? []).flatMap((page): TripListItem[] => {
-        if (Array.isArray(page.trips)) {
-          return page.trips as TripListItem[];
-        }
-        return [];
-      }),
-    [data?.pages],
+  const trips = useMemo(() => (data?.trips as TripListItem[]) ?? [], [data]);
+
+  const hasNextPage = useMemo(
+    () => (data?.trips?.length ?? 0) === PAGE_SIZE,
+    [data],
   );
+
+  const isFetchingNextPage = tripsLoading && offset > 0;
+
+  const fetchNextPage = useCallback(() => {
+    if (hasNextPage && !tripsLoading) {
+      setOffset((prev) => prev + PAGE_SIZE);
+    }
+  }, [hasNextPage, tripsLoading]);
 
   const effectiveTripId = selectedTripId ?? trips?.[0]?.id ?? null;
 
@@ -207,7 +158,7 @@ export default function AdminPanelScreen() {
         contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
 
       if (nearBottom) {
-        void fetchNextPage();
+        fetchNextPage();
       }
     },
     [hasNextPage, isFetchingNextPage, tripsLoading, fetchNextPage],
@@ -234,7 +185,7 @@ export default function AdminPanelScreen() {
             onPress={() => setIsTripPickerOpen(true)}
             activeOpacity={0.85}
           >
-            {tripsLoading ? (
+            {tripsLoading && offset === 0 ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : (
               <>
@@ -303,7 +254,7 @@ export default function AdminPanelScreen() {
         }}
         trips={trips ?? []}
         selectedTripId={effectiveTripId}
-        isLoading={tripsLoading}
+        isLoading={tripsLoading && offset === 0}
         isFetchingMore={isFetchingNextPage}
         onLoadMore={handleTripPickerLoadMore}
       />

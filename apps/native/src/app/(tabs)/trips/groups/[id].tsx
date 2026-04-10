@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   ScrollView,
@@ -8,23 +8,22 @@ import {
   Text,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  useGetGroupQuery,
-  useGetCurrentUserQuery,
-  useGetGroupRankingQuery,
-  useGetCoinTransactionsQuery,
-  useGetGroupJoinRequestQuery,
-  useGetPendingGroupJoinRequestsQuery,
-  useRequestToJoinGroupMutation,
-  useCancelGroupJoinRequestMutation,
-  useRespondToGroupJoinRequestMutation,
-  useLeaveGroupMutation,
+  GetGroupDocument,
+  GetCurrentUserDocument,
+  GetGroupRankingDocument,
+  GetCoinTransactionsDocument,
+  GetGroupJoinRequestDocument,
+  GetPendingGroupJoinRequestsDocument,
+  RequestToJoinGroupDocument,
+  CancelGroupJoinRequestDocument,
+  RespondToGroupJoinRequestDocument,
+  LeaveGroupDocument,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 import { useTripDetails } from "~/hooks/trips";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";
@@ -39,17 +38,19 @@ export default function GroupDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
-  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const client = useClient();
 
   // GraphQL queries
-  const { data: currentUser } = useGetCurrentUserQuery(graphqlClient, {});
+  const [{ data: currentUser }] = useQuery({
+    query: GetCurrentUserDocument,
+  });
 
-  const { data: groupData, isLoading: groupLoading } = useGetGroupQuery(
-    graphqlClient,
-    { id: groupId ?? "" },
-    { enabled: !!groupId },
-  );
+  const [{ data: groupData, fetching: groupLoading }] = useQuery({
+    query: GetGroupDocument,
+    variables: { id: groupId ?? "" },
+    pause: !groupId,
+  });
   const group = groupData?.group;
 
   const { isTripPast } = useTripDetails(group?.trip?.id);
@@ -63,95 +64,50 @@ export default function GroupDetailsScreen() {
     group?.organizer?.id === currentUser.currentUser.id,
   );
 
-  const { data: rankingData } = useGetGroupRankingQuery(
-    graphqlClient,
-    { tripId: group?.trip?.id ?? "" },
-    { enabled: !!group?.trip?.id },
-  );
+  const [{ data: rankingData }] = useQuery({
+    query: GetGroupRankingDocument,
+    variables: { tripId: group?.trip?.id ?? "" },
+    pause: !group?.trip?.id,
+  });
 
-  const { data: transactionsData } = useGetCoinTransactionsQuery(
-    graphqlClient,
-    { tripId: group?.trip?.id ?? "", groupId: groupId ?? "", limit: 20 },
-    { enabled: !!groupId && !!group?.trip?.id },
-  );
+  const [{ data: transactionsData }] = useQuery({
+    query: GetCoinTransactionsDocument,
+    variables: {
+      tripId: group?.trip?.id ?? "",
+      groupId: groupId ?? "",
+      limit: 20,
+    },
+    pause: !groupId || !group?.trip?.id,
+  });
   const transactions = transactionsData?.coinTransactions?.transactions ?? [];
 
-  const { data: myJoinRequest } = useGetGroupJoinRequestQuery(
-    graphqlClient,
-    { groupId: groupId ?? "" },
-    {
-      enabled:
-        !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
-    },
-  );
+  const [{ data: myJoinRequest }] = useQuery({
+    query: GetGroupJoinRequestDocument,
+    variables: { groupId: groupId ?? "" },
+    pause: !groupId || !group?.trip?.id || isCurrentUserMemberInViewedGroup,
+  });
 
-  const { data: pendingJoinRequestsData } = useGetPendingGroupJoinRequestsQuery(
-    graphqlClient,
-    { groupId: groupId ?? "" },
-    { enabled: !!groupId && isCurrentUserOrganizerOfViewedGroup },
-  );
+  const [{ data: pendingJoinRequestsData }] = useQuery({
+    query: GetPendingGroupJoinRequestsDocument,
+    variables: { groupId: groupId ?? "" },
+    pause: !groupId || !isCurrentUserOrganizerOfViewedGroup,
+  });
   const pendingJoinRequests =
     pendingJoinRequestsData?.pendingGroupJoinRequests ?? [];
 
   // GraphQL mutations
-  const leaveGroupMutation = useLeaveGroupMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetGroup", { id: groupId }],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetGroupsByTrip", { tripId: group?.trip?.id }],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetGroupRanking", { tripId: group?.trip?.id }],
-      });
-    },
-  });
-
-  const requestToJoinMutation = useRequestToJoinGroupMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetGroupJoinRequest", { groupId }],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetPendingGroupJoinRequests", { groupId }],
-      });
-    },
-  });
-
-  const cancelJoinRequestMutation = useCancelGroupJoinRequestMutation(
-    graphqlClient,
-    {
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ["GetGroupJoinRequest", { groupId }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["GetPendingGroupJoinRequests", { groupId }],
-        });
-      },
-    },
+  const [, leaveGroup] = useMutation(LeaveGroupDocument);
+  const [, requestToJoin] = useMutation(RequestToJoinGroupDocument);
+  const [, cancelJoinRequest] = useMutation(CancelGroupJoinRequestDocument);
+  const [, respondToJoinRequest] = useMutation(
+    RespondToGroupJoinRequestDocument,
   );
 
-  const respondToJoinRequestMutation = useRespondToGroupJoinRequestMutation(
-    graphqlClient,
-    {
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ["GetGroup", { id: groupId }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["GetPendingGroupJoinRequests", { groupId }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["GetGroupsByTrip", { tripId: group?.trip?.id }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["GetGroupRanking", { tripId: group?.trip?.id }],
-        });
-      },
-    },
-  );
+  // Loading states for mutations
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
 
   if (!groupId || groupLoading) {
     return <GroupDetailsLoadingState />;
@@ -224,11 +180,21 @@ export default function GroupDetailsScreen() {
         onPress: () => {
           void (async () => {
             try {
-              await leaveGroupMutation.mutateAsync({ groupId: group.id });
+              setIsLeaving(true);
+              const result = await leaveGroup({ groupId: group.id });
+              if (result.error) {
+                throw result.error;
+              }
+              // Invalidate related queries
+              await client.invalidate("GetGroup");
+              await client.invalidate("GetGroupsByTrip");
+              await client.invalidate("GetGroupRanking");
               router.replace(`/trips/groups?tripId=${group.trip?.id}`);
             } catch (error) {
               console.error("Failed to leave group:", error);
               Alert.alert("Error", "Failed to leave group");
+            } finally {
+              setIsLeaving(false);
             }
           })();
         },
@@ -240,7 +206,14 @@ export default function GroupDetailsScreen() {
     if (!groupId) return;
     void (async () => {
       try {
-        await requestToJoinMutation.mutateAsync({ groupId });
+        setIsRequesting(true);
+        const result = await requestToJoin({ groupId });
+        if (result.error) {
+          throw result.error;
+        }
+        // Invalidate related queries
+        await client.invalidate("GetGroupJoinRequest");
+        await client.invalidate("GetPendingGroupJoinRequests");
         Alert.alert("Success", "Join request sent");
       } catch (error: unknown) {
         const message =
@@ -248,6 +221,8 @@ export default function GroupDetailsScreen() {
             ? error.message
             : "Failed to send join request";
         Alert.alert("Error", message);
+      } finally {
+        setIsRequesting(false);
       }
     })();
   };
@@ -258,13 +233,24 @@ export default function GroupDetailsScreen() {
   ) => {
     void (async () => {
       try {
-        await respondToJoinRequestMutation.mutateAsync({ requestId, decision });
+        setIsResponding(true);
+        const result = await respondToJoinRequest({ requestId, decision });
+        if (result.error) {
+          throw result.error;
+        }
+        // Invalidate related queries
+        await client.invalidate("GetGroup");
+        await client.invalidate("GetPendingGroupJoinRequests");
+        await client.invalidate("GetGroupsByTrip");
+        await client.invalidate("GetGroupRanking");
       } catch (error: unknown) {
         const message =
           error instanceof Error
             ? error.message
             : "Failed to update join request";
         Alert.alert("Error", message);
+      } finally {
+        setIsResponding(false);
       }
     })();
   };
@@ -273,7 +259,14 @@ export default function GroupDetailsScreen() {
     if (!groupId) return;
     void (async () => {
       try {
-        await cancelJoinRequestMutation.mutateAsync({ groupId });
+        setIsCanceling(true);
+        const result = await cancelJoinRequest({ groupId });
+        if (result.error) {
+          throw result.error;
+        }
+        // Invalidate related queries
+        await client.invalidate("GetGroupJoinRequest");
+        await client.invalidate("GetPendingGroupJoinRequests");
         Alert.alert("Success", "Join request canceled");
       } catch (error: unknown) {
         const message =
@@ -281,6 +274,8 @@ export default function GroupDetailsScreen() {
             ? error.message
             : "Failed to cancel join request";
         Alert.alert("Error", message);
+      } finally {
+        setIsCanceling(false);
       }
     })();
   };
@@ -324,11 +319,11 @@ export default function GroupDetailsScreen() {
             style={styles.joinButton}
             activeOpacity={0.8}
             onPress={handleRequestToJoin}
-            disabled={requestToJoinMutation.isPending}
+            disabled={isRequesting}
           >
             <Ionicons name="log-in-outline" size={18} color={colors.white} />
             <Text style={styles.joinButtonText}>
-              {requestToJoinMutation.isPending ? "Sending..." : "Join Group"}
+              {isRequesting ? "Sending..." : "Join Group"}
             </Text>
           </TouchableOpacity>
         ) : null}
@@ -345,7 +340,7 @@ export default function GroupDetailsScreen() {
               style={styles.cancelRequestButton}
               activeOpacity={0.8}
               onPress={handleCancelJoinRequest}
-              disabled={cancelJoinRequestMutation.isPending}
+              disabled={isCanceling}
             >
               <Ionicons
                 name="close-circle-outline"
@@ -353,9 +348,7 @@ export default function GroupDetailsScreen() {
                 color={colors.white}
               />
               <Text style={styles.cancelRequestButtonText}>
-                {cancelJoinRequestMutation.isPending
-                  ? "Canceling..."
-                  : "Cancel request"}
+                {isCanceling ? "Canceling..." : "Cancel request"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -379,11 +372,11 @@ export default function GroupDetailsScreen() {
             style={styles.leaveButton}
             activeOpacity={0.8}
             onPress={handleLeaveGroup}
-            disabled={leaveGroupMutation.isPending}
+            disabled={isLeaving}
           >
             <Ionicons name="exit-outline" size={18} color={colors.white} />
             <Text style={styles.leaveButtonText}>
-              {leaveGroupMutation.isPending ? "Leaving..." : "Leave Group"}
+              {isLeaving ? "Leaving..." : "Leave Group"}
             </Text>
           </TouchableOpacity>
         ) : null}
@@ -426,7 +419,7 @@ export default function GroupDetailsScreen() {
                       onPress={() =>
                         handleRespondToJoinRequest(request.id, "REJECT")
                       }
-                      disabled={respondToJoinRequestMutation.isPending}
+                      disabled={isResponding}
                     >
                       <Ionicons name="close" size={14} color={colors.white} />
                       <Text style={styles.joinRequestButtonText}>Reject</Text>
@@ -439,7 +432,7 @@ export default function GroupDetailsScreen() {
                       onPress={() =>
                         handleRespondToJoinRequest(request.id, "ACCEPT")
                       }
-                      disabled={respondToJoinRequestMutation.isPending}
+                      disabled={isResponding}
                     >
                       <Ionicons
                         name="checkmark"
