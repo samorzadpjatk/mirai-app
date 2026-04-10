@@ -18,11 +18,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
 import { useState } from "react";
 import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
-import { getTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { getTRPCClient } from "@mirai-app/frameworks/graphql";
 import {
   PRIVACY_POLICY_PUBLIC_URL,
-  TRPC_HTTP_URL,
-  TRPC_WS_URL,
+  GRAPHQL_HTTP_URL,
+  GRAPHQL_WS_URL,
 } from "~/config/runtimeEnv";
 import Pdf from "react-native-pdf";
 import { AppModalShell } from "~/components/common/ui/AppModalShell";
@@ -81,8 +81,8 @@ export default function LoginScreen() {
       };
     }
     const { client, cleanup } = getTRPCClient(
-      TRPC_HTTP_URL,
-      TRPC_WS_URL,
+      GRAPHQL_HTTP_URL,
+      GRAPHQL_WS_URL,
       token,
     );
     try {
@@ -93,7 +93,7 @@ export default function LoginScreen() {
   };
 
   const checkBanStatusByEmail = async () => {
-    const { client, cleanup } = getTRPCClient(TRPC_HTTP_URL, TRPC_WS_URL);
+    const { client, cleanup } = getTRPCClient(GRAPHQL_HTTP_URL, GRAPHQL_WS_URL);
     try {
       return await client.user.getBanStatusByEmail.query({ email });
     } finally {
