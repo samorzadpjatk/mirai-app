@@ -8,7 +8,7 @@
  *
  * This service is designed to run as a background worker. It:
  * 1. Connects to Supabase Realtime to listen for new Notification INSERT events
- * 2. Calls the GraphQL API to track delivery status
+ * 2. Calls the GraphQL API using the typed SDK to track delivery status
  * 3. Sends mobile push notifications via the notification service
  * 4. Tracks delivery completion or failure
  *
@@ -18,7 +18,7 @@
  * - `SUPABASE_URL` - Supabase project URL
  * - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
  *
- * ## GraphQL Mutations Used
+ * ## GraphQL Mutations Used (via SDK)
  *
  * - `trackDeliveryStart` - Marks delivery as started
  * - `sendMobileNotifications` - Sends push notifications
@@ -30,6 +30,40 @@
 
 import { createSupabaseClient as createClient } from "@mirai-app/frameworks/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/frameworks/supabase";
+import { GraphQLClient } from "graphql-request";
+import { getSdk } from "@mirai-app/graphql-types/sdk";
+
+// =============================================================================
+// Environment Configuration
+// =============================================================================
+
+const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!GRAPHQL_ENDPOINT) throw new Error("Missing env: GRAPHQL_ENDPOINT");
+if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
+if (!SUPABASE_SERVICE_ROLE_KEY)
+  throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
+
+// =============================================================================
+// GraphQL SDK Client
+// =============================================================================
+
+/**
+ * Create GraphQL client with service account authentication
+ */
+const graphQLClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
+  headers: {
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    "X-Service-Account": "notification-sender",
+  },
+});
+
+/**
+ * Typed GraphQL SDK for notification operations
+ */
+const sdk = getSdk(graphQLClient);
 
 // =============================================================================
 // Types
@@ -39,146 +73,70 @@ interface NotificationRow {
   id: string;
 }
 
-interface SendMobileNotificationsResult {
-  success: boolean;
-  sent: number;
-  failed: number;
-  total: number;
-}
-
-interface TrackDeliveryResult {
-  success: boolean;
-}
-
-// =============================================================================
-// GraphQL Client
-// =============================================================================
-
-/**
- * Simple GraphQL client for making mutations to the notification API
- */
-class GraphQLClient {
-  private endpoint: string;
-  private authToken: string;
-
-  constructor(endpoint: string, authToken: string) {
-    this.endpoint = endpoint;
-    this.authToken = authToken;
-  }
-
-  async mutate<T>(
-    mutation: string,
-    variables: Record<string, unknown>,
-  ): Promise<T> {
-    const response = await fetch(this.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.authToken}`,
-      },
-      body: JSON.stringify({
-        query: mutation,
-        variables,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`GraphQL request failed: ${response.statusText}`);
-    }
-
-    const result = (await response.json()) as {
-      data?: T;
-      errors?: Array<{ message: string }>;
-    };
-
-    if (result.errors) {
-      throw new Error(
-        `GraphQL errors: ${result.errors.map((e) => e.message).join(", ")}`,
-      );
-    }
-
-    return result.data as T;
-  }
-}
-
-// =============================================================================
-// GraphQL Mutations
-// =============================================================================
-
-const TRACK_DELIVERY_START_MUTATION = `
-  mutation TrackDeliveryStart($input: TrackDeliveryStartInput!) {
-    trackDeliveryStart(input: $input) {
-      success
-    }
-  }
-`;
-
-const SEND_MOBILE_NOTIFICATIONS_MUTATION = `
-  mutation SendMobileNotifications($input: SendMobileNotificationsInput!) {
-    sendMobileNotifications(input: $input) {
-      success
-      sent
-      failed
-      total
-    }
-  }
-`;
-
-const TRACK_DELIVERY_COMPLETE_MUTATION = `
-  mutation TrackDeliveryComplete($input: TrackDeliveryCompleteInput!) {
-    trackDeliveryComplete(input: $input) {
-      success
-    }
-  }
-`;
-
-const TRACK_DELIVERY_FAILURE_MUTATION = `
-  mutation TrackDeliveryFailure($input: TrackDeliveryFailureInput!) {
-    trackDeliveryFailure(input: $input) {
-      success
-    }
-  }
-`;
-
 // =============================================================================
 // Notification Service
 // =============================================================================
 
-class NotificationGraphQLService {
-  private client: GraphQLClient;
-
-  constructor(endpoint: string, authToken: string) {
-    this.client = new GraphQLClient(endpoint, authToken);
+/**
+ * Notification service using the typed GraphQL SDK
+ * Replaces the previous custom GraphQL client with full type safety
+ */
+class NotificationSDKService {
+  /**
+   * Track delivery start via SDK
+   */
+  async trackDeliveryStart(notificationId: string): Promise<boolean> {
+    try {
+      const result = await sdk.TrackDeliveryStart({
+        input: { notificationId },
+      });
+      return result.trackDeliveryStart?.success ?? false;
+    } catch (error) {
+      console.error("Failed to track delivery start:", error);
+      return false;
+    }
   }
 
-  async trackDeliveryStart(
-    notificationId: string,
-  ): Promise<TrackDeliveryResult> {
-    return this.client.mutate<TrackDeliveryResult>(
-      TRACK_DELIVERY_START_MUTATION,
-      { input: { notificationId } },
-    );
-  }
-
+  /**
+   * Send mobile notifications via SDK
+   */
   async sendMobileNotifications(
     notificationId: string,
-  ): Promise<SendMobileNotificationsResult> {
-    return this.client.mutate<SendMobileNotificationsResult>(
-      SEND_MOBILE_NOTIFICATIONS_MUTATION,
-      { input: { notificationId } },
-    );
+  ): Promise<{
+    success: boolean;
+    sent: number;
+    failed: number;
+    total: number;
+  }> {
+    try {
+      const result = await sdk.SendMobileNotifications({
+        input: { notificationId },
+      });
+      const payload = result.sendMobileNotifications;
+      return {
+        success: payload?.success ?? false,
+        sent: payload?.sent ?? 0,
+        failed: payload?.failed ?? 0,
+        total: payload?.total ?? 0,
+      };
+    } catch (error) {
+      console.error("Failed to send mobile notifications:", error);
+      return { success: false, sent: 0, failed: 0, total: 0 };
+    }
   }
 
+  /**
+   * Track delivery completion via SDK
+   */
   async trackDeliveryComplete(
     notificationId: string,
     totalRecipients: number,
     successCount: number,
     failureCount: number,
     errors: string | null,
-  ): Promise<TrackDeliveryResult> {
-    return this.client.mutate<TrackDeliveryResult>(
-      TRACK_DELIVERY_COMPLETE_MUTATION,
-      {
+  ): Promise<boolean> {
+    try {
+      const result = await sdk.TrackDeliveryComplete({
         input: {
           notificationId,
           totalRecipients,
@@ -186,18 +144,30 @@ class NotificationGraphQLService {
           failureCount,
           errors,
         },
-      },
-    );
+      });
+      return result.trackDeliveryComplete?.success ?? false;
+    } catch (error) {
+      console.error("Failed to track delivery completion:", error);
+      return false;
+    }
   }
 
+  /**
+   * Track delivery failure via SDK
+   */
   async trackDeliveryFailure(
     notificationId: string,
     error: string,
-  ): Promise<TrackDeliveryResult> {
-    return this.client.mutate<TrackDeliveryResult>(
-      TRACK_DELIVERY_FAILURE_MUTATION,
-      { input: { notificationId, error } },
-    );
+  ): Promise<boolean> {
+    try {
+      const result = await sdk.TrackDeliveryFailure({
+        input: { notificationId, error },
+      });
+      return result.trackDeliveryFailure?.success ?? false;
+    } catch (err) {
+      console.error("Failed to track delivery failure:", err);
+      return false;
+    }
   }
 }
 
@@ -206,15 +176,6 @@ class NotificationGraphQLService {
 // =============================================================================
 
 function main(): () => void {
-  const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT;
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!GRAPHQL_ENDPOINT) throw new Error("Missing env: GRAPHQL_ENDPOINT");
-  if (!SUPABASE_URL) throw new Error("Missing env: SUPABASE_URL");
-  if (!SUPABASE_SERVICE_ROLE_KEY)
-    throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
-
   const supabase = createClient(
     SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY,
@@ -222,10 +183,7 @@ function main(): () => void {
     { realtime: { params: { eventsPerSecond: 2 } } },
   );
 
-  const notificationService = new NotificationGraphQLService(
-    GRAPHQL_ENDPOINT,
-    SUPABASE_SERVICE_ROLE_KEY,
-  );
+  const notificationService = new NotificationSDKService();
 
   const channel = supabase
     .channel("public:Notification:insert")
@@ -284,10 +242,11 @@ function main(): () => void {
 
 try {
   main();
+  console.log("Notification sender service started with GraphQL SDK");
 } catch (err) {
-  console.error(err);
+  console.error("Failed to start notification sender:", err);
   process.exit(1);
 }
 
 // Export for testing
-export { GraphQLClient, NotificationGraphQLService, main };
+export { NotificationSDKService, main };

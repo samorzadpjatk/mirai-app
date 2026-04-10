@@ -17,7 +17,9 @@
     "clean": "rm -rf node_modules"
   },
   "dependencies": {
-    "@mirai-app/frameworks": "workspace:*"
+    "@mirai-app/frameworks": "workspace:*",
+    "@mirai-app/graphql-types": "workspace:*",
+    "graphql-request": "^7.1.2"
   },
   "devDependencies": {
     "@types/node": "^24.7.2",

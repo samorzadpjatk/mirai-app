@@ -7,4 +7,6 @@ export const env = {
   seedGhostEmail: process.env.SEED_GHOST_EMAIL!!,
   seedGhostPassword: process.env.SEED_GHOST_PASSWORD!!,
   databaseUrl: process.env.DATABASE_URL!!,
+  graphqlEndpoint:
+    process.env.GRAPHQL_ENDPOINT ?? "http://localhost:4000/graphql",
 };
