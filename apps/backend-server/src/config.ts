@@ -1,19 +1,23 @@
+/**
+ * Legacy Server Configuration - DEPRECATED
+ *
+ * This file is kept for backward compatibility but the configuration
+ * is no longer used. Server configuration is now handled by
+ * config/hono-config.ts for the Hono GraphQL server.
+ *
+ * @deprecated Use config/hono-config.ts instead
+ */
+
 import type { ServerOptions } from "./server";
+import { honoConfig } from "./config/hono-config";
 
-const serverPort = process.env.TRPC_SERVER_PORT;
-const serverHost = process.env.TRPC_SERVER_HOST;
-
-if (!serverPort || !serverHost) {
-  throw new Error(
-    "Missing TRPC_SERVER_PORT or TRPC_SERVER_HOST environment variable.",
-  );
-}
-
+/**
+ * Legacy server configuration mapped to Hono config values.
+ * @deprecated Use honoConfig from config/hono-config.ts
+ */
 export const serverConfig: ServerOptions = {
-  dev: true,
-  port: Number(serverPort),
-  // Serve both HTTP and WebSocket tRPC under the same path
-  // so that clients can use one base URL.
-  prefix: "/api/trpc",
-  host: serverHost,
+  dev: !honoConfig.isProduction,
+  port: honoConfig.port,
+  prefix: "/graphql",
+  host: honoConfig.host,
 };

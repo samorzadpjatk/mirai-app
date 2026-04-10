@@ -1,7 +1,7 @@
 /**
  * Hono Server Configuration
  *
- * Environment-based configuration for the Hono server.
+ * Environment-based configuration for the Hono GraphQL server.
  * Supports both development and production settings with
  * sensible defaults for GraphQL API infrastructure.
  *
@@ -82,7 +82,7 @@ export const honoConfig = {
   /**
    * Server port
    *
-   * Default: 4000 (to avoid conflict with tRPC server on 3000)
+   * Default: 4000
    */
   port: getPort(),
 
@@ -178,13 +178,6 @@ export type HonoConfig = typeof honoConfig;
  */
 export function validateHonoConfig(): void {
   const issues: string[] = [];
-
-  // Port conflicts with tRPC
-  if (honoConfig.port === 3000) {
-    issues.push(
-      "Port 3000 conflicts with tRPC server. Use a different port (default: 4000).",
-    );
-  }
 
   // GraphiQL in production
   if (honoConfig.isProduction && honoConfig.enableGraphiQL) {
