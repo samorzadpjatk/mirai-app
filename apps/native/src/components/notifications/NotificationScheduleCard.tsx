@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useClient } from "urql";
 import {
   useDeleteNotificationScheduleMutation,
   useToggleNotificationScheduleActiveMutation,
@@ -8,7 +8,6 @@ import {
 } from "@mirai-app/graphql-types";
 import { formatRelativeTime, formatDate } from "~/utils/format";
 import type { NotificationScheduleItem } from "~/types/notifications";
-import { graphqlClient } from "~/lib/graphql-client";
 
 interface NotificationScheduleCardProps {
   schedule: NotificationScheduleItem;
@@ -17,41 +16,14 @@ interface NotificationScheduleCardProps {
 export function NotificationScheduleCard({
   schedule,
 }: NotificationScheduleCardProps) {
-  const queryClient = useQueryClient();
+  const client = useClient();
 
-  const deleteMutation = useMutation({
-    mutationFn: async (variables: { id: string }) => {
-      return useDeleteNotificationScheduleMutation.fetcher(
-        graphqlClient,
-        variables,
-      )();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: useGetNotificationSchedulesQuery.getKey(),
-      });
-    },
-    onError: (err) => {
-      console.error("Error deleting schedule:", err);
-    },
-  });
-
-  const toggleMutation = useMutation({
-    mutationFn: async (variables: { id: string }) => {
-      return useToggleNotificationScheduleActiveMutation.fetcher(
-        graphqlClient,
-        variables,
-      )();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: useGetNotificationSchedulesQuery.getKey(),
-      });
-    },
-    onError: (err) => {
-      console.error("Error toggling schedule:", err);
-    },
-  });
+  const [, deleteSchedule] = useMutation(
+    useDeleteNotificationScheduleMutation.document,
+  );
+  const [, toggleSchedule] = useMutation(
+    useToggleNotificationScheduleActiveMutation.document,
+  );
 
   const handleDelete = () => {
     Alert.alert(
@@ -62,14 +34,30 @@ export function NotificationScheduleCard({
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => deleteMutation.mutate({ id: schedule.id }),
+          onPress: async () => {
+            const result = await deleteSchedule({ id: schedule.id });
+            if (!result.error) {
+              // Invalidate schedules so list refreshes
+              await client.invalidate(
+                useGetNotificationSchedulesQuery.document,
+              );
+            } else {
+              console.error("Error deleting schedule:", result.error);
+            }
+          },
         },
       ],
     );
   };
 
-  const handleToggle = () => {
-    toggleMutation.mutate({ id: schedule.id });
+  const handleToggle = async () => {
+    const result = await toggleSchedule({ id: schedule.id });
+    if (!result.error) {
+      // Invalidate schedules so list refreshes
+      await client.invalidate(useGetNotificationSchedulesQuery.document);
+    } else {
+      console.error("Error toggling schedule:", result.error);
+    }
   };
 
   return (

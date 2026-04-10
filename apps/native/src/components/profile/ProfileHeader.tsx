@@ -2,26 +2,11 @@ import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery } from "urql";
+import { useFocusEffect } from "expo-router";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useGetCurrentUserQuery } from "@mirai-app/graphql-types";
-import { useQuery } from "@tanstack/react-query";
-import { useFocusEffect } from "expo-router";
 import { useFileDownload } from "~/hooks/files";
-
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
-  const token = await SecureStore.getItemAsync("sb-access-token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
 
 const getRoleColor = (role: string) => {
   switch (role) {
@@ -77,24 +62,13 @@ const getRoleBadgeStyle = (role: string) => {
 };
 
 export function ProfileHeader() {
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useEffect(() => {
-    void createGraphQLClient().then(setClient);
-  }, []);
-
-  const { data: currentUserData } = useQuery({
-    queryKey: ["GetCurrentUser"],
-    queryFn: async () => {
-      if (!client) {
-        throw new Error("GraphQL client not initialized");
-      }
-      return useGetCurrentUserQuery.fetcher(client)();
-    },
-    enabled: !!client,
+  const [result] = useQuery({
+    query: useGetCurrentUserQuery.document,
   });
 
-  const currentUser = currentUserData?.me;
+  const { data } = result;
+
+  const currentUser = data?.me;
   const {
     download: downloadAvatar,
     status: avatarStatus,

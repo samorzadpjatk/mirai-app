@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { graphqlClient } from "~/lib/graphql-client";
 
 interface GroupMember {
   id: string;
@@ -18,41 +17,42 @@ interface GroupMemberListProps {
   members: GroupMember[];
 }
 
+// Inline GraphQL document for createDownloadUrl
+const CreateDownloadUrlDocument = `
+  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+    createDownloadUrl(input: $input) {
+      signedUrl
+    }
+  }
+`;
+
 function MemberAvatar({ member }: { member: GroupMember }) {
-  const avatarQuery = useQuery({
-    queryKey: ["createDownloadUrl", member.avatarStoragePath],
-    queryFn: async () => {
-      if (!member.avatarStoragePath) return null;
-      const result = await graphqlClient.request<{
-        createDownloadUrl?: {
-          signedUrl?: string;
-        };
-      }>(
-        `
-        query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-          createDownloadUrl(input: $input) {
-            signedUrl
-          }
-        }
-        `,
-        {
-          input: {
-            storagePath: member.avatarStoragePath,
-            expiresInSeconds: 60 * 60,
-          },
-        },
-      );
-      return result.createDownloadUrl?.signedUrl ?? null;
+  const [result] = useQuery({
+    query: CreateDownloadUrlDocument,
+    variables: {
+      input: {
+        storagePath: member.avatarStoragePath,
+        expiresInSeconds: 60 * 60,
+      },
     },
-    enabled: Boolean(member.avatarStoragePath),
-    staleTime: 15 * 60 * 1000,
-    retry: false,
+    pause: !member.avatarStoragePath,
   });
 
-  if (avatarQuery.data) {
+  const { data, fetching } = result;
+  const signedUrl = data?.createDownloadUrl?.signedUrl ?? null;
+
+  if (fetching) {
+    return (
+      <View style={styles.avatarImage}>
+        <Text style={styles.avatarText}>...</Text>
+      </View>
+    );
+  }
+
+  if (signedUrl) {
     return (
       <Image
-        source={{ uri: avatarQuery.data }}
+        source={{ uri: signedUrl }}
         style={styles.avatarImage}
         contentFit="cover"
       />

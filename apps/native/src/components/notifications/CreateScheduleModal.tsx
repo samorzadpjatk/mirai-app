@@ -6,13 +6,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useClient } from "urql";
 import {
   useCreateNotificationScheduleMutation,
   useGetNotificationSchedulesQuery,
 } from "@mirai-app/graphql-types";
 import { useTrips } from "~/hooks/trips";
-import { graphqlClient } from "~/lib/graphql-client";
 import { colors, spacing } from "~/styles";
 import {
   AppModalShell,
@@ -33,7 +32,7 @@ export function CreateScheduleModal({
   onClose,
   onCreated,
 }: CreateScheduleModalProps) {
-  const queryClient = useQueryClient();
+  const client = useClient();
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
 
   const [createName, setCreateName] = useState("");
@@ -45,6 +44,7 @@ export function CreateScheduleModal({
   const [createEndDate, setCreateEndDate] = useState("");
   const [createHour, setCreateHour] = useState("9");
   const [createMinute, setCreateMinute] = useState("0");
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -65,61 +65,26 @@ export function CreateScheduleModal({
     return;
   }, [createTripId, createType, trips]);
 
-  const createScheduleMutation = useMutation({
-    mutationFn: async (variables: {
-      name: string;
-      tripId?: string;
-      notificationType: "custom" | "ranking";
-      notificationTitle?: string;
-      notificationBody?: string;
-      startDate: Date;
-      endDate: Date;
-      hour: number;
-      minute: number;
-      isActive: boolean;
-    }) => {
-      return useCreateNotificationScheduleMutation.fetcher(
-        graphqlClient,
-        variables,
-      )();
-    },
-    onSuccess: async () => {
-      // Invalidate schedules so list refreshes without parent needing to refetch
-      await queryClient.invalidateQueries({
-        queryKey: useGetNotificationSchedulesQuery.getKey(),
-      });
-      onCreated?.();
-      onClose();
-      setCreateName("");
-      setCreateType("custom");
-      setCreateTripId(null);
-      setCreateTitle("");
-      setCreateBody("");
-      setCreateStartDate("");
-      setCreateEndDate("");
-      setCreateHour("9");
-      setCreateMinute("0");
-    },
-    onError: (err) => {
-      console.error("Error creating schedule:", err);
-    },
-  });
+  const [, createSchedule] = useMutation(
+    useCreateNotificationScheduleMutation.document,
+  );
 
   const isSubmitDisabled =
     !createName.trim() ||
     !createStartDate ||
     !createEndDate ||
     (createType === "ranking" && !createTripId) ||
-    createScheduleMutation.isPending;
+    isCreating;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (
       createName.trim() &&
       createStartDate &&
       createEndDate &&
       (createType !== "ranking" || createTripId)
     ) {
-      createScheduleMutation.mutate({
+      setIsCreating(true);
+      const result = await createSchedule({
         name: createName.trim(),
         ...(createTripId ? { tripId: createTripId } : {}),
         notificationType: createType,
@@ -131,6 +96,25 @@ export function CreateScheduleModal({
         minute: parseInt(createMinute, 10),
         isActive: true,
       });
+
+      if (!result.error) {
+        // Invalidate schedules so list refreshes without parent needing to refetch
+        await client.invalidate(useGetNotificationSchedulesQuery.document);
+        onCreated?.();
+        onClose();
+        setCreateName("");
+        setCreateType("custom");
+        setCreateTripId(null);
+        setCreateTitle("");
+        setCreateBody("");
+        setCreateStartDate("");
+        setCreateEndDate("");
+        setCreateHour("9");
+        setCreateMinute("0");
+      } else {
+        console.error("Error creating schedule:", result.error);
+      }
+      setIsCreating(false);
     }
   };
 
@@ -292,11 +276,9 @@ export function CreateScheduleModal({
         </View>
       </ScrollView>
       <AppModalFooter
-        primaryLabel={
-          createScheduleMutation.isPending ? "Creating..." : "Create Schedule"
-        }
+        primaryLabel={isCreating ? "Creating..." : "Create Schedule"}
         onPrimary={handleSubmit}
-        isPrimaryLoading={createScheduleMutation.isPending}
+        isPrimaryLoading={isCreating}
         isPrimaryDisabled={isSubmitDisabled}
         secondaryLabel="Cancel"
         onSecondary={onClose}

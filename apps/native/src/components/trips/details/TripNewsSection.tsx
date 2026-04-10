@@ -7,26 +7,11 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery, useClient } from "urql";
 import { useGetActivitiesByTripQuery } from "@mirai-app/graphql-types";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-
-// GraphQL Client setup with SecureStore
-const createGraphQLClient = async (): Promise<GraphQLClient> => {
-  const token = await SecureStore.getItemAsync("sb-access-token");
-  return new GraphQLClient(
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
-    {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    },
-  );
-};
 
 interface TripNewsSectionProps {
   tripId: string;
@@ -70,29 +55,29 @@ const formatAdminName = (item: AdminNewsItem) => {
 
 export function TripNewsSection({ tripId }: TripNewsSectionProps) {
   const router = useRouter();
-  const [client, setClient] = useState<GraphQLClient | null>(null);
+  const client = useClient();
+  const [isClientReady, setIsClientReady] = useState(false);
 
   useEffect(() => {
-    void createGraphQLClient().then(setClient);
-  }, []);
+    if (client) {
+      setIsClientReady(true);
+    }
+  }, [client]);
 
-  const newsQuery = useQuery({
-    queryKey: ["GetActivitiesByTrip", tripId, 1, 30],
-    queryFn: async () => {
-      if (!client) {
-        throw new Error("GraphQL client not initialized");
-      }
-      return useGetActivitiesByTripQuery.fetcher(client, {
-        tripId,
-        page: 1,
-        pageSize: 30,
-      })();
+  const [newsResult] = useQuery({
+    query: useGetActivitiesByTripQuery.document,
+    variables: {
+      tripId,
+      page: 1,
+      pageSize: 30,
     },
-    enabled: Boolean(tripId) && !!client,
+    pause: !Boolean(tripId) || !isClientReady,
   });
 
+  const { data: newsData, fetching } = newsResult;
+
   const customNews = useMemo(() => {
-    const activities = (newsQuery.data?.activities ?? []) as {
+    const activities = (newsData?.activities ?? []) as {
       id: string;
       activityType: string;
       title: string;
@@ -109,7 +94,7 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
       (activity): activity is AdminNewsItem =>
         activity.activityType === "custom",
     );
-  }, [newsQuery.data?.activities]);
+  }, [newsData?.activities]);
 
   return (
     <View style={styles.newsSection}>
@@ -130,14 +115,14 @@ export function TripNewsSection({ tripId }: TripNewsSectionProps) {
       </View>
 
       <View style={styles.newsList}>
-        {newsQuery.isLoading ? (
+        {fetching ? (
           <View style={styles.loadingState}>
             <ActivityIndicator size="small" color={colors.primary} />
             <Text style={styles.loadingText}>Loading admin news...</Text>
           </View>
         ) : null}
 
-        {!newsQuery.isLoading && customNews.length === 0 ? (
+        {!fetching && customNews.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons
               name="megaphone-outline"

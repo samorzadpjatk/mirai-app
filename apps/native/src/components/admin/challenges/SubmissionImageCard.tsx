@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
-import { graphqlClient } from "~/lib/graphql-client";
 
 interface SubmissionImageCardProps {
   submission: VotingSubmission;
@@ -20,6 +19,15 @@ interface SubmissionImageCardProps {
   disabled?: boolean;
 }
 
+// Inline GraphQL document for createDownloadUrl
+const CreateDownloadUrlDocument = `
+  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+    createDownloadUrl(input: $input) {
+      signedUrl
+    }
+  }
+`;
+
 export function SubmissionImageCard({
   submission,
   title,
@@ -27,42 +35,28 @@ export function SubmissionImageCard({
   onPress,
   disabled = false,
 }: SubmissionImageCardProps) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["createDownloadUrl", submission.imagePath],
-    queryFn: async () => {
-      if (!submission.imagePath) return null;
-      const result = await graphqlClient.request<{
-        createDownloadUrl?: {
-          signedUrl?: string;
-        };
-      }>(
-        `
-        query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-          createDownloadUrl(input: $input) {
-            signedUrl
-          }
-        }
-        `,
-        {
-          input: {
-            storagePath: submission.imagePath,
-          },
-        },
-      );
-      return result.createDownloadUrl?.signedUrl ?? null;
+  const [result] = useQuery({
+    query: CreateDownloadUrlDocument,
+    variables: {
+      input: {
+        storagePath: submission.imagePath,
+      },
     },
-    enabled: !!submission.imagePath,
+    pause: !submission.imagePath,
   });
+
+  const { data, fetching } = result;
+  const signedUrl = data?.createDownloadUrl?.signedUrl ?? null;
 
   const content = (
     <View style={styles.voteCard}>
       <View style={styles.voteImageWrap}>
-        {isLoading ? (
+        {fetching ? (
           <View style={styles.voteImageFallback}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
-        ) : data ? (
-          <Image source={{ uri: data }} style={styles.voteImage} />
+        ) : signedUrl ? (
+          <Image source={{ uri: signedUrl }} style={styles.voteImage} />
         ) : (
           <View style={styles.voteImageFallback}>
             <Text style={styles.voteImageFallbackText}>

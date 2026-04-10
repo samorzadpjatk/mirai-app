@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useClient } from "urql";
 import { colors, spacing, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
@@ -12,7 +12,6 @@ import {
   useAddCoinsMutation,
   useRemoveCoinsMutation,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 
 interface CoinOperationScreenProps {
   operation: "add" | "remove";
@@ -21,6 +20,7 @@ interface CoinOperationScreenProps {
 export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const client = useClient();
   const params = useLocalSearchParams<{
     tripId?: string | string[];
     groupId?: string | string[];
@@ -60,12 +60,12 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
 
-  // GraphQL mutations for coins
-  const addCoinsMutation = useAddCoinsMutation(graphqlClient);
-  const removeCoinsMutation = useRemoveCoinsMutation(graphqlClient);
+  // GraphQL mutations for coins using urql
+  const [, addCoins] = useMutation(useAddCoinsMutation.document);
+  const [, removeCoins] = useMutation(useRemoveCoinsMutation.document);
 
-  const isAddingCoins = addCoinsMutation.isPending;
-  const isRemovingCoins = removeCoinsMutation.isPending;
+  const [isAddingCoins, setIsAddingCoins] = useState(false);
+  const [isRemovingCoins, setIsRemovingCoins] = useState(false);
   const isSubmitting = operation === "add" ? isAddingCoins : isRemovingCoins;
 
   const submit = async () => {
@@ -85,7 +85,8 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
 
     try {
       if (operation === "add") {
-        await addCoinsMutation.mutateAsync({
+        setIsAddingCoins(true);
+        const result = await addCoins({
           input: {
             tripId,
             groupId,
@@ -93,8 +94,12 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
             reason: reason.trim(),
           },
         });
+        if (result.error) {
+          throw result.error;
+        }
       } else {
-        await removeCoinsMutation.mutateAsync({
+        setIsRemovingCoins(true);
+        const result = await removeCoins({
           input: {
             tripId,
             groupId,
@@ -102,6 +107,9 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
             reason: reason.trim(),
           },
         });
+        if (result.error) {
+          throw result.error;
+        }
       }
       Alert.alert(
         "Success",
@@ -116,6 +124,9 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
     } catch (error) {
       console.error(`Failed to ${operation} coins`, error);
       Alert.alert("Error", "Operation failed. Try again.");
+    } finally {
+      setIsAddingCoins(false);
+      setIsRemovingCoins(false);
     }
   };
 
