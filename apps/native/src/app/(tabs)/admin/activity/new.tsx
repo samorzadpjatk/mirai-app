@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   Image,
@@ -13,42 +13,74 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useCreateCustomActivityMutation } from "@mirai-app/graphql-types";
 import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 
+// Create GraphQL client with auth token from SecureStore
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:3000/graphql";
+  const token = await SecureStore.getItemAsync("token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
+
 export default function AdminCreateActivityScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId =
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
-  const { upload, reset: resetUpload, status: uploadStatus, progress: uploadProgress } =
-    useFileUpload();
+  const {
+    upload,
+    reset: resetUpload,
+    status: uploadStatus,
+    progress: uploadProgress,
+  } = useFileUpload();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPinned, setIsPinned] = useState(false);
   const [imagePath, setImagePath] = useState("");
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
+  const [client, setClient] = useState<GraphQLClient | null>(null);
 
-  const feedQueryOptions = trpc.activityFeed.getByTripModeration.queryOptions({
-    tripId,
-    page: 1,
-    pageSize: 100,
-  });
+  // Initialize GraphQL client
+  useEffect(() => {
+    void createGraphQLClient().then(setClient);
+  }, []);
 
-  const createCustomMutation = useMutation(
-    trpc.activityFeed.createCustom.mutationOptions({
+  const invalidateFeed = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: [
+        "GetActivitiesByTripModeration",
+        { tripId, page: 1, perPage: 100 },
+      ],
+    });
+  };
+
+  const createCustomMutation = useCreateCustomActivityMutation(
+    client ?? new GraphQLClient(""),
+    {
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey });
+        await invalidateFeed();
         setTitle("");
         setDescription("");
         setIsPinned(false);
@@ -62,13 +94,19 @@ export default function AdminCreateActivityScreen() {
           },
         ]);
       },
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
+      onError: (error) =>
+        Alert.alert(
+          "Error",
+          error instanceof Error ? error.message : "Create failed.",
+        ),
+    },
   );
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
-    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
+    uploadProgress.percent != null
+      ? Math.round(uploadProgress.percent * 100)
+      : null;
 
   const handlePickImage = async () => {
     try {
@@ -83,7 +121,8 @@ export default function AdminCreateActivityScreen() {
 
       const asset = result.assets[0];
       const extension = getImageExtension(asset);
-      const fileName = asset.fileName?.trim() ?? `custom-activity-${Date.now()}.${extension}`;
+      const fileName =
+        asset.fileName?.trim() ?? `custom-activity-${Date.now()}.${extension}`;
       const storagePath = `activity/${tripId}/custom-${Date.now()}.${extension}`;
       const contentType = asset.mimeType ?? getImageContentType(extension);
 
@@ -98,7 +137,8 @@ export default function AdminCreateActivityScreen() {
       setImagePath(storagePath);
       setImagePreviewUri(asset.uri);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to upload image";
+      const message =
+        error instanceof Error ? error.message : "Failed to upload image";
       Alert.alert("Upload error", message);
     }
   };
@@ -122,11 +162,13 @@ export default function AdminCreateActivityScreen() {
 
     try {
       await createCustomMutation.mutateAsync({
-        tripId,
-        title: trimmedTitle,
-        description: description.trim() || undefined,
-        imageUrl: imagePath || undefined,
-        isPinned,
+        input: {
+          tripId,
+          title: trimmedTitle,
+          description: description.trim() || null,
+          imageUrl: imagePath || null,
+          isPinned,
+        },
       });
     } catch {
       // Error handling is done in the mutation's onError
@@ -137,7 +179,10 @@ export default function AdminCreateActivityScreen() {
     <View
       style={[
         styles.container,
-        { paddingTop: spacing.xl, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        {
+          paddingTop: spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
       ]}
     >
       <StatusBar style="light" />
@@ -196,7 +241,11 @@ export default function AdminCreateActivityScreen() {
                 activeOpacity={0.85}
                 disabled={isUploadingImage}
               >
-                <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                <Ionicons
+                  name="trash-outline"
+                  size={16}
+                  color={colors.danger}
+                />
                 <Text style={styles.imageRemoveButtonText}>Remove</Text>
               </TouchableOpacity>
             ) : null}
@@ -204,15 +253,21 @@ export default function AdminCreateActivityScreen() {
 
           {isUploadingImage ? (
             <Text style={styles.helperText}>
-              Uploading image{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+              Uploading image
+              {imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
             </Text>
           ) : null}
 
           {imagePreviewUri ? (
-            <Image source={{ uri: imagePreviewUri }} style={styles.imagePreview} />
+            <Image
+              source={{ uri: imagePreviewUri }}
+              style={styles.imagePreview}
+            />
           ) : null}
 
-          <Text style={styles.helperText}>Image is optional for custom activity.</Text>
+          <Text style={styles.helperText}>
+            Image is optional for custom activity.
+          </Text>
         </View>
 
         <View style={styles.section}>
@@ -223,7 +278,12 @@ export default function AdminCreateActivityScreen() {
               onPress={() => setIsPinned(false)}
               activeOpacity={0.8}
             >
-              <Text style={[styles.typeChipText, !isPinned && styles.typeChipTextActive]}>
+              <Text
+                style={[
+                  styles.typeChipText,
+                  !isPinned && styles.typeChipTextActive,
+                ]}
+              >
                 Normal
               </Text>
             </TouchableOpacity>
@@ -233,7 +293,12 @@ export default function AdminCreateActivityScreen() {
               onPress={() => setIsPinned(true)}
               activeOpacity={0.8}
             >
-              <Text style={[styles.typeChipText, isPinned && styles.typeChipTextActive]}>
+              <Text
+                style={[
+                  styles.typeChipText,
+                  isPinned && styles.typeChipTextActive,
+                ]}
+              >
                 Pin to top
               </Text>
             </TouchableOpacity>
@@ -248,7 +313,9 @@ export default function AdminCreateActivityScreen() {
           label="Create Activity"
           isLoading={createCustomMutation.isPending || isUploadingImage}
           onPress={handleSubmit}
-          disabled={!title.trim() || createCustomMutation.isPending || isUploadingImage}
+          disabled={
+            !title.trim() || createCustomMutation.isPending || isUploadingImage
+          }
         />
       </ScrollView>
     </View>

@@ -10,7 +10,12 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import {
+  useGetGroupQuery,
+  useGetCurrentUserQuery,
+  useDeleteGroupMutation,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import {
@@ -41,12 +46,19 @@ export default function EditGroupScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  // GraphQL queries
+  const { data: currentUserData } = useGetCurrentUserQuery(graphqlClient, {});
+  const currentUser = currentUserData?.currentUser;
 
-  const { group, isLoading: groupLoading } = useGroupEditor(groupId);
+  const { data: groupData, isLoading: groupLoading } = useGetGroupQuery(
+    graphqlClient,
+    { id: groupId ?? "" },
+    { enabled: !!groupId },
+  );
+  const group = groupData?.group;
+
   const { isTripPast } = useTripDetails(group?.trip?.id);
 
   useEffect(() => {
@@ -72,17 +84,19 @@ export default function EditGroupScreen() {
     // Defer state updates to avoid calling setState synchronously within the effect
     // which can cause cascading renders and trigger the lint rule
     const id = setTimeout(() => {
-      setGroupName(group.name);
+      setGroupName(group.name ?? "");
       setGroupImagePreviewUri(group.image ?? null);
-      setCurrentMembers(new Set(group.participants.map((p) => p.user.id)));
+      setCurrentMembers(
+        new Set((group.participants ?? []).map((p) => p.user?.id ?? "")),
+      );
     }, 0);
     return () => clearTimeout(id);
   }, [group]);
 
   const { updateGroup, removeUser, isUpdating } = useGroupEditor(groupId);
-  const deleteGroupMutation = useMutation(
-    trpc.group.deleteMyGroup.mutationOptions(),
-  );
+
+  // GraphQL mutation
+  const deleteGroupMutation = useDeleteGroupMutation(graphqlClient);
 
   const handleSave = async () => {
     if (!groupName.trim()) {
@@ -102,7 +116,7 @@ export default function EditGroupScreen() {
       });
 
       const originalMembers = new Set(
-        group?.participants?.map((p) => p.user.id) ?? [],
+        (group?.participants ?? []).map((p) => p.user?.id ?? "") ?? [],
       );
       const membersToRemove = Array.from(originalMembers).filter(
         (id) => !currentMembers.has(id),
@@ -185,7 +199,7 @@ export default function EditGroupScreen() {
             void (async () => {
               try {
                 await deleteGroupMutation.mutateAsync({ groupId: group.id });
-                router.replace(`/trips/groups?tripId=${group.trip.id}`);
+                router.replace(`/trips/groups?tripId=${group.trip?.id}`);
               } catch (error: unknown) {
                 const message =
                   error instanceof Error
@@ -203,11 +217,11 @@ export default function EditGroupScreen() {
   const visibleMembers = useMemo(() => {
     const members = group?.participants ?? [];
     return members
-      .filter((participant) => currentMembers.has(participant.user.id))
+      .filter((participant) => currentMembers.has(participant.user?.id ?? ""))
       .sort((a, b) =>
-        a.user.id === group?.organizer?.id
+        a.user?.id === group?.organizer?.id
           ? -1
-          : b.user.id === group?.organizer?.id
+          : b.user?.id === group?.organizer?.id
             ? 1
             : 0,
       );
@@ -276,7 +290,7 @@ export default function EditGroupScreen() {
               </View>
             ) : (
               visibleMembers.map((participant) => {
-                const userId = participant.user.id;
+                const userId = participant.user?.id ?? "";
                 const isLeader = userId === group.organizer?.id;
 
                 return (
@@ -284,20 +298,23 @@ export default function EditGroupScreen() {
                     <View style={styles.memberAvatar}>
                       <Text style={styles.memberAvatarText}>
                         {getInitials(
-                          participant.user.firstName,
-                          participant.user.lastName,
+                          participant.user?.firstName,
+                          participant.user?.lastName,
                         )}
                       </Text>
                     </View>
 
                     <View style={styles.memberInfo}>
                       <Text style={styles.memberName}>
-                        {[participant.user.firstName, participant.user.lastName]
+                        {[
+                          participant.user?.firstName,
+                          participant.user?.lastName,
+                        ]
                           .filter(Boolean)
                           .join(" ") || "Unknown user"}
                       </Text>
                       <Text style={styles.memberMeta}>
-                        {participant.user.email ?? "No email"}
+                        {participant.user?.email ?? "No email"}
                         {isLeader ? " (Leader)" : ""}
                       </Text>
                     </View>

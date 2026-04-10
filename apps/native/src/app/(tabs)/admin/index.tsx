@@ -1,14 +1,24 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from '@mirai-app/frameworks/graphql';
-import { colors, spacing, borderRadius, typography } from '../../../styles';
-import { TripPickerModal } from '~/components/common/ui';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { TripListItem } from '~/components/trips/list/types';
+import React, { useMemo, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import { useGetTripsQuery } from "@mirai-app/graphql-types";
+import { colors, spacing, borderRadius, typography } from "../../../styles";
+import { TripPickerModal } from "~/components/common/ui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { TripListItem } from "~/components/trips/list/types";
 
 const PAGE_SIZE = 20;
 
@@ -16,7 +26,7 @@ interface TileType {
   key: string;
   title: string;
   subtitle: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
   accent: string;
   accentBg: string;
   route: string | null;
@@ -24,87 +34,107 @@ interface TileType {
 
 const tiles: TileType[] = [
   {
-    key: 'users',
-    title: 'Users',
-    subtitle: 'Manage accounts',
-    icon: 'people',
+    key: "users",
+    title: "Users",
+    subtitle: "Manage accounts",
+    icon: "people",
     accent: colors.primary,
     accentBg: colors.primaryOpacity10,
-    route: '/admin/users',
+    route: "/admin/users",
   },
   {
-    key: 'groups',
-    title: 'Groups',
-    subtitle: 'Teams & roles',
-    icon: 'people-circle',
+    key: "groups",
+    title: "Groups",
+    subtitle: "Teams & roles",
+    icon: "people-circle",
     accent: colors.slate400,
     accentBg: colors.cardDarkOpacity40,
-    route: '/admin/groups',
+    route: "/admin/groups",
   },
   {
-    key: 'coins',
-    title: 'Coins',
-    subtitle: 'Currency & transactions',
-    icon: 'cash',
+    key: "coins",
+    title: "Coins",
+    subtitle: "Currency & transactions",
+    icon: "cash",
     accent: colors.accentMagenta,
     accentBg: colors.magentaOpacity10,
-    route: '/admin/coins',
+    route: "/admin/coins",
   },
   {
-    key: 'transactions',
-    title: 'Transactions',
-    subtitle: 'History & logs',
-    icon: 'list',
+    key: "transactions",
+    title: "Transactions",
+    subtitle: "History & logs",
+    icon: "list",
     accent: colors.primary,
     accentBg: colors.primaryOpacity10,
-    route: '/admin/transactions',
+    route: "/admin/transactions",
   },
   {
-    key: 'notifications',
-    title: 'Notifications',
-    subtitle: 'Schedules & alerts',
-    icon: 'notifications',
+    key: "notifications",
+    title: "Notifications",
+    subtitle: "Schedules & alerts",
+    icon: "notifications",
     accent: colors.accentMagenta,
     accentBg: colors.magentaOpacity10,
-    route: '/admin/notifications',
+    route: "/admin/notifications",
   },
   {
-    key: 'challenges',
-    title: 'Challenges',
-    subtitle: 'Points & tasks',
-    icon: 'trophy',
+    key: "challenges",
+    title: "Challenges",
+    subtitle: "Points & tasks",
+    icon: "trophy",
     accent: colors.primary,
     accentBg: colors.primaryOpacity10,
-    route: '/admin/challenges',
+    route: "/admin/challenges",
   },
   {
-    key: 'rewards',
-    title: 'Rewards',
-    subtitle: 'Manage prizes',
-    icon: 'gift',
+    key: "rewards",
+    title: "Rewards",
+    subtitle: "Manage prizes",
+    icon: "gift",
     accent: colors.accentMagenta,
     accentBg: colors.magentaOpacity10,
-    route: '/admin/rewards',
+    route: "/admin/rewards",
   },
   {
-    key: 'activity',
-    title: 'Activity',
-    subtitle: 'Feed moderation',
-    icon: 'pulse',
+    key: "activity",
+    title: "Activity",
+    subtitle: "Feed moderation",
+    icon: "pulse",
     accent: colors.slate400,
     accentBg: colors.cardDarkOpacity40,
-    route: '/admin/activity',
+    route: "/admin/activity",
   },
 ];
 
+// Create GraphQL client with auth token from SecureStore
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:3000/graphql";
+  const token = await SecureStore.getItemAsync("token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
+
 export default function AdminPanelScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const insets = useSafeAreaInsets();
   const [isTripPickerOpen, setIsTripPickerOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
 
+  // Create GraphQL client instance
+  const [client, setClient] = useState<GraphQLClient | null>(null);
+
+  React.useEffect(() => {
+    void createGraphQLClient().then(setClient);
+  }, []);
+
+  // Use GraphQL query instead of tRPC
   const {
     data,
     isLoading: tripsLoading,
@@ -112,43 +142,42 @@ export default function AdminPanelScreen() {
     isFetchingNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.trip.getAll.queryOptions().queryKey,
-      'infinite',
-      PAGE_SIZE,
-    ],
+    queryKey: ["GetTrips", "infinite", PAGE_SIZE],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return trpcClient.trip.getAll.query({
+      if (!client) {
+        throw new Error("GraphQL client not initialized");
+      }
+      const offset = typeof pageParam === "number" ? pageParam : 0;
+      const result = await useGetTripsQuery.fetcher(client, {
+        limit: PAGE_SIZE,
+        offset,
+      })();
+      return {
+        trips: result.trips,
         pagination: {
-          limit: PAGE_SIZE,
+          hasMore: result.trips.length === PAGE_SIZE,
           offset,
+          limit: PAGE_SIZE,
         },
-      });
+      };
     },
     getNextPageParam: (lastPage) => {
-      const pagination =
-        lastPage && typeof lastPage === 'object' && 'pagination' in lastPage
-          ? lastPage.pagination
-          : null;
-
-      if (!pagination?.hasMore) {
+      if (!lastPage?.pagination?.hasMore) {
         return undefined;
       }
-
-      return pagination.offset + pagination.limit;
+      return lastPage.pagination.offset + lastPage.pagination.limit;
     },
+    enabled: !!client,
   });
 
   const trips = useMemo(
     () =>
       (data?.pages ?? []).flatMap((page): TripListItem[] => {
-        if (Array.isArray(page)) {
-          return page as TripListItem[];
+        if (Array.isArray(page.trips)) {
+          return page.trips as TripListItem[];
         }
-
-        return (page as { trips?: TripListItem[] })?.trips ?? [];
+        return [];
       }),
     [data?.pages],
   );
@@ -160,28 +189,37 @@ export default function AdminPanelScreen() {
     return trips.find((trip) => trip.id === effectiveTripId) ?? null;
   }, [trips, effectiveTripId]);
 
-  const handleTripPickerLoadMore = (event: {
-    nativeEvent: {
-      contentOffset: { y: number };
-      contentSize: { height: number };
-      layoutMeasurement: { height: number };
-    };
-  }) => {
-    if (!hasNextPage || isFetchingNextPage || tripsLoading) {
-      return;
-    }
+  const handleTripPickerLoadMore = useCallback(
+    (event: {
+      nativeEvent: {
+        contentOffset: { y: number };
+        contentSize: { height: number };
+        layoutMeasurement: { height: number };
+      };
+    }) => {
+      if (!hasNextPage || isFetchingNextPage || tripsLoading) {
+        return;
+      }
 
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const nearBottom =
-      contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const nearBottom =
+        contentOffset.y + layoutMeasurement.height >= contentSize.height - 240;
 
-    if (nearBottom) {
-      void fetchNextPage();
-    }
-  };
+      if (nearBottom) {
+        void fetchNextPage();
+      }
+    },
+    [hasNextPage, isFetchingNextPage, tripsLoading, fetchNextPage],
+  );
 
   return (
-    <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: spacing.xl, paddingBottom: insets.bottom },
+      ]}
+    >
       <StatusBar style="light" />
 
       <ScrollView
@@ -201,9 +239,13 @@ export default function AdminPanelScreen() {
             ) : (
               <>
                 <Text style={styles.tripPickerText} numberOfLines={1}>
-                  {selectedTrip?.name ?? 'Select trip'}
+                  {selectedTrip?.name ?? "Select trip"}
                 </Text>
-                <Ionicons name="chevron-down" size={16} color={colors.primary} />
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={colors.primary}
+                />
               </>
             )}
           </TouchableOpacity>
@@ -217,12 +259,18 @@ export default function AdminPanelScreen() {
               activeOpacity={0.9}
               onPress={() => {
                 if (!tile.route) {
-                  Alert.alert('Coming soon', 'This section is not available yet.');
+                  Alert.alert(
+                    "Coming soon",
+                    "This section is not available yet.",
+                  );
                   return;
                 }
 
                 if (!effectiveTripId) {
-                  Alert.alert('Select trip', 'Choose a trip to manage before continuing.');
+                  Alert.alert(
+                    "Select trip",
+                    "Choose a trip to manage before continuing.",
+                  );
                   return;
                 }
 
@@ -232,7 +280,11 @@ export default function AdminPanelScreen() {
                 });
               }}
             >
-              <View style={[styles.tileIcon, { backgroundColor: tile.accentBg, borderColor: tile.accent }]}
+              <View
+                style={[
+                  styles.tileIcon,
+                  { backgroundColor: tile.accentBg, borderColor: tile.accent },
+                ]}
               >
                 <Ionicons name={tile.icon} size={24} color={tile.accent} />
               </View>
@@ -273,9 +325,9 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.md,
   },
   title: {
@@ -285,12 +337,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tileGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md,
   },
   tile: {
-    width: '47%',
+    width: "47%",
     backgroundColor: colors.cardDark,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
@@ -301,8 +353,8 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     marginBottom: spacing.md,
   },
@@ -317,8 +369,8 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   tripPicker: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

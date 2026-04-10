@@ -149,6 +149,7 @@ function AuthStoreProviderWrapper({ children }: { children: React.ReactNode }) {
 
   const onUserFetch = async () => {
     try {
+      // Use native-client GraphQL for user fetch (tRPC-compatible API)
       const user = await trpcClient.user.getMy.query();
       if (!user) return null;
 

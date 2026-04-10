@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Alert,
   Image,
@@ -12,8 +12,9 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -21,23 +22,65 @@ import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoading
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
+import {
+  useGetTotalAvailablePointsQuery,
+  useCreateRewardMutation,
+} from "@mirai-app/graphql-types";
+
+// GraphQL Client setup with SecureStore
+const createGraphQLClient = async (): Promise<GraphQLClient> => {
+  const token = await SecureStore.getItemAsync("sb-access-token");
+  return new GraphQLClient(
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+};
+
+// Wrapper hook to get client
+const useGraphQLClient = () => {
+  const [client, setClient] = useState<GraphQLClient | null>(null);
+
+  useMemo(() => {
+    createGraphQLClient().then(setClient);
+  }, []);
+
+  return client;
+};
 
 export default function AdminCreateRewardScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
+  const client = useGraphQLClient();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId =
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
-  const { data: totalPointsData } = useQuery(
-    trpc.reward.getTotalAvailablePoints.queryOptions({ tripId }, { enabled: !!tripId })
-  );
+  // GraphQL Query: Get total available points
+  const { data: totalPointsData } = useQuery({
+    queryKey: ["GetTotalAvailablePoints", { tripId }],
+    enabled: Boolean(tripId) && Boolean(client),
+    queryFn: async () => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useGetTotalAvailablePointsQuery.fetcher(client, { tripId })();
+    },
+  });
 
-  const totalAvailablePoints = totalPointsData?.totalPoints ?? 0;
+  const totalAvailablePoints =
+    totalPointsData?.totalAvailablePoints?.totalPoints ?? 0;
 
-  const { upload, reset: resetUpload, status: uploadStatus, progress: uploadProgress } =
-    useFileUpload();
+  const {
+    upload,
+    reset: resetUpload,
+    status: uploadStatus,
+    progress: uploadProgress,
+  } = useFileUpload();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -47,38 +90,59 @@ export default function AdminCreateRewardScreen() {
   const [imagePath, setImagePath] = useState("");
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
 
-  const calculatedCost = coinCost && totalAvailablePoints > 0 
-    ? Math.max(1, Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)))
-    : 0;
+  const calculatedCost =
+    coinCost && totalAvailablePoints > 0
+      ? Math.max(
+          1,
+          Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)),
+        )
+      : 0;
 
-  const createRewardMutation = useMutation(
-    trpc.reward.create.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getAll"], { input: { tripId } }],
-        });
-        setName("");
-        setDescription("");
-        setCoinCost("");
-        setAvailableQuantity("");
-        setIsHidden(false);
-        setImagePath("");
-        setImagePreviewUri(null);
-        resetUpload();
-        Alert.alert("Success", "Reward created successfully.", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
-      },
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
-  );
+  // GraphQL Mutation: Create reward
+  const createRewardMutation = useMutation({
+    mutationFn: async (input: {
+      name: string;
+      description: string;
+      coinCost: number;
+      availableQuantity: number;
+      tripId: string;
+      images?: string[];
+      isHidden: boolean;
+    }) => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useCreateRewardMutation.fetcher(client, { input })();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
+      });
+      setName("");
+      setDescription("");
+      setCoinCost("");
+      setAvailableQuantity("");
+      setIsHidden(false);
+      setImagePath("");
+      setImagePreviewUri(null);
+      resetUpload();
+      Alert.alert("Success", "Reward created successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    },
+    onError: (error) =>
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to create reward",
+      ),
+  });
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
-    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
+    uploadProgress.percent != null
+      ? Math.round(uploadProgress.percent * 100)
+      : null;
 
   const handlePickImage = async () => {
     try {
@@ -93,7 +157,8 @@ export default function AdminCreateRewardScreen() {
 
       const asset = result.assets[0];
       const extension = getImageExtension(asset);
-      const fileName = asset.fileName?.trim() ?? `reward-${Date.now()}.${extension}`;
+      const fileName =
+        asset.fileName?.trim() ?? `reward-${Date.now()}.${extension}`;
       const storagePath = `rewards/${tripId}/reward-${Date.now()}.${extension}`;
       const contentType = asset.mimeType ?? getImageContentType(extension);
 
@@ -108,7 +173,8 @@ export default function AdminCreateRewardScreen() {
       setImagePath(storagePath);
       setImagePreviewUri(asset.uri);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to upload image";
+      const message =
+        error instanceof Error ? error.message : "Failed to upload image";
       Alert.alert("Upload error", message);
     }
   };
@@ -135,7 +201,10 @@ export default function AdminCreateRewardScreen() {
     }
 
     if (isNaN(parsedCoinCost) || parsedCoinCost <= 0 || parsedCoinCost > 100) {
-      Alert.alert("Validation", "Valid coin cost percentage (1-100) is required.");
+      Alert.alert(
+        "Validation",
+        "Valid coin cost percentage (1-100) is required.",
+      );
       return;
     }
 
@@ -156,7 +225,7 @@ export default function AdminCreateRewardScreen() {
         coinCost: parsedCoinCost,
         availableQuantity: parsedQuantity,
         tripId,
-        image: imagePath || undefined,
+        images: imagePath ? [imagePath] : [],
         isHidden,
       });
     } catch {
@@ -168,7 +237,10 @@ export default function AdminCreateRewardScreen() {
     <View
       style={[
         styles.container,
-        { paddingTop: spacing.xl, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        {
+          paddingTop: spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
       ]}
     >
       <StatusBar style="light" />
@@ -211,7 +283,8 @@ export default function AdminCreateRewardScreen() {
           />
           {coinCost && totalAvailablePoints > 0 && (
             <Text style={styles.helperText}>
-              Cost: {calculatedCost} coins ({coinCost}% of {totalAvailablePoints} total points)
+              Cost: {calculatedCost} coins ({coinCost}% of{" "}
+              {totalAvailablePoints} total points)
             </Text>
           )}
         </FormField>
@@ -250,7 +323,11 @@ export default function AdminCreateRewardScreen() {
                 activeOpacity={0.85}
                 disabled={isUploadingImage}
               >
-                <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                <Ionicons
+                  name="trash-outline"
+                  size={16}
+                  color={colors.danger}
+                />
                 <Text style={styles.imageRemoveButtonText}>Remove</Text>
               </TouchableOpacity>
             ) : null}
@@ -258,45 +335,67 @@ export default function AdminCreateRewardScreen() {
 
           {isUploadingImage ? (
             <Text style={styles.helperText}>
-              Uploading image{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+              Uploading image
+              {imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
             </Text>
           ) : null}
 
           {imagePreviewUri ? (
-            <Image source={{ uri: imagePreviewUri }} style={styles.imagePreview} />
+            <Image
+              source={{ uri: imagePreviewUri }}
+              style={styles.imagePreview}
+            />
           ) : null}
 
-          <Text style={styles.helperText}>Image is optional but recommended.</Text>
+          <Text style={styles.helperText}>
+            Image is optional but recommended.
+          </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Visibility</Text>
           <View style={styles.visibilityOptions}>
             <TouchableOpacity
-              style={[styles.visibilityOption, !isHidden && styles.visibilityOptionActive]}
+              style={[
+                styles.visibilityOption,
+                !isHidden && styles.visibilityOptionActive,
+              ]}
               onPress={() => setIsHidden(false)}
               activeOpacity={0.8}
             >
-              <Ionicons 
-                name="eye-outline" 
-                size={16} 
-                color={!isHidden ? colors.primary : colors.textSecondary} 
+              <Ionicons
+                name="eye-outline"
+                size={16}
+                color={!isHidden ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.visibilityOptionText, !isHidden && styles.visibilityOptionTextActive]}>
+              <Text
+                style={[
+                  styles.visibilityOptionText,
+                  !isHidden && styles.visibilityOptionTextActive,
+                ]}
+              >
                 Visible
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.visibilityOption, isHidden && styles.visibilityOptionActive]}
+              style={[
+                styles.visibilityOption,
+                isHidden && styles.visibilityOptionActive,
+              ]}
               onPress={() => setIsHidden(true)}
               activeOpacity={0.8}
             >
-              <Ionicons 
-                name="eye-off-outline" 
-                size={16} 
-                color={isHidden ? colors.primary : colors.textSecondary} 
+              <Ionicons
+                name="eye-off-outline"
+                size={16}
+                color={isHidden ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.visibilityOptionText, isHidden && styles.visibilityOptionTextActive]}>
+              <Text
+                style={[
+                  styles.visibilityOptionText,
+                  isHidden && styles.visibilityOptionTextActive,
+                ]}
+              >
                 Hidden
               </Text>
             </TouchableOpacity>
@@ -308,14 +407,17 @@ export default function AdminCreateRewardScreen() {
 
         <PrimaryLoadingButton
           label="Create Reward"
-          isLoading={createRewardMutation.isPending || isUploadingImage}
+          isLoading={
+            createRewardMutation.isPending || isUploadingImage || !client
+          }
           onPress={handleSubmit}
           disabled={
             !name.trim() ||
             !coinCost.trim() ||
             !availableQuantity.trim() ||
             createRewardMutation.isPending ||
-            isUploadingImage
+            isUploadingImage ||
+            !client
           }
         />
       </ScrollView>

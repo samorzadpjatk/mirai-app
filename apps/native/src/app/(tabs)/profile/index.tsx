@@ -6,23 +6,21 @@ import { AppInfoFooter } from "~/components/profile/AppInfoFooter";
 import { ProfileActionsSection } from "~/components/profile/ProfileActionsSection";
 import { ProfileHeader } from "~/components/profile/ProfileHeader";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const userMyQueryOptions = trpc.user.getMy.queryOptions();
 
+  // Refresh profile data on focus
   useFocusEffect(
     useCallback(() => {
       void queryClient.invalidateQueries({
-        queryKey: userMyQueryOptions.queryKey,
+        queryKey: ["me"],
       });
-    }, [queryClient, userMyQueryOptions.queryKey]),
+    }, [queryClient]),
   );
 
   return (
@@ -45,7 +43,9 @@ export default function ProfileScreen() {
         <AccountInfoSection />
 
         {/* Actions */}
-        <ProfileActionsSection onEditProfile={() => router.push("/profile/edit")} />
+        <ProfileActionsSection
+          onEditProfile={() => router.push("/profile/edit")}
+        />
 
         {/* App Info */}
         <AppInfoFooter

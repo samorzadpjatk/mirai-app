@@ -12,7 +12,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, spacing, typography } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import {
+  useGetGroupQuery,
+  useGetCurrentUserQuery,
+  useGetGroupRankingQuery,
+  useGetCoinTransactionsQuery,
+  useGetGroupJoinRequestQuery,
+  useGetPendingGroupJoinRequestsQuery,
+  useRequestToJoinGroupMutation,
+  useCancelGroupJoinRequestMutation,
+  useRespondToGroupJoinRequestMutation,
+  useLeaveGroupMutation,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { useTripDetails } from "~/hooks/trips";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";
@@ -27,147 +39,119 @@ export default function GroupDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const groupId = typeof params.id === "string" ? params.id : params.id?.[0];
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  // GraphQL queries
+  const { data: currentUser } = useGetCurrentUserQuery(graphqlClient, {});
 
-  const { data: group, isLoading: groupLoading } = useQuery({
-    ...trpc.group.getById.queryOptions({ id: groupId ?? "" }),
-    enabled: !!groupId,
-  });
+  const { data: groupData, isLoading: groupLoading } = useGetGroupQuery(
+    graphqlClient,
+    { id: groupId ?? "" },
+    { enabled: !!groupId },
+  );
+  const group = groupData?.group;
+
   const { isTripPast } = useTripDetails(group?.trip?.id);
   const isCurrentUserMemberInViewedGroup = Boolean(
-    group?.participants.some(
-      (participant) => participant.user.id === currentUser?.id,
+    group?.participants?.some(
+      (participant) => participant.user?.id === currentUser?.currentUser?.id,
     ),
   );
   const isCurrentUserOrganizerOfViewedGroup = Boolean(
-    currentUser?.id && group?.organizer?.id === currentUser.id,
+    currentUser?.currentUser?.id &&
+    group?.organizer?.id === currentUser.currentUser.id,
   );
 
-  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
-    useQuery({
-      ...trpc.user.getMyWithGroup.queryOptions({
-        tripId: group?.trip?.id ?? "",
-      }),
-      enabled: !!group?.trip?.id,
-    });
-  const currentUserGroupId =
-    currentUserWithGroup?.trips?.[0]?.group?.id ?? null;
-  const hasGroupInCurrentTrip = Boolean(currentUserGroupId);
+  const { data: rankingData } = useGetGroupRankingQuery(
+    graphqlClient,
+    { tripId: group?.trip?.id ?? "" },
+    { enabled: !!group?.trip?.id },
+  );
 
-  const { data: myJoinRequest } = useQuery({
-    ...trpc.group.getMyJoinRequestForGroup.queryOptions({
-      groupId: groupId ?? "",
-    }),
-    enabled:
-      !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
+  const { data: transactionsData } = useGetCoinTransactionsQuery(
+    graphqlClient,
+    { tripId: group?.trip?.id ?? "", groupId: groupId ?? "", limit: 20 },
+    { enabled: !!groupId && !!group?.trip?.id },
+  );
+  const transactions = transactionsData?.coinTransactions?.transactions ?? [];
+
+  const { data: myJoinRequest } = useGetGroupJoinRequestQuery(
+    graphqlClient,
+    { groupId: groupId ?? "" },
+    {
+      enabled:
+        !!groupId && !!group?.trip?.id && !isCurrentUserMemberInViewedGroup,
+    },
+  );
+
+  const { data: pendingJoinRequestsData } = useGetPendingGroupJoinRequestsQuery(
+    graphqlClient,
+    { groupId: groupId ?? "" },
+    { enabled: !!groupId && isCurrentUserOrganizerOfViewedGroup },
+  );
+  const pendingJoinRequests =
+    pendingJoinRequestsData?.pendingGroupJoinRequests ?? [];
+
+  // GraphQL mutations
+  const leaveGroupMutation = useLeaveGroupMutation(graphqlClient, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetGroup", { id: groupId }],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetGroupsByTrip", { tripId: group?.trip?.id }],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetGroupRanking", { tripId: group?.trip?.id }],
+      });
+    },
   });
 
-  const { data: pendingJoinRequests } = useQuery({
-    ...trpc.group.getPendingJoinRequests.queryOptions({
-      groupId: groupId ?? "",
-    }),
-    enabled: !!groupId && isCurrentUserOrganizerOfViewedGroup,
+  const requestToJoinMutation = useRequestToJoinGroupMutation(graphqlClient, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetGroupJoinRequest", { groupId }],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetPendingGroupJoinRequests", { groupId }],
+      });
+    },
   });
 
-  const { data: transactions } = useQuery({
-    ...trpc.coinTransaction.getCoinTransactions.queryOptions({
-      tripId: group?.trip?.id ?? "",
-      groupId: groupId ?? "",
-      limit: 20,
-    }),
-    enabled: !!groupId && !!group?.trip?.id,
-  });
-  const { data: rankingData } = useQuery({
-    ...trpc.group.ranking.queryOptions({ tripId: group?.trip?.id ?? "" }),
-    enabled: !!group?.trip?.id,
-  });
-  const leaveGroupMutation = useMutation(
-    trpc.group.leaveMyGroup.mutationOptions({
+  const cancelJoinRequestMutation = useCancelGroupJoinRequestMutation(
+    graphqlClient,
+    {
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
-            .queryKey,
+          queryKey: ["GetGroupJoinRequest", { groupId }],
         });
         await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({
-            tripId: group?.trip?.id ?? "",
-          }).queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.ranking.queryOptions({
-            tripId: group?.trip?.id ?? "",
-          }).queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.user.getMyWithGroup.queryOptions({
-            tripId: group?.trip?.id ?? "",
-          }).queryKey,
+          queryKey: ["GetPendingGroupJoinRequests", { groupId }],
         });
       },
-    }),
-  );
-  const requestToJoinMutation = useMutation(
-    trpc.group.requestToJoin.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getMyJoinRequestForGroup.queryOptions({
-            groupId: groupId ?? "",
-          }).queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
-            groupId: groupId ?? "",
-          }).queryKey,
-        });
-      },
-    }),
-  );
-  const cancelJoinRequestMutation = useMutation(
-    trpc.group.cancelMyJoinRequest.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getMyJoinRequestForGroup.queryOptions({
-            groupId: groupId ?? "",
-          }).queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
-            groupId: groupId ?? "",
-          }).queryKey,
-        });
-      },
-    }),
-  );
-  const respondToJoinRequestMutation = useMutation(
-    trpc.group.respondToJoinRequest.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getById.queryOptions({ id: groupId ?? "" })
-            .queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getPendingJoinRequests.queryOptions({
-            groupId: groupId ?? "",
-          }).queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.getAll.queryOptions({
-            tripId: group?.trip?.id ?? "",
-          }).queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: trpc.group.ranking.queryOptions({
-            tripId: group?.trip?.id ?? "",
-          }).queryKey,
-        });
-      },
-    }),
+    },
   );
 
-  const insets = useSafeAreaInsets();
+  const respondToJoinRequestMutation = useRespondToGroupJoinRequestMutation(
+    graphqlClient,
+    {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["GetGroup", { id: groupId }],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["GetPendingGroupJoinRequests", { groupId }],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["GetGroupsByTrip", { tripId: group?.trip?.id }],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["GetGroupRanking", { tripId: group?.trip?.id }],
+        });
+      },
+    },
+  );
 
   if (!groupId || groupLoading) {
     return <GroupDetailsLoadingState />;
@@ -185,33 +169,47 @@ export default function GroupDetailsScreen() {
   };
 
   const organizerId = group.organizer?.id;
-  const isGroupMember = group.participants.some(
-    (participant) => participant.user.id === currentUser?.id,
+  const isGroupMember = group.participants?.some(
+    (participant) => participant.user?.id === currentUser?.currentUser?.id,
   );
-  const isOrganizer = currentUser?.id === organizerId;
+  const isOrganizer = currentUser?.currentUser?.id === organizerId;
   const canManageGroup = isGroupMember && isOrganizer;
-  const canRequestToJoin =
-    !isLoadingCurrentUserGroup && !isGroupMember && !hasGroupInCurrentTrip;
-  const hasPendingRequestToThisGroup = Boolean(myJoinRequest);
-  const sortedParticipants = [...group.participants].sort((a, b) => {
-    const aIsLeader = a.user.id === organizerId;
-    const bIsLeader = b.user.id === organizerId;
+
+  // Check if user has a group in current trip by looking at ranking data
+  const hasGroupInCurrentTrip = Boolean(
+    rankingData?.groupRanking?.groups?.some((g) =>
+      g.participants?.some((p) => p.user?.id === currentUser?.currentUser?.id),
+    ),
+  );
+  const currentUserGroupId =
+    rankingData?.groupRanking?.groups?.find((g) =>
+      g.participants?.some((p) => p.user?.id === currentUser?.currentUser?.id),
+    )?.id ?? null;
+
+  const canRequestToJoin = !isGroupMember && !hasGroupInCurrentTrip;
+  const hasPendingRequestToThisGroup = Boolean(myJoinRequest?.groupJoinRequest);
+
+  const sortedParticipants = [...(group.participants ?? [])].sort((a, b) => {
+    const aIsLeader = a.user?.id === organizerId;
+    const bIsLeader = b.user?.id === organizerId;
 
     if (aIsLeader && !bIsLeader) return -1;
     if (!aIsLeader && bIsLeader) return 1;
 
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
+
   const memberList = sortedParticipants.map((p) => ({
-    id: p.user.id,
-    name: `${p.user.firstName ?? ""} ${p.user.lastName ?? ""}`.trim(),
-    initials: getInitials(p.user.firstName, p.user.lastName),
-    role: p.user.id === organizerId ? "Group Leader" : "Member",
-    isLeader: p.user.id === organizerId,
-    avatarStoragePath: p.user.hasAvatar ? `avatar/${p.user.id}.jpg` : null,
+    id: p.user?.id ?? "",
+    name: `${p.user?.firstName ?? ""} ${p.user?.lastName ?? ""}`.trim(),
+    initials: getInitials(p.user?.firstName, p.user?.lastName),
+    role: p.user?.id === organizerId ? "Group Leader" : "Member",
+    isLeader: p.user?.id === organizerId,
+    avatarStoragePath: p.user?.hasAvatar ? `avatar/${p.user?.id}.jpg` : null,
   }));
+
   const rankingPosition = (() => {
-    const index = rankingData?.data.findIndex(
+    const index = rankingData?.groupRanking?.groups?.findIndex(
       (rankingGroup) => rankingGroup.id === group.id,
     );
     return typeof index === "number" && index >= 0 ? index + 1 : null;
@@ -227,7 +225,7 @@ export default function GroupDetailsScreen() {
           void (async () => {
             try {
               await leaveGroupMutation.mutateAsync({ groupId: group.id });
-              router.replace(`/trips/groups?tripId=${group.trip.id}`);
+              router.replace(`/trips/groups?tripId=${group.trip?.id}`);
             } catch (error) {
               console.error("Failed to leave group:", error);
               Alert.alert("Error", "Failed to leave group");
@@ -237,6 +235,7 @@ export default function GroupDetailsScreen() {
       },
     ]);
   };
+
   const handleRequestToJoin = () => {
     if (!groupId) return;
     void (async () => {
@@ -362,9 +361,7 @@ export default function GroupDetailsScreen() {
           </View>
         ) : null}
 
-        {!isLoadingCurrentUserGroup &&
-        !isGroupMember &&
-        hasGroupInCurrentTrip ? (
+        {!isGroupMember && hasGroupInCurrentTrip ? (
           <View style={styles.groupLockedBadge}>
             <Ionicons
               name="lock-closed-outline"
@@ -402,7 +399,7 @@ export default function GroupDetailsScreen() {
                   <View style={styles.joinRequestTop}>
                     <View style={styles.joinRequestAvatar}>
                       <Text style={styles.joinRequestAvatarText}>
-                        {`${request.user.firstName?.[0] ?? ""}${request.user.lastName?.[0] ?? ""}`.toUpperCase() ||
+                        {`${request.user?.firstName?.[0] ?? ""}${request.user?.lastName?.[0] ?? ""}`.toUpperCase() ||
                           "?"}
                       </Text>
                     </View>
@@ -412,12 +409,12 @@ export default function GroupDetailsScreen() {
                   </View>
                   <View style={styles.joinRequestUser}>
                     <Text style={styles.joinRequestName}>
-                      {[request.user.firstName, request.user.lastName]
+                      {[request.user?.firstName, request.user?.lastName]
                         .filter(Boolean)
                         .join(" ") || "Unknown user"}
                     </Text>
                     <Text style={styles.joinRequestEmail}>
-                      {request.user.email ?? "No email"}
+                      {request.user?.email ?? "No email"}
                     </Text>
                   </View>
                   <View style={styles.joinRequestActions}>
@@ -460,8 +457,8 @@ export default function GroupDetailsScreen() {
 
         {/* Stats Grid */}
         <GroupStatsGrid
-          membersCount={group._count.participants}
-          coins={group.coins}
+          membersCount={group._count?.participants ?? 0}
+          coins={group.coins ?? 0}
           rankingPosition={rankingPosition}
         />
 
@@ -470,7 +467,7 @@ export default function GroupDetailsScreen() {
 
         {/* Transaction History */}
         <View style={styles.transactionHistorySection}>
-          <TransactionHistory transactions={transactions ?? []} />
+          <TransactionHistory transactions={transactions} />
         </View>
 
         <GroupApprovedChallenges

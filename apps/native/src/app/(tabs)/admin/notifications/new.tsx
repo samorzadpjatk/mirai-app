@@ -10,15 +10,23 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import {
+  useCreateNotificationMutation,
+  useGetAllGroupsQuery,
+} from "@mirai-app/graphql-types";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { DateTimePickerModal, FilterChip, FilterChipRow, FormField, ThemedTextInput } from "~/components/common/ui";
+import {
+  DateTimePickerModal,
+  FilterChip,
+  FilterChipRow,
+  FormField,
+  ThemedTextInput,
+} from "~/components/common/ui";
 
 type DeliveryType = "instant" | "scheduled_once" | "recurring_daily";
 type AudienceType = "all" | "group";
@@ -61,7 +69,10 @@ function mergePickedDate(base: Date, picked: Date): Date {
   return next;
 }
 
-function buildNotificationUrl(audience: AudienceType, groupId?: string): string {
+function buildNotificationUrl(
+  audience: AudienceType,
+  groupId?: string,
+): string {
   const parsed = new URL(DEFAULT_NOTIFICATION_URL, "https://integral.local");
   parsed.searchParams.set(AUDIENCE_MODE_PARAM, audience);
 
@@ -101,12 +112,13 @@ const placeholderLegend = [
 
 export default function AdminCreateNotificationScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("instant");
   const [audienceType, setAudienceType] = useState<AudienceType>("all");
@@ -118,51 +130,38 @@ export default function AdminCreateNotificationScreen() {
   );
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
 
-  const groupsQuery = useQuery({
-    ...trpc.group.getAllNames.queryOptions({ tripId }),
-    enabled: !!tripId,
-  });
+  // GraphQL query for groups
+  const { data: groupsData, isLoading: isLoadingGroups } = useGetAllGroupsQuery(
+    { tripId },
+    { enabled: !!tripId },
+  );
 
-  const groups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data]);
+  const groups = useMemo(() => groupsData?.groups ?? [], [groupsData]);
 
-  const schedulesQueryOptions = trpc.notificationSchedule.getAll.queryOptions({
-    ...(tripId ? { filter: { tripId } } : {}),
-    pagination: {
-      limit: 100,
-      offset: 0,
+  // GraphQL mutation for creating notifications
+  const createNotificationMutation = useCreateNotificationMutation({
+    onSuccess: async () => {
+      // Invalidate related queries
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["notificationSchedules"],
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to create/send notification", error);
+      Alert.alert(
+        "Error",
+        "Operation failed. Check input values and try again.",
+      );
     },
   });
 
-  const sentNotificationsQueryOptions = trpc.notifications.getAll.queryOptions(
-    tripId ? { tripId } : undefined,
-  );
-
-  const createScheduleMutation = useMutation(
-    trpc.notificationSchedule.create.mutationOptions(),
-  );
-  const sendToAllMutation = useMutation(trpc.notifications.sendToAll.mutationOptions());
-  const sendToGroupMutation = useMutation(trpc.notifications.sendToGroup.mutationOptions());
-
-  const isSubmitting =
-    createScheduleMutation.isPending ||
-    sendToAllMutation.isPending ||
-    sendToGroupMutation.isPending;
+  const isSubmitting = createNotificationMutation.isPending;
 
   const selectedGroupName = useMemo(
     () => groups.find((group) => group.id === groupId)?.name,
     [groups, groupId],
   );
-
-  const refreshAdminNotificationLists = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: schedulesQueryOptions.queryKey,
-      }),
-      queryClient.invalidateQueries({
-        queryKey: sentNotificationsQueryOptions.queryKey,
-      }),
-    ]);
-  };
 
   const openPicker = (mode: Exclude<ActivePicker, null>) => {
     setActivePicker(mode);
@@ -190,24 +189,17 @@ export default function AdminCreateNotificationScreen() {
 
     try {
       if (deliveryType === "instant") {
-        if (audienceType === "all") {
-          await sendToAllMutation.mutateAsync({
+        await createNotificationMutation.mutateAsync({
+          input: {
             tripId,
             title: normalizedTitle,
             body: normalizedBody,
             url: notificationUrl,
-          });
-        } else {
-          await sendToGroupMutation.mutateAsync({
-            tripId,
-            groupId,
-            title: normalizedTitle,
-            body: normalizedBody,
-            url: notificationUrl,
-          });
-        }
+            audienceType: audienceType === "all" ? "ALL" : "GROUP",
+            groupId: audienceType === "group" ? groupId : undefined,
+          },
+        });
 
-        await refreshAdminNotificationLists();
         Alert.alert("Success", "Notification sent instantly.");
         router.back();
         return;
@@ -222,24 +214,20 @@ export default function AdminCreateNotificationScreen() {
       if (deliveryType === "recurring_daily") {
         const startDate = getNextDailyOccurrence(hour, minute);
 
-        await createScheduleMutation.mutateAsync({
-          tripId,
-          name:
-            audienceType === "group"
-              ? `Daily (${selectedGroupName ?? "Group"}): ${normalizedTitle}`
-              : `Daily (All): ${normalizedTitle}`,
-          notificationType: "custom",
-          notificationTitle: normalizedTitle,
-          notificationBody: normalizedBody,
-          notificationUrl,
-          startDate,
-          endDate,
-          hour,
-          minute,
-          isActive: true,
+        await createNotificationMutation.mutateAsync({
+          input: {
+            tripId,
+            title: normalizedTitle,
+            body: normalizedBody,
+            url: notificationUrl,
+            audienceType: audienceType === "all" ? "ALL" : "GROUP",
+            groupId: audienceType === "group" ? groupId : undefined,
+            isScheduled: true,
+            isRecurring: true,
+            scheduleDate: startDate.toISOString(),
+          },
         });
 
-        await refreshAdminNotificationLists();
         Alert.alert("Success", "Recurring daily notification created.");
         router.back();
         return;
@@ -254,31 +242,29 @@ export default function AdminCreateNotificationScreen() {
         );
         return;
       }
-      const oneTimeEndDate = new Date(startDate.getTime() + 2 * 60 * 1000);
 
-      await createScheduleMutation.mutateAsync({
-        tripId,
-        name:
-          audienceType === "group"
-            ? `One-time (${selectedGroupName ?? "Group"}): ${normalizedTitle}`
-            : `One-time (All): ${normalizedTitle}`,
-        notificationType: "custom",
-        notificationTitle: normalizedTitle,
-        notificationBody: normalizedBody,
-        notificationUrl,
-        startDate,
-        endDate: oneTimeEndDate,
-        hour,
-        minute,
-        isActive: true,
+      await createNotificationMutation.mutateAsync({
+        input: {
+          tripId,
+          title: normalizedTitle,
+          body: normalizedBody,
+          url: notificationUrl,
+          audienceType: audienceType === "all" ? "ALL" : "GROUP",
+          groupId: audienceType === "group" ? groupId : undefined,
+          isScheduled: true,
+          isRecurring: false,
+          scheduleDate: startDate.toISOString(),
+        },
       });
 
-      await refreshAdminNotificationLists();
       Alert.alert("Success", "One-time scheduled notification created.");
       router.back();
     } catch (error) {
       console.error("Failed to create/send notification", error);
-      Alert.alert("Error", "Operation failed. Check input values and try again.");
+      Alert.alert(
+        "Error",
+        "Operation failed. Check input values and try again.",
+      );
     }
   };
 
@@ -286,7 +272,10 @@ export default function AdminCreateNotificationScreen() {
     <View
       style={[
         styles.container,
-        { paddingTop: spacing.xl, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        {
+          paddingTop: spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
       ]}
     >
       <StatusBar style="light" />
@@ -337,13 +326,17 @@ export default function AdminCreateNotificationScreen() {
 
           {audienceType === "group" ? (
             <View style={styles.groupList}>
-              {groupsQuery.isLoading ? (
+              {isLoadingGroups ? (
                 <View style={styles.loadingInline}>
                   <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={styles.loadingInlineText}>Loading groups...</Text>
+                  <Text style={styles.loadingInlineText}>
+                    Loading groups...
+                  </Text>
                 </View>
               ) : groups.length === 0 ? (
-                <Text style={styles.helperText}>No groups available for selected trip.</Text>
+                <Text style={styles.helperText}>
+                  No groups available for selected trip.
+                </Text>
               ) : (
                 groups.map((group) => (
                   <TouchableOpacity
@@ -363,7 +356,11 @@ export default function AdminCreateNotificationScreen() {
                       {group.name}
                     </Text>
                     {groupId === group.id ? (
-                      <Ionicons name="checkmark-circle" size={18} color={colors.white} />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={18}
+                        color={colors.white}
+                      />
                     ) : null}
                   </TouchableOpacity>
                 ))
@@ -453,7 +450,9 @@ export default function AdminCreateNotificationScreen() {
       <DateTimePickerModal
         visible={Boolean(activePicker)}
         value={scheduleDateTime}
-        mode={activePicker === "datetime" ? "datetime" : activePicker ?? "date"}
+        mode={
+          activePicker === "datetime" ? "datetime" : (activePicker ?? "date")
+        }
         onConfirm={(date) => {
           if (activePicker === "datetime") {
             setScheduleDateTime(date);
@@ -497,7 +496,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.medium,
     color: colors.white,
   },
-    helperText: {
+  helperText: {
     color: colors.textSecondary,
     fontSize: typography.sm,
   },

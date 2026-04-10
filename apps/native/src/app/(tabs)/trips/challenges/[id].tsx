@@ -1,16 +1,18 @@
 import { useState } from "react";
-import {
-  View,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Text,
-} from "react-native";
+import { View, ScrollView, StyleSheet, Alert, Text } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import {
+  useGetChallengeQuery,
+  useGetChallengeSubmissionsQuery,
+  useGetChallengeSubmissionByChallengeAndGroupQuery,
+  useCreateChallengeSubmissionMutation,
+  useDeleteChallengeSubmissionMutation,
+  useGetTripQuery,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { QrScannerModal } from "~/components/common";
 import { AppModalShell, AppModalFooter } from "~/components/common/ui";
 import { ThemedTextInput } from "~/components/common/ui";
@@ -71,7 +73,6 @@ const isOnOrBeforeNow = (value?: string | Date | null) => {
 
 export default function ChallengeDetailScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams();
   const challengeId =
@@ -114,29 +115,27 @@ export default function ChallengeDetailScreen() {
       : "Uploading..."
     : undefined;
 
-  const submissionQuery =
-    trpc.challengeSubmission.getMyForChallenge.queryOptions({
-      challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
-    });
-  const challengeSubmissionsQuery =
-    trpc.challengeSubmission.getByChallenge.queryOptions({
-      challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
-    });
+  // GraphQL queries
+  const { data: mySubmission } =
+    useGetChallengeSubmissionByChallengeAndGroupQuery(
+      graphqlClient,
+      { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+      { enabled: !!challengeId && !!tripId },
+    );
+  const { data: challengeSubmissionsData } = useGetChallengeSubmissionsQuery(
+    graphqlClient,
+    { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+    { enabled: !!challengeId && !!tripId },
+  );
+  const { data: trip } = useGetTripQuery(
+    graphqlClient,
+    { id: tripId ?? "" },
+    { enabled: !!tripId },
+  );
 
-  const { data: mySubmission } = useQuery({
-    ...submissionQuery,
-    enabled: !!challengeId && !!tripId,
-  });
-  const { data: challengeSubmissions } = useQuery({
-    ...challengeSubmissionsQuery,
-    enabled: !!challengeId && !!tripId,
-  });
-  const { data: trip } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
-    enabled: !!tripId,
-  });
+  const challengeSubmissions =
+    challengeSubmissionsData?.challengeSubmissions?.submissions ?? [];
+
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
   const [isPhotoCameraOpen, setIsPhotoCameraOpen] = useState(false);
@@ -151,53 +150,64 @@ export default function ChallengeDetailScreen() {
     [number, number] | null
   >(null);
 
-  const withdrawMutation = useMutation(
-    trpc.challengeSubmission.deleteMine.mutationOptions({
+  // GraphQL mutations
+  const withdrawMutation = useDeleteChallengeSubmissionMutation(graphqlClient, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [
+          "GetChallengeSubmissionByChallengeAndGroup",
+          { challengeId, tripId },
+        ],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
+      });
+    },
+  });
+  const qrSubmitMutation = useCreateChallengeSubmissionMutation(graphqlClient, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [
+          "GetChallengeSubmissionByChallengeAndGroup",
+          { challengeId, tripId },
+        ],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
+      });
+    },
+  });
+  const locationSubmitMutation = useCreateChallengeSubmissionMutation(
+    graphqlClient,
+    {
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: submissionQuery.queryKey,
+          queryKey: [
+            "GetChallengeSubmissionByChallengeAndGroup",
+            { challengeId, tripId },
+          ],
         });
         await queryClient.invalidateQueries({
-          queryKey: challengeSubmissionsQuery.queryKey,
+          queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
         });
       },
-    }),
+    },
   );
-  const qrSubmitMutation = useMutation(
-    trpc.challengeSubmission.create.mutationOptions({
+  const textSubmitMutation = useCreateChallengeSubmissionMutation(
+    graphqlClient,
+    {
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: submissionQuery.queryKey,
+          queryKey: [
+            "GetChallengeSubmissionByChallengeAndGroup",
+            { challengeId, tripId },
+          ],
         });
         await queryClient.invalidateQueries({
-          queryKey: challengeSubmissionsQuery.queryKey,
+          queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
         });
       },
-    }),
-  );
-  const locationSubmitMutation = useMutation(
-    trpc.challengeSubmission.create.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: submissionQuery.queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: challengeSubmissionsQuery.queryKey,
-        });
-      },
-    }),
-  );
-  const textSubmitMutation = useMutation(
-    trpc.challengeSubmission.create.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: submissionQuery.queryKey,
-        });
-        await queryClient.invalidateQueries({
-          queryKey: challengeSubmissionsQuery.queryKey,
-        });
-      },
-    }),
+    },
   );
 
   const handleWithdraw = async (submissionId: string) => {
@@ -259,8 +269,9 @@ export default function ChallengeDetailScreen() {
     ).length ?? 0;
   const submittedGroupsCount = challengeSubmissions?.length ?? 0;
   const pendingReviewGroupsCount =
-    challengeSubmissions?.filter((submission) => submission.status === "PENDING")
-      .length ?? 0;
+    challengeSubmissions?.filter(
+      (submission) => submission.status === "PENDING",
+    ).length ?? 0;
   const isAwaitingStaffReview = pendingReviewGroupsCount > 0;
   const shouldHideStaffSubmissionsGallery =
     challenge.scoringCategory === "JUDGED_STAFF" &&
@@ -268,7 +279,7 @@ export default function ChallengeDetailScreen() {
   const shouldShowPendingReviewCounter =
     isAwaitingStaffReview &&
     (isImageBasedChallenge || shouldShowSolvedCounterOnly);
-  const totalGroupsCount = trip?.groups?.length ?? 0;
+  const totalGroupsCount = trip?.trip?.groups?.length ?? 0;
 
   const validateImageLocationSubmission = () => {
     if (challenge.submissionType !== "IMAGE_LOCATION") {
@@ -654,7 +665,8 @@ export default function ChallengeDetailScreen() {
           </View>
         ) : null}
 
-        {shouldShowPendingReviewCounter && !shouldHideStaffSubmissionsGallery ? (
+        {shouldShowPendingReviewCounter &&
+        !shouldHideStaffSubmissionsGallery ? (
           <View style={styles.solvedCounterCard}>
             <Text style={styles.solvedCounterLabel}>Groups submitted</Text>
             <Text style={styles.solvedCounterValue}>
@@ -730,7 +742,9 @@ export default function ChallengeDetailScreen() {
           style={{ marginBottom: spacing.lg }}
         />
         <AppModalFooter
-          primaryLabel={textSubmitMutation.isPending ? "Submitting..." : "Submit"}
+          primaryLabel={
+            textSubmitMutation.isPending ? "Submitting..." : "Submit"
+          }
           onPrimary={() => handleSubmitText(textInputValue)}
           isPrimaryLoading={textSubmitMutation.isPending}
           isPrimaryDisabled={!textInputValue.trim()}
@@ -761,7 +775,7 @@ export default function ChallengeDetailScreen() {
         instructionText="Point camera at QR code to verify challenge."
         onScan={async (data) => {
           if (!tripId || !challengeId) return;
-          
+
           try {
             const submission = await qrSubmitMutation.mutateAsync({
               tripId,
@@ -776,9 +790,7 @@ export default function ChallengeDetailScreen() {
             );
           } catch (error) {
             const message =
-              error instanceof Error
-                ? error.message
-                : "Invalid QR code";
+              error instanceof Error ? error.message : "Invalid QR code";
             throw new Error(message);
           }
         }}

@@ -1,47 +1,72 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import {
+  useGetActivityQuery,
+  useUpdateActivityMutation,
+} from "@mirai-app/graphql-types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 
+// Create GraphQL client with auth token from SecureStore
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:3000/graphql";
+  const token = await SecureStore.getItemAsync("token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
 
 export default function AdminEditActivityScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ activityId: string; tripId?: string }>();
+  const params = useLocalSearchParams<{
+    activityId: string;
+    tripId?: string;
+  }>();
   const activityId = params.activityId;
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId =
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [client, setClient] = useState<GraphQLClient | null>(null);
 
-  const feedQueryOptions = trpc.activityFeed.getByTripModeration.queryOptions({
-    tripId,
-    page: 1,
-    pageSize: 100,
-  });
+  // Initialize GraphQL client
+  useEffect(() => {
+    void createGraphQLClient().then(setClient);
+  }, []);
 
-  const { data: activity, isLoading } = useQuery(
-    trpc.activityFeed.getById.queryOptions({ id: activityId }, { enabled: !!activityId })
+  // Get activity query
+  const { data: activity, isLoading } = useGetActivityQuery(
+    client ?? new GraphQLClient(""),
+    { id: activityId },
+    { enabled: !!client && !!activityId },
   );
 
   // Initialize form with activity data when it loads
   useEffect(() => {
-    if (activity) {
-      // Use requestAnimationFrame to defer state updates
+    if (activity?.activity) {
       const updateState = () => {
-        if (title !== activity.title) {
-          setTitle(activity.title);
+        if (title !== activity.activity.title) {
+          setTitle(activity.activity.title);
         }
-        const newDescription = activity.description ?? "";
+        const newDescription = activity.activity.description ?? "";
         if (description !== newDescription) {
           setDescription(newDescription);
         }
@@ -50,10 +75,20 @@ export default function AdminEditActivityScreen() {
     }
   }, [activity, title, description]);
 
-  const updateMutation = useMutation(
-    trpc.activityFeed.update.mutationOptions({
+  const invalidateFeed = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: [
+        "GetActivitiesByTripModeration",
+        { tripId, page: 1, perPage: 100 },
+      ],
+    });
+  }, [queryClient, tripId]);
+
+  const updateMutation = useUpdateActivityMutation(
+    client ?? new GraphQLClient(""),
+    {
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey });
+        await invalidateFeed();
         Alert.alert("Success", "Activity updated successfully.", [
           {
             text: "OK",
@@ -61,12 +96,16 @@ export default function AdminEditActivityScreen() {
           },
         ]);
       },
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
+      onError: (error) =>
+        Alert.alert(
+          "Error",
+          error instanceof Error ? error.message : "Update failed.",
+        ),
+    },
   );
 
   const handleSubmit = async () => {
-    if (!activity) return;
+    if (!activity?.activity) return;
 
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
@@ -80,14 +119,15 @@ export default function AdminEditActivityScreen() {
       activityId: string;
       title?: string;
       description?: string | null;
-    } = { activityId: activity.id };
+    } = { activityId: activity.activity.id };
 
-    if (trimmedTitle !== activity.title) {
+    if (trimmedTitle !== activity.activity.title) {
       payload.title = trimmedTitle;
     }
 
-    if (trimmedDescription !== (activity.description ?? "")) {
-      payload.description = trimmedDescription.length > 0 ? trimmedDescription : null;
+    if (trimmedDescription !== (activity.activity.description ?? "")) {
+      payload.description =
+        trimmedDescription.length > 0 ? trimmedDescription : null;
     }
 
     if (Object.keys(payload).length === 1) {
@@ -106,12 +146,15 @@ export default function AdminEditActivityScreen() {
     return (
       <View style={[styles.container, { paddingTop: spacing.xl }]}>
         <StatusBar style="light" />
-        <AdminHeader title="Edit Activity" subtitle="Loading activity data..." />
+        <AdminHeader
+          title="Edit Activity"
+          subtitle="Loading activity data..."
+        />
       </View>
     );
   }
 
-  if (!activity) {
+  if (!activity?.activity) {
     return (
       <View style={[styles.container, { paddingTop: spacing.xl }]}>
         <StatusBar style="light" />
@@ -120,11 +163,16 @@ export default function AdminEditActivityScreen() {
     );
   }
 
+  const activityData = activity.activity;
+
   return (
     <View
       style={[
         styles.container,
-        { paddingTop: spacing.xl, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        {
+          paddingTop: spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
       ]}
     >
       <StatusBar style="light" />
@@ -140,10 +188,12 @@ export default function AdminEditActivityScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.activityInfo}>
-          <Text style={styles.activityTitle}>{activity.title}</Text>
-          <Text style={styles.activityType}>Type: {activity.activityType}</Text>
+          <Text style={styles.activityTitle}>{activityData.title}</Text>
+          <Text style={styles.activityType}>
+            Type: {activityData.activityType}
+          </Text>
           <Text style={styles.activityMeta}>
-            Created: {new Date(activity.createdAt).toLocaleDateString()}
+            Created: {new Date(activityData.createdAt).toLocaleDateString()}
           </Text>
         </View>
 

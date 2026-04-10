@@ -14,8 +14,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useGetCurrentUserQuery,
+  useUpdateUserMutation,
+} from "@mirai-app/graphql-types";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileDownload, useFileUpload } from "~/hooks/files";
@@ -31,10 +34,11 @@ interface UploadAsset {
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const userMyQueryOptions = trpc.user.getMy.queryOptions();
-  const { data: currentUser } = useQuery(userMyQueryOptions);
+
+  // GraphQL query for current user
+  const { data: userData } = useGetCurrentUserQuery();
+  const currentUser = userData?.me;
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -100,31 +104,21 @@ export default function EditProfileScreen() {
     resetAvatar,
   ]);
 
-  const updateAvatarMutation = useMutation(
-    trpc.user.updateAvatar.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: userMyQueryOptions.queryKey,
-        });
-      },
-    }),
-  );
-
-  const updateProfileMutation = useMutation(
-    trpc.user.updateMyProfile.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: userMyQueryOptions.queryKey,
-        });
-      },
-    }),
-  );
+  // GraphQL mutation for updating profile
+  const updateProfileMutation = useUpdateUserMutation({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+    onError: (error) => {
+      Alert.alert("Save Failed", error.message);
+    },
+  });
 
   const isUploading = uploadStatus === "uploading";
   const isDownloading = avatarStatus === "loading";
   const isBusy = isUploading || isDownloading || isPicking || isCameraOpen;
   const remoteAvatarUri = avatarFile?.uri
-    ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt?.toISOString() ?? "")}`
+    ? `${avatarFile.uri}?v=${encodeURIComponent(currentUser?.updatedAt?.toString() ?? "")}`
     : null;
   const avatarUri = localAvatarPreviewUri ?? remoteAvatarUri;
 
@@ -142,7 +136,13 @@ export default function EditProfileScreen() {
         upsert: true,
       });
 
-      await updateAvatarMutation.mutateAsync({ hasAvatar: true });
+      // Update user profile with hasAvatar flag
+      await updateProfileMutation.mutateAsync({
+        input: {
+          id: currentUser.id,
+          hasAvatar: true,
+        },
+      });
       await refreshAvatar(true);
     },
     [
@@ -150,7 +150,7 @@ export default function EditProfileScreen() {
       currentUser?.id,
       refreshAvatar,
       resetUpload,
-      updateAvatarMutation,
+      updateProfileMutation,
       upload,
     ],
   );
@@ -265,10 +265,18 @@ export default function EditProfileScreen() {
       return;
     }
 
+    if (!currentUser?.id) {
+      Alert.alert("Error", "User not authenticated");
+      return;
+    }
+
     try {
       await updateProfileMutation.mutateAsync({
-        firstName: trimmedFirstName,
-        lastName: trimmedLastName,
+        input: {
+          id: currentUser.id,
+          firstName: trimmedFirstName,
+          lastName: trimmedLastName,
+        },
       });
       router.back();
     } catch (error) {
@@ -276,7 +284,7 @@ export default function EditProfileScreen() {
         error instanceof Error ? error.message : "Failed to save profile";
       Alert.alert("Save Failed", message);
     }
-  }, [firstName, lastName, router, updateProfileMutation]);
+  }, [firstName, lastName, router, updateProfileMutation, currentUser?.id]);
 
   return (
     <View style={styles.container}>

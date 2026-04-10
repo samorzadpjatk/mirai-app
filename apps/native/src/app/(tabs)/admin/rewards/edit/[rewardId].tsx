@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Alert,
   Image,
@@ -12,8 +12,9 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -21,93 +22,207 @@ import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoading
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
+import {
+  useGetRewardQuery,
+  useGetTotalAvailablePointsQuery,
+  useUpdateRewardMutation,
+  useSetRewardHiddenMutation,
+  useDeleteRewardMutation,
+} from "@mirai-app/graphql-types";
+
+// GraphQL Client setup with SecureStore
+const createGraphQLClient = async (): Promise<GraphQLClient> => {
+  const token = await SecureStore.getItemAsync("sb-access-token");
+  return new GraphQLClient(
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+};
+
+// Wrapper hook to get client
+const useGraphQLClient = () => {
+  const [client, setClient] = useState<GraphQLClient | null>(null);
+
+  useMemo(() => {
+    createGraphQLClient().then(setClient);
+  }, []);
+
+  return client;
+};
 
 export default function AdminEditRewardScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
+  const client = useGraphQLClient();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ rewardId: string; tripId?: string }>();
   const rewardId = params.rewardId;
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId =
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
-  const { upload, status: uploadStatus, progress: uploadProgress } = useFileUpload();
+  const {
+    upload,
+    status: uploadStatus,
+    progress: uploadProgress,
+  } = useFileUpload();
 
-  const { data: reward, isLoading } = useQuery(
-    trpc.reward.getById.queryOptions({ id: rewardId }, { enabled: !!rewardId })
-  );
+  // GraphQL Query: Get reward by ID
+  const { data: rewardData, isLoading } = useQuery({
+    queryKey: ["GetReward", { id: rewardId }],
+    enabled: Boolean(rewardId) && Boolean(client),
+    queryFn: async () => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useGetRewardQuery.fetcher(client, { id: rewardId })();
+    },
+  });
 
-  const { data: totalPointsData } = useQuery(
-    trpc.reward.getTotalAvailablePoints.queryOptions({ tripId }, { enabled: !!tripId })
-  );
+  const reward = rewardData?.reward;
 
+  // GraphQL Query: Get total available points
+  const { data: totalPointsData } = useQuery({
+    queryKey: ["GetTotalAvailablePoints", { tripId }],
+    enabled: Boolean(tripId) && Boolean(client),
+    queryFn: async () => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useGetTotalAvailablePointsQuery.fetcher(client, { tripId })();
+    },
+  });
+
+  // Form state
   const [name, setName] = useState(reward?.name ?? "");
   const [description, setDescription] = useState(reward?.description ?? "");
-  const [coinCost, setCoinCost] = useState(reward?.originalCoinCost?.toString() ?? reward?.coinCost.toString() ?? "");
-  const [availableQuantity, setAvailableQuantity] = useState(reward?.availableQuantity.toString() ?? "");
+  const [coinCost, setCoinCost] = useState(reward?.coinCost?.toString() ?? "");
+  const [availableQuantity, setAvailableQuantity] = useState(
+    reward?.availableQuantity?.toString() ?? "",
+  );
   const [isHidden, setIsHidden] = useState(reward?.isHidden ?? false);
-  const [imagePath, setImagePath] = useState(reward?.image ?? "");
-  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(reward?.signedImageUrl ?? null);
-
-  const totalAvailablePoints = totalPointsData?.totalPoints ?? 0;
-  const calculatedCost = coinCost && totalAvailablePoints > 0
-    ? Math.max(1, Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)))
-    : 0;
-
-  const updateRewardMutation = useMutation(
-    trpc.reward.update.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getById"], { input: { id: rewardId } }],
-        });
-        Alert.alert("Success", "Reward updated successfully.", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
-      },
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
+  const [imagePath, setImagePath] = useState(reward?.primaryImage ?? "");
+  const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(
+    reward?.signedImageUrl ?? null,
   );
 
-  const setHiddenMutation = useMutation(
-    trpc.reward.setHidden.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getById"], { input: { id: rewardId } }],
-        });
-      },
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
-  );
+  // Update form when reward data loads
+  useEffect(() => {
+    if (reward) {
+      setName(reward.name ?? "");
+      setDescription(reward.description ?? "");
+      setCoinCost(reward.coinCost?.toString() ?? "");
+      setAvailableQuantity(reward.availableQuantity?.toString() ?? "");
+      setIsHidden(reward.isHidden ?? false);
+      setImagePath(reward.primaryImage ?? "");
+      setImagePreviewUri(reward.signedImageUrl ?? null);
+    }
+  }, [reward]);
 
-  const deleteRewardMutation = useMutation(
-    trpc.reward.delete.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["reward", "getAll"], { input: { tripId } }],
-        });
-        Alert.alert("Success", "Reward deleted successfully.", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
-      },
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
-  );
+  const totalAvailablePoints =
+    totalPointsData?.totalAvailablePoints?.totalPoints ?? 0;
+  const calculatedCost =
+    coinCost && totalAvailablePoints > 0
+      ? Math.max(
+          1,
+          Math.round(totalAvailablePoints * (parseFloat(coinCost) / 100)),
+        )
+      : 0;
+
+  // GraphQL Mutation: Update reward
+  const updateRewardMutation = useMutation({
+    mutationFn: async (input: {
+      id: string;
+      name: string;
+      description?: string;
+      coinCost: number;
+      availableQuantity: number;
+      images?: string[];
+    }) => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useUpdateRewardMutation.fetcher(client, {
+        input: {
+          id: input.id,
+          name: input.name,
+          description: input.description,
+          coinCost: input.coinCost,
+          availableQuantity: input.availableQuantity,
+          images: input.images,
+        },
+      })();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetReward", { id: rewardId }],
+      });
+      Alert.alert("Success", "Reward updated successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    },
+    onError: (error) =>
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to update reward",
+      ),
+  });
+
+  // GraphQL Mutation: Set reward hidden status
+  const setHiddenMutation = useMutation({
+    mutationFn: async (input: { rewardId: string; isHidden: boolean }) => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useSetRewardHiddenMutation.fetcher(client, input)();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetReward", { id: rewardId }],
+      });
+    },
+    onError: (error) =>
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to update visibility",
+      ),
+  });
+
+  // GraphQL Mutation: Delete reward
+  const deleteRewardMutation = useMutation({
+    mutationFn: async (input: { id: string }) => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useDeleteRewardMutation.fetcher(client, input)();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
+      });
+      Alert.alert("Success", "Reward deleted successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    },
+    onError: (error) =>
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to delete reward",
+      ),
+  });
 
   const isUploadingImage = uploadStatus === "uploading";
   const imageUploadPercent =
-    uploadProgress.percent != null ? Math.round(uploadProgress.percent * 100) : null;
+    uploadProgress.percent != null
+      ? Math.round(uploadProgress.percent * 100)
+      : null;
 
   const handlePickImage = async () => {
     try {
@@ -122,7 +237,8 @@ export default function AdminEditRewardScreen() {
 
       const asset = result.assets[0];
       const extension = getImageExtension(asset);
-      const fileName = asset.fileName?.trim() ?? `reward-${Date.now()}.${extension}`;
+      const fileName =
+        asset.fileName?.trim() ?? `reward-${Date.now()}.${extension}`;
       const storagePath = `rewards/${tripId}/reward-${Date.now()}.${extension}`;
       const contentType = asset.mimeType ?? getImageContentType(extension);
 
@@ -137,7 +253,8 @@ export default function AdminEditRewardScreen() {
       setImagePath(storagePath);
       setImagePreviewUri(asset.uri);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to upload image";
+      const message =
+        error instanceof Error ? error.message : "Failed to upload image";
       Alert.alert("Upload error", message);
     }
   };
@@ -156,7 +273,10 @@ export default function AdminEditRewardScreen() {
     }
 
     if (isNaN(parsedCoinCost) || parsedCoinCost <= 0 || parsedCoinCost > 100) {
-      Alert.alert("Validation", "Valid coin cost percentage (1-100) is required.");
+      Alert.alert(
+        "Validation",
+        "Valid coin cost percentage (1-100) is required.",
+      );
       return;
     }
 
@@ -178,13 +298,13 @@ export default function AdminEditRewardScreen() {
         description: trimmedDescription || undefined,
         coinCost: parsedCoinCost,
         availableQuantity: parsedQuantity,
-        image: imagePath || undefined,
+        images: imagePath ? [imagePath] : [],
       });
 
       // Update hidden status if changed
       if (reward.isHidden !== isHidden) {
         await setHiddenMutation.mutateAsync({
-          id: rewardId,
+          rewardId: rewardId,
           isHidden,
         });
       }
@@ -208,11 +328,11 @@ export default function AdminEditRewardScreen() {
             void deleteRewardMutation.mutateAsync({ id: rewardId });
           },
         },
-      ]
+      ],
     );
   };
 
-  if (isLoading) {
+  if (isLoading || !client) {
     return (
       <View style={[styles.container, { paddingTop: spacing.xl }]}>
         <StatusBar style="light" />
@@ -234,15 +354,15 @@ export default function AdminEditRewardScreen() {
     <View
       style={[
         styles.container,
-        { paddingTop: spacing.xl, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        {
+          paddingTop: spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
       ]}
     >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Edit Reward"
-        subtitle="Update reward information"
-      />
+      <AdminHeader title="Edit Reward" subtitle="Update reward information" />
 
       <ScrollView
         style={styles.scroll}
@@ -252,7 +372,8 @@ export default function AdminEditRewardScreen() {
         <View style={styles.rewardInfo}>
           <Text style={styles.rewardName}>{reward.name}</Text>
           <Text style={styles.rewardMeta}>
-            {reward.purchasedCount ?? 0} purchased • {reward.availableQuantity} available
+            {reward.purchasedCount ?? 0} purchased • {reward.availableQuantity}{" "}
+            available
           </Text>
           <Text style={styles.rewardMeta}>
             Created: {new Date(reward.createdAt).toLocaleDateString()}
@@ -287,7 +408,8 @@ export default function AdminEditRewardScreen() {
           />
           {coinCost && totalAvailablePoints > 0 && (
             <Text style={styles.helperText}>
-              Cost: {calculatedCost} coins ({coinCost}% of {totalAvailablePoints} total points)
+              Cost: {calculatedCost} coins ({coinCost}% of{" "}
+              {totalAvailablePoints} total points)
             </Text>
           )}
         </FormField>
@@ -326,7 +448,11 @@ export default function AdminEditRewardScreen() {
                 activeOpacity={0.85}
                 disabled={isUploadingImage}
               >
-                <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                <Ionicons
+                  name="trash-outline"
+                  size={16}
+                  color={colors.danger}
+                />
                 <Text style={styles.imageRemoveButtonText}>Remove</Text>
               </TouchableOpacity>
             ) : null}
@@ -334,22 +460,31 @@ export default function AdminEditRewardScreen() {
 
           {isUploadingImage ? (
             <Text style={styles.helperText}>
-              Uploading image{imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
+              Uploading image
+              {imageUploadPercent != null ? ` ${imageUploadPercent}%` : "..."}
             </Text>
           ) : null}
 
           {imagePreviewUri ? (
-            <Image source={{ uri: imagePreviewUri }} style={styles.imagePreview} />
+            <Image
+              source={{ uri: imagePreviewUri }}
+              style={styles.imagePreview}
+            />
           ) : null}
 
-          <Text style={styles.helperText}>Image is optional but recommended.</Text>
+          <Text style={styles.helperText}>
+            Image is optional but recommended.
+          </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Visibility</Text>
           <View style={styles.visibilityOptions}>
             <TouchableOpacity
-              style={[styles.visibilityOption, !isHidden && styles.visibilityOptionActive]}
+              style={[
+                styles.visibilityOption,
+                !isHidden && styles.visibilityOptionActive,
+              ]}
               onPress={() => setIsHidden(false)}
               activeOpacity={0.8}
             >
@@ -358,12 +493,20 @@ export default function AdminEditRewardScreen() {
                 size={16}
                 color={!isHidden ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.visibilityOptionText, !isHidden && styles.visibilityOptionTextActive]}>
+              <Text
+                style={[
+                  styles.visibilityOptionText,
+                  !isHidden && styles.visibilityOptionTextActive,
+                ]}
+              >
                 Visible
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.visibilityOption, isHidden && styles.visibilityOptionActive]}
+              style={[
+                styles.visibilityOption,
+                isHidden && styles.visibilityOptionActive,
+              ]}
               onPress={() => setIsHidden(true)}
               activeOpacity={0.8}
             >
@@ -372,7 +515,12 @@ export default function AdminEditRewardScreen() {
                 size={16}
                 color={isHidden ? colors.primary : colors.textSecondary}
               />
-              <Text style={[styles.visibilityOptionText, isHidden && styles.visibilityOptionTextActive]}>
+              <Text
+                style={[
+                  styles.visibilityOptionText,
+                  isHidden && styles.visibilityOptionTextActive,
+                ]}
+              >
                 Hidden
               </Text>
             </TouchableOpacity>
@@ -384,9 +532,13 @@ export default function AdminEditRewardScreen() {
 
         <PrimaryLoadingButton
           label="Save Changes"
-          isLoading={updateRewardMutation.isPending}
+          isLoading={
+            updateRewardMutation.isPending || setHiddenMutation.isPending
+          }
           onPress={handleSubmit}
-          disabled={updateRewardMutation.isPending}
+          disabled={
+            updateRewardMutation.isPending || setHiddenMutation.isPending
+          }
         />
 
         <TouchableOpacity

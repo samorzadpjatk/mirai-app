@@ -9,8 +9,11 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
-import { useQuery } from "@tanstack/react-query";
+import {
+  useGetGroupsByTripQuery,
+  useGetCurrentUserQuery,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { useMemo } from "react";
 import { colors, spacing } from "../../../../styles";
 import { FloatingActionButton } from "~/components/common/FloatingActionButton";
@@ -25,7 +28,6 @@ export default function GroupsListScreen() {
   const params = useLocalSearchParams();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const trpc = useTRPC();
 
   const { isTripPast } = useTripDetails(tripId);
   const {
@@ -39,15 +41,21 @@ export default function GroupsListScreen() {
     searchQuery,
     setSearchQuery,
   } = useGroups(tripId);
-  const { data: currentUserWithGroup, isLoading: isLoadingCurrentUserGroup } =
-    useQuery({
-      ...trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }),
-      enabled: !!tripId,
-    });
+
+  // GraphQL query for current user with group
+  const { data: currentUserData, isLoading: isLoadingCurrentUserGroup } =
+    useGetCurrentUserQuery(graphqlClient, {}, { enabled: !!tripId });
+  const currentUserWithGroup = currentUserData?.currentUser;
+
   const groupsLoading = isLoading;
+
+  // Check if user has a group in current trip from their trips data
   const hasGroupInCurrentTrip = Boolean(
-    currentUserWithGroup?.trips?.some((trip) => trip.group),
+    currentUserWithGroup?.trips?.some(
+      (trip) => trip.tripId === tripId && trip.group,
+    ),
   );
+
   const myGroupId = useMemo(() => {
     if (!currentUserWithGroup?.trips?.length) return null;
     const match = currentUserWithGroup?.trips.find(
@@ -112,7 +120,6 @@ export default function GroupsListScreen() {
         {/* Search Bar */}
         <GroupsSearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
-        
         {/* Header */}
         <GroupsListHeader title="Groups" count={orderedGroups.length} />
 

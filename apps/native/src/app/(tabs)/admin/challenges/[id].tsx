@@ -2,19 +2,25 @@ import React from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useGetChallengeQuery,
+  useUpdateChallengeMutation,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { ChallengeFormFields } from "~/components/admin/challenges/ChallengeFormFields";
 import { ChallengeFormModals } from "~/components/admin/challenges/ChallengeFormModals";
-import { formatIso, toOptionalInt, toVotingDurationHours } from "~/components/admin/challenges/challengeFormConstants";
-
+import {
+  formatIso,
+  toOptionalInt,
+  toVotingDurationHours,
+} from "~/components/admin/challenges/challengeFormConstants";
 
 export default function EditChallengeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const tripId =
@@ -24,15 +30,14 @@ export default function EditChallengeScreen() {
   const challengeId =
     typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
 
-  const challengeQueryOptions = trpc.challenge.getById.queryOptions({
-    id: challengeId,
-    tripId,
-  });
+  // GraphQL query for challenge details
+  const challengeQuery = useGetChallengeQuery(
+    graphqlClient,
+    { id: challengeId, tripId },
+    { enabled: Boolean(challengeId) && Boolean(tripId) },
+  );
 
-  const { data: challenge, isLoading: isChallengeLoading } = useQuery({
-    ...challengeQueryOptions,
-    enabled: Boolean(challengeId) && Boolean(tripId),
-  });
+  const { data: challenge, isLoading: isChallengeLoading } = challengeQuery;
 
   const formState = useChallengeForm({
     tripId,
@@ -40,34 +45,36 @@ export default function EditChallengeScreen() {
     challengeId,
   });
 
-  const { form, validateForm, isUploadingImage, initializeFormFromChallenge } = formState;
+  const { form, validateForm, isUploadingImage, initializeFormFromChallenge } =
+    formState;
 
   // Initialize form when challenge data is loaded
   if (challenge && formState.initializedChallengeId !== challenge.id) {
     initializeFormFromChallenge(challenge);
   }
 
-  const updateChallengeMutation = useMutation(
-    trpc.challenge.update.mutationOptions({
-      onSuccess: () => {
-        Alert.alert("Saved", "Challenge updated successfully.", [
-          {
-            text: "OK",
-            onPress: () => {
-              void queryClient.invalidateQueries({ queryKey: challengeQueryOptions.queryKey });
-              router.replace({
-                pathname: "/admin/challenges",
-                params: { tripId },
-              });
-            },
+  // GraphQL mutation for updating challenge
+  const updateChallengeMutation = useUpdateChallengeMutation(graphqlClient, {
+    onSuccess: () => {
+      Alert.alert("Saved", "Challenge updated successfully.", [
+        {
+          text: "OK",
+          onPress: () => {
+            void queryClient.invalidateQueries({
+              queryKey: ["GetChallenge", { id: challengeId, tripId }],
+            });
+            router.replace({
+              pathname: "/admin/challenges",
+              params: { tripId },
+            });
           },
-        ]);
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to update challenge: ${error.message}`);
-      },
-    }),
-  );
+        },
+      ]);
+    },
+    onError: (error: Error) => {
+      Alert.alert("Error", `Failed to update challenge: ${error.message}`);
+    },
+  });
 
   const handleSave = async () => {
     if (!validateForm()) return;
@@ -136,18 +143,15 @@ export default function EditChallengeScreen() {
           ? toOptionalInt(form.recurringDays)
           : undefined,
         basePoints: toOptionalInt(form.basePoints),
-        firstPlacePoints:
-          formState.showPodiumPoints
-            ? toOptionalInt(form.firstPlacePoints)
-            : undefined,
-        secondPlacePoints:
-          formState.showPodiumPoints
-            ? toOptionalInt(form.secondPlacePoints)
-            : undefined,
-        thirdPlacePoints:
-          formState.showPodiumPoints
-            ? toOptionalInt(form.thirdPlacePoints)
-            : undefined,
+        firstPlacePoints: formState.showPodiumPoints
+          ? toOptionalInt(form.firstPlacePoints)
+          : undefined,
+        secondPlacePoints: formState.showPodiumPoints
+          ? toOptionalInt(form.secondPlacePoints)
+          : undefined,
+        thirdPlacePoints: formState.showPodiumPoints
+          ? toOptionalInt(form.thirdPlacePoints)
+          : undefined,
         status: form.status as
           | "HIDDEN"
           | "VISIBLE"
@@ -177,12 +181,11 @@ export default function EditChallengeScreen() {
           form.submissionType === "TEXT"
             ? form.textExpectedPhrase.trim() || undefined
             : undefined,
-        autoApprove:
-          formState.isAutoApproveForced
-            ? true
-            : formState.isAutoApproveDisabled
-              ? false
-              : form.autoApprove,
+        autoApprove: formState.isAutoApproveForced
+          ? true
+          : formState.isAutoApproveDisabled
+            ? false
+            : form.autoApprove,
       });
     } catch {
       // onError already handles user-facing message; swallow to prevent unhandled rejections.
@@ -218,7 +221,7 @@ export default function EditChallengeScreen() {
       <ChallengeFormModals formState={formState} />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   screen: {

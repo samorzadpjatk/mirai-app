@@ -2,7 +2,12 @@ import { useMemo } from "react";
 import { View, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import {
+  useGetTripQuery,
+  useGetCurrentUserQuery,
+  useGetGroupRankingQuery,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";
@@ -15,38 +20,47 @@ export default function LeaderboardScreen() {
   const router = useRouter();
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
 
-  const { data: trip, isLoading: tripLoading } = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
-    enabled: !!tripId,
-  });
+  // GraphQL queries
+  const { data: tripData, isLoading: tripLoading } = useGetTripQuery(
+    graphqlClient,
+    { id: tripId ?? "" },
+    { enabled: !!tripId },
+  );
+  const trip = tripData?.trip;
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
+  const { data: currentUserData } = useGetCurrentUserQuery(graphqlClient, {});
+  const currentUser = currentUserData?.currentUser;
 
-  // Calculate rankings
+  const { data: rankingData } = useGetGroupRankingQuery(
+    graphqlClient,
+    { tripId: tripId ?? "" },
+    { enabled: !!tripId },
+  );
+
+  // Calculate rankings from GraphQL data
   const rankedGroups: RankedGroup[] = useMemo(() => {
-    if (!trip?.groups) return [];
+    if (!rankingData?.groupRanking?.groups) return [];
 
-    const userGroupId = trip.participants.find(
-      (p) => p.user.id === currentUser?.id,
-    )?.group?.id;
+    const userGroupId = rankingData.groupRanking.groups.find((g) =>
+      g.participants?.some((p) => p.user?.id === currentUser?.id),
+    )?.id;
 
-    const sorted = [...trip.groups]
-      .sort((a, b) => b.coins - a.coins)
+    const sorted = rankingData.groupRanking.groups
+      .sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0))
       .map((group, index) => ({
         id: group.id,
-        name: group.name,
+        name: group.name ?? "Unknown",
         image: group.image,
-        coins: group.coins,
+        coins: group.coins ?? 0,
         memberCount: group._count?.participants ?? 0,
         rank: index + 1,
         isCurrentUserGroup: group.id === userGroupId,
       }));
 
     return sorted;
-  }, [trip, currentUser?.id]);
+  }, [rankingData, currentUser?.id]);
 
   const topThree = rankedGroups.slice(0, 3);
   const restOfGroups = rankedGroups.slice(3);

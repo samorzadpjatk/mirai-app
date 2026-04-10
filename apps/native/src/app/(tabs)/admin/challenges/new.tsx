@@ -2,19 +2,22 @@ import React from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useMutation } from "@tanstack/react-query";
+import { useCreateChallengeMutation } from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { ChallengeFormFields } from "~/components/admin/challenges/ChallengeFormFields";
 import { ChallengeFormModals } from "~/components/admin/challenges/ChallengeFormModals";
-import { formatIso, toOptionalInt, toVotingDurationHours } from "~/components/admin/challenges/challengeFormConstants";
-
+import {
+  formatIso,
+  toOptionalInt,
+  toVotingDurationHours,
+} from "~/components/admin/challenges/challengeFormConstants";
 
 export default function NewChallengeScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const trpc = useTRPC();
 
   const tripId =
     typeof params.tripId === "string"
@@ -28,26 +31,25 @@ export default function NewChallengeScreen() {
 
   const { form, validateForm, isUploadingImage } = formState;
 
-  const createChallengeMutation = useMutation(
-    trpc.challenge.create.mutationOptions({
-      onSuccess: () => {
-        Alert.alert("Saved", "Challenge created successfully.", [
-          {
-            text: "OK",
-            onPress: () => {
-              router.replace({
-                pathname: "/admin/challenges",
-                params: { tripId },
-              });
-            },
+  // GraphQL mutation for creating challenge
+  const createChallengeMutation = useCreateChallengeMutation(graphqlClient, {
+    onSuccess: () => {
+      Alert.alert("Saved", "Challenge created successfully.", [
+        {
+          text: "OK",
+          onPress: () => {
+            router.replace({
+              pathname: "/admin/challenges",
+              params: { tripId },
+            });
           },
-        ]);
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to create challenge: ${error.message}`);
-      },
-    }),
-  );
+        },
+      ]);
+    },
+    onError: (error: Error) => {
+      Alert.alert("Error", `Failed to create challenge: ${error.message}`);
+    },
+  });
 
   const handleSave = async () => {
     if (!validateForm()) return;

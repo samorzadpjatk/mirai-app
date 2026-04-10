@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,24 +6,113 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, typography } from '../../../../styles';
-import { useAdminGroups } from '@mirai-app/frameworks/trpc/hooks';
-import { AdminHeader } from '~/components/admin/AdminHeader';
-import { GroupsSearchBar } from '~/components/admin/groups/GroupsSearchBar';
-import { GroupManagementCard } from '~/components/admin/groups/GroupManagementCard';
-import type { Group } from '@mirai-app/frameworks/trpc/hooks';
+} from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import { useQuery } from "@tanstack/react-query";
+import { colors, spacing, borderRadius, typography } from "../../../../styles";
+import {
+  useGetGroupsByTripQuery,
+  type GetGroupsByTripQuery,
+} from "@mirai-app/graphql-types";
+import { AdminHeader } from "~/components/admin/AdminHeader";
+import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
+import { GroupManagementCard } from "~/components/admin/groups/GroupManagementCard";
+
+// GraphQL Client setup with SecureStore
+const createGraphQLClient = async (): Promise<GraphQLClient> => {
+  const token = await SecureStore.getItemAsync("sb-access-token");
+  return new GraphQLClient(
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+};
+
+// Group type from GraphQL
+interface Group {
+  id: string;
+  name: string;
+  organizer?: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+  _count?: {
+    participants: number;
+  };
+}
+
+// Custom hook for admin groups
+const useAdminGroups = (tripId: string) => {
+  const [client, setClient] = useState<GraphQLClient | null>(null);
+
+  useMemo(() => {
+    createGraphQLClient().then(setClient);
+  }, []);
+
+  const {
+    data,
+    isLoading: groupsLoading,
+    isFetching: groupsRefetching,
+    refetch: refetchGroups,
+  } = useQuery({
+    queryKey: ["GetGroupsByTrip", { tripId }],
+    enabled: Boolean(tripId) && Boolean(client),
+    queryFn: async () => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useGetGroupsByTripQuery.fetcher(client, {
+        tripId,
+        pagination: { limit: 50, offset: 0 },
+      })();
+    },
+  });
+
+  const groupsData = data as GetGroupsByTripQuery | undefined;
+
+  const groups = useMemo(() => {
+    return (groupsData?.groupsByTrip?.groups ?? []).map(
+      (group): Group => ({
+        id: group.id,
+        name: group.name,
+        organizer: group.organizer,
+        _count: { participants: 0 }, // GraphQL response may not include count
+      }),
+    );
+  }, [groupsData]);
+
+  const pagination = groupsData?.groupsByTrip?.pagination;
+  const groupsHasNextPage = pagination?.hasMore ?? false;
+  const groupsFetchingNextPage = false; // Pagination handled via offset
+
+  const fetchMoreGroups = async () => {
+    // Implement pagination if needed
+  };
+
+  return {
+    groups,
+    groupsLoading: groupsLoading || !client,
+    groupsRefetching,
+    groupsHasNextPage,
+    groupsFetchingNextPage,
+    fetchMoreGroups,
+    refetchGroups,
+  };
+};
 
 export default function AdminGroupsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   // Get tripId from router params
   const { tripId } = useLocalSearchParams<{ tripId?: string }>();
-  
+
   // Use the custom hook for all group operations
   const {
     groups,
@@ -33,16 +122,21 @@ export default function AdminGroupsScreen() {
     groupsFetchingNextPage,
     fetchMoreGroups,
     refetchGroups,
-  } = useAdminGroups(tripId ?? '');
-  
-  const [searchTerm, setSearchTerm] = useState('');
+  } = useAdminGroups(tripId ?? "");
+
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Memoized filtered groups
   const filteredGroups = useMemo(() => {
-    return groups?.filter(group =>
-      group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${group.organizer?.firstName ?? ''} ${group.organizer?.lastName ?? ''}`.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    return (
+      groups?.filter(
+        (group) =>
+          group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          `${group.organizer?.firstName ?? ""} ${group.organizer?.lastName ?? ""}`
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()),
+      ) || []
+    );
   }, [groups, searchTerm]);
 
   if (!tripId) {
@@ -73,14 +167,16 @@ export default function AdminGroupsScreen() {
   };
 
   const renderGroup = ({ item }: { item: Group }) => (
-    <GroupManagementCard
-      group={item}
-      onEdit={openEditModal}
-    />
+    <GroupManagementCard group={item} onEdit={openEditModal} />
   );
 
   return (
-    <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: spacing.xl, paddingBottom: insets.bottom },
+      ]}
+    >
       <StatusBar style="light" />
 
       <AdminHeader
@@ -115,7 +211,11 @@ export default function AdminGroupsScreen() {
           contentContainerStyle={styles.groupsList}
           showsVerticalScrollIndicator={false}
           onEndReached={() => {
-            if (groupsHasNextPage && !groupsFetchingNextPage && !groupsLoading) {
+            if (
+              groupsHasNextPage &&
+              !groupsFetchingNextPage &&
+              !groupsLoading
+            ) {
               void fetchMoreGroups();
             }
           }}
@@ -126,25 +226,39 @@ export default function AdminGroupsScreen() {
           }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="people-circle" size={48} color={colors.textSecondary} />
+              <Ionicons
+                name="people-circle"
+                size={48}
+                color={colors.textSecondary}
+              />
               <Text style={styles.emptyText}>
-                {searchTerm ? 'No groups found' : 'No groups available'}
+                {searchTerm ? "No groups found" : "No groups available"}
               </Text>
               {!searchTerm && (
                 <TouchableOpacity
                   style={styles.emptyCreateButton}
                   onPress={handleCreateGroup}
                 >
-                  <Text style={styles.emptyCreateButtonText}>Create your first group</Text>
+                  <Text style={styles.emptyCreateButtonText}>
+                    Create your first group
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
           }
           ListFooterComponent={
             groupsFetchingNextPage ? (
-              <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
+              <View
+                style={{ alignItems: "center", paddingVertical: spacing.md }}
+              >
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: spacing.xs }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: spacing.xs,
+                  }}
+                >
                   Loading more groups...
                 </Text>
               </View>
@@ -162,9 +276,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundDark,
   },
   header: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
@@ -183,13 +297,13 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primary,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   loadingText: {
     marginTop: spacing.md,
@@ -201,14 +315,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   emptyContainer: {
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
     paddingVertical: spacing.xxl,
   },
   emptyText: {
     marginTop: spacing.md,
     fontSize: typography.base,
     color: colors.textSecondary,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
   },
   emptyCreateButton: {
     marginTop: spacing.lg,

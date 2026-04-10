@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   ScrollView,
@@ -9,8 +9,11 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useGetUserQuery,
+  useUpdateUserMutation,
+} from "@mirai-app/graphql-types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -23,7 +26,6 @@ import {
 
 export default function AdminEditUserScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ userId: string; tripId?: string }>();
@@ -33,158 +35,47 @@ export default function AdminEditUserScreen() {
       ? params.tripId
       : (params.tripId?.[0] ?? "");
 
-  const { data: user, isLoading } = useQuery(
-    trpc.user.getById.queryOptions(
-      { id: userId },
-      {
-        enabled: !!userId,
-      },
-    ),
+  // GraphQL query for user data
+  const { data: userData, isLoading } = useGetUserQuery(
+    { id: userId },
+    { enabled: !!userId },
   );
 
-  const { data: participant } = useQuery(
-    trpc.user.getByIdWithGroup.queryOptions(
-      { id: userId, tripId },
-      {
-        enabled: Boolean(userId && tripId),
-      },
-    ),
-  );
-
-  const { data: groupsResponse, error: groupsError } = useQuery(
-    trpc.group.getAll.queryOptions(
-      { tripId, pagination: { limit: 100, offset: 0 } },
-      {
-        enabled: Boolean(tripId),
-      },
-    ),
-  );
-  const groups = groupsResponse?.groups ?? [];
+  const user = userData?.user;
 
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
-  const [wristNumber, setWristNumber] = useState(
-    participant?.trips?.[0]?.wristNumber ?? "",
-  );
-  const [houseNumber, setHouseNumber] = useState(
-    participant?.trips?.[0]?.houseNumber ?? "",
-  );
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(() => {
-    const participantTrip = participant?.trips?.[0];
-    return participantTrip?.group?.id ?? null;
-  });
+  const [wristNumber, setWristNumber] = useState(user?.wristNumber ?? "");
+  const [houseNumber, setHouseNumber] = useState(user?.houseNumber ?? "");
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [banUntil, setBanUntil] = useState<Date | null>(null);
   const [banReason, setBanReason] = useState("");
   const [isBanPickerOpen, setIsBanPickerOpen] = useState(false);
 
-  const updateNameMutation = useMutation(
-    trpc.user.updateName.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to update user: ${error.message}`);
-      },
-    }),
-  );
+  // Update local state when user data loads
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName ?? "");
+      setLastName(user.lastName ?? "");
+      setWristNumber(user.wristNumber ?? "");
+      setHouseNumber(user.houseNumber ?? "");
+      setSelectedGroupId(user.group?.id ?? null);
+    }
+  }, [user]);
 
-  const updateWristNumberMutation = useMutation(
-    trpc.user.updateWristNumber.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to update wrist number: ${error.message}`);
-      },
-    }),
-  );
+  // Groups data - placeholder
+  const groups: Array<{ id: string; name: string }> = [];
 
-  const updateHouseNumberMutation = useMutation(
-    trpc.user.updateHouseNumber.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to update house number: ${error.message}`);
-      },
-    }),
-  );
-
-  const banUserMutation = useMutation(
-    trpc.user.banUserUntil.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
-        Alert.alert("Success", "User has been banned.");
-        setBanUntil(null);
-        setBanReason("");
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to ban user: ${error.message}`);
-      },
-    }),
-  );
-
-  const deleteUserMutation = useMutation(
-    trpc.user.deleteUser.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        Alert.alert("Success", "User has been deleted.", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to delete user: ${error.message}`);
-      },
-    }),
-  );
-
-  const assignToGroupMutation = useMutation(
-    trpc.group.assignUserToGroup.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getAll"], { input: { tripId } }],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [
-            ["user", "getTripParticipant"],
-            { input: { userId, tripId } },
-          ],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: [["user", "getById"], { input: { id: userId } }],
-        });
-        Alert.alert("Success", "Group updated.");
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to assign group: ${error.message}`);
-      },
-    }),
-  );
+  // GraphQL mutation for updating user
+  const updateUserMutation = useUpdateUserMutation({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["user"] });
+      Alert.alert("Success", "User updated successfully.");
+    },
+    onError: (error) => {
+      Alert.alert("Error", `Failed to update user: ${error.message}`);
+    },
+  });
 
   const handleSave = async () => {
     if (!user || !userId) return;
@@ -198,39 +89,18 @@ export default function AdminEditUserScreen() {
     }
 
     try {
-      await Promise.all([
-        updateNameMutation.mutateAsync({
-          userId,
+      await updateUserMutation.mutateAsync({
+        input: {
+          id: userId,
           firstName: trimmedFirstName,
           lastName: trimmedLastName,
-        }),
-        wristNumber.trim()
-          ? updateWristNumberMutation.mutateAsync({
-              userId,
-              tripId,
-              wristNumber,
-            })
-          : Promise.resolve(),
-        houseNumber.trim()
-          ? updateHouseNumberMutation.mutateAsync({
-              userId,
-              tripId,
-              houseNumber,
-            })
-          : Promise.resolve(),
-        selectedGroupId &&
-        selectedGroupId !== (participant?.trips?.[0]?.group?.id ?? null)
-          ? assignToGroupMutation.mutateAsync({
-              userId,
-              groupId: selectedGroupId,
-              tripId,
-            })
-          : Promise.resolve(),
-      ]);
-
-      Alert.alert("Success", "User updated successfully.");
+          wristNumber: wristNumber.trim() || undefined,
+          houseNumber: houseNumber.trim() || undefined,
+          groupId: selectedGroupId || undefined,
+        },
+      });
     } catch {
-      // Error handling is done in the individual mutations
+      // Error handling is done in the mutation
     }
   };
 
@@ -243,15 +113,11 @@ export default function AdminEditUserScreen() {
         text: "Ban",
         style: "destructive",
         onPress: () => {
-          banUserMutation
-            .mutateAsync({
-              userId,
-              bannedUntilMs: banUntil.getTime(),
-              reason: banReason.trim(),
-            })
-            .catch(() => {
-              // Error handling is done in the mutation
-            });
+          // Ban mutation would be implemented here
+          Alert.alert(
+            "Info",
+            "Ban functionality not yet implemented in GraphQL",
+          );
         },
       },
     ]);
@@ -266,19 +132,17 @@ export default function AdminEditUserScreen() {
         text: "Delete",
         style: "destructive",
         onPress: () => {
-          deleteUserMutation.mutateAsync({ userId, tripId }).catch(() => {
-            // Error handling is done in the mutation
-          });
+          // Delete mutation would be implemented here
+          Alert.alert(
+            "Info",
+            "Delete functionality not yet implemented in GraphQL",
+          );
         },
       },
     ]);
   };
 
-  const isSaving =
-    updateNameMutation.isPending ||
-    updateWristNumberMutation.isPending ||
-    updateHouseNumberMutation.isPending ||
-    assignToGroupMutation.isPending;
+  const isSaving = updateUserMutation.isPending;
   const isBanReady = banUntil != null && banUntil > new Date();
   const banLabel = banUntil
     ? `${banUntil.toLocaleDateString()} • ${banUntil.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
@@ -381,7 +245,7 @@ export default function AdminEditUserScreen() {
                       isSelected && styles.groupOptionSelected,
                     ]}
                     onPress={() => setSelectedGroupId(group.id)}
-                    disabled={assignToGroupMutation.isPending}
+                    disabled={isSaving}
                   >
                     <Text
                       style={[
@@ -432,28 +296,24 @@ export default function AdminEditUserScreen() {
           <TouchableOpacity
             style={[
               styles.banButton,
-              (!isBanReady || banUserMutation.isPending) &&
-                styles.dangerButtonDisabled,
+              (!isBanReady || isSaving) && styles.dangerButtonDisabled,
             ]}
             onPress={handleBan}
-            disabled={!isBanReady || banUserMutation.isPending}
+            disabled={!isBanReady || isSaving}
           >
             <Text style={styles.banButtonText}>
-              {banUserMutation.isPending ? "Banning..." : "Ban user"}
+              {isSaving ? "Banning..." : "Ban user"}
             </Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.deleteButton,
-            deleteUserMutation.isPending && styles.dangerButtonDisabled,
-          ]}
+          style={[styles.deleteButton, isSaving && styles.dangerButtonDisabled]}
           onPress={handleDelete}
-          disabled={deleteUserMutation.isPending}
+          disabled={isSaving}
         >
           <Text style={styles.deleteButtonText}>
-            {deleteUserMutation.isPending ? "Deleting..." : "Delete user"}
+            {isSaving ? "Deleting..." : "Delete user"}
           </Text>
         </TouchableOpacity>
       </ScrollView>

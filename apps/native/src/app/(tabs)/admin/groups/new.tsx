@@ -1,43 +1,74 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { colors, spacing } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
+import { useCreateGroupMutation } from "@mirai-app/graphql-types";
+
+// GraphQL Client setup with SecureStore
+const createGraphQLClient = async (): Promise<GraphQLClient> => {
+  const token = await SecureStore.getItemAsync("sb-access-token");
+  return new GraphQLClient(
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+};
 
 export default function AdminCreateGroupScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string }>();
-  const tripId = typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+  const tripId =
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
+
+  const [client, setClient] = useState<GraphQLClient | null>(null);
+
+  useMemo(() => {
+    createGraphQLClient().then(setClient);
+  }, []);
 
   const [groupName, setGroupName] = useState("");
 
-  const createGroupMutation = useMutation(
-    trpc.group.create.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: [["group", "getAll"], { input: { tripId } }],
-        });
-        Alert.alert("Success", "Group created successfully.", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
-      },
-      onError: (error) => {
-        Alert.alert("Error", `Failed to create group: ${error.message}`);
-      },
-    }),
-  );
+  const createGroupMutation = useMutation({
+    mutationFn: async (input: { name: string; tripId: string }) => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useCreateGroupMutation.fetcher(client, {
+        input: {
+          name: input.name,
+          tripId: input.tripId,
+        },
+      })();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["GetGroupsByTrip"] });
+      Alert.alert("Success", "Group created successfully.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    },
+    onError: (error) => {
+      Alert.alert(
+        "Error",
+        `Failed to create group: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    },
+  });
 
   const handleSubmit = async () => {
     const trimmedGroupName = groupName.trim();
@@ -66,7 +97,10 @@ export default function AdminCreateGroupScreen() {
     <View
       style={[
         styles.container,
-        { paddingTop: spacing.xl, paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        {
+          paddingTop: spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
       ]}
     >
       <StatusBar style="light" />
@@ -93,7 +127,9 @@ export default function AdminCreateGroupScreen() {
           label="Create Group"
           isLoading={createGroupMutation.isPending}
           onPress={handleSubmit}
-          disabled={!groupName.trim() || createGroupMutation.isPending}
+          disabled={
+            !groupName.trim() || createGroupMutation.isPending || !client
+          }
         />
       </ScrollView>
     </View>

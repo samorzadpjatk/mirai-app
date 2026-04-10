@@ -10,7 +10,14 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import {
+  useGetChallengeQuery,
+  useGetChallengeSubmissionsQuery,
+  useGetMyVotesQuery,
+  useSubmitVoteMutation,
+  useGetCurrentUserQuery,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import {
   borderRadius,
   colors,
@@ -116,29 +123,31 @@ function SubmissionImageCard({
   onPress?: () => void;
   disabled?: boolean;
 }) {
-  const trpc = useTRPC();
-  const { data, isLoading } = useQuery({
-    ...trpc.storage.createDownloadUrl.queryOptions({
-      storagePath: submission.imagePath,
-    }),
-    enabled: !!submission.imagePath,
-  });
+  // For image loading, we'll use a simple placeholder pattern
+  // Storage URL generation would need a separate hook or util
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const content = (
     <View style={styles.voteCard}>
       <View style={styles.voteImageWrap}>
-        {isLoading ? (
+        {!imageLoaded && !imageError ? (
           <View style={styles.voteImageFallback}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
-        ) : data?.signedUrl ? (
-          <Image source={{ uri: data.signedUrl }} style={styles.voteImage} />
-        ) : (
+        ) : imageError ? (
           <View style={styles.voteImageFallback}>
             <Text style={styles.voteImageFallbackText}>
               {submission.groupName.charAt(0).toUpperCase()}
             </Text>
           </View>
+        ) : (
+          <Image
+            source={{ uri: submission.imagePath }}
+            style={styles.voteImage}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
+          />
         )}
       </View>
       <View style={styles.voteCardBody}>
@@ -168,7 +177,6 @@ export default function ChallengePeerVotingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
 
   const challengeId =
@@ -176,37 +184,30 @@ export default function ChallengePeerVotingScreen() {
   const tripId =
     typeof params.tripId === "string" ? params.tripId : params.tripId?.[0];
 
-  const challengeQuery = trpc.challenge.getById.queryOptions({
-    id: challengeId ?? "",
-    tripId: tripId ?? "",
-  });
-  const submissionsQuery = trpc.challengeSubmission.getByChallenge.queryOptions(
-    {
-      challengeId: challengeId ?? "",
-      tripId: tripId ?? "",
-    },
+  // GraphQL queries
+  const { data: challenge, isLoading: isLoadingChallenge } =
+    useGetChallengeQuery(
+      graphqlClient,
+      { id: challengeId ?? "", tripId: tripId ?? "" },
+      { enabled: !!challengeId && !!tripId },
+    );
+  const { data: challengeSubmissionsData, isLoading: isLoadingSubmissions } =
+    useGetChallengeSubmissionsQuery(
+      graphqlClient,
+      { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+      { enabled: !!challengeId && !!tripId },
+    );
+  const { data: myVotesData, isLoading: isLoadingVotes } = useGetMyVotesQuery(
+    graphqlClient,
+    { challengeId: challengeId ?? "", tripId: tripId ?? "" },
+    { enabled: !!challengeId && !!tripId },
   );
-  const myVotesQuery = trpc.challengeVote.getMyByChallenge.queryOptions({
-    challengeId: challengeId ?? "",
-    tripId: tripId ?? "",
-  });
+  const { data: currentUser, isLoading: isLoadingCurrentUser } =
+    useGetCurrentUserQuery(graphqlClient, {}, { enabled: !!tripId });
 
-  const { data: challenge, isLoading: isLoadingChallenge } = useQuery({
-    ...challengeQuery,
-    enabled: !!challengeId && !!tripId,
-  });
-  const { data: submissionsData, isLoading: isLoadingSubmissions } = useQuery({
-    ...submissionsQuery,
-    enabled: !!challengeId && !!tripId,
-  });
-  const { data: myVotes, isLoading: isLoadingVotes } = useQuery({
-    ...myVotesQuery,
-    enabled: !!challengeId && !!tripId,
-  });
-  const { data: meWithGroup, isLoading: isLoadingMeWithGroup } = useQuery({
-    ...trpc.user.getMyWithGroup.queryOptions({ tripId: tripId ?? "" }),
-    enabled: !!tripId,
-  });
+  const submissionsData =
+    challengeSubmissionsData?.challengeSubmissions?.submissions ?? [];
+  const myVotes = myVotesData?.myVotes ?? [];
 
   const { isTripPast } = useTripDetails(tripId);
 
@@ -222,9 +223,8 @@ export default function ChallengePeerVotingScreen() {
     }
   }, [isTripPast, challengeId, tripId, router]);
 
-  const submitVoteMutation = useMutation(
-    trpc.challengeVote.submitVote.mutationOptions(),
-  );
+  // GraphQL mutation
+  const submitVoteMutation = useSubmitVoteMutation(graphqlClient);
 
   const [phase, setPhase] = useState<VotingPhase>("comparing");
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
@@ -237,20 +237,27 @@ export default function ChallengePeerVotingScreen() {
   const [finalTopThreeIds, setFinalTopThreeIds] = useState<string[]>([]);
   const [bootstrapped, setBootstrapped] = useState(false);
 
-  const ownGroupId = meWithGroup?.trips?.[0]?.group?.id ?? null;
+  // Get user's group from challenge data
+  const ownGroupId = useMemo(() => {
+    if (!challenge?.challenge?.submissions) return null;
+    const userSubmission = challenge.challenge.submissions.find(
+      (s) => s.userId === currentUser?.currentUser?.id,
+    );
+    return userSubmission?.groupId ?? null;
+  }, [challenge, currentUser]);
 
   const votingSubmissions: VotingSubmission[] = useMemo(() => {
     const raw = submissionsData ?? [];
     return raw
-      .filter((submission) => Boolean(submission.imageIds[0]))
+      .filter((submission) => Boolean(submission.imageIds?.[0]))
       .filter((submission) =>
         ownGroupId ? submission.groupId !== ownGroupId : true,
       )
       .map((submission) => ({
         id: submission.id,
         groupId: submission.groupId,
-        groupName: submission.group.name,
-        imagePath: submission.imageIds[0] ?? "",
+        groupName: submission.group?.name ?? "Unknown",
+        imagePath: submission.imageIds?.[0] ?? "",
         createdAt: submission.createdAt,
       }));
   }, [submissionsData, ownGroupId]);
@@ -295,8 +302,8 @@ export default function ChallengePeerVotingScreen() {
     challengeId &&
     tripId &&
     challenge &&
-    (challenge.scoringCategory !== "PEER_VOTING" ||
-      challenge.status !== "VOTING_PHASE"),
+    (challenge.challenge?.scoringCategory !== "PEER_VOTING" ||
+      challenge.challenge?.status !== "VOTING_PHASE"),
   );
 
   const startComparing = useCallback(() => {
@@ -334,16 +341,16 @@ export default function ChallengePeerVotingScreen() {
       isLoadingChallenge ||
       isLoadingSubmissions ||
       isLoadingVotes ||
-      isLoadingMeWithGroup
+      isLoadingCurrentUser
     ) {
       return;
     }
 
-    if (!challenge) return;
+    if (!challenge?.challenge) return;
 
     if (
-      challenge.scoringCategory !== "PEER_VOTING" ||
-      challenge.status !== "VOTING_PHASE"
+      challenge.challenge.scoringCategory !== "PEER_VOTING" ||
+      challenge.challenge.status !== "VOTING_PHASE"
     ) {
       return;
     }
@@ -375,7 +382,7 @@ export default function ChallengePeerVotingScreen() {
     challengeId,
     phase,
     isLoadingChallenge,
-    isLoadingMeWithGroup,
+    isLoadingCurrentUser,
     isLoadingSubmissions,
     isLoadingVotes,
     myVotes?.length,
@@ -440,7 +447,11 @@ export default function ChallengePeerVotingScreen() {
   };
 
   const handleSubmitPodium = async () => {
-    if (!tripId || !challengeId || finalTopThree.length < MIN_SUBMISSIONS_TO_VOTE) {
+    if (
+      !tripId ||
+      !challengeId ||
+      finalTopThree.length < MIN_SUBMISSIONS_TO_VOTE
+    ) {
       return;
     }
 
@@ -482,9 +493,11 @@ export default function ChallengePeerVotingScreen() {
         ),
       );
 
-      await queryClient.invalidateQueries({ queryKey: myVotesQuery.queryKey });
       await queryClient.invalidateQueries({
-        queryKey: submissionsQuery.queryKey,
+        queryKey: ["GetMyVotes", { challengeId, tripId }],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetChallengeSubmissions", { challengeId, tripId }],
       });
       navigateBackToChallenge();
     } catch (error) {
@@ -506,7 +519,7 @@ export default function ChallengePeerVotingScreen() {
     return <ChallengeLoadingState />;
   }
 
-  if (!challenge) {
+  if (!challenge?.challenge) {
     return (
       <View style={styles.container}>
         <ChallengeNotFoundState onGoBack={() => router.back()} />
@@ -527,7 +540,7 @@ export default function ChallengePeerVotingScreen() {
           { paddingBottom: insets.bottom + spacing.xxxl },
         ]}
       >
-        <Text style={styles.title}>{challenge.name}</Text>
+        <Text style={styles.title}>{challenge.challenge.name}</Text>
         <Text style={styles.subtitle}>Peer voting</Text>
 
         {phase === "comparing" ? (

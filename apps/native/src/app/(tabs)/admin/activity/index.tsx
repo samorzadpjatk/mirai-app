@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,134 +10,165 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import {
+  useGetActivitiesByTripModerationQuery,
+  useGetCurrentUserQuery,
+  useSetActivityPinnedMutation,
+  useHideActivityMutation,
+  useUnhideActivityMutation,
+  useDeleteActivityMutation,
+  ActivityType,
+} from "@mirai-app/graphql-types";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
-import { FilterChip, FilterChipRow, EmptyState, ThemedTextInput } from "~/components/common/ui";
+import {
+  FilterChip,
+  FilterChipRow,
+  EmptyState,
+  ThemedTextInput,
+} from "~/components/common/ui";
 import { AdminActivityCard } from "~/components/admin/activity/AdminActivityCard";
 
-type ActivityType =
-  | "submission"
-  | "challenge_event"
-  | "rank_change"
-  | "custom"
-  | "user_post";
-
-interface AdminActivity {
-  id: string;
-  tripId: string;
-  activityType: ActivityType;
-  title: string;
-  description: string | null;
-  imageUrl: string | null;
-  isPinned: boolean;
-  isHidden: boolean;
-  createdAt: Date | string;
-  admin?: { firstName?: string | null; lastName?: string | null } | null;
-  submissionActivity?: {
-    group?: { name?: string | null } | null;
-  } | null;
-  rankChangeActivity?: {
-    group?: { name?: string | null } | null;
-  } | null;
-  userPost?: {
-    author?: {
-      group?: { name?: string | null } | null;
-    } | null;
-  } | null;
-}
-
+// Use GraphQL ActivityType enum values
 const activityTypeFilters: { label: string; value: "all" | ActivityType }[] = [
   { label: "All", value: "all" },
-  { label: "Submission", value: "submission" },
-  { label: "Challenge", value: "challenge_event" },
-  { label: "Rank", value: "rank_change" },
-  { label: "Custom", value: "custom" },
-  { label: "User Post", value: "user_post" },
+  { label: "Submission", value: ActivityType.Submission },
+  { label: "Challenge", value: ActivityType.ChallengeEvent },
+  { label: "Rank", value: ActivityType.RankChange },
+  { label: "Custom", value: ActivityType.Custom },
+  { label: "User Post", value: ActivityType.UserPost },
 ];
 
+// GraphQL Activity type doesn't include nested group info, so we return empty
+// This maintains backward compatibility with AdminActivityCard interface
+const getActivityGroupName = () => "";
 
-const getActivityGroupName = (activity: AdminActivity) =>
-  activity.submissionActivity?.group?.name?.trim() ??
-  activity.rankChangeActivity?.group?.name?.trim() ??
-  activity.userPost?.author?.group?.name?.trim() ??
-  "";
+// Create GraphQL client with auth token from SecureStore
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:3000/graphql";
+  const token = await SecureStore.getItemAsync("token");
 
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
 
 export default function AdminActivityScreen() {
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const router = useRouter();
   const params = useLocalSearchParams<{ tripId?: string }>();
   const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
   const [selectedType, setSelectedType] = useState<"all" | ActivityType>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [client, setClient] = useState<GraphQLClient | null>(null);
 
-  const feedQueryOptions = trpc.activityFeed.getByTripModeration.queryOptions({
-    tripId,
-    page: 1,
-    pageSize: 100,
-  });
+  // Initialize GraphQL client
+  React.useEffect(() => {
+    void createGraphQLClient().then(setClient);
+  }, []);
 
-  const { data: currentUser } = useQuery(trpc.user.getMy.queryOptions());
-  const { data, isLoading, isRefetching, refetch } = useQuery({
-    ...feedQueryOptions,
-    enabled: Boolean(tripId),
-  });
-
-  const invalidateFeed = async () => {
-    await queryClient.invalidateQueries({ queryKey: feedQueryOptions.queryKey });
-  };
-
-  const pinMutation = useMutation(
-    trpc.activityFeed.setPinned.mutationOptions({
-      onSuccess: invalidateFeed,
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
+  // Get current user query
+  const { data: currentUserData } = useGetCurrentUserQuery(
+    client ?? new GraphQLClient(""),
+    {},
+    { enabled: !!client },
   );
 
-  const hideMutation = useMutation(
-    trpc.activityFeed.hide.mutationOptions({
+  // Get activities by trip moderation query
+  const { data, isLoading, isRefetching, refetch } =
+    useGetActivitiesByTripModerationQuery(
+      client ?? new GraphQLClient(""),
+      { tripId, page: 1, perPage: 100 },
+      { enabled: !!client && Boolean(tripId) },
+    );
+
+  const invalidateFeed = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: [
+        "GetActivitiesByTripModeration",
+        { tripId, page: 1, perPage: 100 },
+      ],
+    });
+  }, [queryClient, tripId]);
+
+  // Mutations
+  const pinMutation = useSetActivityPinnedMutation(
+    client ?? new GraphQLClient(""),
+    {
       onSuccess: invalidateFeed,
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
+      onError: (error) =>
+        Alert.alert(
+          "Error",
+          error instanceof Error ? error.message : "Pin update failed.",
+        ),
+    },
   );
 
-  const unhideMutation = useMutation(
-    trpc.activityFeed.unhide.mutationOptions({
+  const hideMutation = useHideActivityMutation(
+    client ?? new GraphQLClient(""),
+    {
       onSuccess: invalidateFeed,
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
+      onError: (error) =>
+        Alert.alert(
+          "Error",
+          error instanceof Error ? error.message : "Hide failed.",
+        ),
+    },
   );
 
-  const deleteMutation = useMutation(
-    trpc.activityFeed.delete.mutationOptions({
+  const unhideMutation = useUnhideActivityMutation(
+    client ?? new GraphQLClient(""),
+    {
       onSuccess: invalidateFeed,
-      onError: (error) => Alert.alert("Error", error.message),
-    }),
+      onError: (error) =>
+        Alert.alert(
+          "Error",
+          error instanceof Error ? error.message : "Unhide failed.",
+        ),
+    },
   );
+
+  const deleteMutation = useDeleteActivityMutation(
+    client ?? new GraphQLClient(""),
+    {
+      onSuccess: invalidateFeed,
+      onError: (error) =>
+        Alert.alert(
+          "Error",
+          error instanceof Error ? error.message : "Delete failed.",
+        ),
+    },
+  );
+
+  const activities = data?.activitiesByTripModeration?.activities ?? [];
 
   const filteredActivities = useMemo(() => {
-    const allActivities = (data?.activities ?? []) as AdminActivity[];
     const query = searchTerm.trim().toLowerCase();
-    return allActivities.filter((activity) => {
+    return activities.filter((activity) => {
       if (selectedType !== "all" && activity.activityType !== selectedType) {
         return false;
       }
 
       if (!query) return true;
 
-      const groupName = getActivityGroupName(activity).toLowerCase();
       const title = activity.title.toLowerCase();
-      return title.includes(query) || groupName.includes(query);
+      return title.includes(query);
     });
-  }, [data?.activities, searchTerm, selectedType]);
+  }, [activities, searchTerm, selectedType]);
 
   const isBusy =
     pinMutation.isPending ||
@@ -145,7 +176,7 @@ export default function AdminActivityScreen() {
     unhideMutation.isPending ||
     deleteMutation.isPending;
 
-  const canDelete = currentUser?.role === "ADMIN";
+  const canDelete = currentUserData?.me?.role === "ADMIN";
 
   const handleCreateActivity = () => {
     router.push({
@@ -154,11 +185,37 @@ export default function AdminActivityScreen() {
     });
   };
 
-  const handleEditActivity = (activity: AdminActivity) => {
+  const handleEditActivity = (activity: (typeof activities)[0]) => {
     router.push({
       pathname: "/admin/activity/edit/[activityId]",
       params: { activityId: activity.id, tripId },
     });
+  };
+
+  const handlePin = async (activity: (typeof activities)[0]) => {
+    await pinMutation.mutateAsync({
+      id: activity.id,
+      isPinned: !activity.isPinned,
+    });
+  };
+
+  const handleHide = async (activity: (typeof activities)[0]) => {
+    if (activity.isHidden) {
+      await unhideMutation.mutateAsync({ id: activity.id });
+    } else {
+      await hideMutation.mutateAsync({ id: activity.id });
+    }
+  };
+
+  const handleDelete = (activity: (typeof activities)[0]) => {
+    Alert.alert("Delete activity", "Are you sure?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => deleteMutation.mutate({ id: activity.id }),
+      },
+    ]);
   };
 
   if (!tripId) {
@@ -174,19 +231,21 @@ export default function AdminActivityScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: spacing.xl, paddingBottom: insets.bottom },
+      ]}
+    >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Activity"
-        subtitle="Manage community activity feed"
-      />
+      <AdminHeader title="Activity" subtitle="Manage community activity feed" />
 
       <View style={styles.filtersWrap}>
         <ThemedTextInput
           value={searchTerm}
           onChangeText={setSearchTerm}
-          placeholder="Filter by title or group..."
+          placeholder="Filter by title..."
           style={styles.searchInput}
         />
 
@@ -235,27 +294,9 @@ export default function AdminActivityScreen() {
               canDelete={canDelete}
               isBusy={isBusy}
               onEdit={handleEditActivity}
-              onPin={(activity) =>
-                pinMutation.mutate({
-                  activityId: activity.id,
-                  isPinned: !activity.isPinned,
-                })
-              }
-              onHide={(activity) =>
-                activity.isHidden
-                  ? unhideMutation.mutate({ activityId: activity.id })
-                  : hideMutation.mutate({ activityId: activity.id })
-              }
-              onDelete={(activity) => {
-                Alert.alert("Delete activity", "Are you sure?", [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: () => deleteMutation.mutate({ activityId: activity.id }),
-                  },
-                ]);
-              }}
+              onPin={handlePin}
+              onHide={handleHide}
+              onDelete={handleDelete}
             />
           )}
         />

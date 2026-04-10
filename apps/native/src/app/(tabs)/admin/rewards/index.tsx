@@ -13,22 +13,62 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { commonStyles } from "~/styles/commonStyles";
 import { spacing } from "~/styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import {
-  useAdminRewards,
-  useRewardPurchaseHistory,
-  useUpdateRewardPurchaseStatus,
-} from "~/hooks/rewards";
-import { useQuery } from "@tanstack/react-query";
+  useGetRewardsByTripAdminQuery,
+  useGetPurchaseHistoryQuery,
+  useUpdatePurchaseStatusMutation,
+  useGetTripByIdAdminQuery,
+  GetRewardsByTripAdminQuery,
+  GetPurchaseHistoryQuery,
+} from "@mirai-app/graphql-types";
+
+const PAGE_SIZE = 30;
+
+// GraphQL Client setup with SecureStore
+const createGraphQLClient = async (): Promise<GraphQLClient> => {
+  const token = await SecureStore.getItemAsync("sb-access-token");
+  return new GraphQLClient(
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+};
+
+// Wrapper hook to get client
+const useGraphQLClient = () => {
+  const [client, setClient] = useState<GraphQLClient | null>(null);
+
+  useMemo(() => {
+    createGraphQLClient().then(setClient);
+  }, []);
+
+  return client;
+};
 
 type ViewMode = "PURCHASES" | "REWARDS";
-type PurchaseStatus = "BOUGHT" | "ACCEPTED" | "IN_DELIVERY" | "CANCELLED" | "DELIVERED";
+type PurchaseStatus =
+  | "BOUGHT"
+  | "ACCEPTED"
+  | "IN_DELIVERY"
+  | "CANCELLED"
+  | "DELIVERED";
 type PurchaseStatusFilter = "ALL" | PurchaseStatus;
 
 interface AdminPurchaseListItem {
@@ -54,6 +94,24 @@ interface AdminPurchaseListItem {
   } | null;
 }
 
+interface AdminRewardItem {
+  id: string;
+  name: string;
+  description: string;
+  coinCost: number;
+  originalCoinCost?: number | null;
+  availableQuantity: number;
+  purchasedCount?: number;
+  isHidden: boolean;
+  image?: string | null;
+  signedImageUrl?: string | null;
+  createdAt: string;
+  createdBy?: {
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+}
+
 const statusOptions: { value: PurchaseStatusFilter; label: string }[] = [
   { value: "BOUGHT", label: "Pending" },
   { value: "ALL", label: "All" },
@@ -63,16 +121,224 @@ const statusOptions: { value: PurchaseStatusFilter; label: string }[] = [
   { value: "CANCELLED", label: "Cancelled" },
 ];
 
-const statusMeta: Record<PurchaseStatus, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
+const statusMeta: Record<
+  PurchaseStatus,
+  { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
   BOUGHT: { label: "Bought", color: "#fbbf24", icon: "receipt-outline" },
-  ACCEPTED: { label: "Accepted", color: "#22c55e", icon: "checkmark-circle-outline" },
+  ACCEPTED: {
+    label: "Accepted",
+    color: "#22c55e",
+    icon: "checkmark-circle-outline",
+  },
   IN_DELIVERY: { label: "In delivery", color: "#38bdf8", icon: "car-outline" },
   DELIVERED: { label: "Delivered", color: "#10b981", icon: "cube-outline" },
-  CANCELLED: { label: "Cancelled", color: "#ef4444", icon: "close-circle-outline" },
+  CANCELLED: {
+    label: "Cancelled",
+    color: "#ef4444",
+    icon: "close-circle-outline",
+  },
+};
+
+// Custom hook for admin rewards with infinite scroll
+const useAdminRewards = (tripId?: string | null) => {
+  const client = useGraphQLClient();
+  const queryClient = useQueryClient();
+
+  const {
+    data,
+    isLoading,
+    error,
+    isRefetching,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: [
+      "GetRewardsByTripAdmin",
+      { tripId: tripId ?? "", limit: PAGE_SIZE },
+    ],
+    enabled: Boolean(tripId) && Boolean(client),
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      const offset = typeof pageParam === "number" ? pageParam : 0;
+      const result = await useGetRewardsByTripAdminQuery.fetcher(client, {
+        tripId: tripId ?? "",
+        limit: PAGE_SIZE,
+        offset,
+      })();
+      return result;
+    },
+    getNextPageParam: (lastPage) => {
+      const pagination = (lastPage as GetRewardsByTripAdminQuery)
+        ?.rewardsByTripAdmin?.pagination;
+      if (!pagination?.hasMore) {
+        return undefined;
+      }
+      return (pagination.offset ?? 0) + (pagination.limit ?? PAGE_SIZE);
+    },
+  });
+
+  const rewards = useMemo(() => {
+    const pages = data?.pages ?? [];
+    const allRewards: AdminRewardItem[] = [];
+    pages.forEach((page) => {
+      const pageData = page as GetRewardsByTripAdminQuery;
+      const edges = pageData?.rewardsByTripAdmin?.edges ?? [];
+      edges.forEach((edge) => {
+        if (edge?.node) {
+          const node = edge.node;
+          allRewards.push({
+            id: node.id,
+            name: node.name,
+            description: node.description ?? "",
+            coinCost: node.dynamicCost ?? node.coinCost ?? 0,
+            originalCoinCost: node.coinCost,
+            availableQuantity: node.availableQuantity ?? 0,
+            purchasedCount: node.purchasedCount ?? 0,
+            isHidden: node.isHidden ?? false,
+            image: node.primaryImage,
+            signedImageUrl: node.signedImageUrl,
+            createdAt: node.createdAt,
+            createdBy: node.createdBy,
+          });
+        }
+      });
+    });
+    return allRewards;
+  }, [data?.pages]);
+
+  return {
+    data: rewards,
+    isLoading: isLoading || !client,
+    error,
+    isRefetching,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  };
+};
+
+// Custom hook for purchase history with infinite scroll
+const useRewardPurchaseHistory = (tripId: string) => {
+  const client = useGraphQLClient();
+
+  const {
+    data,
+    isLoading,
+    error,
+    isRefetching,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["GetPurchaseHistory", { tripId, limit: PAGE_SIZE }],
+    enabled: Boolean(tripId) && Boolean(client),
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      const offset = typeof pageParam === "number" ? pageParam : 0;
+      const result = await useGetPurchaseHistoryQuery.fetcher(client, {
+        tripId,
+        limit: PAGE_SIZE,
+        offset,
+      })();
+      return result;
+    },
+    getNextPageParam: (lastPage) => {
+      const pagination = (lastPage as GetPurchaseHistoryQuery)?.purchaseHistory
+        ?.pagination;
+      if (!pagination?.hasMore) {
+        return undefined;
+      }
+      return (pagination.offset ?? 0) + (pagination.limit ?? PAGE_SIZE);
+    },
+  });
+
+  const purchases = useMemo(() => {
+    const pages = data?.pages ?? [];
+    const allPurchases: AdminPurchaseListItem[] = [];
+    pages.forEach((page) => {
+      const pageData = page as GetPurchaseHistoryQuery;
+      const edges = pageData?.purchaseHistory?.edges ?? [];
+      edges.forEach((edge) => {
+        if (edge?.node) {
+          const node = edge.node;
+          allPurchases.push({
+            id: node.id,
+            rewardId: node.reward?.id ?? "",
+            quantity: node.quantity ?? 1,
+            totalCost: node.totalCost ?? 0,
+            status: node.status as PurchaseStatus,
+            collectionMethod: node.collectionMethod,
+            purchasedAt: node.purchasedAt,
+            reward: node.reward
+              ? { id: node.reward.id, name: node.reward.name }
+              : { id: "", name: "Unknown" },
+            group: node.group
+              ? { id: node.group.id, name: node.group.name }
+              : null,
+            purchasedBy: node.purchasedBy
+              ? {
+                  id: node.purchasedBy.id,
+                  firstName: node.purchasedBy.firstName ?? "",
+                  lastName: node.purchasedBy.lastName ?? "",
+                }
+              : null,
+          });
+        }
+      });
+    });
+    return allPurchases;
+  }, [data?.pages]);
+
+  return {
+    data: purchases,
+    isLoading: isLoading || !client,
+    error,
+    isRefetching,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  };
+};
+
+// Custom hook for updating purchase status
+const useUpdateRewardPurchaseStatus = () => {
+  const client = useGraphQLClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      purchaseId: string;
+      status: PurchaseStatus;
+      collectionMethod?: string;
+    }) => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      const mutation = useUpdatePurchaseStatusMutation.fetcher(client, {
+        input: {
+          purchaseId: input.purchaseId,
+          status: input.status,
+          collectionMethod: input.collectionMethod,
+        },
+      });
+      return mutation();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["GetPurchaseHistory"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
+      });
+    },
+  });
 };
 
 export default function AdminRewardsPage() {
-  const trpc = useTRPC();
   const router = useRouter();
   const params = useLocalSearchParams();
   const tripIdParam =
@@ -81,17 +347,26 @@ export default function AdminRewardsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("PURCHASES");
   const [purchaseStatusFilter, setPurchaseStatusFilter] =
     useState<PurchaseStatusFilter>("BOUGHT");
-  const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<Record<string, string>>({});
+  const [collectionMethodByPurchase, setCollectionMethodByPurchase] = useState<
+    Record<string, string>
+  >({});
   const insets = useSafeAreaInsets();
   const updatePurchaseStatus = useUpdateRewardPurchaseStatus();
-  const tripQueryOptions = trpc.trip.getByIdAdmin.queryOptions({ id: tripIdParam ?? "" });
+  const client = useGraphQLClient();
 
-  const { data: trip, error: tripError } = useQuery({
-    ...tripQueryOptions,
-    enabled: Boolean(tripIdParam),
+  // Trip query
+  const { data: tripData, error: tripError } = useQuery({
+    queryKey: ["GetTripByIdAdmin", { id: tripIdParam ?? "" }],
+    enabled: Boolean(tripIdParam) && Boolean(client),
+    queryFn: async () => {
+      if (!client) throw new Error("GraphQL client not initialized");
+      return useGetTripByIdAdminQuery.fetcher(client, {
+        id: tripIdParam ?? "",
+      })();
+    },
   });
 
-  const tripName = trip?.name ?? null;
+  const tripName = tripData?.tripByIdAdmin?.name ?? null;
 
   const {
     data: rewards,
@@ -122,10 +397,14 @@ export default function AdminRewardsPage() {
 
   const filteredPurchases = useMemo(() => {
     if (purchaseStatusFilter === "ALL") return safePurchases;
-    return safePurchases.filter((purchase) => purchase.status === purchaseStatusFilter);
+    return safePurchases.filter(
+      (purchase) => purchase.status === purchaseStatusFilter,
+    );
   }, [safePurchases, purchaseStatusFilter]);
 
-  const handlePurchasesScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handlePurchasesScroll = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
     if (!hasMorePurchases || isFetchingMorePurchases || purchasesLoading) {
       return;
     }
@@ -139,7 +418,9 @@ export default function AdminRewardsPage() {
     }
   };
 
-  const handleRewardsScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const handleRewardsScroll = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
     if (!hasMoreRewards || isFetchingMoreRewards || rewardsLoading) {
       return;
     }
@@ -156,7 +437,10 @@ export default function AdminRewardsPage() {
   const handleAcceptPurchase = async (purchaseId: string) => {
     const collectionMethod = collectionMethodByPurchase[purchaseId]?.trim();
     if (!collectionMethod) {
-      Alert.alert("Collection method required", "Add pickup instructions before accepting.");
+      Alert.alert(
+        "Collection method required",
+        "Add pickup instructions before accepting.",
+      );
       return;
     }
 
@@ -168,7 +452,8 @@ export default function AdminRewardsPage() {
       });
       Alert.alert("Saved", "Purchase has been accepted.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to accept purchase";
+      const message =
+        error instanceof Error ? error.message : "Failed to accept purchase";
       Alert.alert("Error", message);
     }
   };
@@ -189,9 +474,15 @@ export default function AdminRewardsPage() {
                   purchaseId,
                   status: "CANCELLED",
                 });
-                Alert.alert("Saved", "Purchase has been cancelled and refunded.");
+                Alert.alert(
+                  "Saved",
+                  "Purchase has been cancelled and refunded.",
+                );
               } catch (error) {
-                const message = error instanceof Error ? error.message : "Failed to cancel purchase";
+                const message =
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to cancel purchase";
                 Alert.alert("Error", message);
               }
             })();
@@ -223,13 +514,21 @@ export default function AdminRewardsPage() {
       });
       Alert.alert("Saved", "Purchase has been marked as delivered.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to mark purchase as delivered";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to mark purchase as delivered";
       Alert.alert("Error", message);
     }
   };
 
   return (
-    <View style={[commonStyles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        commonStyles.container,
+        { paddingTop: spacing.xl, paddingBottom: insets.bottom },
+      ]}
+    >
       <StatusBar style="light" />
       <AdminHeader
         title="Rewards"
@@ -251,12 +550,23 @@ export default function AdminRewardsPage() {
               borderRadius: 999,
               borderWidth: 1,
               borderColor: viewMode === "PURCHASES" ? "#00ced1" : "#273a3a",
-              backgroundColor: viewMode === "PURCHASES" ? "rgba(0, 206, 209, 0.14)" : "#0f2323",
+              backgroundColor:
+                viewMode === "PURCHASES"
+                  ? "rgba(0, 206, 209, 0.14)"
+                  : "#0f2323",
               paddingVertical: 10,
               alignItems: "center",
             }}
           >
-            <Text style={[commonStyles.label, { color: viewMode === "PURCHASES" ? "#00ced1" : "#9ca3af", letterSpacing: 1 }]}>
+            <Text
+              style={[
+                commonStyles.label,
+                {
+                  color: viewMode === "PURCHASES" ? "#00ced1" : "#9ca3af",
+                  letterSpacing: 1,
+                },
+              ]}
+            >
               Purchases
             </Text>
           </TouchableOpacity>
@@ -267,12 +577,21 @@ export default function AdminRewardsPage() {
               borderRadius: 999,
               borderWidth: 1,
               borderColor: viewMode === "REWARDS" ? "#00ced1" : "#273a3a",
-              backgroundColor: viewMode === "REWARDS" ? "rgba(0, 206, 209, 0.14)" : "#0f2323",
+              backgroundColor:
+                viewMode === "REWARDS" ? "rgba(0, 206, 209, 0.14)" : "#0f2323",
               paddingVertical: 10,
               alignItems: "center",
             }}
           >
-            <Text style={[commonStyles.label, { color: viewMode === "REWARDS" ? "#00ced1" : "#9ca3af", letterSpacing: 1 }]}>
+            <Text
+              style={[
+                commonStyles.label,
+                {
+                  color: viewMode === "REWARDS" ? "#00ced1" : "#9ca3af",
+                  letterSpacing: 1,
+                },
+              ]}
+            >
               Rewards
             </Text>
           </TouchableOpacity>
@@ -295,24 +614,68 @@ export default function AdminRewardsPage() {
           }
         >
           {!tripIdParam ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
-              <Ionicons name="information-circle-outline" size={44} color="#6b7280" />
-              <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}>
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingVertical: 36,
+              }}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={44}
+                color="#6b7280"
+              />
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  { marginTop: 12, textAlign: "center" },
+                ]}
+              >
                 Select a trip in admin panel to review purchases.
               </Text>
             </View>
           ) : purchasesError ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingVertical: 36,
+              }}
+            >
               <Ionicons name="warning" size={48} color="#ef4444" />
-              <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  { marginTop: 16, textAlign: "center" },
+                ]}
+              >
                 Failed to load purchases
               </Text>
-              <Text style={[commonStyles.textSecondary, { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" }]}>
-                {purchasesError instanceof Error ? purchasesError.message : "Try again"}
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  {
+                    marginTop: 8,
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: "#666",
+                  },
+                ]}
+              >
+                {purchasesError instanceof Error
+                  ? purchasesError.message
+                  : "Try again"}
               </Text>
             </View>
           ) : purchasesLoading ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingVertical: 36,
+              }}
+            >
               <Text style={[commonStyles.textSecondary, { color: "#9ca3af" }]}>
                 Loading purchases...
               </Text>
@@ -334,12 +697,22 @@ export default function AdminRewardsPage() {
                         borderRadius: 999,
                         borderWidth: 1,
                         borderColor: active ? "#00ced1" : "#273a3a",
-                        backgroundColor: active ? "rgba(0, 206, 209, 0.14)" : "#0f2323",
+                        backgroundColor: active
+                          ? "rgba(0, 206, 209, 0.14)"
+                          : "#0f2323",
                         paddingHorizontal: 12,
                         paddingVertical: 7,
                       }}
                     >
-                      <Text style={[commonStyles.label, { color: active ? "#00ced1" : "#9ca3af", letterSpacing: 0.8 }]}>
+                      <Text
+                        style={[
+                          commonStyles.label,
+                          {
+                            color: active ? "#00ced1" : "#9ca3af",
+                            letterSpacing: 0.8,
+                          },
+                        ]}
+                      >
                         {option.label}
                       </Text>
                     </TouchableOpacity>
@@ -349,26 +722,39 @@ export default function AdminRewardsPage() {
 
               {filteredPurchases.length > 0 ? (
                 filteredPurchases.map((purchase) => {
-                  const statusInfo = statusMeta[purchase.status] ?? statusMeta.BOUGHT;
+                  const statusInfo =
+                    statusMeta[purchase.status] ?? statusMeta.BOUGHT;
                   const purchaserName =
                     `${purchase.purchasedBy?.firstName ?? ""} ${purchase.purchasedBy?.lastName ?? ""}`.trim();
                   const canEditCollectionMethod =
-                    purchase.status === "BOUGHT" || purchase.status === "ACCEPTED";
+                    purchase.status === "BOUGHT" ||
+                    purchase.status === "ACCEPTED";
                   return (
                     <View
                       key={purchase.id}
                       style={{
                         backgroundColor: "#0f2323",
                         borderWidth: 1,
-                        borderColor: purchase.status === "BOUGHT" ? "#fbbf24" : "#273a3a",
+                        borderColor:
+                          purchase.status === "BOUGHT" ? "#fbbf24" : "#273a3a",
                         borderRadius: 12,
                         padding: 14,
                         gap: 10,
                       }}
                     >
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
                         <View style={{ flex: 1 }}>
-                          <Text style={[commonStyles.h4, { marginBottom: 3 }]} numberOfLines={1}>
+                          <Text
+                            style={[commonStyles.h4, { marginBottom: 3 }]}
+                            numberOfLines={1}
+                          >
                             {purchase.reward?.name ?? "Unknown reward"}
                           </Text>
                           <Text style={[commonStyles.textSecondary]}>
@@ -388,19 +774,44 @@ export default function AdminRewardsPage() {
                             backgroundColor: `${statusInfo.color}20`,
                           }}
                         >
-                          <Ionicons name={statusInfo.icon} size={12} color={statusInfo.color} />
-                          <Text style={[commonStyles.label, { color: statusInfo.color, letterSpacing: 0.6 }]}>
+                          <Ionicons
+                            name={statusInfo.icon}
+                            size={12}
+                            color={statusInfo.color}
+                          />
+                          <Text
+                            style={[
+                              commonStyles.label,
+                              { color: statusInfo.color, letterSpacing: 0.6 },
+                            ]}
+                          >
                             {statusInfo.label}
                           </Text>
                         </View>
                       </View>
 
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                        <Text style={[commonStyles.textSecondary, { color: "#fbbf24" }]}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Text
+                          style={[
+                            commonStyles.textSecondary,
+                            { color: "#fbbf24" },
+                          ]}
+                        >
                           {purchase.quantity} pcs. • {purchase.totalCost} coins
                         </Text>
                         <Text style={[commonStyles.textSecondary]}>
-                          {new Date(purchase.purchasedAt).toLocaleDateString()} • {new Date(purchase.purchasedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(purchase.purchasedAt).toLocaleDateString()}{" "}
+                          •{" "}
+                          {new Date(purchase.purchasedAt).toLocaleTimeString(
+                            [],
+                            { hour: "2-digit", minute: "2-digit" },
+                          )}
                         </Text>
                       </View>
 
@@ -411,16 +822,25 @@ export default function AdminRewardsPage() {
                       ) : null}
 
                       {purchase.collectionMethod ? (
-                        <Text style={[commonStyles.textSecondary, { color: "#93c5fd" }]}>
+                        <Text
+                          style={[
+                            commonStyles.textSecondary,
+                            { color: "#93c5fd" },
+                          ]}
+                        >
                           Pickup: {purchase.collectionMethod}
                         </Text>
                       ) : null}
 
                       <TextInput
                         style={{
-                          backgroundColor: canEditCollectionMethod ? "#0b1a1a" : "#0a1414",
+                          backgroundColor: canEditCollectionMethod
+                            ? "#0b1a1a"
+                            : "#0a1414",
                           borderWidth: 1,
-                          borderColor: canEditCollectionMethod ? "#273a3a" : "#1f2a2a",
+                          borderColor: canEditCollectionMethod
+                            ? "#273a3a"
+                            : "#1f2a2a",
                           borderRadius: 10,
                           paddingHorizontal: 10,
                           paddingVertical: 8,
@@ -428,7 +848,11 @@ export default function AdminRewardsPage() {
                         }}
                         placeholder="Collection method (how to pick up)"
                         placeholderTextColor="#6b7280"
-                        value={collectionMethodByPurchase[purchase.id] ?? purchase.collectionMethod ?? ""}
+                        value={
+                          collectionMethodByPurchase[purchase.id] ??
+                          purchase.collectionMethod ??
+                          ""
+                        }
                         editable={canEditCollectionMethod}
                         onChangeText={(text: string) =>
                           setCollectionMethodByPurchase((prev) => ({
@@ -439,7 +863,13 @@ export default function AdminRewardsPage() {
                       />
 
                       {purchase.status === "BOUGHT" ? (
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            flexWrap: "wrap",
+                            gap: 8,
+                          }}
+                        >
                           <TouchableOpacity
                             onPress={() => handleAcceptPurchase(purchase.id)}
                             disabled={updatePurchaseStatus.isPending}
@@ -459,9 +889,18 @@ export default function AdminRewardsPage() {
                             {updatePurchaseStatus.isPending ? (
                               <ActivityIndicator size="small" color="#22c55e" />
                             ) : (
-                              <Ionicons name="checkmark-circle-outline" size={14} color="#22c55e" />
+                              <Ionicons
+                                name="checkmark-circle-outline"
+                                size={14}
+                                color="#22c55e"
+                              />
                             )}
-                            <Text style={[commonStyles.label, { color: "#22c55e", letterSpacing: 0.8 }]}>
+                            <Text
+                              style={[
+                                commonStyles.label,
+                                { color: "#22c55e", letterSpacing: 0.8 },
+                              ]}
+                            >
                               Accept purchase
                             </Text>
                           </TouchableOpacity>
@@ -481,8 +920,17 @@ export default function AdminRewardsPage() {
                               gap: 6,
                             }}
                           >
-                            <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                            <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}>
+                            <Ionicons
+                              name="close-circle-outline"
+                              size={14}
+                              color="#ef4444"
+                            />
+                            <Text
+                              style={[
+                                commonStyles.label,
+                                { color: "#ef4444", letterSpacing: 0.8 },
+                              ]}
+                            >
                               Cancel purchase
                             </Text>
                           </TouchableOpacity>
@@ -506,15 +954,30 @@ export default function AdminRewardsPage() {
                             gap: 6,
                           }}
                         >
-                          <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                          <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}>
+                          <Ionicons
+                            name="close-circle-outline"
+                            size={14}
+                            color="#ef4444"
+                          />
+                          <Text
+                            style={[
+                              commonStyles.label,
+                              { color: "#ef4444", letterSpacing: 0.8 },
+                            ]}
+                          >
                             Cancel purchase
                           </Text>
                         </TouchableOpacity>
                       ) : null}
 
                       {purchase.status === "IN_DELIVERY" ? (
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            flexWrap: "wrap",
+                            gap: 8,
+                          }}
+                        >
                           <TouchableOpacity
                             onPress={() => handleMarkDelivered(purchase.id)}
                             disabled={updatePurchaseStatus.isPending}
@@ -531,8 +994,17 @@ export default function AdminRewardsPage() {
                               gap: 6,
                             }}
                           >
-                            <Ionicons name="checkmark-done-circle-outline" size={14} color="#10b981" />
-                            <Text style={[commonStyles.label, { color: "#10b981", letterSpacing: 0.8 }]}>
+                            <Ionicons
+                              name="checkmark-done-circle-outline"
+                              size={14}
+                              color="#10b981"
+                            />
+                            <Text
+                              style={[
+                                commonStyles.label,
+                                { color: "#10b981", letterSpacing: 0.8 },
+                              ]}
+                            >
                               Reward delivered
                             </Text>
                           </TouchableOpacity>
@@ -553,8 +1025,17 @@ export default function AdminRewardsPage() {
                               gap: 6,
                             }}
                           >
-                            <Ionicons name="close-circle-outline" size={14} color="#ef4444" />
-                            <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.8 }]}>
+                            <Ionicons
+                              name="close-circle-outline"
+                              size={14}
+                              color="#ef4444"
+                            />
+                            <Text
+                              style={[
+                                commonStyles.label,
+                                { color: "#ef4444", letterSpacing: 0.8 },
+                              ]}
+                            >
                               Cancel purchase
                             </Text>
                           </TouchableOpacity>
@@ -564,18 +1045,37 @@ export default function AdminRewardsPage() {
                   );
                 })
               ) : (
-                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 36 }}>
+                <View
+                  style={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingVertical: 36,
+                  }}
+                >
                   <Ionicons name="cart-outline" size={44} color="#6b7280" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 12, textAlign: "center" }]}> 
+                  <Text
+                    style={[
+                      commonStyles.textSecondary,
+                      { marginTop: 12, textAlign: "center" },
+                    ]}
+                  >
                     No purchases for this filter
                   </Text>
                 </View>
               )}
 
               {isFetchingMorePurchases ? (
-                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                <View
+                  style={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                  }}
+                >
                   <ActivityIndicator size="small" color="#00ced1" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more purchases...</Text>
+                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
+                    Loading more purchases...
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -597,25 +1097,77 @@ export default function AdminRewardsPage() {
           }
         >
           {rewardsError ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingVertical: 32,
+              }}
+            >
               <Ionicons name="warning" size={48} color="#ef4444" />
-              <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>Failed to load rewards</Text>
-              <Text style={[commonStyles.textSecondary, { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" }]}>
-                {rewardsError instanceof Error ? rewardsError.message : "Try again"}
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  { marginTop: 16, textAlign: "center" },
+                ]}
+              >
+                Failed to load rewards
+              </Text>
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  {
+                    marginTop: 8,
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: "#666",
+                  },
+                ]}
+              >
+                {rewardsError instanceof Error
+                  ? rewardsError.message
+                  : "Try again"}
               </Text>
             </View>
           ) : tripError ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingVertical: 32,
+              }}
+            >
               <Ionicons name="warning" size={48} color="#ef4444" />
-              <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}>
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  { marginTop: 16, textAlign: "center" },
+                ]}
+              >
                 Trip {tripName ? `"${tripName}"` : "(selected)"} does not exist
               </Text>
-              <Text style={[commonStyles.textSecondary, { marginTop: 8, textAlign: "center", fontSize: 12, color: "#666" }]}>
+              <Text
+                style={[
+                  commonStyles.textSecondary,
+                  {
+                    marginTop: 8,
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: "#666",
+                  },
+                ]}
+              >
                 Check if the correct trip was selected in the admin panel
               </Text>
             </View>
           ) : rewardsLoading ? (
-            <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                paddingVertical: 32,
+              }}
+            >
               <Text style={[commonStyles.textSecondary, { color: "#9ca3af" }]}>
                 Loading rewards...
               </Text>
@@ -636,19 +1188,41 @@ export default function AdminRewardsPage() {
                       padding: 16,
                     }}
                   >
-                    <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start", marginBottom: 12 }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: 12,
+                        alignItems: "flex-start",
+                        marginBottom: 12,
+                      }}
+                    >
                       {(reward.signedImageUrl ?? reward.image) && (
                         <Image
-                          source={{ uri: reward.signedImageUrl ?? reward.image ?? undefined }}
-                          style={{ width: 72, aspectRatio: 1, borderRadius: 12, backgroundColor: "#0b1a1a" }}
+                          source={{
+                            uri:
+                              reward.signedImageUrl ??
+                              reward.image ??
+                              undefined,
+                          }}
+                          style={{
+                            width: 72,
+                            aspectRatio: 1,
+                            borderRadius: 12,
+                            backgroundColor: "#0b1a1a",
+                          }}
                           resizeMode="cover"
                         />
                       )}
                       <View style={{ flex: 1, minWidth: 0 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                          <Text style={[commonStyles.h4]}>
-                            {reward.name}
-                          </Text>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: 4,
+                          }}
+                        >
+                          <Text style={[commonStyles.h4]}>{reward.name}</Text>
                           {reward.isHidden ? (
                             <View
                               style={{
@@ -660,13 +1234,24 @@ export default function AdminRewardsPage() {
                                 backgroundColor: "rgba(239, 68, 68, 0.12)",
                               }}
                             >
-                              <Text style={[commonStyles.label, { color: "#ef4444", letterSpacing: 0.6 }]}>
+                              <Text
+                                style={[
+                                  commonStyles.label,
+                                  { color: "#ef4444", letterSpacing: 0.6 },
+                                ]}
+                              >
                                 Hidden
                               </Text>
                             </View>
                           ) : null}
                         </View>
-                        <Text style={[commonStyles.textSecondary, { color: "#9ca3af", marginBottom: 8 }]} numberOfLines={2}>
+                        <Text
+                          style={[
+                            commonStyles.textSecondary,
+                            { color: "#9ca3af", marginBottom: 8 },
+                          ]}
+                          numberOfLines={2}
+                        >
                           {reward.description}
                         </Text>
                         <View
@@ -677,28 +1262,76 @@ export default function AdminRewardsPage() {
                             rowGap: 8,
                           }}
                         >
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
                             <Ionicons name="cash" size={16} color="#fbbf24" />
                             <View style={{ alignItems: "flex-start" }}>
-                              <Text style={[commonStyles.label, { color: "#fbbf24", fontSize: 12, lineHeight: 14 }]}>
+                              <Text
+                                style={[
+                                  commonStyles.label,
+                                  {
+                                    color: "#fbbf24",
+                                    fontSize: 12,
+                                    lineHeight: 14,
+                                  },
+                                ]}
+                              >
                                 {reward.coinCost} coins
                               </Text>
                               {reward.originalCoinCost && (
-                                <Text style={[commonStyles.textSecondary, { color: "#9ca3af", fontSize: 10, lineHeight: 12 }]}>
+                                <Text
+                                  style={[
+                                    commonStyles.textSecondary,
+                                    {
+                                      color: "#9ca3af",
+                                      fontSize: 10,
+                                      lineHeight: 12,
+                                    },
+                                  ]}
+                                >
                                   {reward.originalCoinCost}% of total points
                                 </Text>
                               )}
                             </View>
                           </View>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                            <Ionicons name="cube-outline" size={16} color="#10b981" />
-                            <Text style={[commonStyles.label, { color: "#10b981" }]}>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <Ionicons
+                              name="cube-outline"
+                              size={16}
+                              color="#10b981"
+                            />
+                            <Text
+                              style={[commonStyles.label, { color: "#10b981" }]}
+                            >
                               {reward.availableQuantity} pcs.
                             </Text>
                           </View>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                            <Ionicons name="cart-outline" size={16} color="#00ced1" />
-                            <Text style={[commonStyles.label, { color: "#00ced1" }]}>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <Ionicons
+                              name="cart-outline"
+                              size={16}
+                              color="#00ced1"
+                            />
+                            <Text
+                              style={[commonStyles.label, { color: "#00ced1" }]}
+                            >
                               {reward.purchasedCount ?? 0} purchased
                             </Text>
                           </View>
@@ -706,20 +1339,40 @@ export default function AdminRewardsPage() {
                       </View>
                     </View>
 
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginTop: 8,
+                      }}
+                    >
                       <Text style={[commonStyles.label, { color: "#6b7280" }]}>
-                        Created: {new Date(reward.createdAt).toLocaleDateString()}
+                        Created:{" "}
+                        {new Date(reward.createdAt).toLocaleDateString()}
                       </Text>
                       <Text style={[commonStyles.label, { color: "#6b7280" }]}>
-                        {reward.createdBy?.firstName} {reward.createdBy?.lastName}
+                        {reward.createdBy?.firstName}{" "}
+                        {reward.createdBy?.lastName}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 ))
               ) : (
-                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 32 }}>
+                <View
+                  style={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingVertical: 32,
+                  }}
+                >
                   <Ionicons name="gift" size={48} color="#6b7280" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 16, textAlign: "center" }]}> 
+                  <Text
+                    style={[
+                      commonStyles.textSecondary,
+                      { marginTop: 16, textAlign: "center" },
+                    ]}
+                  >
                     {tripIdParam
                       ? `No rewards for trip: ${tripName ?? "(loading name)"}`
                       : "No rewards in the system"}
@@ -728,9 +1381,17 @@ export default function AdminRewardsPage() {
               )}
 
               {isFetchingMoreRewards ? (
-                <View style={{ justifyContent: "center", alignItems: "center", paddingVertical: 12 }}>
+                <View
+                  style={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                  }}
+                >
                   <ActivityIndicator size="small" color="#00ced1" />
-                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>Loading more rewards...</Text>
+                  <Text style={[commonStyles.textSecondary, { marginTop: 8 }]}>
+                    Loading more rewards...
+                  </Text>
                 </View>
               ) : null}
             </View>

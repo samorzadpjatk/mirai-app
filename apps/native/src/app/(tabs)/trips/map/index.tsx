@@ -9,7 +9,8 @@ import {
 } from "~/stores/map";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useGetCurrentUserQuery } from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { useQuery } from "@tanstack/react-query";
 import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";
@@ -54,11 +55,17 @@ function MapScreenContent({
 
 export default function MapScreen() {
   const { session } = useAuth();
-  const trpc = useTRPC();
   const { selectedTripId } = useSelectedTrip();
   const { isTripPast } = useTripDetails(selectedTripId);
-  const userMyQueryOptions = trpc.user.getMy.queryOptions();
-  const { data: currentUser } = useQuery(userMyQueryOptions);
+
+  // GraphQL query for current user
+  const { data: currentUserData } = useGetCurrentUserQuery(
+    graphqlClient,
+    {},
+    { enabled: !!session?.access_token },
+  );
+  const currentUser = currentUserData?.currentUser;
+
   const mapTheme = "dark";
   const [currentCoordinate, setCurrentCoordinate] = useState<
     [number, number] | null

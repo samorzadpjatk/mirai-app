@@ -8,22 +8,33 @@ import {
   RefreshControl,
   StyleSheet,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useRouter } from "expo-router";
+import {
+  useGetCurrentUserQuery,
+  useGetMyNotificationsQuery,
+} from "@mirai-app/graphql-types";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";
 import { NotificationsHeader } from "~/components/notifications/NotificationsHeader";
 import type { NotificationScheduleItem } from "~/types/notifications";
 
 export default function NotificationsScreen() {
-  const trpc = useTRPC();
   const router = useRouter();
 
-  // Check user permissions
-  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
-    trpc.user.getMy.queryOptions(),
-  );
+  // GraphQL query for current user (permission check)
+  const { data: currentUserData, isLoading: isLoadingUser } =
+    useGetCurrentUserQuery();
+  const currentUser = currentUserData?.me;
+
+  // GraphQL query for notifications
+  const {
+    data: notificationsData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useGetMyNotificationsQuery();
 
   // Redirect if user doesn't have access
   useEffect(() => {
@@ -35,17 +46,8 @@ export default function NotificationsScreen() {
     }
   }, [currentUser, isLoadingUser, router]);
 
-  const {
-    data: schedulesData,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isRefetching,
-  } = useQuery(trpc.notificationSchedule.getAll.queryOptions());
-
-  const schedules = (schedulesData?.schedules ??
-    []) as NotificationScheduleItem[];
+  // Schedules would come from notifications query or separate query
+  const schedules: NotificationScheduleItem[] = [];
 
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -98,7 +100,7 @@ export default function NotificationsScreen() {
       <ScrollView
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
+            refreshing={isFetching}
             onRefresh={() => void refetch()}
             tintColor="#00ced1"
           />

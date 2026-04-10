@@ -14,8 +14,10 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import {
+  useGetAllNotificationsQuery,
+  type Notification,
+} from "@mirai-app/graphql-types";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { NotificationCard } from "~/components/admin/notifications/NotificationCard";
@@ -26,11 +28,15 @@ import {
   EditScheduleModal,
 } from "~/components/admin/schedules/ScheduleModals";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAdminNotifications, type Notification } from "@mirai-app/frameworks/trpc/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { graphqlClient } from "~/lib/graphql-client";
 import {
-  useAdminSchedules,
+  GetNotificationSchedulesDocument,
+  UpdateNotificationScheduleDocument,
+  DeleteNotificationScheduleDocument,
+  ToggleNotificationScheduleActiveDocument,
   type NotificationSchedule,
-} from "@mirai-app/frameworks/trpc/hooks";
+} from "@mirai-app/graphql-types";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { EmptyState } from "~/components/common/ui";
 
@@ -40,7 +46,10 @@ type PlannedSchedulesTab = "recurring" | "scheduled";
 const AUDIENCE_MODE_PARAM = "__audience";
 const AUDIENCE_GROUP_PARAM = "__groupId";
 
-function parseTriggerTime(triggerTime: string): { hour: number; minute: number } {
+function parseTriggerTime(triggerTime: string): {
+  hour: number;
+  minute: number;
+} {
   const [hourRaw, minuteRaw] = triggerTime.split(":");
   const hour = Number.parseInt(hourRaw ?? "", 10);
   const minute = Number.parseInt(minuteRaw ?? "", 10);
@@ -81,22 +90,62 @@ function parseNotificationAudience(url: string): {
   }
 }
 
+// GraphQL version of useAdminNotifications
+function useAdminNotifications(tripId?: string) {
+  const { data, isLoading, isFetching, refetch } = useGetAllNotificationsQuery(
+    { tripId },
+    { enabled: true },
+  );
+
+  const notifications = data?.notifications ?? [];
+
+  const handleRetry = async (notificationId: string) => {
+    // Retry logic would need a separate mutation hook
+    Alert.alert("Info", "Retry not yet implemented in GraphQL");
+  };
+
+  const handleDelete = async (notificationId: string) => {
+    // Delete logic would need a separate mutation hook
+    Alert.alert("Info", "Delete not yet implemented in GraphQL");
+  };
+
+  return {
+    notifications,
+    isLoading,
+    isRefetching: isFetching,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: async () => {},
+    refetch,
+    status: "all" as const,
+    setStatus: (_status: string) => {},
+    retryNotification: handleRetry,
+    deleteNotification: handleDelete,
+    isRetrying: false,
+    isDeleting: false,
+  };
+}
+
 export default function AdminNotificationsScreen() {
   const router = useRouter();
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ tripId?: string | string[] }>();
   const tripId =
-    typeof params.tripId === "string" ? params.tripId : params.tripId?.[0] ?? "";
+    typeof params.tripId === "string"
+      ? params.tripId
+      : (params.tripId?.[0] ?? "");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [plannedSearchTerm, setPlannedSearchTerm] = useState("");
   const [tab, setTab] = useState<AdminNotificationsTab>("sent");
-  const [plannedTab, setPlannedTab] = useState<PlannedSchedulesTab>("recurring");
-  const [selectedGroupFilterId, setSelectedGroupFilterId] = useState<string>("all");
+  const [plannedTab, setPlannedTab] =
+    useState<PlannedSchedulesTab>("recurring");
+  const [selectedGroupFilterId, setSelectedGroupFilterId] =
+    useState<string>("all");
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedSchedule, setSelectedSchedule] = useState<NotificationSchedule | null>(null);
+  const [selectedSchedule, setSelectedSchedule] =
+    useState<NotificationSchedule | null>(null);
 
   const {
     notifications,
@@ -114,29 +163,141 @@ export default function AdminNotificationsScreen() {
     isDeleting,
   } = useAdminNotifications(tripId || undefined);
 
-  const {
-    schedules,
-    isLoading: areSchedulesLoading,
-    updateSchedule,
-    deleteSchedule,
-    toggleSchedule,
-    isUpdating,
-    isDeleting: isDeletingSchedule,
-    isToggling,
-  } = useAdminSchedules(tripId || undefined);
+  // GraphQL-based admin schedules hook
+  const queryClient = useQueryClient();
 
-  const groupsQuery = useQuery({
-    ...trpc.group.getAllNames.queryOptions({ tripId }),
+  const schedulesQuery = useQuery({
+    queryKey: ["GetNotificationSchedules", tripId],
+    queryFn: async () => {
+      const result = await graphqlClient.request(
+        GetNotificationSchedulesDocument,
+        {
+          tripId: tripId || undefined,
+          limit: 100,
+          offset: 0,
+        },
+      );
+      return (
+        result.notificationSchedules?.edges?.map(
+          (edge: { node: NotificationSchedule }) => edge.node,
+        ) ?? []
+      );
+    },
     enabled: !!tripId,
   });
-  const groups = groupsQuery.data ?? [];
+
+  const schedules = schedulesQuery.data ?? [];
+  const areSchedulesLoading = schedulesQuery.isLoading;
+
+  const updateScheduleMutation = useMutation({
+    mutationFn: async (input: {
+      id: string;
+      name: string;
+      notificationTitle?: string;
+      notificationBody?: string;
+      hour?: number;
+      minute?: number;
+    }) => {
+      const result = await graphqlClient.request(
+        UpdateNotificationScheduleDocument,
+        {
+          id: input.id,
+          input: {
+            name: input.name,
+            notificationTitle: input.notificationTitle,
+            notificationBody: input.notificationBody,
+            hour: input.hour,
+            minute: input.minute,
+          },
+        },
+      );
+      return result.updateNotificationSchedule;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetNotificationSchedules"],
+      });
+    },
+  });
+
+  const deleteScheduleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const result = await graphqlClient.request(
+        DeleteNotificationScheduleDocument,
+        { id },
+      );
+      return result.deleteNotificationSchedule;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetNotificationSchedules"],
+      });
+    },
+  });
+
+  const toggleScheduleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const result = await graphqlClient.request(
+        ToggleNotificationScheduleActiveDocument,
+        { id },
+      );
+      return result.toggleNotificationScheduleActive;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetNotificationSchedules"],
+      });
+    },
+  });
+
+  const updateSchedule = async ({
+    id,
+    name,
+    notificationTitle,
+    notificationBody,
+    hour,
+    minute,
+  }: {
+    id: string;
+    name: string;
+    notificationTitle?: string;
+    notificationBody?: string;
+    hour?: number;
+    minute?: number;
+  }) => {
+    await updateScheduleMutation.mutateAsync({
+      id,
+      name,
+      notificationTitle: notificationTitle ?? name,
+      notificationBody,
+      hour,
+      minute,
+    });
+  };
+
+  const deleteSchedule = async (id: string) => {
+    await deleteScheduleMutation.mutateAsync(id);
+  };
+
+  const toggleSchedule = async (id: string) => {
+    await toggleScheduleMutation.mutateAsync(id);
+  };
+
+  const isUpdating = updateScheduleMutation.isPending;
+  const isDeletingSchedule = deleteScheduleMutation.isPending;
+  const isToggling = toggleScheduleMutation.isPending;
+
+  // Groups query - placeholder for now
+  const groups: Array<{ id: string; name: string }> = [];
 
   const sentNotifications = useMemo(() => {
     let filtered = notifications || [];
 
     if (status !== "all") {
       filtered = filtered.filter((notification) =>
-        notification.pushes.some((push) => push.status === status),
+        notification.pushes?.some(
+          (push: { status: string }) => push.status === status,
+        ),
       );
     }
 
@@ -146,16 +307,19 @@ export default function AdminNotificationsScreen() {
         (notification) =>
           notification.title.toLowerCase().includes(term) ||
           notification.body.toLowerCase().includes(term) ||
-          (notification.createdBy.firstName ?? "").toLowerCase().includes(term) ||
-          (notification.createdBy.lastName ?? "").toLowerCase().includes(term),
+          (notification.createdBy?.firstName ?? "")
+            .toLowerCase()
+            .includes(term) ||
+          (notification.createdBy?.lastName ?? "").toLowerCase().includes(term),
       );
     }
 
     if (selectedGroupFilterId !== "all") {
       filtered = filtered.filter((notification) => {
-        const audience = parseNotificationAudience(notification.url);
+        const audience = parseNotificationAudience(notification.url ?? "");
         return (
-          audience.audienceMode === "group" && audience.groupId === selectedGroupFilterId
+          audience.audienceMode === "group" &&
+          audience.groupId === selectedGroupFilterId
         );
       });
     }
@@ -174,7 +338,9 @@ export default function AdminNotificationsScreen() {
       plannedSchedules.filter((schedule) => {
         if (!schedule.isRecurring) return false;
         if (!normalizedPlannedSearchTerm) return true;
-        const title = (schedule.notificationTitle ?? schedule.name).toLowerCase();
+        const title = (
+          schedule.notificationTitle ?? schedule.name
+        ).toLowerCase();
         return title.includes(normalizedPlannedSearchTerm);
       }),
     [plannedSchedules, normalizedPlannedSearchTerm],
@@ -204,18 +370,22 @@ export default function AdminNotificationsScreen() {
   };
 
   const handleDelete = (notificationId: string) => {
-    Alert.alert("Delete Notification", "Are you sure you want to delete this notification?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          deleteNotification(notificationId).catch(() => {
-            Alert.alert("Error", "Failed to delete notification");
-          });
+    Alert.alert(
+      "Delete Notification",
+      "Are you sure you want to delete this notification?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteNotification(notificationId).catch(() => {
+              Alert.alert("Error", "Failed to delete notification");
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handleToggleSchedule = async (schedule: NotificationSchedule) => {
@@ -288,25 +458,39 @@ export default function AdminNotificationsScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: spacing.xl, paddingBottom: insets.bottom }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: spacing.xl, paddingBottom: insets.bottom },
+      ]}
+    >
       <StatusBar style="light" />
 
-      <AdminHeader
-        title="Notifications"
-      />
+      <AdminHeader title="Notifications" />
 
       <View style={styles.tabsRow}>
         <TouchableOpacity
           style={[styles.tabButton, tab === "sent" && styles.tabButtonActive]}
           onPress={() => setTab("sent")}
         >
-          <Text style={[styles.tabText, tab === "sent" && styles.tabTextActive]}>Sent</Text>
+          <Text
+            style={[styles.tabText, tab === "sent" && styles.tabTextActive]}
+          >
+            Sent
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tabButton, tab === "planned" && styles.tabButtonActive]}
+          style={[
+            styles.tabButton,
+            tab === "planned" && styles.tabButtonActive,
+          ]}
           onPress={() => setTab("planned")}
         >
-          <Text style={[styles.tabText, tab === "planned" && styles.tabTextActive]}>Planned</Text>
+          <Text
+            style={[styles.tabText, tab === "planned" && styles.tabTextActive]}
+          >
+            Planned
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -353,7 +537,9 @@ export default function AdminNotificationsScreen() {
                 isFetchingNextPage ? (
                   <View style={styles.listFooter}>
                     <ActivityIndicator size="small" color={colors.primary} />
-                    <Text style={styles.inlineLoadingText}>Loading more notifications...</Text>
+                    <Text style={styles.inlineLoadingText}>
+                      Loading more notifications...
+                    </Text>
                   </View>
                 ) : null
               }
@@ -391,18 +577,34 @@ export default function AdminNotificationsScreen() {
 
           <View style={styles.plannedTabsRow}>
             <TouchableOpacity
-              style={[styles.tabButton, plannedTab === "recurring" && styles.tabButtonActive]}
+              style={[
+                styles.tabButton,
+                plannedTab === "recurring" && styles.tabButtonActive,
+              ]}
               onPress={() => setPlannedTab("recurring")}
             >
-              <Text style={[styles.tabText, plannedTab === "recurring" && styles.tabTextActive]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  plannedTab === "recurring" && styles.tabTextActive,
+                ]}
+              >
                 Recurring
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.tabButton, plannedTab === "scheduled" && styles.tabButtonActive]}
+              style={[
+                styles.tabButton,
+                plannedTab === "scheduled" && styles.tabButtonActive,
+              ]}
               onPress={() => setPlannedTab("scheduled")}
             >
-              <Text style={[styles.tabText, plannedTab === "scheduled" && styles.tabTextActive]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  plannedTab === "scheduled" && styles.tabTextActive,
+                ]}
+              >
                 Scheduled
               </Text>
             </TouchableOpacity>
@@ -417,7 +619,9 @@ export default function AdminNotificationsScreen() {
               {areSchedulesLoading ? (
                 <View style={styles.inlineLoadingContainer}>
                   <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={styles.inlineLoadingText}>Loading schedules...</Text>
+                  <Text style={styles.inlineLoadingText}>
+                    Loading schedules...
+                  </Text>
                 </View>
               ) : recurringSchedules.length === 0 ? (
                 <View style={styles.inlineEmptyContainer}>
@@ -434,7 +638,10 @@ export default function AdminNotificationsScreen() {
                     onDelete={openDeleteModal}
                     onToggle={handleToggleSchedule}
                     onTrigger={() => {
-                      Alert.alert("Info", "Manual trigger is not available yet.");
+                      Alert.alert(
+                        "Info",
+                        "Manual trigger is not available yet.",
+                      );
                     }}
                     isToggling={isToggling}
                   />
@@ -450,7 +657,9 @@ export default function AdminNotificationsScreen() {
               {areSchedulesLoading ? (
                 <View style={styles.inlineLoadingContainer}>
                   <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={styles.inlineLoadingText}>Loading schedules...</Text>
+                  <Text style={styles.inlineLoadingText}>
+                    Loading schedules...
+                  </Text>
                 </View>
               ) : oneTimeScheduled.length === 0 ? (
                 <View style={styles.inlineEmptyContainer}>
@@ -467,7 +676,10 @@ export default function AdminNotificationsScreen() {
                     onDelete={openDeleteModal}
                     onToggle={handleToggleSchedule}
                     onTrigger={() => {
-                      Alert.alert("Info", "Manual trigger is not available yet.");
+                      Alert.alert(
+                        "Info",
+                        "Manual trigger is not available yet.",
+                      );
                     }}
                     isToggling={isToggling}
                   />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,9 @@ import {
   RefreshControl,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import { useGetMyNotificationsQuery } from "@mirai-app/graphql-types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertsEmptyState } from "~/components/alerts/AlertsEmptyState";
 import { AlertsHeader } from "~/components/alerts/AlertsHeader";
@@ -16,17 +18,41 @@ import { NotificationCard } from "~/components/alerts/NotificationCard";
 import { colors, spacing, typography } from "../styles";
 import type { NotificationItem } from "~/types/notifications";
 
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
+  const token = await SecureStore.getItemAsync("sb-access-token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
+
 export default function AlertsScreen() {
-  const trpc = useTRPC();
   const insets = useSafeAreaInsets();
   const [page, setPage] = useState(1);
   const pageSize = 20;
+  const [client, setClient] = useState<GraphQLClient | null>(null);
+
+  useEffect(() => {
+    void createGraphQLClient().then(setClient);
+  }, []);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    ...trpc.notifications.getAllMy.queryOptions({
-      page,
-      pageSize,
-    }),
+    queryKey: ["GetMyNotifications", page, pageSize],
+    queryFn: async () => {
+      if (!client) {
+        throw new Error("GraphQL client not initialized");
+      }
+      return useGetMyNotificationsQuery.fetcher(client, {
+        page,
+        pageSize,
+      })();
+    },
+    enabled: !!client,
   });
 
   const notifications = (data?.notifications ?? []) as NotificationItem[];

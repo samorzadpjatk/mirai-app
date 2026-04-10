@@ -1,8 +1,4 @@
-import React, {
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,11 +11,26 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useGetChallengeQuery,
+  useGetChallengeSubmissionsQuery,
+  useUpdateChallengeSubmissionMutation,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FilterChip, FilterChipRow, EmptyState, AppModalShell, AppModalFooter, ThemedTextInput } from "~/components/common/ui";
-import { SubmissionReviewCard, type SubmissionItem } from "~/components/admin/challenges/SubmissionReviewCard";
+import {
+  FilterChip,
+  FilterChipRow,
+  EmptyState,
+  AppModalShell,
+  AppModalFooter,
+  ThemedTextInput,
+} from "~/components/common/ui";
+import {
+  SubmissionReviewCard,
+  type SubmissionItem,
+} from "~/components/admin/challenges/SubmissionReviewCard";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 type ReviewStatus = "APPROVED" | "REJECTED";
@@ -33,9 +44,7 @@ const statusFilters: { label: string; value: StatusFilter }[] = [
   { label: "Rejected", value: "REJECTED" },
 ];
 
-
 export default function ChallengeSubmissionsScreen() {
-  const trpc = useTRPC();
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
@@ -56,48 +65,43 @@ export default function ChallengeSubmissionsScreen() {
   const [selectedSubmission, setSelectedSubmission] =
     useState<SubmissionItem | null>(null);
 
-  const challengeQueryOptions = trpc.challenge.getById.queryOptions({
-    id: challengeId,
-    tripId,
-  });
-  const challengeQuery = useQuery({
-    ...challengeQueryOptions,
-    enabled: Boolean(tripId) && Boolean(challengeId),
-  });
-
-  const submissionsQueryOptions = trpc.challengeSubmission.getByChallenge.queryOptions(
-    {
-      tripId,
-      challengeId,
-    },
+  // GraphQL query for challenge details
+  const challengeQuery = useGetChallengeQuery(
+    graphqlClient,
+    { id: challengeId, tripId },
+    { enabled: Boolean(tripId) && Boolean(challengeId) },
   );
-  const submissionsQuery = useQuery({
-    ...submissionsQueryOptions,
-    enabled: Boolean(tripId) && Boolean(challengeId),
-  });
+
+  // GraphQL query for submissions
+  const submissionsQuery = useGetChallengeSubmissionsQuery(
+    graphqlClient,
+    { challengeId, limit: 100 },
+    { enabled: Boolean(tripId) && Boolean(challengeId) },
+  );
 
   const submissions = useMemo(
-    () => (submissionsQuery.data ?? []) as SubmissionItem[],
+    () =>
+      (submissionsQuery.data?.challengeSubmissions?.submissions ??
+        []) as SubmissionItem[],
     [submissionsQuery.data],
   );
 
-  const reviewMutation = useMutation(
-    trpc.challengeSubmission.review.mutationOptions({
-      onSuccess: async () => {
+  // GraphQL mutation for reviewing submissions
+  const reviewMutation = useUpdateChallengeSubmissionMutation(graphqlClient, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetChallengeSubmissions", { challengeId }],
+      });
+      if (tripId) {
         await queryClient.invalidateQueries({
-          queryKey: submissionsQueryOptions.queryKey,
+          queryKey: ["GetChallenges", { tripId }],
         });
-        if (tripId) {
-          await queryClient.invalidateQueries({
-            queryKey: trpc.challenge.getAllByTrip.queryOptions({ tripId }).queryKey,
-          });
-        }
-      },
-      onError: (error) => {
-        Alert.alert("Error", error.message);
-      },
-    }),
-  );
+      }
+    },
+    onError: (error: Error) => {
+      Alert.alert("Error", error.message);
+    },
+  });
 
   const filteredSubmissions = useMemo(() => {
     const byStatus =
@@ -124,9 +128,11 @@ export default function ChallengeSubmissionsScreen() {
     (submission: SubmissionItem) => {
       const approveWithRanking = (ranking?: 1 | 2 | 3) => {
         void reviewMutation.mutateAsync({
-          id: submission.id,
-          status: "APPROVED",
-          ranking,
+          input: {
+            id: submission.id,
+            status: "APPROVED",
+            ranking,
+          },
         });
       };
 
@@ -168,9 +174,11 @@ export default function ChallengeSubmissionsScreen() {
 
     void reviewMutation
       .mutateAsync({
-        id: selectedSubmission.id,
-        status: "REJECTED",
-        rejectionReason: normalizedReason,
+        input: {
+          id: selectedSubmission.id,
+          status: "REJECTED",
+          rejectionReason: normalizedReason,
+        },
       })
       .then(() => {
         closeRejectModal();
@@ -193,7 +201,7 @@ export default function ChallengeSubmissionsScreen() {
     );
   }
 
-  if (challengeQuery.data?.scoringCategory === "JUDGED_STAFF") {
+  if (challengeQuery.data?.challenge?.scoringCategory === "JUDGED_STAFF") {
     return (
       <View style={styles.centeredScreen}>
         <Stack.Screen
@@ -237,7 +245,8 @@ export default function ChallengeSubmissionsScreen() {
 
       <View style={styles.header}>
         <Text style={styles.subtitle}>
-          {challengeQuery.data?.name ?? "Challenge"} • {submissions.length}
+          {challengeQuery.data?.challenge?.name ?? "Challenge"} •{" "}
+          {submissions.length}
         </Text>
       </View>
 
