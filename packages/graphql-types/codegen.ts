@@ -4,16 +4,23 @@ const config: CodegenConfig = {
   schema: "src/graphql/schema.graphql",
   documents: "src/graphql/**/*.graphql",
   generates: {
-    "src/generated/graphql.ts": {
+    // urql hooks for frontend apps (supports subscriptions)
+    "src/generated/urql.ts": {
+      plugins: ["typescript", "typescript-operations", "typescript-urql"],
+      config: {
+        withSubscription: true,
+      },
+    },
+    // graphql-request SDK for backend apps
+    "src/generated/sdk.ts": {
       plugins: [
         "typescript",
         "typescript-operations",
-        "typescript-react-query",
+        "typescript-graphql-request",
       ],
       config: {
-        fetcher: "graphql-request",
-        reactQueryVersion: 5,
-        exposeQueryKeys: true,
+        documentMode: "documentNode",
+        rawRequest: false,
       },
     },
   },

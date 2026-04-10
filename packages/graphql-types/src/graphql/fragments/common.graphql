@@ -251,6 +251,77 @@ fragment HiddenActivityFields on HiddenActivityResult {
 }
 
 # ============================================
+# CHALLENGE FRAGMENTS
+# ============================================
+
+"""
+All challenge fields including configuration and scheduling.
+Use for challenge details, editing, and administration.
+"""
+fragment ChallengeFields on Challenge {
+  # Core identification
+  id
+  tripId
+
+  # Basic info
+  name
+  description
+  image
+
+  # Type and scoring
+  submissionType
+  scoringCategory
+  basePoints
+  firstPlacePoints
+  secondPlacePoints
+  thirdPlacePoints
+
+  # Recurring settings
+  isRecurring
+  dailyStartTime
+  dailyEndTime
+
+  # Status and scheduling
+  status
+  startTime
+  endTime
+
+  # Location requirements
+  targetLatitude
+  targetLongitude
+
+  # Auto-approval settings
+  expectedValue
+  autoApprove
+
+  # Computed fields
+  isActive
+  isOpenForSubmission
+  hasVotingPhase
+  requiresLocation
+  requiresQRCode
+
+  # Timestamps
+  createdAt
+}
+
+"""
+Minimal challenge fields for lists and summary views.
+Use when you only need basic challenge information.
+"""
+fragment ChallengeSummaryFields on ChallengeSummary {
+  id
+  tripId
+  name
+  description
+  submissionType
+  scoringCategory
+  basePoints
+  status
+  createdAt
+}
+
+# ============================================
 # CHALLENGE SUBMISSION FRAGMENTS
 # ============================================
 

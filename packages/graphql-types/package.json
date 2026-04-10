@@ -7,6 +7,14 @@
     ".": {
       "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js"
+    },
+    "./urql": {
+      "types": "./dist/src/generated/urql.d.ts",
+      "import": "./dist/src/generated/urql.js"
+    },
+    "./sdk": {
+      "types": "./dist/src/generated/sdk.d.ts",
+      "import": "./dist/src/generated/sdk.js"
     }
   },
   "scripts": {
@@ -17,14 +25,18 @@
   },
   "dependencies": {
     "graphql": "^16.8.1",
-    "graphql-request": "^6.1.0",
-    "@tanstack/react-query": "^5.0.0"
+    "graphql-request": "^7.1.2",
+    "graphql-tag": "^2.12.6",
+    "urql": "^4.2.2",
+    "@urql/core": "^5.0.0",
+    "wonka": "^6.3.4"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^5.0.0",
     "@graphql-codegen/typescript": "^4.0.1",
     "@graphql-codegen/typescript-operations": "^4.0.1",
-    "@graphql-codegen/typescript-react-query": "^6.0.0",
+    "@graphql-codegen/typescript-urql": "^4.0.0",
+    "@graphql-codegen/typescript-graphql-request": "^6.0.0",
     "@graphql-codegen/near-operation-file-preset": "^3.0.0",
     "react": "^18.2.0",
     "@types/react": "^18.2.0"

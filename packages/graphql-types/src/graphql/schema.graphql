@@ -2,164 +2,100 @@
 # Generated automatically from Pothos type definitions
 # Do not edit manually - changes will be overwritten
 
-"""
-An activity in the feed
-"""
+"""An activity in the feed"""
 type Activity {
-  """
-  Type of activity
-  """
+  """Type of activity"""
   activityType: ActivityType!
 
-  """
-  Admin who created this activity (null if user post)
-  """
+  """Admin who created this activity (null if user post)"""
   admin: ActivityAdmin
 
-  """
-  When activity was created
-  """
+  """When activity was created"""
   createdAt: DateTime!
 
-  """
-  Activity description
-  """
+  """Activity description"""
   description: String
 
-  """
-  Unique activity ID
-  """
+  """Unique activity ID"""
   id: ID!
 
-  """
-  Activity image URL
-  """
+  """Activity image URL"""
   imageUrl: String
 
-  """
-  Whether activity is hidden
-  """
+  """Whether activity is hidden"""
   isHidden: Boolean!
 
-  """
-  Whether activity is pinned
-  """
+  """Whether activity is pinned"""
   isPinned: Boolean!
 
-  """
-  Activity title
-  """
+  """Activity title"""
   title: String!
 
-  """
-  Trip ID this activity belongs to
-  """
+  """Trip ID this activity belongs to"""
   tripId: ID!
 
-  """
-  When activity was last updated
-  """
+  """When activity was last updated"""
   updatedAt: DateTime!
 }
 
-"""
-Admin user who created the activity
-"""
+"""Admin user who created the activity"""
 type ActivityAdmin {
-  """
-  Admin first name
-  """
+  """Admin first name"""
   firstName: String!
 
-  """
-  Admin user ID
-  """
+  """Admin user ID"""
   id: ID!
 
-  """
-  Admin last name
-  """
+  """Admin last name"""
   lastName: String!
 }
 
-"""
-Cursor for paginating through activities
-"""
+"""Cursor for paginating through activities"""
 type ActivityCursor {
-  """
-  Created timestamp
-  """
+  """Created timestamp"""
   createdAt: DateTime!
 
-  """
-  Activity ID
-  """
+  """Activity ID"""
   id: ID!
 
-  """
-  Whether cursor activity is pinned
-  """
+  """Whether cursor activity is pinned"""
   isPinned: Boolean!
 }
 
-"""
-Cursor for paginating through activity feed
-"""
+"""Cursor for paginating through activity feed"""
 input ActivityCursorInput {
-  """
-  Created timestamp for the cursor
-  """
+  """Created timestamp for the cursor"""
   createdAt: DateTime!
 
-  """
-  Activity ID for the cursor
-  """
+  """Activity ID for the cursor"""
   id: ID!
 
-  """
-  Whether the cursor activity is pinned
-  """
+  """Whether the cursor activity is pinned"""
   isPinned: Boolean!
 }
 
-"""
-Result of fetching activity feed for moderation
-"""
+"""Result of fetching activity feed for moderation"""
 type ActivityFeedModerationResult {
-  """
-  List of activities (including hidden)
-  """
+  """List of activities (including hidden)"""
   activities: [Activity!]!
 
-  """
-  Pagination information
-  """
+  """Pagination information"""
   pagination: ModerationPaginationInfo!
 }
 
-"""
-Result of fetching activity feed
-"""
+"""Result of fetching activity feed"""
 type ActivityFeedResult {
-  """
-  List of activities
-  """
+  """List of activities"""
   activities: [Activity!]!
 
-  """
-  Cursor for next page (null if no more items)
-  """
+  """Cursor for next page (null if no more items)"""
   nextCursor: ActivityCursor
 
-  """
-  Pagination information
-  """
+  """Pagination information"""
   pagination: PaginationInfo!
 }
 
-"""
-Types of activities in the feed
-"""
+"""Types of activities in the feed"""
 enum ActivityType {
   CHALLENGE_EVENT
   CUSTOM
@@ -168,697 +104,578 @@ enum ActivityType {
   USER_POST
 }
 
-"""
-Input for adding coins to a group
-"""
+"""Input for adding coins to a group"""
 input AddCoinsInput {
-  """
-  Amount of coins to add (must be at least 1)
-  """
+  """Amount of coins to add (must be at least 1)"""
   amount: Int!
 
-  """
-  ID of the group to add coins to
-  """
+  """ID of the group to add coins to"""
   groupId: ID!
 
-  """
-  Reason for adding coins (optional)
-  """
+  """Reason for adding coins (optional)"""
   reason: String
 
-  """
-  ID of the trip the group belongs to
-  """
+  """ID of the trip the group belongs to"""
   tripId: ID!
 }
 
-"""
-Input for adding a user to location sharing
-"""
+"""Input for adding a user to location sharing"""
 input AddSharingUserInput {
-  """
-  ID of the user to add
-  """
+  """ID of the user to add"""
   userId: ID!
 }
 
-"""
-Voting progress for a single admin
-"""
+"""Voting progress for a single admin"""
 type AdminVotingInfo {
-  """
-  Whether this admin has voted all required positions
-  """
+  """Whether this admin has voted all required positions"""
   hasVotedAll: Boolean!
 
-  """
-  ID of the admin participant
-  """
+  """ID of the admin participant"""
   participantId: ID!
 
-  """
-  Positions this admin has voted for (1-3)
-  """
+  """Positions this admin has voted for (1-3)"""
   votedPositions: [Int!]!
 }
 
-"""
-Result of fetching all notifications (admin only)
-"""
+"""Result of fetching all notifications (admin only)"""
 type AllNotificationsResult {
-  """
-  List of notifications
-  """
+  """List of notifications"""
   notifications: [Notification!]!
 
-  """
-  Pagination information
-  """
+  """Pagination information"""
   pagination: NotificationOffsetPaginationInfo!
 }
 
-"""
-Result of bulk deleting notification schedules
-"""
+"""Result of bulk deleting notification schedules"""
 type BulkDeleteNotificationSchedulesPayload {
-  """
-  Number of schedules deleted
-  """
+  """Number of schedules deleted"""
   deletedCount: Int!
 
-  """
-  IDs that were not found
-  """
+  """IDs that were not found"""
   notFoundIds: [String!]
 
-  """
-  Number of schedules requested for deletion
-  """
+  """Number of schedules requested for deletion"""
   requestedCount: Int!
 
-  """
-  Whether the operation was successful
-  """
+  """Whether the operation was successful"""
   success: Boolean!
 }
 
-"""
-Result of bulk toggling schedule active status
-"""
+"""Result of bulk toggling schedule active status"""
 type BulkToggleActivePayload {
-  """
-  Whether the operation was successful
-  """
+  """Whether the operation was successful"""
   success: Boolean!
 
-  """
-  Number of schedules updated
-  """
+  """Number of schedules updated"""
   updatedCount: Int!
 }
 
-"""
-Types of challenge events
-"""
+"""A challenge/task within a trip"""
+type Challenge {
+  """Whether submissions are automatically approved"""
+  autoApprove: Boolean!
+
+  """Base points awarded for completing this challenge"""
+  basePoints: Int!
+
+  """When the challenge was created"""
+  createdAt: DateTime!
+
+  """Daily closing time (HH:MM) for recurring challenges"""
+  dailyEndTime: String
+
+  """Daily opening time (HH:MM) for recurring challenges"""
+  dailyStartTime: String
+
+  """Challenge description (optional)"""
+  description: String
+
+  """When the challenge closes"""
+  endTime: DateTime
+
+  """Expected answer for QR code or text challenges"""
+  expectedValue: String
+
+  """Bonus points for 1st place (speed challenges)"""
+  firstPlacePoints: Int
+
+  """Whether this challenge has a peer voting phase"""
+  hasVotingPhase: Boolean!
+
+  """Unique identifier for the challenge (UUID)"""
+  id: ID!
+
+  """Challenge image URL (optional)"""
+  image: String
+
+  """Whether the challenge is currently active"""
+  isActive: Boolean!
+
+  """Whether submissions are currently accepted"""
+  isOpenForSubmission: Boolean!
+
+  """Whether this challenge repeats daily"""
+  isRecurring: Boolean!
+
+  """Challenge name/title"""
+  name: String!
+
+  """Whether this challenge requires location data"""
+  requiresLocation: Boolean!
+
+  """Whether this challenge requires a QR code scan"""
+  requiresQRCode: Boolean!
+
+  """How points are awarded for this challenge"""
+  scoringCategory: ScoringCategory!
+
+  """Bonus points for 2nd place (speed challenges)"""
+  secondPlacePoints: Int
+
+  """When the challenge becomes available"""
+  startTime: DateTime
+
+  """Current status of the challenge"""
+  status: ChallengeStatus!
+
+  """Type of submission required"""
+  submissionType: SubmissionType!
+
+  """Target latitude for location-based challenges"""
+  targetLatitude: Float
+
+  """Target longitude for location-based challenges"""
+  targetLongitude: Float
+
+  """Bonus points for 3rd place (speed challenges)"""
+  thirdPlacePoints: Int
+
+  """ID of the trip this challenge belongs to"""
+  tripId: ID!
+}
+
+"""Types of challenge events"""
 enum ChallengeEventType {
   CHALLENGE_STARTED
   COMPLETED
   VOTING_STARTED
 }
 
-"""
-A challenge submission made by a group
-"""
+"""Pagination metadata for challenge lists"""
+type ChallengePagination {
+  """Whether more items are available"""
+  hasMore: Boolean!
+
+  """Number of items per page"""
+  limit: Int!
+
+  """Number of items skipped"""
+  offset: Int!
+
+  """Total number of challenges available"""
+  total: Int!
+}
+
+"""Pagination parameters for list queries"""
+input ChallengePaginationInput {
+  """Maximum number of items to return (1-100)"""
+  limit: Int = 30
+
+  """Number of items to skip"""
+  offset: Int = 0
+}
+
+"""Current status of a challenge in its lifecycle"""
+enum ChallengeStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  HIDDEN
+  VISIBLE
+  VOTING_PHASE
+}
+
+"""A challenge submission made by a group"""
 type ChallengeSubmission {
-  """
-  Points awarded for this submission
-  """
+  """Points awarded for this submission"""
   awardedPoints: Int!
 
-  """
-  Bonus points awarded
-  """
+  """Bonus points awarded"""
   bonusPoints: Int!
 
-  """
-  ID of the challenge this submission is for
-  """
+  """ID of the challenge this submission is for"""
   challengeId: ID!
 
-  """
-  When the submission was created
-  """
+  """When the submission was created"""
   createdAt: DateTime!
 
-  """
-  Group that made this submission
-  """
+  """Group that made this submission"""
   group: SubmissionGroupInfo
 
-  """
-  ID of the group that made this submission
-  """
+  """ID of the group that made this submission"""
   groupId: ID!
 
-  """
-  Whether the submission has location coordinates
-  """
+  """Whether the submission has location coordinates"""
   hasLocation: Boolean!
 
-  """
-  Whether the submission has images or video
-  """
+  """Whether the submission has images or video"""
   hasMedia: Boolean!
 
-  """
-  Unique identifier for the submission
-  """
+  """Unique identifier for the submission"""
   id: ID!
 
-  """
-  IDs of uploaded images
-  """
+  """IDs of uploaded images"""
   imageIds: [String!]!
 
-  """
-  Latitude coordinate (optional)
-  """
+  """Latitude coordinate (optional)"""
   latitude: Float
 
-  """
-  Longitude coordinate (optional)
-  """
+  """Longitude coordinate (optional)"""
   longitude: Float
 
-  """
-  Ranking position (1-3) if awarded
-  """
+  """Ranking position (1-3) if awarded"""
   ranking: Int
 
-  """
-  Reason for rejection (if rejected)
-  """
+  """Reason for rejection (if rejected)"""
   rejectionReason: String
 
-  """
-  When the submission was reviewed
-  """
+  """When the submission was reviewed"""
   reviewedAt: DateTime
 
-  """
-  User who reviewed this submission
-  """
+  """User who reviewed this submission"""
   reviewedBy: SubmissionReviewerInfo
 
-  """
-  ID of user who reviewed this submission
-  """
+  """ID of user who reviewed this submission"""
   reviewedById: ID
 
-  """
-  Current review status of the submission
-  """
+  """Current review status of the submission"""
   status: SubmissionStatus!
 
-  """
-  Text content of the submission
-  """
+  """Text content of the submission"""
   textContent: String
 
-  """
-  Total points (awarded + bonus)
-  """
+  """Total points (awarded + bonus)"""
   totalPoints: Int!
 
-  """
-  When the submission was last updated
-  """
+  """When the submission was last updated"""
   updatedAt: DateTime!
 
-  """
-  ID of uploaded video (if any)
-  """
+  """ID of uploaded video (if any)"""
   videoId: String
 
-  """
-  Number of votes received
-  """
+  """Number of votes received"""
   voteCount: Int!
 
-  """
-  Calculated vote score
-  """
+  """Calculated vote score"""
   voteScore: Float!
 }
 
-"""
-Result of creating a challenge submission
-"""
+"""Result of creating a challenge submission"""
 type ChallengeSubmissionCreateResult {
-  """
-  Points awarded for this submission
-  """
+  """Points awarded for this submission"""
   awardedPoints: Int!
 
-  """
-  Bonus points awarded
-  """
+  """Bonus points awarded"""
   bonusPoints: Int!
 
-  """
-  ID of the challenge this submission is for
-  """
+  """ID of the challenge this submission is for"""
   challengeId: ID!
 
-  """
-  When the submission was created
-  """
+  """When the submission was created"""
   createdAt: DateTime!
 
-  """
-  Group that made this submission
-  """
+  """Group that made this submission"""
   group: SubmissionGroupInfo
 
-  """
-  ID of the group that made this submission
-  """
+  """ID of the group that made this submission"""
   groupId: ID!
 
-  """
-  Whether the submission has location coordinates
-  """
+  """Whether the submission has location coordinates"""
   hasLocation: Boolean!
 
-  """
-  Whether the submission has images or video
-  """
+  """Whether the submission has images or video"""
   hasMedia: Boolean!
 
-  """
-  Unique identifier for the submission
-  """
+  """Unique identifier for the submission"""
   id: ID!
 
-  """
-  IDs of uploaded images
-  """
+  """IDs of uploaded images"""
   imageIds: [String!]!
 
-  """
-  Latitude coordinate (optional)
-  """
+  """Latitude coordinate (optional)"""
   latitude: Float
 
-  """
-  Longitude coordinate (optional)
-  """
+  """Longitude coordinate (optional)"""
   longitude: Float
 
-  """
-  Ranking position (1-3) if awarded
-  """
+  """Ranking position (1-3) if awarded"""
   ranking: Int
 
-  """
-  Reason for rejection (if rejected)
-  """
+  """Reason for rejection (if rejected)"""
   rejectionReason: String
 
-  """
-  When the submission was reviewed
-  """
+  """When the submission was reviewed"""
   reviewedAt: DateTime
 
-  """
-  User who reviewed this submission
-  """
+  """User who reviewed this submission"""
   reviewedBy: SubmissionReviewerInfo
 
-  """
-  ID of user who reviewed this submission
-  """
+  """ID of user who reviewed this submission"""
   reviewedById: ID
 
-  """
-  Current review status of the submission
-  """
+  """Current review status of the submission"""
   status: SubmissionStatus!
 
-  """
-  Text content of the submission
-  """
+  """Text content of the submission"""
   textContent: String
 
-  """
-  Total points (awarded + bonus)
-  """
+  """Total points (awarded + bonus)"""
   totalPoints: Int!
 
-  """
-  When the submission was last updated
-  """
+  """When the submission was last updated"""
   updatedAt: DateTime!
 
-  """
-  ID of uploaded video (if any)
-  """
+  """ID of uploaded video (if any)"""
   videoId: String
 
-  """
-  Number of votes received
-  """
+  """Number of votes received"""
   voteCount: Int!
 
-  """
-  Calculated vote score
-  """
+  """Calculated vote score"""
   voteScore: Float!
 }
 
-"""
-Paginated list of challenge submissions
-"""
+"""Paginated list of challenge submissions"""
 type ChallengeSubmissionListResult {
-  """
-  List of submissions
-  """
+  """List of submissions"""
   submissions: [ChallengeSubmission!]!
 
-  """
-  Total number of submissions (for pagination)
-  """
+  """Total number of submissions (for pagination)"""
   totalCount: Int!
 }
 
-"""
-Result of updating a challenge submission
-"""
+"""Result of updating a challenge submission"""
 type ChallengeSubmissionUpdateResult {
-  """
-  Points awarded for this submission
-  """
+  """Points awarded for this submission"""
   awardedPoints: Int!
 
-  """
-  Bonus points awarded
-  """
+  """Bonus points awarded"""
   bonusPoints: Int!
 
-  """
-  ID of the challenge this submission is for
-  """
+  """ID of the challenge this submission is for"""
   challengeId: ID!
 
-  """
-  When the submission was created
-  """
+  """When the submission was created"""
   createdAt: DateTime!
 
-  """
-  Group that made this submission
-  """
+  """Group that made this submission"""
   group: SubmissionGroupInfo
 
-  """
-  ID of the group that made this submission
-  """
+  """ID of the group that made this submission"""
   groupId: ID!
 
-  """
-  Whether the submission has location coordinates
-  """
+  """Whether the submission has location coordinates"""
   hasLocation: Boolean!
 
-  """
-  Whether the submission has images or video
-  """
+  """Whether the submission has images or video"""
   hasMedia: Boolean!
 
-  """
-  Unique identifier for the submission
-  """
+  """Unique identifier for the submission"""
   id: ID!
 
-  """
-  IDs of uploaded images
-  """
+  """IDs of uploaded images"""
   imageIds: [String!]!
 
-  """
-  Latitude coordinate (optional)
-  """
+  """Latitude coordinate (optional)"""
   latitude: Float
 
-  """
-  Longitude coordinate (optional)
-  """
+  """Longitude coordinate (optional)"""
   longitude: Float
 
-  """
-  Ranking position (1-3) if awarded
-  """
+  """Ranking position (1-3) if awarded"""
   ranking: Int
 
-  """
-  Reason for rejection (if rejected)
-  """
+  """Reason for rejection (if rejected)"""
   rejectionReason: String
 
-  """
-  When the submission was reviewed
-  """
+  """When the submission was reviewed"""
   reviewedAt: DateTime
 
-  """
-  User who reviewed this submission
-  """
+  """User who reviewed this submission"""
   reviewedBy: SubmissionReviewerInfo
 
-  """
-  ID of user who reviewed this submission
-  """
+  """ID of user who reviewed this submission"""
   reviewedById: ID
 
-  """
-  Current review status of the submission
-  """
+  """Current review status of the submission"""
   status: SubmissionStatus!
 
-  """
-  Text content of the submission
-  """
+  """Text content of the submission"""
   textContent: String
 
-  """
-  Total points (awarded + bonus)
-  """
+  """Total points (awarded + bonus)"""
   totalPoints: Int!
 
-  """
-  When the submission was last updated
-  """
+  """When the submission was last updated"""
   updatedAt: DateTime!
 
-  """
-  ID of uploaded video (if any)
-  """
+  """ID of uploaded video (if any)"""
   videoId: String
 
-  """
-  Number of votes received
-  """
+  """Number of votes received"""
   voteCount: Int!
 
-  """
-  Calculated vote score
-  """
+  """Calculated vote score"""
   voteScore: Float!
 }
 
-"""
-A vote cast for a challenge submission
-"""
-type ChallengeVote {
-  """
-  ID of the challenge being voted on
-  """
-  challengeId: ID!
+"""A simplified view of a challenge for list displays"""
+type ChallengeSummary {
+  """Base points for completion"""
+  basePoints: Int!
 
-  """
-  Unique identifier for the vote (UUID)
-  """
+  """When the challenge was created"""
+  createdAt: DateTime!
+
+  """Challenge description"""
+  description: String
+
+  """Unique identifier for the challenge"""
   id: ID!
 
-  """
-  Normalized weight of the vote (for weighted voting)
-  """
+  """Challenge name"""
+  name: String!
+
+  """How points are awarded"""
+  scoringCategory: ScoringCategory!
+
+  """Current challenge status"""
+  status: ChallengeStatus!
+
+  """Type of submission required"""
+  submissionType: SubmissionType!
+
+  """ID of the associated trip"""
+  tripId: ID!
+}
+
+"""A vote cast for a challenge submission"""
+type ChallengeVote {
+  """ID of the challenge being voted on"""
+  challengeId: ID!
+
+  """Unique identifier for the vote (UUID)"""
+  id: ID!
+
+  """Normalized weight of the vote (for weighted voting)"""
   normalizedWeight: Float!
 
-  """
-  ID of the submission receiving the vote
-  """
+  """ID of the submission receiving the vote"""
   submissionId: ID!
 
-  """
-  Points awarded for this vote
-  """
+  """Points awarded for this vote"""
   votePoints: Int!
 
-  """
-  Voting position (1st, 2nd, or 3rd place)
-  """
+  """Voting position (1st, 2nd, or 3rd place)"""
   votePosition: Int!
 
-  """
-  When the vote was cast
-  """
+  """When the vote was cast"""
   votedAt: DateTime!
 
-  """
-  ID of the voter (trip participant)
-  """
+  """ID of the voter (trip participant)"""
   voterId: ID!
 }
 
-"""
-Admin view of votes with unique voter count
-"""
+"""Admin view of votes with unique voter count"""
 type ChallengeVoteAdminList {
-  """
-  Total number of votes cast
-  """
+  """Total number of votes cast"""
   totalVotes: Int!
 
-  """
-  Number of unique voters
-  """
+  """Number of unique voters"""
   uniqueVoters: Int!
 
-  """
-  All votes for the challenge
-  """
+  """All votes for the challenge"""
   votes: [ChallengeVote!]!
 }
 
-"""
-List of votes with metadata
-"""
+"""List of votes with metadata"""
 type ChallengeVoteList {
-  """
-  Total number of votes
-  """
+  """Total number of votes"""
   totalVotes: Int!
 
-  """
-  The votes in the list
-  """
+  """The votes in the list"""
   votes: [ChallengeVote!]!
 }
 
-"""
-Result of checking inactive users
-"""
+"""A paginated list of challenges with metadata"""
+type ChallengesConnection {
+  """The challenges in this page"""
+  challenges: [ChallengeSummary!]!
+
+  """Pagination metadata"""
+  pagination: ChallengePagination!
+}
+
+"""Result of checking inactive users"""
 type CheckInactiveUsersPayload {
-  """
-  Number of users checked for inactivity
-  """
+  """Number of users checked for inactivity"""
   checked: Int!
 
-  """
-  Number of errors encountered
-  """
+  """Number of errors encountered"""
   errors: Int!
 
-  """
-  Number of users notified
-  """
+  """Number of users notified"""
   notified: Int!
 
-  """
-  Number of users skipped
-  """
+  """Number of users skipped"""
   skipped: Int!
 }
 
-"""
-Additional insights about coin transactions
-"""
+"""Additional insights about coin transactions"""
 type CoinAdditionalInsights {
-  """
-  Information about the most active admin
-  """
+  """Information about the most active admin"""
   mostActiveAdmin: FormattedUser
 
-  """
-  Recent coin transactions
-  """
+  """Recent coin transactions"""
   recentTransactions: [CoinTransaction!]!
 }
 
-"""
-Quick overview statistics for coin distribution in a trip
-"""
+"""Quick overview statistics for coin distribution in a trip"""
 type CoinQuickStats {
-  """
-  Average coins per group
-  """
+  """Average coins per group"""
   averageCoinsPerGroup: Int!
 
-  """
-  ID of the group with the most coins
-  """
+  """ID of the group with the most coins"""
   richestGroupId: ID
 
-  """
-  Name of the group with the most coins
-  """
+  """Name of the group with the most coins"""
   richestGroupName: String
 
-  """
-  When the statistics were computed
-  """
+  """When the statistics were computed"""
   time: DateTime!
 
-  """
-  Total coins across all groups
-  """
+  """Total coins across all groups"""
   totalCoins: Int!
 
-  """
-  Total number of groups with transactions
-  """
+  """Total number of groups with transactions"""
   totalGroups: Int!
 }
 
-"""
-Comprehensive coin statistics for a trip
-"""
+"""Comprehensive coin statistics for a trip"""
 type CoinStatistics {
-  """
-  Total coins added to groups (positive amounts)
-  """
+  """Total coins added to groups (positive amounts)"""
   addedCoins: Int!
 
-  """
-  Net balance of all transactions (added - removed)
-  """
+  """Net balance of all transactions (added - removed)"""
   netBalance: Int!
 
-  """
-  Total coins removed from groups (negative amounts, as positive number)
-  """
+  """Total coins removed from groups (negative amounts, as positive number)"""
   removedCoins: Int!
 
-  """
-  When the statistics were computed
-  """
+  """When the statistics were computed"""
   time: DateTime!
 
-  """
-  Total number of coin transactions
-  """
+  """Total number of coin transactions"""
   transactionCount: Int!
 }
 
@@ -866,435 +683,323 @@ type CoinStatistics {
 A coin transaction recording the addition or removal of coins from a group
 """
 type CoinTransaction {
-  """
-  Admin information for this transaction
-  """
+  """Admin information for this transaction"""
   admin: CoinTransactionAdmin
 
-  """
-  ID of the admin who performed this transaction
-  """
+  """ID of the admin who performed this transaction"""
   adminId: ID!
 
-  """
-  Amount of coins added (positive) or removed (negative)
-  """
+  """Amount of coins added (positive) or removed (negative)"""
   amount: Int!
 
-  """
-  When the transaction was created
-  """
+  """When the transaction was created"""
   createdAt: DateTime!
 
-  """
-  Group information for this transaction
-  """
+  """Group information for this transaction"""
   group: CoinTransactionGroup
 
-  """
-  ID of the group affected by this transaction
-  """
+  """ID of the group affected by this transaction"""
   groupId: ID!
 
-  """
-  Unique identifier for the transaction
-  """
+  """Unique identifier for the transaction"""
   id: ID!
 
-  """
-  Reason or note for this transaction
-  """
+  """Reason or note for this transaction"""
   reason: String
 }
 
-"""
-Admin information in a coin transaction context
-"""
+"""Admin information in a coin transaction context"""
 type CoinTransactionAdmin {
-  """
-  Admin's first name
-  """
+  """Admin's first name"""
   firstName: String
 
-  """
-  Admin's full name (computed)
-  """
+  """Admin's full name (computed)"""
   fullName: String!
 
-  """
-  Admin user ID
-  """
+  """Admin user ID"""
   id: ID!
 
-  """
-  Admin's last name
-  """
+  """Admin's last name"""
   lastName: String
 }
 
-"""
-Group information in a coin transaction context
-"""
+"""Group information in a coin transaction context"""
 type CoinTransactionGroup {
-  """
-  Current coin balance of the group
-  """
+  """Current coin balance of the group"""
   coins: Int!
 
-  """
-  Group ID
-  """
+  """Group ID"""
   id: ID!
 
-  """
-  Group name
-  """
+  """Group name"""
   name: String!
 }
 
-"""
-Pagination metadata for coin transaction lists
-"""
+"""Pagination metadata for coin transaction lists"""
 type CoinTransactionPagination {
-  """
-  Whether more items are available
-  """
+  """Whether more items are available"""
   hasMore: Boolean!
 
-  """
-  Number of items per page
-  """
+  """Number of items per page"""
   limit: Int!
 
-  """
-  Number of items skipped
-  """
+  """Number of items skipped"""
   offset: Int!
 
-  """
-  Total number of transactions available
-  """
+  """Total number of transactions available"""
   total: Int!
 }
 
-"""
-Pagination parameters for coin transaction queries
-"""
+"""Pagination parameters for coin transaction queries"""
 input CoinTransactionPaginationInput {
-  """
-  Maximum number of items to return (1-100)
-  """
+  """Maximum number of items to return (1-100)"""
   limit: Int = 50
 
-  """
-  Number of items to skip
-  """
+  """Number of items to skip"""
   offset: Int = 0
 }
 
-"""
-Result of an add or remove coins operation
-"""
+"""Result of an add or remove coins operation"""
 type CoinTransactionResult {
-  """
-  Admin ID (convenience accessor)
-  """
+  """Admin ID (convenience accessor)"""
   adminId: ID!
 
-  """
-  Transaction amount
-  """
+  """Transaction amount"""
   amount: Int!
 
-  """
-  Transaction timestamp (convenience accessor)
-  """
+  """Transaction timestamp (convenience accessor)"""
   createdAt: DateTime!
 
-  """
-  Group ID (convenience accessor)
-  """
+  """Group ID (convenience accessor)"""
   groupId: ID!
 
-  """
-  Transaction ID (convenience accessor)
-  """
+  """Transaction ID (convenience accessor)"""
   id: ID!
 
-  """
-  The created coin transaction
-  """
+  """The created coin transaction"""
   transaction: CoinTransaction!
 }
 
-"""
-A paginated list of coin transactions with metadata
-"""
+"""A paginated list of coin transactions with metadata"""
 type CoinTransactionsConnection {
-  """
-  Pagination metadata
-  """
+  """Pagination metadata"""
   pagination: CoinTransactionPagination!
 
-  """
-  The transactions in this page
-  """
+  """The transactions in this page"""
   transactions: [CoinTransaction!]!
 }
 
-"""
-Input for creating a challenge event activity
-"""
+"""Input for creating a challenge event activity"""
 input CreateChallengeActivityInput {
-  """
-  Base points for challenge
-  """
+  """Base points for challenge"""
   basePoints: Int
 
-  """
-  Challenge ID
-  """
+  """Challenge ID"""
   challengeId: ID!
 
-  """
-  Activity description
-  """
+  """Activity description"""
   description: String
 
-  """
-  Challenge end time
-  """
+  """Challenge end time"""
   endTime: DateTime
 
-  """
-  Type of challenge event
-  """
+  """Type of challenge event"""
   eventType: ChallengeEventType!
 
-  """
-  Whether to pin the activity
-  """
+  """Whether to pin the activity"""
   isPinned: Boolean = false
 
-  """
-  Number of submissions
-  """
+  """Number of submissions"""
   submissionCount: Int
 
-  """
-  Submission type
-  """
+  """Submission type"""
   submissionType: String
 
-  """
-  Activity title
-  """
+  """Activity title"""
   title: String!
 
-  """
-  Trip ID
-  """
+  """Trip ID"""
   tripId: ID!
 }
 
-"""
-Input for creating a custom activity
-"""
-input CreateCustomActivityInput {
-  """
-  Activity description
-  """
+"""Input for creating a new challenge"""
+input CreateChallengeInput {
+  """Whether to auto-approve submissions"""
+  autoApprove: Boolean = false
+
+  """Base points for completion (0-10000)"""
+  basePoints: Int = 100
+
+  """Challenge description (max 2000 characters)"""
   description: String
 
-  """
-  Activity image URL
-  """
-  imageUrl: String
+  """When the challenge closes"""
+  endTime: DateTime
 
-  """
-  Whether to pin the activity
-  """
-  isPinned: Boolean = false
+  """Expected answer for QR/text challenges"""
+  expectedValue: String
 
-  """
-  Activity title
-  """
-  title: String!
+  """Bonus points for 1st place (speed challenges)"""
+  firstPlacePoints: Int
 
-  """
-  Trip ID to create activity for
-  """
+  """Challenge image URL"""
+  image: String
+
+  """Challenge name (1-200 characters)"""
+  name: String!
+
+  """How points are awarded"""
+  scoringCategory: ScoringCategory!
+
+  """Bonus points for 2nd place (speed challenges)"""
+  secondPlacePoints: Int
+
+  """When the challenge becomes available"""
+  startTime: DateTime
+
+  """Initial challenge status"""
+  status: ChallengeStatus
+
+  """Type of submission required"""
+  submissionType: SubmissionType!
+
+  """Target latitude for location challenges"""
+  targetLatitude: Float
+
+  """Target longitude for location challenges"""
+  targetLongitude: Float
+
+  """Bonus points for 3rd place (speed challenges)"""
+  thirdPlacePoints: Int
+
+  """ID of the trip this challenge belongs to"""
   tripId: ID!
 }
 
-"""
-Input for creating a signed download URL
-"""
+"""Result of creating a new challenge"""
+type CreateChallengePayload {
+  """The newly created challenge"""
+  challenge: ChallengeSummary!
+}
+
+"""Input for creating a custom activity"""
+input CreateCustomActivityInput {
+  """Activity description"""
+  description: String
+
+  """Activity image URL"""
+  imageUrl: String
+
+  """Whether to pin the activity"""
+  isPinned: Boolean = false
+
+  """Activity title"""
+  title: String!
+
+  """Trip ID to create activity for"""
+  tripId: ID!
+}
+
+"""Input for creating a signed download URL"""
 input CreateDownloadUrlInput {
-  """
-  URL expiration time in seconds (60-3600, defaults to 600)
-  """
+  """URL expiration time in seconds (60-3600, defaults to 600)"""
   expiresInSeconds: Int
 
-  """
-  The full storage path (bucket/path) for the file
-  """
+  """The full storage path (bucket/path) for the file"""
   storagePath: String!
 }
 
-"""
-Input for creating a new group
-"""
+"""Input for creating a new group"""
 input CreateGroupInput {
-  """
-  Group description (max 500 characters)
-  """
+  """Group description (max 500 characters)"""
   description: String
 
-  """
-  Group image URL
-  """
+  """Group image URL"""
   image: String
 
-  """
-  Group name (1-100 characters)
-  """
+  """Group name (1-100 characters)"""
   name: String!
 
-  """
-  ID of the group organizer (defaults to current user)
-  """
+  """ID of the group organizer (defaults to current user)"""
   organizerId: ID
 
-  """
-  ID of the trip this group belongs to
-  """
+  """ID of the trip this group belongs to"""
   tripId: ID!
 }
 
-"""
-Result of creating a new group
-"""
+"""Result of creating a new group"""
 type CreateGroupPayload {
-  """
-  The newly created group
-  """
+  """The newly created group"""
   group: Group!
 }
 
-"""
-Input for creating a new notification
-"""
+"""Input for creating a new notification"""
 input CreateNotificationInput {
-  """
-  Notification body content
-  """
+  """Notification body content"""
   body: String!
 
-  """
-  Notification priority
-  """
+  """Notification priority"""
   priority: NotificationPriority = NORMAL
 
-  """
-  Notification title
-  """
+  """Notification title"""
   title: String!
 
-  """
-  Optional trip ID to associate with notification
-  """
+  """Optional trip ID to associate with notification"""
   tripId: ID
 
-  """
-  Optional URL to open when notification is tapped
-  """
+  """Optional URL to open when notification is tapped"""
   url: String
 }
 
-"""
-Result of creating a notification
-"""
+"""Result of creating a notification"""
 type CreateNotificationResult {
-  """
-  The created notification
-  """
+  """The created notification"""
   notification: Notification!
 }
 
-"""
-Input for creating a new notification schedule
-"""
+"""Input for creating a new notification schedule"""
 input CreateNotificationScheduleInput {
-  """
-  When the schedule ends
-  """
+  """When the schedule ends"""
   endDate: DateTime!
 
-  """
-  Scheduled hour (0-23)
-  """
+  """Scheduled hour (0-23)"""
   hour: Int!
 
-  """
-  Whether the schedule is initially active
-  """
+  """Whether the schedule is initially active"""
   isActive: Boolean
 
-  """
-  Scheduled minute (0-59)
-  """
+  """Scheduled minute (0-59)"""
   minute: Int!
 
-  """
-  Schedule name (1-100 characters)
-  """
+  """Schedule name (1-100 characters)"""
   name: String!
 
-  """
-  Notification body (optional for INFO type, max 2000 chars)
-  """
+  """Notification body (optional for INFO type, max 2000 chars)"""
   notificationBody: String
 
-  """
-  Notification title (optional for INFO type, max 200 chars)
-  """
+  """Notification title (optional for INFO type, max 200 chars)"""
   notificationTitle: String
 
-  """
-  Type of notification
-  """
+  """Type of notification"""
   notificationType: NotificationScheduleType!
 
-  """
-  Optional URL for the notification (max 500 chars)
-  """
+  """Optional URL for the notification (max 500 chars)"""
   notificationUrl: String
 
-  """
-  When the schedule starts
-  """
+  """When the schedule starts"""
   startDate: DateTime!
 
-  """
-  Associated trip ID (optional)
-  """
+  """Associated trip ID (optional)"""
   tripId: ID
 }
 
-"""
-Result of creating a new notification schedule
-"""
+"""Result of creating a new notification schedule"""
 type CreateNotificationSchedulePayload {
-  """
-  The newly created schedule
-  """
+  """The newly created schedule"""
   schedule: NotificationSchedule!
 }
 
-"""
-Input for creating a public URL
-"""
+"""Input for creating a public URL"""
 input CreatePublicUrlInput {
   """
   The full storage path (bucket/path) for the file. Only 'files-public' bucket is supported.
@@ -1302,373 +1007,225 @@ input CreatePublicUrlInput {
   storagePath: String!
 }
 
-"""
-Input for creating a rank change activity
-"""
+"""Input for creating a rank change activity"""
 input CreateRankChangeActivityInput {
-  """
-  Coins gained
-  """
+  """Coins gained"""
   coinsGained: Int!
 
-  """
-  Activity description
-  """
+  """Activity description"""
   description: String
 
-  """
-  Group ID
-  """
+  """Group ID"""
   groupId: ID!
 
-  """
-  Whether to pin the activity
-  """
+  """Whether to pin the activity"""
   isPinned: Boolean = false
 
-  """
-  New rank position
-  """
+  """New rank position"""
   newRank: Int!
 
-  """
-  Activity title
-  """
+  """Activity title"""
   title: String!
 
-  """
-  Total coins
-  """
+  """Total coins"""
   totalCoins: Int!
 
-  """
-  Trip ID
-  """
+  """Trip ID"""
   tripId: ID!
 }
 
-"""
-Input for creating a new submission report
-"""
+"""Input for creating a new submission report"""
 input CreateReportInput {
-  """
-  Additional details (max 2000 characters)
-  """
+  """Additional details (max 2000 characters)"""
   details: String
 
-  """
-  Reason for reporting
-  """
+  """Reason for reporting"""
   reason: ReportReason!
 
-  """
-  ID of the submission to report
-  """
+  """ID of the submission to report"""
   submissionId: ID!
 }
 
-"""
-Input for creating a new reward
-"""
+"""Input for creating a new reward"""
 input CreateRewardInput {
-  """
-  Number of rewards available (0-1000000)
-  """
+  """Number of rewards available (0-1000000)"""
   availableQuantity: Int!
 
-  """
-  Percentage of total trip points (1-100)
-  """
+  """Percentage of total trip points (1-100)"""
   coinCost: Int!
 
-  """
-  Reward description (max 2000 characters)
-  """
+  """Reward description (max 2000 characters)"""
   description: String!
 
-  """
-  Array of image URLs (max 10)
-  """
+  """Array of image URLs (max 10)"""
   images: [String!]
 
-  """
-  Whether the reward should be hidden initially
-  """
+  """Whether the reward should be hidden initially"""
   isHidden: Boolean = false
 
-  """
-  Reward name (1-200 characters)
-  """
+  """Reward name (1-200 characters)"""
   name: String!
 
-  """
-  ID of the trip this reward belongs to
-  """
+  """ID of the trip this reward belongs to"""
   tripId: ID!
 }
 
-"""
-Result of creating a new reward
-"""
+"""Result of creating a new reward"""
 type CreateRewardPayload {
-  """
-  The newly created reward
-  """
+  """The newly created reward"""
   reward: Reward!
 }
 
-"""
-Input for creating a new sponsor
-"""
+"""Input for creating a new sponsor"""
 input CreateSponsorInput {
-  """
-  Sponsor description (1-2000 characters)
-  """
+  """Sponsor description (1-2000 characters)"""
   description: String!
 
-  """
-  Logo height in pixels (optional)
-  """
+  """Logo height in pixels (optional)"""
   height: Int
 
-  """
-  Whether the sponsor is active
-  """
+  """Whether the sponsor is active"""
   isActive: Boolean = true
 
-  """
-  URL path to sponsor logo image
-  """
+  """URL path to sponsor logo image"""
   logoPath: String!
 
-  """
-  Sponsor name (1-200 characters)
-  """
+  """Sponsor name (1-200 characters)"""
   name: String!
 
-  """
-  Horizontal offset in pixels (optional)
-  """
+  """Horizontal offset in pixels (optional)"""
   offsetX: Int
 
-  """
-  Vertical offset in pixels (optional)
-  """
+  """Vertical offset in pixels (optional)"""
   offsetY: Int
 }
 
-"""
-Result of creating a sponsor
-"""
+"""Result of creating a sponsor"""
 type CreateSponsorPayload {
-  """
-  The newly created sponsor
-  """
+  """The newly created sponsor"""
   sponsor: Sponsor!
 }
 
-"""
-Input for creating a submission activity
-"""
+"""Input for creating a submission activity"""
 input CreateSubmissionActivityInput {
-  """
-  Challenge ID
-  """
+  """Challenge ID"""
   challengeId: ID!
 
-  """
-  Activity description
-  """
+  """Activity description"""
   description: String
 
-  """
-  Group ID
-  """
+  """Group ID"""
   groupId: ID!
 
-  """
-  Whether submission has video
-  """
+  """Whether submission has video"""
   hasVideo: Boolean
 
-  """
-  Activity image URL
-  """
+  """Activity image URL"""
   imageUrl: String
 
-  """
-  Whether to pin the activity
-  """
+  """Whether to pin the activity"""
   isPinned: Boolean = false
 
-  """
-  Whether submission is a winner
-  """
+  """Whether submission is a winner"""
   isWinner: Boolean
 
-  """
-  Points awarded
-  """
+  """Points awarded"""
   pointsAwarded: Int
 
-  """
-  Submission ranking
-  """
+  """Submission ranking"""
   ranking: Int
 
-  """
-  Submission ID
-  """
+  """Submission ID"""
   submissionId: ID!
 
-  """
-  Activity title
-  """
+  """Activity title"""
   title: String!
 
-  """
-  Trip ID
-  """
+  """Trip ID"""
   tripId: ID!
 }
 
-"""
-Input for creating a new challenge submission
-"""
+"""Input for creating a new challenge submission"""
 input CreateSubmissionInput {
-  """
-  ID of the challenge to submit to
-  """
+  """ID of the challenge to submit to"""
   challengeId: ID!
 
-  """
-  ID of the group making the submission
-  """
+  """ID of the group making the submission"""
   groupId: ID!
 
-  """
-  IDs of uploaded images (max 10)
-  """
+  """IDs of uploaded images (max 10)"""
   imageIds: [String!]
 
-  """
-  Latitude coordinate
-  """
+  """Latitude coordinate"""
   latitude: Float
 
-  """
-  Longitude coordinate
-  """
+  """Longitude coordinate"""
   longitude: Float
 
-  """
-  Text content of the submission
-  """
+  """Text content of the submission"""
   textContent: String
 
-  """
-  ID of uploaded video
-  """
+  """ID of uploaded video"""
   videoId: String
 }
 
-"""
-Input for creating a new trip
-"""
+"""Input for creating a new trip"""
 input CreateTripInput {
-  """
-  URL to background image
-  """
+  """URL to background image"""
   backgroundImagePath: String
 
-  """
-  Trip description
-  """
+  """Trip description"""
   description: String
 
-  """
-  Trip end date
-  """
+  """Trip end date"""
   endDate: DateTime!
 
-  """
-  Trip name
-  """
+  """Trip name"""
   name: String!
 
-  """
-  Trip start date
-  """
+  """Trip start date"""
   startDate: DateTime!
 }
 
-"""
-Input for creating a signed upload URL
-"""
+"""Input for creating a signed upload URL"""
 input CreateUploadUrlInput {
-  """
-  The full storage path (bucket/path) for the file
-  """
+  """The full storage path (bucket/path) for the file"""
   storagePath: String!
 
-  """
-  Whether to overwrite existing file (defaults to false)
-  """
+  """Whether to overwrite existing file (defaults to false)"""
   upsert: Boolean
 }
 
-"""
-Input for creating a new user
-"""
+"""Input for creating a new user"""
 input CreateUserInput {
-  """
-  External authentication provider user ID (required)
-  """
+  """External authentication provider user ID (required)"""
   authUserId: String!
 
-  """
-  User's first name (2-100 characters, no digits)
-  """
+  """User's first name (2-100 characters, no digits)"""
   firstName: String!
 
-  """
-  User's last name (2-100 characters, no digits)
-  """
+  """User's last name (2-100 characters, no digits)"""
   lastName: String!
 
-  """
-  User's role (defaults to USER)
-  """
+  """User's role (defaults to USER)"""
   role: UserRole
 }
 
-"""
-Input for creating a user post activity
-"""
+"""Input for creating a user post activity"""
 input CreateUserPostInput {
-  """
-  Additional image URLs (max 10)
-  """
+  """Additional image URLs (max 10)"""
   additionalImages: [String!]
 
-  """
-  Post description
-  """
+  """Post description"""
   description: String
 
-  """
-  Post image URL
-  """
+  """Post image URL"""
   imageUrl: String
 
-  """
-  Post title
-  """
+  """Post title"""
   title: String!
 
-  """
-  Trip ID to create post for
-  """
+  """Trip ID to create post for"""
   tripId: ID!
 }
 
@@ -1677,194 +1234,124 @@ A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `dat
 """
 scalar DateTime
 
-"""
-Input for deleting an activity
-"""
+"""Input for deleting an activity"""
 input DeleteActivityInput {
-  """
-  Activity ID to delete
-  """
+  """Activity ID to delete"""
   activityId: ID!
 }
 
-"""
-Result of deleting an activity
-"""
+"""Result of deleting an activity"""
 type DeleteActivityResult {
-  """
-  Whether deletion was successful
-  """
+  """Whether deletion was successful"""
   success: Boolean!
 }
 
-"""
-Result of deleting a group
-"""
+"""Result of deleting (cancelling) a challenge"""
+type DeleteChallengePayload {
+  """Whether the deletion was successful"""
+  success: Boolean!
+}
+
+"""Result of deleting a group"""
 type DeleteGroupPayload {
-  """
-  Whether the deletion was successful
-  """
+  """Whether the deletion was successful"""
   success: Boolean!
 }
 
-"""
-Input for deleting a notification
-"""
+"""Input for deleting a notification"""
 input DeleteNotificationInput {
-  """
-  ID of notification to delete
-  """
+  """ID of notification to delete"""
   notificationId: ID!
 }
 
-"""
-Result of deleting a notification
-"""
+"""Result of deleting a notification"""
 type DeleteNotificationResult {
-  """
-  Whether deletion was successful
-  """
+  """Whether deletion was successful"""
   success: Boolean!
 }
 
-"""
-Result of deleting a notification schedule
-"""
+"""Result of deleting a notification schedule"""
 type DeleteNotificationSchedulePayload {
-  """
-  Number of execution history records deleted
-  """
+  """Number of execution history records deleted"""
   deletedExecutionCount: Int
 
-  """
-  Status message
-  """
+  """Status message"""
   message: String!
 
-  """
-  Whether the deletion was successful
-  """
+  """Whether the deletion was successful"""
   success: Boolean!
 }
 
-"""
-Result of deleting a reward
-"""
+"""Result of deleting a reward"""
 type DeleteRewardPayload {
-  """
-  ID of the deleted reward
-  """
+  """ID of the deleted reward"""
   deletedRewardId: ID!
 
-  """
-  Whether the deletion was successful
-  """
+  """Whether the deletion was successful"""
   success: Boolean!
 }
 
-"""
-Result of deleting a sponsor
-"""
+"""Result of deleting a sponsor"""
 type DeleteSponsorPayload {
-  """
-  ID of the deleted sponsor
-  """
+  """ID of the deleted sponsor"""
   id: ID!
 
-  """
-  Whether the deletion was successful
-  """
+  """Whether the deletion was successful"""
   success: Boolean!
 }
 
-"""
-Input for deleting a trip
-"""
+"""Input for deleting a trip"""
 input DeleteTripInput {
-  """
-  Trip ID to delete
-  """
+  """Trip ID to delete"""
   id: ID!
 }
 
-"""
-Result of deleting a trip
-"""
+"""Result of deleting a trip"""
 type DeleteTripResult {
-  """
-  Whether deletion was successful
-  """
+  """Whether deletion was successful"""
   success: Boolean!
 }
 
-"""
-Pagination information for delivery queries
-"""
+"""Pagination information for delivery queries"""
 type DeliveryPagination {
-  """
-  Number of items per page
-  """
+  """Number of items per page"""
   limit: Int!
 
-  """
-  Current offset
-  """
+  """Current offset"""
   offset: Int!
 
-  """
-  Total number of matching deliveries
-  """
+  """Total number of matching deliveries"""
   total: Int!
 }
 
-"""
-Statistics for notification deliveries
-"""
+"""Statistics for notification deliveries"""
 type DeliveryStats {
-  """
-  Average failed deliveries per batch
-  """
+  """Average failed deliveries per batch"""
   avgFailuresPerDelivery: Float!
 
-  """
-  Average successful deliveries per batch
-  """
+  """Average successful deliveries per batch"""
   avgSuccessPerDelivery: Float!
 
-  """
-  Breakdown of deliveries by status
-  """
+  """Breakdown of deliveries by status"""
   statusBreakdown: DeliveryStatusBreakdown!
 
-  """
-  Overall success rate (0.0 - 1.0)
-  """
+  """Overall success rate (0.0 - 1.0)"""
   successRate: Float!
 
-  """
-  Total number of deliveries
-  """
+  """Total number of deliveries"""
   totalDeliveries: Int!
 
-  """
-  Total failed deliveries
-  """
+  """Total failed deliveries"""
   totalFailures: Int!
 
-  """
-  Total intended recipients across all deliveries
-  """
+  """Total intended recipients across all deliveries"""
   totalRecipients: Int!
 
-  """
-  Total successful deliveries
-  """
+  """Total successful deliveries"""
   totalSuccess: Int!
 }
 
-"""
-Status of a notification delivery
-"""
+"""Status of a notification delivery"""
 enum DeliveryStatus {
   FAILURE
   PARTIAL_FAILURE
@@ -1872,1119 +1359,711 @@ enum DeliveryStatus {
   SUCCESS
 }
 
-"""
-Count of deliveries per status
-"""
+"""Count of deliveries per status"""
 type DeliveryStatusBreakdown {
-  """
-  Number of failed deliveries
-  """
+  """Number of failed deliveries"""
   failure: Int!
 
-  """
-  Number of partially failed deliveries
-  """
+  """Number of partially failed deliveries"""
   partialFailure: Int!
 
-  """
-  Number of pending deliveries
-  """
+  """Number of pending deliveries"""
   pending: Int!
 
-  """
-  Number of successful deliveries
-  """
+  """Number of successful deliveries"""
   success: Int!
 }
 
-"""
-Result of creating a signed download URL
-"""
+"""Result of creating a signed download URL"""
 type DownloadUrlResult {
-  """
-  When the signed URL expires
-  """
+  """When the signed URL expires"""
   expiresAt: DateTime!
 
-  """
-  The signed URL for downloading the file
-  """
+  """The signed URL for downloading the file"""
   signedUrl: String!
 }
 
-"""
-Result of duplicating a notification schedule
-"""
+"""Result of duplicating a notification schedule"""
 type DuplicateNotificationSchedulePayload {
-  """
-  The duplicated schedule
-  """
+  """The duplicated schedule"""
   schedule: NotificationSchedule!
 }
 
-"""
-A single execution history record
-"""
+"""A single execution history record"""
 type ExecutionHistoryEntry {
-  """
-  When the execution occurred
-  """
+  """When the execution occurred"""
   executedAt: DateTime!
 
-  """
-  Execution record ID
-  """
+  """Execution record ID"""
   id: ID!
 
-  """
-  The notification that was sent (null if failed)
-  """
+  """The notification that was sent (null if failed)"""
   notification: ExecutionHistoryNotification
 }
 
-"""
-Notification details in execution history
-"""
+"""Notification details in execution history"""
 type ExecutionHistoryNotification {
-  """
-  Notification body
-  """
+  """Notification body"""
   body: String!
 
-  """
-  When the notification was created
-  """
+  """When the notification was created"""
   createdAt: DateTime!
 
-  """
-  Notification ID
-  """
+  """Notification ID"""
   id: ID!
 
-  """
-  Notification title
-  """
+  """Notification title"""
   title: String!
 }
 
-"""
-Result of querying execution history
-"""
+"""Result of querying execution history"""
 type ExecutionHistoryResult {
-  """
-  List of execution history entries
-  """
+  """List of execution history entries"""
   executions: [ExecutionHistoryEntry!]!
 }
 
-"""
-Input for forcing the end of judged staff voting
-"""
+"""Input for forcing the end of judged staff voting"""
 input ForceEndVotingInput {
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 
-  """
-  ID of the trip (for validation)
-  """
+  """ID of the trip (for validation)"""
   tripId: ID!
 }
 
-"""
-Result of forcing the end of judged staff voting
-"""
+"""Result of forcing the end of judged staff voting"""
 type ForceEndVotingPayload {
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 
-  """
-  Final status of the challenge
-  """
+  """Final status of the challenge"""
   challengeStatus: String!
 
-  """
-  Whether voting was finalized
-  """
+  """Whether voting was finalized"""
   finalized: Boolean!
 
-  """
-  Whether the operation succeeded
-  """
+  """Whether the operation succeeded"""
   success: Boolean!
 
-  """
-  Total number of votes counted
-  """
+  """Total number of votes counted"""
   totalVotes: Int!
 }
 
-"""
-User information formatted for display
-"""
+"""User information formatted for display"""
 type FormattedUser {
-  """
-  User's full name
-  """
+  """User's full name"""
   name: String!
 
-  """
-  Number of transactions by this user
-  """
+  """Number of transactions by this user"""
   transactionCount: Int!
 }
 
-"""
-A friend's location with optional distance information
-"""
+"""A friend's location with optional distance information"""
 type FriendLocation {
-  """
-  Accuracy in meters
-  """
+  """Accuracy in meters"""
   accuracy: Float
 
-  """
-  Altitude in meters
-  """
+  """Altitude in meters"""
   altitude: Float
 
-  """
-  Distance from current user in kilometers
-  """
+  """Distance from current user in kilometers"""
   distanceKm: Float
 
-  """
-  Heading in degrees
-  """
+  """Heading in degrees"""
   heading: Float
 
-  """
-  Location ID
-  """
+  """Location ID"""
   id: ID!
 
-  """
-  Whether friend is sharing location
-  """
+  """Whether friend is sharing location"""
   isSharingLocation: Boolean!
 
-  """
-  Latitude
-  """
+  """Latitude"""
   latitude: Float
 
-  """
-  Longitude
-  """
+  """Longitude"""
   longitude: Float
 
-  """
-  Speed in m/s
-  """
+  """Speed in m/s"""
   speed: Float
 
-  """
-  When location was recorded
-  """
+  """When location was recorded"""
   timestamp: DateTime!
 
-  """
-  Friend's user ID
-  """
+  """Friend's user ID"""
   userId: ID!
 }
 
-"""
-A list of friends' locations
-"""
+"""Real-time friend location update"""
+type FriendLocationSubscription {
+  """Accuracy in meters"""
+  accuracy: Float
+
+  """Altitude in meters"""
+  altitude: Float
+
+  """Distance from current user in kilometers"""
+  distanceKm: Float
+
+  """Heading in degrees (0-360)"""
+  heading: Float
+
+  """Location record ID"""
+  id: ID!
+
+  """Whether user is currently sharing location"""
+  isSharingLocation: Boolean!
+
+  """Latitude coordinate"""
+  latitude: Float
+
+  """Longitude coordinate"""
+  longitude: Float
+
+  """Speed in meters per second"""
+  speed: Float
+
+  """When the location was recorded"""
+  timestamp: DateTime!
+
+  """User ID whose location is being shared"""
+  userId: ID!
+}
+
+"""A list of friends' locations"""
 type FriendsLocationsConnection {
-  """
-  Friends' locations
-  """
+  """Friends' locations"""
   locations: [FriendLocation!]!
 
-  """
-  Total number of locations
-  """
+  """Total number of locations"""
   total: Int!
 }
 
-"""
-Input for fetching all coin transactions (moderator view)
-"""
+"""Input for fetching all coin transactions (moderator view)"""
 input GetAllCoinTransactionsInput {
-  """
-  Pagination parameters
-  """
+  """Pagination parameters"""
   pagination: CoinTransactionPaginationInput
 
-  """
-  Trip ID to fetch transactions for
-  """
+  """Trip ID to fetch transactions for"""
   tripId: ID!
 }
 
-"""
-Input for fetching all notifications (admin only)
-"""
+"""Input for fetching all notifications (admin only)"""
 input GetAllNotificationsInput {
-  """
-  Pagination options
-  """
+  """Pagination options"""
   pagination: NotificationOffsetPaginationInput
 
-  """
-  Optional trip ID to filter by
-  """
+  """Optional trip ID to filter by"""
   tripId: ID
 }
 
-"""
-Input for fetching a single activity by ID
-"""
+"""Input for fetching a single activity by ID"""
 input GetByIdInput {
-  """
-  Activity ID to fetch
-  """
+  """Activity ID to fetch"""
   id: ID!
 }
 
-"""
-Input for fetching activities by trip ID
-"""
+"""Input for fetching activities by trip ID"""
 input GetByTripInput {
-  """
-  Cursor for pagination
-  """
+  """Cursor for pagination"""
   cursor: ActivityCursorInput
 
-  """
-  Number of activities to return (1-100)
-  """
+  """Number of activities to return (1-100)"""
   pageSize: Int = 30
 
-  """
-  Trip ID to fetch activities for
-  """
+  """Trip ID to fetch activities for"""
   tripId: ID!
 }
 
-"""
-Input for fetching activities for moderation
-"""
+"""Input for fetching activities for moderation"""
 input GetByTripModerationInput {
-  """
-  Page number (1-based)
-  """
+  """Page number (1-based)"""
   page: Int = 1
 
-  """
-  Number of activities to return (1-100)
-  """
+  """Number of activities to return (1-100)"""
   pageSize: Int = 20
 
-  """
-  Trip ID to fetch activities for
-  """
+  """Trip ID to fetch activities for"""
   tripId: ID!
 }
 
-"""
-Input for fetching additional coin insights
-"""
+"""Input for fetching additional coin insights"""
 input GetCoinAdditionalInsightsInput {
-  """
-  Trip ID to fetch insights for
-  """
+  """Trip ID to fetch insights for"""
   tripId: ID!
 }
 
-"""
-Input for fetching quick coin statistics
-"""
+"""Input for fetching quick coin statistics"""
 input GetCoinQuickStatsInput {
-  """
-  Trip ID to fetch statistics for
-  """
+  """Trip ID to fetch statistics for"""
   tripId: ID!
 }
 
-"""
-Input for fetching coin statistics
-"""
+"""Input for fetching coin statistics"""
 input GetCoinStatisticsInput {
-  """
-  Trip ID to fetch statistics for
-  """
+  """Trip ID to fetch statistics for"""
   tripId: ID!
 }
 
-"""
-Input for fetching notification deliveries with filters
-"""
+"""Input for fetching notification deliveries with filters"""
 input GetDeliveriesInput {
-  """
-  Filter deliveries before this date
-  """
+  """Filter deliveries before this date"""
   endDate: DateTime
 
-  """
-  Number of deliveries to return (1-100, default 50)
-  """
+  """Number of deliveries to return (1-100, default 50)"""
   limit: Int = 50
 
-  """
-  Offset for pagination (default 0)
-  """
+  """Offset for pagination (default 0)"""
   offset: Int = 0
 
-  """
-  Filter by schedule ID
-  """
+  """Filter by schedule ID"""
   scheduleId: ID
 
-  """
-  Filter deliveries after this date
-  """
+  """Filter deliveries after this date"""
   startDate: DateTime
 
-  """
-  Filter by delivery status
-  """
+  """Filter by delivery status"""
   status: DeliveryStatus
 
-  """
-  Filter by trip ID
-  """
+  """Filter by trip ID"""
   tripId: ID
 }
 
-"""
-Input for fetching a delivery by notification ID
-"""
+"""Input for fetching a delivery by notification ID"""
 input GetDeliveryByNotificationIdInput {
-  """
-  Notification ID to look up
-  """
+  """Notification ID to look up"""
   notificationId: ID!
 
-  """
-  Trip ID for the notification
-  """
+  """Trip ID for the notification"""
   tripId: ID!
 }
 
-"""
-Input for fetching delivery statistics
-"""
+"""Input for fetching delivery statistics"""
 input GetDeliveryStatsInput {
-  """
-  Filter deliveries before this date
-  """
+  """Filter deliveries before this date"""
   endDate: DateTime
 
-  """
-  Filter by schedule ID
-  """
+  """Filter by schedule ID"""
   scheduleId: ID
 
-  """
-  Filter deliveries after this date
-  """
+  """Filter deliveries after this date"""
   startDate: DateTime
 
-  """
-  Filter by trip ID
-  """
+  """Filter by trip ID"""
   tripId: ID
 }
 
-"""
-Input for fetching failed deliveries
-"""
+"""Input for fetching failed deliveries"""
 input GetFailedDeliveriesInput {
-  """
-  Number of deliveries to return (1-100, default 20)
-  """
+  """Number of deliveries to return (1-100, default 20)"""
   limit: Int = 20
 
-  """
-  Offset for pagination (default 0)
-  """
+  """Offset for pagination (default 0)"""
   offset: Int = 0
 
-  """
-  Filter by trip ID
-  """
+  """Filter by trip ID"""
   tripId: ID
 }
 
-"""
-Input for fetching judged staff voting progress
-"""
+"""Input for fetching judged staff voting progress"""
 input GetJudgedStaffVotingProgressInput {
-  """
-  IDs of admin participants
-  """
+  """IDs of admin participants"""
   adminParticipantIds: [ID!]!
 
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 
-  """
-  Number of eligible submissions
-  """
+  """Number of eligible submissions"""
   eligibleSubmissionsCount: Int!
 
-  """
-  Number of positions required per admin (1-3)
-  """
+  """Number of positions required per admin (1-3)"""
   requiredPositions: Int!
 
-  """
-  ID of the trip
-  """
+  """ID of the trip"""
   tripId: ID!
 }
 
-"""
-Input for fetching most active admin statistics
-"""
+"""Input for fetching most active admin statistics"""
 input GetMostActiveAdminStatsInput {
-  """
-  Trip ID to fetch statistics for
-  """
+  """Trip ID to fetch statistics for"""
   tripId: ID!
 }
 
-"""
-Input for fetching my votes for a challenge
-"""
+"""Input for fetching my votes for a challenge"""
 input GetMyVotesInput {
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 
-  """
-  ID of the trip (for participant validation)
-  """
+  """ID of the trip (for participant validation)"""
   tripId: ID!
 }
 
-"""
-Input for fetching reports for a specific submission
-"""
+"""Input for fetching reports for a specific submission"""
 input GetReportsBySubmissionInput {
-  """
-  ID of the submission to get reports for
-  """
+  """ID of the submission to get reports for"""
   submissionId: ID!
 }
 
-"""
-Input for fetching coin transactions visible to a user
-"""
+"""Input for fetching coin transactions visible to a user"""
 input GetUserCoinTransactionsInput {
-  """
-  Optional group ID to filter by
-  """
+  """Optional group ID to filter by"""
   groupId: ID
 
-  """
-  Maximum number of items to return (1-100)
-  """
+  """Maximum number of items to return (1-100)"""
   limit: Int = 50
 
-  """
-  Trip ID to fetch transactions for
-  """
+  """Trip ID to fetch transactions for"""
   tripId: ID!
 }
 
-"""
-Input for fetching all votes for a challenge
-"""
+"""Input for fetching all votes for a challenge"""
 input GetVotesByChallengeInput {
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 }
 
-"""
-Input for fetching voting progress
-"""
+"""Input for fetching voting progress"""
 input GetVotingProgressInput {
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 }
 
-"""
-A participant group in a trip
-"""
+"""A participant group in a trip"""
 type Group {
-  """
-  Unique code for joining the group
-  """
+  """Unique code for joining the group"""
   code: String!
 
-  """
-  Number of coins the group has earned
-  """
+  """Number of coins the group has earned"""
   coins: Int!
 
-  """
-  When the group was created
-  """
+  """When the group was created"""
   createdAt: DateTime!
 
-  """
-  Group description
-  """
+  """Group description"""
   description: String
 
-  """
-  Unique identifier for the group (UUID)
-  """
+  """Unique identifier for the group (UUID)"""
   id: ID!
 
-  """
-  Group image URL
-  """
+  """Group image URL"""
   image: String
 
-  """
-  Whether the group is currently active (not deleted)
-  """
+  """Whether the group is currently active (not deleted)"""
   isActive: Boolean!
 
-  """
-  Group name
-  """
+  """Group name"""
   name: String!
 
-  """
-  ID of the user who organized the group
-  """
+  """ID of the user who organized the group"""
   organizerId: ID!
 
-  """
-  Current status of the group
-  """
+  """Current status of the group"""
   status: GroupStatus!
 
-  """
-  ID of the trip this group belongs to
-  """
+  """ID of the trip this group belongs to"""
   tripId: ID!
 
-  """
-  When the group was last updated
-  """
+  """When the group was last updated"""
   updatedAt: DateTime!
 }
 
-"""
-Pagination metadata for group lists
-"""
+"""Pagination metadata for group lists"""
 type GroupPagination {
-  """
-  Whether more items are available
-  """
+  """Whether more items are available"""
   hasMore: Boolean!
 
-  """
-  Number of items per page
-  """
+  """Number of items per page"""
   limit: Int!
 
-  """
-  Number of items skipped
-  """
+  """Number of items skipped"""
   offset: Int!
 
-  """
-  Total number of groups available
-  """
+  """Total number of groups available"""
   total: Int!
 }
 
-"""
-Pagination parameters for group queries
-"""
+"""Pagination parameters for group queries"""
 input GroupPaginationInput {
-  """
-  Maximum number of items to return (1-100)
-  """
+  """Maximum number of items to return (1-100)"""
   limit: Int = 30
 
-  """
-  Number of items to skip
-  """
+  """Number of items to skip"""
   offset: Int = 0
 }
 
-"""
-Group information for ranking displays
-"""
+"""Group information for ranking displays"""
 type GroupRanking {
-  """
-  Unique group code
-  """
+  """Unique group code"""
   code: String!
 
-  """
-  Number of coins earned
-  """
+  """Number of coins earned"""
   coins: Int!
 
-  """
-  When the group was created
-  """
+  """When the group was created"""
   createdAt: DateTime!
 
-  """
-  Group description
-  """
+  """Group description"""
   description: String
 
-  """
-  Unique identifier for the group
-  """
+  """Unique identifier for the group"""
   id: ID!
 
-  """
-  Group image URL
-  """
+  """Group image URL"""
   image: String
 
-  """
-  Whether the group is active
-  """
+  """Whether the group is active"""
   isActive: Boolean!
 
-  """
-  Group name
-  """
+  """Group name"""
   name: String!
 
-  """
-  ID of the group organizer
-  """
+  """ID of the group organizer"""
   organizerId: ID!
 
-  """
-  Current status of the group
-  """
+  """Current status of the group"""
   status: GroupStatus!
 
-  """
-  ID of the trip this group belongs to
-  """
+  """ID of the trip this group belongs to"""
   tripId: ID!
 }
 
-"""
-Result of fetching group rankings for a trip
-"""
+"""Result of fetching group rankings for a trip"""
 type GroupRankingResult {
-  """
-  Current date for the ranking
-  """
+  """Current date for the ranking"""
   currentDate: DateTime!
 
-  """
-  Groups sorted by coins (descending)
-  """
+  """Groups sorted by coins (descending)"""
   data: [GroupRanking!]!
 }
 
-"""
-Current status of a group in the system
-"""
+"""Current status of a group in the system"""
 enum GroupStatus {
   ACTIVE
   DELETED
 }
 
-"""
-A simplified view of a group for list displays
-"""
+"""A simplified view of a group for list displays"""
 type GroupSummary {
-  """
-  Unique identifier for the group
-  """
+  """Unique identifier for the group"""
   id: ID!
 
-  """
-  Group name
-  """
+  """Group name"""
   name: String!
 }
 
-"""
-A paginated list of groups with metadata
-"""
+"""A paginated list of groups with metadata"""
 type GroupsConnection {
-  """
-  The groups in this page
-  """
+  """The groups in this page"""
   groups: [Group!]!
 
-  """
-  Pagination metadata
-  """
+  """Pagination metadata"""
   pagination: GroupPagination!
 }
 
-"""
-Activity result with hide information
-"""
+"""Activity result with hide information"""
 type HiddenActivityResult {
-  """
-  Type of activity
-  """
+  """Type of activity"""
   activityType: ActivityType!
 
-  """
-  Activity description
-  """
+  """Activity description"""
   description: String
 
-  """
-  When activity was hidden
-  """
+  """When activity was hidden"""
   hiddenAt: DateTime!
 
-  """
-  Reason for hiding
-  """
+  """Reason for hiding"""
   hiddenReason: String
 
-  """
-  Activity ID
-  """
+  """Activity ID"""
   id: ID!
 
-  """
-  Activity image URL
-  """
+  """Activity image URL"""
   imageUrl: String
 
-  """
-  Whether activity is hidden
-  """
+  """Whether activity is hidden"""
   isHidden: Boolean!
 
-  """
-  Whether activity is pinned
-  """
+  """Whether activity is pinned"""
   isPinned: Boolean!
 
-  """
-  Activity title
-  """
+  """Activity title"""
   title: String!
 
-  """
-  Trip ID
-  """
+  """Trip ID"""
   tripId: ID!
 
-  """
-  When activity was last updated
-  """
+  """When activity was last updated"""
   updatedAt: DateTime!
 }
 
-"""
-Input for hiding an activity
-"""
+"""Input for hiding an activity"""
 input HideActivityInput {
-  """
-  Activity ID to hide
-  """
+  """Activity ID to hide"""
   activityId: ID!
 
-  """
-  Reason for hiding
-  """
+  """Reason for hiding"""
   reason: String
 }
 
-"""
-Voting progress for judged staff challenges
-"""
+"""Voting progress for judged staff challenges"""
 type JudgedStaffVotingProgress {
-  """
-  Voting progress for each admin
-  """
+  """Voting progress for each admin"""
   adminProgress: [AdminVotingInfo!]!
 
-  """
-  Whether all admins have completed voting
-  """
+  """Whether all admins have completed voting"""
   allAdminsVoted: Boolean!
 
-  """
-  Number of submissions eligible for voting
-  """
+  """Number of submissions eligible for voting"""
   eligibleSubmissionsCount: Int!
 
-  """
-  Number of admins who haven't completed voting
-  """
+  """Number of admins who haven't completed voting"""
   pendingAdmins: Int!
 
-  """
-  Number of positions required per admin (1-3)
-  """
+  """Number of positions required per admin (1-3)"""
   requiredPositions: Int!
 
-  """
-  Total number of admin participants
-  """
+  """Total number of admin participants"""
   totalAdmins: Int!
 
-  """
-  Number of admins who have completed voting
-  """
+  """Number of admins who have completed voting"""
   votedAdmins: Int!
 }
 
-"""
-Status of the last schedule execution
-"""
+"""Status of the last schedule execution"""
 enum LastRunStatus {
   FAILURE
   PARTIAL
   SUCCESS
 }
 
-"""
-Input for linking a sponsor to a trip
-"""
+"""Input for linking a sponsor to a trip"""
 input LinkSponsorToTripInput {
-  """
-  ID of the sponsor to link
-  """
+  """ID of the sponsor to link"""
   sponsorId: ID!
 
-  """
-  ID of the trip to link to
-  """
+  """ID of the trip to link to"""
   tripId: ID!
 }
 
-"""
-Result of linking a sponsor to a trip
-"""
+"""Result of linking a sponsor to a trip"""
 type LinkSponsorToTripPayload {
-  """
-  Whether the link was successful
-  """
+  """Whether the link was successful"""
   linked: Boolean!
 
-  """
-  ID of the sponsor
-  """
+  """ID of the sponsor"""
   sponsorId: ID!
 
-  """
-  ID of the trip
-  """
+  """ID of the trip"""
   tripId: ID!
 }
 
-"""
-A user's geographic location
-"""
+"""A user's geographic location"""
 type Location {
-  """
-  Location accuracy in meters
-  """
+  """Location accuracy in meters"""
   accuracy: Float
 
-  """
-  Altitude in meters above sea level
-  """
+  """Altitude in meters above sea level"""
   altitude: Float
 
-  """
-  Altitude accuracy in meters
-  """
+  """Altitude accuracy in meters"""
   altitudeAccuracy: Float
 
-  """
-  Direction of travel in degrees (0-360)
-  """
+  """Direction of travel in degrees (0-360)"""
   heading: Float
 
-  """
-  Unique identifier for the location record (UUID)
-  """
+  """Unique identifier for the location record (UUID)"""
   id: ID!
 
-  """
-  Whether the user is sharing their location with friends
-  """
+  """Whether the user is sharing their location with friends"""
   isSharingLocation: Boolean!
 
-  """
-  Geographic latitude (-90 to 90 degrees)
-  """
+  """Geographic latitude (-90 to 90 degrees)"""
   latitude: Float
 
-  """
-  Geographic longitude (-180 to 180 degrees)
-  """
+  """Geographic longitude (-180 to 180 degrees)"""
   longitude: Float
 
-  """
-  Speed in meters per second
-  """
+  """Speed in meters per second"""
   speed: Float
 
-  """
-  When the location was last updated
-  """
+  """When the location was last updated"""
   timestamp: DateTime!
 
-  """
-  ID of the user this location belongs to
-  """
+  """ID of the user this location belongs to"""
   userId: ID!
 
-  """
-  List of users allowed to see this location
-  """
+  """List of users allowed to see this location"""
   usersToShareWith: [SharingUserInfo!]!
 }
 
-"""
-Location sharing settings for a user
-"""
+"""Location sharing settings for a user"""
 type LocationSharingSettings {
-  """
-  Whether location sharing is enabled
-  """
+  """Whether location sharing is enabled"""
   isSharingLocation: Boolean!
 
-  """
-  Users allowed to see this location
-  """
+  """Users allowed to see this location"""
   usersToShareWith: [SharingUserInfo!]!
 }
 
-"""
-Pagination information for moderation view
-"""
+"""Pagination information for moderation view"""
 type ModerationPaginationInfo {
-  """
-  Whether there are more pages
-  """
+  """Whether there are more pages"""
   hasMore: Boolean!
 
-  """
-  Current page number
-  """
+  """Current page number"""
   page: Int!
 
-  """
-  Items per page
-  """
+  """Items per page"""
   pageSize: Int!
 
-  """
-  Total number of activities
-  """
+  """Total number of activities"""
   total: Int!
 
-  """
-  Total number of pages
-  """
+  """Total number of pages"""
   totalPages: Int!
 }
 
-"""
-Statistics about the most active admin by transaction volume
-"""
+"""Statistics about the most active admin by transaction volume"""
 type MostActiveAdminStats {
-  """
-  ID of the most active admin
-  """
+  """ID of the most active admin"""
   adminId: ID!
 
-  """
-  Full name of the admin (resolved separately)
-  """
+  """Full name of the admin (resolved separately)"""
   adminName: String
 
-  """
-  Total amount of coins this admin has processed
-  """
+  """Total amount of coins this admin has processed"""
   totalAmount: Int!
 
-  """
-  Number of transactions performed by this admin
-  """
+  """Number of transactions performed by this admin"""
   transactionCount: Int!
 }
 
-"""
-Root mutation type for modifying data
-"""
+"""Root mutation type for modifying data"""
 type Mutation {
-  """
-  Add coins to a group. Requires moderator or admin privileges.
-  """
+  """Add coins to a group. Requires moderator or admin privileges."""
   addCoins(
-    """
-    Input for adding coins
-    """
+    """Input for adding coins"""
     input: AddCoinsInput!
   ): CoinTransactionResult
 
-  """
-  Add a user to location sharing list
-  """
+  """Add a user to location sharing list"""
   addUserToSharing(
-    """
-    User to add to sharing
-    """
+    """User to add to sharing"""
     input: AddSharingUserInput!
   ): SharingUserPayload
 
-  """
-  Bulk delete notification schedules (admin only)
-  """
+  """Bulk delete notification schedules (admin only)"""
   bulkDeleteNotificationSchedules(
-    """
-    IDs of the schedules to delete
-    """
+    """IDs of the schedules to delete"""
     ids: [ID!]!
   ): BulkDeleteNotificationSchedulesPayload
 
-  """
-  Bulk toggle active status of notification schedules (admin only)
-  """
+  """Bulk toggle active status of notification schedules (admin only)"""
   bulkToggleNotificationScheduleActive(
-    """
-    IDs of the schedules to toggle
-    """
+    """IDs of the schedules to toggle"""
     ids: [ID!]!
 
-    """
-    Target active status (true=active, false=inactive)
-    """
+    """Target active status (true=active, false=inactive)"""
     isActive: Boolean!
   ): BulkToggleActivePayload
 
@@ -2993,123 +2072,81 @@ type Mutation {
   """
   checkInactiveUsers: CheckInactiveUsersPayload
 
-  """
-  Create a challenge event activity
-  """
+  """Create a new challenge (admin only)"""
+  createChallenge(
+    """Challenge creation data"""
+    input: CreateChallengeInput!
+  ): CreateChallengePayload
+
+  """Create a challenge event activity"""
   createChallengeActivity(
-    """
-    Input for creating challenge activity
-    """
+    """Input for creating challenge activity"""
     input: CreateChallengeActivityInput!
   ): Activity!
 
-  """
-  Create a new challenge submission
-  """
+  """Create a new challenge submission"""
   createChallengeSubmission(
-    """
-    Submission creation input
-    """
+    """Submission creation input"""
     input: CreateSubmissionInput!
   ): ChallengeSubmissionCreateResult
 
-  """
-  Create a custom activity (admin only)
-  """
+  """Create a custom activity (admin only)"""
   createCustomActivity(
-    """
-    Input for creating activity
-    """
+    """Input for creating activity"""
     input: CreateCustomActivityInput!
   ): Activity!
 
-  """
-  Create a new group
-  """
+  """Create a new group"""
   createGroup(
-    """
-    Group creation data
-    """
+    """Group creation data"""
     input: CreateGroupInput!
   ): CreateGroupPayload!
 
-  """
-  Create a new notification (moderator only)
-  """
+  """Create a new notification (moderator only)"""
   createNotification(
-    """
-    Input for creating notification
-    """
+    """Input for creating notification"""
     input: CreateNotificationInput!
   ): CreateNotificationResult!
 
-  """
-  Create a new notification schedule (admin only)
-  """
+  """Create a new notification schedule (admin only)"""
   createNotificationSchedule(
-    """
-    Schedule creation data
-    """
+    """Schedule creation data"""
     input: CreateNotificationScheduleInput!
   ): CreateNotificationSchedulePayload
 
-  """
-  Create a rank change activity
-  """
+  """Create a rank change activity"""
   createRankChangeActivity(
-    """
-    Input for creating rank change activity
-    """
+    """Input for creating rank change activity"""
     input: CreateRankChangeActivityInput!
   ): Activity!
 
-  """
-  Create a new reward (moderator only)
-  """
+  """Create a new reward (moderator only)"""
   createReward(
-    """
-    Reward creation data
-    """
+    """Reward creation data"""
     input: CreateRewardInput!
   ): CreateRewardPayload
 
-  """
-  Create a new sponsor (admin only)
-  """
+  """Create a new sponsor (admin only)"""
   createSponsor(
-    """
-    Sponsor creation data
-    """
+    """Sponsor creation data"""
     input: CreateSponsorInput!
   ): CreateSponsorPayload
 
-  """
-  Create a submission activity
-  """
+  """Create a submission activity"""
   createSubmissionActivity(
-    """
-    Input for creating submission activity
-    """
+    """Input for creating submission activity"""
     input: CreateSubmissionActivityInput!
   ): Activity!
 
-  """
-  Create a new submission report
-  """
+  """Create a new submission report"""
   createSubmissionReport(
-    """
-    Report creation input
-    """
+    """Report creation input"""
     input: CreateReportInput!
   ): SubmissionReportCreateResult
 
-  """
-  Create a new trip (admin only)
-  """
+  """Create a new trip (admin only)"""
   createTrip(
-    """
-    Input for creating trip
-    """
+    """Input for creating trip"""
     input: CreateTripInput!
   ): Trip!
 
@@ -3117,666 +2154,423 @@ type Mutation {
   Create a signed upload URL for resumable file uploads to Supabase Storage
   """
   createUploadUrl(
-    """
-    Input for creating the upload URL
-    """
+    """Input for creating the upload URL"""
     input: CreateUploadUrlInput!
   ): UploadUrlResult
 
-  """
-  Create a new user (admin only)
-  """
+  """Create a new user (admin only)"""
   createUser(
-    """
-    User creation input
-    """
+    """User creation input"""
     input: CreateUserInput!
   ): UserCreateResult
 
-  """
-  Create a user post activity
-  """
+  """Create a user post activity"""
   createUserPost(
-    """
-    Input for creating user post
-    """
+    """Input for creating user post"""
     input: CreateUserPostInput!
   ): Activity!
 
-  """
-  Delete an activity (admin only)
-  """
+  """Delete an activity (admin only)"""
   deleteActivity(
-    """
-    Input for deleting activity
-    """
+    """Input for deleting activity"""
     input: DeleteActivityInput!
   ): DeleteActivityResult!
 
-  """
-  Delete a challenge submission (only allowed for pending submissions)
-  """
+  """Delete (cancel) a challenge (admin only)"""
+  deleteChallenge(
+    """ID of the challenge to delete"""
+    id: ID!
+
+    """Trip ID (for validation)"""
+    tripId: ID!
+  ): DeleteChallengePayload
+
+  """Delete a challenge submission (only allowed for pending submissions)"""
   deleteChallengeSubmission(
-    """
-    ID of the submission to delete
-    """
+    """ID of the submission to delete"""
     submissionId: ID!
   ): Boolean
 
-  """
-  Delete a group (admin only)
-  """
+  """Delete a group (admin only)"""
   deleteGroup(
-    """
-    ID of the group to delete
-    """
+    """ID of the group to delete"""
     id: ID!
   ): DeleteGroupPayload!
 
-  """
-  Delete a notification (admin only)
-  """
+  """Delete a notification (admin only)"""
   deleteNotification(
-    """
-    Input for deleting notification
-    """
+    """Input for deleting notification"""
     input: DeleteNotificationInput!
   ): DeleteNotificationResult!
 
-  """
-  Delete a notification schedule (admin only)
-  """
+  """Delete a notification schedule (admin only)"""
   deleteNotificationSchedule(
-    """
-    ID of the schedule to delete
-    """
+    """ID of the schedule to delete"""
     id: ID!
   ): DeleteNotificationSchedulePayload
 
-  """
-  Delete a reward (moderator only)
-  """
+  """Delete a reward (moderator only)"""
   deleteReward(
-    """
-    ID of the reward to delete
-    """
+    """ID of the reward to delete"""
     id: ID!
   ): DeleteRewardPayload
 
-  """
-  Delete a sponsor (admin only)
-  """
+  """Delete a sponsor (admin only)"""
   deleteSponsor(
-    """
-    ID of the sponsor to delete
-    """
+    """ID of the sponsor to delete"""
     id: ID!
   ): DeleteSponsorPayload
 
-  """
-  Delete a trip (admin only)
-  """
+  """Delete a trip (admin only)"""
   deleteTrip(
-    """
-    Input for deleting trip
-    """
+    """Input for deleting trip"""
     input: DeleteTripInput!
   ): DeleteTripResult!
 
-  """
-  Duplicate a notification schedule (admin only)
-  """
+  """Duplicate a notification schedule (admin only)"""
   duplicateNotificationSchedule(
-    """
-    ID of the schedule to duplicate
-    """
+    """ID of the schedule to duplicate"""
     id: ID!
   ): DuplicateNotificationSchedulePayload
 
-  """
-  Force the end of voting for a judged staff challenge (admin only)
-  """
+  """Force the end of voting for a judged staff challenge (admin only)"""
   forceEndVoting(
-    """
-    Force end voting input
-    """
+    """Force end voting input"""
     input: ForceEndVotingInput!
   ): ForceEndVotingPayload
 
-  """
-  Hide an activity
-  """
+  """Hide an activity"""
   hideActivity(
-    """
-    Input for hiding activity
-    """
+    """Input for hiding activity"""
     input: HideActivityInput!
   ): HiddenActivityResult!
 
-  """
-  Link a sponsor to a trip (admin only)
-  """
+  """Link a sponsor to a trip (admin only)"""
   linkSponsorToTrip(
-    """
-    Link data
-    """
+    """Link data"""
     input: LinkSponsorToTripInput!
   ): LinkSponsorToTripPayload
 
-  """
-  Purchase a reward (authenticated users)
-  """
+  """Purchase a reward (authenticated users)"""
   purchaseReward(
-    """
-    Purchase data
-    """
+    """Purchase data"""
     input: PurchaseRewardInput!
   ): PurchaseRewardPayload
 
-  """
-  Remove coins from a group. Requires moderator or admin privileges.
-  """
+  """Remove coins from a group. Requires moderator or admin privileges."""
   removeCoins(
-    """
-    Input for removing coins
-    """
+    """Input for removing coins"""
     input: RemoveCoinsInput!
   ): CoinTransactionResult
 
-  """
-  Remove a user from location sharing list
-  """
+  """Remove a user from location sharing list"""
   removeUserFromSharing(
-    """
-    User to remove from sharing
-    """
+    """User to remove from sharing"""
     input: RemoveSharingUserInput!
   ): SharingUserPayload
 
-  """
-  Send mobile push notifications (admin only)
-  """
+  """Send mobile push notifications (admin only)"""
   sendMobileNotifications(
-    """
-    Input for sending notifications
-    """
+    """Input for sending notifications"""
     input: SendMobileNotificationsInput!
   ): SendMobileNotificationsPayload
 
-  """
-  Pin or unpin an activity
-  """
+  """Pin or unpin an activity"""
   setActivityPinned(
-    """
-    Input for pinning/unpinning
-    """
+    """Input for pinning/unpinning"""
     input: SetPinnedInput!
   ): Activity!
 
-  """
-  Set reward hidden status (moderator only)
-  """
+  """Set reward hidden status (moderator only)"""
   setRewardHidden(
-    """
-    Hidden status data
-    """
+    """Hidden status data"""
     input: SetRewardHiddenInput!
   ): SetRewardHiddenPayload
 
-  """
-  Submit a single vote for a challenge submission
-  """
+  """Submit a single vote for a challenge submission"""
   submitVote(
-    """
-    Vote submission data
-    """
+    """Vote submission data"""
     input: SubmitVoteInput!
   ): SubmitVotePayload
 
-  """
-  Submit multiple votes for a challenge (batch)
-  """
+  """Submit multiple votes for a challenge (batch)"""
   submitVotes(
-    """
-    Batch vote submission data
-    """
+    """Batch vote submission data"""
     input: SubmitVotesInput!
   ): SubmitVotesPayload
 
-  """
-  Toggle a reaction on an activity
-  """
+  """Toggle a reaction on an activity"""
   toggleActivityReaction(
-    """
-    Input for toggling reaction
-    """
+    """Input for toggling reaction"""
     input: ToggleReactionInput!
   ): ToggleReactionResult!
 
-  """
-  Toggle the active status of a notification schedule (admin only)
-  """
+  """Toggle the active status of a notification schedule (admin only)"""
   toggleNotificationScheduleActive(
-    """
-    ID of the schedule to toggle
-    """
+    """ID of the schedule to toggle"""
     id: ID!
   ): ToggleScheduleActivePayload
 
-  """
-  Track the completion of a notification delivery (admin only)
-  """
+  """Track the completion of a notification delivery (admin only)"""
   trackDeliveryComplete(
-    """
-    Input for tracking delivery completion
-    """
+    """Input for tracking delivery completion"""
     input: TrackDeliveryCompleteInput!
   ): TrackDeliveryCompletePayload
 
-  """
-  Track a notification delivery failure (admin only)
-  """
+  """Track a notification delivery failure (admin only)"""
   trackDeliveryFailure(
-    """
-    Input for tracking delivery failure
-    """
+    """Input for tracking delivery failure"""
     input: TrackDeliveryFailureInput!
   ): TrackDeliveryFailurePayload
 
-  """
-  Track the start of a notification delivery (admin only)
-  """
+  """Track the start of a notification delivery (admin only)"""
   trackDeliveryStart(
-    """
-    Input for tracking delivery start
-    """
+    """Input for tracking delivery start"""
     input: TrackDeliveryStartInput!
   ): TrackDeliveryStartPayload
 
-  """
-  Unhide an activity
-  """
+  """Unhide an activity"""
   unhideActivity(
-    """
-    Input for unhiding activity
-    """
+    """Input for unhiding activity"""
     input: UnhideActivityInput!
   ): Activity!
 
-  """
-  Unlink a sponsor from a trip (admin only)
-  """
+  """Unlink a sponsor from a trip (admin only)"""
   unlinkSponsorFromTrip(
-    """
-    Unlink data
-    """
+    """Unlink data"""
     input: UnlinkSponsorFromTripInput!
   ): UnlinkSponsorFromTripPayload
 
-  """
-  Update an activity
-  """
+  """Update an activity"""
   updateActivity(
-    """
-    Input for updating activity
-    """
+    """Input for updating activity"""
     input: UpdateActivityInput!
   ): Activity!
 
-  """
-  Update a challenge submission (content or review)
-  """
+  """Update an existing challenge (admin only)"""
+  updateChallenge(
+    """Challenge update data"""
+    input: UpdateChallengeInput!
+  ): UpdateChallengePayload
+
+  """Update a challenge's status (admin only)"""
+  updateChallengeStatus(
+    """Status update data"""
+    input: UpdateChallengeStatusInput!
+  ): UpdateChallengeStatusPayload
+
+  """Update a challenge submission (content or review)"""
   updateChallengeSubmission(
-    """
-    Submission update input
-    """
+    """Submission update input"""
     input: UpdateSubmissionInput!
   ): ChallengeSubmissionUpdateResult
 
-  """
-  Update an existing group
-  """
+  """Update an existing group"""
   updateGroup(
-    """
-    Group update data
-    """
+    """Group update data"""
     input: UpdateGroupInput!
   ): UpdateGroupPayload!
 
-  """
-  Update the current user's location
-  """
+  """Update the current user's location"""
   updateLocation(
-    """
-    Location update data
-    """
+    """Location update data"""
     input: UpdateLocationInput!
   ): UpdateLocationPayload
 
-  """
-  Update own purchase status (group leader only, limited transitions)
-  """
+  """Update own purchase status (group leader only, limited transitions)"""
   updateMyPurchaseStatus(
-    """
-    Status update data
-    """
+    """Status update data"""
     input: UpdateMyPurchaseStatusInput!
   ): UpdateMyPurchaseStatusPayload
 
-  """
-  Update a notification (admin only)
-  """
+  """Update a notification (admin only)"""
   updateNotification(
-    """
-    Input for updating notification
-    """
+    """Input for updating notification"""
     input: UpdateNotificationInput!
   ): UpdateNotificationResult!
 
-  """
-  Update an existing notification schedule (admin only)
-  """
+  """Update an existing notification schedule (admin only)"""
   updateNotificationSchedule(
-    """
-    Schedule update data
-    """
+    """Schedule update data"""
     input: UpdateNotificationScheduleInput!
   ): UpdateNotificationSchedulePayload
 
-  """
-  Update the last run timestamp of a schedule (moderator+)
-  """
+  """Update the last run timestamp of a schedule (moderator+)"""
   updateNotificationScheduleLastRun(
-    """
-    Last run update data
-    """
+    """Last run update data"""
     input: UpdateLastRunInput!
   ): UpdateLastRunPayload
 
-  """
-  Update notification status (admin only)
-  """
+  """Update notification status (admin only)"""
   updateNotificationStatus(
-    """
-    Input for updating status
-    """
+    """Input for updating status"""
     input: UpdateNotificationStatusInput!
   ): UpdateNotificationStatusResult!
 
-  """
-  Update a purchase status (moderator only)
-  """
+  """Update a purchase status (moderator only)"""
   updatePurchaseStatus(
-    """
-    Status update data
-    """
+    """Status update data"""
     input: UpdatePurchaseStatusInput!
   ): UpdatePurchaseStatusPayload
 
-  """
-  Update an existing reward (moderator only)
-  """
+  """Update an existing reward (moderator only)"""
   updateReward(
-    """
-    Reward update data
-    """
+    """Reward update data"""
     input: UpdateRewardInput!
   ): UpdateRewardPayload
 
-  """
-  Update location sharing settings
-  """
+  """Update location sharing settings"""
   updateSharingSettings(
-    """
-    Sharing settings update data
-    """
+    """Sharing settings update data"""
     input: UpdateSharingSettingsInput!
   ): UpdateSharingSettingsPayload
 
-  """
-  Update an existing sponsor (admin only)
-  """
+  """Update an existing sponsor (admin only)"""
   updateSponsor(
-    """
-    Sponsor update data
-    """
+    """Sponsor update data"""
     input: UpdateSponsorInput!
   ): UpdateSponsorPayload
 
-  """
-  Update a trip (admin only)
-  """
+  """Update a trip (admin only)"""
   updateTrip(
-    """
-    Input for updating trip
-    """
+    """Input for updating trip"""
     input: UpdateTripInput!
   ): Trip!
 
-  """
-  Update a user's profile information
-  """
+  """Update a user's profile information"""
   updateUser(
-    """
-    User update input
-    """
+    """User update input"""
     input: UpdateUserInput!
   ): UserUpdateResult
 }
 
-"""
-Result of fetching current user's notifications
-"""
+"""Result of fetching current user's notifications"""
 type MyNotificationsResult {
-  """
-  List of notifications
-  """
+  """List of notifications"""
   notifications: [Notification!]!
 
-  """
-  Pagination information
-  """
+  """Pagination information"""
   pagination: NotificationPaginationInfo!
 }
 
-"""
-A notification message
-"""
+"""A notification message"""
 type Notification {
-  """
-  Notification body content
-  """
+  """Notification body content"""
   body: String!
 
-  """
-  When notification was created
-  """
+  """When notification was created"""
   createdAt: DateTime!
 
-  """
-  User ID who created the notification
-  """
+  """User ID who created the notification"""
   createdById: ID!
 
-  """
-  Unique notification ID
-  """
+  """Unique notification ID"""
   id: ID!
 
-  """
-  Whether notification is ready to be sent
-  """
+  """Whether notification is ready to be sent"""
   isReadyToSend: Boolean
 
-  """
-  Whether notification is scheduled for future delivery
-  """
+  """Whether notification is scheduled for future delivery"""
   isScheduled: Boolean!
 
-  """
-  Whether notification has been sent
-  """
+  """Whether notification has been sent"""
   isSent: Boolean!
 
-  """
-  Priority level
-  """
+  """Priority level"""
   priority: NotificationPriority!
 
-  """
-  When notification is scheduled to be sent
-  """
+  """When notification is scheduled to be sent"""
   scheduledFor: DateTime
 
-  """
-  When notification was actually sent
-  """
+  """When notification was actually sent"""
   sentAt: DateTime
 
-  """
-  Current status
-  """
+  """Current status"""
   status: NotificationStatus!
 
-  """
-  Notification title
-  """
+  """Notification title"""
   title: String!
 
-  """
-  Associated trip ID (null if global)
-  """
+  """Associated trip ID (null if global)"""
   tripId: ID
 
-  """
-  When notification was last updated
-  """
+  """When notification was last updated"""
   updatedAt: DateTime
 
-  """
-  Optional URL to open when tapped
-  """
+  """Optional URL to open when tapped"""
   url: String
 }
 
-"""
-Creator of the notification
-"""
+"""Creator of the notification"""
 type NotificationCreator {
-  """
-  Auth provider user ID
-  """
+  """Auth provider user ID"""
   authUserId: String
 
-  """
-  Creator first name
-  """
+  """Creator first name"""
   firstName: String
 
-  """
-  Creator user ID
-  """
+  """Creator user ID"""
   id: ID!
 
-  """
-  Creator last name
-  """
+  """Creator last name"""
   lastName: String
 }
 
-"""
-A notification delivery record
-"""
+"""A notification delivery record"""
 type NotificationDelivery {
-  """
-  When delivery record was created
-  """
+  """When delivery record was created"""
   createdAt: DateTime!
 
-  """
-  When delivery completed (null if still in progress)
-  """
+  """When delivery completed (null if still in progress)"""
   deliveryCompletedAt: DateTime
 
-  """
-  When delivery started
-  """
+  """When delivery started"""
   deliveryStartedAt: DateTime!
 
-  """
-  Error log for failed deliveries
-  """
+  """Error log for failed deliveries"""
   errorLog: String
 
-  """
-  Number of failed deliveries
-  """
+  """Number of failed deliveries"""
   failureCount: Int!
 
-  """
-  Unique delivery ID
-  """
+  """Unique delivery ID"""
   id: ID!
 
-  """
-  Associated notification details
-  """
+  """Associated notification details"""
   notification: NotificationInfo
 
-  """
-  ID of the notification being delivered
-  """
+  """ID of the notification being delivered"""
   notificationId: ID!
 
-  """
-  Associated schedule ID if scheduled delivery
-  """
+  """Associated schedule ID if scheduled delivery"""
   scheduleId: ID
 
-  """
-  Current delivery status
-  """
+  """Current delivery status"""
   status: DeliveryStatus!
 
-  """
-  Number of successful deliveries
-  """
+  """Number of successful deliveries"""
   successCount: Int!
 
-  """
-  Total number of intended recipients
-  """
+  """Total number of intended recipients"""
   totalRecipients: Int!
 
-  """
-  Trip ID this delivery belongs to
-  """
+  """Trip ID this delivery belongs to"""
   tripId: ID!
 
-  """
-  When delivery record was last updated
-  """
+  """When delivery record was last updated"""
   updatedAt: DateTime!
 }
 
-"""
-Result of fetching a list of notification deliveries
-"""
+"""Result of fetching a list of notification deliveries"""
 type NotificationDeliveryListResult {
-  """
-  List of deliveries
-  """
+  """List of deliveries"""
   deliveries: [NotificationDelivery!]!
 
-  """
-  Pagination information
-  """
+  """Pagination information"""
   pagination: DeliveryPagination!
 }
 
-"""
-Status of a notification delivery
-"""
+"""Status of a notification delivery"""
 enum NotificationDeliveryStatus {
   FAILURE
   PARTIAL_FAILURE
@@ -3784,129 +2578,79 @@ enum NotificationDeliveryStatus {
   SUCCESS
 }
 
-"""
-Notification information within a delivery
-"""
+"""Notification information within a delivery"""
 type NotificationInfo {
-  """
-  Notification body
-  """
+  """Notification body"""
   body: String!
 
-  """
-  When notification was created
-  """
+  """When notification was created"""
   createdAt: DateTime!
 
-  """
-  User who created the notification
-  """
+  """User who created the notification"""
   createdBy: NotificationCreator
 
-  """
-  Notification ID
-  """
+  """Notification ID"""
   id: ID!
 
-  """
-  Notification title
-  """
+  """Notification title"""
   title: String!
 
-  """
-  Trip ID the notification belongs to
-  """
+  """Trip ID the notification belongs to"""
   tripId: ID
 
-  """
-  Notification URL/deep link
-  """
+  """Notification URL/deep link"""
   url: String
 }
 
-"""
-Offset-based pagination information
-"""
+"""Offset-based pagination information"""
 type NotificationOffsetPaginationInfo {
-  """
-  Whether there are more items
-  """
+  """Whether there are more items"""
   hasMore: Boolean!
 
-  """
-  Items per page
-  """
+  """Items per page"""
   limit: Int!
 
-  """
-  Number of items skipped
-  """
+  """Number of items skipped"""
   offset: Int!
 
-  """
-  Total number of items
-  """
+  """Total number of items"""
   total: Int!
 }
 
-"""
-Offset-based pagination for admin queries
-"""
+"""Offset-based pagination for admin queries"""
 input NotificationOffsetPaginationInput {
-  """
-  Number of items to return (1-100)
-  """
+  """Number of items to return (1-100)"""
   limit: Int = 50
 
-  """
-  Number of items to skip
-  """
+  """Number of items to skip"""
   offset: Int = 0
 }
 
-"""
-Pagination information for notification lists
-"""
+"""Pagination information for notification lists"""
 type NotificationPaginationInfo {
-  """
-  Current page number
-  """
+  """Current page number"""
   page: Int!
 
-  """
-  Items per page
-  """
+  """Items per page"""
   pageSize: Int!
 
-  """
-  Total number of items
-  """
+  """Total number of items"""
   total: Int!
 
-  """
-  Total number of pages
-  """
+  """Total number of pages"""
   totalPages: Int!
 }
 
-"""
-Pagination input for notification queries
-"""
+"""Pagination input for notification queries"""
 input NotificationPaginationInput {
-  """
-  Page number (1-based)
-  """
+  """Page number (1-based)"""
   page: Int = 1
 
-  """
-  Number of items per page (1-100)
-  """
+  """Number of items per page (1-100)"""
   pageSize: Int = 20
 }
 
-"""
-Priority level of a notification
-"""
+"""Priority level of a notification"""
 enum NotificationPriority {
   HIGH
   LOW
@@ -3914,239 +2658,145 @@ enum NotificationPriority {
   URGENT
 }
 
-"""
-A scheduled notification campaign
-"""
+"""A scheduled notification campaign"""
 type NotificationSchedule {
-  """
-  When the schedule was created
-  """
+  """When the schedule was created"""
   createdAt: DateTime!
 
-  """
-  ID of the user who created this schedule
-  """
+  """ID of the user who created this schedule"""
   createdById: ID!
 
-  """
-  When the schedule expires
-  """
+  """When the schedule expires"""
   endDate: DateTime!
 
-  """
-  Formatted time string (HH:MM)
-  """
+  """Formatted time string (HH:MM)"""
   formattedTime: String!
 
-  """
-  Scheduled hour (0-23)
-  """
+  """Scheduled hour (0-23)"""
   hour: Int!
 
-  """
-  Unique identifier for the schedule (UUID)
-  """
+  """Unique identifier for the schedule (UUID)"""
   id: ID!
 
-  """
-  Whether the schedule is enabled
-  """
+  """Whether the schedule is enabled"""
   isActive: Boolean!
 
-  """
-  Whether the schedule is currently within its active time window
-  """
+  """Whether the schedule is currently within its active time window"""
   isCurrentlyActive: Boolean!
 
-  """
-  Whether the schedule has passed its end date
-  """
+  """Whether the schedule has passed its end date"""
   isExpired: Boolean!
 
-  """
-  Whether the schedule has not yet reached its start date
-  """
+  """Whether the schedule has not yet reached its start date"""
   isUpcoming: Boolean!
 
-  """
-  When the schedule last ran (null if never run)
-  """
+  """When the schedule last ran (null if never run)"""
   lastRun: DateTime
 
-  """
-  Scheduled minute (0-59)
-  """
+  """Scheduled minute (0-59)"""
   minute: Int!
 
-  """
-  Schedule name/campaign name
-  """
+  """Schedule name/campaign name"""
   name: String!
 
-  """
-  Notification body content (optional for INFO type)
-  """
+  """Notification body content (optional for INFO type)"""
   notificationBody: String
 
-  """
-  Notification title (optional for INFO type)
-  """
+  """Notification title (optional for INFO type)"""
   notificationTitle: String
 
-  """
-  Type of notification to send
-  """
+  """Type of notification to send"""
   notificationType: NotificationScheduleType!
 
-  """
-  Optional URL to include in the notification
-  """
+  """Optional URL to include in the notification"""
   notificationUrl: String
 
-  """
-  When the schedule becomes active
-  """
+  """When the schedule becomes active"""
   startDate: DateTime!
 
-  """
-  ID of the trip this schedule is associated with (optional)
-  """
+  """ID of the trip this schedule is associated with (optional)"""
   tripId: ID
 
-  """
-  When the schedule was last updated
-  """
+  """When the schedule was last updated"""
   updatedAt: DateTime!
 }
 
-"""
-Filter options for notification schedule queries
-"""
+"""Filter options for notification schedule queries"""
 input NotificationScheduleFilterInput {
-  """
-  Filter by active status
-  """
+  """Filter by active status"""
   isActive: Boolean
 
-  """
-  Filter by notification type
-  """
+  """Filter by notification type"""
   notificationType: NotificationScheduleType
 
-  """
-  Search by name
-  """
+  """Search by name"""
   search: String
 
-  """
-  Filter by start date (from)
-  """
+  """Filter by start date (from)"""
   startDateFrom: DateTime
 
-  """
-  Filter by start date (to)
-  """
+  """Filter by start date (to)"""
   startDateTo: DateTime
 
-  """
-  Filter by associated trip ID
-  """
+  """Filter by associated trip ID"""
   tripId: ID
 }
 
-"""
-Pagination metadata for notification schedule lists
-"""
+"""Pagination metadata for notification schedule lists"""
 type NotificationSchedulePagination {
-  """
-  Whether more items are available
-  """
+  """Whether more items are available"""
   hasMore: Boolean!
 
-  """
-  Number of items per page
-  """
+  """Number of items per page"""
   limit: Int!
 
-  """
-  Number of items skipped
-  """
+  """Number of items skipped"""
   offset: Int!
 
-  """
-  Total number of schedules available
-  """
+  """Total number of schedules available"""
   total: Int!
 }
 
-"""
-Pagination parameters for list queries
-"""
+"""Pagination parameters for list queries"""
 input NotificationSchedulePaginationInput {
-  """
-  Maximum number of items to return (1-100)
-  """
+  """Maximum number of items to return (1-100)"""
   limit: Int = 30
 
-  """
-  Number of items to skip
-  """
+  """Number of items to skip"""
   offset: Int = 0
 }
 
-"""
-A simplified view of a notification schedule for list displays
-"""
+"""A simplified view of a notification schedule for list displays"""
 type NotificationScheduleSummary {
-  """
-  Schedule end date
-  """
+  """Schedule end date"""
   endDate: DateTime!
 
-  """
-  Scheduled hour
-  """
+  """Scheduled hour"""
   hour: Int!
 
-  """
-  Unique identifier for the schedule
-  """
+  """Unique identifier for the schedule"""
   id: ID!
 
-  """
-  Whether the schedule is enabled
-  """
+  """Whether the schedule is enabled"""
   isActive: Boolean!
 
-  """
-  Scheduled minute
-  """
+  """Scheduled minute"""
   minute: Int!
 
-  """
-  Schedule name
-  """
+  """Schedule name"""
   name: String!
 
-  """
-  Type of notification
-  """
+  """Type of notification"""
   notificationType: NotificationScheduleType!
 
-  """
-  Schedule start date
-  """
+  """Schedule start date"""
   startDate: DateTime!
 
-  """
-  Associated trip ID
-  """
+  """Associated trip ID"""
   tripId: ID
 }
 
-"""
-Type of scheduled notification
-"""
+"""Type of scheduled notification"""
 enum NotificationScheduleType {
   ANNOUNCEMENT
   CHALLENGE
@@ -4155,24 +2805,16 @@ enum NotificationScheduleType {
   REMINDER
 }
 
-"""
-A paginated list of notification schedules with metadata
-"""
+"""A paginated list of notification schedules with metadata"""
 type NotificationSchedulesConnection {
-  """
-  Pagination metadata
-  """
+  """Pagination metadata"""
   pagination: NotificationSchedulePagination!
 
-  """
-  The schedules in this page
-  """
+  """The schedules in this page"""
   schedules: [NotificationScheduleSummary!]!
 }
 
-"""
-Status of a notification
-"""
+"""Status of a notification"""
 enum NotificationStatus {
   CANCELLED
   DRAFT
@@ -4181,732 +2823,463 @@ enum NotificationStatus {
   SENT
 }
 
-"""
-Direction for ordering results
-"""
+"""Direction for ordering results"""
 enum OrderDirection {
   asc
   desc
 }
 
-"""
-Pagination information for activity feed
-"""
+"""Pagination information for activity feed"""
 type PaginationInfo {
-  """
-  Whether there are more items
-  """
+  """Whether there are more items"""
   hasMore: Boolean!
 
-  """
-  Number of items per page
-  """
+  """Number of items per page"""
   pageSize: Int!
 }
 
-"""
-Pagination parameters for list queries
-"""
+"""Pagination parameters for list queries"""
 input PaginationInput {
-  """
-  Maximum number of items to return (1-100)
-  """
+  """Maximum number of items to return (1-100)"""
   limit: Int = 30
 
-  """
-  Number of items to skip
-  """
+  """Number of items to skip"""
   offset: Int = 0
 }
 
-"""
-Result of creating a public URL
-"""
+"""Result of creating a public URL"""
 type PublicUrlResult {
-  """
-  The public URL for accessing the file
-  """
+  """The public URL for accessing the file"""
   publicUrl: String!
 }
 
-"""
-A paginated list of reward purchases with metadata
-"""
+"""A paginated list of reward purchases with metadata"""
 type PurchaseHistoryConnection {
-  """
-  Pagination metadata
-  """
+  """Pagination metadata"""
   pagination: RewardPagination!
 
-  """
-  The purchases in this page
-  """
+  """The purchases in this page"""
   purchases: [RewardPurchase!]!
 }
 
-"""
-Input for purchasing a reward
-"""
+"""Input for purchasing a reward"""
 input PurchaseRewardInput {
-  """
-  Number of rewards to purchase (min 1)
-  """
+  """Number of rewards to purchase (min 1)"""
   quantity: Int!
 
-  """
-  ID of the reward to purchase
-  """
+  """ID of the reward to purchase"""
   rewardId: ID!
 }
 
-"""
-Result of purchasing a reward
-"""
+"""Result of purchasing a reward"""
 type PurchaseRewardPayload {
-  """
-  The purchase record
-  """
+  """The purchase record"""
   purchase: RewardPurchase!
 
-  """
-  Remaining coins in the group after purchase
-  """
+  """Remaining coins in the group after purchase"""
   remainingGroupCoins: Int!
 
-  """
-  Remaining quantity of the reward after purchase
-  """
+  """Remaining quantity of the reward after purchase"""
   remainingRewardQuantity: Int!
 }
 
-"""
-Root query type for fetching data
-"""
+"""Root query type for fetching data"""
 type Query {
-  """
-  Get all currently active notification schedules (moderator+)
-  """
+  """Get all currently active notification schedules (moderator+)"""
   activeNotificationSchedules(
-    """
-    Filter by notification type
-    """
+    """Filter by notification type"""
     notificationType: NotificationScheduleType
 
-    """
-    Filter by trip ID
-    """
+    """Filter by trip ID"""
     tripId: ID
   ): [NotificationSchedule!]
 
-  """
-  Get activities for a trip (cursor pagination)
-  """
+  """Get activities for a trip (cursor pagination)"""
   activitiesByTrip(
-    """
-    Input for fetching activities
-    """
+    """Input for fetching activities"""
     input: GetByTripInput!
   ): ActivityFeedResult!
 
-  """
-  Get activities for moderation (includes hidden)
-  """
+  """Get activities for moderation (includes hidden)"""
   activitiesByTripModeration(
-    """
-    Input for fetching activities
-    """
+    """Input for fetching activities"""
     input: GetByTripModerationInput!
   ): ActivityFeedModerationResult!
 
-  """
-  Get a single activity by ID
-  """
+  """Get a single activity by ID"""
   activity(
-    """
-    Activity ID to fetch
-    """
+    """Activity ID to fetch"""
     id: ID!
   ): Activity
 
-  """
-  Get all notifications (admin only)
-  """
+  """Get all notifications (admin only)"""
   allNotifications(
-    """
-    Filter and pagination options
-    """
+    """Filter and pagination options"""
     input: GetAllNotificationsInput
   ): AllNotificationsResult!
 
-  """
-  Get a challenge submission by its unique ID
-  """
+  """Get a challenge by its ID"""
+  challenge(
+    """Challenge ID"""
+    id: ID!
+
+    """Trip ID (for validation)"""
+    tripId: ID!
+  ): Challenge
+
+  """Get a challenge submission by its unique ID"""
   challengeSubmission(
-    """
-    Submission ID to fetch
-    """
+    """Submission ID to fetch"""
     id: ID!
   ): ChallengeSubmission
 
-  """
-  Get a submission by challenge ID and group ID
-  """
+  """Get a submission by challenge ID and group ID"""
   challengeSubmissionByChallengeAndGroup(
-    """
-    Challenge ID
-    """
+    """Challenge ID"""
     challengeId: ID!
 
-    """
-    Group ID
-    """
+    """Group ID"""
     groupId: ID!
   ): ChallengeSubmission
 
-  """
-  List all submissions for a challenge with pagination and sorting
-  """
+  """List all submissions for a challenge with pagination and sorting"""
   challengeSubmissions(
-    """
-    Challenge ID to list submissions for
-    """
+    """Challenge ID to list submissions for"""
     challengeId: ID!
 
-    """
-    Maximum number of results (1-100)
-    """
+    """Maximum number of results (1-100)"""
     limit: Int = 20
 
-    """
-    Number of results to skip
-    """
+    """Number of results to skip"""
     offset: Int = 0
 
-    """
-    Field to order by
-    """
+    """Field to order by"""
     orderBy: SubmissionOrderBy = voteScore
 
-    """
-    Sort direction
-    """
+    """Sort direction"""
     orderDirection: OrderDirection = desc
   ): ChallengeSubmissionListResult
 
-  """
-  Get additional coin insights for a trip (moderator only)
-  """
+  """Get all active challenges (admin only)"""
+  challenges: [Challenge!]
+
+  """Get challenges for a specific trip"""
+  challengesByTrip(
+    """Pagination parameters"""
+    pagination: PaginationInput
+
+    """ID of the trip"""
+    tripId: ID!
+  ): ChallengesConnection
+
+  """Get additional coin insights for a trip (moderator only)"""
   coinAdditionalInsights(
-    """
-    Input for fetching additional insights
-    """
+    """Input for fetching additional insights"""
     input: GetCoinAdditionalInsightsInput!
   ): CoinAdditionalInsights
 
-  """
-  Get quick coin statistics for a trip (moderator only)
-  """
+  """Get quick coin statistics for a trip (moderator only)"""
   coinQuickStats(
-    """
-    Input for fetching quick stats
-    """
+    """Input for fetching quick stats"""
     input: GetCoinQuickStatsInput!
   ): CoinQuickStats
 
-  """
-  Get comprehensive coin statistics for a trip (moderator only)
-  """
+  """Get comprehensive coin statistics for a trip (moderator only)"""
   coinStatistics(
-    """
-    Input for fetching coin statistics
-    """
+    """Input for fetching coin statistics"""
     input: GetCoinStatisticsInput!
   ): CoinStatistics
 
-  """
-  Get all coin transactions for a trip (moderator only)
-  """
+  """Get all coin transactions for a trip (moderator only)"""
   coinTransactions(
-    """
-    Input for fetching transactions
-    """
+    """Input for fetching transactions"""
     input: GetAllCoinTransactionsInput!
   ): CoinTransactionsConnection
 
-  """
-  Create a signed download URL for a file in Supabase Storage
-  """
+  """Create a signed download URL for a file in Supabase Storage"""
   createDownloadUrl(
-    """
-    Input for creating the download URL
-    """
+    """Input for creating the download URL"""
     input: CreateDownloadUrlInput!
   ): DownloadUrlResult
 
-  """
-  Create a public URL for a file in the 'files-public' bucket
-  """
+  """Create a public URL for a file in the 'files-public' bucket"""
   createPublicUrl(
-    """
-    Input for creating the public URL
-    """
+    """Input for creating the public URL"""
     input: CreatePublicUrlInput!
   ): PublicUrlResult
 
-  """
-  Get notification delivery statistics
-  """
+  """Get notification delivery statistics"""
   deliveryStats(
-    """
-    Input for fetching delivery statistics
-    """
+    """Input for fetching delivery statistics"""
     input: GetDeliveryStatsInput
   ): DeliveryStats!
 
-  """
-  Get failed notification deliveries
-  """
+  """Get failed notification deliveries"""
   failedDeliveries(
-    """
-    Input for fetching failed deliveries
-    """
+    """Input for fetching failed deliveries"""
     input: GetFailedDeliveriesInput
   ): NotificationDeliveryListResult!
 
-  """
-  Get locations of friends sharing with current user
-  """
+  """Get locations of friends sharing with current user"""
   friendsLocations: FriendsLocationsConnection
 
-  """
-  Get a group by its ID
-  """
+  """Get a group by its ID"""
   group(
-    """
-    Group ID
-    """
+    """Group ID"""
     id: ID!
   ): Group
 
-  """
-  Get a group by its unique code
-  """
+  """Get a group by its unique code"""
   groupByCode(
-    """
-    Group code
-    """
+    """Group code"""
     code: String!
   ): Group
 
-  """
-  Get group names for a trip (moderator only)
-  """
+  """Get group names for a trip (moderator only)"""
   groupNamesByTrip(
-    """
-    ID of the trip
-    """
+    """ID of the trip"""
     tripId: ID!
   ): [GroupSummary!]!
 
-  """
-  Get group rankings for a trip
-  """
+  """Get group rankings for a trip"""
   groupRanking(
-    """
-    ID of the trip
-    """
+    """ID of the trip"""
     tripId: ID!
   ): GroupRankingResult!
 
-  """
-  Get all groups (admin only)
-  """
+  """Get all groups (admin only)"""
   groups(
-    """
-    Pagination parameters
-    """
+    """Pagination parameters"""
     pagination: GroupPaginationInput
   ): GroupsConnection!
 
-  """
-  Get groups organized by a specific user
-  """
+  """Get groups organized by a specific user"""
   groupsByOrganizer(
-    """
-    ID of the organizer
-    """
+    """ID of the organizer"""
     organizerId: ID!
   ): [Group!]!
 
-  """
-  Get groups for a specific trip
-  """
+  """Get groups for a specific trip"""
   groupsByTrip(
-    """
-    Pagination parameters
-    """
+    """Pagination parameters"""
     pagination: GroupPaginationInput
 
-    """
-    ID of the trip to fetch groups for
-    """
+    """ID of the trip to fetch groups for"""
     tripId: ID!
   ): GroupsConnection!
 
-  """
-  Get judged staff voting progress (moderator/admin only)
-  """
+  """Get judged staff voting progress (moderator/admin only)"""
   judgedStaffVotingProgress(
-    """
-    Input with challenge, trip, and admin details
-    """
+    """Input with challenge, trip, and admin details"""
     input: GetJudgedStaffVotingProgressInput!
   ): JudgedStaffVotingProgress
 
-  """
-  Get the currently authenticated user
-  """
+  """Get the currently authenticated user"""
   me: User
 
-  """
-  Get most active admin statistics (moderator only)
-  """
+  """Get most active admin statistics (moderator only)"""
   mostActiveAdminStats(
-    """
-    Input for fetching most active admin stats
-    """
+    """Input for fetching most active admin stats"""
     input: GetMostActiveAdminStatsInput!
   ): MostActiveAdminStats
 
-  """
-  Get coin transactions for the current user
-  """
+  """Get coin transactions for the current user"""
   myCoinTransactions(
-    """
-    Input for fetching user transactions
-    """
+    """Input for fetching user transactions"""
     input: GetUserCoinTransactionsInput!
   ): [CoinTransaction!]!
 
-  """
-  Get the current user's location
-  """
+  """Get the current user's location"""
   myLocation: Location
 
-  """
-  Get current user's notifications
-  """
+  """Get current user's notifications"""
   myNotifications(
-    """
-    Pagination options
-    """
+    """Pagination options"""
     input: NotificationPaginationInput
   ): MyNotificationsResult!
 
-  """
-  Get current user's location sharing settings
-  """
+  """Get current user's location sharing settings"""
   mySharingSettings: LocationSharingSettings
 
-  """
-  Get my votes for a specific challenge
-  """
+  """Get my votes for a specific challenge"""
   myVotes(
-    """
-    Input with challenge and trip IDs
-    """
+    """Input with challenge and trip IDs"""
     input: GetMyVotesInput!
   ): ChallengeVoteList
 
-  """
-  Get a single notification by ID (admin only)
-  """
+  """Get a single notification by ID (admin only)"""
   notification(
-    """
-    Notification ID to fetch
-    """
+    """Notification ID to fetch"""
     id: ID!
   ): Notification
 
-  """
-  Get notification deliveries with optional filters
-  """
+  """Get notification deliveries with optional filters"""
   notificationDeliveries(
-    """
-    Input for fetching deliveries
-    """
+    """Input for fetching deliveries"""
     input: GetDeliveriesInput
   ): NotificationDeliveryListResult!
 
-  """
-  Get a notification delivery by notification ID
-  """
+  """Get a notification delivery by notification ID"""
   notificationDeliveryByNotificationId(
-    """
-    Input for fetching delivery by notification ID
-    """
+    """Input for fetching delivery by notification ID"""
     input: GetDeliveryByNotificationIdInput!
   ): NotificationDelivery
 
-  """
-  Get a notification schedule by its ID (moderator+)
-  """
+  """Get a notification schedule by its ID (moderator+)"""
   notificationSchedule(
-    """
-    Schedule ID
-    """
+    """Schedule ID"""
     id: ID!
   ): NotificationSchedule
 
-  """
-  Get execution history for a notification schedule (moderator+)
-  """
+  """Get execution history for a notification schedule (moderator+)"""
   notificationScheduleExecutionHistory(
-    """
-    Pagination parameters
-    """
+    """Pagination parameters"""
     pagination: PaginationInput
 
-    """
-    ID of the schedule
-    """
+    """ID of the schedule"""
     scheduleId: ID!
   ): ExecutionHistoryResult
 
-  """
-  Get all notification schedules with filtering (moderator+)
-  """
+  """Get all notification schedules with filtering (moderator+)"""
   notificationSchedules(
-    """
-    Filter options
-    """
+    """Filter options"""
     filter: NotificationScheduleFilterInput
 
-    """
-    Pagination parameters
-    """
+    """Pagination parameters"""
     pagination: PaginationInput
   ): NotificationSchedulesConnection
 
-  """
-  Get purchase history for a trip
-  """
+  """Get purchase history for a trip"""
   purchaseHistory(
-    """
-    Pagination parameters
-    """
+    """Pagination parameters"""
     pagination: PaginationInput
 
-    """
-    ID of the trip
-    """
+    """ID of the trip"""
     tripId: ID!
   ): PurchaseHistoryConnection
 
-  """
-  Get a reward by its ID
-  """
+  """Get a reward by its ID"""
   reward(
-    """
-    Reward ID
-    """
+    """Reward ID"""
     id: ID!
   ): Reward
 
-  """
-  Get visible rewards for a specific trip
-  """
+  """Get visible rewards for a specific trip"""
   rewardsByTrip(
-    """
-    Pagination parameters
-    """
+    """Pagination parameters"""
     pagination: PaginationInput
 
-    """
-    ID of the trip
-    """
+    """ID of the trip"""
     tripId: ID!
   ): RewardsConnection
 
-  """
-  Get all rewards for a trip including hidden (admin only)
-  """
+  """Get all rewards for a trip including hidden (admin only)"""
   rewardsByTripAdmin(
-    """
-    Pagination parameters
-    """
+    """Pagination parameters"""
     pagination: PaginationInput
 
-    """
-    ID of the trip
-    """
+    """ID of the trip"""
     tripId: ID!
   ): RewardsConnection
 
-  """
-  Get a sponsor by its ID
-  """
+  """Get a sponsor by its ID"""
   sponsor(
-    """
-    Sponsor ID
-    """
+    """Sponsor ID"""
     id: ID!
   ): Sponsor
 
-  """
-  Get all active sponsors
-  """
+  """Get all active sponsors"""
   sponsors: SponsorListResult
 
-  """
-  Get sponsors for a specific trip
-  """
+  """Get sponsors for a specific trip"""
   sponsorsByTrip(
-    """
-    Trip ID
-    """
+    """Trip ID"""
     tripId: ID!
   ): [Sponsor!]
 
-  """
-  Get all reports filed against a specific submission
-  """
+  """Get all reports filed against a specific submission"""
   submissionReports(
-    """
-    Submission ID to fetch reports for
-    """
+    """Submission ID to fetch reports for"""
     submissionId: ID!
   ): SubmissionReportListResult
 
-  """
-  Get total available points for a trip (admin only)
-  """
+  """Get total available points for a trip (admin only)"""
   totalAvailablePoints(
-    """
-    ID of the trip
-    """
+    """ID of the trip"""
     tripId: ID!
   ): TotalAvailablePointsPayload
 
-  """
-  Get a trip by ID
-  """
+  """Get a trip by ID"""
   trip(
-    """
-    Trip ID to fetch
-    """
+    """Trip ID to fetch"""
     id: ID!
   ): Trip
 
-  """
-  Get a trip by ID (admin only)
-  """
+  """Get a trip by ID (admin only)"""
   tripAdmin(
-    """
-    Trip ID to fetch
-    """
+    """Trip ID to fetch"""
     id: ID!
   ): Trip
 
-  """
-  Get trips where current user is a participant
-  """
+  """Get trips where current user is a participant"""
   trips(
-    """
-    Pagination options
-    """
+    """Pagination options"""
     pagination: TripPaginationInput
   ): TripListResult!
 
-  """
-  Get upcoming notification schedules (moderator+)
-  """
+  """Get upcoming notification schedules (moderator+)"""
   upcomingNotificationSchedules(
-    """
-    Maximum number of schedules to return
-    """
+    """Maximum number of schedules to return"""
     limit: Int = 50
 
-    """
-    How many minutes in the future to look
-    """
+    """How many minutes in the future to look"""
     withinMinutes: Int = 30
   ): [NotificationSchedule!]
 
-  """
-  Get a user by their unique ID
-  """
+  """Get a user by their unique ID"""
   user(
-    """
-    User ID to fetch
-    """
+    """User ID to fetch"""
     id: ID!
   ): User
 
-  """
-  Get all users (admin only)
-  """
+  """Get all users (admin only)"""
   users(
-    """
-    Maximum number of users to return
-    """
+    """Maximum number of users to return"""
     limit: Int = 20
 
-    """
-    Number of users to skip
-    """
+    """Number of users to skip"""
     offset: Int = 0
   ): [User!]
 
-  """
-  Get all votes for a challenge (moderator/admin only)
-  """
+  """Get all votes for a challenge (moderator/admin only)"""
   votesByChallenge(
-    """
-    Input with challenge ID
-    """
+    """Input with challenge ID"""
     input: GetVotesByChallengeInput!
   ): ChallengeVoteAdminList
 
-  """
-  Get voting progress for a challenge
-  """
+  """Get voting progress for a challenge"""
   votingProgress(
-    """
-    Input with challenge ID
-    """
+    """Input with challenge ID"""
     input: GetVotingProgressInput!
   ): VotingProgress
 }
 
-"""
-Counts for each reaction type
-"""
+"""Counts for each reaction type"""
 type ReactionCounts {
-  """
-  Number of clap reactions
-  """
+  """Number of clap reactions"""
   clap: Int!
 
-  """
-  Number of fire reactions
-  """
+  """Number of fire reactions"""
   fire: Int!
 
-  """
-  Number of heart reactions
-  """
+  """Number of heart reactions"""
   heart: Int!
 
-  """
-  Number of star reactions
-  """
+  """Number of star reactions"""
   star: Int!
 }
 
-"""
-Types of reactions users can add to activities
-"""
+"""Types of reactions users can add to activities"""
 enum ReactionType {
   CLAP
   FIRE
@@ -4914,64 +3287,40 @@ enum ReactionType {
   STAR
 }
 
-"""
-Summary of reactions on an activity
-"""
+"""Summary of reactions on an activity"""
 type ReactionsSummary {
-  """
-  Counts per reaction type
-  """
+  """Counts per reaction type"""
   counts: ReactionCounts!
 
-  """
-  Current user's reactions
-  """
+  """Current user's reactions"""
   myReactions: [ReactionType!]!
 
-  """
-  Total number of reactions
-  """
+  """Total number of reactions"""
   total: Int!
 }
 
-"""
-Input for removing coins from a group
-"""
+"""Input for removing coins from a group"""
 input RemoveCoinsInput {
-  """
-  Amount of coins to remove (must be at least 1)
-  """
+  """Amount of coins to remove (must be at least 1)"""
   amount: Int!
 
-  """
-  ID of the group to remove coins from
-  """
+  """ID of the group to remove coins from"""
   groupId: ID!
 
-  """
-  Reason for removing coins (optional)
-  """
+  """Reason for removing coins (optional)"""
   reason: String
 
-  """
-  ID of the trip the group belongs to
-  """
+  """ID of the trip the group belongs to"""
   tripId: ID!
 }
 
-"""
-Input for removing a user from location sharing
-"""
+"""Input for removing a user from location sharing"""
 input RemoveSharingUserInput {
-  """
-  ID of the user to remove
-  """
+  """ID of the user to remove"""
   userId: ID!
 }
 
-"""
-Standard reasons for reporting a submission
-"""
+"""Standard reasons for reporting a submission"""
 enum ReportReason {
   CHEATING
   INAPPROPRIATE
@@ -4980,202 +3329,124 @@ enum ReportReason {
   WRONG_SUBMISSION
 }
 
-"""
-Action to take when reviewing a submission
-"""
+"""Action to take when reviewing a submission"""
 enum ReviewAction {
   APPROVE
   REJECT
 }
 
-"""
-A reward that can be purchased with coins in a trip
-"""
+"""A reward that can be purchased with coins in a trip"""
 type Reward {
-  """
-  Number of rewards available for purchase
-  """
+  """Number of rewards available for purchase"""
   availableQuantity: Int!
 
-  """
-  Whether the reward can be purchased (in stock and not hidden)
-  """
+  """Whether the reward can be purchased (in stock and not hidden)"""
   canBePurchased: Boolean!
 
-  """
-  Percentage of total trip points that this reward costs (1-100)
-  """
+  """Percentage of total trip points that this reward costs (1-100)"""
   coinCostPercentage: Int!
 
-  """
-  When the reward was created
-  """
+  """When the reward was created"""
   createdAt: DateTime!
 
-  """
-  ID of the user who created this reward
-  """
+  """ID of the user who created this reward"""
   createdById: ID!
 
-  """
-  Reward description
-  """
+  """Reward description"""
   description: String!
 
-  """
-  Unique identifier for the reward (UUID)
-  """
+  """Unique identifier for the reward (UUID)"""
   id: ID!
 
-  """
-  Array of reward image URLs
-  """
+  """Array of reward image URLs"""
   images: [String!]!
 
-  """
-  Whether the reward is hidden from users
-  """
+  """Whether the reward is hidden from users"""
   isHidden: Boolean!
 
-  """
-  Whether the reward is currently in stock
-  """
+  """Whether the reward is currently in stock"""
   isInStock: Boolean!
 
-  """
-  Reward name/title
-  """
+  """Reward name/title"""
   name: String!
 
-  """
-  Primary/main image URL (first image or null)
-  """
+  """Primary/main image URL (first image or null)"""
   primaryImage: String
 
-  """
-  Number of times this reward has been purchased
-  """
+  """Number of times this reward has been purchased"""
   purchaseCount: Int!
 
-  """
-  ID of the trip this reward belongs to
-  """
+  """ID of the trip this reward belongs to"""
   tripId: ID!
 
-  """
-  When the reward was last updated
-  """
+  """When the reward was last updated"""
   updatedAt: DateTime!
 }
 
-"""
-Pagination metadata for reward lists
-"""
+"""Pagination metadata for reward lists"""
 type RewardPagination {
-  """
-  Whether more items are available
-  """
+  """Whether more items are available"""
   hasMore: Boolean!
 
-  """
-  Number of items per page
-  """
+  """Number of items per page"""
   limit: Int!
 
-  """
-  Number of items skipped
-  """
+  """Number of items skipped"""
   offset: Int!
 
-  """
-  Total number of rewards available
-  """
+  """Total number of rewards available"""
   total: Int!
 }
 
-"""
-A purchase record for a reward
-"""
+"""A purchase record for a reward"""
 type RewardPurchase {
-  """
-  Method for collecting the reward (e.g., 'Pick up at hotel')
-  """
+  """Method for collecting the reward (e.g., 'Pick up at hotel')"""
   collectionMethod: String
 
-  """
-  ID of the group that made the purchase
-  """
+  """ID of the group that made the purchase"""
   groupId: ID!
 
-  """
-  Name of the group that made the purchase
-  """
+  """Name of the group that made the purchase"""
   groupName: String
 
-  """
-  Unique identifier for the purchase
-  """
+  """Unique identifier for the purchase"""
   purchaseId: ID!
 
-  """
-  When the purchase was made
-  """
+  """When the purchase was made"""
   purchasedAt: DateTime!
 
-  """
-  ID of the user who made the purchase
-  """
+  """ID of the user who made the purchase"""
   purchasedById: ID!
 
-  """
-  Name of the user who made the purchase
-  """
+  """Name of the user who made the purchase"""
   purchasedByName: String
 
-  """
-  Number of rewards purchased
-  """
+  """Number of rewards purchased"""
   quantity: Int!
 
-  """
-  ID of the purchased reward
-  """
+  """ID of the purchased reward"""
   rewardId: ID!
 
-  """
-  Name of the purchased reward
-  """
+  """Name of the purchased reward"""
   rewardName: String!
 
-  """
-  Current status of the purchase
-  """
+  """Current status of the purchase"""
   status: RewardPurchaseStatus!
 
-  """
-  When the status was last updated
-  """
+  """When the status was last updated"""
   statusUpdatedAt: DateTime!
 
-  """
-  ID of the user who last updated the status
-  """
+  """ID of the user who last updated the status"""
   statusUpdatedById: ID
 
-  """
-  Name of the user who last updated the status
-  """
+  """Name of the user who last updated the status"""
   statusUpdatedByName: String
 
-  """
-  Total coin cost for this purchase
-  """
+  """Total coin cost for this purchase"""
   totalCost: Int!
 }
 
-"""
-Status of a reward purchase in its lifecycle
-"""
+"""Status of a reward purchase in its lifecycle"""
 enum RewardPurchaseStatus {
   ACCEPTED
   BOUGHT
@@ -5184,9 +3455,7 @@ enum RewardPurchaseStatus {
   IN_DELIVERY
 }
 
-"""
-A reward with dynamic pricing calculations
-"""
+"""A reward with dynamic pricing calculations"""
 type RewardWithCalculations {
   availableQuantity: Int!
 
@@ -5196,863 +3465,565 @@ type RewardWithCalculations {
   canAfford: Boolean
   canBePurchased: Boolean!
 
-  """
-  Static cost percentage (1-100)
-  """
+  """Static cost percentage (1-100)"""
   coinCostPercentage: Int!
   createdAt: DateTime!
   createdById: ID!
 
-  """
-  Description
-  """
+  """Description"""
   description: String!
 
-  """
-  Calculated dynamic coin cost based on trip points
-  """
+  """Calculated dynamic coin cost based on trip points"""
   dynamicCoinCost: Int!
 
-  """
-  Unique identifier
-  """
+  """Unique identifier"""
   id: ID!
 
-  """
-  Array of image URLs
-  """
+  """Array of image URLs"""
   images: [String!]!
   isHidden: Boolean!
   isInStock: Boolean!
 
-  """
-  Reward name
-  """
+  """Reward name"""
   name: String!
 
-  """
-  Primary image
-  """
+  """Primary image"""
   primaryImage: String
   purchaseCount: Int!
 
-  """
-  Trip ID
-  """
+  """Trip ID"""
   tripId: ID!
   updatedAt: DateTime!
 }
 
-"""
-A paginated list of rewards with metadata
-"""
+"""A paginated list of rewards with metadata"""
 type RewardsConnection {
-  """
-  Pagination metadata
-  """
+  """Pagination metadata"""
   pagination: RewardPagination!
 
-  """
-  The rewards in this page
-  """
+  """The rewards in this page"""
   rewards: [RewardWithCalculations!]!
 }
 
-"""
-Input for sending mobile push notifications
-"""
+"""How points are awarded for a challenge"""
+enum ScoringCategory {
+  JUDGED_STAFF
+  PEER_VOTING
+  SPEED
+  UNLIMITED
+}
+
+"""Input for sending mobile push notifications"""
 input SendMobileNotificationsInput {
-  """
-  ID of the notification to send
-  """
+  """ID of the notification to send"""
   notificationId: ID!
 }
 
-"""
-Result of sending mobile push notifications
-"""
+"""Result of sending mobile push notifications"""
 type SendMobileNotificationsPayload {
-  """
-  Number of notifications that failed to send
-  """
+  """Number of notifications that failed to send"""
   failed: Int!
 
-  """
-  Number of notifications successfully sent
-  """
+  """Number of notifications successfully sent"""
   sent: Int!
 
-  """
-  Whether the send operation was successful
-  """
+  """Whether the send operation was successful"""
   success: Boolean!
 
-  """
-  Total number of recipients targeted
-  """
+  """Total number of recipients targeted"""
   total: Int!
 }
 
-"""
-Input for pinning/unpinning an activity
-"""
+"""Input for pinning/unpinning an activity"""
 input SetPinnedInput {
-  """
-  Activity ID
-  """
+  """Activity ID"""
   activityId: ID!
 
-  """
-  Whether to pin or unpin
-  """
+  """Whether to pin or unpin"""
   isPinned: Boolean!
 }
 
-"""
-Input for setting reward hidden status
-"""
+"""Input for setting reward hidden status"""
 input SetRewardHiddenInput {
-  """
-  ID of the reward
-  """
+  """ID of the reward"""
   id: ID!
 
-  """
-  Whether the reward should be hidden
-  """
+  """Whether the reward should be hidden"""
   isHidden: Boolean!
 }
 
-"""
-Result of setting reward hidden status
-"""
+"""Result of setting reward hidden status"""
 type SetRewardHiddenPayload {
-  """
-  The previous hidden status
-  """
+  """The previous hidden status"""
   previousHidden: Boolean!
 
-  """
-  The reward with updated hidden status
-  """
+  """The reward with updated hidden status"""
   reward: Reward!
 }
 
-"""
-User information for location sharing
-"""
+"""User information for location sharing"""
 type SharingUserInfo {
-  """
-  User's first name
-  """
+  """User's first name"""
   firstName: String
 
-  """
-  User ID
-  """
+  """User ID"""
   id: ID!
 
-  """
-  User's last name
-  """
+  """User's last name"""
   lastName: String
 }
 
-"""
-Result of adding or removing a sharing user
-"""
+"""Result of adding or removing a sharing user"""
 type SharingUserPayload {
-  """
-  The location with updated sharing list
-  """
+  """The location with updated sharing list"""
   location: Location!
 }
 
-"""
-A sponsor for a trip with logo and display settings
-"""
+"""A sponsor for a trip with logo and display settings"""
 type Sponsor {
-  """
-  When the sponsor was created
-  """
+  """When the sponsor was created"""
   createdAt: DateTime!
 
-  """
-  Sponsor description
-  """
+  """Sponsor description"""
   description: String!
 
-  """
-  Whether the sponsor has custom logo sizing/positioning
-  """
+  """Whether the sponsor has custom logo sizing/positioning"""
   hasLogoAdjustments: Boolean!
 
-  """
-  Logo height in pixels (for custom sizing)
-  """
+  """Logo height in pixels (for custom sizing)"""
   height: Int
 
-  """
-  Unique identifier for the sponsor
-  """
+  """Unique identifier for the sponsor"""
   id: ID!
 
-  """
-  Whether the sponsor is currently active
-  """
+  """Whether the sponsor is currently active"""
   isActive: Boolean!
 
-  """
-  URL path to sponsor logo image
-  """
+  """URL path to sponsor logo image"""
   logoPath: String!
 
-  """
-  Sponsor name
-  """
+  """Sponsor name"""
   name: String!
 
-  """
-  Horizontal offset in pixels
-  """
+  """Horizontal offset in pixels"""
   offsetX: Int
 
-  """
-  Vertical offset in pixels
-  """
+  """Vertical offset in pixels"""
   offsetY: Int
 
-  """
-  When the sponsor was last updated
-  """
+  """When the sponsor was last updated"""
   updatedAt: DateTime
 }
 
-"""
-Result of listing sponsors
-"""
+"""Result of listing sponsors"""
 type SponsorListResult {
-  """
-  List of sponsors
-  """
+  """List of sponsors"""
   sponsors: [Sponsor!]!
 
-  """
-  Total number of sponsors matching the query
-  """
+  """Total number of sponsors matching the query"""
   total: Int!
 }
 
-"""
-Group information embedded in a submission
-"""
+"""Group information embedded in a submission"""
 type SubmissionGroupInfo {
-  """
-  Group description
-  """
+  """Group description"""
   description: String
 
-  """
-  Group ID
-  """
+  """Group ID"""
   id: ID!
 
-  """
-  Group image URL
-  """
+  """Group image URL"""
   image: String
 
-  """
-  Group name
-  """
+  """Group name"""
   name: String!
 }
 
-"""
-Field to order submissions by
-"""
+"""Field to order submissions by"""
 enum SubmissionOrderBy {
   createdAt
   voteScore
 }
 
-"""
-A report filed against a challenge submission
-"""
+"""A report filed against a challenge submission"""
 type SubmissionReport {
-  """
-  When the report was created
-  """
+  """When the report was created"""
   createdAt: DateTime!
 
-  """
-  Additional details provided by the reporter
-  """
+  """Additional details provided by the reporter"""
   details: String
 
-  """
-  Whether the report has additional details
-  """
+  """Whether the report has additional details"""
   hasDetails: Boolean!
 
-  """
-  Unique identifier for the report
-  """
+  """Unique identifier for the report"""
   id: ID!
 
-  """
-  Reason for the report
-  """
+  """Reason for the report"""
   reason: ReportReason!
 
-  """
-  Human-readable display text for the reason
-  """
+  """Human-readable display text for the reason"""
   reasonDisplay: String!
 
-  """
-  Reporter information with user details
-  """
+  """Reporter information with user details"""
   reporter: SubmissionReportReporterInfo!
 
-  """
-  ID of the user who filed the report
-  """
+  """ID of the user who filed the report"""
   reporterId: ID!
 
-  """
-  ID of the submission being reported
-  """
+  """ID of the submission being reported"""
   submissionId: ID!
 }
 
-"""
-Result of creating a submission report
-"""
+"""Result of creating a submission report"""
 type SubmissionReportCreateResult {
-  """
-  When the report was created
-  """
+  """When the report was created"""
   createdAt: DateTime!
 
-  """
-  Additional details provided by the reporter
-  """
+  """Additional details provided by the reporter"""
   details: String
 
-  """
-  Whether the report has additional details
-  """
+  """Whether the report has additional details"""
   hasDetails: Boolean!
 
-  """
-  Unique identifier for the report
-  """
+  """Unique identifier for the report"""
   id: ID!
 
-  """
-  Reason for the report
-  """
+  """Reason for the report"""
   reason: ReportReason!
 
-  """
-  Human-readable display text for the reason
-  """
+  """Human-readable display text for the reason"""
   reasonDisplay: String!
 
-  """
-  Reporter information (null on create)
-  """
+  """Reporter information (null on create)"""
   reporter: SubmissionReportReporterInfo
 
-  """
-  ID of the user who filed the report
-  """
+  """ID of the user who filed the report"""
   reporterId: ID!
 
-  """
-  ID of the submission being reported
-  """
+  """ID of the submission being reported"""
   submissionId: ID!
 }
 
-"""
-Paginated list of submission reports
-"""
+"""Paginated list of submission reports"""
 type SubmissionReportListResult {
-  """
-  List of reports
-  """
+  """List of reports"""
   reports: [SubmissionReport!]!
 
-  """
-  Total number of reports (for pagination)
-  """
+  """Total number of reports (for pagination)"""
   totalCount: Int!
 }
 
-"""
-Reporter information with participant and user details
-"""
+"""Reporter information with participant and user details"""
 type SubmissionReportReporterInfo {
-  """
-  Participant ID
-  """
+  """Participant ID"""
   id: ID!
 
-  """
-  User details of the reporter
-  """
+  """User details of the reporter"""
   user: SubmissionReportUserInfo!
 }
 
-"""
-User information for a reporter
-"""
+"""User information for a reporter"""
 type SubmissionReportUserInfo {
-  """
-  User's email address
-  """
+  """User's email address"""
   email: String
 
-  """
-  User's first name
-  """
+  """User's first name"""
   firstName: String!
 
-  """
-  Whether the user has an avatar image
-  """
+  """Whether the user has an avatar image"""
   hasAvatar: Boolean!
 
-  """
-  User ID
-  """
+  """User ID"""
   id: ID!
 
-  """
-  User's last name
-  """
+  """User's last name"""
   lastName: String!
 }
 
-"""
-Reviewer information embedded in a submission
-"""
+"""Reviewer information embedded in a submission"""
 type SubmissionReviewerInfo {
-  """
-  Reviewer's email
-  """
+  """Reviewer's email"""
   email: String
 
-  """
-  Reviewer's first name
-  """
+  """Reviewer's first name"""
   firstName: String!
 
-  """
-  Reviewer user ID
-  """
+  """Reviewer user ID"""
   id: ID!
 
-  """
-  Reviewer's last name
-  """
+  """Reviewer's last name"""
   lastName: String!
 }
 
-"""
-The review status of a challenge submission
-"""
+"""The review status of a challenge submission"""
 enum SubmissionStatus {
   APPROVED
   PENDING
   REJECTED
 }
 
-"""
-Vote statistics for a challenge submission
-"""
+"""Type of submission required for a challenge"""
+enum SubmissionType {
+  IMAGE
+  IMAGE_LOCATION
+  LOCATION
+  MULTI_IMAGE
+  QR_CODE
+  TEXT
+  VIDEO
+}
+
+"""Vote statistics for a challenge submission"""
 type SubmissionVoteCount {
-  """
-  ID of the submission
-  """
+  """ID of the submission"""
   submissionId: ID!
 
-  """
-  Number of votes received
-  """
+  """Number of votes received"""
   voteCount: Int!
 
-  """
-  Calculated vote score (weighted)
-  """
+  """Calculated vote score (weighted)"""
   voteScore: Float!
 }
 
-"""
-Input for submitting a single vote
-"""
+"""Input for submitting a single vote"""
 input SubmitVoteInput {
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 
-  """
-  Normalized weight for weighted voting (optional)
-  """
+  """Normalized weight for weighted voting (optional)"""
   normalizedWeight: Float
 
-  """
-  ID of the submission being voted for
-  """
+  """ID of the submission being voted for"""
   submissionId: ID!
 
-  """
-  ID of the trip (for participant validation)
-  """
+  """ID of the trip (for participant validation)"""
   tripId: ID!
 
-  """
-  Points to award (optional)
-  """
+  """Points to award (optional)"""
   votePoints: Int
 
-  """
-  Voting position (1, 2, or 3)
-  """
+  """Voting position (1, 2, or 3)"""
   votePosition: Int!
 }
 
-"""
-Result of submitting a single vote
-"""
+"""Result of submitting a single vote"""
 type SubmitVotePayload {
-  """
-  The submitted vote
-  """
+  """The submitted vote"""
   vote: ChallengeVote!
 }
 
-"""
-Input for submitting multiple votes at once
-"""
+"""Input for submitting multiple votes at once"""
 input SubmitVotesInput {
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 
-  """
-  ID of the trip (for participant validation)
-  """
+  """ID of the trip (for participant validation)"""
   tripId: ID!
 
-  """
-  List of votes to submit (at least 1 required)
-  """
+  """List of votes to submit (at least 1 required)"""
   votes: [VoteInput!]!
 }
 
-"""
-Result of submitting multiple votes
-"""
+"""Result of submitting multiple votes"""
 type SubmitVotesPayload {
-  """
-  Total number of votes cast
-  """
+  """Total number of votes cast"""
   totalVotesCast: Int!
 
-  """
-  The submitted votes
-  """
+  """The submitted votes"""
   votes: [ChallengeVote!]!
 }
 
-"""
-Input for toggling a reaction on an activity
-"""
+"""Root subscription type for real-time updates"""
+type Subscription {
+  """Subscribe to new activities in a trip feed"""
+  activityFeedUpdated(
+    """Trip ID to subscribe to"""
+    tripId: ID!
+  ): Activity!
+
+  """Subscribe to voting progress updates for a challenge"""
+  challengeVotingUpdated(
+    """Challenge ID to subscribe to voting updates for"""
+    challengeId: ID!
+  ): VotingProgressSubscription!
+
+  """Subscribe to location updates from specific users"""
+  locationUpdated(
+    """User IDs to subscribe to location updates for"""
+    userIds: [ID!]!
+  ): FriendLocationSubscription!
+}
+
+"""Input for toggling a reaction on an activity"""
 input ToggleReactionInput {
-  """
-  Activity ID
-  """
+  """Activity ID"""
   activityId: ID!
 
-  """
-  Type of reaction
-  """
+  """Type of reaction"""
   reactionType: ReactionType!
 }
 
-"""
-Result of toggling a reaction
-"""
+"""Result of toggling a reaction"""
 type ToggleReactionResult {
-  """
-  Activity ID
-  """
+  """Activity ID"""
   activityId: ID!
 
-  """
-  Whether reaction is now active
-  """
+  """Whether reaction is now active"""
   isActive: Boolean!
 
-  """
-  Reaction type that was toggled
-  """
+  """Reaction type that was toggled"""
   reactionType: ReactionType!
 
-  """
-  Updated reactions summary
-  """
+  """Updated reactions summary"""
   reactionsSummary: ReactionsSummary!
 }
 
-"""
-Result of toggling schedule active status
-"""
+"""Result of toggling schedule active status"""
 type ToggleScheduleActivePayload {
-  """
-  The schedule with toggled status
-  """
+  """The schedule with toggled status"""
   schedule: NotificationSchedule!
 }
 
-"""
-Total available points for a trip
-"""
+"""Total available points for a trip"""
 type TotalAvailablePointsPayload {
-  """
-  Total available points in the trip
-  """
+  """Total available points in the trip"""
   totalPoints: Int!
 }
 
-"""
-Input for tracking delivery completion
-"""
+"""Input for tracking delivery completion"""
 input TrackDeliveryCompleteInput {
-  """
-  Error details if any failures occurred
-  """
+  """Error details if any failures occurred"""
   errors: String
 
-  """
-  Number of failed deliveries
-  """
+  """Number of failed deliveries"""
   failureCount: Int!
 
-  """
-  ID of the notification that was delivered
-  """
+  """ID of the notification that was delivered"""
   notificationId: ID!
 
-  """
-  Number of successful deliveries
-  """
+  """Number of successful deliveries"""
   successCount: Int!
 
-  """
-  Total number of recipients
-  """
+  """Total number of recipients"""
   totalRecipients: Int!
 }
 
-"""
-Result of tracking delivery completion
-"""
+"""Result of tracking delivery completion"""
 type TrackDeliveryCompletePayload {
-  """
-  Whether the tracking was recorded successfully
-  """
+  """Whether the tracking was recorded successfully"""
   success: Boolean!
 }
 
-"""
-Input for tracking delivery failure
-"""
+"""Input for tracking delivery failure"""
 input TrackDeliveryFailureInput {
-  """
-  Error message describing the failure
-  """
+  """Error message describing the failure"""
   error: String!
 
-  """
-  ID of the notification that failed
-  """
+  """ID of the notification that failed"""
   notificationId: ID!
 }
 
-"""
-Result of tracking delivery failure
-"""
+"""Result of tracking delivery failure"""
 type TrackDeliveryFailurePayload {
-  """
-  Whether the failure was recorded successfully
-  """
+  """Whether the failure was recorded successfully"""
   success: Boolean!
 }
 
-"""
-Input for tracking delivery start
-"""
+"""Input for tracking delivery start"""
 input TrackDeliveryStartInput {
-  """
-  ID of the notification being delivered
-  """
+  """ID of the notification being delivered"""
   notificationId: ID!
 }
 
-"""
-Result of tracking delivery start
-"""
+"""Result of tracking delivery start"""
 type TrackDeliveryStartPayload {
-  """
-  Whether the tracking was recorded successfully
-  """
+  """Whether the tracking was recorded successfully"""
   success: Boolean!
 }
 
-"""
-A trip/event in the application
-"""
+"""A trip/event in the application"""
 type Trip {
-  """
-  Path to background image
-  """
+  """Path to background image"""
   backgroundImagePath: String
 
-  """
-  When the trip was created
-  """
+  """When the trip was created"""
   createdAt: DateTime!
 
-  """
-  Trip description
-  """
+  """Trip description"""
   description: String
 
-  """
-  When the trip ends
-  """
+  """When the trip ends"""
   endDate: DateTime!
 
-  """
-  Unique trip identifier
-  """
+  """Unique trip identifier"""
   id: ID!
 
-  """
-  Whether the trip is in active status
-  """
+  """Whether the trip is in active status"""
   isActive: Boolean!
 
-  """
-  Whether the trip is cancelled
-  """
+  """Whether the trip is cancelled"""
   isCancelled: Boolean!
 
-  """
-  Whether the trip is completed
-  """
+  """Whether the trip is completed"""
   isCompleted: Boolean!
 
-  """
-  Whether the trip is in planning status
-  """
+  """Whether the trip is in planning status"""
   isPlanning: Boolean!
 
-  """
-  Trip name
-  """
+  """Trip name"""
   name: String!
 
-  """
-  When the trip starts
-  """
+  """When the trip starts"""
   startDate: DateTime!
 
-  """
-  Trip status
-  """
+  """Trip status"""
   status: TripStatus!
 
-  """
-  When the trip was last updated
-  """
+  """When the trip was last updated"""
   updatedAt: DateTime!
 }
 
-"""
-Input for fetching a trip by ID
-"""
+"""Input for fetching a trip by ID"""
 input TripByIdInput {
-  """
-  Trip ID to fetch
-  """
+  """Trip ID to fetch"""
   id: ID!
 }
 
-"""
-Result of fetching a list of trips
-"""
+"""Result of fetching a list of trips"""
 type TripListResult {
-  """
-  Pagination information
-  """
+  """Pagination information"""
   pagination: TripPaginationInfo!
 
-  """
-  List of trips
-  """
+  """List of trips"""
   trips: [Trip!]!
 }
 
-"""
-Pagination information for trip list
-"""
+"""Pagination information for trip list"""
 type TripPaginationInfo {
-  """
-  Whether there are more items
-  """
+  """Whether there are more items"""
   hasMore: Boolean!
 
-  """
-  Number of items per page
-  """
+  """Number of items per page"""
   limit: Int!
 
-  """
-  Number of items skipped
-  """
+  """Number of items skipped"""
   offset: Int!
 
-  """
-  Total number of trips
-  """
+  """Total number of trips"""
   total: Int!
 }
 
-"""
-Pagination input for trip queries
-"""
+"""Pagination input for trip queries"""
 input TripPaginationInput {
-  """
-  Maximum number of trips to return (1-100)
-  """
+  """Maximum number of trips to return (1-100)"""
   limit: Int = 30
 
-  """
-  Number of trips to skip
-  """
+  """Number of trips to skip"""
   offset: Int = 0
 }
 
-"""
-Status of a trip
-"""
+"""Status of a trip"""
 enum TripStatus {
   ACTIVE
   CANCELLED
@@ -6060,809 +4031,562 @@ enum TripStatus {
   PLANNING
 }
 
-"""
-Input for unhiding an activity
-"""
+"""Input for unhiding an activity"""
 input UnhideActivityInput {
-  """
-  Activity ID to unhide
-  """
+  """Activity ID to unhide"""
   activityId: ID!
 }
 
-"""
-Input for unlinking a sponsor from a trip
-"""
+"""Input for unlinking a sponsor from a trip"""
 input UnlinkSponsorFromTripInput {
-  """
-  ID of the sponsor to unlink
-  """
+  """ID of the sponsor to unlink"""
   sponsorId: ID!
 
-  """
-  ID of the trip to unlink from
-  """
+  """ID of the trip to unlink from"""
   tripId: ID!
 }
 
-"""
-Result of unlinking a sponsor from a trip
-"""
+"""Result of unlinking a sponsor from a trip"""
 type UnlinkSponsorFromTripPayload {
-  """
-  ID of the sponsor
-  """
+  """ID of the sponsor"""
   sponsorId: ID!
 
-  """
-  ID of the trip
-  """
+  """ID of the trip"""
   tripId: ID!
 
-  """
-  Whether the unlink was successful
-  """
+  """Whether the unlink was successful"""
   unlinked: Boolean!
 }
 
-"""
-Input for updating an activity
-"""
+"""Input for updating an activity"""
 input UpdateActivityInput {
-  """
-  Activity ID to update
-  """
+  """Activity ID to update"""
   activityId: ID!
 
-  """
-  New description (null to clear)
-  """
+  """New description (null to clear)"""
   description: String
 
-  """
-  Pin/unpin the activity
-  """
+  """Pin/unpin the activity"""
   isPinned: Boolean
 
-  """
-  New title
-  """
+  """New title"""
   title: String
 }
 
-"""
-Input for updating an existing group
-"""
-input UpdateGroupInput {
-  """
-  New description (null to clear, max 500 characters)
-  """
+"""Input for updating an existing challenge"""
+input UpdateChallengeInput {
+  """New auto-approve setting"""
+  autoApprove: Boolean
+
+  """New base points (0-10000)"""
+  basePoints: Int
+
+  """New description (max 2000 characters)"""
   description: String
 
-  """
-  ID of the group to update
-  """
+  """New end time"""
+  endTime: DateTime
+
+  """New expected value"""
+  expectedValue: String
+
+  """New 1st place bonus points"""
+  firstPlacePoints: Int
+
+  """ID of the challenge to update"""
   id: ID!
 
-  """
-  New image URL (null to clear)
-  """
+  """New image URL"""
   image: String
 
-  """
-  New group name (1-100 characters)
-  """
+  """New challenge name (1-200 characters)"""
   name: String
 
-  """
-  ID of the trip (for validation)
-  """
+  """New 2nd place bonus points"""
+  secondPlacePoints: Int
+
+  """New start time"""
+  startTime: DateTime
+
+  """New target latitude"""
+  targetLatitude: Float
+
+  """New target longitude"""
+  targetLongitude: Float
+
+  """New 3rd place bonus points"""
+  thirdPlacePoints: Int
+
+  """ID of the trip (for validation)"""
   tripId: ID!
 }
 
-"""
-Result of updating a group
-"""
+"""Result of updating a challenge"""
+type UpdateChallengePayload {
+  """The updated challenge"""
+  challenge: ChallengeSummary!
+}
+
+"""Input for updating a challenge's status"""
+input UpdateChallengeStatusInput {
+  """ID of the challenge"""
+  id: ID!
+
+  """New status to transition to"""
+  newStatus: ChallengeStatus!
+
+  """ID of the trip (for validation)"""
+  tripId: ID!
+}
+
+"""Result of updating a challenge's status"""
+type UpdateChallengeStatusPayload {
+  """The challenge with updated status"""
+  challenge: ChallengeSummary!
+
+  """The previous status before the update"""
+  previousStatus: ChallengeStatus!
+}
+
+"""Input for updating an existing group"""
+input UpdateGroupInput {
+  """New description (null to clear, max 500 characters)"""
+  description: String
+
+  """ID of the group to update"""
+  id: ID!
+
+  """New image URL (null to clear)"""
+  image: String
+
+  """New group name (1-100 characters)"""
+  name: String
+
+  """ID of the trip (for validation)"""
+  tripId: ID!
+}
+
+"""Result of updating a group"""
 type UpdateGroupPayload {
-  """
-  The updated group
-  """
+  """The updated group"""
   group: Group!
 }
 
-"""
-Input for updating the last run timestamp
-"""
+"""Input for updating the last run timestamp"""
 input UpdateLastRunInput {
-  """
-  ID of the schedule
-  """
+  """ID of the schedule"""
   id: ID!
 
-  """
-  When the schedule last ran
-  """
+  """When the schedule last ran"""
   lastRunAt: DateTime!
 
-  """
-  Error message if the run failed
-  """
+  """Error message if the run failed"""
   lastRunError: String
 
-  """
-  Status of the last run
-  """
+  """Status of the last run"""
   lastRunStatus: LastRunStatus!
 }
 
-"""
-Result of updating the last run timestamp
-"""
+"""Result of updating the last run timestamp"""
 type UpdateLastRunPayload {
-  """
-  The schedule with updated last run timestamp
-  """
+  """The schedule with updated last run timestamp"""
   schedule: NotificationSchedule!
 }
 
-"""
-Input for updating a user's location
-"""
+"""Input for updating a user's location"""
 input UpdateLocationInput {
-  """
-  Accuracy in meters
-  """
+  """Accuracy in meters"""
   accuracy: Float
 
-  """
-  Altitude in meters
-  """
+  """Altitude in meters"""
   altitude: Float
 
-  """
-  Altitude accuracy in meters
-  """
+  """Altitude accuracy in meters"""
   altitudeAccuracy: Float
 
-  """
-  Heading (0-360 degrees)
-  """
+  """Heading (0-360 degrees)"""
   heading: Float
 
-  """
-  Latitude (-90 to 90)
-  """
+  """Latitude (-90 to 90)"""
   latitude: Float
 
-  """
-  Longitude (-180 to 180)
-  """
+  """Longitude (-180 to 180)"""
   longitude: Float
 
-  """
-  Speed in meters per second
-  """
+  """Speed in meters per second"""
   speed: Float
 }
 
-"""
-Result of updating a location
-"""
+"""Result of updating a location"""
 type UpdateLocationPayload {
-  """
-  The updated location
-  """
+  """The updated location"""
   location: Location!
 }
 
-"""
-Input for updating own purchase status (group leader only)
-"""
+"""Input for updating own purchase status (group leader only)"""
 input UpdateMyPurchaseStatusInput {
-  """
-  ID of the purchase to update
-  """
+  """ID of the purchase to update"""
   purchaseId: ID!
 
-  """
-  New status (IN_DELIVERY or CANCELLED only)
-  """
+  """New status (IN_DELIVERY or CANCELLED only)"""
   status: RewardPurchaseStatus!
 }
 
-"""
-Result of updating own purchase status (group leader only)
-"""
+"""Result of updating own purchase status (group leader only)"""
 type UpdateMyPurchaseStatusPayload {
-  """
-  The previous status before the update
-  """
+  """The previous status before the update"""
   previousStatus: RewardPurchaseStatus!
 
-  """
-  The updated purchase record
-  """
+  """The updated purchase record"""
   purchase: RewardPurchase!
 }
 
-"""
-Input for updating a notification
-"""
+"""Input for updating a notification"""
 input UpdateNotificationInput {
-  """
-  New body content
-  """
+  """New body content"""
   body: String
 
-  """
-  ID of notification to update
-  """
+  """ID of notification to update"""
   notificationId: ID!
 
-  """
-  New priority
-  """
+  """New priority"""
   priority: NotificationPriority
 
-  """
-  New title
-  """
+  """New title"""
   title: String
 
-  """
-  New URL (null to clear)
-  """
+  """New URL (null to clear)"""
   url: String
 }
 
-"""
-Result of updating a notification
-"""
+"""Result of updating a notification"""
 type UpdateNotificationResult {
-  """
-  The updated notification
-  """
+  """The updated notification"""
   notification: Notification!
 }
 
-"""
-Input for updating an existing notification schedule
-"""
+"""Input for updating an existing notification schedule"""
 input UpdateNotificationScheduleInput {
-  """
-  New end date
-  """
+  """New end date"""
   endDate: DateTime
 
-  """
-  New scheduled hour (0-23)
-  """
+  """New scheduled hour (0-23)"""
   hour: Int
 
-  """
-  ID of the schedule to update
-  """
+  """ID of the schedule to update"""
   id: ID!
 
-  """
-  New active status
-  """
+  """New active status"""
   isActive: Boolean
 
-  """
-  New scheduled minute (0-59)
-  """
+  """New scheduled minute (0-59)"""
   minute: Int
 
-  """
-  New schedule name (1-100 characters)
-  """
+  """New schedule name (1-100 characters)"""
   name: String
 
-  """
-  New notification body (max 2000 chars)
-  """
+  """New notification body (max 2000 chars)"""
   notificationBody: String
 
-  """
-  New notification title (max 200 chars)
-  """
+  """New notification title (max 200 chars)"""
   notificationTitle: String
 
-  """
-  New notification URL (max 500 chars)
-  """
+  """New notification URL (max 500 chars)"""
   notificationUrl: String
 
-  """
-  New start date
-  """
+  """New start date"""
   startDate: DateTime
 }
 
-"""
-Result of updating a notification schedule
-"""
+"""Result of updating a notification schedule"""
 type UpdateNotificationSchedulePayload {
-  """
-  The updated schedule
-  """
+  """The updated schedule"""
   schedule: NotificationSchedule!
 }
 
-"""
-Input for updating notification status
-"""
+"""Input for updating notification status"""
 input UpdateNotificationStatusInput {
-  """
-  New status to set
-  """
+  """New status to set"""
   newStatus: NotificationStatus!
 
-  """
-  ID of notification to update
-  """
+  """ID of notification to update"""
   notificationId: ID!
 }
 
-"""
-Result of updating notification status
-"""
+"""Result of updating notification status"""
 type UpdateNotificationStatusResult {
-  """
-  New status
-  """
+  """New status"""
   newStatus: NotificationStatus!
 
-  """
-  The notification with updated status
-  """
+  """The notification with updated status"""
   notification: Notification!
 
-  """
-  Previous status
-  """
+  """Previous status"""
   previousStatus: NotificationStatus!
 }
 
-"""
-Input for updating a purchase status (admin/staff only)
-"""
+"""Input for updating a purchase status (admin/staff only)"""
 input UpdatePurchaseStatusInput {
-  """
-  Collection method (required for ACCEPTED status)
-  """
+  """Collection method (required for ACCEPTED status)"""
   collectionMethod: String
 
-  """
-  ID of the purchase to update
-  """
+  """ID of the purchase to update"""
   purchaseId: ID!
 
-  """
-  New status to transition to
-  """
+  """New status to transition to"""
   status: RewardPurchaseStatus!
 }
 
-"""
-Result of updating a purchase status
-"""
+"""Result of updating a purchase status"""
 type UpdatePurchaseStatusPayload {
-  """
-  The previous status before the update
-  """
+  """The previous status before the update"""
   previousStatus: RewardPurchaseStatus!
 
-  """
-  The updated purchase record
-  """
+  """The updated purchase record"""
   purchase: RewardPurchase!
 
-  """
-  Whether coins were refunded (only when cancelling)
-  """
+  """Whether coins were refunded (only when cancelling)"""
   refunded: Boolean!
 }
 
-"""
-Input for updating an existing reward
-"""
+"""Input for updating an existing reward"""
 input UpdateRewardInput {
-  """
-  New available quantity (0-1000000)
-  """
+  """New available quantity (0-1000000)"""
   availableQuantity: Int
 
-  """
-  New percentage of total trip points (1-100)
-  """
+  """New percentage of total trip points (1-100)"""
   coinCost: Int
 
-  """
-  New description (max 2000 characters)
-  """
+  """New description (max 2000 characters)"""
   description: String
 
-  """
-  ID of the reward to update
-  """
+  """ID of the reward to update"""
   id: ID!
 
-  """
-  New array of image URLs (max 10)
-  """
+  """New array of image URLs (max 10)"""
   images: [String!]
 
-  """
-  New reward name (1-200 characters)
-  """
+  """New reward name (1-200 characters)"""
   name: String
 }
 
-"""
-Result of updating a reward
-"""
+"""Result of updating a reward"""
 type UpdateRewardPayload {
-  """
-  The updated reward
-  """
+  """The updated reward"""
   reward: Reward!
 }
 
-"""
-Input for updating location sharing settings
-"""
+"""Input for updating location sharing settings"""
 input UpdateSharingSettingsInput {
-  """
-  Whether to enable location sharing
-  """
+  """Whether to enable location sharing"""
   isSharingLocation: Boolean!
 
-  """
-  IDs of users to share location with
-  """
+  """IDs of users to share location with"""
   userIdsToShareWith: [ID!]
 }
 
-"""
-Result of updating sharing settings
-"""
+"""Result of updating sharing settings"""
 type UpdateSharingSettingsPayload {
-  """
-  The updated sharing settings
-  """
+  """The updated sharing settings"""
   settings: LocationSharingSettings!
 }
 
-"""
-Input for updating an existing sponsor
-"""
+"""Input for updating an existing sponsor"""
 input UpdateSponsorInput {
-  """
-  New sponsor description (1-2000 characters)
-  """
+  """New sponsor description (1-2000 characters)"""
   description: String
 
-  """
-  New logo height in pixels (null to clear)
-  """
+  """New logo height in pixels (null to clear)"""
   height: Int
 
-  """
-  ID of the sponsor to update
-  """
+  """ID of the sponsor to update"""
   id: ID!
 
-  """
-  New active status
-  """
+  """New active status"""
   isActive: Boolean
 
-  """
-  New logo URL path
-  """
+  """New logo URL path"""
   logoPath: String
 
-  """
-  New sponsor name (1-200 characters)
-  """
+  """New sponsor name (1-200 characters)"""
   name: String
 
-  """
-  New horizontal offset in pixels (null to clear)
-  """
+  """New horizontal offset in pixels (null to clear)"""
   offsetX: Int
 
-  """
-  New vertical offset in pixels (null to clear)
-  """
+  """New vertical offset in pixels (null to clear)"""
   offsetY: Int
 }
 
-"""
-Result of updating a sponsor
-"""
+"""Result of updating a sponsor"""
 type UpdateSponsorPayload {
-  """
-  The updated sponsor
-  """
+  """The updated sponsor"""
   sponsor: Sponsor!
 }
 
-"""
-Input for updating a challenge submission
-"""
+"""Input for updating a challenge submission"""
 input UpdateSubmissionInput {
-  """
-  Points to award (for APPROVE action)
-  """
+  """Points to award (for APPROVE action)"""
   awardedPoints: Int
 
-  """
-  Bonus points to award
-  """
+  """Bonus points to award"""
   bonusPoints: Int
 
-  """
-  New image IDs (replaces existing)
-  """
+  """New image IDs (replaces existing)"""
   imageIds: [String!]
 
-  """
-  New latitude (null to remove)
-  """
+  """New latitude (null to remove)"""
   latitude: Float
 
-  """
-  New longitude (null to remove)
-  """
+  """New longitude (null to remove)"""
   longitude: Float
 
-  """
-  Ranking position 1-3 (for APPROVE action, null to clear)
-  """
+  """Ranking position 1-3 (for APPROVE action, null to clear)"""
   ranking: Int
 
-  """
-  Reason for rejection (required for REJECT)
-  """
+  """Reason for rejection (required for REJECT)"""
   rejectionReason: String
 
-  """
-  Review action (APPROVE or REJECT)
-  """
+  """Review action (APPROVE or REJECT)"""
   reviewAction: ReviewAction
 
-  """
-  ID of reviewer (required for review actions)
-  """
+  """ID of reviewer (required for review actions)"""
   reviewedById: ID
 
-  """
-  ID of the submission to update
-  """
+  """ID of the submission to update"""
   submissionId: ID!
 
-  """
-  New text content (null to remove)
-  """
+  """New text content (null to remove)"""
   textContent: String
 
-  """
-  New video ID (null to remove)
-  """
+  """New video ID (null to remove)"""
   videoId: String
 }
 
-"""
-Input for updating a trip
-"""
+"""Input for updating a trip"""
 input UpdateTripInput {
-  """
-  URL to background image
-  """
+  """URL to background image"""
   backgroundImagePath: String
 
-  """
-  Trip description
-  """
+  """Trip description"""
   description: String
 
-  """
-  Trip end date
-  """
+  """Trip end date"""
   endDate: DateTime
 
-  """
-  Trip ID to update
-  """
+  """Trip ID to update"""
   id: ID!
 
-  """
-  Trip name
-  """
+  """Trip name"""
   name: String
 
-  """
-  Trip start date
-  """
+  """Trip start date"""
   startDate: DateTime
 }
 
-"""
-Input for updating an existing user
-"""
+"""Input for updating an existing user"""
 input UpdateUserInput {
-  """
-  User's first name (2-100 characters, no digits)
-  """
+  """User's first name (2-100 characters, no digits)"""
   firstName: String
 
-  """
-  Whether the user has an avatar
-  """
+  """Whether the user has an avatar"""
   hasAvatar: Boolean
 
-  """
-  User's last name (2-100 characters, no digits)
-  """
+  """User's last name (2-100 characters, no digits)"""
   lastName: String
 
-  """
-  ID of the user to update
-  """
+  """ID of the user to update"""
   userId: ID!
 }
 
-"""
-Result of creating a signed upload URL for resumable uploads
-"""
+"""Result of creating a signed upload URL for resumable uploads"""
 type UploadUrlResult {
-  """
-  The storage bucket name
-  """
+  """The storage bucket name"""
   bucket: String!
 
-  """
-  The path to the object within the bucket
-  """
+  """The path to the object within the bucket"""
   objectPath: String!
 
-  """
-  The resumable upload endpoint URL
-  """
+  """The resumable upload endpoint URL"""
   resumableUrl: String!
 
-  """
-  The full storage path (bucket/path)
-  """
+  """The full storage path (bucket/path)"""
   storagePath: String!
 
-  """
-  The signed upload token (X-Ups-Authorization header)
-  """
+  """The signed upload token (X-Ups-Authorization header)"""
   token: String!
 }
 
-"""
-A user in the Mirai App system
-"""
+"""A user in the Mirai App system"""
 type User {
-  """
-  External authentication provider user ID
-  """
+  """External authentication provider user ID"""
   authUserId: String!
 
-  """
-  When the user account was created
-  """
+  """When the user account was created"""
   createdAt: DateTime!
 
-  """
-  User's first name
-  """
+  """User's first name"""
   firstName: String!
 
-  """
-  Computed full name (firstName + lastName)
-  """
+  """Computed full name (firstName + lastName)"""
   fullName: String!
 
-  """
-  Whether the user has uploaded an avatar image
-  """
+  """Whether the user has uploaded an avatar image"""
   hasAvatar: Boolean!
 
-  """
-  Unique identifier for the user (UUID)
-  """
+  """Unique identifier for the user (UUID)"""
   id: ID!
 
-  """
-  Whether the user has admin privileges
-  """
+  """Whether the user has admin privileges"""
   isAdmin: Boolean!
 
-  """
-  Whether the user has moderator privileges or higher
-  """
+  """Whether the user has moderator privileges or higher"""
   isModerator: Boolean!
 
-  """
-  User's last name
-  """
+  """User's last name"""
   lastName: String!
 
-  """
-  When the user was last active (null if never seen)
-  """
+  """When the user was last active (null if never seen)"""
   lastSeenOn: DateTime
 
-  """
-  User's role in the system
-  """
+  """User's role in the system"""
   role: UserRole!
 }
 
-"""
-Result of creating a new user
-"""
+"""Result of creating a new user"""
 type UserCreateResult {
-  """
-  External authentication provider user ID
-  """
+  """External authentication provider user ID"""
   authUserId: String!
 
-  """
-  When the user account was created
-  """
+  """When the user account was created"""
   createdAt: DateTime!
 
-  """
-  User's first name
-  """
+  """User's first name"""
   firstName: String!
 
-  """
-  Computed full name (firstName + lastName)
-  """
+  """Computed full name (firstName + lastName)"""
   fullName: String!
 
-  """
-  Whether the user has uploaded an avatar image
-  """
+  """Whether the user has uploaded an avatar image"""
   hasAvatar: Boolean!
 
-  """
-  Unique identifier for the user (UUID)
-  """
+  """Unique identifier for the user (UUID)"""
   id: ID!
 
-  """
-  User's last name
-  """
+  """User's last name"""
   lastName: String!
 
-  """
-  User's role in the system
-  """
+  """User's role in the system"""
   role: UserRole!
 }
 
-"""
-Input for fetching a user by ID
-"""
+"""Input for fetching a user by ID"""
 input UserInput {
-  """
-  Unique user ID
-  """
+  """Unique user ID"""
   id: ID!
 }
 
-"""
-User roles in the system
-"""
+"""User roles in the system"""
 enum UserRole {
   ADMIN
   MODERATOR
@@ -6870,92 +4594,95 @@ enum UserRole {
   USER
 }
 
-"""
-Result of updating a user
-"""
+"""Result of updating a user"""
 type UserUpdateResult {
-  """
-  External authentication provider user ID
-  """
+  """External authentication provider user ID"""
   authUserId: String!
 
-  """
-  User's first name
-  """
+  """User's first name"""
   firstName: String!
 
-  """
-  Computed full name (firstName + lastName)
-  """
+  """Computed full name (firstName + lastName)"""
   fullName: String!
 
-  """
-  Whether the user has uploaded an avatar image
-  """
+  """Whether the user has uploaded an avatar image"""
   hasAvatar: Boolean!
 
-  """
-  Unique identifier for the user (UUID)
-  """
+  """Unique identifier for the user (UUID)"""
   id: ID!
 
-  """
-  User's last name
-  """
+  """User's last name"""
   lastName: String!
 
-  """
-  User's role in the system
-  """
+  """User's role in the system"""
   role: UserRole!
 
-  """
-  When the user was last updated
-  """
+  """When the user was last updated"""
   updatedAt: DateTime!
 }
 
-"""
-Input for a single vote in a batch submission
-"""
+"""Input for a single vote in a batch submission"""
 input VoteInput {
-  """
-  Normalized weight for weighted voting (optional)
-  """
+  """Normalized weight for weighted voting (optional)"""
   normalizedWeight: Float
 
-  """
-  ID of the submission being voted for
-  """
+  """ID of the submission being voted for"""
   submissionId: ID!
 
-  """
-  Points to award (optional)
-  """
+  """Points to award (optional)"""
   votePoints: Int
 
-  """
-  Voting position (1, 2, or 3)
-  """
+  """Voting position (1, 2, or 3)"""
   votePosition: Int!
 }
 
-"""
-Current voting progress for a challenge
-"""
+"""Current voting progress for a challenge"""
 type VotingProgress {
-  """
-  ID of the challenge
-  """
+  """ID of the challenge"""
   challengeId: ID!
 
-  """
-  Vote statistics per submission (sorted by score)
-  """
+  """Vote statistics per submission (sorted by score)"""
   submissionStats: [SubmissionVoteCount!]!
 
-  """
-  Total number of votes cast across all submissions
-  """
+  """Total number of votes cast across all submissions"""
   totalVotes: Int!
+}
+
+"""Vote count for a specific submission"""
+type VotingProgressSubmission {
+  """Current rank based on votes"""
+  rank: Int
+
+  """Submission ID"""
+  submissionId: ID!
+
+  """Number of votes for this submission"""
+  voteCount: Int!
+
+  """Calculated vote score"""
+  voteScore: Float!
+}
+
+"""Real-time voting progress for a challenge"""
+type VotingProgressSubscription {
+  """Challenge ID"""
+  challengeId: ID!
+
+  """When voting ends"""
+  endsAt: DateTime
+
+  """Whether voting is complete"""
+  isComplete: Boolean!
+
+  """Vote counts per submission"""
+  submissions: [VotingProgressSubmission!]!
+
+  """Total number of votes cast"""
+  totalVotes: Int!
+
+  """Number of unique voters"""
+  uniqueVoters: Int!
+
+  """When this progress was last updated"""
+  updatedAt: DateTime!
 }

@@ -10,11 +10,11 @@
 # Queries:
 #   - GetMyLocation: Get current user's location
 #   - GetMySharingSettings: Get current user's location sharing settings
-#   - GetLocationsSharingWithMe: Get all locations sharing with current user
+#   - FriendsLocations: Get friends' locations (for initial fetch)
 #
 # Mutations:
 #   - UpdateLocation: Update current user's location
-#   - UpdateLocationSharing: Update location sharing settings
+#   - UpdateSharingSettings: Update location sharing settings
 #   - AddUserToSharing: Add a user to sharing list
 #   - RemoveUserFromSharing: Remove a user from sharing list
 #
@@ -23,63 +23,6 @@
 # ============================================
 
 #import "../fragments/common.graphql"
-
-# ============================================
-# LOCATION FRAGMENTS
-# ============================================
-
-fragment LocationFields on Location {
-  id
-  userId
-  latitude
-  longitude
-  accuracy
-  altitude
-  altitudeAccuracy
-  heading
-  speed
-  isSharingLocation
-  timestamp
-  usersToShareWith {
-    id
-    firstName
-    lastName
-  }
-}
-
-fragment SharingUserInfoFields on SharingUserInfo {
-  id
-  firstName
-  lastName
-}
-
-fragment LocationSharingSettingsFields on LocationSharingSettings {
-  isSharingLocation
-  usersToShareWith {
-    ...SharingUserInfoFields
-  }
-}
-
-fragment FriendLocationFields on FriendLocation {
-  id
-  userId
-  latitude
-  longitude
-  accuracy
-  altitude
-  heading
-  speed
-  isSharingLocation
-  distanceKm
-  timestamp
-  user {
-    id
-    firstName
-    lastName
-    fullName
-    hasAvatar
-  }
-}
 
 # ============================================
 # LOCATION QUERIES
@@ -106,28 +49,12 @@ query GetMySharingSettings {
 }
 
 """
-Get all locations that are sharing with current user.
-Returns: List of locations with user information.
+Get friends' locations.
+Returns: Connection of friend locations for the current user.
 """
-query GetLocationsSharingWithMe {
-  locationsSharingWithMe {
-    ...LocationFields
-  }
-}
-
-"""
-Get all users available for location sharing in a trip.
-Optional: tripId to filter by trip.
-Returns: List of users with their sharing status.
-"""
-query GetAllUsersForSharing($tripId: ID) {
-  allUsersForSharing(tripId: $tripId) {
-    id
-    firstName
-    lastName
-    fullName
-    hasAvatar
-    isCurrentlySharing
+query GetFriendsLocations {
+  friendsLocations {
+    ...FriendsLocationsConnectionFields
   }
 }
 
@@ -141,8 +68,8 @@ Requires: latitude, longitude. Optional: accuracy, altitude, etc.
 Returns: Updated location.
 """
 mutation UpdateLocation($input: UpdateLocationInput!) {
-  updateMyLocation(input: $input) {
-    ...LocationFields
+  updateLocation(input: $input) {
+    ...UpdateLocationPayloadFields
   }
 }
 
@@ -150,22 +77,21 @@ mutation UpdateLocation($input: UpdateLocationInput!) {
 Update location sharing settings.
 Requires: isSharingLocation boolean.
 Optional: userIdsToShareWith list.
-Returns: Updated location with sharing settings.
+Returns: Updated sharing settings.
 """
-mutation UpdateSharingSettings($input: UpdateSharingSettingsInput!) {
-  updateLocationSharing(input: $input) {
-    ...LocationFields
+mutation UpdateLocationSharingSettings($input: UpdateSharingSettingsInput!) {
+  updateSharingSettings(input: $input) {
+    ...UpdateSharingSettingsPayloadFields
   }
 }
 
 """
 Add a user to location sharing list.
 Requires: userId to add.
-Returns: Success status.
+Returns: Location with updated sharing list.
 """
-mutation AddUserToSharing($input: AddSharingUserInput!) {
-  addSharingUser(input: $input) {
-    success
+mutation AddUserToLocationSharing($input: AddSharingUserInput!) {
+  addUserToSharing(input: $input) {
     location {
       ...LocationFields
     }
@@ -175,42 +101,12 @@ mutation AddUserToSharing($input: AddSharingUserInput!) {
 """
 Remove a user from location sharing list.
 Requires: userId to remove.
-Returns: Success status.
+Returns: Location with updated sharing list.
 """
-mutation RemoveUserFromSharing($userId: ID!) {
-  removeUserFromSharing(userId: $userId) {
-    success
+mutation RemoveUserFromLocationSharing($input: RemoveSharingUserInput!) {
+  removeUserFromSharing(input: $input) {
     location {
       ...LocationFields
-    }
-  }
-}
-
-# ============================================
-# LOCATION SUBSCRIPTIONS
-# ============================================
-
-"""
-Subscribe to real-time updates of friends' locations.
-Optional: connectionId for connection tracking, radiusKm for filtering.
-Returns: Stream of location events (upsert/delete).
-"""
-subscription FriendsLocations(
-  $connectionId: String
-  $radiusKm: Float
-  $latitude: Float
-  $longitude: Float
-) {
-  friendsLocations(
-    connectionId: $connectionId
-    radiusKm: $radiusKm
-    latitude: $latitude
-    longitude: $longitude
-  ) {
-    edges {
-      node {
-        ...FriendLocationFields
-      }
     }
   }
 }
