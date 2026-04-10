@@ -1,0 +1,161 @@
+import type { Event } from "@mirai-app/domain";
+
+/**
+ * EventRepository Port
+ *
+ * This interface defines what operations the application needs
+ * from any event repository implementation.
+ *
+ * Events represent trip-level activities that users can express interest in
+ * or enlist for. Events can be organized by groups or created independently.
+ *
+ * Implementations (in adapters layer):
+ * - PrismaEventRepository: Uses Prisma ORM
+ * - DrizzleEventRepository: Uses Drizzle ORM (Phase 1 migration)
+ * - InMemoryEventRepository: For testing
+ */
+export interface EventRepository {
+  /**
+   * Create a new event
+   */
+  create(event: Event): Promise<Event>;
+
+  /**
+   * Find event by ID
+   * @returns Event or null if not found
+   */
+  findById(id: string): Promise<Event | null>;
+
+  /**
+   * Find events by creator ID
+   */
+  findByCreatorId(creatorId: string): Promise<Event[]>;
+
+  /**
+   * Find events by organizer group ID
+   */
+  findByOrganizerGroupId(groupId: string): Promise<Event[]>;
+
+  /**
+   * Find events by IDs
+   */
+  findByIds(ids: string[]): Promise<Event[]>;
+
+  /**
+   * Find all events with optional pagination
+   */
+  findAll(options?: {
+    limit?: number;
+    offset?: number;
+    orderBy?: { column: string; direction: "asc" | "desc" };
+  }): Promise<Event[]>;
+
+  /**
+   * Find upcoming events (startTime > now)
+   */
+  findUpcoming(): Promise<Event[]>;
+
+  /**
+   * Find ongoing events (startTime <= now <= endTime)
+   */
+  findOngoing(): Promise<Event[]>;
+
+  /**
+   * Find past events (endTime < now)
+   */
+  findPast(): Promise<Event[]>;
+
+  /**
+   * Find events starting within a time range
+   */
+  findStartingBetween(start: Date, end: Date): Promise<Event[]>;
+
+  /**
+   * Update event
+   */
+  update(event: Event): Promise<Event>;
+
+  /**
+   * Delete event
+   */
+  delete(id: string): Promise<void>;
+
+  /**
+   * Check if event exists
+   */
+  exists(id: string): Promise<boolean>;
+
+  /**
+   * Count total events
+   */
+  count(): Promise<number>;
+
+  /**
+   * Count events by organizer group ID
+   */
+  countByOrganizerGroupId(groupId: string): Promise<number>;
+
+  // ============================================================
+  // User Event Operations (Interest/Enlistment)
+  // ============================================================
+
+  /**
+   * Mark a user as interested in an event
+   */
+  markInterested(userId: string, eventId: string): Promise<void>;
+
+  /**
+   * Mark a user as enlisted in an event
+   */
+  markEnlisted(userId: string, eventId: string): Promise<void>;
+
+  /**
+   * Remove a user's interest in an event
+   */
+  removeInterest(userId: string, eventId: string): Promise<void>;
+
+  /**
+   * Remove a user's enlistment from an event
+   */
+  removeEnlistment(userId: string, eventId: string): Promise<void>;
+
+  /**
+   * Check if user is interested in event
+   */
+  isInterested(userId: string, eventId: string): Promise<boolean>;
+
+  /**
+   * Check if user is enlisted in event
+   */
+  isEnlisted(userId: string, eventId: string): Promise<boolean>;
+
+  /**
+   * Get interested users for an event
+   */
+  getInterestedUsers(eventId: string): Promise<string[]>;
+
+  /**
+   * Get enlisted users for an event
+   */
+  getEnlistedUsers(eventId: string): Promise<string[]>;
+
+  /**
+   * Get events a user is interested in
+   */
+  getInterestedEventsForUser(userId: string): Promise<Event[]>;
+
+  /**
+   * Get events a user is enlisted in
+   */
+  getEnlistedEventsForUser(userId: string): Promise<Event[]>;
+
+  /**
+   * Count interested users for an event
+   */
+  countInterested(eventId: string): Promise<number>;
+
+  /**
+   * Count enlisted users for an event
+   */
+  countEnlisted(eventId: string): Promise<number>;
+}

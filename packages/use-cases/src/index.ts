@@ -25,6 +25,7 @@ export type { LocationRepository } from "./ports/LocationRepository";
 export type { ChallengeVoteRepository } from "./ports/ChallengeVoteRepository";
 export type { SponsorRepository } from "./ports/SponsorRepository";
 export type { SubmissionReportRepository } from "./ports/SubmissionReportRepository";
+export type { EventRepository } from "./ports/EventRepository";
 export type {
   RewardRepository,
   RewardPurchaseRepository,

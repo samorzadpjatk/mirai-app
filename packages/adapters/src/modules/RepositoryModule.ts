@@ -1,30 +1,44 @@
 /**
  * RepositoryModule - Data Access Layer Module
  *
- * Provides all 16 Prisma repository implementations as injectable services.
+ * Provides all 17 repository implementations as injectable services.
  * This module serves as the data access layer in the Clean Architecture,
- * bridging domain entities with the Prisma ORM.
+ * bridging domain entities with the ORM (Prisma or Drizzle).
  *
- * ## Repository Catalog (16 repositories)
+ * ## Dual-ORM Support
  *
- * | Token | Class | Interface |
- * |-------|-------|-----------|
- * | `userRepository` | PrismaUserRepository | UserRepository |
- * | `tripRepository` | PrismaTripRepository | TripRepository |
- * | `challengeRepository` | PrismaChallengeRepository | ChallengeRepository |
- * | `groupRepository` | PrismaGroupRepository | GroupRepository |
- * | `locationRepository` | PrismaLocationRepository | LocationRepository |
- * | `notificationRepository` | PrismaNotificationRepository | NotificationRepository |
- * | `challengeSubmissionRepository` | PrismaChallengeSubmissionRepository | ChallengeSubmissionRepository |
- * | `challengeVoteRepository` | PrismaChallengeVoteRepository | ChallengeVoteRepository |
- * | `activityFeedRepository` | PrismaActivityFeedRepository | ActivityFeedRepository |
- * | `sponsorRepository` | PrismaSponsorRepository | SponsorRepository |
- * | `submissionReportRepository` | PrismaSubmissionReportRepository | SubmissionReportRepository |
- * | `rewardRepository` | PrismaRewardRepository | RewardRepository |
- * | `rewardPurchaseRepository` | PrismaRewardPurchaseRepository | RewardPurchaseRepository |
- * | `coinTransactionRepository` | PrismaCoinTransactionRepository | CoinTransactionRepository |
- * | `notificationDeliveryRepository` | PrismaNotificationDeliveryRepository | NotificationDeliveryRepository |
- * | `notificationScheduleRepository` | PrismaNotificationScheduleRepository | NotificationScheduleRepository |
+ * This module supports both Prisma and Drizzle ORMs via environment variable
+ * configuration. Set `USE_DRIZZLE=true` to use Drizzle implementations.
+ *
+ * ```bash
+ * # Use Prisma (default)
+ * USE_DRIZZLE=false
+ *
+ * # Use Drizzle
+ * USE_DRIZZLE=true
+ * ```
+ *
+ * ## Repository Catalog (17 repositories)
+ *
+ * | Token | Prisma Class | Drizzle Class | Interface |
+ * |-------|--------------|---------------|-----------|
+ * | `userRepository` | PrismaUserRepository | DrizzleUserRepository | UserRepository |
+ * | `tripRepository` | PrismaTripRepository | DrizzleTripRepository | TripRepository |
+ * | `challengeRepository` | PrismaChallengeRepository | DrizzleChallengeRepository | ChallengeRepository |
+ * | `groupRepository` | PrismaGroupRepository | DrizzleGroupRepository | GroupRepository |
+ * | `locationRepository` | PrismaLocationRepository | DrizzleLocationRepository | LocationRepository |
+ * | `notificationRepository` | PrismaNotificationRepository | DrizzleNotificationRepository | NotificationRepository |
+ * | `challengeSubmissionRepository` | PrismaChallengeSubmissionRepository | DrizzleChallengeSubmissionRepository | ChallengeSubmissionRepository |
+ * | `challengeVoteRepository` | PrismaChallengeVoteRepository | DrizzleChallengeVoteRepository | ChallengeVoteRepository |
+ * | `activityFeedRepository` | PrismaActivityFeedRepository | DrizzleActivityFeedRepository | ActivityFeedRepository |
+ * | `sponsorRepository` | PrismaSponsorRepository | DrizzleSponsorRepository | SponsorRepository |
+ * | `submissionReportRepository` | PrismaSubmissionReportRepository | DrizzleSubmissionReportRepository | SubmissionReportRepository |
+ * | `rewardRepository` | PrismaRewardRepository | DrizzleRewardRepository | RewardRepository |
+ * | `rewardPurchaseRepository` | PrismaRewardPurchaseRepository | DrizzleRewardPurchaseRepository | RewardPurchaseRepository |
+ * | `coinTransactionRepository` | PrismaCoinTransactionRepository | DrizzleCoinTransactionRepository | CoinTransactionRepository |
+ * | `notificationDeliveryRepository` | PrismaNotificationDeliveryRepository | DrizzleNotificationDeliveryRepository | NotificationDeliveryRepository |
+ * | `notificationScheduleRepository` | PrismaNotificationScheduleRepository | DrizzleNotificationScheduleRepository | NotificationScheduleRepository |
+ * | `eventRepository` | PrismaEventRepository | DrizzleEventRepository | EventRepository |
  *
  * ## Usage
  *
@@ -85,6 +99,31 @@ import {
 import { PrismaCoinTransactionRepository } from "../gateways/PrismaCoinTransactionRepository";
 import { PrismaNotificationDeliveryRepository } from "../gateways/PrismaNotificationDeliveryRepository";
 import { PrismaNotificationScheduleRepository } from "../gateways/PrismaNotificationScheduleRepository";
+import { PrismaEventRepository } from "../gateways/prisma/PrismaEventRepository";
+
+// =============================================================================
+// Drizzle Repository Imports (for dual-ORM support)
+// =============================================================================
+
+import { DrizzleUserRepository } from "../gateways/drizzle/DrizzleUserRepository";
+import { DrizzleTripRepository } from "../gateways/drizzle/DrizzleTripRepository";
+import { DrizzleGroupRepository } from "../gateways/drizzle/DrizzleGroupRepository";
+import { DrizzleChallengeRepository } from "../gateways/drizzle/DrizzleChallengeRepository";
+import { DrizzleLocationRepository } from "../gateways/drizzle/DrizzleLocationRepository";
+import { DrizzleNotificationRepository } from "../gateways/drizzle/DrizzleNotificationRepository";
+import { DrizzleChallengeSubmissionRepository } from "../gateways/drizzle/DrizzleChallengeSubmissionRepository";
+import { DrizzleChallengeVoteRepository } from "../gateways/drizzle/DrizzleChallengeVoteRepository";
+import { DrizzleActivityFeedRepository } from "../gateways/drizzle/DrizzleActivityFeedRepository";
+import { DrizzleSponsorRepository } from "../gateways/drizzle/DrizzleSponsorRepository";
+import { DrizzleSubmissionReportRepository } from "../gateways/drizzle/DrizzleSubmissionReportRepository";
+import {
+  DrizzleRewardRepository,
+  DrizzleRewardPurchaseRepository,
+} from "../gateways/drizzle/DrizzleRewardRepository";
+import { DrizzleCoinTransactionRepository } from "../gateways/drizzle/DrizzleCoinTransactionRepository";
+import { DrizzleNotificationDeliveryRepository } from "../gateways/drizzle/DrizzleNotificationDeliveryRepository";
+import { DrizzleNotificationScheduleRepository } from "../gateways/drizzle/DrizzleNotificationScheduleRepository";
+import { DrizzleEventRepository } from "../gateways/drizzle/DrizzleEventRepository";
 
 // =============================================================================
 // Type Imports (for type definitions)
@@ -107,6 +146,7 @@ import type {
   CoinTransactionRepository,
   NotificationDeliveryRepository,
   NotificationScheduleRepository,
+  EventRepository,
 } from "@mirai-app/use-cases";
 
 // =============================================================================
@@ -145,6 +185,9 @@ export const REPOSITORY_TOKENS = {
   // Support & moderation repositories
   SponsorRepository: "sponsorRepository",
   SubmissionReportRepository: "submissionReportRepository",
+
+  // Event repositories
+  EventRepository: "eventRepository",
 } as const;
 
 /**
@@ -227,8 +270,14 @@ export interface RepositoryModuleDeps {
   /** Notification schedule data access */
   [REPOSITORY_TOKENS.NotificationScheduleRepository]: NotificationScheduleRepository;
 
+  /** Event data access */
+  [REPOSITORY_TOKENS.EventRepository]: EventRepository;
+
   /** PrismaClient from parent container */
   prisma: unknown; // PrismaClient type from frameworks
+
+  /** Drizzle client from parent container (for dual-ORM support) */
+  drizzle: unknown; // DrizzleDb type from frameworks
 }
 
 // =============================================================================
@@ -240,25 +289,68 @@ export interface RepositoryModuleDeps {
  *
  * Used for type checking and module composition.
  */
+/**
+ * ORM Selection Configuration
+ *
+ * Set USE_DRIZZLE=true to use Drizzle implementations.
+ * Default is Prisma for backward compatibility.
+ */
+const USE_DRIZZLE = process.env.USE_DRIZZLE === "true";
+
 export interface RepositoryModuleDef {
   name: "RepositoryModule";
   providers: {
-    [REPOSITORY_TOKENS.UserRepository]: typeof PrismaUserRepository;
-    [REPOSITORY_TOKENS.TripRepository]: typeof PrismaTripRepository;
-    [REPOSITORY_TOKENS.ChallengeRepository]: typeof PrismaChallengeRepository;
-    [REPOSITORY_TOKENS.GroupRepository]: typeof PrismaGroupRepository;
-    [REPOSITORY_TOKENS.LocationRepository]: typeof PrismaLocationRepository;
-    [REPOSITORY_TOKENS.NotificationRepository]: typeof PrismaNotificationRepository;
-    [REPOSITORY_TOKENS.ChallengeSubmissionRepository]: typeof PrismaChallengeSubmissionRepository;
-    [REPOSITORY_TOKENS.ChallengeVoteRepository]: typeof PrismaChallengeVoteRepository;
-    [REPOSITORY_TOKENS.ActivityFeedRepository]: typeof PrismaActivityFeedRepository;
-    [REPOSITORY_TOKENS.SponsorRepository]: typeof PrismaSponsorRepository;
-    [REPOSITORY_TOKENS.SubmissionReportRepository]: typeof PrismaSubmissionReportRepository;
-    [REPOSITORY_TOKENS.RewardRepository]: typeof PrismaRewardRepository;
-    [REPOSITORY_TOKENS.RewardPurchaseRepository]: typeof PrismaRewardPurchaseRepository;
-    [REPOSITORY_TOKENS.CoinTransactionRepository]: typeof PrismaCoinTransactionRepository;
-    [REPOSITORY_TOKENS.NotificationDeliveryRepository]: typeof PrismaNotificationDeliveryRepository;
-    [REPOSITORY_TOKENS.NotificationScheduleRepository]: typeof PrismaNotificationScheduleRepository;
+    [REPOSITORY_TOKENS.UserRepository]:
+      | typeof PrismaUserRepository
+      | typeof DrizzleUserRepository;
+    [REPOSITORY_TOKENS.TripRepository]:
+      | typeof PrismaTripRepository
+      | typeof DrizzleTripRepository;
+    [REPOSITORY_TOKENS.ChallengeRepository]:
+      | typeof PrismaChallengeRepository
+      | typeof DrizzleChallengeRepository;
+    [REPOSITORY_TOKENS.GroupRepository]:
+      | typeof PrismaGroupRepository
+      | typeof DrizzleGroupRepository;
+    [REPOSITORY_TOKENS.LocationRepository]:
+      | typeof PrismaLocationRepository
+      | typeof DrizzleLocationRepository;
+    [REPOSITORY_TOKENS.NotificationRepository]:
+      | typeof PrismaNotificationRepository
+      | typeof DrizzleNotificationRepository;
+    [REPOSITORY_TOKENS.ChallengeSubmissionRepository]:
+      | typeof PrismaChallengeSubmissionRepository
+      | typeof DrizzleChallengeSubmissionRepository;
+    [REPOSITORY_TOKENS.ChallengeVoteRepository]:
+      | typeof PrismaChallengeVoteRepository
+      | typeof DrizzleChallengeVoteRepository;
+    [REPOSITORY_TOKENS.ActivityFeedRepository]:
+      | typeof PrismaActivityFeedRepository
+      | typeof DrizzleActivityFeedRepository;
+    [REPOSITORY_TOKENS.SponsorRepository]:
+      | typeof PrismaSponsorRepository
+      | typeof DrizzleSponsorRepository;
+    [REPOSITORY_TOKENS.SubmissionReportRepository]:
+      | typeof PrismaSubmissionReportRepository
+      | typeof DrizzleSubmissionReportRepository;
+    [REPOSITORY_TOKENS.RewardRepository]:
+      | typeof PrismaRewardRepository
+      | typeof DrizzleRewardRepository;
+    [REPOSITORY_TOKENS.RewardPurchaseRepository]:
+      | typeof PrismaRewardPurchaseRepository
+      | typeof DrizzleRewardPurchaseRepository;
+    [REPOSITORY_TOKENS.CoinTransactionRepository]:
+      | typeof PrismaCoinTransactionRepository
+      | typeof DrizzleCoinTransactionRepository;
+    [REPOSITORY_TOKENS.NotificationDeliveryRepository]:
+      | typeof PrismaNotificationDeliveryRepository
+      | typeof DrizzleNotificationDeliveryRepository;
+    [REPOSITORY_TOKENS.NotificationScheduleRepository]:
+      | typeof PrismaNotificationScheduleRepository
+      | typeof DrizzleNotificationScheduleRepository;
+    [REPOSITORY_TOKENS.EventRepository]:
+      | typeof PrismaEventRepository
+      | typeof DrizzleEventRepository;
   };
   exports: RepositoryToken[];
 }
@@ -387,38 +479,68 @@ export const RepositoryModule: StaticModule<RepositoryModuleDef> =
     name: "RepositoryModule",
 
     providers: {
-      // Core domain repositories - using classes directly for dependency injection
-      [REPOSITORY_TOKENS.UserRepository]: PrismaUserRepository,
-      [REPOSITORY_TOKENS.TripRepository]: PrismaTripRepository,
-      [REPOSITORY_TOKENS.ChallengeRepository]: PrismaChallengeRepository,
-      [REPOSITORY_TOKENS.GroupRepository]: PrismaGroupRepository,
-      [REPOSITORY_TOKENS.LocationRepository]: PrismaLocationRepository,
+      // Core domain repositories - using ORM selection based on USE_DRIZZLE env var
+      [REPOSITORY_TOKENS.UserRepository]: USE_DRIZZLE
+        ? DrizzleUserRepository
+        : PrismaUserRepository,
+      [REPOSITORY_TOKENS.TripRepository]: USE_DRIZZLE
+        ? DrizzleTripRepository
+        : PrismaTripRepository,
+      [REPOSITORY_TOKENS.ChallengeRepository]: USE_DRIZZLE
+        ? DrizzleChallengeRepository
+        : PrismaChallengeRepository,
+      [REPOSITORY_TOKENS.GroupRepository]: USE_DRIZZLE
+        ? DrizzleGroupRepository
+        : PrismaGroupRepository,
+      [REPOSITORY_TOKENS.LocationRepository]: USE_DRIZZLE
+        ? DrizzleLocationRepository
+        : PrismaLocationRepository,
 
       // Notification & messaging repositories
-      [REPOSITORY_TOKENS.NotificationRepository]: PrismaNotificationRepository,
-      [REPOSITORY_TOKENS.NotificationDeliveryRepository]:
-        PrismaNotificationDeliveryRepository,
-      [REPOSITORY_TOKENS.NotificationScheduleRepository]:
-        PrismaNotificationScheduleRepository,
+      [REPOSITORY_TOKENS.NotificationRepository]: USE_DRIZZLE
+        ? DrizzleNotificationRepository
+        : PrismaNotificationRepository,
+      [REPOSITORY_TOKENS.NotificationDeliveryRepository]: USE_DRIZZLE
+        ? DrizzleNotificationDeliveryRepository
+        : PrismaNotificationDeliveryRepository,
+      [REPOSITORY_TOKENS.NotificationScheduleRepository]: USE_DRIZZLE
+        ? DrizzleNotificationScheduleRepository
+        : PrismaNotificationScheduleRepository,
 
       // Challenge & submission repositories
-      [REPOSITORY_TOKENS.ChallengeSubmissionRepository]:
-        PrismaChallengeSubmissionRepository,
-      [REPOSITORY_TOKENS.ChallengeVoteRepository]:
-        PrismaChallengeVoteRepository,
-      [REPOSITORY_TOKENS.ActivityFeedRepository]: PrismaActivityFeedRepository,
+      [REPOSITORY_TOKENS.ChallengeSubmissionRepository]: USE_DRIZZLE
+        ? DrizzleChallengeSubmissionRepository
+        : PrismaChallengeSubmissionRepository,
+      [REPOSITORY_TOKENS.ChallengeVoteRepository]: USE_DRIZZLE
+        ? DrizzleChallengeVoteRepository
+        : PrismaChallengeVoteRepository,
+      [REPOSITORY_TOKENS.ActivityFeedRepository]: USE_DRIZZLE
+        ? DrizzleActivityFeedRepository
+        : PrismaActivityFeedRepository,
 
       // Reward & gamification repositories
-      [REPOSITORY_TOKENS.RewardRepository]: PrismaRewardRepository,
-      [REPOSITORY_TOKENS.RewardPurchaseRepository]:
-        PrismaRewardPurchaseRepository,
-      [REPOSITORY_TOKENS.CoinTransactionRepository]:
-        PrismaCoinTransactionRepository,
+      [REPOSITORY_TOKENS.RewardRepository]: USE_DRIZZLE
+        ? DrizzleRewardRepository
+        : PrismaRewardRepository,
+      [REPOSITORY_TOKENS.RewardPurchaseRepository]: USE_DRIZZLE
+        ? DrizzleRewardPurchaseRepository
+        : PrismaRewardPurchaseRepository,
+      [REPOSITORY_TOKENS.CoinTransactionRepository]: USE_DRIZZLE
+        ? DrizzleCoinTransactionRepository
+        : PrismaCoinTransactionRepository,
 
       // Support & moderation repositories
-      [REPOSITORY_TOKENS.SponsorRepository]: PrismaSponsorRepository,
-      [REPOSITORY_TOKENS.SubmissionReportRepository]:
-        PrismaSubmissionReportRepository,
+      [REPOSITORY_TOKENS.SponsorRepository]: USE_DRIZZLE
+        ? DrizzleSponsorRepository
+        : PrismaSponsorRepository,
+      [REPOSITORY_TOKENS.SubmissionReportRepository]: USE_DRIZZLE
+        ? DrizzleSubmissionReportRepository
+        : PrismaSubmissionReportRepository,
+
+      // Event repository
+      [REPOSITORY_TOKENS.EventRepository]: USE_DRIZZLE
+        ? DrizzleEventRepository
+        : PrismaEventRepository,
     },
 
     exports: [
@@ -447,6 +569,9 @@ export const RepositoryModule: StaticModule<RepositoryModuleDef> =
       // Support & moderation
       REPOSITORY_TOKENS.SponsorRepository,
       REPOSITORY_TOKENS.SubmissionReportRepository,
+
+      // Event
+      REPOSITORY_TOKENS.EventRepository,
     ],
   });
 
@@ -454,6 +579,7 @@ export const RepositoryModule: StaticModule<RepositoryModuleDef> =
 // Re-exports for convenience
 // =============================================================================
 
+// Prisma Repositories
 export { PrismaUserRepository } from "../gateways/PrismaUserRepository";
 export { PrismaTripRepository } from "../gateways/PrismaTripRepository";
 export { PrismaChallengeRepository } from "../gateways/PrismaChallengeRepository";
@@ -472,3 +598,25 @@ export {
 export { PrismaCoinTransactionRepository } from "../gateways/PrismaCoinTransactionRepository";
 export { PrismaNotificationDeliveryRepository } from "../gateways/PrismaNotificationDeliveryRepository";
 export { PrismaNotificationScheduleRepository } from "../gateways/PrismaNotificationScheduleRepository";
+export { PrismaEventRepository } from "../gateways/prisma/PrismaEventRepository";
+
+// Drizzle Repositories
+export { DrizzleUserRepository } from "../gateways/drizzle/DrizzleUserRepository";
+export { DrizzleTripRepository } from "../gateways/drizzle/DrizzleTripRepository";
+export { DrizzleChallengeRepository } from "../gateways/drizzle/DrizzleChallengeRepository";
+export { DrizzleGroupRepository } from "../gateways/drizzle/DrizzleGroupRepository";
+export { DrizzleLocationRepository } from "../gateways/drizzle/DrizzleLocationRepository";
+export { DrizzleNotificationRepository } from "../gateways/drizzle/DrizzleNotificationRepository";
+export { DrizzleChallengeSubmissionRepository } from "../gateways/drizzle/DrizzleChallengeSubmissionRepository";
+export { DrizzleChallengeVoteRepository } from "../gateways/drizzle/DrizzleChallengeVoteRepository";
+export { DrizzleActivityFeedRepository } from "../gateways/drizzle/DrizzleActivityFeedRepository";
+export { DrizzleSponsorRepository } from "../gateways/drizzle/DrizzleSponsorRepository";
+export { DrizzleSubmissionReportRepository } from "../gateways/drizzle/DrizzleSubmissionReportRepository";
+export {
+  DrizzleRewardRepository,
+  DrizzleRewardPurchaseRepository,
+} from "../gateways/drizzle/DrizzleRewardRepository";
+export { DrizzleCoinTransactionRepository } from "../gateways/drizzle/DrizzleCoinTransactionRepository";
+export { DrizzleNotificationDeliveryRepository } from "../gateways/drizzle/DrizzleNotificationDeliveryRepository";
+export { DrizzleNotificationScheduleRepository } from "../gateways/drizzle/DrizzleNotificationScheduleRepository";
+export { DrizzleEventRepository } from "../gateways/drizzle/DrizzleEventRepository";
