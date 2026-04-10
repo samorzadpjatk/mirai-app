@@ -1,4 +1,4 @@
-// Mock for @mirai-app/trpc/client
+// Mock for @mirai-app/frameworks/trpc/client
 import { jest } from "@jest/globals";
 
 // Create mock tRPC client with all expected procedures

@@ -158,6 +158,11 @@ jest.mock("expo-location", () => ({
     OtherNavigation: 3,
     Airborne: 4,
   },
+  PermissionStatus: {
+    GRANTED: "granted",
+    DENIED: "denied",
+    UNDETERMINED: "undetermined",
+  },
   hasStartedLocationUpdatesAsync: jest.fn(() => Promise.resolve(false)),
   startLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
   stopLocationUpdatesAsync: jest.fn(() => Promise.resolve()),
@@ -166,6 +171,9 @@ jest.mock("expo-location", () => ({
   ),
   requestForegroundPermissionsAsync: jest.fn(() =>
     Promise.resolve({ granted: true, status: "granted" }),
+  ),
+  getForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: false, status: "undetermined" }),
   ),
   getCurrentPositionAsync: jest.fn(() =>
     Promise.resolve({
@@ -440,6 +448,62 @@ jest.mock("@mirai-app/frameworks/auth", () => ({
     user: null,
     loading: false,
   })),
+}));
+
+// Mock @tanstack/react-query
+jest.mock("@tanstack/react-query", () => ({
+  useQuery: jest.fn(() => ({
+    data: null,
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: jest.fn(),
+  })),
+  useMutation: jest.fn(() => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(() => Promise.resolve()),
+    isLoading: false,
+    isError: false,
+    error: null,
+    reset: jest.fn(),
+  })),
+  useQueryClient: jest.fn(() => ({
+    invalidateQueries: jest.fn(),
+    refetchQueries: jest.fn(),
+    setQueryData: jest.fn(),
+    getQueryData: jest.fn(),
+  })),
+  QueryClient: jest.fn(() => ({
+    invalidateQueries: jest.fn(),
+    refetchQueries: jest.fn(),
+    setQueryData: jest.fn(),
+    getQueryData: jest.fn(),
+  })),
+}));
+
+// Mock @mirai-app/frameworks/trpc/client
+jest.mock("@mirai-app/frameworks/trpc/client", () => ({
+  useTRPC: jest.fn(() => ({
+    location: {
+      getMySharingSettings: {
+        queryOptions: jest.fn(() => ({
+          queryKey: ["location", "getMySharingSettings"],
+          queryFn: jest.fn(),
+        })),
+      },
+      updateSharingSettings: {
+        mutationOptions: jest.fn(() => ({
+          mutationKey: ["location", "updateSharingSettings"],
+          mutationFn: jest.fn(() => Promise.resolve()),
+        })),
+      },
+    },
+  })),
+}));
+
+// Mock @mirai-app/frameworks/trpc/client/query
+jest.mock("@mirai-app/frameworks/trpc/client/query", () => ({
+  invalidateLocationQueries: jest.fn(() => Promise.resolve()),
 }));
 
 // Global test utilities
