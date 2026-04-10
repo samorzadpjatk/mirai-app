@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 
 export function useSponsors() {
   const trpc = useTRPC();

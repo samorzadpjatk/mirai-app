@@ -15,7 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { NotificationCard } from "~/components/admin/notifications/NotificationCard";

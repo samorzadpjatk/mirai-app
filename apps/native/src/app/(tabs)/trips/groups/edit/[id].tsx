@@ -10,7 +10,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import {

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useTRPC, useSubscription } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC, useSubscription } from "@mirai-app/frameworks/graphql";
 import * as Crypto from "expo-crypto";
 import { useLocationContext } from "~/stores/location";
 

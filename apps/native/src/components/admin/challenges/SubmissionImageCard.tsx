@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
 

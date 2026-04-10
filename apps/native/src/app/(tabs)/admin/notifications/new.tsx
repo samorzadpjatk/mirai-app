@@ -12,7 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { Ionicons } from "@expo/vector-icons";

@@ -5,11 +5,11 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/graphql";
 import {
   invalidateRewardQueries,
   invalidateTransactionQueries,
-} from "@mirai-app/frameworks/trpc/client/query";
+} from "@mirai-app/frameworks/graphql/query";
 
 const PAGE_SIZE = 30;
 

@@ -9,7 +9,7 @@ import {
 } from "~/stores/map";
 import { MapScreenOverlay } from "~/components/map/overlays/MapScreenOverlay";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useQuery } from "@tanstack/react-query";
 import { useMapLocationStream } from "~/hooks/map";
 import { useMapSharing } from "~/hooks/map";

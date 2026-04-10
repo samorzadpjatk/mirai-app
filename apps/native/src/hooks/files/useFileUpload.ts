@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import { File } from "expo-file-system";
-import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/graphql";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
 import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
 

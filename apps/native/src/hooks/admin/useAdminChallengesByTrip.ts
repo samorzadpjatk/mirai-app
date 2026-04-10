@@ -4,7 +4,7 @@ import {
   useInfiniteQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/graphql";
 
 export interface ChallengeItem {
   id: string;

@@ -3,8 +3,8 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
-import { invalidateNotificationQueries } from "@mirai-app/frameworks/trpc/client/query";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { invalidateNotificationQueries } from "@mirai-app/frameworks/graphql/query";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;

@@ -10,7 +10,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";

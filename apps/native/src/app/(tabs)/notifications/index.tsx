@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useRouter } from "expo-router";
 import { CreateScheduleModal } from "~/components/notifications/CreateScheduleModal";
 import { NotificationScheduleCard } from "~/components/notifications/NotificationScheduleCard";

@@ -3,8 +3,8 @@ import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
-import { invalidateLocationQueries } from "@mirai-app/frameworks/trpc/client/query";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { invalidateLocationQueries } from "@mirai-app/frameworks/graphql/query";
 
 const LOCATION_SETTINGS_KEY = "location_sharing_enabled";
 

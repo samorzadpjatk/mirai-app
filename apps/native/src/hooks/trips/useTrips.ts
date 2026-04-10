@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/graphql";
 import type { TripListItem } from "~/components/trips/list/types";
 import {
   getCachedTrips,

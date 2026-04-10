@@ -16,7 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FilterChip, FilterChipRow, EmptyState, AppModalShell, AppModalFooter, ThemedTextInput } from "~/components/common/ui";
 import { SubmissionReviewCard, type SubmissionItem } from "~/components/admin/challenges/SubmissionReviewCard";

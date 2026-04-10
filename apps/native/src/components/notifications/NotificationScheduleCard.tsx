@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { formatRelativeTime, formatDate } from "~/utils/format";
 import type { NotificationScheduleItem } from "~/types/notifications";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface NotificationScheduleCardProps {

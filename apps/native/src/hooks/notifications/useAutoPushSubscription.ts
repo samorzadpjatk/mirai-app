@@ -2,8 +2,8 @@ import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/trpc/client";
-import { invalidateNotificationQueries } from "@mirai-app/frameworks/trpc/client/query";
+import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { invalidateNotificationQueries } from "@mirai-app/frameworks/graphql/query";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
 
 function resolveProjectId(): string | undefined {
