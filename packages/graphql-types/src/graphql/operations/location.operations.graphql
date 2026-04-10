@@ -1,0 +1,216 @@
+# ============================================
+# Location Operations - Mirai App API
+# ============================================
+# This file contains all GraphQL operations for location management,
+# sharing settings, and real-time location subscriptions.
+#
+# Import statement:
+#   #import "../fragments/common.graphql"
+#
+# Queries:
+#   - GetMyLocation: Get current user's location
+#   - GetMySharingSettings: Get current user's location sharing settings
+#   - GetLocationsSharingWithMe: Get all locations sharing with current user
+#
+# Mutations:
+#   - UpdateLocation: Update current user's location
+#   - UpdateLocationSharing: Update location sharing settings
+#   - AddUserToSharing: Add a user to sharing list
+#   - RemoveUserFromSharing: Remove a user from sharing list
+#
+# Subscriptions:
+#   - FriendsLocations: Real-time updates of friends' locations
+# ============================================
+
+#import "../fragments/common.graphql"
+
+# ============================================
+# LOCATION FRAGMENTS
+# ============================================
+
+fragment LocationFields on Location {
+  id
+  userId
+  latitude
+  longitude
+  accuracy
+  altitude
+  altitudeAccuracy
+  heading
+  speed
+  isSharingLocation
+  timestamp
+  usersToShareWith {
+    id
+    firstName
+    lastName
+  }
+}
+
+fragment SharingUserInfoFields on SharingUserInfo {
+  id
+  firstName
+  lastName
+}
+
+fragment LocationSharingSettingsFields on LocationSharingSettings {
+  isSharingLocation
+  usersToShareWith {
+    ...SharingUserInfoFields
+  }
+}
+
+fragment FriendLocationFields on FriendLocation {
+  id
+  userId
+  latitude
+  longitude
+  accuracy
+  altitude
+  heading
+  speed
+  isSharingLocation
+  distanceKm
+  timestamp
+  user {
+    id
+    firstName
+    lastName
+    fullName
+    hasAvatar
+  }
+}
+
+# ============================================
+# LOCATION QUERIES
+# ============================================
+
+"""
+Get current user's location.
+Returns: Location object or null if not set.
+"""
+query GetMyLocation {
+  myLocation {
+    ...LocationFields
+  }
+}
+
+"""
+Get current user's location sharing settings.
+Returns: Sharing settings including enabled status and users to share with.
+"""
+query GetMySharingSettings {
+  mySharingSettings {
+    ...LocationSharingSettingsFields
+  }
+}
+
+"""
+Get all locations that are sharing with current user.
+Returns: List of locations with user information.
+"""
+query GetLocationsSharingWithMe {
+  locationsSharingWithMe {
+    ...LocationFields
+  }
+}
+
+"""
+Get all users available for location sharing in a trip.
+Optional: tripId to filter by trip.
+Returns: List of users with their sharing status.
+"""
+query GetAllUsersForSharing($tripId: ID) {
+  allUsersForSharing(tripId: $tripId) {
+    id
+    firstName
+    lastName
+    fullName
+    hasAvatar
+    isCurrentlySharing
+  }
+}
+
+# ============================================
+# LOCATION MUTATIONS
+# ============================================
+
+"""
+Update current user's location.
+Requires: latitude, longitude. Optional: accuracy, altitude, etc.
+Returns: Updated location.
+"""
+mutation UpdateLocation($input: UpdateLocationInput!) {
+  updateMyLocation(input: $input) {
+    ...LocationFields
+  }
+}
+
+"""
+Update location sharing settings.
+Requires: isSharingLocation boolean.
+Optional: userIdsToShareWith list.
+Returns: Updated location with sharing settings.
+"""
+mutation UpdateSharingSettings($input: UpdateSharingSettingsInput!) {
+  updateLocationSharing(input: $input) {
+    ...LocationFields
+  }
+}
+
+"""
+Add a user to location sharing list.
+Requires: userId to add.
+Returns: Success status.
+"""
+mutation AddUserToSharing($input: AddSharingUserInput!) {
+  addSharingUser(input: $input) {
+    success
+    location {
+      ...LocationFields
+    }
+  }
+}
+
+"""
+Remove a user from location sharing list.
+Requires: userId to remove.
+Returns: Success status.
+"""
+mutation RemoveUserFromSharing($userId: ID!) {
+  removeUserFromSharing(userId: $userId) {
+    success
+    location {
+      ...LocationFields
+    }
+  }
+}
+
+# ============================================
+# LOCATION SUBSCRIPTIONS
+# ============================================
+
+"""
+Subscribe to real-time updates of friends' locations.
+Optional: connectionId for connection tracking, radiusKm for filtering.
+Returns: Stream of location events (upsert/delete).
+"""
+subscription FriendsLocations(
+  $connectionId: String
+  $radiusKm: Float
+  $latitude: Float
+  $longitude: Float
+) {
+  friendsLocations(
+    connectionId: $connectionId
+    radiusKm: $radiusKm
+    latitude: $latitude
+    longitude: $longitude
+  ) {
+    edges {
+      node {
+        ...FriendLocationFields
+      }
+    }
+  }
+}
