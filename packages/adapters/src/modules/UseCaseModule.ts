@@ -140,6 +140,7 @@ import { SupabaseStorageAdapter } from "../gateways/storage/SupabaseStorageAdapt
 import { InMemoryStorageAdapter } from "../gateways/storage/InMemoryStorageAdapter";
 import { DrizzleTelemetryAdapter } from "../gateways/drizzle/telemetry";
 import { TokenExtractor } from "../utils/TokenExtractor";
+import { EventEmitterPubSub } from "../services/EventEmitterPubSub";
 
 // =============================================================================
 // Type Imports
@@ -150,6 +151,7 @@ import type {
   RealtimePort,
   StoragePort,
   TelemetryPort,
+  PubSubService,
 } from "@mirai-app/use-cases";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
@@ -257,6 +259,7 @@ export const PORT_TOKENS = {
   RealtimePort: "realtimePort",
   StoragePort: "storagePort",
   TelemetryPort: "telemetryPort",
+  PubSubService: "pubSubService",
 } as const;
 
 /**
@@ -389,6 +392,18 @@ function createLogTelemetryUseCase(cradle: Cradle): LogTelemetryUseCase {
   return new LogTelemetryUseCase(cradle.telemetryPort as TelemetryPort);
 }
 
+/**
+ * Create PubSubService instance (EventEmitterPubSub)
+ *
+ * Uses singleton pattern since EventEmitterPubSub maintains internal state
+ * (EventEmitter instance and subscription tracking).
+ */
+const pubSubServiceSingleton = new EventEmitterPubSub();
+
+function createPubSubService(): PubSubService {
+  return pubSubServiceSingleton;
+}
+
 // =============================================================================
 // Module Dependencies Type
 // =============================================================================
@@ -405,6 +420,9 @@ export interface UseCaseModuleDeps {
 
   /** Telemetry port - Prisma implementation */
   [PORT_TOKENS.TelemetryPort]: TelemetryPort;
+
+  /** PubSub service - EventEmitterPubSub singleton */
+  [PORT_TOKENS.PubSubService]: PubSubService;
 
   /** Token extraction utility */
   [UTILITY_TOKENS.TokenExtractor]: typeof TokenExtractor;
@@ -559,6 +577,15 @@ export const UseCaseModule: StaticModule<UseCaseModuleDef> =
         lifetime: Lifetime.SCOPED,
       },
 
+      /**
+       * PubSubService - EventEmitterPubSub singleton
+       * SINGLETON lifetime because it maintains internal EventEmitter state
+       */
+      [PORT_TOKENS.PubSubService]: {
+        factory: createPubSubService,
+        lifetime: Lifetime.SINGLETON,
+      },
+
       // =================================================================
       // Utility Registrations
       // =================================================================
@@ -619,6 +646,7 @@ export const UseCaseModule: StaticModule<UseCaseModuleDef> =
       PORT_TOKENS.RealtimePort,
       PORT_TOKENS.StoragePort,
       PORT_TOKENS.TelemetryPort,
+      PORT_TOKENS.PubSubService,
 
       // Utilities
       UTILITY_TOKENS.TokenExtractor,

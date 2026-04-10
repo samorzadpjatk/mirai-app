@@ -23,8 +23,9 @@ export { DrizzleRewardService } from "./reward";
 export { DrizzleNotificationSenderService } from "./notification-sender";
 
 // =============================================================================
-// Real-Time Architecture Services
+// Pub/Sub Services (GraphQL Subscriptions Migration)
 // =============================================================================
+export { EventEmitterPubSub } from "./EventEmitterPubSub";
 export {
   EventBus,
   globalEventBus,

@@ -87,6 +87,15 @@ export type {
   SubscriptionError,
 } from "./ports/RealtimePort";
 
+// PubSubService exports (GraphQL Subscriptions Migration)
+export type {
+  PubSubService,
+  SubscriptionHandle,
+  PubSubError,
+  SubscriptionFailedError,
+  PublishFailedError,
+} from "./ports/PubSubService";
+
 // StoragePort exports
 export type {
   StoragePort,
