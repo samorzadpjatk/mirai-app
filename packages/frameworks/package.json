@@ -12,6 +12,7 @@
     "./trpc/hooks": "./src/trpc/hooks/index.ts",
     "./prisma/*": "./src/prisma/*.ts",
     "./supabase/*": "./src/supabase/*.ts",
+    "./supabase/react": "./src/supabase/react.tsx",
     "./auth": "./src/auth/index.ts",
     "./auth/client": "./src/auth/client.ts",
     "./auth/server": "./src/auth/server.ts",
