@@ -31,6 +31,13 @@ export type {
   DrizzleRepositoryConfig,
 } from "./BaseDrizzleRepository";
 export { DrizzleUserRepository } from "./DrizzleUserRepository";
+export { DrizzleTripRepository } from "./DrizzleTripRepository";
+export { DrizzleGroupRepository } from "./DrizzleGroupRepository";
+export { DrizzleChallengeRepository } from "./DrizzleChallengeRepository";
+export { DrizzleLocationRepository } from "./DrizzleLocationRepository";
+export { DrizzleNotificationRepository } from "./DrizzleNotificationRepository";
+export { DrizzleActivityFeedRepository } from "./DrizzleActivityFeedRepository";
+export { DrizzleRewardRepository } from "./DrizzleRewardRepository";
 
 // =============================================================================
 // Auth Adapters (Phase 0: Supabase-Agnostic Architecture)

@@ -93,10 +93,6 @@ export {
 } from "./trpc/router-factory";
 
 // =============================================================================
-// Prisma Configuration
-// =============================================================================
-
-// =============================================================================
 // Dependency Injection
 // =============================================================================
 
@@ -111,33 +107,27 @@ export {
 } from "./di";
 
 // =============================================================================
-// Prisma Configuration
+// Phase 1: Drizzle ORM Configuration (Prisma Replacement)
 // =============================================================================
 
-export {
-  createPrismaClient,
-  getPrismaClient,
-  clearPrismaCache,
-  type PrismaClient,
-} from "./prisma/client";
+export { createDrizzleClient, type DrizzleDb } from "./drizzle/client";
+
+export * from "./drizzle/schema";
+
+// =============================================================================
+// Phase 3: GraphQL API Configuration (tRPC Coexistence)
+// =============================================================================
+
+export { builder, schemaBuilder, type GraphQLContext } from "./graphql/builder";
 
 export {
-  createPaginationArgs,
-  createCursorPaginationArgs,
-  whereActive,
-  whereDateRange,
-  runInTransaction,
-  softDeleteData,
-  softRestoreData,
-  ORDER_BY,
-  INCLUDE,
-  type PrismaModelName,
-  type PrismaWhereInput,
-  type PrismaCreateInput,
-  type PrismaUpdateInput,
-  type PrismaInclude,
-  type PaginationParams,
-} from "./prisma/schema-helpers";
+  schema,
+  type Schema,
+  generateSDL,
+  writeSDLToFile,
+} from "./graphql/schema";
+
+export { createHonoApp, startHonoServer } from "./graphql/server";
 
 // =============================================================================
 // Supabase Configuration

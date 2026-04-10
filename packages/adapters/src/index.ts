@@ -188,6 +188,30 @@ export { SponsorMapper } from "./mappers/SponsorMapper";
 // Phase 1: Drizzle ORM Migration Mappers
 // =============================================================================
 export { UserDrizzleMapper } from "./mappers/UserDrizzleMapper";
+export { TripDrizzleMapper } from "./mappers/TripDrizzleMapper";
+export { GroupDrizzleMapper } from "./mappers/GroupDrizzleMapper";
+export { ChallengeDrizzleMapper } from "./mappers/ChallengeDrizzleMapper";
+export { LocationDrizzleMapper } from "./mappers/LocationDrizzleMapper";
+export { NotificationDrizzleMapper } from "./mappers/NotificationDrizzleMapper";
+export { ActivityFeedDrizzleMapper } from "./mappers/ActivityFeedDrizzleMapper";
+export { RewardDrizzleMapper } from "./mappers/RewardDrizzleMapper";
+
+// =============================================================================
+// Phase 1: Drizzle ORM Migration Repositories
+// =============================================================================
+export {
+  BaseDrizzleRepository,
+  type DrizzleEntityMapper,
+  type DrizzleRepositoryConfig,
+} from "./gateways/BaseDrizzleRepository";
+export { DrizzleUserRepository } from "./gateways/DrizzleUserRepository";
+export { DrizzleTripRepository } from "./gateways/DrizzleTripRepository";
+export { DrizzleGroupRepository } from "./gateways/DrizzleGroupRepository";
+export { DrizzleChallengeRepository } from "./gateways/DrizzleChallengeRepository";
+export { DrizzleLocationRepository } from "./gateways/DrizzleLocationRepository";
+export { DrizzleNotificationRepository } from "./gateways/DrizzleNotificationRepository";
+export { DrizzleActivityFeedRepository } from "./gateways/DrizzleActivityFeedRepository";
+export { DrizzleRewardRepository } from "./gateways/DrizzleRewardRepository";
 
 // Re-export inner layers for convenience
 export type {

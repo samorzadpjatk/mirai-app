@@ -27,7 +27,6 @@
     "effect": "^3.18.4"
   },
   "devDependencies": {
-    "@mirai-app/adapters": "workspace:*",
     "@types/bun": "latest",
     "typescript": "^5.9.3"
   },
