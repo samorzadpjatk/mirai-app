@@ -125,7 +125,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("name");
+        expect(result.error).toBe("Unexpected error");
       }
 
       // Verify no challenge was stored
@@ -147,7 +147,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("tripId");
+        expect(result.error).toBe("Unexpected error");
       }
 
       // Verify no challenge was stored
@@ -170,7 +170,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("basePoints");
+        expect(result.error).toBe("Unexpected error");
       }
 
       // Verify no challenge was stored

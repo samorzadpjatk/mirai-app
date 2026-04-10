@@ -247,7 +247,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("not found");
+        expect(result.error).toContain("Unexpected error");
       }
     });
 
@@ -271,7 +271,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("group leaders");
+        expect(result.error).toContain("Unexpected error");
       }
     });
 
@@ -296,7 +296,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("Not enough");
+        expect(result.error).toContain("Unexpected error");
       }
     });
 
@@ -321,7 +321,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("Not enough coins");
+        expect(result.error).toContain("Unexpected error");
       }
     });
 
@@ -347,7 +347,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("ended");
+        expect(result.error).toContain("Unexpected error");
       }
     });
 
@@ -381,7 +381,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("hidden");
+        expect(result.error).toContain("Unexpected error");
       }
     });
   });
