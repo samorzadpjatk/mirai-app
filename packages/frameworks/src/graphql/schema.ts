@@ -1,11 +1,19 @@
 import { builder } from "./builder";
 
-// Import types to register them
+// Import all types to register them
 import "./types/User";
+import "./types/Trip";
+import "./types/Group";
+import "./types/Location";
+import "./types/Notification";
+import "./types/ActivityFeed";
+import "./types/Reward";
+import "./types/Event";
 import "./types/Challenge";
 
-// Import resolvers to register queries and mutations
+// Import all resolvers to register queries and mutations
 import "./resolvers/User";
+import "./resolvers/Trip";
 import "./resolvers/Challenge";
 
 /**

@@ -11,16 +11,29 @@
  * - Dual-ORM coexistence allows gradual migration
  */
 
-// Export all schemas as they are created
-// Currently: User schema is defined
+// User schema (first migrated entity)
 export * from "./user";
 
-// TODO: Add more schemas as entities are migrated
-// export * from "./group";
-// export * from "./trip";
-// export * from "./challenge";
-// export * from "./event";
-// export * from "./location";
-// export * from "./challengeSubmission";
-// export * from "./activityFeed";
-// export * from "./notification";
+// Trip and related schemas
+export * from "./trip";
+
+// Group and related schemas
+export * from "./group";
+
+// Challenge and related schemas
+export * from "./challenge";
+
+// Event schemas
+export * from "./event";
+
+// Location schemas
+export * from "./location";
+
+// Activity Feed schemas
+export * from "./activityFeed";
+
+// Notification schemas
+export * from "./notification";
+
+// Reward schemas
+export * from "./reward";
