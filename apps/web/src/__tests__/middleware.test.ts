@@ -37,7 +37,7 @@ mock.module("@trpc/client", () => ({
   wsLink: () => ({}),
   loggerLink: () => ({}),
   splitLink: () => ({}),
-  // For @mirai-app/frameworks/trpc/client compatibility
+  // For @mirai-app/frameworks/graphql/client compatibility
   useTRPC: () => ({}),
   useTRPCClient: () => ({}),
   useSubscription: () => ({}),
@@ -47,7 +47,7 @@ mock.module("../lib/env", () => ({
   env: {
     supabaseUrl: "http://localhost:54321",
     supabaseAnonKey: "mock-key",
-    trpcUrl: "http://localhost:3001/trpc",
+    graphqlUrl: "http://localhost:3001/graphql",
   },
 }));
 

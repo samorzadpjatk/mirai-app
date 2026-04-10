@@ -14,7 +14,7 @@ const mockGetUser = mock(() =>
   Promise.resolve({ data: { user: null }, error: null }),
 );
 
-mock.module("@mirai-app/frameworks/trpc/client", () => ({
+mock.module("@mirai-app/frameworks/graphql/client", () => ({
   getTRPCClient: () => ({
     client: {
       user: {

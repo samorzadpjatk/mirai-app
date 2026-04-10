@@ -1,26 +1,44 @@
 import { defineMiddleware } from "astro:middleware";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
-import { createTRPCUntypedClient, httpBatchLink } from "@trpc/client";
 import { env } from "./lib/env";
 
 const PUBLIC_ROUTES = new Set(["/login"]);
 
+const GET_ME_QUERY = `
+  query GetMe {
+    me {
+      id
+      role
+    }
+  }
+`;
+
 const getDbRole = async (accessToken: string): Promise<string | null> => {
   try {
-    const trpcClient = createTRPCUntypedClient({
-      links: [
-        httpBatchLink({
-          url: env.trpcUrl,
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }),
-      ],
+    const response = await fetch(env.graphqlUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        query: GET_ME_QUERY,
+      }),
     });
 
-    const me = await trpcClient.query("user.getMy");
-    // tRPC response with SuperJSON transformer has data in .json property
-    const userData = (me as { json?: { role?: string } })?.json ?? me;
+    if (!response.ok) {
+      console.error("[Middleware] GraphQL request failed:", response.status);
+      return null;
+    }
+
+    const result = await response.json();
+
+    if (result.errors && result.errors.length > 0) {
+      console.error("[Middleware] GraphQL errors:", result.errors);
+      return null;
+    }
+
+    const userData = result.data?.me;
     if (
       typeof userData === "object" &&
       userData !== null &&
