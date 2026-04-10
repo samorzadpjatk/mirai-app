@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTrips } from "~/hooks/trips";
-import { useAdminChallenges } from "@mirai-app/frameworks/trpc/hooks";
+import { graphqlClient } from "~/lib/graphql-client";
 import { colors, spacing } from "~/styles";
 import {
   LocationPicker,
@@ -22,6 +22,9 @@ import {
   ThemedTextInput,
 } from "~/components/common/ui";
 
+// Local type definition for challenge category
+type ChallengeCategory = "standard" | "wintegral" | "special";
+
 interface Props {
   visible: boolean;
   onClose: () => void;
@@ -31,10 +34,23 @@ interface NewChallengeState {
   title: string;
   description: string;
   points: string;
-  category: "standard" | "wintegral" | "special";
+  category: ChallengeCategory;
   icon: string;
   location?: LocationCoordinate | null;
 }
+
+// GraphQL mutation document for creating a challenge
+const CREATE_CHALLENGE_MUTATION = `
+  mutation CreateChallenge($input: CreateChallengeInput!) {
+    createChallenge(input: $input) {
+      id
+      name
+      description
+      status
+      points
+    }
+  }
+`;
 
 export default function AddChallengeModal({ visible, onClose }: Props) {
   const [newChallenge, setNewChallenge] = useState<NewChallengeState>({
@@ -48,7 +64,6 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
-  const { createChallenge } = useAdminChallenges();
 
   const handleAdd = async () => {
     if (
@@ -62,15 +77,17 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
     }
     setIsSubmitting(true);
     try {
-      await createChallenge({
-        tripId,
-        title: newChallenge.title,
-        description: newChallenge.description,
-        points: Number(newChallenge.points),
-        category: newChallenge.category,
-        icon: newChallenge.icon,
-        targetLatitude: newChallenge.location?.latitude,
-        targetLongitude: newChallenge.location?.longitude,
+      await graphqlClient.request(CREATE_CHALLENGE_MUTATION, {
+        input: {
+          tripId,
+          name: newChallenge.title,
+          description: newChallenge.description,
+          points: Number(newChallenge.points),
+          submissionType: "TEXT",
+          scoringCategory: "SPEED",
+          targetLatitude: newChallenge.location?.latitude,
+          targetLongitude: newChallenge.location?.longitude,
+        },
       });
       setNewChallenge({
         title: "",
@@ -83,8 +100,9 @@ export default function AddChallengeModal({ visible, onClose }: Props) {
       setTripId("");
       onClose();
       Alert.alert("Success", "Challenge created");
-    } catch {
-      Alert.alert("Error", "Failed to create");
+    } catch (error) {
+      console.error("Failed to create challenge:", error);
+      Alert.alert("Error", "Failed to create challenge");
     } finally {
       setIsSubmitting(false);
     }

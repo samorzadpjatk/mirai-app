@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+import { graphqlClient } from "~/lib/graphql-client";
 
 interface GroupMember {
   id: string;
@@ -19,21 +19,40 @@ interface GroupMemberListProps {
 }
 
 function MemberAvatar({ member }: { member: GroupMember }) {
-  const trpc = useTRPC();
   const avatarQuery = useQuery({
-    ...trpc.storage.createDownloadUrl.queryOptions({
-      storagePath: member.avatarStoragePath ?? "",
-      expiresInSeconds: 60 * 60,
-    }),
+    queryKey: ["createDownloadUrl", member.avatarStoragePath],
+    queryFn: async () => {
+      if (!member.avatarStoragePath) return null;
+      const result = await graphqlClient.request<{
+        createDownloadUrl?: {
+          signedUrl?: string;
+        };
+      }>(
+        `
+        query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+          createDownloadUrl(input: $input) {
+            signedUrl
+          }
+        }
+        `,
+        {
+          input: {
+            storagePath: member.avatarStoragePath,
+            expiresInSeconds: 60 * 60,
+          },
+        },
+      );
+      return result.createDownloadUrl?.signedUrl ?? null;
+    },
     enabled: Boolean(member.avatarStoragePath),
     staleTime: 15 * 60 * 1000,
     retry: false,
   });
 
-  if (avatarQuery.data?.signedUrl) {
+  if (avatarQuery.data) {
     return (
       <Image
-        source={{ uri: avatarQuery.data.signedUrl }}
+        source={{ uri: avatarQuery.data }}
         style={styles.avatarImage}
         contentFit="cover"
       />

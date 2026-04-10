@@ -2,7 +2,30 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "~/styles";
-import type { Group } from "@mirai-app/frameworks/trpc/hooks";
+
+// GraphQL Group type with extended fields for UI
+interface Group {
+  id: string;
+  name: string;
+  code: string;
+  coins: number;
+  description?: string | null;
+  image?: string | null;
+  isActive: boolean;
+  organizerId: string;
+  status: string;
+  tripId: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  // Extended fields for UI (populated by parent component)
+  organizer?: {
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+  _count?: {
+    participants: number;
+  };
+}
 
 interface GroupManagementCardProps {
   group: Group;
@@ -28,7 +51,9 @@ export function GroupManagementCard({
         <View style={styles.groupBadges}>
           <View style={[styles.badge, styles.membersBadge]}>
             <Ionicons name="people" size={12} color={colors.white} />
-            <Text style={styles.badgeText}>{group._count.participants}</Text>
+            <Text style={styles.badgeText}>
+              {group._count?.participants ?? 0}
+            </Text>
           </View>
           <View style={[styles.badge, styles.coinsBadge]}>
             <Ionicons name="cash" size={12} color={colors.white} />

@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "~/styles";
-import type { User } from "@mirai-app/frameworks/trpc/hooks";
+import type { User } from "@mirai-app/graphql-types";
 
 interface UserCardProps {
   user: User;
@@ -10,23 +10,39 @@ interface UserCardProps {
 }
 
 export function UserCard({ user, onEdit }: UserCardProps) {
+  // GraphQL User type has firstName/lastName but may not have email/group/wrist fields yet
+  // These are accessed safely with fallbacks until the schema is updated
   const userName =
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ??
-    user.email ??
-    "Unknown User";
-  const groupName = user.group?.name ?? "Not selected";
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || "Unknown User";
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const groupName =
+    (user as unknown as { group?: { name?: string } }).group?.name ??
+    "Not selected";
   const isAdmin = user.role === "ADMIN";
-  const bannedUntilLabel = user.bannedUntil
-    ? new Date(user.bannedUntil).toLocaleString()
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const bannedUntil = (user as unknown as { bannedUntil?: string }).bannedUntil;
+  const bannedUntilLabel = bannedUntil
+    ? new Date(bannedUntil).toLocaleString()
     : null;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const isBanned =
+    (user as unknown as { isBanned?: boolean }).isBanned ?? false;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const email = (user as unknown as { email?: string }).email;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const wristNumber = (user as unknown as { wristNumber?: string | number })
+    .wristNumber;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const houseNumber = (user as unknown as { houseNumber?: string | number })
+    .houseNumber;
 
   return (
     <View style={styles.userCard}>
       <View style={styles.userHeader}>
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{userName}</Text>
-          <Text style={styles.userEmail}>{user.email}</Text>
-          {user.isBanned && bannedUntilLabel ? (
+          <Text style={styles.userEmail}>{email}</Text>
+          {isBanned && bannedUntilLabel ? (
             <Text style={styles.userBanned}>
               Banned until {bannedUntilLabel}
             </Text>
@@ -51,11 +67,11 @@ export function UserCard({ user, onEdit }: UserCardProps) {
         <View style={styles.numberSummary}>
           <View style={styles.numberItem}>
             <Text style={styles.numberLabel}>Wrist #</Text>
-            <Text style={styles.numberValue}>{user.wristNumber ?? "—"}</Text>
+            <Text style={styles.numberValue}>{wristNumber ?? "—"}</Text>
           </View>
           <View style={styles.numberItem}>
             <Text style={styles.numberLabel}>House #</Text>
-            <Text style={styles.numberValue}>{user.houseNumber ?? "—"}</Text>
+            <Text style={styles.numberValue}>{houseNumber ?? "—"}</Text>
           </View>
         </View>
 

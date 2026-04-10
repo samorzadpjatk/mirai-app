@@ -3,7 +3,32 @@ import { View, Text, StyleSheet } from "react-native";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import { colors, spacing, typography } from "~/styles";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import type { NotificationSchedule } from "@mirai-app/frameworks/trpc/hooks";
+
+// GraphQL NotificationSchedule type (simplified for local use)
+interface NotificationSchedule {
+  id: string;
+  name: string;
+  notificationTitle?: string | null;
+  notificationBody?: string | null;
+  message: string;
+  triggerTime: string;
+  formattedTime: string;
+  hour: number;
+  minute: number;
+  isActive: boolean;
+  isCurrentlyActive: boolean;
+  isExpired: boolean;
+  isUpcoming: boolean;
+  notificationType: string;
+  notificationUrl?: string | null;
+  startDate: Date | string;
+  endDate: Date | string;
+  lastRun?: Date | string | null;
+  tripId?: string | null;
+  createdById: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
 
 interface CreateScheduleModalProps {
   visible: boolean;

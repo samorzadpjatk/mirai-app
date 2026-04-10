@@ -3,7 +3,42 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, typography } from "~/styles";
 import { AdminModal, AdminModalButton } from "../AdminModal";
-import type { User, Group } from "@mirai-app/frameworks/trpc/hooks";
+
+// GraphQL User type from @mirai-app/graphql-types
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  authUserId: string;
+  fullName: string;
+  hasAvatar: boolean;
+  isAdmin: boolean;
+  isModerator: boolean;
+  role: string;
+  createdAt: Date | string;
+  lastSeenOn?: Date | string | null;
+  group?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+// GraphQL Group type from @mirai-app/graphql-types (simplified for local use)
+interface Group {
+  id: string;
+  name: string;
+  code: string;
+  coins: number;
+  description?: string | null;
+  image?: string | null;
+  isActive: boolean;
+  organizerId: string;
+  status: string;
+  tripId: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
 
 interface GroupAssignmentModalProps {
   visible: boolean;

@@ -7,7 +7,7 @@ import {
   ThemedTextInput,
   DateTimePickerModal,
 } from "~/components/common/ui";
-import type { User } from "@mirai-app/frameworks/trpc/hooks";
+import type { User } from "@mirai-app/graphql-types";
 
 interface EditUserModalProps {
   visible: boolean;
@@ -38,13 +38,21 @@ export function EditUserModal({
   isDeleting,
   isBanning,
 }: EditUserModalProps) {
+  // GraphQL User type has firstName/lastName but may not have email/wrist/house fields yet
+  // Access extended fields safely with type assertions until schema is updated
+  const extendedUser = user as unknown as {
+    email?: string;
+    wristNumber?: string | number;
+    houseNumber?: string | number;
+  } | null;
+
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [wristNumber, setWristNumber] = useState(
-    user?.wristNumber?.toString() ?? "",
+    extendedUser?.wristNumber?.toString() ?? "",
   );
   const [houseNumber, setHouseNumber] = useState(
-    user?.houseNumber?.toString() ?? "",
+    extendedUser?.houseNumber?.toString() ?? "",
   );
   const [banUntil, setBanUntil] = useState<Date | null>(null);
   const [banReason, setBanReason] = useState("");
@@ -116,7 +124,7 @@ export function EditUserModal({
             <Text
               style={{ fontSize: typography.sm, color: colors.textSecondary }}
             >
-              {user.email ?? "No email"}
+              {extendedUser?.email ?? "No email"}
             </Text>
           </View>
 

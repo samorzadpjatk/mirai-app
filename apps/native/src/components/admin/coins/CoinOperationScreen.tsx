@@ -3,11 +3,16 @@ import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useMutation } from "@tanstack/react-query";
 import { colors, spacing, borderRadius } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
-import { useAdminCoins } from "@mirai-app/frameworks/trpc/hooks";
+import {
+  useAddCoinsMutation,
+  useRemoveCoinsMutation,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "~/lib/graphql-client";
 
 interface CoinOperationScreenProps {
   operation: "add" | "remove";
@@ -55,8 +60,12 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
 
-  const { addCoins, removeCoins, isAddingCoins, isRemovingCoins } =
-    useAdminCoins(tripId);
+  // GraphQL mutations for coins
+  const addCoinsMutation = useAddCoinsMutation(graphqlClient);
+  const removeCoinsMutation = useRemoveCoinsMutation(graphqlClient);
+
+  const isAddingCoins = addCoinsMutation.isPending;
+  const isRemovingCoins = removeCoinsMutation.isPending;
   const isSubmitting = operation === "add" ? isAddingCoins : isRemovingCoins;
 
   const submit = async () => {
@@ -76,9 +85,23 @@ export function CoinOperationScreen({ operation }: CoinOperationScreenProps) {
 
     try {
       if (operation === "add") {
-        await addCoins(groupId, numericAmount, reason.trim());
+        await addCoinsMutation.mutateAsync({
+          input: {
+            tripId,
+            groupId,
+            amount: numericAmount,
+            reason: reason.trim(),
+          },
+        });
       } else {
-        await removeCoins(groupId, numericAmount, reason.trim());
+        await removeCoinsMutation.mutateAsync({
+          input: {
+            tripId,
+            groupId,
+            amount: numericAmount,
+            reason: reason.trim(),
+          },
+        });
       }
       Alert.alert(
         "Success",

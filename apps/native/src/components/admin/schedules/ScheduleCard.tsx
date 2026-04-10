@@ -2,7 +2,32 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "~/styles";
-import type { NotificationSchedule } from "@mirai-app/frameworks/trpc/hooks";
+
+// GraphQL NotificationSchedule type (simplified for local use)
+interface NotificationSchedule {
+  id: string;
+  name: string;
+  notificationTitle?: string | null;
+  notificationBody?: string | null;
+  message: string;
+  triggerTime: string;
+  formattedTime: string;
+  hour: number;
+  minute: number;
+  isActive: boolean;
+  isCurrentlyActive: boolean;
+  isExpired: boolean;
+  isUpcoming: boolean;
+  notificationType: string;
+  notificationUrl?: string | null;
+  startDate: Date | string;
+  endDate: Date | string;
+  lastRun?: Date | string | null;
+  tripId?: string | null;
+  createdById: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
 
 interface ScheduleCardProps {
   schedule: NotificationSchedule;
@@ -55,10 +80,9 @@ export function ScheduleCard({
         <Text style={styles.metaText}>
           Created: {new Date(schedule.createdAt).toLocaleDateString()}
         </Text>
-        {schedule.lastTriggered && (
+        {schedule.lastRun && (
           <Text style={styles.metaText}>
-            Last triggered:{" "}
-            {new Date(schedule.lastTriggered).toLocaleDateString()}
+            Last triggered: {new Date(schedule.lastRun).toLocaleDateString()}
           </Text>
         )}
       </View>

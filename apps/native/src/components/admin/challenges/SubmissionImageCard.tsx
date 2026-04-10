@@ -8,9 +8,9 @@ import {
   View,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import type { VotingSubmission } from "~/hooks/admin/useStaffVoting";
+import { graphqlClient } from "~/lib/graphql-client";
 
 interface SubmissionImageCardProps {
   submission: VotingSubmission;
@@ -27,11 +27,30 @@ export function SubmissionImageCard({
   onPress,
   disabled = false,
 }: SubmissionImageCardProps) {
-  const trpc = useTRPC();
   const { data, isLoading } = useQuery({
-    ...trpc.storage.createDownloadUrl.queryOptions({
-      storagePath: submission.imagePath,
-    }),
+    queryKey: ["createDownloadUrl", submission.imagePath],
+    queryFn: async () => {
+      if (!submission.imagePath) return null;
+      const result = await graphqlClient.request<{
+        createDownloadUrl?: {
+          signedUrl?: string;
+        };
+      }>(
+        `
+        query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+          createDownloadUrl(input: $input) {
+            signedUrl
+          }
+        }
+        `,
+        {
+          input: {
+            storagePath: submission.imagePath,
+          },
+        },
+      );
+      return result.createDownloadUrl?.signedUrl ?? null;
+    },
     enabled: !!submission.imagePath,
   });
 
@@ -42,8 +61,8 @@ export function SubmissionImageCard({
           <View style={styles.voteImageFallback}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
-        ) : data?.signedUrl ? (
-          <Image source={{ uri: data.signedUrl }} style={styles.voteImage} />
+        ) : data ? (
+          <Image source={{ uri: data }} style={styles.voteImage} />
         ) : (
           <View style={styles.voteImageFallback}>
             <Text style={styles.voteImageFallbackText}>

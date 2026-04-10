@@ -7,8 +7,12 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import {
+  useCreateNotificationScheduleMutation,
+  useGetNotificationSchedulesQuery,
+} from "@mirai-app/graphql-types";
 import { useTrips } from "~/hooks/trips";
+import { graphqlClient } from "~/lib/graphql-client";
 import { colors, spacing } from "~/styles";
 import {
   AppModalShell,
@@ -29,7 +33,6 @@ export function CreateScheduleModal({
   onClose,
   onCreated,
 }: CreateScheduleModalProps) {
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
 
@@ -62,30 +65,45 @@ export function CreateScheduleModal({
     return;
   }, [createTripId, createType, trips]);
 
-  const createScheduleMutation = useMutation(
-    trpc.notificationSchedule.create.mutationOptions({
-      onSuccess: async () => {
-        // Invalidate schedules so list refreshes without parent needing to refetch
-        await queryClient.invalidateQueries({
-          queryKey: trpc.notificationSchedule.getAll.queryOptions().queryKey,
-        });
-        onCreated?.();
-        onClose();
-        setCreateName("");
-        setCreateType("custom");
-        setCreateTripId(null);
-        setCreateTitle("");
-        setCreateBody("");
-        setCreateStartDate("");
-        setCreateEndDate("");
-        setCreateHour("9");
-        setCreateMinute("0");
-      },
-      onError: (err) => {
-        console.error("Error creating schedule:", err);
-      },
-    }),
-  );
+  const createScheduleMutation = useMutation({
+    mutationFn: async (variables: {
+      name: string;
+      tripId?: string;
+      notificationType: "custom" | "ranking";
+      notificationTitle?: string;
+      notificationBody?: string;
+      startDate: Date;
+      endDate: Date;
+      hour: number;
+      minute: number;
+      isActive: boolean;
+    }) => {
+      return useCreateNotificationScheduleMutation.fetcher(
+        graphqlClient,
+        variables,
+      )();
+    },
+    onSuccess: async () => {
+      // Invalidate schedules so list refreshes without parent needing to refetch
+      await queryClient.invalidateQueries({
+        queryKey: useGetNotificationSchedulesQuery.getKey(),
+      });
+      onCreated?.();
+      onClose();
+      setCreateName("");
+      setCreateType("custom");
+      setCreateTripId(null);
+      setCreateTitle("");
+      setCreateBody("");
+      setCreateStartDate("");
+      setCreateEndDate("");
+      setCreateHour("9");
+      setCreateMinute("0");
+    },
+    onError: (err) => {
+      console.error("Error creating schedule:", err);
+    },
+  });
 
   const isSubmitDisabled =
     !createName.trim() ||

@@ -1,8 +1,19 @@
 import React, { type ComponentProps } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { AdminChallengeUI } from "@mirai-app/frameworks/trpc/hooks";
 import { commonStyles } from "~/styles/commonStyles";
+
+// Challenge type definition based on GraphQL schema
+export interface AdminChallengeUI {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  status: string;
+  category: "standard" | "wintegral" | "special";
+  tripId?: string;
+  icon: string;
+}
 
 export default function ChallengeCard({
   challenge,

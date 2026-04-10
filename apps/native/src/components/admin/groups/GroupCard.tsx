@@ -2,7 +2,30 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "~/styles";
-import type { Group } from "@mirai-app/frameworks/trpc/hooks";
+
+// GraphQL Group type with extended fields for UI
+interface Group {
+  id: string;
+  name: string;
+  code: string;
+  coins: number;
+  description?: string | null;
+  image?: string | null;
+  isActive: boolean;
+  organizerId: string;
+  status: string;
+  tripId: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  // Extended fields for UI (populated by parent component)
+  organizer?: {
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+  _count?: {
+    participants: number;
+  };
+}
 
 interface GroupCardProps {
   group: Group;
@@ -100,7 +123,7 @@ export function GroupCard({
               color: colors.textSecondary,
             }}
           >
-            {group._count.participants} members
+            {group._count?.participants ?? 0} members
           </Text>
         </View>
       </View>

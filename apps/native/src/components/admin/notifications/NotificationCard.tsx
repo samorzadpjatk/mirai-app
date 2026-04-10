@@ -2,7 +2,43 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "~/styles";
-import type { Notification } from "@mirai-app/frameworks/trpc/hooks";
+
+// Notification Push type (simplified for UI)
+interface NotificationPush {
+  id: string;
+  status: "sent" | "failed" | "pending";
+  userId: string;
+  sentAt?: Date | string | null;
+  errorMessage?: string | null;
+}
+
+// Notification Creator type
+interface NotificationCreator {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  name?: string | null;
+}
+
+// GraphQL Notification type (simplified for local use)
+interface Notification {
+  id: string;
+  title: string;
+  body: string;
+  status: "CANCELLED" | "DRAFT" | "FAILED" | "READY" | "SENT";
+  priority: string;
+  createdAt: Date | string;
+  updatedAt?: Date | string | null;
+  sentAt?: Date | string | null;
+  scheduledFor?: Date | string | null;
+  isSent: boolean;
+  isScheduled: boolean;
+  isReadyToSend?: boolean | null;
+  tripId?: string | null;
+  createdById: string;
+  createdBy: NotificationCreator;
+  pushes: NotificationPush[];
+}
 
 interface NotificationCardProps {
   notification: Notification;
@@ -13,11 +49,7 @@ interface NotificationCardProps {
 }
 
 // Helper function to get display name from user object
-const getDisplayName = (user: {
-  firstName?: string | null;
-  lastName?: string | null;
-  name?: string | null;
-}): string => {
+const getDisplayName = (user: NotificationCreator): string => {
   if (user.firstName && user.lastName) {
     return `${user.firstName} ${user.lastName}`;
   }
@@ -29,12 +61,16 @@ const getDisplayName = (user: {
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case "sent":
+    case "SENT":
       return { color: colors.success, text: "Sent" };
-    case "failed":
+    case "FAILED":
       return { color: colors.danger, text: "Failed" };
-    case "pending":
+    case "READY":
       return { color: colors.primary, text: "Pending" };
+    case "DRAFT":
+      return { color: colors.textSecondary, text: "Draft" };
+    case "CANCELLED":
+      return { color: colors.warning, text: "Cancelled" };
     default:
       return { color: colors.textSecondary, text: status };
   }
@@ -59,10 +95,10 @@ export function NotificationCard({
 
   const statusBadge =
     failedCount > 0
-      ? getStatusBadge("failed")
+      ? getStatusBadge("FAILED")
       : pendingCount > 0
-        ? getStatusBadge("pending")
-        : getStatusBadge("sent");
+        ? getStatusBadge("READY")
+        : getStatusBadge(notification.status);
 
   return (
     <View style={styles.card}>

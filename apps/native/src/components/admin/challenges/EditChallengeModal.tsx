@@ -8,8 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useTrips } from "~/hooks/trips";
-import { useAdminChallenges } from "@mirai-app/frameworks/trpc/hooks";
-import type { AdminChallengeUI } from "@mirai-app/frameworks/trpc/hooks";
+import { graphqlClient } from "~/lib/graphql-client";
 import { colors, spacing } from "~/styles";
 import {
   AppModalShell,
@@ -18,11 +17,39 @@ import {
   ThemedTextInput,
 } from "~/components/common/ui";
 
+// Local type definition for challenge category
+type ChallengeCategory = "standard" | "wintegral" | "special";
+
+// Admin challenge UI type definition
+export interface AdminChallengeUI {
+  id: string;
+  title: string;
+  description: string;
+  points: number;
+  status: string;
+  category: ChallengeCategory;
+  tripId?: string;
+  icon: string;
+}
+
 interface Props {
   visible: boolean;
   onClose: () => void;
   challenge: AdminChallengeUI;
 }
+
+// GraphQL mutation document for updating a challenge
+const UPDATE_CHALLENGE_MUTATION = `
+  mutation UpdateChallenge($input: UpdateChallengeInput!) {
+    updateChallenge(input: $input) {
+      id
+      name
+      description
+      status
+      points
+    }
+  }
+`;
 
 export default function EditChallengeModal({
   visible,
@@ -39,22 +66,23 @@ export default function EditChallengeModal({
   const [tripId, setTripId] = useState<string>(challenge.tripId ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const { trips, hasNextPage, isFetchingNextPage, fetchNextPage } = useTrips();
-  const { updateChallenge } = useAdminChallenges();
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateChallenge(challenge.id, {
-        tripId,
-        title: state.title,
-        description: state.description,
-        points: Number(state.points),
-        category: state.category,
-        icon: state.icon,
+      await graphqlClient.request(UPDATE_CHALLENGE_MUTATION, {
+        input: {
+          id: challenge.id,
+          tripId,
+          name: state.title,
+          description: state.description,
+          points: Number(state.points),
+        },
       });
       onClose();
       Alert.alert("Saved", "Challenge updated");
-    } catch {
+    } catch (error) {
+      console.error("Failed to update challenge:", error);
       Alert.alert("Error", "Failed to update challenge");
     } finally {
       setIsSaving(false);

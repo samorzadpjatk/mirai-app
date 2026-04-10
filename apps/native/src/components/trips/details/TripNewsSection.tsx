@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -10,8 +10,23 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import { useGetActivitiesByTripQuery } from "@mirai-app/graphql-types";
 import { borderRadius, colors, spacing, typography } from "~/styles";
+
+// GraphQL Client setup with SecureStore
+const createGraphQLClient = async (): Promise<GraphQLClient> => {
+  const token = await SecureStore.getItemAsync("sb-access-token");
+  return new GraphQLClient(
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql",
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+};
 
 interface TripNewsSectionProps {
   tripId: string;
@@ -54,16 +69,26 @@ const formatAdminName = (item: AdminNewsItem) => {
 };
 
 export function TripNewsSection({ tripId }: TripNewsSectionProps) {
-  const trpc = useTRPC();
   const router = useRouter();
+  const [client, setClient] = useState<GraphQLClient | null>(null);
+
+  useEffect(() => {
+    void createGraphQLClient().then(setClient);
+  }, []);
 
   const newsQuery = useQuery({
-    ...trpc.activityFeed.getByTrip.queryOptions({
-      tripId,
-      page: 1,
-      pageSize: 30,
-    }),
-    enabled: Boolean(tripId),
+    queryKey: ["GetActivitiesByTrip", tripId, 1, 30],
+    queryFn: async () => {
+      if (!client) {
+        throw new Error("GraphQL client not initialized");
+      }
+      return useGetActivitiesByTripQuery.fetcher(client, {
+        tripId,
+        page: 1,
+        pageSize: 30,
+      })();
+    },
+    enabled: Boolean(tripId) && !!client,
   });
 
   const customNews = useMemo(() => {

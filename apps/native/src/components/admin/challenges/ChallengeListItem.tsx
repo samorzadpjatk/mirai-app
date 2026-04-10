@@ -3,7 +3,16 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { colors, spacing, borderRadius } from "~/styles";
-import type { ChallengeItem } from "@mirai-app/frameworks/trpc/hooks";
+
+// Challenge item type definition based on GraphQL schema
+export interface ChallengeItem {
+  id: string;
+  title: string;
+  description: string | null;
+  basePoints: number;
+  status: string;
+  tripId: string;
+}
 
 interface ChallengeListItemProps {
   challenge: ChallengeItem;

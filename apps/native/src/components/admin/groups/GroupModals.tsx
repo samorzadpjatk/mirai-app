@@ -10,7 +10,47 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius, typography } from "~/styles";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 import { FormField, ThemedTextInput } from "~/components/common/ui";
-import type { Group, User } from "@mirai-app/frameworks/trpc/hooks";
+
+// GraphQL Group type with extended fields for UI
+interface Group {
+  id: string;
+  name: string;
+  code: string;
+  coins: number;
+  description?: string | null;
+  image?: string | null;
+  isActive: boolean;
+  organizerId: string;
+  status: string;
+  tripId: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  // Extended fields for UI (populated by parent component)
+  organizer?: {
+    id?: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+  _count?: {
+    participants: number;
+  };
+}
+
+// GraphQL User type from @mirai-app/graphql-types
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  authUserId: string;
+  fullName: string;
+  hasAvatar: boolean;
+  isAdmin: boolean;
+  isModerator: boolean;
+  role: string;
+  createdAt: Date | string;
+  lastSeenOn?: Date | string | null;
+}
 
 interface CreateGroupModalProps {
   visible: boolean;
@@ -183,9 +223,9 @@ export function DeleteGroupModal({
             This action cannot be undone and will remove all members from the
             group.
           </Text>
-          {group._count.participants > 0 && (
+          {(group._count?.participants ?? 0) > 0 && (
             <Text style={styles.memberCount}>
-              {group._count.participants} participants will be affected.
+              {group._count?.participants} participants will be affected.
             </Text>
           )}
         </View>
