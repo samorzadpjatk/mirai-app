@@ -34,12 +34,12 @@ import {
 import { useAuth, useAuthLoading } from "@mirai-app/frameworks/auth/client";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
 import { SupabaseProvider } from "@mirai-app/frameworks/supabase/react";
-import { APIProvider, useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { APIProvider, useTRPCClient } from "@mirai-app/frameworks/graphql";
 import {
   SUPABASE_ANON_KEY,
   SUPABASE_URL,
-  TRPC_HTTP_URL,
-  TRPC_WS_URL,
+  GRAPHQL_HTTP_URL,
+  GRAPHQL_WS_URL,
 } from "~/config/runtimeEnv";
 import "~/services/background/backgroundLocationTask";
 import { authStorage } from "~/services/storage/storage";
@@ -203,7 +203,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SupabaseProvider client={supabaseClient}>
-          <APIProvider httpUrl={TRPC_HTTP_URL} wsUrl={TRPC_WS_URL}>
+          <APIProvider httpUrl={GRAPHQL_HTTP_URL} wsUrl={GRAPHQL_WS_URL}>
             <AuthStoreProviderWrapper>
               <LocationStoreProvider>
                 <App />
