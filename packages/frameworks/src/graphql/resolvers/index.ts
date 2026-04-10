@@ -7,9 +7,16 @@ import "./Trip.js";
 import "./Group.js";
 import "./Location.js";
 import "./Challenge.js";
+import "./ChallengeSubmission.js";
+import "./ChallengeVote.js";
 import "./Notification.js";
+import "./NotificationSchedule.js";
+import "./NotificationDelivery.js";
 import "./ActivityFeed.js";
 import "./Reward.js";
+import "./CoinTransaction.js";
+import "./Sponsor.js";
+import "./SubmissionReport.js";
 import "./Event.js";
 
 // Note: Resolvers are loaded for side-effects (schema registration with Pothos)

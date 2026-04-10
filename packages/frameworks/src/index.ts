@@ -10,7 +10,7 @@
  * ┌─────────────────────────────────────────┐
  * │          Frameworks Layer               │
  * │  ┌─────────┐ ┌─────────┐ ┌─────────┐  │
- * │  │  tRPC   │ │ Prisma  │ │ Supabase│  │
+ * │  │  tRPC   │ │ Drizzle │ │ Supabase│  │
  * │  │ Config  │ │ Client  │ │ Client  │  │
  * │  └─────────┘ └─────────┘ └─────────┘  │
  * └─────────────────────────────────────────┘
@@ -46,11 +46,11 @@
  * );
  * ```
  *
- * ### Prisma Client
+ * ### Drizzle ORM Client
  * ```typescript
- * import { createPrismaClient } from "@mirai-app/frameworks/prisma/client";
+ * import { createDrizzleClient } from "@mirai-app/frameworks/drizzle/client";
  *
- * const prisma = createPrismaClient(process.env.DATABASE_URL);
+ * const db = createDrizzleClient(process.env.DATABASE_URL);
  * ```
  *
  * ### Supabase Client

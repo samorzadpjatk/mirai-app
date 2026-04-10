@@ -14,7 +14,20 @@ import "./types/Challenge";
 // Import all resolvers to register queries and mutations
 import "./resolvers/User";
 import "./resolvers/Trip";
+import "./resolvers/Group";
+import "./resolvers/Location";
 import "./resolvers/Challenge";
+import "./resolvers/ChallengeSubmission";
+import "./resolvers/ChallengeVote";
+import "./resolvers/Notification";
+import "./resolvers/NotificationSchedule";
+import "./resolvers/NotificationDelivery";
+import "./resolvers/ActivityFeed";
+import "./resolvers/Reward";
+import "./resolvers/CoinTransaction";
+import "./resolvers/Sponsor";
+import "./resolvers/SubmissionReport";
+import "./resolvers/Event";
 
 /**
  * GraphQL Schema
