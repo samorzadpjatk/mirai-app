@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import { useGetTripsQuery } from "@mirai-app/graphql-types";
 import type { TripListItem } from "~/components/trips/list/types";
 import {
   getCachedTrips,
@@ -9,13 +11,29 @@ import {
 
 const PAGE_SIZE = 20;
 
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
+  const token = await SecureStore.getItemAsync("sb-access-token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
+
 export function useTrips() {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
+  const [client, setClient] = useState<GraphQLClient | null>(null);
   const [cachedTrips, setCachedTripsState] = useState<TripListItem[] | null>(
     null,
   );
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
+
+  useEffect(() => {
+    void createGraphQLClient().then(setClient);
+  }, []);
 
   const {
     data,
@@ -28,20 +46,25 @@ export function useTrips() {
     error,
     refetch,
   } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.trip.getAll.queryOptions().queryKey,
-      "infinite",
-      PAGE_SIZE,
-    ],
+    queryKey: ["GetTrips", "infinite", PAGE_SIZE],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
+      if (!client) {
+        throw new Error("GraphQL client not initialized");
+      }
       const offset = typeof pageParam === "number" ? pageParam : 0;
-      return trpcClient.trip.getAll.query({
+      const result = await useGetTripsQuery.fetcher(client, {
+        limit: PAGE_SIZE,
+        offset,
+      })();
+      return {
+        trips: result.trips,
         pagination: {
-          limit: PAGE_SIZE,
+          hasMore: result.trips.length === PAGE_SIZE,
           offset,
+          limit: PAGE_SIZE,
         },
-      });
+      };
     },
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
@@ -50,6 +73,7 @@ export function useTrips() {
 
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
+    enabled: !!client,
   });
 
   const tripsData = useMemo(

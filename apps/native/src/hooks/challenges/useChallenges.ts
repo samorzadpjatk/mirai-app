@@ -1,49 +1,90 @@
 import { useCallback, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import {
+  useGetTripQuery,
+  useGetCurrentUserQuery,
+} from "@mirai-app/graphql-types";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
 const PAGE_SIZE = 30;
 
-export function useChallenges(tripId?: string | null) {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
+  const token = await SecureStore.getItemAsync("sb-access-token");
 
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
+
+// TODO: This hook requires GetChallengesByTrip query in GraphQL schema
+// For now, we use trip data which contains challenges
+export function useChallenges(tripId?: string | null) {
   const tripQuery = useQuery({
-    ...trpc.trip.getById.queryOptions({ id: tripId ?? "" }),
+    queryKey: useGetTripQuery.getKey({ id: tripId ?? "" }),
+    queryFn: async () => {
+      const client = await createGraphQLClient();
+      return useGetTripQuery.fetcher(client, { id: tripId ?? "" })();
+    },
     enabled: Boolean(tripId),
   });
 
+  const currentUserQuery = useQuery({
+    queryKey: useGetCurrentUserQuery.getKey(),
+    queryFn: async () => {
+      const client = await createGraphQLClient();
+      return useGetCurrentUserQuery.fetcher(client)();
+    },
+  });
+
+  // TODO: Implement infinite query for challenges when GraphQL schema supports it
+  // For now, we use challenges from trip data
   const challengesQuery = useInfiniteQuery({
-    queryKey: [
-      ...trpc.challenge.getAllByTrip.queryOptions({ tripId: tripId ?? "" })
-        .queryKey,
-      "infinite",
-      PAGE_SIZE,
-    ],
+    queryKey: ["challenges", tripId, "infinite", PAGE_SIZE],
     enabled: Boolean(tripId),
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
+      const client = await createGraphQLClient();
       const offset = typeof pageParam === "number" ? pageParam : 0;
-      return trpcClient.challenge.getAllByTrip.query({
-        tripId: tripId ?? "",
+
+      // Get trip data which includes challenges
+      const tripResult = await useGetTripQuery.fetcher(client, {
+        id: tripId ?? "",
+      })();
+
+      // Extract challenges from trip data if available
+      const allChallenges =
+        (tripResult.trip?.challenges as unknown as DBChallenge[]) ?? [];
+
+      // Paginate locally since we don't have server-side pagination yet
+      const paginatedChallenges = allChallenges.slice(
+        offset,
+        offset + PAGE_SIZE,
+      );
+
+      return {
+        challenges: paginatedChallenges,
         pagination: {
-          limit: PAGE_SIZE,
+          hasMore: allChallenges.length > offset + PAGE_SIZE,
           offset,
+          limit: PAGE_SIZE,
         },
-      });
+      };
     },
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
         return undefined;
       }
-
       return lastPage.pagination.offset + lastPage.pagination.limit;
     },
   });
-
-  const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
 
   const { data: trip, isLoading: tripLoading } = tripQuery;
   const challengesData = useMemo(

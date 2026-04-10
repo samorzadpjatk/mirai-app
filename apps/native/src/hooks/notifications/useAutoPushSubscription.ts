@@ -1,10 +1,9 @@
 import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
-import { invalidateNotificationQueries } from "@mirai-app/frameworks/graphql/query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
+import { graphqlClient } from "~/lib/graphql-client";
 
 function resolveProjectId(): string | undefined {
   const expoConfigExtra = (Constants.expoConfig?.extra ?? null) as unknown;
@@ -43,30 +42,43 @@ function parseToken(value: unknown): string | null {
   return trimmedToken.length > 0 ? trimmedToken : null;
 }
 
+// GraphQL mutation to subscribe to push notifications
+const SubscribeToNotificationsDocument = `
+  mutation SubscribeToNotifications($token: String!) {
+    subscribeToNotifications(token: $token) {
+      success
+      subscription {
+        id
+        isActive
+      }
+    }
+  }
+`;
+
 export function useAutoPushSubscription() {
   const { session } = useAuth();
   const attemptedForUserRef = useRef<string | null>(null);
-
-  // Use tRPC + React Query directly for server-state
-  const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const subscriptionQuery = useQuery(
-    trpc.notifications.getSubscriptionStatus.queryOptions(),
-  );
-  const subscribeMutation = useMutation(
-    trpc.notifications.subscribe.mutationOptions({
-      onSuccess: async () => {
-        await invalidateNotificationQueries(queryClient);
-      },
-    }),
-  );
 
-  const { data: subscriptionStatus, isLoading: isStatusLoading } =
-    subscriptionQuery;
+  // GraphQL mutation for subscribing to push notifications
+  const subscribeMutation = useMutation({
+    mutationFn: async (variables: { token: string }) => {
+      const result = await graphqlClient.request(
+        SubscribeToNotificationsDocument,
+        variables,
+      );
+      return result.subscribeToNotifications;
+    },
+    onSuccess: async () => {
+      // Invalidate notification queries to refresh subscription status
+      await queryClient.invalidateQueries({
+        queryKey: ["GetMyNotifications"],
+      });
+    },
+  });
 
   const hasSession = !!session?.access_token;
   const authUserId = session?.user?.id ?? null;
-  const hasSubscription = subscriptionStatus?.isSubscribed ?? false;
 
   useEffect(() => {
     if (!hasSession || !authUserId) {
@@ -74,7 +86,7 @@ export function useAutoPushSubscription() {
       return;
     }
 
-    if (isStatusLoading || hasSubscription || subscribeMutation.isPending) {
+    if (subscribeMutation.isPending) {
       return;
     }
 
@@ -115,11 +127,5 @@ export function useAutoPushSubscription() {
         console.warn("Failed to run automatic notification onboarding:", error);
       }
     })();
-  }, [
-    authUserId,
-    hasSession,
-    hasSubscription,
-    isStatusLoading,
-    subscribeMutation,
-  ]);
+  }, [authUserId, hasSession, subscribeMutation]);
 }

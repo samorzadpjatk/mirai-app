@@ -4,11 +4,29 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import {
+  useGetActivitiesByTripQuery,
+  useToggleActivityReactionMutation,
+} from "@mirai-app/graphql-types";
 import type {
   CommunityFeedActivity,
   ActivityFilter,
 } from "~/components/community/CommunityActivityCard";
+
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
+  const token = await SecureStore.getItemAsync("sb-access-token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
 
 type FeedCursor = {
   id: string;
@@ -75,11 +93,15 @@ export const useCommunityFeed = ({
   focusActivityId,
 }: UseCommunityFeedProps) => {
   const queryClient = useQueryClient();
-  const trpcClient = useTRPCClient();
 
   const feedQueryKey = useMemo(
     () =>
-      selectedTripId ? (["community-feed", selectedTripId, 30] as const) : null,
+      selectedTripId
+        ? (useGetActivitiesByTripQuery.getKey({
+            tripId: selectedTripId,
+            limit: 30,
+          }) as readonly unknown[])
+        : null,
     [selectedTripId],
   );
 
@@ -102,12 +124,40 @@ export const useCommunityFeed = ({
         } satisfies FeedPageData;
       }
 
-      return (await trpcClient.activityFeed.getByTrip.query({
+      const client = await createGraphQLClient();
+      const result = await useGetActivitiesByTripQuery.fetcher(client, {
         tripId: selectedTripId,
-        page: 1,
-        pageSize: 30,
-        cursor: pageParam ?? undefined,
-      })) as FeedPageData;
+        limit: 30,
+        cursor: pageParam
+          ? {
+              id: pageParam.id,
+              createdAt:
+                pageParam.createdAt instanceof Date
+                  ? pageParam.createdAt.toISOString()
+                  : pageParam.createdAt,
+              isPinned: pageParam.isPinned,
+            }
+          : undefined,
+      })();
+
+      return {
+        activities: result.activitiesByTrip
+          .activities as CommunityFeedActivity[],
+        pagination: {
+          total: result.activitiesByTrip.pagination.total,
+          page: result.activitiesByTrip.pagination.page,
+          pageSize: result.activitiesByTrip.pagination.pageSize,
+          totalPages: result.activitiesByTrip.pagination.totalPages,
+          hasMore: result.activitiesByTrip.pagination.hasMore,
+        },
+        nextCursor: result.activitiesByTrip.nextCursor
+          ? {
+              id: result.activitiesByTrip.nextCursor.id,
+              createdAt: result.activitiesByTrip.nextCursor.createdAt,
+              isPinned: result.activitiesByTrip.nextCursor.isPinned,
+            }
+          : undefined,
+      } satisfies FeedPageData;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
@@ -149,12 +199,13 @@ export const useCommunityFeed = ({
     );
   };
 
-  const { mutateAsync: toggleHeart } = useMutation({
+  const toggleHeartMutation = useMutation({
     mutationFn: async ({ activityId }: { activityId: string }) => {
-      return await trpcClient.activityFeed.toggleReaction.mutate({
+      const client = await createGraphQLClient();
+      return useToggleActivityReactionMutation.fetcher(client, {
         activityId,
-        reactionType: "heart",
-      });
+        reaction: "heart",
+      })();
     },
     onMutate: async ({ activityId }) => {
       const queryKey = feedQueryKey;
@@ -176,19 +227,22 @@ export const useCommunityFeed = ({
       queryClient.setQueryData(context.queryKey, context.previousData);
     },
     onSuccess: (result, _variables, context) => {
-      applyReactionSummaryToFeed(
-        result.activityId,
-        result.reactionsSummary as CommunityFeedActivity["reactionsSummary"],
-        context?.queryKey,
-      );
+      if (result.toggleActivityReaction) {
+        applyReactionSummaryToFeed(
+          result.toggleActivityReaction.activityId,
+          result.toggleActivityReaction
+            .reactionsSummary as CommunityFeedActivity["reactionsSummary"],
+          context?.queryKey,
+        );
+      }
     },
   });
 
   const handleToggleHeart = useCallback(
     (activityId: string) => {
-      void toggleHeart({ activityId });
+      void toggleHeartMutation.mutateAsync({ activityId });
     },
-    [toggleHeart],
+    [toggleHeartMutation],
   );
 
   const activities = useMemo(

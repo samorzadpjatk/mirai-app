@@ -1,13 +1,26 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useTRPC, useTRPCClient } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import { useGetGroupsByTripQuery } from "@mirai-app/graphql-types";
 import type { GroupListItem } from "~/components/trips/groups/types";
 
 const PAGE_SIZE = 30;
 
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
+  const token = await SecureStore.getItemAsync("sb-access-token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
+
 export function useGroups(tripId?: string | null) {
-  const trpc = useTRPC();
-  const trpcClient = useTRPCClient();
   const [searchQuery, setSearchQuery] = useState("");
 
   const {
@@ -19,22 +32,25 @@ export function useGroups(tripId?: string | null) {
     fetchNextPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: [
-      ...trpc.group.getAll.queryOptions({ tripId: tripId ?? "" }).queryKey,
-      "infinite",
-      PAGE_SIZE,
-    ],
+    queryKey: ["GetGroupsByTrip", tripId, "infinite", PAGE_SIZE],
     enabled: Boolean(tripId),
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
+      const client = await createGraphQLClient();
       const offset = typeof pageParam === "number" ? pageParam : 0;
-      return trpcClient.group.getAll.query({
+      const result = await useGetGroupsByTripQuery.fetcher(client, {
         tripId: tripId ?? "",
+        limit: PAGE_SIZE,
+        offset,
+      })();
+      return {
+        groups: result.groupsByTrip,
         pagination: {
-          limit: PAGE_SIZE,
+          hasMore: result.groupsByTrip.length === PAGE_SIZE,
           offset,
+          limit: PAGE_SIZE,
         },
-      });
+      };
     },
     getNextPageParam: (lastPage) => {
       if (!lastPage.pagination.hasMore) {
@@ -60,7 +76,7 @@ export function useGroups(tripId?: string | null) {
         name: group.name,
         code: group.code,
         image: group.image,
-        participantCount: group.participants.length,
+        participantCount: group.participants?.length ?? 0,
       }));
   }, [groups, searchQuery]);
 

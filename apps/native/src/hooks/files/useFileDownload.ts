@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Crypto from "expo-crypto";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql";
+import { graphqlClient } from "~/lib/graphql-client";
 
 type DownloadStatus = "idle" | "loading" | "success" | "error";
 
@@ -24,6 +24,17 @@ interface DownloadResult {
   fileName: string | null;
   totalBytes: number;
 }
+
+// GraphQL document for creating download URL
+const CreateDownloadUrlDocument = `
+  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+    createDownloadUrl(input: $input) {
+      storagePath
+      signedUrl
+      expiresAt
+    }
+  }
+`;
 
 const toDownloadResult = (file: File, fileName: string): DownloadResult => ({
   uri: file.uri,
@@ -81,7 +92,6 @@ export const deleteCachedDownload = async (
 };
 
 export const useFileDownload = () => {
-  const trpcClient = useTRPCClient();
   const [status, setStatus] = useState<DownloadStatus>("idle");
   const [error, setError] = useState<Error | null>(null);
   const [file, setFile] = useState<DownloadResult | null>(null);
@@ -161,16 +171,24 @@ export const useFileDownload = () => {
           }
         }
 
-        // Use public URL if available, otherwise get signed URL
+        // Use public URL if available, otherwise get signed URL via GraphQL
         let signedUrl: string;
         if (input.publicUrl) {
           signedUrl = input.publicUrl;
         } else {
-          const response = await trpcClient.storage.createDownloadUrl.query({
-            storagePath: input.storagePath,
-            expiresInSeconds: input.expiresInSeconds,
+          const response = await graphqlClient.request<{
+            createDownloadUrl: {
+              storagePath: string;
+              signedUrl: string;
+              expiresAt: string;
+            };
+          }>(CreateDownloadUrlDocument, {
+            input: {
+              storagePath: input.storagePath,
+              expiresInSeconds: input.expiresInSeconds,
+            },
           });
-          signedUrl = response.signedUrl;
+          signedUrl = response.createDownloadUrl.signedUrl;
         }
 
         const cachedFileName = await buildCacheFileName(
@@ -280,7 +298,7 @@ export const useFileDownload = () => {
         throw errorObject;
       }
     },
-    [trpcClient],
+    [],
   );
 
   return {

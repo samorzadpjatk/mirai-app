@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import { File } from "expo-file-system";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql";
+import { graphqlClient } from "~/lib/graphql-client";
 import { tusUrlStorage } from "~/services/storage/tusUrlStorage";
 import { useSupabaseClient } from "@mirai-app/frameworks/supabase/react";
 
@@ -35,8 +35,20 @@ interface UploadTicket {
   storagePath: string;
 }
 
+// GraphQL document for creating upload URL
+const CreateUploadUrlDocument = `
+  mutation CreateUploadUrl($input: CreateUploadUrlInput!) {
+    createUploadUrl(input: $input) {
+      bucket
+      objectPath
+      storagePath
+      resumableUrl
+      token
+    }
+  }
+`;
+
 export const useFileUpload = () => {
-  const trpcClient = useTRPCClient();
   const supabase = useSupabaseClient();
 
   const [status, setStatus] = useState<UploadStatus>("idle");
@@ -76,6 +88,22 @@ export const useFileUpload = () => {
     }
   }, []);
 
+  const createUploadUrl = useCallback(
+    async (input: { storagePath: string; upsert?: boolean }) => {
+      const result = await graphqlClient.request<{
+        createUploadUrl: {
+          bucket: string;
+          objectPath: string;
+          storagePath: string;
+          resumableUrl: string;
+          token: string;
+        };
+      }>(CreateUploadUrlDocument, { input });
+      return result.createUploadUrl;
+    },
+    [],
+  );
+
   const upload = useCallback(
     async (input: UploadInput): Promise<UploadResult> => {
       abort();
@@ -99,7 +127,7 @@ export const useFileUpload = () => {
 
         const contentType = input.contentType;
 
-        const uploadTicket = await trpcClient.storage.createUploadUrl.mutate({
+        const uploadTicket = await createUploadUrl({
           storagePath: input.storagePath,
           upsert: input.upsert,
         });
@@ -165,10 +193,9 @@ export const useFileUpload = () => {
                   attempt += 1;
                   void tusUpload.abort().then(async () => {
                     try {
-                      const refreshedTicket =
-                        await trpcClient.storage.createUploadUrl.mutate({
-                          storagePath: input.storagePath,
-                        });
+                      const refreshedTicket = await createUploadUrl({
+                        storagePath: input.storagePath,
+                      });
                       console.warn("[Upload] Retrying with fresh signed URL", {
                         storagePath: input.storagePath,
                         attempt,
@@ -284,7 +311,7 @@ export const useFileUpload = () => {
         uploadRef.current = null;
       }
     },
-    [abort, supabase.auth, trpcClient.storage.createUploadUrl, urlStorage],
+    [abort, supabase.auth, createUploadUrl, urlStorage],
   );
 
   return {

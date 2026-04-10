@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import {
+  useGetCurrentUserQuery,
+  useGetTripQuery,
+} from "@mirai-app/graphql-types";
 import {
   getCachedTripById,
   setCachedTripById,
@@ -9,16 +14,52 @@ import {
 import type { TripListItem } from "~/components/trips/list/types";
 import { isTripPast } from "~/utils/trip";
 
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
+  const token = await SecureStore.getItemAsync("sb-access-token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
+
 export function useTripDetails(tripId?: string | null) {
-  const trpc = useTRPC();
-  const currentUserQuery = useQuery(trpc.user.getMy.queryOptions());
-  const tripQuery = useQuery(
-    trpc.trip.getById.queryOptions({ id: tripId ?? "" }, { enabled: !!tripId }),
-  );
+  const [client, setClient] = useState<GraphQLClient | null>(null);
 
-  const { data: currentUser, isLoading: isLoadingUser } = currentUserQuery;
+  useEffect(() => {
+    void createGraphQLClient().then(setClient);
+  }, []);
 
-  type TripData = Exclude<typeof tripQuery.data, undefined>;
+  const currentUserQuery = useQuery({
+    queryKey: ["GetCurrentUser"],
+    queryFn: async () => {
+      if (!client) {
+        throw new Error("GraphQL client not initialized");
+      }
+      return useGetCurrentUserQuery.fetcher(client)();
+    },
+    enabled: !!client,
+  });
+
+  const tripQuery = useQuery({
+    queryKey: ["GetTrip", tripId],
+    queryFn: async () => {
+      if (!client) {
+        throw new Error("GraphQL client not initialized");
+      }
+      return useGetTripQuery.fetcher(client, { id: tripId ?? "" })();
+    },
+    enabled: !!tripId && !!client,
+  });
+
+  const { data: currentUserData, isLoading: isLoadingUser } = currentUserQuery;
+  const currentUser = currentUserData?.me;
+
+  type TripData = NonNullable<typeof tripQuery.data>["trip"];
   const [cachedTrip, setCachedTrip] = useState<TripData | null>(null);
   const [cachedTripId, setCachedTripId] = useState<string | null>(null);
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
@@ -50,24 +91,25 @@ export function useTripDetails(tripId?: string | null) {
   }, [tripId]);
 
   useEffect(() => {
-    if (!tripId || !tripQuery.data) return;
+    if (!tripId || !tripData) return;
 
-    void setCachedTripById(tripId, tripQuery.data);
+    void setCachedTripById(tripId, tripData);
 
     const listItem: TripListItem = {
-      id: tripQuery.data.id,
-      name: tripQuery.data.name,
-      description: tripQuery.data.description,
-      startDate: tripQuery.data.startDate,
-      endDate: tripQuery.data.endDate,
-      backgroundImagePath: tripQuery.data.backgroundImagePath,
-      groups: tripQuery.data.groups,
+      id: tripData.id,
+      name: tripData.name,
+      description: tripData.description,
+      startDate: tripData.startDate,
+      endDate: tripData.endDate,
+      backgroundImagePath: tripData.backgroundImagePath,
+      groups: tripData.groups,
     };
     void upsertCachedTripListItem(listItem);
-  }, [tripId, tripQuery.data]);
+  }, [tripId, tripData]);
 
   const localCachedTrip = cachedTripId === (tripId ?? null) ? cachedTrip : null;
-  const trip = tripQuery.data ?? localCachedTrip ?? null;
+  const tripData = tripQuery.data?.trip;
+  const trip = tripData ?? localCachedTrip ?? null;
   const isLoadingTrip =
     Boolean(tripId) && !trip && (tripQuery.isLoading || !isCacheHydrated);
 

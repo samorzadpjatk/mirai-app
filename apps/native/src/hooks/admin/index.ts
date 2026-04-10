@@ -1,1 +1,2 @@
-export * from "@mirai-app/frameworks/trpc/hooks";
+// Admin hooks exports - migrated to GraphQL
+export { useGetUsersQuery, type User } from "@mirai-app/graphql-types";

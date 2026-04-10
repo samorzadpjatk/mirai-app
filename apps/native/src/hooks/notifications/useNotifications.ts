@@ -3,8 +3,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
-import { invalidateNotificationQueries } from "@mirai-app/frameworks/graphql/query";
+import { graphqlClient } from "~/lib/graphql-client";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;
@@ -18,30 +17,96 @@ export interface UseNotificationsReturn {
   testNotification: () => void;
 }
 
+// GraphQL documents for notification operations (not yet in generated hooks)
+const GetSubscriptionStatusDocument = `
+  query GetNotificationSubscriptionStatus {
+    myNotificationSubscriptions {
+      isSubscribed
+      subscriptions {
+        token
+        platform
+        createdAt
+      }
+    }
+  }
+`;
+
+const SubscribeNotificationsDocument = `
+  mutation SubscribeNotifications($token: String!) {
+    subscribeToNotifications(input: { token: $token }) {
+      success
+      subscription {
+        token
+        platform
+      }
+    }
+  }
+`;
+
+const UnsubscribeNotificationsDocument = `
+  mutation UnsubscribeNotifications($token: String!) {
+    unsubscribeFromNotifications(input: { token: $token }) {
+      success
+    }
+  }
+`;
+
 export function useNotifications(): UseNotificationsReturn {
-  const trpc = useTRPC();
-
-  const subscriptionQueryOptions =
-    trpc.notifications.getSubscriptionStatus.queryOptions();
-  const { data: subscriptionStatus, isLoading: isStatusLoading } = useQuery(
-    subscriptionQueryOptions,
-  );
-
   const queryClient = useQueryClient();
-  const subscribeMutation = useMutation(
-    trpc.notifications.subscribe.mutationOptions({
-      onSuccess: async () => {
-        await invalidateNotificationQueries(queryClient);
-      },
-    }),
-  );
-  const unsubscribeMutation = useMutation(
-    trpc.notifications.unsubscribe.mutationOptions({
-      onSuccess: async () => {
-        await invalidateNotificationQueries(queryClient);
-      },
-    }),
-  );
+
+  // GraphQL query for subscription status using direct request
+  const subscriptionQuery = useQuery({
+    queryKey: ["GetNotificationSubscriptionStatus"],
+    queryFn: async () => {
+      const result = await graphqlClient.request<{
+        myNotificationSubscriptions: {
+          isSubscribed: boolean;
+          subscriptions: Array<{
+            token: string;
+            platform: string;
+            createdAt: string;
+          }>;
+        };
+      }>(GetSubscriptionStatusDocument);
+      return result.myNotificationSubscriptions;
+    },
+  });
+
+  const subscriptionStatus = subscriptionQuery.data;
+  const isStatusLoading = subscriptionQuery.isLoading;
+
+  // GraphQL mutation for subscribing
+  const subscribeMutation = useMutation({
+    mutationFn: async (variables: { token: string }) => {
+      const result = await graphqlClient.request<{
+        subscribeToNotifications: {
+          success: boolean;
+          subscription: { token: string; platform: string };
+        };
+      }>(SubscribeNotificationsDocument, variables);
+      return result.subscribeToNotifications;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetNotificationSubscriptionStatus"],
+      });
+    },
+  });
+
+  // GraphQL mutation for unsubscribing
+  const unsubscribeMutation = useMutation({
+    mutationFn: async (variables: { token: string }) => {
+      const result = await graphqlClient.request<{
+        unsubscribeFromNotifications: { success: boolean };
+      }>(UnsubscribeNotificationsDocument, variables);
+      return result.unsubscribeFromNotifications;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetNotificationSubscriptionStatus"],
+      });
+    },
+  });
 
   const [permission, setPermission] = useState<Notifications.PermissionStatus>(
     Notifications.PermissionStatus.UNDETERMINED,

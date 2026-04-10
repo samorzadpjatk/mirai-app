@@ -1,8 +1,26 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql";
+import { GraphQLClient } from "graphql-request";
+import * as SecureStore from "expo-secure-store";
+import {
+  useGetGroupRankingQuery,
+  useCreateDownloadUrlMutation,
+} from "@mirai-app/graphql-types";
 import type { CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
+
+const createGraphQLClient = async () => {
+  const graphqlUrl =
+    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
+  const token = await SecureStore.getItemAsync("sb-access-token");
+
+  return new GraphQLClient(graphqlUrl, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+};
 
 interface UseCommunityActivityDataProps {
   activities: CommunityFeedActivity[];
@@ -11,8 +29,6 @@ interface UseCommunityActivityDataProps {
 export const useCommunityActivityData = ({
   activities,
 }: UseCommunityActivityDataProps) => {
-  const trpcClient = useTRPCClient();
-
   // Get unique trip IDs for rank change activities
   const rankingTripIds = useMemo(() => {
     const tripIds = new Set<string>();
@@ -44,10 +60,11 @@ export const useCommunityActivityData = ({
     queryFn: async () => {
       if (rankingTripIds.length === 0) return {};
 
+      const client = await createGraphQLClient();
       const queries = rankingTripIds.map((tripId) =>
-        trpcClient.group.ranking
-          .query({ tripId })
-          .then((data) => ({ tripId, data: data.data }))
+        useGetGroupRankingQuery
+          .fetcher(client, { tripId })()
+          .then((data) => ({ tripId, data: data.groupRanking.data }))
           .catch(() => ({ tripId, data: [] })),
       );
 
@@ -59,7 +76,7 @@ export const useCommunityActivityData = ({
             name: group.name,
             image: group.image ?? null,
             coins: group.coins,
-            memberCount: group.participants.length,
+            memberCount: group.participants?.length ?? 0,
             rank: index + 1,
             isCurrentUserGroup: false,
           }));
@@ -78,13 +95,19 @@ export const useCommunityActivityData = ({
     queryFn: async () => {
       if (avatarUserIds.length === 0) return {};
 
+      const client = await createGraphQLClient();
       const queries = avatarUserIds.map((userId) =>
-        trpcClient.storage.createDownloadUrl
-          .query({
-            storagePath: `avatar/${userId}.jpg`,
-            expiresInSeconds: 60 * 60,
-          })
-          .then((data) => ({ userId, url: data.signedUrl }))
+        useCreateDownloadUrlMutation
+          .fetcher(client, {
+            input: {
+              storagePath: `avatar/${userId}.jpg`,
+              expiresInSeconds: 60 * 60,
+            },
+          })()
+          .then((data) => ({
+            userId,
+            url: data.createDownloadUrl?.signedUrl ?? null,
+          }))
           .catch(() => ({ userId, url: null })),
       );
 
