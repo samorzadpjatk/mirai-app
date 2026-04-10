@@ -70,6 +70,7 @@ import { builder } from "../builder";
  * - sponsorsByTrip(tripId: ID!): [Sponsor!]!
  */
 import "../resolvers/User";
+import "../resolvers/challenge";
 import "../resolvers/challengeSubmission";
 import "../resolvers/activityFeed";
 import "../resolvers/notificationDelivery";

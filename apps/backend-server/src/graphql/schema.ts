@@ -45,6 +45,7 @@ import { builder } from "./builder";
  */
 import "./types/User";
 import "./types/activityFeed";
+import "./types/challenge";
 import "./types/notificationDelivery";
 import "./types/notifications";
 import "./types/challengeSubmission";
@@ -56,6 +57,16 @@ import "./types/notificationSchedule";
 import "./types/storage";
 import "./types/location";
 import "./types/sponsor";
+
+/**
+ * Import Subscription types
+ *
+ * This imports all subscription types including:
+ * - activityFeedUpdated(tripId: ID!): Activity!
+ * - locationUpdated(userIds: [ID!]!): FriendLocation!
+ * - challengeVotingUpdated(challengeId: ID!): VotingProgress!
+ */
+import "./types/subscriptions";
 
 /**
  * Import Query type and resolvers

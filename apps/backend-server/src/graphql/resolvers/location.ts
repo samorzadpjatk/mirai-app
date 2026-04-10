@@ -9,6 +9,7 @@
 
 import { builder } from "../builder";
 import { LocationController } from "@mirai-app/adapters";
+import type { PubSubService } from "@mirai-app/use-cases";
 import { requireAuth } from "../utils/auth-helpers";
 import { mapErrorToGraphQL } from "../utils/error-mapper";
 
@@ -190,6 +191,22 @@ builder.mutationField("updateLocation", (t) =>
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
+
+      // Publish location update to subscribers
+      const pubSubService =
+        context.container.resolve<PubSubService>("pubSubService");
+      pubSubService.publish(`location:${authContext.userId}`, {
+        id: result.data.id,
+        userId: authContext.userId as string,
+        latitude: args.input.latitude ?? null,
+        longitude: args.input.longitude ?? null,
+        accuracy: args.input.accuracy ?? null,
+        altitude: args.input.altitude ?? null,
+        heading: args.input.heading ?? null,
+        speed: args.input.speed ?? null,
+        isSharingLocation: result.data.isSharingLocation,
+        timestamp: new Date(),
+      });
 
       return { location: result.data };
     },

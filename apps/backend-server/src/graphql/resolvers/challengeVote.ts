@@ -32,6 +32,7 @@ import type {
   SubmitVoteOutput,
   SubmitVotesOutput,
   ForceEndVotingOutput,
+  PubSubService,
 } from "@mirai-app/use-cases";
 import {
   requireAuth,
@@ -296,6 +297,20 @@ builder.mutationField("submitVote", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      // Fetch and publish updated voting progress
+      const progressResult = await controller.getVotingProgress({
+        challengeId: args.input.challengeId.toString(),
+      });
+
+      if (progressResult.success) {
+        const pubSubService =
+          context.container.resolve<PubSubService>("pubSubService");
+        pubSubService.publish(
+          `voting:${args.input.challengeId}`,
+          progressResult.data,
+        );
+      }
+
       return result.data;
     },
   }),
@@ -353,6 +368,20 @@ builder.mutationField("submitVotes", (t) =>
           );
         }
         throw mapErrorToGraphQL(new Error(result.error));
+      }
+
+      // Fetch and publish updated voting progress
+      const progressResult = await controller.getVotingProgress({
+        challengeId: args.input.challengeId.toString(),
+      });
+
+      if (progressResult.success) {
+        const pubSubService =
+          context.container.resolve<PubSubService>("pubSubService");
+        pubSubService.publish(
+          `voting:${args.input.challengeId}`,
+          progressResult.data,
+        );
       }
 
       return result.data;

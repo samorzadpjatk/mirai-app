@@ -17,6 +17,7 @@ import {
 import { handleResult, mapErrorToGraphQL } from "../utils/error-mapper";
 import { GraphQLError } from "graphql";
 import type { ReactionType } from "@mirai-app/domain";
+import type { PubSubService } from "@mirai-app/use-cases";
 
 // =============================================================================
 // Import Types (registers them with builder)
@@ -228,6 +229,11 @@ builder.mutationField("createCustomActivity", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      // Publish to activity feed subscription
+      const pubSubService =
+        context.container.resolve<PubSubService>("pubSubService");
+      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
+
       return result.data;
     },
   }),
@@ -274,6 +280,11 @@ builder.mutationField("createUserPost", (t) =>
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
+
+      // Publish to activity feed subscription
+      const pubSubService =
+        context.container.resolve<PubSubService>("pubSubService");
+      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
 
       return result.data;
     },
@@ -329,6 +340,11 @@ builder.mutationField("createSubmissionActivity", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      // Publish to activity feed subscription
+      const pubSubService =
+        context.container.resolve<PubSubService>("pubSubService");
+      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
+
       return result.data;
     },
   }),
@@ -381,6 +397,11 @@ builder.mutationField("createChallengeActivity", (t) =>
         throw mapErrorToGraphQL(new Error(result.error));
       }
 
+      // Publish to activity feed subscription
+      const pubSubService =
+        context.container.resolve<PubSubService>("pubSubService");
+      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
+
       return result.data;
     },
   }),
@@ -430,6 +451,11 @@ builder.mutationField("createRankChangeActivity", (t) =>
       if (!result.success) {
         throw mapErrorToGraphQL(new Error(result.error));
       }
+
+      // Publish to activity feed subscription
+      const pubSubService =
+        context.container.resolve<PubSubService>("pubSubService");
+      pubSubService.publish(`activity:feed:${args.input.tripId}`, result.data);
 
       return result.data;
     },
