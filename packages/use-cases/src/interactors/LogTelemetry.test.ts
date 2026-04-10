@@ -242,7 +242,7 @@ describe("[UNIT] LogTelemetryUseCase", () => {
     it("should propagate telemetry port errors as Result.err", async () => {
       // Arrange
       const dbError = new TelemetryError({
-        operation: "PrismaTelemetryAdapter.log",
+        operation: "DrizzleTelemetryAdapter.log",
         message: "Database connection failed",
         cause: new Error("Connection refused"),
       });
@@ -257,7 +257,7 @@ describe("[UNIT] LogTelemetryUseCase", () => {
       expect(isErr(result)).toBe(true);
       if (isErr(result)) {
         expect(result.error).toBe(dbError);
-        expect(result.error.operation).toBe("PrismaTelemetryAdapter.log");
+        expect(result.error.operation).toBe("DrizzleTelemetryAdapter.log");
         expect(result.error.message).toBe("Database connection failed");
       }
     });

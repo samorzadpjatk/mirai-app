@@ -9,7 +9,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import { notificationDeliveries } from "@mirai-app/frameworks/drizzle/schema/notificationDelivery";
 import { notifications } from "@mirai-app/frameworks/drizzle/schema/notification";
 import { eq, and, or, desc, gte, lte, sql } from "drizzle-orm";
-import { BaseDrizzleRepository } from "./BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
 import { NotificationDeliveryDrizzleMapper } from "../../mappers/drizzle/NotificationDeliveryDrizzleMapper";
 
 /**

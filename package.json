@@ -54,8 +54,6 @@
   "dependencies": {
     "@pothos/core": "^4.12.0",
     "@pothos/plugin-scope-auth": "^4.1.6",
-    "@trpc/client": "^11.10.0",
-    "@trpc/server": "^11.10.0",
     "@types/pg": "^8.20.0",
     "awilix": "^13.0.3",
     "awilix-modular": "^2.1.3",

@@ -5,7 +5,7 @@ import { submissionReports } from "@mirai-app/frameworks/drizzle/schema/submissi
 import { tripParticipants } from "@mirai-app/frameworks/drizzle/schema/trip";
 import { users } from "@mirai-app/frameworks/drizzle/schema/user";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { BaseDrizzleRepository } from "./BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
 import { SubmissionReportDrizzleMapper } from "../../mappers/drizzle/SubmissionReportDrizzleMapper";
 
 // Include config for reporter info

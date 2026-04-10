@@ -6,7 +6,7 @@ import {
   tripSponsors,
 } from "@mirai-app/frameworks/drizzle/schema/sponsor";
 import { eq, and, asc, sql } from "drizzle-orm";
-import { BaseDrizzleRepository } from "./BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
 import { SponsorDrizzleMapper } from "../../mappers/drizzle/SponsorDrizzleMapper";
 
 /**

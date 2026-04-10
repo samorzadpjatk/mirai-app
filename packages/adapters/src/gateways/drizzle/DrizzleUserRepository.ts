@@ -7,7 +7,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { eq } from "drizzle-orm";
 import { User } from "@mirai-app/domain";
 import type { UserRepository } from "@mirai-app/use-cases";
-import { BaseDrizzleRepository } from "./BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
 import { UserDrizzleMapper } from "../../mappers/drizzle/UserDrizzleMapper";
 
 /**

@@ -12,7 +12,7 @@ import {
   type ScoringCategory,
 } from "@mirai-app/domain";
 import type { ChallengeRepository } from "@mirai-app/use-cases";
-import { BaseDrizzleRepository } from "./BaseDrizzleRepository";
+import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
 import { ChallengeDrizzleMapper } from "../../mappers/drizzle/ChallengeDrizzleMapper";
 
 /**
