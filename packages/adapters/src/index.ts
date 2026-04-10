@@ -74,7 +74,7 @@ export { PrismaSponsorRepository } from "./gateways/prisma/PrismaSponsorReposito
 // =============================================================================
 
 // Auth Adapters
-export { SupabaseAuthAdapter } from "./gateways/auth/SupabaseAuthAdapter";
+export { SupabaseAuthAdapter, InMemoryAuthAdapter } from "./gateways/auth";
 
 // Realtime Adapters
 export {
@@ -184,6 +184,7 @@ export {
   createControllerFactory,
   type ControllerFactory,
 } from "./utils/repository-factory";
+export { TokenExtractor } from "./utils/TokenExtractor";
 
 // Mappers (Domain <-> DTO <-> Database) - Prisma (Legacy)
 export { UserMapper } from "./mappers/prisma/UserMapper";

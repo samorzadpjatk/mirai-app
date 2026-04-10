@@ -59,6 +59,7 @@ export { DrizzleTelemetryAdapter } from "./drizzle/DrizzleTelemetryAdapter";
 // Auth Adapters (Phase 0: Supabase-Agnostic Architecture)
 // =============================================================================
 export { SupabaseAuthAdapter } from "./auth/SupabaseAuthAdapter";
+export { InMemoryAuthAdapter } from "./auth/InMemoryAuthAdapter";
 
 // =============================================================================
 // Realtime Adapters (Phase 0: Supabase-Agnostic Architecture)

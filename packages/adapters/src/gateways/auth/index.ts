@@ -5,3 +5,4 @@
  */
 
 export { SupabaseAuthAdapter } from "./SupabaseAuthAdapter";
+export { InMemoryAuthAdapter } from "./InMemoryAuthAdapter";
