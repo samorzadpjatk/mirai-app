@@ -138,7 +138,7 @@ import { SupabaseRealtimeAdapter } from "../gateways/realtime/SupabaseRealtimeAd
 import { InMemoryRealtimeAdapter } from "../gateways/realtime/InMemoryRealtimeAdapter";
 import { SupabaseStorageAdapter } from "../gateways/storage/SupabaseStorageAdapter";
 import { InMemoryStorageAdapter } from "../gateways/storage/InMemoryStorageAdapter";
-import { DrizzleTelemetryAdapter } from "../gateways/drizzle/DrizzleTelemetryAdapter";
+import { DrizzleTelemetryAdapter } from "../gateways/drizzle/telemetry";
 import { TokenExtractor } from "../utils/TokenExtractor";
 
 // =============================================================================

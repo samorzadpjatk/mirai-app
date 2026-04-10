@@ -505,49 +505,6 @@ builder.mutationField("deleteGroup", (t) =>
   }),
 );
 
-/**
- * Mutation: addCoins - Add coins to a group
- *
- * Requires moderator role. Adds coins to a group's balance.
- */
-builder.mutationField("addCoins", (t) =>
-  t.field({
-    description: "Add coins to a group (moderator only)",
-    type: "AddCoinsPayload",
-    nullable: false,
-    args: {
-      input: t.arg({
-        type: "AddCoinsInput",
-        description: "Add coins data",
-        required: true,
-      }),
-    },
-    authScopes: {
-      moderator: true,
-    },
-    resolve: async (_root, args, context) => {
-      // Require moderator
-      await requireModerator(context);
-
-      // Get controller from DI container
-      const controller =
-        context.container.resolve<GroupController>("groupController");
-
-      // Add coins
-      const result = await controller.addCoins({
-        groupId: args.input.groupId,
-        amount: args.input.amount,
-      });
-
-      if (!result.success) {
-        throw mapErrorToGraphQL(new Error(result.error));
-      }
-
-      return result.data;
-    },
-  }),
-);
-
 // =============================================================================
 // Export
 // =============================================================================

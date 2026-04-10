@@ -377,22 +377,22 @@ export const RepositoryModule: StaticModule<RepositoryModuleDef> =
 // Re-exports for convenience
 // =============================================================================
 
-export { DrizzleUserRepository } from "../gateways/drizzle/DrizzleUserRepository";
-export { DrizzleTripRepository } from "../gateways/drizzle/DrizzleTripRepository";
-export { DrizzleChallengeRepository } from "../gateways/drizzle/DrizzleChallengeRepository";
-export { DrizzleGroupRepository } from "../gateways/drizzle/DrizzleGroupRepository";
-export { DrizzleLocationRepository } from "../gateways/drizzle/DrizzleLocationRepository";
-export { DrizzleNotificationRepository } from "../gateways/drizzle/DrizzleNotificationRepository";
-export { DrizzleChallengeSubmissionRepository } from "../gateways/drizzle/DrizzleChallengeSubmissionRepository";
-export { DrizzleChallengeVoteRepository } from "../gateways/drizzle/DrizzleChallengeVoteRepository";
-export { DrizzleActivityFeedRepository } from "../gateways/drizzle/DrizzleActivityFeedRepository";
-export { DrizzleSponsorRepository } from "../gateways/drizzle/DrizzleSponsorRepository";
-export { DrizzleSubmissionReportRepository } from "../gateways/drizzle/DrizzleSubmissionReportRepository";
+export { DrizzleUserRepository } from "../gateways/drizzle/user";
+export { DrizzleTripRepository } from "../gateways/drizzle/trip";
+export { DrizzleChallengeRepository } from "../gateways/drizzle/challenge";
+export { DrizzleGroupRepository } from "../gateways/drizzle/group";
+export { DrizzleLocationRepository } from "../gateways/drizzle/location";
+export { DrizzleNotificationRepository } from "../gateways/drizzle/notification";
+export { DrizzleChallengeSubmissionRepository } from "../gateways/drizzle/challenge-submission";
+export { DrizzleChallengeVoteRepository } from "../gateways/drizzle/challenge-vote";
+export { DrizzleActivityFeedRepository } from "../gateways/drizzle/activity-feed";
+export { DrizzleSponsorRepository } from "../gateways/drizzle/sponsor";
+export { DrizzleSubmissionReportRepository } from "../gateways/drizzle/submission-report";
 export {
   DrizzleRewardRepository,
   DrizzleRewardPurchaseRepository,
-} from "../gateways/drizzle/DrizzleRewardRepository";
-export { DrizzleCoinTransactionRepository } from "../gateways/drizzle/DrizzleCoinTransactionRepository";
-export { DrizzleNotificationDeliveryRepository } from "../gateways/drizzle/DrizzleNotificationDeliveryRepository";
-export { DrizzleNotificationScheduleRepository } from "../gateways/drizzle/DrizzleNotificationScheduleRepository";
-export { DrizzleEventRepository } from "../gateways/drizzle/DrizzleEventRepository";
+} from "../gateways/drizzle/reward";
+export { DrizzleCoinTransactionRepository } from "../gateways/drizzle/coin-transaction";
+export { DrizzleNotificationDeliveryRepository } from "../gateways/drizzle/notification-delivery";
+export { DrizzleNotificationScheduleRepository } from "../gateways/drizzle/notification-schedule";
+export { DrizzleEventRepository } from "../gateways/drizzle/event";

@@ -13,9 +13,10 @@
  */
 
 import { builder } from "../builder";
+import { CoinTransactionType } from "./coinTransaction";
 
 // =============================================================================
-// Transaction Type
+// Result Type
 // =============================================================================
 
 /**
@@ -29,82 +30,6 @@ interface CoinTransactionData {
   adminId: string;
   createdAt: Date;
 }
-
-/**
- * CoinTransaction type for GraphQL schema
- *
- * Represents a single coin transaction (addition or removal).
- */
-export const CoinTransactionType = builder.objectType("CoinTransaction", {
-  description: "A coin transaction (add or remove operation)",
-  authScopes: { public: true },
-  fields: (t) => ({
-    // -------------------------------------------------------------------------
-    // Identity Fields
-    // -------------------------------------------------------------------------
-
-    id: t.exposeID("id", {
-      description: "Unique identifier for the transaction",
-      nullable: false,
-    }),
-
-    // -------------------------------------------------------------------------
-    // Transaction Fields
-    // -------------------------------------------------------------------------
-
-    amount: t.exposeInt("amount", {
-      description: "Amount of coins (positive for add, negative for remove)",
-      nullable: false,
-    }),
-
-    reason: t.exposeString("reason", {
-      description: "Reason for the transaction",
-      nullable: true,
-    }),
-
-    groupId: t.exposeID("groupId", {
-      description: "ID of the group receiving/losing coins",
-      nullable: false,
-    }),
-
-    adminId: t.exposeID("adminId", {
-      description: "ID of the admin who performed the transaction",
-      nullable: false,
-    }),
-
-    // -------------------------------------------------------------------------
-    // Timestamp Fields
-    // -------------------------------------------------------------------------
-
-    createdAt: t.field({
-      type: "DateTime",
-      description: "When the transaction was created",
-      nullable: false,
-      resolve: (transaction: CoinTransactionData) => transaction.createdAt,
-    }),
-
-    // -------------------------------------------------------------------------
-    // Computed Fields
-    // -------------------------------------------------------------------------
-
-    isAddition: t.boolean({
-      description: "Whether this is an addition (true) or removal (false)",
-      nullable: false,
-      resolve: (transaction: CoinTransactionData) => transaction.amount > 0,
-    }),
-
-    absoluteAmount: t.int({
-      description: "Absolute value of the coin amount",
-      nullable: false,
-      resolve: (transaction: CoinTransactionData) =>
-        Math.abs(transaction.amount),
-    }),
-  }),
-});
-
-// =============================================================================
-// Result Type
-// =============================================================================
 
 /**
  * Result type for add/remove coin mutations
@@ -219,4 +144,4 @@ export const RemoveCoinsInput = builder.inputType("RemoveCoinsInput", {
 // Export
 // =============================================================================
 
-export default CoinTransactionType;
+export { CoinTransactionType } from "./coinTransaction";

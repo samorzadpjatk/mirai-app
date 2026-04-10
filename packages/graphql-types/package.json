@@ -1,0 +1,32 @@
+{
+  "name": "@mirai-app/graphql-types",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "generate": "graphql-codegen --config codegen.ts",
+    "generate:watch": "graphql-codegen --config codegen.ts --watch",
+    "build": "tsc",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "graphql": "^16.8.1",
+    "graphql-request": "^6.1.0",
+    "@tanstack/react-query": "^5.0.0"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": "^5.0.0",
+    "@graphql-codegen/typescript": "^4.0.1",
+    "@graphql-codegen/typescript-operations": "^4.0.1",
+    "@graphql-codegen/typescript-react-query": "^6.0.0",
+    "@graphql-codegen/near-operation-file-preset": "^3.0.0",
+    "react": "^18.2.0",
+    "@types/react": "^18.2.0"
+  }
+}

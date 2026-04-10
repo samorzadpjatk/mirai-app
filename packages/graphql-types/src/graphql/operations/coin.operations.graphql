@@ -1,0 +1,83 @@
+# Coin Operations
+# GraphQL operations for managing coins and coin transactions in the Mirai App API
+# These operations allow moderators/admins to add/remove coins and view statistics.
+
+# Import fragments from common.fragments:
+# Fragment: CoinTransactionFields - All coin transaction fields
+# Fragment: CoinTransactionGroupFields - Group info in coin transaction context
+# Fragment: CoinTransactionAdminFields - Admin info in coin transaction context
+# Fragment: CoinTransactionResultFields - Coin transaction result with embedded transaction
+# Fragment: CoinStatisticsFields - Coin statistics for a trip
+# Fragment: CoinQuickStatsFields - Quick overview statistics for coin distribution
+# Fragment: CoinAdditionalInsightsFields - Additional insights about coin transactions
+# Fragment: CoinTransactionsConnectionFields - Coin transactions connection with pagination
+# Fragment: CoinTransactionPaginationFields - Pagination metadata for coin transactions
+# Fragment: FormattedUserFields - User formatted for stats displays
+
+# ============================================
+# QUERIES
+# ============================================
+
+# Get comprehensive coin statistics for a trip (moderator only)
+# Returns: total coins added, removed, net balance, and transaction count
+query GetCoinStatistics($tripId: ID!) {
+  coinStatistics(input: { tripId: $tripId }) {
+    ...CoinStatisticsFields
+  }
+}
+
+# Get quick coin statistics overview for a trip (moderator only)
+# Returns: total coins, total groups, average per group, and richest group info
+query GetCoinQuickStats($tripId: ID!) {
+  coinQuickStats(input: { tripId: $tripId }) {
+    ...CoinQuickStatsFields
+  }
+}
+
+# Get additional coin insights for a trip (moderator only)
+# Returns: most active admin and recent transactions
+query GetCoinAdditionalInsights($tripId: ID!) {
+  coinAdditionalInsights(input: { tripId: $tripId }) {
+    ...CoinAdditionalInsightsFields
+  }
+}
+
+# Get all coin transactions for a trip (moderator only)
+# Returns: paginated list of all coin transactions in the trip
+query GetCoinTransactions($tripId: ID!, $limit: Int, $offset: Int) {
+  coinTransactions(
+    input: { tripId: $tripId, pagination: { limit: $limit, offset: $offset } }
+  ) {
+    ...CoinTransactionsConnectionFields
+  }
+}
+
+# Get coin transactions visible to the current user
+# Returns: list of transactions for the user's group in the specified trip
+query GetMyCoinTransactions($tripId: ID!, $groupId: ID, $limit: Int) {
+  myCoinTransactions(
+    input: { tripId: $tripId, groupId: $groupId, limit: $limit }
+  ) {
+    ...CoinTransactionFields
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+# Add coins to a group (moderator or admin privileges required)
+# Returns: the created coin transaction with all details
+mutation AddCoins($input: AddCoinsInput!) {
+  addCoins(input: $input) {
+    ...CoinTransactionResultFields
+  }
+}
+
+# Remove coins from a group (moderator or admin privileges required)
+# Returns: the created coin transaction (with negative amount) and all details
+mutation RemoveCoins($input: RemoveCoinsInput!) {
+  removeCoins(input: $input) {
+    ...CoinTransactionResultFields
+  }
+}

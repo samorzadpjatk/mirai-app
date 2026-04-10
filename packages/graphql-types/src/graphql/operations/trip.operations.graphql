@@ -1,0 +1,64 @@
+# Trip Operations
+# Comprehensive GraphQL operations for trip management
+# This file replaces trip.queries.graphql and mutations.graphql trip-related operations
+
+# Import common fragments
+#import "../fragments/common.graphql"
+
+# ============================================
+# QUERIES
+# ============================================
+
+# Get a single trip by ID
+query GetTrip($id: ID!) {
+  trip(id: $id) {
+    ...TripFields
+  }
+}
+
+# Get trips with pagination
+query GetTrips($pagination: TripPaginationInput) {
+  trips(pagination: $pagination) {
+    trips {
+      ...TripFields
+    }
+    pagination {
+      total
+      hasMore
+      limit
+      offset
+    }
+  }
+}
+
+# Get trip admin details (admin only)
+query GetTripAdmin($id: ID!) {
+  tripAdmin(id: $id) {
+    ...TripFields
+  }
+}
+
+# ============================================
+# MUTATIONS
+# ============================================
+
+# Create a new trip (admin only)
+mutation CreateTrip($input: CreateTripInput!) {
+  createTrip(input: $input) {
+    ...TripFields
+  }
+}
+
+# Update an existing trip (admin only)
+mutation UpdateTrip($input: UpdateTripInput!) {
+  updateTrip(input: $input) {
+    ...TripFields
+  }
+}
+
+# Delete a trip (admin only)
+mutation DeleteTrip($id: ID!) {
+  deleteTrip(input: { id: $id }) {
+    success
+  }
+}

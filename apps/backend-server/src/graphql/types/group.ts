@@ -356,40 +356,6 @@ export const DeleteGroupPayloadType = builder.objectType("DeleteGroupPayload", {
   }),
 });
 
-/**
- * Output type for add coins mutation
- */
-export const AddCoinsPayloadType = builder.objectType("AddCoinsPayload", {
-  description: "Result of adding coins to a group",
-  authScopes: {
-    public: true,
-  },
-  fields: (t) => ({
-    id: t.exposeID("id", {
-      description: "Group ID",
-      nullable: false,
-    }),
-    name: t.exposeString("name", {
-      description: "Group name",
-      nullable: false,
-    }),
-    previousCoins: t.exposeInt("previousCoins", {
-      description: "Coin balance before adding",
-      nullable: false,
-    }),
-    newCoins: t.exposeInt("newCoins", {
-      description: "Coin balance after adding",
-      nullable: false,
-    }),
-    updatedAt: t.field({
-      type: "DateTime",
-      description: "When the group was updated",
-      nullable: false,
-      resolve: (payload) => (payload as { updatedAt: Date }).updatedAt,
-    }),
-  }),
-});
-
 // =============================================================================
 // Input Types
 // =============================================================================
@@ -467,27 +433,6 @@ export const UpdateGroupInput = builder.inputType("UpdateGroupInput", {
     image: t.string({
       description: "New image URL (null to clear)",
       required: false,
-    }),
-  }),
-});
-
-/**
- * Input for adding coins to a group
- */
-export const AddCoinsInput = builder.inputType("AddCoinsInput", {
-  description: "Input for adding coins to a group",
-  fields: (t) => ({
-    groupId: t.id({
-      description: "ID of the group to add coins to",
-      required: true,
-    }),
-    amount: t.int({
-      description: "Amount of coins to add (minimum 1)",
-      required: true,
-    }),
-    tripId: t.id({
-      description: "ID of the trip (for validation)",
-      required: true,
     }),
   }),
 });
