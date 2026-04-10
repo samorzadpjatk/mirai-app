@@ -48,6 +48,9 @@ export { DrizzleNotificationScheduleRepository } from "./DrizzleNotificationSche
 export { DrizzleSponsorRepository } from "./DrizzleSponsorRepository";
 export { DrizzleSubmissionReportRepository } from "./DrizzleSubmissionReportRepository";
 
+// Drizzle telemetry adapter
+export { DrizzleTelemetryAdapter } from "./DrizzleTelemetryAdapter";
+
 // =============================================================================
 // Auth Adapters (Phase 0: Supabase-Agnostic Architecture)
 // =============================================================================

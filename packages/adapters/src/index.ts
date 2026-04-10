@@ -247,6 +247,9 @@ export { DrizzleNotificationScheduleRepository } from "./gateways/DrizzleNotific
 export { DrizzleSponsorRepository } from "./gateways/DrizzleSponsorRepository";
 export { DrizzleSubmissionReportRepository } from "./gateways/DrizzleSubmissionReportRepository";
 
+// Drizzle telemetry adapter
+export { DrizzleTelemetryAdapter } from "./gateways/DrizzleTelemetryAdapter";
+
 // Re-export inner layers for convenience
 export type {
   Result,

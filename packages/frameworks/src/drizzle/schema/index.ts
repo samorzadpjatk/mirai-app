@@ -49,3 +49,6 @@ export * from "./sponsor";
 
 // Submission Report schemas
 export * from "./submissionReport";
+
+// UserAgent/Telemetry schemas
+export * from "./userAgent";
