@@ -1,73 +1,56 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetNotificationSchedulesQuery,
-  useDeleteNotificationScheduleMutation,
-  useToggleNotificationScheduleActiveMutation,
+  GetNotificationSchedulesDocument,
+  DeleteNotificationScheduleDocument,
+  ToggleNotificationScheduleActiveDocument,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 
 export function useNotificationSchedules() {
-  const queryClient = useQueryClient();
+  const client = useClient();
 
-  const query = useQuery({
-    queryKey: useGetNotificationSchedulesQuery.getKey(),
-    queryFn: () => useGetNotificationSchedulesQuery.fetcher(graphqlClient)(),
+  const [{ data, fetching, error }] = useQuery({
+    query: GetNotificationSchedulesDocument,
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (variables: { id: string }) => {
-      return useDeleteNotificationScheduleMutation.fetcher(
-        graphqlClient,
-        variables,
-      )();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: useGetNotificationSchedulesQuery.getKey(),
-      });
-    },
-    onError: (err) => {
-      console.error("Error deleting schedule:", err);
-    },
-  });
+  const [, deleteScheduleMutation] = useMutation(
+    DeleteNotificationScheduleDocument,
+  );
+  const [, toggleMutation] = useMutation(
+    ToggleNotificationScheduleActiveDocument,
+  );
 
-  const toggleMutation = useMutation({
-    mutationFn: async (variables: { id: string }) => {
-      return useToggleNotificationScheduleActiveMutation.fetcher(
-        graphqlClient,
-        variables,
-      )();
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: useGetNotificationSchedulesQuery.getKey(),
-      });
-    },
-    onError: (err) => {
-      console.error("Error toggling schedule:", err);
-    },
-  });
+  const schedules = data?.notificationSchedules ?? [];
 
-  const schedules = query.data?.notificationSchedules ?? [];
-
-  const deleteSchedule = (id: string) => {
-    deleteMutation.mutate({ id });
+  const deleteSchedule = async (id: string) => {
+    const result = await deleteScheduleMutation({ id });
+    if (result.error) {
+      console.error("Error deleting schedule:", result.error);
+      throw result.error;
+    }
+    // Invalidate query
+    client.invalidate(GetNotificationSchedulesDocument);
   };
 
-  const toggleActive = (id: string) => {
-    toggleMutation.mutate({ id });
+  const toggleActive = async (id: string) => {
+    const result = await toggleMutation({ id });
+    if (result.error) {
+      console.error("Error toggling schedule:", result.error);
+      throw result.error;
+    }
+    // Invalidate query
+    client.invalidate(GetNotificationSchedulesDocument);
   };
 
   return {
     schedules,
-    isLoading: query.isLoading,
-    isError: query.isError,
-    error: query.error,
-    refetch: query.refetch,
-    isFetching: query.isFetching,
+    isLoading: fetching,
+    isError: !!error,
+    error,
+    refetch: () => client.invalidate(GetNotificationSchedulesDocument),
+    isFetching: fetching,
     deleteSchedule,
     toggleActive,
-    isDeleting: deleteMutation.isPending,
-    isToggling: toggleMutation.isPending,
+    isDeleting: false,
+    isToggling: false,
   };
 }

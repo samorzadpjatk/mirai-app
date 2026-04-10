@@ -2,28 +2,13 @@ import { useCallback, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery, useMutation } from "urql";
 import {
-  useGetCurrentUserQuery,
-  useCreateChallengeSubmissionMutation,
-  useDeleteChallengeSubmissionMutation,
+  GetCurrentUserDocument,
+  CreateChallengeSubmissionDocument,
+  DeleteChallengeSubmissionDocument,
 } from "@mirai-app/graphql-types";
 import { useFileUpload } from "~/hooks/files";
-
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
-  const token = await SecureStore.getItemAsync("sb-access-token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
 
 interface ChallengeCaptureOptions {
   tripId: string | undefined;
@@ -45,65 +30,16 @@ export function useChallengeCapture({
   challengeId,
 }: ChallengeCaptureOptions) {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
-  const userQuery = useQuery({
-    queryKey: useGetCurrentUserQuery.getKey(),
-    queryFn: async () => {
-      const client = await createGraphQLClient();
-      return useGetCurrentUserQuery.fetcher(client)();
-    },
-    enabled: !!tripId,
+  const [{ data: userData, fetching: currentUserLoading }] = useQuery({
+    query: GetCurrentUserDocument,
+    pause: !tripId,
   });
 
-  const createSubmissionMutation = useMutation({
-    mutationFn: async (input: {
-      tripId: string;
-      challengeId: string;
-      imageIds?: string[];
-      videoId?: string;
-      latitude?: number;
-      longitude?: number;
-    }) => {
-      const client = await createGraphQLClient();
-      return useCreateChallengeSubmissionMutation.fetcher(client, {
-        input: {
-          tripId: input.tripId,
-          challengeId: input.challengeId,
-          imageIds: input.imageIds,
-          videoId: input.videoId,
-          latitude: input.latitude,
-          longitude: input.longitude,
-        },
-      })();
-    },
-    onSuccess: async () => {
-      // Invalidate challenge-related queries
-      await queryClient.invalidateQueries({ queryKey: ["challenges"] });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetChallengeSubmissionByChallengeAndGroup"],
-      });
-    },
-  });
+  const [, createSubmission] = useMutation(CreateChallengeSubmissionDocument);
+  const [, deleteSubmission] = useMutation(DeleteChallengeSubmissionDocument);
 
-  const deleteSubmissionMutation = useMutation({
-    mutationFn: async (input: { id: string }) => {
-      const client = await createGraphQLClient();
-      return useDeleteChallengeSubmissionMutation.fetcher(client, {
-        id: input.id,
-      })();
-    },
-    onSuccess: async () => {
-      // Invalidate challenge-related queries
-      await queryClient.invalidateQueries({ queryKey: ["challenges"] });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetChallengeSubmissionByChallengeAndGroup"],
-      });
-    },
-  });
-
-  const userTrip = userQuery.data?.me;
-  const currentUserLoading = userQuery.isLoading;
+  const userTrip = userData?.me;
 
   const {
     upload,
@@ -239,14 +175,23 @@ export function useChallengeCapture({
       try {
         const extension = resolveExtension(asset);
         const storagePath = `challenge/${challengeId}/${groupId}-${Date.now()}.${extension}`;
-        const submission = await createSubmissionMutation.mutateAsync({
-          tripId,
-          challengeId,
-          imageIds: [storagePath],
-          latitude: submissionLocation?.latitude,
-          longitude: submissionLocation?.longitude,
+
+        const result = await createSubmission({
+          input: {
+            tripId,
+            challengeId,
+            imageIds: [storagePath],
+            latitude: submissionLocation?.latitude,
+            longitude: submissionLocation?.longitude,
+          },
         });
-        createdSubmissionId = submission.createChallengeSubmission?.id ?? null;
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        createdSubmissionId =
+          result.data?.createChallengeSubmission?.id ?? null;
         setSubmissionId(createdSubmissionId);
 
         const fileName = resolveFileName(asset, extension);
@@ -265,9 +210,7 @@ export function useChallengeCapture({
       } catch (error) {
         if (createdSubmissionId) {
           try {
-            await deleteSubmissionMutation.mutateAsync({
-              id: createdSubmissionId,
-            });
+            await deleteSubmission({ id: createdSubmissionId });
           } catch {
             // Ignore cleanup failures, original upload error is shown below.
           }
@@ -281,12 +224,12 @@ export function useChallengeCapture({
     },
     [
       challengeId,
-      deleteSubmissionMutation,
+      deleteSubmission,
       resolveExtension,
       resolveFileName,
       resolveMimeType,
       showSuccessAlert,
-      createSubmissionMutation,
+      createSubmission,
       tripId,
       upload,
       userTrip,
@@ -364,12 +307,21 @@ export function useChallengeCapture({
       try {
         const extension = resolveExtension(asset);
         const storagePath = `challenge/${challengeId}/${groupId}-${Date.now()}.${extension}`;
-        const submission = await createSubmissionMutation.mutateAsync({
-          tripId,
-          challengeId,
-          videoId: storagePath,
+
+        const result = await createSubmission({
+          input: {
+            tripId,
+            challengeId,
+            videoId: storagePath,
+          },
         });
-        createdSubmissionId = submission.createChallengeSubmission?.id ?? null;
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        createdSubmissionId =
+          result.data?.createChallengeSubmission?.id ?? null;
         setSubmissionId(createdSubmissionId);
 
         const fileName = resolveFileName(asset, extension);
@@ -388,9 +340,7 @@ export function useChallengeCapture({
       } catch (error) {
         if (createdSubmissionId) {
           try {
-            await deleteSubmissionMutation.mutateAsync({
-              id: createdSubmissionId,
-            });
+            await deleteSubmission({ id: createdSubmissionId });
           } catch {
             // Ignore cleanup failures, original upload error is shown below.
           }
@@ -404,12 +354,12 @@ export function useChallengeCapture({
     },
     [
       challengeId,
-      deleteSubmissionMutation,
+      deleteSubmission,
       resolveExtension,
       resolveFileName,
       resolveMimeType,
       showSuccessAlert,
-      createSubmissionMutation,
+      createSubmission,
       tripId,
       upload,
       userTrip,
@@ -451,16 +401,14 @@ export function useChallengeCapture({
 
     if (submissionId) {
       try {
-        await deleteSubmissionMutation.mutateAsync({
-          id: submissionId,
-        });
+        await deleteSubmission({ id: submissionId });
       } catch {
         // Ignore cleanup errors so the user can continue retaking.
       }
     }
 
     setSubmissionId(null);
-  }, [abortUpload, deleteSubmissionMutation, resetUpload, submissionId]);
+  }, [abortUpload, deleteSubmission, resetUpload, submissionId]);
 
   return {
     isLoading: isLoading || currentUserLoading,

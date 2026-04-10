@@ -1,9 +1,5 @@
-import { useCallback, useMemo } from "react";
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
+import { useMutation, useClient } from "urql";
 import { GraphQLClient } from "graphql-request";
 import * as SecureStore from "expo-secure-store";
 import {
@@ -87,12 +83,80 @@ interface UseCommunityFeedProps {
   focusActivityId?: string;
 }
 
+// GraphQL document for activities by trip query
+const GetActivitiesByTripDocument = `
+  query GetActivitiesByTrip($tripId: ID!, $limit: Int = 30, $cursor: ActivityCursorInput) {
+    activitiesByTrip(tripId: $tripId, limit: $limit, cursor: $cursor) {
+      activities {
+        id
+        activityType
+        createdAt
+        isPinned
+        reactionsSummary {
+          total
+          counts {
+            heart
+            fire
+            clap
+            star
+          }
+          myReactions
+        }
+        userPost {
+          id
+          content
+          imagePaths
+          author {
+            user {
+              id
+              firstName
+              lastName
+              hasAvatar
+            }
+            houseNumber
+          }
+        }
+        admin {
+          id
+          firstName
+          lastName
+          hasAvatar
+        }
+        tripId
+        rankChange {
+          newRank
+          previousRank
+        }
+      }
+      pagination {
+        total
+        page
+        pageSize
+        totalPages
+        hasMore
+      }
+      nextCursor {
+        id
+        createdAt
+        isPinned
+      }
+    }
+  }
+`;
+
 export const useCommunityFeed = ({
   selectedTripId,
   selectedFilter,
   focusActivityId,
 }: UseCommunityFeedProps) => {
-  const queryClient = useQueryClient();
+  const client = useClient();
+
+  // Pagination state
+  const [pages, setPages] = useState<FeedPageData[]>([]);
+  const [currentCursor, setCurrentCursor] = useState<FeedCursor>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
 
   const feedQueryKey = useMemo(
     () =>
@@ -105,11 +169,9 @@ export const useCommunityFeed = ({
     [selectedTripId],
   );
 
-  const feedQuery = useInfiniteQuery({
-    queryKey: feedQueryKey ?? ["community-feed-disabled"],
-    enabled: Boolean(selectedTripId && feedQueryKey),
-    initialPageParam: null as FeedCursor,
-    queryFn: async ({ pageParam }) => {
+  // Manual fetch function for pagination
+  const fetchPage = useCallback(
+    async (cursor: FeedCursor, isNextPage = false) => {
       if (!selectedTripId) {
         return {
           activities: [],
@@ -124,18 +186,18 @@ export const useCommunityFeed = ({
         } satisfies FeedPageData;
       }
 
-      const client = await createGraphQLClient();
-      const result = await useGetActivitiesByTripQuery.fetcher(client, {
+      const graphqlClient = await createGraphQLClient();
+      const result = await useGetActivitiesByTripQuery.fetcher(graphqlClient, {
         tripId: selectedTripId,
         limit: 30,
-        cursor: pageParam
+        cursor: cursor
           ? {
-              id: pageParam.id,
+              id: cursor.id,
               createdAt:
-                pageParam.createdAt instanceof Date
-                  ? pageParam.createdAt.toISOString()
-                  : pageParam.createdAt,
-              isPinned: pageParam.isPinned,
+                cursor.createdAt instanceof Date
+                  ? cursor.createdAt.toISOString()
+                  : cursor.createdAt,
+              isPinned: cursor.isPinned,
             }
           : undefined,
       })();
@@ -159,8 +221,44 @@ export const useCommunityFeed = ({
           : undefined,
       } satisfies FeedPageData;
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-  });
+    [selectedTripId],
+  );
+
+  // Initial load
+  const loadInitial = useCallback(async () => {
+    if (!selectedTripId) return;
+    setIsLoading(true);
+    try {
+      const page = await fetchPage(null);
+      setPages([page]);
+      setCurrentCursor(page.nextCursor ?? null);
+      setHasMore(page.pagination.hasMore ?? false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchPage, selectedTripId]);
+
+  // Fetch next page
+  const fetchNextPage = useCallback(async () => {
+    if (!hasMore || isFetchingNextPage || !selectedTripId) return;
+    setIsFetchingNextPage(true);
+    try {
+      const page = await fetchPage(currentCursor, true);
+      setPages((prev) => [...prev, page]);
+      setCurrentCursor(page.nextCursor ?? null);
+      setHasMore(page.pagination.hasMore ?? false);
+    } finally {
+      setIsFetchingNextPage(false);
+    }
+  }, [currentCursor, fetchPage, hasMore, isFetchingNextPage, selectedTripId]);
+
+  // Refetch
+  const refetch = useCallback(async () => {
+    setPages([]);
+    setCurrentCursor(null);
+    setHasMore(true);
+    await loadInitial();
+  }, [loadInitial]);
 
   const applyReactionSummaryToFeed = (
     activityId: string,
@@ -174,81 +272,66 @@ export const useCommunityFeed = ({
     const queryKey = queryKeyOverride ?? feedQueryKey;
     if (!queryKey) return;
 
-    queryClient.setQueryData(
-      queryKey,
-      (oldData: { pages: FeedPageData[] } | undefined) => {
-        if (!oldData?.pages) return oldData;
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: FeedPageData) => ({
-            ...page,
-            activities: page.activities.map((activity) => {
-              if (activity.id !== activityId) return activity;
-              const nextSummary =
-                typeof updater === "function"
-                  ? updater(activity.reactionsSummary)
-                  : updater;
-              return {
-                ...activity,
-                reactionsSummary: nextSummary,
-              };
-            }),
-          })),
-        };
-      },
+    // Update local state instead of queryClient
+    setPages((currentPages) =>
+      currentPages.map((page) => ({
+        ...page,
+        activities: page.activities.map((activity) => {
+          if (activity.id !== activityId) return activity;
+          const nextSummary =
+            typeof updater === "function"
+              ? updater(activity.reactionsSummary)
+              : updater;
+          return {
+            ...activity,
+            reactionsSummary: nextSummary,
+          };
+        }),
+      })),
     );
   };
 
-  const toggleHeartMutation = useMutation({
-    mutationFn: async ({ activityId }: { activityId: string }) => {
-      const client = await createGraphQLClient();
-      return useToggleActivityReactionMutation.fetcher(client, {
-        activityId,
-        reaction: "heart",
-      })();
-    },
-    onMutate: async ({ activityId }) => {
-      const queryKey = feedQueryKey;
-      if (!selectedTripId || !queryKey) {
-        return undefined;
-      }
-
-      await queryClient.cancelQueries({ queryKey });
-      const previousData = queryClient.getQueryData(feedQueryKey);
-      applyReactionSummaryToFeed(
-        activityId,
-        toggleHeartSummaryLocally,
-        queryKey,
-      );
-      return { queryKey, previousData };
-    },
-    onError: (_error, _variables, context) => {
-      if (!context?.queryKey || !context.previousData) return;
-      queryClient.setQueryData(context.queryKey, context.previousData);
-    },
-    onSuccess: (result, _variables, context) => {
-      if (result.toggleActivityReaction) {
-        applyReactionSummaryToFeed(
-          result.toggleActivityReaction.activityId,
-          result.toggleActivityReaction
-            .reactionsSummary as CommunityFeedActivity["reactionsSummary"],
-          context?.queryKey,
-        );
-      }
-    },
-  });
+  // GraphQL mutation for toggling heart reaction
+  const [, toggleHeartMutation] = useMutation(ToggleActivityReactionDocument);
 
   const handleToggleHeart = useCallback(
-    (activityId: string) => {
-      void toggleHeartMutation.mutateAsync({ activityId });
+    async (activityId: string) => {
+      // Optimistic update
+      const queryKey = feedQueryKey;
+      if (selectedTripId && queryKey) {
+        applyReactionSummaryToFeed(
+          activityId,
+          toggleHeartSummaryLocally,
+          queryKey,
+        );
+      }
+
+      try {
+        const result = await toggleHeartMutation({
+          activityId,
+          reaction: "heart",
+        });
+
+        if (result.data?.toggleActivityReaction) {
+          applyReactionSummaryToFeed(
+            result.data.toggleActivityReaction.activityId,
+            result.data.toggleActivityReaction
+              .reactionsSummary as CommunityFeedActivity["reactionsSummary"],
+            queryKey,
+          );
+        }
+      } catch (error) {
+        // Revert optimistic update on error - refetch the page
+        console.error("Failed to toggle reaction:", error);
+        await refetch();
+      }
     },
-    [toggleHeartMutation],
+    [feedQueryKey, selectedTripId, toggleHeartMutation, refetch],
   );
 
   const activities = useMemo(
-    () =>
-      (feedQuery.data?.pages ?? []).flatMap((page) => page.activities ?? []),
-    [feedQuery.data?.pages],
+    () => pages.flatMap((page) => page.activities ?? []),
+    [pages],
   );
 
   const filteredActivities = useMemo(() => {
@@ -269,10 +352,37 @@ export const useCommunityFeed = ({
   }, [activities, focusActivityId, selectedFilter]);
 
   return {
-    feedQuery,
+    feedQuery: {
+      data: { pages },
+      isLoading,
+      isRefetching: isLoading,
+      hasNextPage: hasMore,
+      isFetchingNextPage,
+      fetchNextPage,
+      refetch,
+    },
     filteredActivities,
     handleToggleHeart,
   };
 };
+
+// GraphQL document for toggle reaction mutation
+const ToggleActivityReactionDocument = `
+  mutation ToggleActivityReaction($activityId: ID!, $reaction: String!) {
+    toggleActivityReaction(activityId: $activityId, reaction: $reaction) {
+      activityId
+      reactionsSummary {
+        total
+        counts {
+          heart
+          fire
+          clap
+          star
+        }
+        myReactions
+      }
+    }
+  }
+`;
 
 export type { FeedCursor, FeedPageData };

@@ -2,8 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Alert, Linking } from "react-native";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { graphqlClient } from "~/lib/graphql-client";
+import { useQuery, useMutation, useClient } from "urql";
 
 export interface UseNotificationsReturn {
   isSupported: boolean;
@@ -52,61 +51,22 @@ const UnsubscribeNotificationsDocument = `
 `;
 
 export function useNotifications(): UseNotificationsReturn {
-  const queryClient = useQueryClient();
+  const client = useClient();
 
-  // GraphQL query for subscription status using direct request
-  const subscriptionQuery = useQuery({
-    queryKey: ["GetNotificationSubscriptionStatus"],
-    queryFn: async () => {
-      const result = await graphqlClient.request<{
-        myNotificationSubscriptions: {
-          isSubscribed: boolean;
-          subscriptions: Array<{
-            token: string;
-            platform: string;
-            createdAt: string;
-          }>;
-        };
-      }>(GetSubscriptionStatusDocument);
-      return result.myNotificationSubscriptions;
-    },
+  // GraphQL query for subscription status using urql
+  const [subscriptionQueryResult] = useQuery({
+    query: GetSubscriptionStatusDocument,
   });
 
-  const subscriptionStatus = subscriptionQuery.data;
-  const isStatusLoading = subscriptionQuery.isLoading;
+  const subscriptionStatus =
+    subscriptionQueryResult.data?.myNotificationSubscriptions;
+  const isStatusLoading = subscriptionQueryResult.fetching;
 
   // GraphQL mutation for subscribing
-  const subscribeMutation = useMutation({
-    mutationFn: async (variables: { token: string }) => {
-      const result = await graphqlClient.request<{
-        subscribeToNotifications: {
-          success: boolean;
-          subscription: { token: string; platform: string };
-        };
-      }>(SubscribeNotificationsDocument, variables);
-      return result.subscribeToNotifications;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetNotificationSubscriptionStatus"],
-      });
-    },
-  });
+  const [, subscribeMutation] = useMutation(SubscribeNotificationsDocument);
 
   // GraphQL mutation for unsubscribing
-  const unsubscribeMutation = useMutation({
-    mutationFn: async (variables: { token: string }) => {
-      const result = await graphqlClient.request<{
-        unsubscribeFromNotifications: { success: boolean };
-      }>(UnsubscribeNotificationsDocument, variables);
-      return result.unsubscribeFromNotifications;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetNotificationSubscriptionStatus"],
-      });
-    },
-  });
+  const [, unsubscribeMutation] = useMutation(UnsubscribeNotificationsDocument);
 
   const [permission, setPermission] = useState<Notifications.PermissionStatus>(
     Notifications.PermissionStatus.UNDETERMINED,
@@ -155,8 +115,13 @@ export function useNotifications(): UseNotificationsReturn {
   const toggleSubscription = useCallback(async () => {
     if (subscriptionStatus?.isSubscribed) {
       for (const sub of subscriptionStatus.subscriptions) {
-        await unsubscribeMutation.mutateAsync({ token: sub.token });
+        const result = await unsubscribeMutation({ token: sub.token });
+        if (result.error) {
+          console.error("Failed to unsubscribe:", result.error);
+        }
       }
+      // Invalidate cache after unsubscribing
+      await client.invalidate(GetSubscriptionStatusDocument);
       return;
     }
 
@@ -179,7 +144,13 @@ export function useNotifications(): UseNotificationsReturn {
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
 
     if (tokenData.data) {
-      await subscribeMutation.mutateAsync({ token: tokenData.data });
+      const result = await subscribeMutation({ token: tokenData.data });
+      if (!result.error) {
+        // Invalidate cache after subscribing
+        await client.invalidate(GetSubscriptionStatusDocument);
+      } else {
+        console.error("Failed to subscribe:", result.error);
+      }
     }
   }, [
     subscriptionStatus,
@@ -187,6 +158,7 @@ export function useNotifications(): UseNotificationsReturn {
     openAppSettings,
     subscribeMutation,
     unsubscribeMutation,
+    client,
   ]);
 
   const testNotification = useCallback(() => {

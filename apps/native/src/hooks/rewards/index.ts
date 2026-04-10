@@ -1,333 +1,316 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-} from "@tanstack/react-query";
-import {
-  useGetRewardQuery,
-  useGetRewardsByTripQuery,
-  useGetRewardsByTripAdminQuery,
-  useCreateRewardMutation,
-  useUpdateRewardMutation,
-  useDeleteRewardMutation,
-  usePurchaseRewardMutation,
-  useSetRewardHiddenMutation,
-  useGetPurchaseHistoryQuery,
-  useUpdatePurchaseStatusMutation,
-  useUpdateMyPurchaseStatusMutation,
+  GetRewardDocument,
+  GetRewardsByTripDocument,
+  GetRewardsByTripAdminDocument,
+  CreateRewardDocument,
+  UpdateRewardDocument,
+  DeleteRewardDocument,
+  PurchaseRewardDocument,
+  SetRewardHiddenDocument,
+  GetPurchaseHistoryDocument,
+  UpdatePurchaseStatusDocument,
+  UpdateMyPurchaseStatusDocument,
 } from "@mirai-app/graphql-types";
-import { graphqlClient } from "~/lib/graphql-client";
 
 const PAGE_SIZE = 30;
 
 export const useRewards = (tripId: string) => {
-  return useGetRewardsByTripQuery(
-    graphqlClient,
-    { tripId },
-    { enabled: Boolean(tripId) },
-  );
+  return useQuery({
+    query: GetRewardsByTripDocument,
+    variables: { tripId },
+    pause: !tripId,
+  });
 };
 
 export const useAdminRewards = (tripId?: string | null) => {
-  const {
-    data,
-    isLoading,
-    error,
-    isRefetching,
-    refetch,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["GetRewardsByTripAdmin", tripId ?? "", "infinite", PAGE_SIZE],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      const result = await graphqlClient.request<{
-        rewardsByTripAdmin: {
-          rewards: Array<{
-            id: string;
-            name: string;
-            description: string | null;
-            pointsCost: number;
-            quantity: number | null;
-            isHidden: boolean;
-            imageUrl: string | null;
-            tripId: string;
-          }>;
-          pagination: {
-            total: number;
-            hasMore: boolean;
-            limit: number;
-            offset: number;
-          };
-        };
-      }>(
-        `
-        query GetRewardsByTripAdmin($tripId: ID!, $pagination: PaginationInput) {
-          rewardsByTripAdmin(tripId: $tripId, pagination: $pagination) {
-            rewards {
-              id
-              name
-              description
-              pointsCost
-              quantity
-              isHidden
-              imageUrl
-              tripId
-            }
-            pagination {
-              total
-              hasMore
-              limit
-              offset
-            }
-          }
-        }
-        `,
-        {
-          tripId: tripId ?? "",
-          pagination: {
-            limit: PAGE_SIZE,
-            offset,
-          },
-        },
-      );
-      return result.rewardsByTripAdmin;
+  const client = useClient();
+  const [offset, setOffset] = useState(0);
+
+  const [{ data, fetching, error }] = useQuery({
+    query: GetRewardsByTripAdminDocument,
+    variables: {
+      tripId: tripId ?? "",
+      pagination: { limit: PAGE_SIZE, offset },
     },
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination.hasMore) {
-        return undefined;
-      }
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
+    pause: !tripId,
   });
 
   const rewards = useMemo(
-    () => (data?.pages ?? []).flatMap((page) => page.rewards ?? []),
-    [data?.pages],
+    () => data?.rewardsByTripAdmin?.rewards ?? [],
+    [data],
   );
+
+  const hasNextPage = useMemo(
+    () => data?.rewardsByTripAdmin?.pagination?.hasMore ?? false,
+    [data],
+  );
+
+  const fetchNextPage = useCallback(() => {
+    if (hasNextPage) {
+      setOffset((prev) => prev + PAGE_SIZE);
+    }
+  }, [hasNextPage]);
+
+  const refetch = useCallback(() => {
+    setOffset(0);
+    client.invalidate(GetRewardsByTripAdminDocument, {
+      tripId: tripId ?? "",
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+  }, [client, tripId]);
 
   return {
     data: rewards,
-    isLoading,
+    isLoading: fetching && offset === 0,
     error,
-    isRefetching,
+    isRefetching: false,
     refetch,
     hasNextPage,
-    isFetchingNextPage,
+    isFetchingNextPage: fetching && offset > 0,
     fetchNextPage,
   };
 };
 
 export const useReward = (id: string | null) => {
-  return useGetRewardQuery(
-    graphqlClient,
-    { id: id ?? "" },
-    { enabled: Boolean(id) },
-  );
+  return useQuery({
+    query: GetRewardDocument,
+    variables: { id: id ?? "" },
+    pause: !id,
+  });
 };
 
 export const useCreateReward = () => {
-  const queryClient = useQueryClient();
-  return useCreateRewardMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTrip"]],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTripAdmin"]],
-      });
-    },
-  });
+  const client = useClient();
+  const [, createReward] = useMutation(CreateRewardDocument);
+
+  return async (input: {
+    tripId: string;
+    name: string;
+    description?: string | null;
+    pointsCost: number;
+    quantity?: number | null;
+    imageUrl?: string | null;
+  }) => {
+    const result = await createReward({ input });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate rewards queries
+    client.invalidate(GetRewardsByTripDocument, { tripId: input.tripId });
+    client.invalidate(GetRewardsByTripAdminDocument, {
+      tripId: input.tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+
+    return result.data;
+  };
 };
 
 export const useUpdateReward = () => {
-  const queryClient = useQueryClient();
-  return useUpdateRewardMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTrip"]],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTripAdmin"]],
-      });
-    },
-  });
+  const client = useClient();
+  const [, updateReward] = useMutation(UpdateRewardDocument);
+
+  return async (input: {
+    id: string;
+    tripId: string;
+    name?: string;
+    description?: string | null;
+    pointsCost?: number;
+    quantity?: number | null;
+    imageUrl?: string | null;
+  }) => {
+    const result = await updateReward({ input });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate rewards queries
+    client.invalidate(GetRewardDocument, { id: input.id });
+    client.invalidate(GetRewardsByTripDocument, { tripId: input.tripId });
+    client.invalidate(GetRewardsByTripAdminDocument, {
+      tripId: input.tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+
+    return result.data;
+  };
 };
 
 export const useSetRewardHidden = () => {
-  const queryClient = useQueryClient();
-  return useSetRewardHiddenMutation(graphqlClient, {
-    onSuccess: async (responseData) => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetReward", responseData.id],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTrip"]],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTripAdmin"]],
-      });
-    },
-  });
+  const client = useClient();
+  const [, setHidden] = useMutation(SetRewardHiddenDocument);
+
+  return async (input: { id: string; tripId: string; isHidden: boolean }) => {
+    const result = await setHidden({ input });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate rewards queries
+    client.invalidate(GetRewardDocument, { id: input.id });
+    client.invalidate(GetRewardsByTripDocument, { tripId: input.tripId });
+    client.invalidate(GetRewardsByTripAdminDocument, {
+      tripId: input.tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+
+    return result.data;
+  };
 };
 
 export const useDeleteReward = () => {
-  const queryClient = useQueryClient();
-  return useDeleteRewardMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTrip"]],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTripAdmin"]],
-      });
-    },
-  });
+  const client = useClient();
+  const [, deleteReward] = useMutation(DeleteRewardDocument);
+
+  return async (input: { id: string; tripId: string }) => {
+    const result = await deleteReward({ input });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate rewards queries
+    client.invalidate(GetRewardsByTripDocument, { tripId: input.tripId });
+    client.invalidate(GetRewardsByTripAdminDocument, {
+      tripId: input.tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+
+    return result.data;
+  };
 };
 
 export const usePurchaseReward = () => {
-  const queryClient = useQueryClient();
-  return usePurchaseRewardMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTrip"]],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetPurchaseHistory"]],
-      });
-    },
-  });
+  const client = useClient();
+  const [, purchaseReward] = useMutation(PurchaseRewardDocument);
+
+  return async (input: { rewardId: string; tripId: string }) => {
+    const result = await purchaseReward({ input });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate queries
+    client.invalidate(GetRewardsByTripDocument, { tripId: input.tripId });
+    client.invalidate(GetPurchaseHistoryDocument, {
+      tripId: input.tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+
+    return result.data;
+  };
 };
 
 export const useRewardPurchaseHistory = (tripId: string) => {
-  const {
-    data,
-    isLoading,
-    error,
-    isRefetching,
-    refetch,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["GetPurchaseHistory", tripId, "infinite", PAGE_SIZE],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-      return graphqlClient.request<{
-        purchaseHistory: {
-          purchases: Array<{
-            id: string;
-            rewardId: string;
-            userId: string;
-            pointsSpent: number;
-            status: string;
-            createdAt: string;
-          }>;
-          pagination: {
-            total: number;
-            hasMore: boolean;
-            limit: number;
-            offset: number;
-          };
-        };
-      }>(
-        `
-        query GetPurchaseHistory($tripId: ID!, $pagination: PaginationInput) {
-          purchaseHistory(tripId: $tripId, pagination: $pagination) {
-            purchases {
-              id
-              rewardId
-              userId
-              pointsSpent
-              status
-              createdAt
-            }
-            pagination {
-              total
-              hasMore
-              limit
-              offset
-            }
-          }
-        }
-        `,
-        {
-          tripId,
-          pagination: {
-            limit: PAGE_SIZE,
-            offset,
-          },
-        },
-      );
+  const client = useClient();
+  const [offset, setOffset] = useState(0);
+
+  const [{ data, fetching, error }] = useQuery({
+    query: GetPurchaseHistoryDocument,
+    variables: {
+      tripId,
+      pagination: { limit: PAGE_SIZE, offset },
     },
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.purchaseHistory?.pagination?.hasMore) {
-        return undefined;
-      }
-      return (
-        lastPage.purchaseHistory.pagination.offset +
-        lastPage.purchaseHistory.pagination.limit
-      );
-    },
+    pause: !tripId,
   });
 
   const purchases = useMemo(
-    () =>
-      (data?.pages ?? []).flatMap(
-        (page) => page.purchaseHistory?.purchases ?? [],
-      ),
-    [data?.pages],
+    () => data?.purchaseHistory?.purchases ?? [],
+    [data],
   );
+
+  const hasNextPage = useMemo(
+    () => data?.purchaseHistory?.pagination?.hasMore ?? false,
+    [data],
+  );
+
+  const fetchNextPage = useCallback(() => {
+    if (hasNextPage) {
+      setOffset((prev) => prev + PAGE_SIZE);
+    }
+  }, [hasNextPage]);
+
+  const refetch = useCallback(() => {
+    setOffset(0);
+    client.invalidate(GetPurchaseHistoryDocument, {
+      tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+  }, [client, tripId]);
 
   return {
     data: purchases,
-    isLoading,
+    isLoading: fetching && offset === 0,
     error,
-    isRefetching,
+    isRefetching: false,
     refetch,
     hasNextPage,
-    isFetchingNextPage,
+    isFetchingNextPage: fetching && offset > 0,
     fetchNextPage,
   };
 };
 
 export const useUpdateRewardPurchaseStatus = () => {
-  const queryClient = useQueryClient();
-  return useUpdatePurchaseStatusMutation(graphqlClient, {
-    onSuccess: async (responseData) => {
-      await queryClient.invalidateQueries({
-        queryKey: [["GetPurchaseHistory"]],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["GetReward", responseData.rewardId],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTrip"]],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTripAdmin"]],
-      });
-    },
-  });
+  const client = useClient();
+  const [, updateStatus] = useMutation(UpdatePurchaseStatusDocument);
+
+  return async (input: {
+    purchaseId: string;
+    rewardId: string;
+    tripId: string;
+    status: string;
+  }) => {
+    const result = await updateStatus({ input });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate queries
+    client.invalidate(GetPurchaseHistoryDocument, {
+      tripId: input.tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+    client.invalidate(GetRewardDocument, { id: input.rewardId });
+    client.invalidate(GetRewardsByTripDocument, { tripId: input.tripId });
+    client.invalidate(GetRewardsByTripAdminDocument, {
+      tripId: input.tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+
+    return result.data;
+  };
 };
 
 export const useUpdateMyRewardPurchaseStatus = () => {
-  const queryClient = useQueryClient();
-  return useUpdateMyPurchaseStatusMutation(graphqlClient, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [["GetPurchaseHistory"]],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: [["GetRewardsByTrip"]],
-      });
-    },
-  });
+  const client = useClient();
+  const [, updateStatus] = useMutation(UpdateMyPurchaseStatusDocument);
+
+  return async (input: {
+    purchaseId: string;
+    tripId: string;
+    status: string;
+  }) => {
+    const result = await updateStatus({ input });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate queries
+    client.invalidate(GetPurchaseHistoryDocument, {
+      tripId: input.tripId,
+      pagination: { limit: PAGE_SIZE, offset: 0 },
+    });
+    client.invalidate(GetRewardsByTripDocument, { tripId: input.tripId });
+
+    return result.data;
+  };
 };

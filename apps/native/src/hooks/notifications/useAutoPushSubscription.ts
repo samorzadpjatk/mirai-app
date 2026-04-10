@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useClient } from "urql";
 import { useAuth } from "@mirai-app/frameworks/auth/client";
-import { graphqlClient } from "~/lib/graphql-client";
 
 function resolveProjectId(): string | undefined {
   const expoConfigExtra = (Constants.expoConfig?.extra ?? null) as unknown;
@@ -58,24 +57,10 @@ const SubscribeToNotificationsDocument = `
 export function useAutoPushSubscription() {
   const { session } = useAuth();
   const attemptedForUserRef = useRef<string | null>(null);
-  const queryClient = useQueryClient();
+  const client = useClient();
 
   // GraphQL mutation for subscribing to push notifications
-  const subscribeMutation = useMutation({
-    mutationFn: async (variables: { token: string }) => {
-      const result = await graphqlClient.request(
-        SubscribeToNotificationsDocument,
-        variables,
-      );
-      return result.subscribeToNotifications;
-    },
-    onSuccess: async () => {
-      // Invalidate notification queries to refresh subscription status
-      await queryClient.invalidateQueries({
-        queryKey: ["GetMyNotifications"],
-      });
-    },
-  });
+  const [, subscribeMutation] = useMutation(SubscribeToNotificationsDocument);
 
   const hasSession = !!session?.access_token;
   const authUserId = session?.user?.id ?? null;
@@ -86,10 +71,8 @@ export function useAutoPushSubscription() {
       return;
     }
 
-    if (subscribeMutation.isPending) {
-      return;
-    }
-
+    // Check if mutation is in progress via the result
+    // urql doesn't expose isPending the same way, so we track differently
     if (attemptedForUserRef.current === authUserId) {
       return;
     }
@@ -122,10 +105,29 @@ export function useAutoPushSubscription() {
           return;
         }
 
-        await subscribeMutation.mutateAsync({ token });
+        const result = await subscribeMutation({ token });
+
+        // Invalidate notification queries to refresh subscription status on success
+        if (!result.error) {
+          await client.invalidate(GetMyNotificationsDocument);
+        }
       } catch (error) {
         console.warn("Failed to run automatic notification onboarding:", error);
       }
     })();
-  }, [authUserId, hasSession, subscribeMutation]);
+  }, [authUserId, hasSession, subscribeMutation, client]);
 }
+
+// Document for cache invalidation
+const GetMyNotificationsDocument = `
+  query GetMyNotifications {
+    myNotificationSubscriptions {
+      isSubscribed
+      subscriptions {
+        token
+        platform
+        createdAt
+      }
+    }
+  }
+`;

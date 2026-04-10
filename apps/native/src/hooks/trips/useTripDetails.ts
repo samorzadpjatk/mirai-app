@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery } from "urql";
 import {
-  useGetCurrentUserQuery,
-  useGetTripQuery,
+  GetCurrentUserDocument,
+  GetTripDocument,
 } from "@mirai-app/graphql-types";
 import {
   getCachedTripById,
@@ -14,52 +12,21 @@ import {
 import type { TripListItem } from "~/components/trips/list/types";
 import { isTripPast } from "~/utils/trip";
 
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
-  const token = await SecureStore.getItemAsync("sb-access-token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
-
 export function useTripDetails(tripId?: string | null) {
-  const [client, setClient] = useState<GraphQLClient | null>(null);
-
-  useEffect(() => {
-    void createGraphQLClient().then(setClient);
-  }, []);
-
-  const currentUserQuery = useQuery({
-    queryKey: ["GetCurrentUser"],
-    queryFn: async () => {
-      if (!client) {
-        throw new Error("GraphQL client not initialized");
-      }
-      return useGetCurrentUserQuery.fetcher(client)();
-    },
-    enabled: !!client,
+  const [{ data: currentUserData, fetching: isLoadingUser }] = useQuery({
+    query: GetCurrentUserDocument,
   });
 
-  const tripQuery = useQuery({
-    queryKey: ["GetTrip", tripId],
-    queryFn: async () => {
-      if (!client) {
-        throw new Error("GraphQL client not initialized");
-      }
-      return useGetTripQuery.fetcher(client, { id: tripId ?? "" })();
-    },
-    enabled: !!tripId && !!client,
-  });
+  const [{ data: tripQueryData, fetching: tripFetching }, refetchTrip] =
+    useQuery({
+      query: GetTripDocument,
+      variables: { id: tripId ?? "" },
+      pause: !tripId,
+    });
 
-  const { data: currentUserData, isLoading: isLoadingUser } = currentUserQuery;
   const currentUser = currentUserData?.me;
 
-  type TripData = NonNullable<typeof tripQuery.data>["trip"];
+  type TripData = NonNullable<typeof tripQueryData>["trip"];
   const [cachedTrip, setCachedTrip] = useState<TripData | null>(null);
   const [cachedTripId, setCachedTripId] = useState<string | null>(null);
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
@@ -90,6 +57,8 @@ export function useTripDetails(tripId?: string | null) {
     };
   }, [tripId]);
 
+  const tripData = tripQueryData?.trip;
+
   useEffect(() => {
     if (!tripId || !tripData) return;
 
@@ -108,10 +77,9 @@ export function useTripDetails(tripId?: string | null) {
   }, [tripId, tripData]);
 
   const localCachedTrip = cachedTripId === (tripId ?? null) ? cachedTrip : null;
-  const tripData = tripQuery.data?.trip;
   const trip = tripData ?? localCachedTrip ?? null;
   const isLoadingTrip =
-    Boolean(tripId) && !trip && (tripQuery.isLoading || !isCacheHydrated);
+    Boolean(tripId) && !trip && (tripFetching || !isCacheHydrated);
 
   const isTripPastValue = trip ? isTripPast(trip.endDate) : false;
 
@@ -120,9 +88,9 @@ export function useTripDetails(tripId?: string | null) {
     isLoadingUser,
     trip,
     isLoadingTrip,
-    refetchTrip: tripQuery.refetch,
-    isErrorTrip: tripQuery.isError,
-    tripError: tripQuery.error,
+    refetchTrip: () => refetchTrip({ requestPolicy: "network-only" }),
+    isErrorTrip: !!error,
+    tripError: error,
     isTripPast: isTripPastValue,
   };
 }

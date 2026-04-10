@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useClient } from "urql";
 import * as Crypto from "expo-crypto";
 import { useLocationContext } from "~/stores/location";
 import { graphqlClient } from "~/lib/graphql-client";
@@ -154,7 +154,7 @@ function createGraphQLSubscription<T>(
 
 export function useMapLocationStream(enabled: boolean) {
   const { canViewOthersLocations } = useLocationContext();
-  const queryClient = useQueryClient();
+  const client = useClient();
 
   const [locationsByUserId, setLocationsByUserId] = useState<
     Record<

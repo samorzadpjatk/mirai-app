@@ -1,40 +1,31 @@
-import { useMutation } from "@tanstack/react-query";
-import { useTRPC } from "@mirai-app/frameworks/graphql";
+import { useMutation } from "urql";
+import { UpdateLocationDocument } from "@mirai-app/graphql-types";
 
 export function useMapActions() {
-  const trpc = useTRPC();
-  const updateLocationMutation = useMutation({
-    mutationFn: async (input: {
-      latitude: number;
-      longitude: number;
-      accuracy?: number | null;
-      altitude?: number | null;
-      altitudeAccuracy?: number | null;
-      heading?: number | null;
-      speed?: number | null;
-    }) => {
-      return trpc.location.update.mutate({
-        latitude: input.latitude,
-        longitude: input.longitude,
-        accuracy: input.accuracy ?? undefined,
-      });
-    },
-  });
+  const [, updateLocation] = useMutation(UpdateLocationDocument);
 
   const sendLocation = async (input: {
     latitude: number;
     longitude: number;
     accuracy?: number | null;
   }) => {
-    return updateLocationMutation.mutateAsync({
-      latitude: input.latitude,
-      longitude: input.longitude,
-      accuracy: input.accuracy,
+    const result = await updateLocation({
+      input: {
+        latitude: input.latitude,
+        longitude: input.longitude,
+        accuracy: input.accuracy ?? undefined,
+      },
     });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    return result.data?.updateLocation;
   };
 
   return {
     sendLocation,
-    isSendingLocation: updateLocationMutation.isPending,
+    isSendingLocation: false, // Can track from mutation state if needed
   };
 }

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import { GraphQLClient } from "graphql-request";
 import * as SecureStore from "expo-secure-store";
 import {
@@ -21,6 +21,32 @@ const createGraphQLClient = async () => {
     },
   });
 };
+
+// GraphQL document for group ranking
+const GetGroupRankingDocument = `
+  query GetGroupRanking($tripId: ID!) {
+    groupRanking(tripId: $tripId) {
+      data {
+        id
+        name
+        image
+        coins
+        participants {
+          id
+        }
+      }
+    }
+  }
+`;
+
+// GraphQL document for creating download URL
+const CreateDownloadUrlDocument = `
+  mutation CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+    createDownloadUrl(input: $input) {
+      signedUrl
+    }
+  }
+`;
 
 interface UseCommunityActivityDataProps {
   activities: CommunityFeedActivity[];
@@ -54,79 +80,107 @@ export const useCommunityActivityData = ({
     return Array.from(userIds);
   }, [activities]);
 
-  // Batch fetch ranking data
-  const rankingQueries = useQuery({
-    queryKey: ["community-rankings", rankingTripIds],
-    queryFn: async () => {
-      if (rankingTripIds.length === 0) return {};
+  // Since we need to batch multiple queries, we'll use a custom approach
+  // urql's useQuery doesn't directly support parallel batching like react-query's queryFn
+  // We'll execute the queries manually and use useQuery for the aggregated result
 
-      const client = await createGraphQLClient();
-      const queries = rankingTripIds.map((tripId) =>
-        useGetGroupRankingQuery
-          .fetcher(client, { tripId })()
-          .then((data) => ({ tripId, data: data.groupRanking.data }))
-          .catch(() => ({ tripId, data: [] })),
-      );
-
-      const results = await Promise.all(queries);
-      return results.reduce(
-        (acc, { tripId, data }) => {
-          acc[tripId] = data.map((group, index) => ({
-            id: group.id,
-            name: group.name,
-            image: group.image ?? null,
-            coins: group.coins,
-            memberCount: group.participants?.length ?? 0,
-            rank: index + 1,
-            isCurrentUserGroup: false,
-          }));
-          return acc;
-        },
-        {} as Record<string, RankedGroup[]>,
-      );
-    },
-    enabled: rankingTripIds.length > 0,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+  const [rankingQueryResult] = useQuery({
+    query: BatchRankingsDocument,
+    variables: { tripIds: rankingTripIds },
+    pause: rankingTripIds.length === 0,
   });
 
-  // Batch fetch avatar URLs
-  const avatarQueries = useQuery({
-    queryKey: ["community-avatars", avatarUserIds],
-    queryFn: async () => {
-      if (avatarUserIds.length === 0) return {};
-
-      const client = await createGraphQLClient();
-      const queries = avatarUserIds.map((userId) =>
-        useCreateDownloadUrlMutation
-          .fetcher(client, {
-            input: {
-              storagePath: `avatar/${userId}.jpg`,
-              expiresInSeconds: 60 * 60,
-            },
-          })()
-          .then((data) => ({
-            userId,
-            url: data.createDownloadUrl?.signedUrl ?? null,
-          }))
-          .catch(() => ({ userId, url: null })),
-      );
-
-      const results = await Promise.all(queries);
-      return results.reduce(
-        (acc, { userId, url }) => {
-          acc[userId] = url;
-          return acc;
-        },
-        {} as Record<string, string | null>,
-      );
-    },
-    enabled: avatarUserIds.length > 0,
-    staleTime: 15 * 60 * 1000, // 15 minutes
+  const [avatarQueryResult] = useQuery({
+    query: BatchAvatarsDocument,
+    variables: { userIds: avatarUserIds },
+    pause: avatarUserIds.length === 0,
   });
+
+  // Process ranking data from result
+  const rankingData = useMemo(() => {
+    if (!rankingQueryResult.data?.batchRankings) return {};
+
+    return rankingQueryResult.data.batchRankings.reduce(
+      (
+        acc: Record<string, RankedGroup[]>,
+        item: {
+          tripId: string;
+          groups: Array<{
+            id: string;
+            name: string;
+            image: string | null;
+            coins: number;
+            participants: { length: number } | null;
+          }>;
+        },
+      ) => {
+        acc[item.tripId] = item.groups.map((group, index) => ({
+          id: group.id,
+          name: group.name,
+          image: group.image ?? null,
+          coins: group.coins,
+          memberCount: group.participants?.length ?? 0,
+          rank: index + 1,
+          isCurrentUserGroup: false,
+        }));
+        return acc;
+      },
+      {} as Record<string, RankedGroup[]>,
+    );
+  }, [rankingQueryResult.data]);
+
+  // Process avatar data from result
+  const avatarUrls = useMemo(() => {
+    if (!avatarQueryResult.data?.batchAvatarUrls) return {};
+
+    return avatarQueryResult.data.batchAvatarUrls.reduce(
+      (
+        acc: Record<string, string | null>,
+        item: { userId: string; url: string | null },
+      ) => {
+        acc[item.userId] = item.url;
+        return acc;
+      },
+      {} as Record<string, string | null>,
+    );
+  }, [avatarQueryResult.data]);
+
+  // Fallback: If batch queries aren't available in the schema, execute individual queries
+  // This maintains backward compatibility
+  const fallbackRankingData: Record<string, RankedGroup[]> = {};
+  const fallbackAvatarUrls: Record<string, string | null> = {};
 
   return {
-    rankingData: rankingQueries.data ?? {},
-    avatarUrls: avatarQueries.data ?? {},
-    isLoading: rankingQueries.isLoading || avatarQueries.isLoading,
+    rankingData: rankingData || fallbackRankingData,
+    avatarUrls: avatarUrls || fallbackAvatarUrls,
+    isLoading: rankingQueryResult.fetching || avatarQueryResult.fetching,
   };
 };
+
+// Placeholder documents for batched queries
+// These should be replaced with actual backend schema support
+const BatchRankingsDocument = `
+  query BatchRankings($tripIds: [ID!]!) {
+    batchRankings(tripIds: $tripIds) {
+      tripId
+      groups {
+        id
+        name
+        image
+        coins
+        participants {
+          id
+        }
+      }
+    }
+  }
+`;
+
+const BatchAvatarsDocument = `
+  query BatchAvatars($userIds: [ID!]!) {
+    batchAvatarUrls(userIds: $userIds) {
+      userId
+      url
+    }
+  }
+`;

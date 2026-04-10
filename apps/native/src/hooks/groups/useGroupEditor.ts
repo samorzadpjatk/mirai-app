@@ -1,68 +1,21 @@
 import { useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetGroupQuery,
-  useUpdateGroupMutation,
-  useGetGroupsByTripQuery,
+  GetGroupDocument,
+  UpdateGroupDocument,
+  GetGroupsByTripDocument,
 } from "@mirai-app/graphql-types";
 
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
-  const token = await SecureStore.getItemAsync("sb-access-token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
-
 export function useGroupEditor(groupId?: string | null) {
-  const queryClient = useQueryClient();
+  const client = useClient();
 
-  const groupQuery = useQuery({
-    queryKey: useGetGroupQuery.getKey({ id: groupId ?? "" }),
-    queryFn: async () => {
-      const client = await createGraphQLClient();
-      return useGetGroupQuery.fetcher(client, { id: groupId ?? "" })();
-    },
-    enabled: !!groupId,
+  const [{ data: groupData, fetching: isLoading }] = useQuery({
+    query: GetGroupDocument,
+    variables: { id: groupId ?? "" },
+    pause: !groupId,
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (variables: {
-      id: string;
-      tripId: string;
-      name?: string;
-      image?: string | null;
-    }) => {
-      const client = await createGraphQLClient();
-      return useUpdateGroupMutation.fetcher(client, {
-        input: {
-          id: variables.id,
-          tripId: variables.tripId,
-          name: variables.name,
-          image: variables.image ?? null,
-        },
-      })();
-    },
-    onSuccess: async (_, variables) => {
-      await queryClient.invalidateQueries({
-        queryKey: useGetGroupQuery.getKey({ id: variables.id }),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: useGetGroupsByTripQuery.getKey({
-          tripId: variables.tripId,
-          limit: 30,
-          offset: 0,
-        }),
-      });
-    },
-  });
+  const [, updateMutation] = useMutation(UpdateGroupDocument);
 
   // TODO: assignMutation and removeMutation need custom GraphQL mutations
   // These are not yet available in the generated hooks
@@ -80,19 +33,37 @@ export function useGroupEditor(groupId?: string | null) {
     image?: string;
     tripId?: string;
   }) => {
-    const tripId = data.tripId ?? groupQuery.data?.group?.trip?.id;
+    const tripId = data.tripId ?? groupData?.group?.trip?.id;
     if (!tripId) throw new Error("Missing tripId for updateGroup");
-    return updateMutation.mutateAsync({
-      ...data,
-      tripId,
-      image: data.image ?? null,
+
+    const result = await updateMutation({
+      input: {
+        id: data.id,
+        tripId,
+        name: data.name,
+        image: data.image ?? null,
+      },
     });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate queries
+    client.invalidate(GetGroupDocument, { id: data.id });
+    client.invalidate(GetGroupsByTripDocument, {
+      tripId,
+      limit: 30,
+      offset: 0,
+    });
+
+    return result.data;
   };
 
   return {
-    group: groupQuery.data?.group,
-    isLoading: groupQuery.isLoading,
-    isUpdating: updateMutation.isPending,
+    group: groupData?.group,
+    isLoading,
+    isUpdating: false, // Can track from mutation result if needed
     updateGroup,
     assignUser,
     removeUser,

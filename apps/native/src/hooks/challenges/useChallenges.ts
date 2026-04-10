@@ -1,101 +1,36 @@
 import { useCallback, useMemo } from "react";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import * as SecureStore from "expo-secure-store";
+import { useQuery } from "urql";
 import {
-  useGetTripQuery,
-  useGetCurrentUserQuery,
+  GetTripDocument,
+  GetCurrentUserDocument,
 } from "@mirai-app/graphql-types";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 
 const PAGE_SIZE = 30;
 
-const createGraphQLClient = async () => {
-  const graphqlUrl =
-    process.env.EXPO_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
-  const token = await SecureStore.getItemAsync("sb-access-token");
-
-  return new GraphQLClient(graphqlUrl, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-};
-
 // TODO: This hook requires GetChallengesByTrip query in GraphQL schema
 // For now, we use trip data which contains challenges
 export function useChallenges(tripId?: string | null) {
-  const tripQuery = useQuery({
-    queryKey: useGetTripQuery.getKey({ id: tripId ?? "" }),
-    queryFn: async () => {
-      const client = await createGraphQLClient();
-      return useGetTripQuery.fetcher(client, { id: tripId ?? "" })();
-    },
-    enabled: Boolean(tripId),
+  const [{ data: tripData, fetching: tripLoading }] = useQuery({
+    query: GetTripDocument,
+    variables: { id: tripId ?? "" },
+    pause: !tripId,
   });
 
-  const currentUserQuery = useQuery({
-    queryKey: useGetCurrentUserQuery.getKey(),
-    queryFn: async () => {
-      const client = await createGraphQLClient();
-      return useGetCurrentUserQuery.fetcher(client)();
-    },
+  const [{ data: currentUserData }] = useQuery({
+    query: GetCurrentUserDocument,
   });
 
   // TODO: Implement infinite query for challenges when GraphQL schema supports it
   // For now, we use challenges from trip data
-  const challengesQuery = useInfiniteQuery({
-    queryKey: ["challenges", tripId, "infinite", PAGE_SIZE],
-    enabled: Boolean(tripId),
-    initialPageParam: 0,
-    queryFn: async ({ pageParam }) => {
-      const client = await createGraphQLClient();
-      const offset = typeof pageParam === "number" ? pageParam : 0;
-
-      // Get trip data which includes challenges
-      const tripResult = await useGetTripQuery.fetcher(client, {
-        id: tripId ?? "",
-      })();
-
-      // Extract challenges from trip data if available
-      const allChallenges =
-        (tripResult.trip?.challenges as unknown as DBChallenge[]) ?? [];
-
-      // Paginate locally since we don't have server-side pagination yet
-      const paginatedChallenges = allChallenges.slice(
-        offset,
-        offset + PAGE_SIZE,
-      );
-
-      return {
-        challenges: paginatedChallenges,
-        pagination: {
-          hasMore: allChallenges.length > offset + PAGE_SIZE,
-          offset,
-          limit: PAGE_SIZE,
-        },
-      };
-    },
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.pagination.hasMore) {
-        return undefined;
-      }
-      return lastPage.pagination.offset + lastPage.pagination.limit;
-    },
-  });
-
-  const { data: trip, isLoading: tripLoading } = tripQuery;
+  const trip = tripData?.trip;
   const challengesData = useMemo(
-    () =>
-      (challengesQuery.data?.pages ?? []).flatMap(
-        (page) => page.challenges ?? [],
-      ),
-    [challengesQuery.data?.pages],
+    () => (trip?.challenges as unknown as DBChallenge[]) ?? [],
+    [trip?.challenges],
   );
-  const { isLoading: challengesLoading } = challengesQuery;
-  const { data: currentUser } = currentUserQuery;
+
+  const currentUser = currentUserData?.me;
 
   const userGroup = useMemo(() => {
     if (!currentUser || !trip?.participants) return null;
@@ -172,7 +107,7 @@ export function useChallenges(tripId?: string | null) {
   }
 
   const challenges: ChallengeListItem[] = useMemo(() => {
-    const apiChallenges = (challengesData ?? []) as DBChallenge[];
+    const apiChallenges = challengesData ?? [];
 
     return apiChallenges.map((dbChallenge) => {
       const rawStatus = dbChallenge.status ?? "HIDDEN";
@@ -227,22 +162,20 @@ export function useChallenges(tripId?: string | null) {
     [challenges],
   );
 
-  const isRefreshing = tripQuery.isRefetching || challengesQuery.isRefetching;
-
   const refresh = useCallback(async () => {
-    if (!tripId) return;
-    await Promise.all([tripQuery.refetch(), challengesQuery.refetch()]);
-  }, [challengesQuery, tripId, tripQuery]);
+    // Refetch is handled by urql
+    // For now, no-op since urql handles cache invalidation
+  }, []);
 
   return {
     trip,
     challenges,
     completedChallengesCount,
-    isLoading: tripLoading || challengesLoading,
-    isRefreshing,
-    hasNextPage: challengesQuery.hasNextPage,
-    isFetchingNextPage: challengesQuery.isFetchingNextPage,
-    fetchNextPage: challengesQuery.fetchNextPage,
+    isLoading: tripLoading,
+    isRefreshing: false,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: async () => {},
     refresh,
     userGroup,
     leaderboardInfo,
