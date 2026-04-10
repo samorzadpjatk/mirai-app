@@ -54,6 +54,18 @@ export {
   type GraphQLClientConfig,
 } from "./client";
 
+// Native Client (for React Native with React Query integration)
+export {
+  GraphQLProvider as TRPCProvider,
+  useGraphQL as useTRPC,
+  useGraphQLClient as useTRPCClient,
+  getTRPCClient,
+  type GraphQLClient,
+  type GraphQLProcedures,
+  type Procedure,
+  type MutationProcedure,
+} from "./native-client";
+
 // Example query:
 // ```graphql
 // query GetUser($id: ID!) {
