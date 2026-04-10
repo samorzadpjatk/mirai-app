@@ -1,0 +1,61 @@
+# GraphQL Schema - Mirai App API
+# Generated automatically from Pothos type definitions
+# Do not edit manually - changes will be overwritten
+
+"""
+A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.
+"""
+scalar DateTime
+
+"""Root mutation type for modifying data"""
+type Mutation
+
+"""Root query type for fetching data"""
+type Query
+
+"""Root subscription type for real-time updates"""
+type Subscription
+
+"""A user in the Mirai App system"""
+type User {
+  """External authentication provider user ID"""
+  authUserId: String!
+
+  """When the user account was created"""
+  createdAt: DateTime!
+
+  """User's first name"""
+  firstName: String!
+
+  """Computed full name (firstName + lastName)"""
+  fullName: String!
+
+  """Whether the user has uploaded an avatar image"""
+  hasAvatar: Boolean!
+
+  """Unique identifier for the user (UUID)"""
+  id: ID!
+
+  """Whether the user has admin privileges"""
+  isAdmin: Boolean!
+
+  """Whether the user has moderator privileges or higher"""
+  isModerator: Boolean!
+
+  """User's last name"""
+  lastName: String!
+
+  """When the user was last active (null if never seen)"""
+  lastSeenOn: DateTime
+
+  """User's role in the system"""
+  role: UserRole!
+}
+
+"""User roles in the system"""
+enum UserRole {
+  ADMIN
+  MODERATOR
+  SERVICE
+  USER
+}

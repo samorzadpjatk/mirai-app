@@ -1,0 +1,481 @@
+/**
+ * User GraphQL Resolver Tests
+ *
+ * Tests for User domain GraphQL resolvers.
+ * Verifies query behavior, authentication, and error handling.
+ *
+ * @module User/resolver-tests
+ */
+
+import { describe, it, expect, beforeEach, beforeAll } from "bun:test";
+import { graphql, printSchema } from "graphql";
+import { schema } from "../schema";
+import { createTestContainer, PORT_TOKENS } from "@mirai-app/frameworks/di";
+import { asClass } from "awilix";
+import { UserController, InMemoryAuthAdapter } from "@mirai-app/adapters";
+import { InMemoryUserRepository } from "@mirai-app/adapters/test-utils";
+import { User, UserRole, UserId } from "@mirai-app/domain";
+import type { AwilixContainer } from "awilix";
+
+// =============================================================================
+// Test Setup
+// =============================================================================
+
+/**
+ * Test context with container
+ */
+interface TestContext {
+  container: AwilixContainer;
+  authAdapter: InMemoryAuthAdapter;
+}
+
+// Test users
+const TEST_USERS = {
+  admin: {
+    id: "550e8400-e29b-41d4-a716-446655440001",
+    authUserId: "auth-admin-001",
+    firstName: "Admin",
+    lastName: "User",
+    role: UserRole.ADMIN,
+    hasAvatar: false,
+  },
+  moderator: {
+    id: "550e8400-e29b-41d4-a716-446655440002",
+    authUserId: "auth-moderator-002",
+    firstName: "Moderator",
+    lastName: "User",
+    role: UserRole.MODERATOR,
+    hasAvatar: true,
+  },
+  regular: {
+    id: "550e8400-e29b-41d4-a716-446655440003",
+    authUserId: "auth-user-003",
+    firstName: "Regular",
+    lastName: "User",
+    role: UserRole.USER,
+    hasAvatar: false,
+  },
+};
+
+describe("[INTEGRATION] User GraphQL Resolvers", () => {
+  let context: TestContext;
+  let adminToken: string;
+  let userToken: string;
+
+  beforeAll(async () => {
+    // Setup container
+    context = {
+      container: createTestContainer(),
+      authAdapter: new InMemoryAuthAdapter(),
+    };
+
+    // Register auth adapter
+    context.container.register({
+      [PORT_TOKENS.AuthPort]: asClass(InMemoryAuthAdapter).singleton(),
+    });
+
+    // Get repository and auth adapter
+    const userRepo = context.container.resolve<InMemoryUserRepository>(
+      PORT_TOKENS.UserRepository,
+    );
+    const authAdapter = context.container.resolve<InMemoryAuthAdapter>(
+      PORT_TOKENS.AuthPort,
+    );
+
+    // Create admin user in repository
+    const adminResult = User.create({
+      id: TEST_USERS.admin.id,
+      authUserId: TEST_USERS.admin.authUserId,
+      firstName: TEST_USERS.admin.firstName,
+      lastName: TEST_USERS.admin.lastName,
+      role: TEST_USERS.admin.role,
+      hasAvatar: TEST_USERS.admin.hasAvatar,
+      createdAt: new Date("2024-01-01"),
+    });
+    if (adminResult.kind === "ok") {
+      await userRepo.save(adminResult.value);
+    }
+
+    // Create moderator user in repository
+    const modResult = User.create({
+      id: TEST_USERS.moderator.id,
+      authUserId: TEST_USERS.moderator.authUserId,
+      firstName: TEST_USERS.moderator.firstName,
+      lastName: TEST_USERS.moderator.lastName,
+      role: TEST_USERS.moderator.role,
+      hasAvatar: TEST_USERS.moderator.hasAvatar,
+      createdAt: new Date("2024-01-02"),
+    });
+    if (modResult.kind === "ok") {
+      await userRepo.save(modResult.value);
+    }
+
+    // Create regular user in repository
+    const userResult = User.create({
+      id: TEST_USERS.regular.id,
+      authUserId: TEST_USERS.regular.authUserId,
+      firstName: TEST_USERS.regular.firstName,
+      lastName: TEST_USERS.regular.lastName,
+      role: TEST_USERS.regular.role,
+      hasAvatar: TEST_USERS.regular.hasAvatar,
+      createdAt: new Date("2024-01-03"),
+    });
+    if (userResult.kind === "ok") {
+      await userRepo.save(userResult.value);
+    }
+
+    // Create auth users in InMemoryAuthAdapter
+    const adminUserId = UserId.create(TEST_USERS.admin.id);
+    const regularUserId = UserId.create(TEST_USERS.regular.id);
+
+    authAdapter.createUser({
+      id: adminUserId,
+      role: UserRole.ADMIN,
+    });
+
+    authAdapter.createUser({
+      id: regularUserId,
+      role: UserRole.USER,
+    });
+
+    // Create sessions and get tokens
+    const adminSession = authAdapter.createSession(adminUserId);
+    adminToken = adminSession.token;
+
+    const userSession = authAdapter.createSession(regularUserId);
+    userToken = userSession.token;
+  });
+
+  beforeEach(() => {
+    // Reset container state if needed
+  });
+
+  // =============================================================================
+  // user(id: ID!) Query Tests
+  // =============================================================================
+
+  describe("Query: user(id: ID!)", () => {
+    const USER_QUERY = `
+      query GetUser($id: ID!) {
+        user(id: $id) {
+          id
+          authUserId
+          firstName
+          lastName
+          fullName
+          role
+          hasAvatar
+          isAdmin
+          isModerator
+        }
+      }
+    `;
+
+    it("returns user data when authenticated with valid ID", async () => {
+      const result = await graphql({
+        schema,
+        source: USER_QUERY,
+        variableValues: { id: TEST_USERS.regular.id },
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data).toBeDefined();
+      expect(result.data?.user).toBeDefined();
+      expect(result.data?.user.id).toBe(TEST_USERS.regular.id);
+      expect(result.data?.user.firstName).toBe("Regular");
+      expect(result.data?.user.fullName).toBe("Regular User");
+      expect(result.data?.user.role).toBe("USER");
+      expect(result.data?.user.isAdmin).toBe(false);
+      expect(result.data?.user.isModerator).toBe(false);
+    });
+
+    it("returns admin user data when requested by regular user", async () => {
+      const result = await graphql({
+        schema,
+        source: USER_QUERY,
+        variableValues: { id: TEST_USERS.admin.id },
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.user).toBeDefined();
+      expect(result.data?.user.id).toBe(TEST_USERS.admin.id);
+      expect(result.data?.user.role).toBe("ADMIN");
+      expect(result.data?.user.isAdmin).toBe(true);
+    });
+
+    it("returns null for non-existent user ID", async () => {
+      const result = await graphql({
+        schema,
+        source: USER_QUERY,
+        variableValues: { id: "550e8400-e29b-41d4-a716-446655440999" },
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.user).toBeNull();
+    });
+
+    it("returns authentication error when no token provided", async () => {
+      const result = await graphql({
+        schema,
+        source: USER_QUERY,
+        variableValues: { id: TEST_USERS.regular.id },
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql"),
+        },
+      });
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.length).toBeGreaterThan(0);
+      expect(result.errors?.[0].extensions?.code).toBe("UNAUTHENTICATED");
+    });
+
+    it("returns authentication error with invalid token", async () => {
+      const result = await graphql({
+        schema,
+        source: USER_QUERY,
+        variableValues: { id: TEST_USERS.regular.id },
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: "Bearer invalid-token",
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.[0].extensions?.code).toBe("UNAUTHENTICATED");
+    });
+  });
+
+  // =============================================================================
+  // Query: users Tests
+  // =============================================================================
+
+  describe("Query: users (admin only)", () => {
+    const USERS_QUERY = `
+      query GetUsers($limit: Int, $offset: Int) {
+        users(limit: $limit, offset: $offset) {
+          id
+          firstName
+          lastName
+          role
+        }
+      }
+    `;
+
+    it("returns all users when authenticated as admin", async () => {
+      const result = await graphql({
+        schema,
+        source: USERS_QUERY,
+        variableValues: {},
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data).toBeDefined();
+      expect(result.data?.users).toBeInstanceOf(Array);
+      expect(result.data?.users.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("returns forbidden error when authenticated as regular user", async () => {
+      const result = await graphql({
+        schema,
+        source: USERS_QUERY,
+        variableValues: {},
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.[0].extensions?.code).toBe("FORBIDDEN");
+    });
+
+    it("respects pagination parameters", async () => {
+      const result = await graphql({
+        schema,
+        source: USERS_QUERY,
+        variableValues: { limit: 2, offset: 0 },
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.users).toBeInstanceOf(Array);
+      expect(result.data?.users.length).toBeLessThanOrEqual(2);
+    });
+  });
+
+  // =============================================================================
+  // Query: me Tests
+  // =============================================================================
+
+  describe("Query: me", () => {
+    const ME_QUERY = `
+      query GetMe {
+        me {
+          id
+          authUserId
+          firstName
+          lastName
+          fullName
+          role
+          hasAvatar
+          isAdmin
+          isModerator
+        }
+      }
+    `;
+
+    it("returns current authenticated user data", async () => {
+      const result = await graphql({
+        schema,
+        source: ME_QUERY,
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data).toBeDefined();
+      expect(result.data?.me).toBeDefined();
+      expect(result.data?.me.id).toBe(TEST_USERS.regular.id);
+      expect(result.data?.me.authUserId).toBe(TEST_USERS.regular.authUserId);
+      expect(result.data?.me.firstName).toBe("Regular");
+      expect(result.data?.me.role).toBe("USER");
+    });
+
+    it("returns admin user when authenticated as admin", async () => {
+      const result = await graphql({
+        schema,
+        source: ME_QUERY,
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.me).toBeDefined();
+      expect(result.data?.me.id).toBe(TEST_USERS.admin.id);
+      expect(result.data?.me.role).toBe("ADMIN");
+      expect(result.data?.me.isAdmin).toBe(true);
+    });
+
+    it("returns authentication error when no token provided", async () => {
+      const result = await graphql({
+        schema,
+        source: ME_QUERY,
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql"),
+        },
+      });
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.[0].extensions?.code).toBe("UNAUTHENTICATED");
+    });
+
+    it("returns authentication error with malformed token", async () => {
+      const result = await graphql({
+        schema,
+        source: ME_QUERY,
+        contextValue: {
+          container: context.container,
+          request: new Request("http://localhost/graphql", {
+            headers: {
+              Authorization: "MalformedToken",
+            },
+          }),
+        },
+      });
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors?.[0].extensions?.code).toBe("UNAUTHENTICATED");
+    });
+  });
+
+  // =============================================================================
+  // Schema Generation Test
+  // =============================================================================
+
+  describe("Schema Generation", () => {
+    it("generates valid GraphQL schema", () => {
+      const sdl = printSchema(schema);
+
+      expect(sdl).toContain("type User");
+      expect(sdl).toContain("type Query");
+      expect(sdl).toContain("user(id: ID!): User");
+      expect(sdl).toContain("users(limit: Int, offset: Int): [User!]!");
+      expect(sdl).toContain("me: User");
+      expect(sdl).toContain("enum UserRole");
+    });
+
+    it("includes User fields in schema", () => {
+      const sdl = printSchema(schema);
+
+      expect(sdl).toContain("id: ID!");
+      expect(sdl).toContain("firstName: String!");
+      expect(sdl).toContain("lastName: String!");
+      expect(sdl).toContain("fullName: String!");
+      expect(sdl).toContain("role: UserRole!");
+      expect(sdl).toContain("hasAvatar: Boolean!");
+      expect(sdl).toContain("isAdmin: Boolean!");
+      expect(sdl).toContain("isModerator: Boolean!");
+    });
+  });
+});
