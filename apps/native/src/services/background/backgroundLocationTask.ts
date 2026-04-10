@@ -2,13 +2,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LocationObject } from "expo-location";
 import * as TaskManager from "expo-task-manager";
 import { createSupabaseClient } from "@mirai-app/frameworks/supabase";
-import { getTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { getTRPCClient } from "@mirai-app/frameworks/graphql";
 import { authStorage } from "~/services/storage/storage";
 import {
   SUPABASE_ANON_KEY,
   SUPABASE_URL,
-  TRPC_HTTP_URL,
-  TRPC_WS_URL,
+  GRAPHQL_HTTP_URL,
+  GRAPHQL_WS_URL,
 } from "~/config/runtimeEnv";
 import {
   BACKGROUND_LOCATION_SETTINGS_KEY,
@@ -94,8 +94,8 @@ async function sendLocationUpdate(location: LocationObject): Promise<void> {
   }
 
   const { client, cleanup } = getTRPCClient(
-    TRPC_HTTP_URL,
-    TRPC_WS_URL,
+    GRAPHQL_HTTP_URL,
+    GRAPHQL_WS_URL,
     accessToken,
   );
 
