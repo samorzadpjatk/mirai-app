@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
-import type { TRPCError } from "@trpc/server";
 
 /**
  * Input validation schemas for coin controller

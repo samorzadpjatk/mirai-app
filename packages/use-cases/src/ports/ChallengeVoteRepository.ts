@@ -7,7 +7,7 @@ import type { ChallengeVote } from "@mirai-app/domain";
  * from any challenge vote repository implementation.
  *
  * Implementations (in adapters layer):
- * - PrismaChallengeVoteRepository: Uses Prisma ORM
+ * - DrizzleChallengeVoteRepository: Uses Drizzle ORM
  * - InMemoryChallengeVoteRepository: For testing
  */
 export interface ChallengeVoteRepository {

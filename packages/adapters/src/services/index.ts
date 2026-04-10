@@ -5,25 +5,7 @@
  */
 
 // =============================================================================
-// Prisma Services (Legacy - being replaced by Drizzle)
-// =============================================================================
-export { PrismaTripPointsCalculator } from "./PrismaTripPointsCalculator";
-export { PrismaGroupCoinsService } from "./PrismaGroupCoinsService";
-export {
-  PrismaTripAccessChecker,
-  type GroupLeaderCheckResult,
-} from "./PrismaTripAccessChecker";
-export {
-  PrismaRankingActivityService,
-  type RankSnapshot,
-} from "./PrismaRankingActivityService";
-export { PrismaCoinTransactionService } from "./PrismaCoinTransactionService";
-export { PrismaCoinService } from "./PrismaCoinService";
-export { PrismaRewardService } from "./PrismaRewardService";
-export { PrismaNotificationSenderService } from "./PrismaNotificationSenderService";
-
-// =============================================================================
-// Phase 1: Drizzle ORM Migration Services (New)
+// Drizzle ORM Services (Current)
 // =============================================================================
 export { DrizzleTripPointsCalculator } from "./DrizzleTripPointsCalculator";
 export { DrizzleGroupCoinsService } from "./DrizzleGroupCoinsService";
@@ -41,7 +23,7 @@ export { DrizzleRewardService } from "./DrizzleRewardService";
 export { DrizzleNotificationSenderService } from "./DrizzleNotificationSenderService";
 
 // =============================================================================
-// Phase 2: Real-Time Architecture Services
+// Real-Time Architecture Services
 // =============================================================================
 export {
   EventBus,

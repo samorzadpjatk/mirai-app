@@ -38,22 +38,17 @@ export { ActivityFeedController } from "./controllers/activityFeed-controller";
 export { ChallengeSubmissionController } from "./controllers/challengeSubmission-controller";
 export { LocationController } from "./controllers/location-controller";
 export { RewardController } from "./controllers/reward-controller";
-export { NotificationScheduleController } from "./controllers/notification-schedule-controller";
+export {
+  NotificationScheduleController,
+  type NotificationScheduleOutput,
+} from "./controllers/notification-schedule-controller";
 export { ChallengeVoteController } from "./controllers/challengeVote-controller";
 export { StorageController } from "./controllers/storage-controller";
 export { SubmissionReportController } from "./controllers/submissionReport-controller";
 export { SponsorController } from "./controllers/sponsor-controller";
 
 // Gateways (Repository implementations)
-export {
-  BasePrismaRepository,
-  type EntityMapper,
-  type PrismaModelDelegate,
-} from "./gateways/BasePrismaRepository";
-export { PrismaNotificationRepository } from "./gateways/prisma/PrismaNotificationRepository";
-export { PrismaActivityFeedRepository } from "./gateways/prisma/PrismaActivityFeedRepository";
-export { PrismaNotificationScheduleRepository } from "./gateways/prisma/PrismaNotificationScheduleRepository";
-export { PrismaChallengeVoteRepository } from "./gateways/prisma/PrismaChallengeVoteRepository";
+// NOTE: Prisma repositories have been fully migrated to Drizzle equivalents
 
 // =============================================================================
 // Phase 0: Supabase-Agnostic Architecture Adapters
@@ -74,22 +69,8 @@ export {
   InMemoryStorageAdapter,
 } from "./gateways/storage";
 
-// Services (Domain logic utilities)
-export { PrismaTripPointsCalculator } from "./services/PrismaTripPointsCalculator";
-export { PrismaGroupCoinsService } from "./services/PrismaGroupCoinsService";
-export { PrismaTripAccessChecker } from "./services/PrismaTripAccessChecker";
-export type { GroupLeaderCheckResult } from "./services/PrismaTripAccessChecker";
-export { PrismaCoinService } from "./services/PrismaCoinService";
-export { PrismaCoinTransactionService } from "./services/PrismaCoinTransactionService";
-export { PrismaNotificationSenderService } from "./services/PrismaNotificationSenderService";
-export { PrismaRewardService } from "./services/PrismaRewardService";
-export {
-  PrismaRankingActivityService,
-  type RankSnapshot,
-} from "./services/PrismaRankingActivityService";
-
 // =============================================================================
-// Phase 1: Drizzle ORM Migration Services (New)
+// Phase 1: Drizzle ORM Services
 // =============================================================================
 export { DrizzleTripPointsCalculator } from "./services/DrizzleTripPointsCalculator";
 export { DrizzleGroupCoinsService } from "./services/DrizzleGroupCoinsService";
@@ -134,27 +115,21 @@ export {
   type DeliveryResult,
 } from "./services/NotificationDeliveryService";
 
-// tRPC API (Server-side)
+// NotificationService for creating and sending notifications
 export {
-  createTRPCContext,
-  createCallerFactory,
-  createTRPCRouter,
-  publicProcedure,
-  type TRPCContext,
-  type DIContext,
-} from "./api/trpc";
-export { appRouter, createCaller, type AppRouter } from "./api/root";
+  NotificationService,
+  type RankingTemplateValues,
+} from "./services/notificationService";
 
-// Services (tRPC-specific services)
-export { NotificationService } from "./services/notificationService";
-
-// tRPC Utils
-export * from "./utils/trpc-utils/activityFeed";
-export * from "./utils/trpc-utils/notifications";
-export * from "./utils/trpc-utils/tripGuards";
-export * from "./utils/trpc-utils/recurringChallenges";
-export * from "./utils/trpc-utils/resilience";
-export * from "./utils/trpc-utils/notificationTemplates";
+// API Error Classes
+export {
+  ApiError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  BadRequestError,
+  createErrorFromMessage,
+} from "./api/errors";
 
 // Utilities
 export {
@@ -172,27 +147,8 @@ export {
 } from "./utils/repository-factory";
 export { TokenExtractor } from "./utils/TokenExtractor";
 
-// Mappers (Domain <-> DTO <-> Database) - Prisma (Legacy)
-export { UserMapper } from "./mappers/prisma/UserMapper";
-export { ChallengeMapper } from "./mappers/prisma/ChallengeMapper";
-export { NotificationMapper } from "./mappers/prisma/NotificationMapper";
-export { TripMapper } from "./mappers/prisma/TripMapper";
-export { GroupMapper } from "./mappers/prisma/GroupMapper";
-export { ActivityFeedMapper } from "./mappers/prisma/ActivityFeedMapper";
-export { ChallengeSubmissionMapper } from "./mappers/prisma/ChallengeSubmissionMapper";
-export { LocationMapper } from "./mappers/prisma/LocationMapper";
-export {
-  RewardMapper,
-  RewardPurchaseMapper,
-} from "./mappers/prisma/RewardMapper";
-export { NotificationScheduleMapper } from "./mappers/prisma/NotificationScheduleMapper";
-export { ChallengeVoteMapper } from "./mappers/prisma/ChallengeVoteMapper";
-export { SubmissionReportMapper } from "./mappers/prisma/SubmissionReportMapper";
-export { SponsorMapper } from "./mappers/prisma/SponsorMapper";
-export { UserAgentMapper } from "./mappers/prisma/UserAgentMapper";
-
 // =============================================================================
-// Phase 1: Drizzle ORM Migration Mappers
+// Mappers (Domain <-> DTO <-> Database) - Drizzle ORM
 // =============================================================================
 export { UserDrizzleMapper } from "./mappers/drizzle/UserDrizzleMapper";
 export { TripDrizzleMapper } from "./mappers/drizzle/TripDrizzleMapper";

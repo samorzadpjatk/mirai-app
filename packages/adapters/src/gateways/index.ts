@@ -18,16 +18,8 @@ export type {
 // =============================================================================
 // Prisma ORM Repositories (Legacy)
 // =============================================================================
-export { PrismaUserRepository } from "./prisma/PrismaUserRepository";
-export { PrismaGroupRepository } from "./prisma/PrismaGroupRepository";
-export { PrismaTripRepository } from "./prisma/PrismaTripRepository";
-export { PrismaChallengeSubmissionRepository } from "./prisma/PrismaChallengeSubmissionRepository";
-export { PrismaChallengeVoteRepository } from "./prisma/PrismaChallengeVoteRepository";
-export { PrismaNotificationRepository } from "./prisma/PrismaNotificationRepository";
-export { PrismaNotificationDeliveryRepository } from "./prisma/PrismaNotificationDeliveryRepository";
-export { PrismaNotificationScheduleRepository } from "./prisma/PrismaNotificationScheduleRepository";
-export { PrismaSubmissionReportRepository } from "./prisma/PrismaSubmissionReportRepository";
-export { PrismaTelemetryAdapter } from "./prisma/PrismaTelemetryAdapter";
+// NOTE: All Prisma repositories have been migrated to Drizzle and removed
+// Use the Drizzle equivalents in ./drizzle/
 
 // =============================================================================
 // Drizzle ORM Repositories (Phase 1 Migration)

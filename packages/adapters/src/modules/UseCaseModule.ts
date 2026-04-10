@@ -22,7 +22,7 @@
  * | `authPort` | AuthPort | SupabaseAuthAdapter (default) or InMemoryAuthAdapter |
  * | `realtimePort` | RealtimePort | SupabaseRealtimeAdapter (default) or InMemoryRealtimeAdapter |
  * | `storagePort` | StoragePort | SupabaseStorageAdapter (default) or InMemoryStorageAdapter |
- * | `telemetryPort` | TelemetryPort | PrismaTelemetryAdapter |
+ * | `telemetryPort` | TelemetryPort | DrizzleTelemetryAdapter |
  *
  * ## Environment-Based Provider Switching
  *
@@ -138,7 +138,7 @@ import { SupabaseRealtimeAdapter } from "../gateways/realtime/SupabaseRealtimeAd
 import { InMemoryRealtimeAdapter } from "../gateways/realtime/InMemoryRealtimeAdapter";
 import { SupabaseStorageAdapter } from "../gateways/storage/SupabaseStorageAdapter";
 import { InMemoryStorageAdapter } from "../gateways/storage/InMemoryStorageAdapter";
-import { PrismaTelemetryAdapter } from "../gateways/prisma/PrismaTelemetryAdapter";
+import { DrizzleTelemetryAdapter } from "../gateways/drizzle/DrizzleTelemetryAdapter";
 import { TokenExtractor } from "../utils/TokenExtractor";
 
 // =============================================================================
@@ -151,7 +151,7 @@ import type {
   StoragePort,
   TelemetryPort,
 } from "@mirai-app/use-cases";
-import type { PrismaClient } from "@mirai-app/frameworks/prisma";
+import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 
 // =============================================================================
@@ -347,10 +347,10 @@ function createStoragePort(cradle: Cradle): StoragePort {
 }
 
 /**
- * Create PrismaTelemetryAdapter instance
+ * Create DrizzleTelemetryAdapter instance
  */
-function createPrismaTelemetryAdapter(cradle: Cradle): TelemetryPort {
-  return new PrismaTelemetryAdapter(cradle.prisma as PrismaClient);
+function createDrizzleTelemetryAdapter(cradle: Cradle): TelemetryPort {
+  return new DrizzleTelemetryAdapter(cradle.db as DrizzleDb);
 }
 
 /**
@@ -444,7 +444,7 @@ export interface UseCaseModuleDef {
  *    - AuthPort: SupabaseAuthAdapter or InMemoryAuthAdapter
  *    - RealtimePort: SupabaseRealtimeAdapter or InMemoryRealtimeAdapter
  *    - StoragePort: SupabaseStorageAdapter or InMemoryStorageAdapter
- *    - TelemetryPort: PrismaTelemetryAdapter
+ *    - TelemetryPort: DrizzleTelemetryAdapter
  * 2. Factory registrations for auth/telemetry use cases
  * 3. TokenExtractor utility for HTTP header parsing
  *
@@ -466,7 +466,7 @@ export interface UseCaseModuleDef {
  * | authPort | SCOPED | Request-scoped based on provider |
  * | realtimePort | SCOPED | Request-scoped based on provider |
  * | storagePort | SCOPED | Request-scoped based on provider |
- * | telemetryPort | SCOPED | Request-scoped Prisma client |
+ * | telemetryPort | SCOPED | Request-scoped Drizzle client |
  * | tokenExtractor | SINGLETON | Stateless utility |
  * | authenticateUserUseCase | SCOPED | Uses request-scoped authPort |
  * | authorizeAdminUseCase | SINGLETON | Pure logic, no dependencies |
@@ -481,7 +481,7 @@ export interface UseCaseModuleDef {
  * │   ├── authPort ← [SupabaseAuthAdapter | InMemoryAuthAdapter]
  * │   ├── realtimePort ← [SupabaseRealtimeAdapter | InMemoryRealtimeAdapter]
  * │   ├── storagePort ← [SupabaseStorageAdapter | InMemoryStorageAdapter]
- * │   ├── telemetryPort ← PrismaTelemetryAdapter
+ * │   ├── telemetryPort ← DrizzleTelemetryAdapter
  * │   ├── tokenExtractor (utility)
  * │   ├── authenticateUserUseCase (depends on authPort)
  * │   ├── authorizeAdminUseCase (no deps)
@@ -551,11 +551,11 @@ export const UseCaseModule: StaticModule<UseCaseModuleDef> =
       },
 
       /**
-       * TelemetryPort - Prisma implementation
-       * SCOPED lifetime for request-scoped Prisma client
+       * TelemetryPort - Drizzle implementation
+       * SCOPED lifetime for request-scoped Drizzle client
        */
       [PORT_TOKENS.TelemetryPort]: {
-        factory: createPrismaTelemetryAdapter,
+        factory: createDrizzleTelemetryAdapter,
         lifetime: Lifetime.SCOPED,
       },
 

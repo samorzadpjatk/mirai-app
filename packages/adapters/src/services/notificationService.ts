@@ -1,15 +1,142 @@
-import { executeWithRetry } from "../utils/trpc-utils/resilience";
 import type { PrismaClient } from "@mirai-app/frameworks/prisma";
 import {
   Expo,
   type ExpoPushMessage,
   type ExpoPushTicket,
 } from "expo-server-sdk";
-import {
-  applyRankingTemplate,
-  containsRankingTemplate,
-  type RankingTemplateValues,
-} from "../utils/trpc-utils/notificationTemplates";
+
+// ============================================================================
+// Template Types and Utilities (moved from trpc-utils/notificationTemplates)
+// ============================================================================
+
+export interface RankingTemplateValues {
+  groupName: string;
+  rankingPosition: string;
+  activeChallengesCount: string;
+  tripName: string;
+  totalGroupsCount: string;
+  groupMembersCount: string;
+  currentDate: string;
+  currentTime: string;
+}
+
+const RANKING_TEMPLATE_PLACEHOLDERS = {
+  groupName: "<nazwa-grupy>",
+  rankingPosition: "<miejsce-w-rankingu>",
+  activeChallengesCount: "<liczba-aktywnych-wyzwan>",
+  tripName: "<nazwa-wycieczki>",
+  totalGroupsCount: "<liczba-grup>",
+  groupMembersCount: "<liczba-czlonkow-grupy>",
+  currentDate: "<data-dzisiaj>",
+  currentTime: "<godzina-teraz>",
+} as const;
+
+const PLACEHOLDER_ALIASES: Record<keyof RankingTemplateValues, string[]> = {
+  groupName: [RANKING_TEMPLATE_PLACEHOLDERS.groupName, "<nazwa_grupy>"],
+  rankingPosition: [
+    RANKING_TEMPLATE_PLACEHOLDERS.rankingPosition,
+    "<miejsce_w_rankingu>",
+  ],
+  activeChallengesCount: [
+    RANKING_TEMPLATE_PLACEHOLDERS.activeChallengesCount,
+    "<liczba-aktywnych-wyzwań>",
+    "<liczba_aktywnych_wyzwan>",
+    "<liczba_aktywnych_wyzwań>",
+  ],
+  tripName: [RANKING_TEMPLATE_PLACEHOLDERS.tripName, "<nazwa_wycieczki>"],
+  totalGroupsCount: [
+    RANKING_TEMPLATE_PLACEHOLDERS.totalGroupsCount,
+    "<liczba_grup>",
+  ],
+  groupMembersCount: [
+    RANKING_TEMPLATE_PLACEHOLDERS.groupMembersCount,
+    "<liczba-członków-grupy>",
+    "<liczba_czlonkow_grupy>",
+    "<liczba_członków_grupy>",
+  ],
+  currentDate: [RANKING_TEMPLATE_PLACEHOLDERS.currentDate, "<data_dzisiaj>"],
+  currentTime: [RANKING_TEMPLATE_PLACEHOLDERS.currentTime, "<godzina_teraz>"],
+};
+
+function replaceAll(
+  input: string,
+  searchValue: string,
+  replaceValue: string,
+): string {
+  return input.split(searchValue).join(replaceValue);
+}
+
+function applyRankingTemplate(
+  input: string,
+  values: RankingTemplateValues,
+): string {
+  let output = input;
+
+  (Object.keys(PLACEHOLDER_ALIASES) as (keyof RankingTemplateValues)[]).forEach(
+    (field) => {
+      const value = values[field];
+      PLACEHOLDER_ALIASES[field].forEach((placeholder) => {
+        output = replaceAll(output, placeholder, value);
+      });
+    },
+  );
+
+  return output;
+}
+
+function containsRankingTemplate(input: string): boolean {
+  return Object.values(PLACEHOLDER_ALIASES).some((aliases) =>
+    aliases.some((placeholder) => input.includes(placeholder)),
+  );
+}
+
+// ============================================================================
+// Resilience Utilities (moved from trpc-utils/resilience)
+// ============================================================================
+
+const defaultMaxRetriesCount = 5;
+const defaultDelayInMs = 1000;
+
+const getJitteredDelay = (delay: number) => delay * (0.5 + Math.random());
+
+async function executeWithRetry<T>(
+  toExecute: () => Promise<T>,
+  onError?: (err: unknown, retryAttempt: number) => void | Promise<void>,
+  isValidResult?: (result: T) => boolean,
+  maxRetriesCount?: number,
+  delayInMs?: number,
+): Promise<T> {
+  maxRetriesCount ??= defaultMaxRetriesCount;
+  delayInMs ??= defaultDelayInMs;
+
+  const handleDelay = async (retryAttempt: number) => {
+    const delay = getJitteredDelay(delayInMs * Math.pow(2, retryAttempt));
+    await new Promise((result) => setTimeout(result, delay));
+  };
+
+  for (let retryAttempt = 0; retryAttempt < maxRetriesCount; retryAttempt++) {
+    try {
+      const result = await toExecute();
+      if (isValidResult && !isValidResult(result)) {
+        await handleDelay(retryAttempt);
+        continue;
+      }
+
+      return result;
+    } catch (err: unknown) {
+      await onError?.(err, retryAttempt);
+      if (retryAttempt === maxRetriesCount - 1) {
+        throw err;
+      }
+
+      await handleDelay(retryAttempt);
+    }
+  }
+
+  throw new Error(
+    `None of the ${maxRetriesCount} retry attempts provided a valid result.`,
+  );
+}
 
 export interface NotificationData {
   title: string;

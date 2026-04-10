@@ -1,4 +1,10 @@
 import type { Result } from "@mirai-app/domain";
+import {
+  NotFoundError,
+  BadRequestError,
+  ForbiddenError,
+  UnauthorizedError,
+} from "../api/errors";
 
 /**
  * Error code types for controller responses
@@ -28,7 +34,23 @@ export function mapErrorToCode(error: string): ErrorCode {
 }
 
 /**
- * Handles controller results and converts to TRPC errors
+ * Maps error code to appropriate error class
+ */
+function mapCodeToError(code: ErrorCode, message: string): Error {
+  switch (code) {
+    case "NOT_FOUND":
+      return new NotFoundError(message);
+    case "FORBIDDEN":
+      return new ForbiddenError(message);
+    case "UNAUTHORIZED":
+      return new UnauthorizedError(message);
+    default:
+      return new BadRequestError(message);
+  }
+}
+
+/**
+ * Handles controller results and converts to appropriate error types
  *
  * @example
  * const result = await controller.someMethod(input);
@@ -38,10 +60,8 @@ export function handleResult<T>(
   result: { success: true; data: T } | { success: false; error: string },
 ): T {
   if (!result.success) {
-    throw new TRPCError({
-      code: mapErrorToCode(result.error),
-      message: result.error,
-    });
+    const code = mapErrorToCode(result.error);
+    throw mapCodeToError(code, result.error);
   }
   return result.data;
 }
