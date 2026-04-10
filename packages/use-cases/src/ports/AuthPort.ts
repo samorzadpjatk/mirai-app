@@ -104,7 +104,9 @@ export interface AuthPort {
    */
   validateToken(
     token: string,
-  ): Promise<Result<AuthContext, AuthError | InvalidTokenError>>;
+  ): Promise<
+    Result<AuthContext, AuthError | InvalidTokenError | SessionExpiredError>
+  >;
 
   /**
    * Refresh an existing session and return updated auth context
