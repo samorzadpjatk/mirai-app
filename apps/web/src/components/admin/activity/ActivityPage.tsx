@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
@@ -8,27 +10,42 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import {
-  useAdminActivity,
+  useGetActivitiesByTripQuery,
+  useSetActivityPinnedMutation,
+  useHideActivityMutation,
+  useUnhideActivityMutation,
+  useDeleteActivityMutation,
   type ActivityType,
-  type AdminActivity,
-} from "@mirai-app/frameworks/trpc/hooks";
+  type ActivityFieldsFragment,
+} from "@mirai-app/graphql-types";
 import { AdminActivityCard } from "./AdminActivityCard";
 import { useTrip } from "../../../contexts/TripContext";
 
 const activityTypeFilters: { label: string; value: "all" | ActivityType }[] = [
   { label: "All", value: "all" },
-  { label: "Submission", value: "submission" },
-  { label: "Challenge", value: "challenge_event" },
-  { label: "Rank", value: "rank_change" },
-  { label: "Custom", value: "custom" },
-  { label: "User Post", value: "user_post" },
+  { label: "Submission", value: "Submission" },
+  { label: "Challenge", value: "ChallengeEvent" },
+  { label: "Rank", value: "RankChange" },
+  { label: "Custom", value: "Custom" },
+  { label: "User Post", value: "UserPost" },
 ];
 
-const getActivityGroupName = (activity: AdminActivity) =>
-  activity.submissionActivity?.group?.name?.trim() ??
-  activity.rankChangeActivity?.group?.name?.trim() ??
-  activity.userPost?.author?.group?.name?.trim() ??
-  "";
+// GraphQL Activity type doesn't include nested group info, so we return empty
+// This maintains backward compatibility with AdminActivityCard interface
+const getActivityGroupName = (_activity: ActivityFieldsFragment) => "";
+
+// Create GraphQL client (matches pattern in other admin components)
+const createGraphQLClient = () => {
+  const graphqlUrl =
+    process.env.NEXT_PUBLIC_GRAPHQL_URL || `${window.location.origin}/graphql`;
+
+  return new GraphQLClient(graphqlUrl, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+};
 
 export function ActivityPage() {
   const { selectedTrip } = useTrip();
@@ -36,17 +53,78 @@ export function ActivityPage() {
   const [selectedType, setSelectedType] = useState<"all" | ActivityType>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const client = useMemo(() => createGraphQLClient(), []);
+  const queryClient = useQueryClient();
+
+  // Query for fetching activities
   const {
-    activities,
+    data: activitiesData,
     isLoading,
-    isRefetching,
+    isFetching: isRefetching,
     refetch,
-    setPinned,
-    hide,
-    unhide,
-    deleteActivity,
-    isBusy,
-  } = useAdminActivity(tripId);
+  } = useGetActivitiesByTripQuery(
+    client,
+    { tripId, limit: 100 },
+    {
+      enabled: !!tripId,
+    },
+  );
+
+  const activities = activitiesData?.activitiesByTrip.activities ?? [];
+
+  // Mutations
+  const setPinnedMutation = useSetActivityPinnedMutation(client, {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["GetActivitiesByTrip", { tripId, limit: 100 }],
+      });
+    },
+    onError: (error) => {
+      appToast.error(
+        error instanceof Error ? error.message : "Pin update failed.",
+      );
+    },
+  });
+
+  const hideMutation = useHideActivityMutation(client, {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["GetActivitiesByTrip", { tripId, limit: 100 }],
+      });
+    },
+    onError: (error) => {
+      appToast.error(error instanceof Error ? error.message : "Hide failed.");
+    },
+  });
+
+  const unhideMutation = useUnhideActivityMutation(client, {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["GetActivitiesByTrip", { tripId, limit: 100 }],
+      });
+    },
+    onError: (error) => {
+      appToast.error(error instanceof Error ? error.message : "Unhide failed.");
+    },
+  });
+
+  const deleteMutation = useDeleteActivityMutation(client, {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["GetActivitiesByTrip", { tripId, limit: 100 }],
+      });
+      appToast.success("Activity deleted.");
+    },
+    onError: (error) => {
+      appToast.error(error instanceof Error ? error.message : "Delete failed.");
+    },
+  });
+
+  const isBusy =
+    setPinnedMutation.isPending ||
+    hideMutation.isPending ||
+    unhideMutation.isPending ||
+    deleteMutation.isPending;
 
   const filteredActivities = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -58,51 +136,33 @@ export function ActivityPage() {
 
       if (!query) return true;
 
-      const groupName = getActivityGroupName(activity).toLowerCase();
       const title = activity.title.toLowerCase();
-      return title.includes(query) || groupName.includes(query);
+      return title.includes(query);
     });
   }, [activities, searchTerm, selectedType]);
 
-  const handlePin = async (activity: AdminActivity) => {
-    try {
-      await setPinned({
-        activityId: activity.id,
-        isPinned: !activity.isPinned,
-      });
-    } catch (error) {
-      appToast.error(
-        error instanceof Error ? error.message : "Pin update failed.",
-      );
+  const handlePin = async (activity: ActivityFieldsFragment) => {
+    await setPinnedMutation.mutateAsync({
+      id: activity.id,
+      isPinned: !activity.isPinned,
+    });
+  };
+
+  const handleHide = async (activity: ActivityFieldsFragment) => {
+    if (activity.isHidden) {
+      await unhideMutation.mutateAsync({ id: activity.id });
+    } else {
+      await hideMutation.mutateAsync({ id: activity.id });
     }
   };
 
-  const handleHide = async (activity: AdminActivity) => {
-    try {
-      if (activity.isHidden) {
-        await unhide({ activityId: activity.id });
-      } else {
-        await hide({ activityId: activity.id });
-      }
-    } catch (error) {
-      appToast.error(
-        error instanceof Error ? error.message : "Visibility update failed.",
-      );
-    }
-  };
-
-  const handleDelete = async (activity: AdminActivity) => {
+  const handleDelete = async (activity: ActivityFieldsFragment) => {
     const confirmed = window.confirm("Delete this activity?");
     if (!confirmed) {
       return;
     }
 
-    try {
-      await deleteActivity({ activityId: activity.id });
-      appToast.success("Activity deleted.");
-    } catch (error) {
-      appToast.error(error instanceof Error ? error.message : "Delete failed.");
-    }
+    await deleteMutation.mutateAsync({ id: activity.id });
   };
 
   if (!tripId) {
@@ -135,7 +195,7 @@ export function ActivityPage() {
           label="Search"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Title or group"
+          placeholder="Title"
         />
         <Select
           label="Type"
