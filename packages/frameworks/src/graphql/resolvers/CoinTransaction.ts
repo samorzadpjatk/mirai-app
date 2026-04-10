@@ -1,7 +1,7 @@
 import { builder } from "../builder.js";
 import { CoinTransaction } from "../../../domain/src/entities/CoinTransaction.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 /**
  * CoinTransaction Resolvers
@@ -24,7 +24,7 @@ const CoinTransactionType = builder.objectType("CoinTransaction", {
     group: t.field({
       type: "Group",
       nullable: true,
-      resolve: async (ct, _, ctx: DIContext) => {
+      resolve: async (ct, _, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("groupController");
         const result = await controller.getById(
           { id: ct.groupId },
@@ -37,7 +37,7 @@ const CoinTransactionType = builder.objectType("CoinTransaction", {
     admin: t.field({
       type: "User",
       nullable: true,
-      resolve: async (ct, _, ctx: DIContext) => {
+      resolve: async (ct, _, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("userController");
         const result = await controller.getById(
           { id: ct.adminId },
@@ -60,7 +60,7 @@ builder.queryFields((t) => ({
       limit: t.arg.int({ defaultValue: 20 }),
       offset: t.arg.int({ defaultValue: 0 }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("coinTransactionController");
       const result = await controller.getTransactions(
         {
@@ -72,10 +72,7 @@ builder.queryFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -93,17 +90,14 @@ builder.queryFields((t) => ({
     args: {
       tripId: t.arg.string({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("coinTransactionController");
       const result = await controller.getStats(
         { tripId: args.tripId },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -123,7 +117,7 @@ builder.queryFields((t) => ({
       tripId: t.arg.string({ required: true }),
       limit: t.arg.int({ defaultValue: 5 }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("coinTransactionController");
       const result = await controller.getMostActiveAdmins(
         {
@@ -133,10 +127,7 @@ builder.queryFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -152,7 +143,7 @@ builder.mutationFields((t) => ({
       amount: t.arg.int({ required: true }),
       reason: t.arg.string(),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("coinController");
       const result = await controller.addCoins(
         {
@@ -163,10 +154,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -179,7 +167,7 @@ builder.mutationFields((t) => ({
       amount: t.arg.int({ required: true }),
       reason: t.arg.string(),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("coinController");
       const result = await controller.removeCoins(
         {
@@ -190,10 +178,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },

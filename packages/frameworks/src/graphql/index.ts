@@ -41,6 +41,19 @@ export { schema, type Schema, generateSDL, writeSDLToFile } from "./schema";
 // Server
 export { createHonoApp, startHonoServer } from "./server";
 
+// Client (for web app)
+export {
+  GraphQLProvider,
+  useGraphQL,
+  useGraphQLQuery,
+  useGraphQLMutation,
+  APIProvider,
+  useTRPCClient,
+  getTRPCClient,
+  type GraphQLClient,
+  type GraphQLClientConfig,
+} from "./client";
+
 // Example query:
 // ```graphql
 // query GetUser($id: ID!) {

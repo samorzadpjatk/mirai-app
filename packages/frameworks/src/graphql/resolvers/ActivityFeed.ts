@@ -1,8 +1,8 @@
 import { builder } from "../builder.js";
 import { ActivityFeed } from "../../../domain/src/entities/ActivityFeed.js";
 import { Notification } from "../../../domain/src/entities/Notification.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 const ActivityFeedItemType = builder.objectType("ActivityFeedItem", {
   fields: (t) => ({
@@ -21,17 +21,14 @@ const ActivityFeedItemType = builder.objectType("ActivityFeedItem", {
     }),
     user: t.field({
       type: "User",
-      resolve: async (item, _args, ctx: DIContext) => {
+      resolve: async (item, _args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("userController");
         const result = await controller.getById(
           { id: (item as any).userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "NOT_FOUND" } });
         }
         return result.value;
       },
@@ -47,34 +44,28 @@ builder.node(ActivityFeed, {
     userId: t.exposeString("userId"),
     items: t.field({
       type: [ActivityFeedItemType],
-      resolve: async (a, _args, ctx: DIContext) => {
+      resolve: async (a, _args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("activityFeedController");
         const result = await controller.getItems(
           { feedId: a.id },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
     }),
     user: t.field({
       type: "User",
-      resolve: async (a, _args, ctx: DIContext) => {
+      resolve: async (a, _args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("userController");
         const result = await controller.getById(
           { id: a.userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "NOT_FOUND" } });
         }
         return result.value;
       },
@@ -89,17 +80,14 @@ builder.queryType({
       args: {
         userId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("activityFeedController");
         const result = await controller.getByUserId(
           { userId: args.userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "NOT_FOUND" } });
         }
         return result.value;
       },
@@ -111,27 +99,21 @@ builder.queryType({
         limit: t.arg.int({ defaultValue: 20 }),
         offset: t.arg.int({ defaultValue: 0 }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("activityFeedController");
         const feedResult = await controller.getByUserId(
           { userId: args.userId },
           ctx.container,
         );
         if (feedResult.kind === "err") {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: feedResult.error.message,
-          });
+          throw new GraphQLError(feedResult.error.message, { extensions: { code: "NOT_FOUND" } });
         }
         const itemsResult = await controller.getItems(
           { feedId: feedResult.value.id },
           ctx.container,
         );
         if (itemsResult.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: itemsResult.error.message,
-          });
+          throw new GraphQLError(itemsResult.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return itemsResult.value.slice(args.offset, args.offset + args.limit);
       },
@@ -149,7 +131,7 @@ builder.mutationType({
         content: t.arg.string({ required: true }),
         metadata: t.arg({ type: "JSON" }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("activityFeedController");
         const result = await controller.addItem(
           {
@@ -161,10 +143,7 @@ builder.mutationType({
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
         }
         return result.value;
       },
@@ -174,17 +153,14 @@ builder.mutationType({
       args: {
         userId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("activityFeedController");
         const result = await controller.clearFeed(
           { userId: args.userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },

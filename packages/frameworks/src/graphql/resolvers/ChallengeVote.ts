@@ -1,7 +1,7 @@
 import { builder } from "../builder.js";
 import { ChallengeVote } from "../../../domain/src/entities/ChallengeVote.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 /**
  * ChallengeVote Resolvers
@@ -47,17 +47,14 @@ builder.queryFields((t) => ({
     args: {
       challengeId: t.arg.string({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("challengeVoteController");
       const result = await controller.getByChallengeId(
         { challengeId: args.challengeId },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -68,17 +65,14 @@ builder.queryFields((t) => ({
     args: {
       challengeId: t.arg.string({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("challengeVoteController");
       const result = await controller.getMyVotes(
         { challengeId: args.challengeId },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -89,17 +83,14 @@ builder.queryFields((t) => ({
     args: {
       challengeId: t.arg.string({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("challengeVoteController");
       const result = await controller.hasVoted(
         { challengeId: args.challengeId },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -117,17 +108,14 @@ builder.queryFields((t) => ({
     args: {
       challengeId: t.arg.string({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("challengeVoteController");
       const result = await controller.getVotingProgress(
         { challengeId: args.challengeId },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -143,14 +131,11 @@ builder.mutationFields((t) => ({
       submissionId: t.arg.string({ required: true }),
       position: t.arg({ type: VotePositionEnum, required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("challengeVoteController");
       const result = await controller.submitVote(args, ctx.container);
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -170,7 +155,7 @@ builder.mutationFields((t) => ({
         { required: true, list: true },
       ),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("challengeVoteController");
       const result = await controller.submitVotes(
         {
@@ -183,10 +168,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -197,17 +179,14 @@ builder.mutationFields((t) => ({
     args: {
       challengeId: t.arg.string({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("challengeVoteController");
       const result = await controller.forceEndVoting(
         { challengeId: args.challengeId },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },

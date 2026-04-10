@@ -1,7 +1,7 @@
 import { builder } from "../builder.js";
 import { NotificationSchedule } from "../../../domain/src/entities/NotificationSchedule.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 /**
  * NotificationSchedule Resolvers
@@ -66,7 +66,7 @@ builder.node(NotificationSchedule, {
     trip: t.field({
       type: "Trip",
       nullable: true,
-      resolve: async (ns, _, ctx: DIContext) => {
+      resolve: async (ns, _, ctx: GraphQLContext) => {
         if (!ns.tripId) return null;
         const controller = ctx.container.resolve("tripController");
         const result = await controller.getById(
@@ -80,7 +80,7 @@ builder.node(NotificationSchedule, {
     createdBy: t.field({
       type: "User",
       nullable: true,
-      resolve: async (ns, _, ctx: DIContext) => {
+      resolve: async (ns, _, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("userController");
         const result = await controller.getById(
           { id: ns.createdById },
@@ -101,7 +101,7 @@ builder.queryFields((t) => ({
     args: {
       id: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationScheduleController",
       );
@@ -123,7 +123,7 @@ builder.queryFields((t) => ({
       limit: t.arg.int({ defaultValue: 20 }),
       offset: t.arg.int({ defaultValue: 0 }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationScheduleController",
       );
@@ -138,10 +138,7 @@ builder.queryFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -149,16 +146,13 @@ builder.queryFields((t) => ({
 
   activeSchedules: t.field({
     type: [NotificationSchedule],
-    resolve: async (_, __, ctx: DIContext) => {
+    resolve: async (_, __, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationScheduleController",
       );
       const result = await controller.findActive({}, ctx.container);
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -169,7 +163,7 @@ builder.queryFields((t) => ({
     args: {
       days: t.arg.int({ defaultValue: 7 }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationScheduleController",
       );
@@ -178,10 +172,7 @@ builder.queryFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -207,16 +198,13 @@ builder.mutationFields((t) => ({
       hour: t.arg.int({ required: true }),
       minute: t.arg.int({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationScheduleController",
       );
       const result = await controller.create(args, ctx.container);
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -236,7 +224,7 @@ builder.mutationFields((t) => ({
       minute: t.arg.int(),
       isActive: t.arg.boolean(),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationScheduleController",
       );
@@ -248,10 +236,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -262,7 +247,7 @@ builder.mutationFields((t) => ({
     args: {
       id: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationScheduleController",
       );
@@ -271,10 +256,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -285,7 +267,7 @@ builder.mutationFields((t) => ({
     args: {
       id: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationScheduleController",
       );
@@ -294,10 +276,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },

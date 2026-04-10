@@ -1,6 +1,6 @@
 import { builder } from "../builder.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 const EventTypeEnum = builder.enumType("EventType", {
   values: [
@@ -34,7 +34,7 @@ const Event = builder.objectType("Event", {
     user: t.field({
       type: "User",
       nullable: true,
-      resolve: async (e, _args, ctx: DIContext) => {
+      resolve: async (e, _args, ctx: GraphQLContext) => {
         const userId = (e as any).userId;
         if (!userId) return null;
         const controller = ctx.container.resolve("userController");
@@ -46,7 +46,7 @@ const Event = builder.objectType("Event", {
     group: t.field({
       type: "Group",
       nullable: true,
-      resolve: async (e, _args, ctx: DIContext) => {
+      resolve: async (e, _args, ctx: GraphQLContext) => {
         const groupId = (e as any).groupId;
         if (!groupId) return null;
         const controller = ctx.container.resolve("groupController");
@@ -58,7 +58,7 @@ const Event = builder.objectType("Event", {
     trip: t.field({
       type: "Trip",
       nullable: true,
-      resolve: async (e, _args, ctx: DIContext) => {
+      resolve: async (e, _args, ctx: GraphQLContext) => {
         const tripId = (e as any).tripId;
         if (!tripId) return null;
         const controller = ctx.container.resolve("tripController");
@@ -82,7 +82,7 @@ builder.queryType({
         limit: t.arg.int({ defaultValue: 20 }),
         offset: t.arg.int({ defaultValue: 0 }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("eventController");
         const result = await controller.getEvents(
           {
@@ -96,10 +96,7 @@ builder.queryType({
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -110,7 +107,7 @@ builder.queryType({
       args: {
         id: t.arg.id({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("eventController");
         const result = await controller.getById(
           { id: args.id.toString() },
@@ -125,17 +122,14 @@ builder.queryType({
       args: {
         limit: t.arg.int({ defaultValue: 10 }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("eventController");
         const result = await controller.getRecent(
           { limit: args.limit },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -154,7 +148,7 @@ builder.mutationType({
         groupId: t.arg.string(),
         tripId: t.arg.string(),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("eventController");
         const result = await controller.emit(
           {
@@ -167,10 +161,7 @@ builder.mutationType({
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
         }
         return result.value;
       },

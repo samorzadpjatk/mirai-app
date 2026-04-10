@@ -5,8 +5,8 @@ import {
   RewardRarity,
 } from "../../../domain/src/entities/Reward.js";
 import { RewardPurchase } from "../../../domain/src/entities/RewardPurchase.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 const RewardTypeEnum = builder.enumType("RewardType", {
   values: ["BADGE", "TITLE", "THEME", "AVATAR"] as const,
@@ -57,34 +57,28 @@ builder.node(RewardPurchase, {
     isEquipped: t.exposeBoolean("isEquipped"),
     user: t.field({
       type: "User",
-      resolve: async (rp, _args, ctx: DIContext) => {
+      resolve: async (rp, _args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("userController");
         const result = await controller.getById(
           { id: rp.userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "NOT_FOUND" } });
         }
         return result.value;
       },
     }),
     reward: t.field({
       type: Reward,
-      resolve: async (rp, _args, ctx: DIContext) => {
+      resolve: async (rp, _args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.getById(
           { id: rp.rewardId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "NOT_FOUND" } });
         }
         return result.value;
       },
@@ -101,7 +95,7 @@ builder.queryType({
         rarity: t.arg({ type: RewardRarityEnum }),
         activeOnly: t.arg.boolean({ defaultValue: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.getAll(
           {
@@ -112,10 +106,7 @@ builder.queryType({
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -126,7 +117,7 @@ builder.queryType({
       args: {
         id: t.arg.id({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.getById(
           { id: args.id.toString() },
@@ -141,17 +132,14 @@ builder.queryType({
       args: {
         userId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.getUserRewards(
           { userId: args.userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -161,17 +149,14 @@ builder.queryType({
       args: {
         userId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.getUserEquippedRewards(
           { userId: args.userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -187,7 +172,7 @@ builder.mutationType({
         userId: t.arg.string({ required: true }),
         rewardId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.purchase(
           {
@@ -197,10 +182,7 @@ builder.mutationType({
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
         }
         return result.value;
       },
@@ -210,17 +192,14 @@ builder.mutationType({
       args: {
         purchaseId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.equipReward(
           { purchaseId: args.purchaseId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
         }
         return result.value;
       },
@@ -230,17 +209,14 @@ builder.mutationType({
       args: {
         purchaseId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.unequipReward(
           { purchaseId: args.purchaseId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
         }
         return result.value;
       },
@@ -256,7 +232,7 @@ builder.mutationType({
         pointCost: t.arg.int({ required: true }),
         unlockRequirement: t.arg.string(),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("rewardController");
         const result = await controller.create(
           {
@@ -271,10 +247,7 @@ builder.mutationType({
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
         }
         return result.value;
       },

@@ -1,7 +1,7 @@
 import { builder } from "../builder.js";
 import { NotificationDelivery } from "../../../domain/src/entities/NotificationDelivery.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 /**
  * NotificationDelivery Resolvers
@@ -51,7 +51,7 @@ builder.node(NotificationDelivery, {
     notification: t.field({
       type: "Notification",
       nullable: true,
-      resolve: async (nd, _, ctx: DIContext) => {
+      resolve: async (nd, _, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("notificationController");
         const result = await controller.getById(
           { id: nd.notificationId },
@@ -64,7 +64,7 @@ builder.node(NotificationDelivery, {
     trip: t.field({
       type: "Trip",
       nullable: true,
-      resolve: async (nd, _, ctx: DIContext) => {
+      resolve: async (nd, _, ctx: GraphQLContext) => {
         if (!nd.tripId) return null;
         const controller = ctx.container.resolve("tripController");
         const result = await controller.getById(
@@ -86,7 +86,7 @@ builder.queryFields((t) => ({
     args: {
       id: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationDeliveryController",
       );
@@ -110,7 +110,7 @@ builder.queryFields((t) => ({
       limit: t.arg.int({ defaultValue: 20 }),
       offset: t.arg.int({ defaultValue: 0 }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationDeliveryController",
       );
@@ -127,10 +127,7 @@ builder.queryFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -154,7 +151,7 @@ builder.queryFields((t) => ({
       startDate: t.arg({ type: "DateTime" }),
       endDate: t.arg({ type: "DateTime" }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationDeliveryController",
       );
@@ -168,10 +165,7 @@ builder.queryFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -184,7 +178,7 @@ builder.queryFields((t) => ({
       limit: t.arg.int({ defaultValue: 20 }),
       offset: t.arg.int({ defaultValue: 0 }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve(
         "notificationDeliveryController",
       );
@@ -197,10 +191,7 @@ builder.queryFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },

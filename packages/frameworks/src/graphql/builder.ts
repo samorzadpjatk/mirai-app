@@ -1,6 +1,6 @@
 import SchemaBuilder from "@pothos/core";
 import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
-import type { DIContext } from "../trpc";
+import type { AwilixContainer } from "awilix";
 
 /**
  * GraphQL Context
@@ -11,7 +11,7 @@ import type { DIContext } from "../trpc";
  * - Request metadata
  */
 export interface GraphQLContext {
-  container: DIContext["container"];
+  container: AwilixContainer;
   authContext?: {
     userId: string;
     role: string;

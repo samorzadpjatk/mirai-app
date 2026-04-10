@@ -1,7 +1,7 @@
 import { builder } from "../builder.js";
 import { SubmissionReport } from "../../../domain/src/entities/SubmissionReport.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 /**
  * SubmissionReport Resolvers
@@ -46,7 +46,7 @@ builder.node(SubmissionReport, {
     reporter: t.field({
       type: "User",
       nullable: true,
-      resolve: async (sr, _, ctx: DIContext) => {
+      resolve: async (sr, _, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("userController");
         const result = await controller.getById(
           { id: sr.reporterId },
@@ -59,7 +59,7 @@ builder.node(SubmissionReport, {
     submission: t.field({
       type: "ChallengeSubmission",
       nullable: true,
-      resolve: async (sr, _, ctx: DIContext) => {
+      resolve: async (sr, _, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve(
           "challengeSubmissionController",
         );
@@ -82,7 +82,7 @@ builder.queryFields((t) => ({
     args: {
       id: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("submissionReportController");
       const result = await controller.getById(
         { id: args.id.toString() },
@@ -102,7 +102,7 @@ builder.queryFields((t) => ({
       limit: t.arg.int({ defaultValue: 20 }),
       offset: t.arg.int({ defaultValue: 0 }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("submissionReportController");
       const result = await controller.getReports(
         {
@@ -115,10 +115,7 @@ builder.queryFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -129,17 +126,14 @@ builder.queryFields((t) => ({
     args: {
       submissionId: t.arg.string({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("submissionReportController");
       const result = await controller.getBySubmissionId(
         { submissionId: args.submissionId },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -151,17 +145,14 @@ builder.queryFields((t) => ({
       limit: t.arg.int({ defaultValue: 20 }),
       offset: t.arg.int({ defaultValue: 0 }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("submissionReportController");
       const result = await controller.getByReporterId(
         { limit: args.limit, offset: args.offset },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -177,14 +168,11 @@ builder.mutationFields((t) => ({
       reason: t.arg({ type: ReportReasonEnum, required: true }),
       details: t.arg.string(),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("submissionReportController");
       const result = await controller.create(args, ctx.container);
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -195,17 +183,14 @@ builder.mutationFields((t) => ({
     args: {
       id: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("submissionReportController");
       const result = await controller.delete(
         { id: args.id.toString() },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },

@@ -3,8 +3,8 @@ import {
   Notification,
   NotificationType,
 } from "../../../domain/src/entities/Notification.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 const NotificationTypeEnum = builder.enumType("NotificationType", {
   values: [
@@ -36,7 +36,7 @@ builder.node(Notification, {
     sender: t.field({
       type: "User",
       nullable: true,
-      resolve: async (n, _args, ctx: DIContext) => {
+      resolve: async (n, _args, ctx: GraphQLContext) => {
         if (!n.senderId) return null;
         const controller = ctx.container.resolve("userController");
         const result = await controller.getById(
@@ -59,7 +59,7 @@ builder.queryType({
         unreadOnly: t.arg.boolean({ defaultValue: false }),
         limit: t.arg.int({ defaultValue: 20 }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("notificationController");
         const result = await controller.getByUserId(
           {
@@ -70,10 +70,7 @@ builder.queryType({
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -84,7 +81,7 @@ builder.queryType({
       args: {
         id: t.arg.id({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("notificationController");
         const result = await controller.getById(
           { id: args.id.toString() },
@@ -99,17 +96,14 @@ builder.queryType({
       args: {
         userId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("notificationController");
         const result = await controller.getUnreadCount(
           { userId: args.userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -124,17 +118,14 @@ builder.mutationType({
       args: {
         id: t.arg.id({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("notificationController");
         const result = await controller.markAsRead(
           { id: args.id.toString() },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -144,17 +135,14 @@ builder.mutationType({
       args: {
         userId: t.arg.string({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("notificationController");
         const result = await controller.markAllAsRead(
           { userId: args.userId },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },
@@ -168,7 +156,7 @@ builder.mutationType({
         senderId: t.arg.string(),
         referenceId: t.arg.string(),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("notificationController");
         const result = await controller.create(
           {
@@ -181,10 +169,7 @@ builder.mutationType({
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
         }
         return result.value;
       },
@@ -194,17 +179,14 @@ builder.mutationType({
       args: {
         id: t.arg.id({ required: true }),
       },
-      resolve: async (_root, args, ctx: DIContext) => {
+      resolve: async (_root, args, ctx: GraphQLContext) => {
         const controller = ctx.container.resolve("notificationController");
         const result = await controller.delete(
           { id: args.id.toString() },
           ctx.container,
         );
         if (result.kind === "err") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: result.error.message,
-          });
+          throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
         }
         return result.value;
       },

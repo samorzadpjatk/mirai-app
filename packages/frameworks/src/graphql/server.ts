@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { createYoga } from "graphql-yoga";
 import type { Schema } from "./schema";
 import type { GraphQLContext } from "./builder";
-import type { DIContext } from "../trpc";
+import type { AwilixContainer } from "awilix";
 import type { AuthPort } from "@mirai-app/use-cases";
 
 /**
@@ -24,14 +24,14 @@ import type { AuthPort } from "@mirai-app/use-cases";
  * @example
  * ```typescript
  * // Start the server
- * const app = createHonoApp(schema, { getDIContext });
+ * const app = createHonoApp(schema, { getContainer });
  * app.fire(4000);
  * ```
  */
 export function createHonoApp(
   schema: Schema,
   options: {
-    getDIContext: () => DIContext;
+    getContainer: () => AwilixContainer;
     authPort?: AuthPort;
   },
 ) {
@@ -42,7 +42,7 @@ export function createHonoApp(
     schema,
     // Custom context factory
     context: async ({ request }): Promise<GraphQLContext> => {
-      const diContext = options.getDIContext();
+      const container = options.getContainer();
 
       // Extract and validate auth token
       let authContext: GraphQLContext["authContext"] = undefined;
@@ -63,7 +63,7 @@ export function createHonoApp(
       }
 
       return {
-        container: diContext.container,
+        container,
         authContext,
         requestId: crypto.randomUUID(),
       };
@@ -142,12 +142,12 @@ export async function startHonoServer(
   schema: Schema,
   options: {
     port: number;
-    getDIContext: () => DIContext;
+    getContainer: () => AwilixContainer;
     authPort?: AuthPort;
   },
 ) {
   const app = createHonoApp(schema, {
-    getDIContext: options.getDIContext,
+    getContainer: options.getContainer,
     authPort: options.authPort,
   });
 

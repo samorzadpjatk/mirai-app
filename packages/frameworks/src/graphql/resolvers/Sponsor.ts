@@ -1,7 +1,7 @@
 import { builder } from "../builder.js";
 import { Sponsor } from "../../../domain/src/entities/Sponsor.js";
-import type { DIContext } from "../../di/src/index.js";
-import { TRPCError } from "@trpc/server";
+import type { GraphQLContext } from "../builder.js";
+import { GraphQLError } from "graphql";
 
 /**
  * Sponsor Resolvers
@@ -41,7 +41,7 @@ builder.queryFields((t) => ({
     args: {
       id: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("sponsorController");
       const result = await controller.getById(
         { id: args.id.toString() },
@@ -57,17 +57,14 @@ builder.queryFields((t) => ({
     args: {
       activeOnly: t.arg.boolean({ defaultValue: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("sponsorController");
       const result = await controller.list(
         { activeOnly: args.activeOnly },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -78,17 +75,14 @@ builder.queryFields((t) => ({
     args: {
       tripId: t.arg.string({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("sponsorController");
       const result = await controller.getByTripId(
         { tripId: args.tripId },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
@@ -107,14 +101,11 @@ builder.mutationFields((t) => ({
       offsetX: t.arg.int(),
       offsetY: t.arg.int(),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("sponsorController");
       const result = await controller.create(args, ctx.container);
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -132,7 +123,7 @@ builder.mutationFields((t) => ({
       offsetY: t.arg.int(),
       isActive: t.arg.boolean(),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("sponsorController");
       const result = await controller.update(
         {
@@ -142,10 +133,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -157,7 +145,7 @@ builder.mutationFields((t) => ({
       sponsorId: t.arg.id({ required: true }),
       tripId: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("sponsorController");
       const result = await controller.linkToTrip(
         {
@@ -167,10 +155,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -182,7 +167,7 @@ builder.mutationFields((t) => ({
       sponsorId: t.arg.id({ required: true }),
       tripId: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("sponsorController");
       const result = await controller.unlinkFromTrip(
         {
@@ -192,10 +177,7 @@ builder.mutationFields((t) => ({
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "BAD_REQUEST" } });
       }
       return result.value;
     },
@@ -206,17 +188,14 @@ builder.mutationFields((t) => ({
     args: {
       id: t.arg.id({ required: true }),
     },
-    resolve: async (_, args, ctx: DIContext) => {
+    resolve: async (_, args, ctx: GraphQLContext) => {
       const controller = ctx.container.resolve("sponsorController");
       const result = await controller.delete(
         { id: args.id.toString() },
         ctx.container,
       );
       if (result.kind === "err") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: result.error.message,
-        });
+        throw new GraphQLError(result.error.message, { extensions: { code: "INTERNAL_SERVER_ERROR" } });
       }
       return result.value;
     },
