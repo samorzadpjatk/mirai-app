@@ -1,94 +1,119 @@
-import { GraphQLClient } from 'graphql-request';
-import { RequestInit } from 'graphql-request/dist/types.dom';
-import { useQuery, useMutation, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import { GraphQLClient } from "graphql-request";
+import {
+  useQuery,
+  useMutation,
+  type UseQueryOptions,
+  type UseMutationOptions,
+} from "@tanstack/react-query";
+
+type RequestInit = globalThis.RequestInit;
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+export type Exact<T extends { [key: string]: unknown }> = {
+  [K in keyof T]: T[K];
+};
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & {
+  [SubKey in K]?: Maybe<T[SubKey]>;
+};
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & {
+  [SubKey in K]: Maybe<T[SubKey]>;
+};
+export type MakeEmpty<
+  T extends { [key: string]: unknown },
+  K extends keyof T,
+> = { [_ in K]?: never };
+export type Incremental<T> =
+  | T
+  | {
+      [P in keyof T]?: P extends " $fragmentName" | "__typename" ? T[P] : never;
+    };
 
-function fetcher<TData, TVariables extends { [key: string]: any }>(client: GraphQLClient, query: string, variables?: TVariables, requestHeaders?: RequestInit['headers']) {
-  return async (): Promise<TData> => client.request({
-    document: query,
-    variables,
-    requestHeaders
-  });
+function fetcher<TData, TVariables extends { [key: string]: any }>(
+  client: GraphQLClient,
+  query: string,
+  variables?: TVariables,
+  requestHeaders?: RequestInit["headers"],
+) {
+  return async (): Promise<TData> =>
+    client.request({
+      document: query,
+      variables,
+      requestHeaders,
+    });
 }
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string; }
-  String: { input: string; output: string; }
-  Boolean: { input: boolean; output: boolean; }
-  Int: { input: number; output: number; }
-  Float: { input: number; output: number; }
+  ID: { input: string; output: string };
+  String: { input: string; output: string };
+  Boolean: { input: boolean; output: boolean };
+  Int: { input: number; output: number };
+  Float: { input: number; output: number };
   /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
-  DateTime: { input: any; output: any; }
+  DateTime: { input: any; output: any };
 };
 
 /** An activity in the feed */
 export type Activity = {
-  __typename?: 'Activity';
+  __typename?: "Activity";
   /** Type of activity */
   activityType: ActivityType;
   /** Admin who created this activity (null if user post) */
   admin?: Maybe<ActivityAdmin>;
   /** When activity was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Activity description */
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   /** Unique activity ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Activity image URL */
-  imageUrl?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars["String"]["output"]>;
   /** Whether activity is hidden */
-  isHidden: Scalars['Boolean']['output'];
+  isHidden: Scalars["Boolean"]["output"];
   /** Whether activity is pinned */
-  isPinned: Scalars['Boolean']['output'];
+  isPinned: Scalars["Boolean"]["output"];
   /** Activity title */
-  title: Scalars['String']['output'];
+  title: Scalars["String"]["output"];
   /** Trip ID this activity belongs to */
-  tripId: Scalars['ID']['output'];
+  tripId: Scalars["ID"]["output"];
   /** When activity was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** Admin user who created the activity */
 export type ActivityAdmin = {
-  __typename?: 'ActivityAdmin';
+  __typename?: "ActivityAdmin";
   /** Admin first name */
-  firstName: Scalars['String']['output'];
+  firstName: Scalars["String"]["output"];
   /** Admin user ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Admin last name */
-  lastName: Scalars['String']['output'];
+  lastName: Scalars["String"]["output"];
 };
 
 /** Cursor for paginating through activities */
 export type ActivityCursor = {
-  __typename?: 'ActivityCursor';
+  __typename?: "ActivityCursor";
   /** Created timestamp */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Activity ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether cursor activity is pinned */
-  isPinned: Scalars['Boolean']['output'];
+  isPinned: Scalars["Boolean"]["output"];
 };
 
 /** Cursor for paginating through activity feed */
 export type ActivityCursorInput = {
   /** Created timestamp for the cursor */
-  createdAt: Scalars['DateTime']['input'];
+  createdAt: Scalars["DateTime"]["input"];
   /** Activity ID for the cursor */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
   /** Whether the cursor activity is pinned */
-  isPinned: Scalars['Boolean']['input'];
+  isPinned: Scalars["Boolean"]["input"];
 };
 
 /** Result of fetching activity feed for moderation */
 export type ActivityFeedModerationResult = {
-  __typename?: 'ActivityFeedModerationResult';
+  __typename?: "ActivityFeedModerationResult";
   /** List of activities (including hidden) */
   activities: Array<Activity>;
   /** Pagination information */
@@ -97,7 +122,7 @@ export type ActivityFeedModerationResult = {
 
 /** Result of fetching activity feed */
 export type ActivityFeedResult = {
-  __typename?: 'ActivityFeedResult';
+  __typename?: "ActivityFeedResult";
   /** List of activities */
   activities: Array<Activity>;
   /** Cursor for next page (null if no more items) */
@@ -108,45 +133,45 @@ export type ActivityFeedResult = {
 
 /** Types of activities in the feed */
 export enum ActivityType {
-  ChallengeEvent = 'CHALLENGE_EVENT',
-  Custom = 'CUSTOM',
-  RankChange = 'RANK_CHANGE',
-  Submission = 'SUBMISSION',
-  UserPost = 'USER_POST'
+  ChallengeEvent = "CHALLENGE_EVENT",
+  Custom = "CUSTOM",
+  RankChange = "RANK_CHANGE",
+  Submission = "SUBMISSION",
+  UserPost = "USER_POST",
 }
 
 /** Input for adding coins to a group */
 export type AddCoinsInput = {
   /** Amount of coins to add (must be at least 1) */
-  amount: Scalars['Int']['input'];
+  amount: Scalars["Int"]["input"];
   /** ID of the group to add coins to */
-  groupId: Scalars['ID']['input'];
+  groupId: Scalars["ID"]["input"];
   /** Reason for adding coins (optional) */
-  reason?: InputMaybe<Scalars['String']['input']>;
+  reason?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of the trip the group belongs to */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for adding a user to location sharing */
 export type AddSharingUserInput = {
   /** ID of the user to add */
-  userId: Scalars['ID']['input'];
+  userId: Scalars["ID"]["input"];
 };
 
 /** Voting progress for a single admin */
 export type AdminVotingInfo = {
-  __typename?: 'AdminVotingInfo';
+  __typename?: "AdminVotingInfo";
   /** Whether this admin has voted all required positions */
-  hasVotedAll: Scalars['Boolean']['output'];
+  hasVotedAll: Scalars["Boolean"]["output"];
   /** ID of the admin participant */
-  participantId: Scalars['ID']['output'];
+  participantId: Scalars["ID"]["output"];
   /** Positions this admin has voted for (1-3) */
-  votedPositions: Array<Scalars['Int']['output']>;
+  votedPositions: Array<Scalars["Int"]["output"]>;
 };
 
 /** Result of fetching all notifications (admin only) */
 export type AllNotificationsResult = {
-  __typename?: 'AllNotificationsResult';
+  __typename?: "AllNotificationsResult";
   /** List of notifications */
   notifications: Array<Notification>;
   /** Pagination information */
@@ -155,258 +180,258 @@ export type AllNotificationsResult = {
 
 /** Result of bulk deleting notification schedules */
 export type BulkDeleteNotificationSchedulesPayload = {
-  __typename?: 'BulkDeleteNotificationSchedulesPayload';
+  __typename?: "BulkDeleteNotificationSchedulesPayload";
   /** Number of schedules deleted */
-  deletedCount: Scalars['Int']['output'];
+  deletedCount: Scalars["Int"]["output"];
   /** IDs that were not found */
-  notFoundIds?: Maybe<Array<Scalars['String']['output']>>;
+  notFoundIds?: Maybe<Array<Scalars["String"]["output"]>>;
   /** Number of schedules requested for deletion */
-  requestedCount: Scalars['Int']['output'];
+  requestedCount: Scalars["Int"]["output"];
   /** Whether the operation was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Result of bulk toggling schedule active status */
 export type BulkToggleActivePayload = {
-  __typename?: 'BulkToggleActivePayload';
+  __typename?: "BulkToggleActivePayload";
   /** Whether the operation was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
   /** Number of schedules updated */
-  updatedCount: Scalars['Int']['output'];
+  updatedCount: Scalars["Int"]["output"];
 };
 
 /** Types of challenge events */
 export enum ChallengeEventType {
-  ChallengeStarted = 'CHALLENGE_STARTED',
-  Completed = 'COMPLETED',
-  VotingStarted = 'VOTING_STARTED'
+  ChallengeStarted = "CHALLENGE_STARTED",
+  Completed = "COMPLETED",
+  VotingStarted = "VOTING_STARTED",
 }
 
 /** A challenge submission made by a group */
 export type ChallengeSubmission = {
-  __typename?: 'ChallengeSubmission';
+  __typename?: "ChallengeSubmission";
   /** Points awarded for this submission */
-  awardedPoints: Scalars['Int']['output'];
+  awardedPoints: Scalars["Int"]["output"];
   /** Bonus points awarded */
-  bonusPoints: Scalars['Int']['output'];
+  bonusPoints: Scalars["Int"]["output"];
   /** ID of the challenge this submission is for */
-  challengeId: Scalars['ID']['output'];
+  challengeId: Scalars["ID"]["output"];
   /** When the submission was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Group that made this submission */
   group?: Maybe<SubmissionGroupInfo>;
   /** ID of the group that made this submission */
-  groupId: Scalars['ID']['output'];
+  groupId: Scalars["ID"]["output"];
   /** Whether the submission has location coordinates */
-  hasLocation: Scalars['Boolean']['output'];
+  hasLocation: Scalars["Boolean"]["output"];
   /** Whether the submission has images or video */
-  hasMedia: Scalars['Boolean']['output'];
+  hasMedia: Scalars["Boolean"]["output"];
   /** Unique identifier for the submission */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** IDs of uploaded images */
-  imageIds: Array<Scalars['String']['output']>;
+  imageIds: Array<Scalars["String"]["output"]>;
   /** Latitude coordinate (optional) */
-  latitude?: Maybe<Scalars['Float']['output']>;
+  latitude?: Maybe<Scalars["Float"]["output"]>;
   /** Longitude coordinate (optional) */
-  longitude?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars["Float"]["output"]>;
   /** Ranking position (1-3) if awarded */
-  ranking?: Maybe<Scalars['Int']['output']>;
+  ranking?: Maybe<Scalars["Int"]["output"]>;
   /** Reason for rejection (if rejected) */
-  rejectionReason?: Maybe<Scalars['String']['output']>;
+  rejectionReason?: Maybe<Scalars["String"]["output"]>;
   /** When the submission was reviewed */
-  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedAt?: Maybe<Scalars["DateTime"]["output"]>;
   /** User who reviewed this submission */
   reviewedBy?: Maybe<SubmissionReviewerInfo>;
   /** ID of user who reviewed this submission */
-  reviewedById?: Maybe<Scalars['ID']['output']>;
+  reviewedById?: Maybe<Scalars["ID"]["output"]>;
   /** Current review status of the submission */
   status: SubmissionStatus;
   /** Text content of the submission */
-  textContent?: Maybe<Scalars['String']['output']>;
+  textContent?: Maybe<Scalars["String"]["output"]>;
   /** Total points (awarded + bonus) */
-  totalPoints: Scalars['Int']['output'];
+  totalPoints: Scalars["Int"]["output"];
   /** When the submission was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
   /** ID of uploaded video (if any) */
-  videoId?: Maybe<Scalars['String']['output']>;
+  videoId?: Maybe<Scalars["String"]["output"]>;
   /** Number of votes received */
-  voteCount: Scalars['Int']['output'];
+  voteCount: Scalars["Int"]["output"];
   /** Calculated vote score */
-  voteScore: Scalars['Float']['output'];
+  voteScore: Scalars["Float"]["output"];
 };
 
 /** Result of creating a challenge submission */
 export type ChallengeSubmissionCreateResult = {
-  __typename?: 'ChallengeSubmissionCreateResult';
+  __typename?: "ChallengeSubmissionCreateResult";
   /** Points awarded for this submission */
-  awardedPoints: Scalars['Int']['output'];
+  awardedPoints: Scalars["Int"]["output"];
   /** Bonus points awarded */
-  bonusPoints: Scalars['Int']['output'];
+  bonusPoints: Scalars["Int"]["output"];
   /** ID of the challenge this submission is for */
-  challengeId: Scalars['ID']['output'];
+  challengeId: Scalars["ID"]["output"];
   /** When the submission was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Group that made this submission */
   group?: Maybe<SubmissionGroupInfo>;
   /** ID of the group that made this submission */
-  groupId: Scalars['ID']['output'];
+  groupId: Scalars["ID"]["output"];
   /** Whether the submission has location coordinates */
-  hasLocation: Scalars['Boolean']['output'];
+  hasLocation: Scalars["Boolean"]["output"];
   /** Whether the submission has images or video */
-  hasMedia: Scalars['Boolean']['output'];
+  hasMedia: Scalars["Boolean"]["output"];
   /** Unique identifier for the submission */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** IDs of uploaded images */
-  imageIds: Array<Scalars['String']['output']>;
+  imageIds: Array<Scalars["String"]["output"]>;
   /** Latitude coordinate (optional) */
-  latitude?: Maybe<Scalars['Float']['output']>;
+  latitude?: Maybe<Scalars["Float"]["output"]>;
   /** Longitude coordinate (optional) */
-  longitude?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars["Float"]["output"]>;
   /** Ranking position (1-3) if awarded */
-  ranking?: Maybe<Scalars['Int']['output']>;
+  ranking?: Maybe<Scalars["Int"]["output"]>;
   /** Reason for rejection (if rejected) */
-  rejectionReason?: Maybe<Scalars['String']['output']>;
+  rejectionReason?: Maybe<Scalars["String"]["output"]>;
   /** When the submission was reviewed */
-  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedAt?: Maybe<Scalars["DateTime"]["output"]>;
   /** User who reviewed this submission */
   reviewedBy?: Maybe<SubmissionReviewerInfo>;
   /** ID of user who reviewed this submission */
-  reviewedById?: Maybe<Scalars['ID']['output']>;
+  reviewedById?: Maybe<Scalars["ID"]["output"]>;
   /** Current review status of the submission */
   status: SubmissionStatus;
   /** Text content of the submission */
-  textContent?: Maybe<Scalars['String']['output']>;
+  textContent?: Maybe<Scalars["String"]["output"]>;
   /** Total points (awarded + bonus) */
-  totalPoints: Scalars['Int']['output'];
+  totalPoints: Scalars["Int"]["output"];
   /** When the submission was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
   /** ID of uploaded video (if any) */
-  videoId?: Maybe<Scalars['String']['output']>;
+  videoId?: Maybe<Scalars["String"]["output"]>;
   /** Number of votes received */
-  voteCount: Scalars['Int']['output'];
+  voteCount: Scalars["Int"]["output"];
   /** Calculated vote score */
-  voteScore: Scalars['Float']['output'];
+  voteScore: Scalars["Float"]["output"];
 };
 
 /** Paginated list of challenge submissions */
 export type ChallengeSubmissionListResult = {
-  __typename?: 'ChallengeSubmissionListResult';
+  __typename?: "ChallengeSubmissionListResult";
   /** List of submissions */
   submissions: Array<ChallengeSubmission>;
   /** Total number of submissions (for pagination) */
-  totalCount: Scalars['Int']['output'];
+  totalCount: Scalars["Int"]["output"];
 };
 
 /** Result of updating a challenge submission */
 export type ChallengeSubmissionUpdateResult = {
-  __typename?: 'ChallengeSubmissionUpdateResult';
+  __typename?: "ChallengeSubmissionUpdateResult";
   /** Points awarded for this submission */
-  awardedPoints: Scalars['Int']['output'];
+  awardedPoints: Scalars["Int"]["output"];
   /** Bonus points awarded */
-  bonusPoints: Scalars['Int']['output'];
+  bonusPoints: Scalars["Int"]["output"];
   /** ID of the challenge this submission is for */
-  challengeId: Scalars['ID']['output'];
+  challengeId: Scalars["ID"]["output"];
   /** When the submission was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Group that made this submission */
   group?: Maybe<SubmissionGroupInfo>;
   /** ID of the group that made this submission */
-  groupId: Scalars['ID']['output'];
+  groupId: Scalars["ID"]["output"];
   /** Whether the submission has location coordinates */
-  hasLocation: Scalars['Boolean']['output'];
+  hasLocation: Scalars["Boolean"]["output"];
   /** Whether the submission has images or video */
-  hasMedia: Scalars['Boolean']['output'];
+  hasMedia: Scalars["Boolean"]["output"];
   /** Unique identifier for the submission */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** IDs of uploaded images */
-  imageIds: Array<Scalars['String']['output']>;
+  imageIds: Array<Scalars["String"]["output"]>;
   /** Latitude coordinate (optional) */
-  latitude?: Maybe<Scalars['Float']['output']>;
+  latitude?: Maybe<Scalars["Float"]["output"]>;
   /** Longitude coordinate (optional) */
-  longitude?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars["Float"]["output"]>;
   /** Ranking position (1-3) if awarded */
-  ranking?: Maybe<Scalars['Int']['output']>;
+  ranking?: Maybe<Scalars["Int"]["output"]>;
   /** Reason for rejection (if rejected) */
-  rejectionReason?: Maybe<Scalars['String']['output']>;
+  rejectionReason?: Maybe<Scalars["String"]["output"]>;
   /** When the submission was reviewed */
-  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
+  reviewedAt?: Maybe<Scalars["DateTime"]["output"]>;
   /** User who reviewed this submission */
   reviewedBy?: Maybe<SubmissionReviewerInfo>;
   /** ID of user who reviewed this submission */
-  reviewedById?: Maybe<Scalars['ID']['output']>;
+  reviewedById?: Maybe<Scalars["ID"]["output"]>;
   /** Current review status of the submission */
   status: SubmissionStatus;
   /** Text content of the submission */
-  textContent?: Maybe<Scalars['String']['output']>;
+  textContent?: Maybe<Scalars["String"]["output"]>;
   /** Total points (awarded + bonus) */
-  totalPoints: Scalars['Int']['output'];
+  totalPoints: Scalars["Int"]["output"];
   /** When the submission was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
   /** ID of uploaded video (if any) */
-  videoId?: Maybe<Scalars['String']['output']>;
+  videoId?: Maybe<Scalars["String"]["output"]>;
   /** Number of votes received */
-  voteCount: Scalars['Int']['output'];
+  voteCount: Scalars["Int"]["output"];
   /** Calculated vote score */
-  voteScore: Scalars['Float']['output'];
+  voteScore: Scalars["Float"]["output"];
 };
 
 /** A vote cast for a challenge submission */
 export type ChallengeVote = {
-  __typename?: 'ChallengeVote';
+  __typename?: "ChallengeVote";
   /** ID of the challenge being voted on */
-  challengeId: Scalars['ID']['output'];
+  challengeId: Scalars["ID"]["output"];
   /** Unique identifier for the vote (UUID) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Normalized weight of the vote (for weighted voting) */
-  normalizedWeight: Scalars['Float']['output'];
+  normalizedWeight: Scalars["Float"]["output"];
   /** ID of the submission receiving the vote */
-  submissionId: Scalars['ID']['output'];
+  submissionId: Scalars["ID"]["output"];
   /** Points awarded for this vote */
-  votePoints: Scalars['Int']['output'];
+  votePoints: Scalars["Int"]["output"];
   /** Voting position (1st, 2nd, or 3rd place) */
-  votePosition: Scalars['Int']['output'];
+  votePosition: Scalars["Int"]["output"];
   /** When the vote was cast */
-  votedAt: Scalars['DateTime']['output'];
+  votedAt: Scalars["DateTime"]["output"];
   /** ID of the voter (trip participant) */
-  voterId: Scalars['ID']['output'];
+  voterId: Scalars["ID"]["output"];
 };
 
 /** Admin view of votes with unique voter count */
 export type ChallengeVoteAdminList = {
-  __typename?: 'ChallengeVoteAdminList';
+  __typename?: "ChallengeVoteAdminList";
   /** Total number of votes cast */
-  totalVotes: Scalars['Int']['output'];
+  totalVotes: Scalars["Int"]["output"];
   /** Number of unique voters */
-  uniqueVoters: Scalars['Int']['output'];
+  uniqueVoters: Scalars["Int"]["output"];
   /** All votes for the challenge */
   votes: Array<ChallengeVote>;
 };
 
 /** List of votes with metadata */
 export type ChallengeVoteList = {
-  __typename?: 'ChallengeVoteList';
+  __typename?: "ChallengeVoteList";
   /** Total number of votes */
-  totalVotes: Scalars['Int']['output'];
+  totalVotes: Scalars["Int"]["output"];
   /** The votes in the list */
   votes: Array<ChallengeVote>;
 };
 
 /** Result of checking inactive users */
 export type CheckInactiveUsersPayload = {
-  __typename?: 'CheckInactiveUsersPayload';
+  __typename?: "CheckInactiveUsersPayload";
   /** Number of users checked for inactivity */
-  checked: Scalars['Int']['output'];
+  checked: Scalars["Int"]["output"];
   /** Number of errors encountered */
-  errors: Scalars['Int']['output'];
+  errors: Scalars["Int"]["output"];
   /** Number of users notified */
-  notified: Scalars['Int']['output'];
+  notified: Scalars["Int"]["output"];
   /** Number of users skipped */
-  skipped: Scalars['Int']['output'];
+  skipped: Scalars["Int"]["output"];
 };
 
 /** Additional insights about coin transactions */
 export type CoinAdditionalInsights = {
-  __typename?: 'CoinAdditionalInsights';
+  __typename?: "CoinAdditionalInsights";
   /** Information about the most active admin */
   mostActiveAdmin?: Maybe<FormattedUser>;
   /** Recent coin transactions */
@@ -415,122 +440,122 @@ export type CoinAdditionalInsights = {
 
 /** Quick overview statistics for coin distribution in a trip */
 export type CoinQuickStats = {
-  __typename?: 'CoinQuickStats';
+  __typename?: "CoinQuickStats";
   /** Average coins per group */
-  averageCoinsPerGroup: Scalars['Int']['output'];
+  averageCoinsPerGroup: Scalars["Int"]["output"];
   /** ID of the group with the most coins */
-  richestGroupId?: Maybe<Scalars['ID']['output']>;
+  richestGroupId?: Maybe<Scalars["ID"]["output"]>;
   /** Name of the group with the most coins */
-  richestGroupName?: Maybe<Scalars['String']['output']>;
+  richestGroupName?: Maybe<Scalars["String"]["output"]>;
   /** When the statistics were computed */
-  time: Scalars['DateTime']['output'];
+  time: Scalars["DateTime"]["output"];
   /** Total coins across all groups */
-  totalCoins: Scalars['Int']['output'];
+  totalCoins: Scalars["Int"]["output"];
   /** Total number of groups with transactions */
-  totalGroups: Scalars['Int']['output'];
+  totalGroups: Scalars["Int"]["output"];
 };
 
 /** Comprehensive coin statistics for a trip */
 export type CoinStatistics = {
-  __typename?: 'CoinStatistics';
+  __typename?: "CoinStatistics";
   /** Total coins added to groups (positive amounts) */
-  addedCoins: Scalars['Int']['output'];
+  addedCoins: Scalars["Int"]["output"];
   /** Net balance of all transactions (added - removed) */
-  netBalance: Scalars['Int']['output'];
+  netBalance: Scalars["Int"]["output"];
   /** Total coins removed from groups (negative amounts, as positive number) */
-  removedCoins: Scalars['Int']['output'];
+  removedCoins: Scalars["Int"]["output"];
   /** When the statistics were computed */
-  time: Scalars['DateTime']['output'];
+  time: Scalars["DateTime"]["output"];
   /** Total number of coin transactions */
-  transactionCount: Scalars['Int']['output'];
+  transactionCount: Scalars["Int"]["output"];
 };
 
 /** A coin transaction recording the addition or removal of coins from a group */
 export type CoinTransaction = {
-  __typename?: 'CoinTransaction';
+  __typename?: "CoinTransaction";
   /** Admin information for this transaction */
   admin?: Maybe<CoinTransactionAdmin>;
   /** ID of the admin who performed this transaction */
-  adminId: Scalars['ID']['output'];
+  adminId: Scalars["ID"]["output"];
   /** Amount of coins added (positive) or removed (negative) */
-  amount: Scalars['Int']['output'];
+  amount: Scalars["Int"]["output"];
   /** When the transaction was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Group information for this transaction */
   group?: Maybe<CoinTransactionGroup>;
   /** ID of the group affected by this transaction */
-  groupId: Scalars['ID']['output'];
+  groupId: Scalars["ID"]["output"];
   /** Unique identifier for the transaction */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Reason or note for this transaction */
-  reason?: Maybe<Scalars['String']['output']>;
+  reason?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** Admin information in a coin transaction context */
 export type CoinTransactionAdmin = {
-  __typename?: 'CoinTransactionAdmin';
+  __typename?: "CoinTransactionAdmin";
   /** Admin's first name */
-  firstName?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars["String"]["output"]>;
   /** Admin's full name (computed) */
-  fullName: Scalars['String']['output'];
+  fullName: Scalars["String"]["output"];
   /** Admin user ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Admin's last name */
-  lastName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** Group information in a coin transaction context */
 export type CoinTransactionGroup = {
-  __typename?: 'CoinTransactionGroup';
+  __typename?: "CoinTransactionGroup";
   /** Current coin balance of the group */
-  coins: Scalars['Int']['output'];
+  coins: Scalars["Int"]["output"];
   /** Group ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Group name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
 };
 
 /** Pagination metadata for coin transaction lists */
 export type CoinTransactionPagination = {
-  __typename?: 'CoinTransactionPagination';
+  __typename?: "CoinTransactionPagination";
   /** Whether more items are available */
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
   /** Number of items per page */
-  limit: Scalars['Int']['output'];
+  limit: Scalars["Int"]["output"];
   /** Number of items skipped */
-  offset: Scalars['Int']['output'];
+  offset: Scalars["Int"]["output"];
   /** Total number of transactions available */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Pagination parameters for coin transaction queries */
 export type CoinTransactionPaginationInput = {
   /** Maximum number of items to return (1-100) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Number of items to skip */
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** Result of an add or remove coins operation */
 export type CoinTransactionResult = {
-  __typename?: 'CoinTransactionResult';
+  __typename?: "CoinTransactionResult";
   /** Admin ID (convenience accessor) */
-  adminId: Scalars['ID']['output'];
+  adminId: Scalars["ID"]["output"];
   /** Transaction amount */
-  amount: Scalars['Int']['output'];
+  amount: Scalars["Int"]["output"];
   /** Transaction timestamp (convenience accessor) */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Group ID (convenience accessor) */
-  groupId: Scalars['ID']['output'];
+  groupId: Scalars["ID"]["output"];
   /** Transaction ID (convenience accessor) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** The created coin transaction */
   transaction: CoinTransaction;
 };
 
 /** A paginated list of coin transactions with metadata */
 export type CoinTransactionsConnection = {
-  __typename?: 'CoinTransactionsConnection';
+  __typename?: "CoinTransactionsConnection";
   /** Pagination metadata */
   pagination: CoinTransactionPagination;
   /** The transactions in this page */
@@ -540,66 +565,66 @@ export type CoinTransactionsConnection = {
 /** Input for creating a challenge event activity */
 export type CreateChallengeActivityInput = {
   /** Base points for challenge */
-  basePoints?: InputMaybe<Scalars['Int']['input']>;
+  basePoints?: InputMaybe<Scalars["Int"]["input"]>;
   /** Challenge ID */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
   /** Activity description */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Challenge end time */
-  endTime?: InputMaybe<Scalars['DateTime']['input']>;
+  endTime?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** Type of challenge event */
   eventType: ChallengeEventType;
   /** Whether to pin the activity */
-  isPinned?: InputMaybe<Scalars['Boolean']['input']>;
+  isPinned?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** Number of submissions */
-  submissionCount?: InputMaybe<Scalars['Int']['input']>;
+  submissionCount?: InputMaybe<Scalars["Int"]["input"]>;
   /** Submission type */
-  submissionType?: InputMaybe<Scalars['String']['input']>;
+  submissionType?: InputMaybe<Scalars["String"]["input"]>;
   /** Activity title */
-  title: Scalars['String']['input'];
+  title: Scalars["String"]["input"];
   /** Trip ID */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for creating a custom activity */
 export type CreateCustomActivityInput = {
   /** Activity description */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Activity image URL */
-  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars["String"]["input"]>;
   /** Whether to pin the activity */
-  isPinned?: InputMaybe<Scalars['Boolean']['input']>;
+  isPinned?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** Activity title */
-  title: Scalars['String']['input'];
+  title: Scalars["String"]["input"];
   /** Trip ID to create activity for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for creating a signed download URL */
 export type CreateDownloadUrlInput = {
   /** URL expiration time in seconds (60-3600, defaults to 600) */
-  expiresInSeconds?: InputMaybe<Scalars['Int']['input']>;
+  expiresInSeconds?: InputMaybe<Scalars["Int"]["input"]>;
   /** The full storage path (bucket/path) for the file */
-  storagePath: Scalars['String']['input'];
+  storagePath: Scalars["String"]["input"];
 };
 
 /** Input for creating a new group */
 export type CreateGroupInput = {
   /** Group description (max 500 characters) */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Group image URL */
-  image?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<Scalars["String"]["input"]>;
   /** Group name (1-100 characters) */
-  name: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
   /** ID of the group organizer (defaults to current user) */
-  organizerId?: InputMaybe<Scalars['ID']['input']>;
+  organizerId?: InputMaybe<Scalars["ID"]["input"]>;
   /** ID of the trip this group belongs to */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Result of creating a new group */
 export type CreateGroupPayload = {
-  __typename?: 'CreateGroupPayload';
+  __typename?: "CreateGroupPayload";
   /** The newly created group */
   group: Group;
 };
@@ -607,20 +632,20 @@ export type CreateGroupPayload = {
 /** Input for creating a new notification */
 export type CreateNotificationInput = {
   /** Notification body content */
-  body: Scalars['String']['input'];
+  body: Scalars["String"]["input"];
   /** Notification priority */
   priority?: InputMaybe<NotificationPriority>;
   /** Notification title */
-  title: Scalars['String']['input'];
+  title: Scalars["String"]["input"];
   /** Optional trip ID to associate with notification */
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
   /** Optional URL to open when notification is tapped */
-  url?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** Result of creating a notification */
 export type CreateNotificationResult = {
-  __typename?: 'CreateNotificationResult';
+  __typename?: "CreateNotificationResult";
   /** The created notification */
   notification: Notification;
 };
@@ -628,32 +653,32 @@ export type CreateNotificationResult = {
 /** Input for creating a new notification schedule */
 export type CreateNotificationScheduleInput = {
   /** When the schedule ends */
-  endDate: Scalars['DateTime']['input'];
+  endDate: Scalars["DateTime"]["input"];
   /** Scheduled hour (0-23) */
-  hour: Scalars['Int']['input'];
+  hour: Scalars["Int"]["input"];
   /** Whether the schedule is initially active */
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  isActive?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** Scheduled minute (0-59) */
-  minute: Scalars['Int']['input'];
+  minute: Scalars["Int"]["input"];
   /** Schedule name (1-100 characters) */
-  name: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
   /** Notification body (optional for INFO type, max 2000 chars) */
-  notificationBody?: InputMaybe<Scalars['String']['input']>;
+  notificationBody?: InputMaybe<Scalars["String"]["input"]>;
   /** Notification title (optional for INFO type, max 200 chars) */
-  notificationTitle?: InputMaybe<Scalars['String']['input']>;
+  notificationTitle?: InputMaybe<Scalars["String"]["input"]>;
   /** Type of notification */
   notificationType: NotificationScheduleType;
   /** Optional URL for the notification (max 500 chars) */
-  notificationUrl?: InputMaybe<Scalars['String']['input']>;
+  notificationUrl?: InputMaybe<Scalars["String"]["input"]>;
   /** When the schedule starts */
-  startDate: Scalars['DateTime']['input'];
+  startDate: Scalars["DateTime"]["input"];
   /** Associated trip ID (optional) */
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 };
 
 /** Result of creating a new notification schedule */
 export type CreateNotificationSchedulePayload = {
-  __typename?: 'CreateNotificationSchedulePayload';
+  __typename?: "CreateNotificationSchedulePayload";
   /** The newly created schedule */
   schedule: NotificationSchedule;
 };
@@ -661,60 +686,60 @@ export type CreateNotificationSchedulePayload = {
 /** Input for creating a public URL */
 export type CreatePublicUrlInput = {
   /** The full storage path (bucket/path) for the file. Only 'files-public' bucket is supported. */
-  storagePath: Scalars['String']['input'];
+  storagePath: Scalars["String"]["input"];
 };
 
 /** Input for creating a rank change activity */
 export type CreateRankChangeActivityInput = {
   /** Coins gained */
-  coinsGained: Scalars['Int']['input'];
+  coinsGained: Scalars["Int"]["input"];
   /** Activity description */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Group ID */
-  groupId: Scalars['ID']['input'];
+  groupId: Scalars["ID"]["input"];
   /** Whether to pin the activity */
-  isPinned?: InputMaybe<Scalars['Boolean']['input']>;
+  isPinned?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** New rank position */
-  newRank: Scalars['Int']['input'];
+  newRank: Scalars["Int"]["input"];
   /** Activity title */
-  title: Scalars['String']['input'];
+  title: Scalars["String"]["input"];
   /** Total coins */
-  totalCoins: Scalars['Int']['input'];
+  totalCoins: Scalars["Int"]["input"];
   /** Trip ID */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for creating a new submission report */
 export type CreateReportInput = {
   /** Additional details (max 2000 characters) */
-  details?: InputMaybe<Scalars['String']['input']>;
+  details?: InputMaybe<Scalars["String"]["input"]>;
   /** Reason for reporting */
   reason: ReportReason;
   /** ID of the submission to report */
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
 };
 
 /** Input for creating a new reward */
 export type CreateRewardInput = {
   /** Number of rewards available (0-1000000) */
-  availableQuantity: Scalars['Int']['input'];
+  availableQuantity: Scalars["Int"]["input"];
   /** Percentage of total trip points (1-100) */
-  coinCost: Scalars['Int']['input'];
+  coinCost: Scalars["Int"]["input"];
   /** Reward description (max 2000 characters) */
-  description: Scalars['String']['input'];
+  description: Scalars["String"]["input"];
   /** Array of image URLs (max 10) */
-  images?: InputMaybe<Array<Scalars['String']['input']>>;
+  images?: InputMaybe<Array<Scalars["String"]["input"]>>;
   /** Whether the reward should be hidden initially */
-  isHidden?: InputMaybe<Scalars['Boolean']['input']>;
+  isHidden?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** Reward name (1-200 characters) */
-  name: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
   /** ID of the trip this reward belongs to */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Result of creating a new reward */
 export type CreateRewardPayload = {
-  __typename?: 'CreateRewardPayload';
+  __typename?: "CreateRewardPayload";
   /** The newly created reward */
   reward: Reward;
 };
@@ -722,24 +747,24 @@ export type CreateRewardPayload = {
 /** Input for creating a new sponsor */
 export type CreateSponsorInput = {
   /** Sponsor description (1-2000 characters) */
-  description: Scalars['String']['input'];
+  description: Scalars["String"]["input"];
   /** Logo height in pixels (optional) */
-  height?: InputMaybe<Scalars['Int']['input']>;
+  height?: InputMaybe<Scalars["Int"]["input"]>;
   /** Whether the sponsor is active */
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  isActive?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** URL path to sponsor logo image */
-  logoPath: Scalars['String']['input'];
+  logoPath: Scalars["String"]["input"];
   /** Sponsor name (1-200 characters) */
-  name: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
   /** Horizontal offset in pixels (optional) */
-  offsetX?: InputMaybe<Scalars['Int']['input']>;
+  offsetX?: InputMaybe<Scalars["Int"]["input"]>;
   /** Vertical offset in pixels (optional) */
-  offsetY?: InputMaybe<Scalars['Int']['input']>;
+  offsetY?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** Result of creating a sponsor */
 export type CreateSponsorPayload = {
-  __typename?: 'CreateSponsorPayload';
+  __typename?: "CreateSponsorPayload";
   /** The newly created sponsor */
   sponsor: Sponsor;
 };
@@ -747,79 +772,79 @@ export type CreateSponsorPayload = {
 /** Input for creating a submission activity */
 export type CreateSubmissionActivityInput = {
   /** Challenge ID */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
   /** Activity description */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Group ID */
-  groupId: Scalars['ID']['input'];
+  groupId: Scalars["ID"]["input"];
   /** Whether submission has video */
-  hasVideo?: InputMaybe<Scalars['Boolean']['input']>;
+  hasVideo?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** Activity image URL */
-  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars["String"]["input"]>;
   /** Whether to pin the activity */
-  isPinned?: InputMaybe<Scalars['Boolean']['input']>;
+  isPinned?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** Whether submission is a winner */
-  isWinner?: InputMaybe<Scalars['Boolean']['input']>;
+  isWinner?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** Points awarded */
-  pointsAwarded?: InputMaybe<Scalars['Int']['input']>;
+  pointsAwarded?: InputMaybe<Scalars["Int"]["input"]>;
   /** Submission ranking */
-  ranking?: InputMaybe<Scalars['Int']['input']>;
+  ranking?: InputMaybe<Scalars["Int"]["input"]>;
   /** Submission ID */
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
   /** Activity title */
-  title: Scalars['String']['input'];
+  title: Scalars["String"]["input"];
   /** Trip ID */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for creating a new challenge submission */
 export type CreateSubmissionInput = {
   /** ID of the challenge to submit to */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
   /** ID of the group making the submission */
-  groupId: Scalars['ID']['input'];
+  groupId: Scalars["ID"]["input"];
   /** IDs of uploaded images (max 10) */
-  imageIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  imageIds?: InputMaybe<Array<Scalars["String"]["input"]>>;
   /** Latitude coordinate */
-  latitude?: InputMaybe<Scalars['Float']['input']>;
+  latitude?: InputMaybe<Scalars["Float"]["input"]>;
   /** Longitude coordinate */
-  longitude?: InputMaybe<Scalars['Float']['input']>;
+  longitude?: InputMaybe<Scalars["Float"]["input"]>;
   /** Text content of the submission */
-  textContent?: InputMaybe<Scalars['String']['input']>;
+  textContent?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of uploaded video */
-  videoId?: InputMaybe<Scalars['String']['input']>;
+  videoId?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** Input for creating a new trip */
 export type CreateTripInput = {
   /** URL to background image */
-  backgroundImagePath?: InputMaybe<Scalars['String']['input']>;
+  backgroundImagePath?: InputMaybe<Scalars["String"]["input"]>;
   /** Trip description */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Trip end date */
-  endDate: Scalars['DateTime']['input'];
+  endDate: Scalars["DateTime"]["input"];
   /** Trip name */
-  name: Scalars['String']['input'];
+  name: Scalars["String"]["input"];
   /** Trip start date */
-  startDate: Scalars['DateTime']['input'];
+  startDate: Scalars["DateTime"]["input"];
 };
 
 /** Input for creating a signed upload URL */
 export type CreateUploadUrlInput = {
   /** The full storage path (bucket/path) for the file */
-  storagePath: Scalars['String']['input'];
+  storagePath: Scalars["String"]["input"];
   /** Whether to overwrite existing file (defaults to false) */
-  upsert?: InputMaybe<Scalars['Boolean']['input']>;
+  upsert?: InputMaybe<Scalars["Boolean"]["input"]>;
 };
 
 /** Input for creating a new user */
 export type CreateUserInput = {
   /** External authentication provider user ID (required) */
-  authUserId: Scalars['String']['input'];
+  authUserId: Scalars["String"]["input"];
   /** User's first name (2-100 characters, no digits) */
-  firstName: Scalars['String']['input'];
+  firstName: Scalars["String"]["input"];
   /** User's last name (2-100 characters, no digits) */
-  lastName: Scalars['String']['input'];
+  lastName: Scalars["String"]["input"];
   /** User's role (defaults to USER) */
   role?: InputMaybe<UserRole>;
 };
@@ -827,188 +852,188 @@ export type CreateUserInput = {
 /** Input for creating a user post activity */
 export type CreateUserPostInput = {
   /** Additional image URLs (max 10) */
-  additionalImages?: InputMaybe<Array<Scalars['String']['input']>>;
+  additionalImages?: InputMaybe<Array<Scalars["String"]["input"]>>;
   /** Post description */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Post image URL */
-  imageUrl?: InputMaybe<Scalars['String']['input']>;
+  imageUrl?: InputMaybe<Scalars["String"]["input"]>;
   /** Post title */
-  title: Scalars['String']['input'];
+  title: Scalars["String"]["input"];
   /** Trip ID to create post for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for deleting an activity */
 export type DeleteActivityInput = {
   /** Activity ID to delete */
-  activityId: Scalars['ID']['input'];
+  activityId: Scalars["ID"]["input"];
 };
 
 /** Result of deleting an activity */
 export type DeleteActivityResult = {
-  __typename?: 'DeleteActivityResult';
+  __typename?: "DeleteActivityResult";
   /** Whether deletion was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Result of deleting a group */
 export type DeleteGroupPayload = {
-  __typename?: 'DeleteGroupPayload';
+  __typename?: "DeleteGroupPayload";
   /** Whether the deletion was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Input for deleting a notification */
 export type DeleteNotificationInput = {
   /** ID of notification to delete */
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
 };
 
 /** Result of deleting a notification */
 export type DeleteNotificationResult = {
-  __typename?: 'DeleteNotificationResult';
+  __typename?: "DeleteNotificationResult";
   /** Whether deletion was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Result of deleting a notification schedule */
 export type DeleteNotificationSchedulePayload = {
-  __typename?: 'DeleteNotificationSchedulePayload';
+  __typename?: "DeleteNotificationSchedulePayload";
   /** Number of execution history records deleted */
-  deletedExecutionCount?: Maybe<Scalars['Int']['output']>;
+  deletedExecutionCount?: Maybe<Scalars["Int"]["output"]>;
   /** Status message */
-  message: Scalars['String']['output'];
+  message: Scalars["String"]["output"];
   /** Whether the deletion was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Result of deleting a reward */
 export type DeleteRewardPayload = {
-  __typename?: 'DeleteRewardPayload';
+  __typename?: "DeleteRewardPayload";
   /** ID of the deleted reward */
-  deletedRewardId: Scalars['ID']['output'];
+  deletedRewardId: Scalars["ID"]["output"];
   /** Whether the deletion was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Result of deleting a sponsor */
 export type DeleteSponsorPayload = {
-  __typename?: 'DeleteSponsorPayload';
+  __typename?: "DeleteSponsorPayload";
   /** ID of the deleted sponsor */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether the deletion was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Input for deleting a trip */
 export type DeleteTripInput = {
   /** Trip ID to delete */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
 
 /** Result of deleting a trip */
 export type DeleteTripResult = {
-  __typename?: 'DeleteTripResult';
+  __typename?: "DeleteTripResult";
   /** Whether deletion was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Pagination information for delivery queries */
 export type DeliveryPagination = {
-  __typename?: 'DeliveryPagination';
+  __typename?: "DeliveryPagination";
   /** Number of items per page */
-  limit: Scalars['Int']['output'];
+  limit: Scalars["Int"]["output"];
   /** Current offset */
-  offset: Scalars['Int']['output'];
+  offset: Scalars["Int"]["output"];
   /** Total number of matching deliveries */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Statistics for notification deliveries */
 export type DeliveryStats = {
-  __typename?: 'DeliveryStats';
+  __typename?: "DeliveryStats";
   /** Average failed deliveries per batch */
-  avgFailuresPerDelivery: Scalars['Float']['output'];
+  avgFailuresPerDelivery: Scalars["Float"]["output"];
   /** Average successful deliveries per batch */
-  avgSuccessPerDelivery: Scalars['Float']['output'];
+  avgSuccessPerDelivery: Scalars["Float"]["output"];
   /** Breakdown of deliveries by status */
   statusBreakdown: DeliveryStatusBreakdown;
   /** Overall success rate (0.0 - 1.0) */
-  successRate: Scalars['Float']['output'];
+  successRate: Scalars["Float"]["output"];
   /** Total number of deliveries */
-  totalDeliveries: Scalars['Int']['output'];
+  totalDeliveries: Scalars["Int"]["output"];
   /** Total failed deliveries */
-  totalFailures: Scalars['Int']['output'];
+  totalFailures: Scalars["Int"]["output"];
   /** Total intended recipients across all deliveries */
-  totalRecipients: Scalars['Int']['output'];
+  totalRecipients: Scalars["Int"]["output"];
   /** Total successful deliveries */
-  totalSuccess: Scalars['Int']['output'];
+  totalSuccess: Scalars["Int"]["output"];
 };
 
 /** Status of a notification delivery */
 export enum DeliveryStatus {
-  Failure = 'FAILURE',
-  PartialFailure = 'PARTIAL_FAILURE',
-  Pending = 'PENDING',
-  Success = 'SUCCESS'
+  Failure = "FAILURE",
+  PartialFailure = "PARTIAL_FAILURE",
+  Pending = "PENDING",
+  Success = "SUCCESS",
 }
 
 /** Count of deliveries per status */
 export type DeliveryStatusBreakdown = {
-  __typename?: 'DeliveryStatusBreakdown';
+  __typename?: "DeliveryStatusBreakdown";
   /** Number of failed deliveries */
-  failure: Scalars['Int']['output'];
+  failure: Scalars["Int"]["output"];
   /** Number of partially failed deliveries */
-  partialFailure: Scalars['Int']['output'];
+  partialFailure: Scalars["Int"]["output"];
   /** Number of pending deliveries */
-  pending: Scalars['Int']['output'];
+  pending: Scalars["Int"]["output"];
   /** Number of successful deliveries */
-  success: Scalars['Int']['output'];
+  success: Scalars["Int"]["output"];
 };
 
 /** Result of creating a signed download URL */
 export type DownloadUrlResult = {
-  __typename?: 'DownloadUrlResult';
+  __typename?: "DownloadUrlResult";
   /** When the signed URL expires */
-  expiresAt: Scalars['DateTime']['output'];
+  expiresAt: Scalars["DateTime"]["output"];
   /** The signed URL for downloading the file */
-  signedUrl: Scalars['String']['output'];
+  signedUrl: Scalars["String"]["output"];
 };
 
 /** Result of duplicating a notification schedule */
 export type DuplicateNotificationSchedulePayload = {
-  __typename?: 'DuplicateNotificationSchedulePayload';
+  __typename?: "DuplicateNotificationSchedulePayload";
   /** The duplicated schedule */
   schedule: NotificationSchedule;
 };
 
 /** A single execution history record */
 export type ExecutionHistoryEntry = {
-  __typename?: 'ExecutionHistoryEntry';
+  __typename?: "ExecutionHistoryEntry";
   /** When the execution occurred */
-  executedAt: Scalars['DateTime']['output'];
+  executedAt: Scalars["DateTime"]["output"];
   /** Execution record ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** The notification that was sent (null if failed) */
   notification?: Maybe<ExecutionHistoryNotification>;
 };
 
 /** Notification details in execution history */
 export type ExecutionHistoryNotification = {
-  __typename?: 'ExecutionHistoryNotification';
+  __typename?: "ExecutionHistoryNotification";
   /** Notification body */
-  body: Scalars['String']['output'];
+  body: Scalars["String"]["output"];
   /** When the notification was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Notification ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Notification title */
-  title: Scalars['String']['output'];
+  title: Scalars["String"]["output"];
 };
 
 /** Result of querying execution history */
 export type ExecutionHistoryResult = {
-  __typename?: 'ExecutionHistoryResult';
+  __typename?: "ExecutionHistoryResult";
   /** List of execution history entries */
   executions: Array<ExecutionHistoryEntry>;
 };
@@ -1016,69 +1041,69 @@ export type ExecutionHistoryResult = {
 /** Input for forcing the end of judged staff voting */
 export type ForceEndVotingInput = {
   /** ID of the challenge */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
   /** ID of the trip (for validation) */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Result of forcing the end of judged staff voting */
 export type ForceEndVotingPayload = {
-  __typename?: 'ForceEndVotingPayload';
+  __typename?: "ForceEndVotingPayload";
   /** ID of the challenge */
-  challengeId: Scalars['ID']['output'];
+  challengeId: Scalars["ID"]["output"];
   /** Final status of the challenge */
-  challengeStatus: Scalars['String']['output'];
+  challengeStatus: Scalars["String"]["output"];
   /** Whether voting was finalized */
-  finalized: Scalars['Boolean']['output'];
+  finalized: Scalars["Boolean"]["output"];
   /** Whether the operation succeeded */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
   /** Total number of votes counted */
-  totalVotes: Scalars['Int']['output'];
+  totalVotes: Scalars["Int"]["output"];
 };
 
 /** User information formatted for display */
 export type FormattedUser = {
-  __typename?: 'FormattedUser';
+  __typename?: "FormattedUser";
   /** User's full name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** Number of transactions by this user */
-  transactionCount: Scalars['Int']['output'];
+  transactionCount: Scalars["Int"]["output"];
 };
 
 /** A friend's location with optional distance information */
 export type FriendLocation = {
-  __typename?: 'FriendLocation';
+  __typename?: "FriendLocation";
   /** Accuracy in meters */
-  accuracy?: Maybe<Scalars['Float']['output']>;
+  accuracy?: Maybe<Scalars["Float"]["output"]>;
   /** Altitude in meters */
-  altitude?: Maybe<Scalars['Float']['output']>;
+  altitude?: Maybe<Scalars["Float"]["output"]>;
   /** Distance from current user in kilometers */
-  distanceKm?: Maybe<Scalars['Float']['output']>;
+  distanceKm?: Maybe<Scalars["Float"]["output"]>;
   /** Heading in degrees */
-  heading?: Maybe<Scalars['Float']['output']>;
+  heading?: Maybe<Scalars["Float"]["output"]>;
   /** Location ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether friend is sharing location */
-  isSharingLocation: Scalars['Boolean']['output'];
+  isSharingLocation: Scalars["Boolean"]["output"];
   /** Latitude */
-  latitude?: Maybe<Scalars['Float']['output']>;
+  latitude?: Maybe<Scalars["Float"]["output"]>;
   /** Longitude */
-  longitude?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars["Float"]["output"]>;
   /** Speed in m/s */
-  speed?: Maybe<Scalars['Float']['output']>;
+  speed?: Maybe<Scalars["Float"]["output"]>;
   /** When location was recorded */
-  timestamp: Scalars['DateTime']['output'];
+  timestamp: Scalars["DateTime"]["output"];
   /** Friend's user ID */
-  userId: Scalars['ID']['output'];
+  userId: Scalars["ID"]["output"];
 };
 
 /** A list of friends' locations */
 export type FriendsLocationsConnection = {
-  __typename?: 'FriendsLocationsConnection';
+  __typename?: "FriendsLocationsConnection";
   /** Friends' locations */
   locations: Array<FriendLocation>;
   /** Total number of locations */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Input for fetching all coin transactions (moderator view) */
@@ -1086,7 +1111,7 @@ export type GetAllCoinTransactionsInput = {
   /** Pagination parameters */
   pagination?: InputMaybe<CoinTransactionPaginationInput>;
   /** Trip ID to fetch transactions for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching all notifications (admin only) */
@@ -1094,13 +1119,13 @@ export type GetAllNotificationsInput = {
   /** Pagination options */
   pagination?: InputMaybe<NotificationOffsetPaginationInput>;
   /** Optional trip ID to filter by */
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 };
 
 /** Input for fetching a single activity by ID */
 export type GetByIdInput = {
   /** Activity ID to fetch */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
 
 /** Input for fetching activities by trip ID */
@@ -1108,247 +1133,247 @@ export type GetByTripInput = {
   /** Cursor for pagination */
   cursor?: InputMaybe<ActivityCursorInput>;
   /** Number of activities to return (1-100) */
-  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars["Int"]["input"]>;
   /** Trip ID to fetch activities for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching activities for moderation */
 export type GetByTripModerationInput = {
   /** Page number (1-based) */
-  page?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars["Int"]["input"]>;
   /** Number of activities to return (1-100) */
-  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars["Int"]["input"]>;
   /** Trip ID to fetch activities for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching additional coin insights */
 export type GetCoinAdditionalInsightsInput = {
   /** Trip ID to fetch insights for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching quick coin statistics */
 export type GetCoinQuickStatsInput = {
   /** Trip ID to fetch statistics for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching coin statistics */
 export type GetCoinStatisticsInput = {
   /** Trip ID to fetch statistics for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching notification deliveries with filters */
 export type GetDeliveriesInput = {
   /** Filter deliveries before this date */
-  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  endDate?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** Number of deliveries to return (1-100, default 50) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Offset for pagination (default 0) */
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   /** Filter by schedule ID */
-  scheduleId?: InputMaybe<Scalars['ID']['input']>;
+  scheduleId?: InputMaybe<Scalars["ID"]["input"]>;
   /** Filter deliveries after this date */
-  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  startDate?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** Filter by delivery status */
   status?: InputMaybe<DeliveryStatus>;
   /** Filter by trip ID */
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 };
 
 /** Input for fetching a delivery by notification ID */
 export type GetDeliveryByNotificationIdInput = {
   /** Notification ID to look up */
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
   /** Trip ID for the notification */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching delivery statistics */
 export type GetDeliveryStatsInput = {
   /** Filter deliveries before this date */
-  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  endDate?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** Filter by schedule ID */
-  scheduleId?: InputMaybe<Scalars['ID']['input']>;
+  scheduleId?: InputMaybe<Scalars["ID"]["input"]>;
   /** Filter deliveries after this date */
-  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  startDate?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** Filter by trip ID */
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 };
 
 /** Input for fetching failed deliveries */
 export type GetFailedDeliveriesInput = {
   /** Number of deliveries to return (1-100, default 20) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Offset for pagination (default 0) */
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   /** Filter by trip ID */
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 };
 
 /** Input for fetching judged staff voting progress */
 export type GetJudgedStaffVotingProgressInput = {
   /** IDs of admin participants */
-  adminParticipantIds: Array<Scalars['ID']['input']>;
+  adminParticipantIds: Array<Scalars["ID"]["input"]>;
   /** ID of the challenge */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
   /** Number of eligible submissions */
-  eligibleSubmissionsCount: Scalars['Int']['input'];
+  eligibleSubmissionsCount: Scalars["Int"]["input"];
   /** Number of positions required per admin (1-3) */
-  requiredPositions: Scalars['Int']['input'];
+  requiredPositions: Scalars["Int"]["input"];
   /** ID of the trip */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching most active admin statistics */
 export type GetMostActiveAdminStatsInput = {
   /** Trip ID to fetch statistics for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching my votes for a challenge */
 export type GetMyVotesInput = {
   /** ID of the challenge */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
   /** ID of the trip (for participant validation) */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching reports for a specific submission */
 export type GetReportsBySubmissionInput = {
   /** ID of the submission to get reports for */
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching coin transactions visible to a user */
 export type GetUserCoinTransactionsInput = {
   /** Optional group ID to filter by */
-  groupId?: InputMaybe<Scalars['ID']['input']>;
+  groupId?: InputMaybe<Scalars["ID"]["input"]>;
   /** Maximum number of items to return (1-100) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Trip ID to fetch transactions for */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching all votes for a challenge */
 export type GetVotesByChallengeInput = {
   /** ID of the challenge */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
 };
 
 /** Input for fetching voting progress */
 export type GetVotingProgressInput = {
   /** ID of the challenge */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
 };
 
 /** A participant group in a trip */
 export type Group = {
-  __typename?: 'Group';
+  __typename?: "Group";
   /** Unique code for joining the group */
-  code: Scalars['String']['output'];
+  code: Scalars["String"]["output"];
   /** Number of coins the group has earned */
-  coins: Scalars['Int']['output'];
+  coins: Scalars["Int"]["output"];
   /** When the group was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Group description */
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   /** Unique identifier for the group (UUID) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Group image URL */
-  image?: Maybe<Scalars['String']['output']>;
+  image?: Maybe<Scalars["String"]["output"]>;
   /** Whether the group is currently active (not deleted) */
-  isActive: Scalars['Boolean']['output'];
+  isActive: Scalars["Boolean"]["output"];
   /** Group name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** ID of the user who organized the group */
-  organizerId: Scalars['ID']['output'];
+  organizerId: Scalars["ID"]["output"];
   /** Current status of the group */
   status: GroupStatus;
   /** ID of the trip this group belongs to */
-  tripId: Scalars['ID']['output'];
+  tripId: Scalars["ID"]["output"];
   /** When the group was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** Pagination metadata for group lists */
 export type GroupPagination = {
-  __typename?: 'GroupPagination';
+  __typename?: "GroupPagination";
   /** Whether more items are available */
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
   /** Number of items per page */
-  limit: Scalars['Int']['output'];
+  limit: Scalars["Int"]["output"];
   /** Number of items skipped */
-  offset: Scalars['Int']['output'];
+  offset: Scalars["Int"]["output"];
   /** Total number of groups available */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Pagination parameters for group queries */
 export type GroupPaginationInput = {
   /** Maximum number of items to return (1-100) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Number of items to skip */
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** Group information for ranking displays */
 export type GroupRanking = {
-  __typename?: 'GroupRanking';
+  __typename?: "GroupRanking";
   /** Unique group code */
-  code: Scalars['String']['output'];
+  code: Scalars["String"]["output"];
   /** Number of coins earned */
-  coins: Scalars['Int']['output'];
+  coins: Scalars["Int"]["output"];
   /** When the group was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Group description */
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   /** Unique identifier for the group */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Group image URL */
-  image?: Maybe<Scalars['String']['output']>;
+  image?: Maybe<Scalars["String"]["output"]>;
   /** Whether the group is active */
-  isActive: Scalars['Boolean']['output'];
+  isActive: Scalars["Boolean"]["output"];
   /** Group name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** ID of the group organizer */
-  organizerId: Scalars['ID']['output'];
+  organizerId: Scalars["ID"]["output"];
   /** Current status of the group */
   status: GroupStatus;
   /** ID of the trip this group belongs to */
-  tripId: Scalars['ID']['output'];
+  tripId: Scalars["ID"]["output"];
 };
 
 /** Result of fetching group rankings for a trip */
 export type GroupRankingResult = {
-  __typename?: 'GroupRankingResult';
+  __typename?: "GroupRankingResult";
   /** Current date for the ranking */
-  currentDate: Scalars['DateTime']['output'];
+  currentDate: Scalars["DateTime"]["output"];
   /** Groups sorted by coins (descending) */
   data: Array<GroupRanking>;
 };
 
 /** Current status of a group in the system */
 export enum GroupStatus {
-  Active = 'ACTIVE',
-  Deleted = 'DELETED'
+  Active = "ACTIVE",
+  Deleted = "DELETED",
 }
 
 /** A simplified view of a group for list displays */
 export type GroupSummary = {
-  __typename?: 'GroupSummary';
+  __typename?: "GroupSummary";
   /** Unique identifier for the group */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Group name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
 };
 
 /** A paginated list of groups with metadata */
 export type GroupsConnection = {
-  __typename?: 'GroupsConnection';
+  __typename?: "GroupsConnection";
   /** The groups in this page */
   groups: Array<Group>;
   /** Pagination metadata */
@@ -1357,153 +1382,153 @@ export type GroupsConnection = {
 
 /** Activity result with hide information */
 export type HiddenActivityResult = {
-  __typename?: 'HiddenActivityResult';
+  __typename?: "HiddenActivityResult";
   /** Type of activity */
   activityType: ActivityType;
   /** Activity description */
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   /** When activity was hidden */
-  hiddenAt: Scalars['DateTime']['output'];
+  hiddenAt: Scalars["DateTime"]["output"];
   /** Reason for hiding */
-  hiddenReason?: Maybe<Scalars['String']['output']>;
+  hiddenReason?: Maybe<Scalars["String"]["output"]>;
   /** Activity ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Activity image URL */
-  imageUrl?: Maybe<Scalars['String']['output']>;
+  imageUrl?: Maybe<Scalars["String"]["output"]>;
   /** Whether activity is hidden */
-  isHidden: Scalars['Boolean']['output'];
+  isHidden: Scalars["Boolean"]["output"];
   /** Whether activity is pinned */
-  isPinned: Scalars['Boolean']['output'];
+  isPinned: Scalars["Boolean"]["output"];
   /** Activity title */
-  title: Scalars['String']['output'];
+  title: Scalars["String"]["output"];
   /** Trip ID */
-  tripId: Scalars['ID']['output'];
+  tripId: Scalars["ID"]["output"];
   /** When activity was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** Input for hiding an activity */
 export type HideActivityInput = {
   /** Activity ID to hide */
-  activityId: Scalars['ID']['input'];
+  activityId: Scalars["ID"]["input"];
   /** Reason for hiding */
-  reason?: InputMaybe<Scalars['String']['input']>;
+  reason?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** Voting progress for judged staff challenges */
 export type JudgedStaffVotingProgress = {
-  __typename?: 'JudgedStaffVotingProgress';
+  __typename?: "JudgedStaffVotingProgress";
   /** Voting progress for each admin */
   adminProgress: Array<AdminVotingInfo>;
   /** Whether all admins have completed voting */
-  allAdminsVoted: Scalars['Boolean']['output'];
+  allAdminsVoted: Scalars["Boolean"]["output"];
   /** Number of submissions eligible for voting */
-  eligibleSubmissionsCount: Scalars['Int']['output'];
+  eligibleSubmissionsCount: Scalars["Int"]["output"];
   /** Number of admins who haven't completed voting */
-  pendingAdmins: Scalars['Int']['output'];
+  pendingAdmins: Scalars["Int"]["output"];
   /** Number of positions required per admin (1-3) */
-  requiredPositions: Scalars['Int']['output'];
+  requiredPositions: Scalars["Int"]["output"];
   /** Total number of admin participants */
-  totalAdmins: Scalars['Int']['output'];
+  totalAdmins: Scalars["Int"]["output"];
   /** Number of admins who have completed voting */
-  votedAdmins: Scalars['Int']['output'];
+  votedAdmins: Scalars["Int"]["output"];
 };
 
 /** Status of the last schedule execution */
 export enum LastRunStatus {
-  Failure = 'FAILURE',
-  Partial = 'PARTIAL',
-  Success = 'SUCCESS'
+  Failure = "FAILURE",
+  Partial = "PARTIAL",
+  Success = "SUCCESS",
 }
 
 /** Input for linking a sponsor to a trip */
 export type LinkSponsorToTripInput = {
   /** ID of the sponsor to link */
-  sponsorId: Scalars['ID']['input'];
+  sponsorId: Scalars["ID"]["input"];
   /** ID of the trip to link to */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Result of linking a sponsor to a trip */
 export type LinkSponsorToTripPayload = {
-  __typename?: 'LinkSponsorToTripPayload';
+  __typename?: "LinkSponsorToTripPayload";
   /** Whether the link was successful */
-  linked: Scalars['Boolean']['output'];
+  linked: Scalars["Boolean"]["output"];
   /** ID of the sponsor */
-  sponsorId: Scalars['ID']['output'];
+  sponsorId: Scalars["ID"]["output"];
   /** ID of the trip */
-  tripId: Scalars['ID']['output'];
+  tripId: Scalars["ID"]["output"];
 };
 
 /** A user's geographic location */
 export type Location = {
-  __typename?: 'Location';
+  __typename?: "Location";
   /** Location accuracy in meters */
-  accuracy?: Maybe<Scalars['Float']['output']>;
+  accuracy?: Maybe<Scalars["Float"]["output"]>;
   /** Altitude in meters above sea level */
-  altitude?: Maybe<Scalars['Float']['output']>;
+  altitude?: Maybe<Scalars["Float"]["output"]>;
   /** Altitude accuracy in meters */
-  altitudeAccuracy?: Maybe<Scalars['Float']['output']>;
+  altitudeAccuracy?: Maybe<Scalars["Float"]["output"]>;
   /** Direction of travel in degrees (0-360) */
-  heading?: Maybe<Scalars['Float']['output']>;
+  heading?: Maybe<Scalars["Float"]["output"]>;
   /** Unique identifier for the location record (UUID) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether the user is sharing their location with friends */
-  isSharingLocation: Scalars['Boolean']['output'];
+  isSharingLocation: Scalars["Boolean"]["output"];
   /** Geographic latitude (-90 to 90 degrees) */
-  latitude?: Maybe<Scalars['Float']['output']>;
+  latitude?: Maybe<Scalars["Float"]["output"]>;
   /** Geographic longitude (-180 to 180 degrees) */
-  longitude?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars["Float"]["output"]>;
   /** Speed in meters per second */
-  speed?: Maybe<Scalars['Float']['output']>;
+  speed?: Maybe<Scalars["Float"]["output"]>;
   /** When the location was last updated */
-  timestamp: Scalars['DateTime']['output'];
+  timestamp: Scalars["DateTime"]["output"];
   /** ID of the user this location belongs to */
-  userId: Scalars['ID']['output'];
+  userId: Scalars["ID"]["output"];
   /** List of users allowed to see this location */
   usersToShareWith: Array<SharingUserInfo>;
 };
 
 /** Location sharing settings for a user */
 export type LocationSharingSettings = {
-  __typename?: 'LocationSharingSettings';
+  __typename?: "LocationSharingSettings";
   /** Whether location sharing is enabled */
-  isSharingLocation: Scalars['Boolean']['output'];
+  isSharingLocation: Scalars["Boolean"]["output"];
   /** Users allowed to see this location */
   usersToShareWith: Array<SharingUserInfo>;
 };
 
 /** Pagination information for moderation view */
 export type ModerationPaginationInfo = {
-  __typename?: 'ModerationPaginationInfo';
+  __typename?: "ModerationPaginationInfo";
   /** Whether there are more pages */
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
   /** Current page number */
-  page: Scalars['Int']['output'];
+  page: Scalars["Int"]["output"];
   /** Items per page */
-  pageSize: Scalars['Int']['output'];
+  pageSize: Scalars["Int"]["output"];
   /** Total number of activities */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
   /** Total number of pages */
-  totalPages: Scalars['Int']['output'];
+  totalPages: Scalars["Int"]["output"];
 };
 
 /** Statistics about the most active admin by transaction volume */
 export type MostActiveAdminStats = {
-  __typename?: 'MostActiveAdminStats';
+  __typename?: "MostActiveAdminStats";
   /** ID of the most active admin */
-  adminId: Scalars['ID']['output'];
+  adminId: Scalars["ID"]["output"];
   /** Full name of the admin (resolved separately) */
-  adminName?: Maybe<Scalars['String']['output']>;
+  adminName?: Maybe<Scalars["String"]["output"]>;
   /** Total amount of coins this admin has processed */
-  totalAmount: Scalars['Int']['output'];
+  totalAmount: Scalars["Int"]["output"];
   /** Number of transactions performed by this admin */
-  transactionCount: Scalars['Int']['output'];
+  transactionCount: Scalars["Int"]["output"];
 };
 
 /** Root mutation type for modifying data */
 export type Mutation = {
-  __typename?: 'Mutation';
+  __typename?: "Mutation";
   /** Add coins to a group. Requires moderator or admin privileges. */
   addCoins?: Maybe<CoinTransactionResult>;
   /** Add a user to location sharing list */
@@ -1547,7 +1572,7 @@ export type Mutation = {
   /** Delete an activity (admin only) */
   deleteActivity: DeleteActivityResult;
   /** Delete a challenge submission (only allowed for pending submissions) */
-  deleteChallengeSubmission?: Maybe<Scalars['Boolean']['output']>;
+  deleteChallengeSubmission?: Maybe<Scalars["Boolean"]["output"]>;
   /** Delete a group (admin only) */
   deleteGroup: DeleteGroupPayload;
   /** Delete a notification (admin only) */
@@ -1630,367 +1655,306 @@ export type Mutation = {
   updateUser?: Maybe<UserUpdateResult>;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationAddCoinsArgs = {
   input: AddCoinsInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationAddUserToSharingArgs = {
   input: AddSharingUserInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationBulkDeleteNotificationSchedulesArgs = {
-  ids: Array<Scalars['ID']['input']>;
+  ids: Array<Scalars["ID"]["input"]>;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationBulkToggleNotificationScheduleActiveArgs = {
-  ids: Array<Scalars['ID']['input']>;
-  isActive: Scalars['Boolean']['input'];
+  ids: Array<Scalars["ID"]["input"]>;
+  isActive: Scalars["Boolean"]["input"];
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationCreateChallengeActivityArgs = {
   input: CreateChallengeActivityInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationCreateChallengeSubmissionArgs = {
   input: CreateSubmissionInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationCreateCustomActivityArgs = {
   input: CreateCustomActivityInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationCreateGroupArgs = {
   input: CreateGroupInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationCreateNotificationArgs = {
   input: CreateNotificationInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationCreateNotificationScheduleArgs = {
   input: CreateNotificationScheduleInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationCreateRankChangeActivityArgs = {
   input: CreateRankChangeActivityInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationCreateRewardArgs = {
   input: CreateRewardInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationCreateSponsorArgs = {
   input: CreateSponsorInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationCreateSubmissionActivityArgs = {
   input: CreateSubmissionActivityInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationCreateSubmissionReportArgs = {
   input: CreateReportInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationCreateTripArgs = {
   input: CreateTripInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationCreateUploadUrlArgs = {
   input: CreateUploadUrlInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationCreateUserArgs = {
   input: CreateUserInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationCreateUserPostArgs = {
   input: CreateUserPostInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationDeleteActivityArgs = {
   input: DeleteActivityInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationDeleteChallengeSubmissionArgs = {
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationDeleteGroupArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationDeleteNotificationArgs = {
   input: DeleteNotificationInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationDeleteNotificationScheduleArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationDeleteRewardArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationDeleteSponsorArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationDeleteTripArgs = {
   input: DeleteTripInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationDuplicateNotificationScheduleArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationForceEndVotingArgs = {
   input: ForceEndVotingInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationHideActivityArgs = {
   input: HideActivityInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationLinkSponsorToTripArgs = {
   input: LinkSponsorToTripInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationPurchaseRewardArgs = {
   input: PurchaseRewardInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationRemoveCoinsArgs = {
   input: RemoveCoinsInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationRemoveUserFromSharingArgs = {
   input: RemoveSharingUserInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationSendMobileNotificationsArgs = {
   input: SendMobileNotificationsInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationSetActivityPinnedArgs = {
   input: SetPinnedInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationSetRewardHiddenArgs = {
   input: SetRewardHiddenInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationSubmitVoteArgs = {
   input: SubmitVoteInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationSubmitVotesArgs = {
   input: SubmitVotesInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationToggleActivityReactionArgs = {
   input: ToggleReactionInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationToggleNotificationScheduleActiveArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationTrackDeliveryCompleteArgs = {
   input: TrackDeliveryCompleteInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationTrackDeliveryFailureArgs = {
   input: TrackDeliveryFailureInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationTrackDeliveryStartArgs = {
   input: TrackDeliveryStartInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUnhideActivityArgs = {
   input: UnhideActivityInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationUnlinkSponsorFromTripArgs = {
   input: UnlinkSponsorFromTripInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUpdateActivityArgs = {
   input: UpdateActivityInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationUpdateChallengeSubmissionArgs = {
   input: UpdateSubmissionInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUpdateGroupArgs = {
   input: UpdateGroupInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationUpdateLocationArgs = {
   input: UpdateLocationInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUpdateMyPurchaseStatusArgs = {
   input: UpdateMyPurchaseStatusInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationUpdateNotificationArgs = {
   input: UpdateNotificationInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUpdateNotificationScheduleArgs = {
   input: UpdateNotificationScheduleInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationUpdateNotificationScheduleLastRunArgs = {
   input: UpdateLastRunInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUpdateNotificationStatusArgs = {
   input: UpdateNotificationStatusInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationUpdatePurchaseStatusArgs = {
   input: UpdatePurchaseStatusInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUpdateRewardArgs = {
   input: UpdateRewardInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationUpdateSharingSettingsArgs = {
   input: UpdateSharingSettingsInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUpdateSponsorArgs = {
   input: UpdateSponsorInput;
 };
 
-
 /** Root mutation type for modifying data */
 export type MutationUpdateTripArgs = {
   input: UpdateTripInput;
 };
-
 
 /** Root mutation type for modifying data */
 export type MutationUpdateUserArgs = {
@@ -1999,7 +1963,7 @@ export type MutationUpdateUserArgs = {
 
 /** Result of fetching current user's notifications */
 export type MyNotificationsResult = {
-  __typename?: 'MyNotificationsResult';
+  __typename?: "MyNotificationsResult";
   /** List of notifications */
   notifications: Array<Notification>;
   /** Pagination information */
@@ -2008,88 +1972,88 @@ export type MyNotificationsResult = {
 
 /** A notification message */
 export type Notification = {
-  __typename?: 'Notification';
+  __typename?: "Notification";
   /** Notification body content */
-  body: Scalars['String']['output'];
+  body: Scalars["String"]["output"];
   /** When notification was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** User ID who created the notification */
-  createdById: Scalars['ID']['output'];
+  createdById: Scalars["ID"]["output"];
   /** Unique notification ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether notification is ready to be sent */
-  isReadyToSend?: Maybe<Scalars['Boolean']['output']>;
+  isReadyToSend?: Maybe<Scalars["Boolean"]["output"]>;
   /** Whether notification is scheduled for future delivery */
-  isScheduled: Scalars['Boolean']['output'];
+  isScheduled: Scalars["Boolean"]["output"];
   /** Whether notification has been sent */
-  isSent: Scalars['Boolean']['output'];
+  isSent: Scalars["Boolean"]["output"];
   /** Priority level */
   priority: NotificationPriority;
   /** When notification is scheduled to be sent */
-  scheduledFor?: Maybe<Scalars['DateTime']['output']>;
+  scheduledFor?: Maybe<Scalars["DateTime"]["output"]>;
   /** When notification was actually sent */
-  sentAt?: Maybe<Scalars['DateTime']['output']>;
+  sentAt?: Maybe<Scalars["DateTime"]["output"]>;
   /** Current status */
   status: NotificationStatus;
   /** Notification title */
-  title: Scalars['String']['output'];
+  title: Scalars["String"]["output"];
   /** Associated trip ID (null if global) */
-  tripId?: Maybe<Scalars['ID']['output']>;
+  tripId?: Maybe<Scalars["ID"]["output"]>;
   /** When notification was last updated */
-  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  updatedAt?: Maybe<Scalars["DateTime"]["output"]>;
   /** Optional URL to open when tapped */
-  url?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** Creator of the notification */
 export type NotificationCreator = {
-  __typename?: 'NotificationCreator';
+  __typename?: "NotificationCreator";
   /** Auth provider user ID */
-  authUserId?: Maybe<Scalars['String']['output']>;
+  authUserId?: Maybe<Scalars["String"]["output"]>;
   /** Creator first name */
-  firstName?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars["String"]["output"]>;
   /** Creator user ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Creator last name */
-  lastName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** A notification delivery record */
 export type NotificationDelivery = {
-  __typename?: 'NotificationDelivery';
+  __typename?: "NotificationDelivery";
   /** When delivery record was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** When delivery completed (null if still in progress) */
-  deliveryCompletedAt?: Maybe<Scalars['DateTime']['output']>;
+  deliveryCompletedAt?: Maybe<Scalars["DateTime"]["output"]>;
   /** When delivery started */
-  deliveryStartedAt: Scalars['DateTime']['output'];
+  deliveryStartedAt: Scalars["DateTime"]["output"];
   /** Error log for failed deliveries */
-  errorLog?: Maybe<Scalars['String']['output']>;
+  errorLog?: Maybe<Scalars["String"]["output"]>;
   /** Number of failed deliveries */
-  failureCount: Scalars['Int']['output'];
+  failureCount: Scalars["Int"]["output"];
   /** Unique delivery ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Associated notification details */
   notification?: Maybe<NotificationInfo>;
   /** ID of the notification being delivered */
-  notificationId: Scalars['ID']['output'];
+  notificationId: Scalars["ID"]["output"];
   /** Associated schedule ID if scheduled delivery */
-  scheduleId?: Maybe<Scalars['ID']['output']>;
+  scheduleId?: Maybe<Scalars["ID"]["output"]>;
   /** Current delivery status */
   status: DeliveryStatus;
   /** Number of successful deliveries */
-  successCount: Scalars['Int']['output'];
+  successCount: Scalars["Int"]["output"];
   /** Total number of intended recipients */
-  totalRecipients: Scalars['Int']['output'];
+  totalRecipients: Scalars["Int"]["output"];
   /** Trip ID this delivery belongs to */
-  tripId: Scalars['ID']['output'];
+  tripId: Scalars["ID"]["output"];
   /** When delivery record was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** Result of fetching a list of notification deliveries */
 export type NotificationDeliveryListResult = {
-  __typename?: 'NotificationDeliveryListResult';
+  __typename?: "NotificationDeliveryListResult";
   /** List of deliveries */
   deliveries: Array<NotificationDelivery>;
   /** Pagination information */
@@ -2098,198 +2062,198 @@ export type NotificationDeliveryListResult = {
 
 /** Status of a notification delivery */
 export enum NotificationDeliveryStatus {
-  Failure = 'FAILURE',
-  PartialFailure = 'PARTIAL_FAILURE',
-  Pending = 'PENDING',
-  Success = 'SUCCESS'
+  Failure = "FAILURE",
+  PartialFailure = "PARTIAL_FAILURE",
+  Pending = "PENDING",
+  Success = "SUCCESS",
 }
 
 /** Notification information within a delivery */
 export type NotificationInfo = {
-  __typename?: 'NotificationInfo';
+  __typename?: "NotificationInfo";
   /** Notification body */
-  body: Scalars['String']['output'];
+  body: Scalars["String"]["output"];
   /** When notification was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** User who created the notification */
   createdBy?: Maybe<NotificationCreator>;
   /** Notification ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Notification title */
-  title: Scalars['String']['output'];
+  title: Scalars["String"]["output"];
   /** Trip ID the notification belongs to */
-  tripId?: Maybe<Scalars['ID']['output']>;
+  tripId?: Maybe<Scalars["ID"]["output"]>;
   /** Notification URL/deep link */
-  url?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** Offset-based pagination information */
 export type NotificationOffsetPaginationInfo = {
-  __typename?: 'NotificationOffsetPaginationInfo';
+  __typename?: "NotificationOffsetPaginationInfo";
   /** Whether there are more items */
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
   /** Items per page */
-  limit: Scalars['Int']['output'];
+  limit: Scalars["Int"]["output"];
   /** Number of items skipped */
-  offset: Scalars['Int']['output'];
+  offset: Scalars["Int"]["output"];
   /** Total number of items */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Offset-based pagination for admin queries */
 export type NotificationOffsetPaginationInput = {
   /** Number of items to return (1-100) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Number of items to skip */
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** Pagination information for notification lists */
 export type NotificationPaginationInfo = {
-  __typename?: 'NotificationPaginationInfo';
+  __typename?: "NotificationPaginationInfo";
   /** Current page number */
-  page: Scalars['Int']['output'];
+  page: Scalars["Int"]["output"];
   /** Items per page */
-  pageSize: Scalars['Int']['output'];
+  pageSize: Scalars["Int"]["output"];
   /** Total number of items */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
   /** Total number of pages */
-  totalPages: Scalars['Int']['output'];
+  totalPages: Scalars["Int"]["output"];
 };
 
 /** Pagination input for notification queries */
 export type NotificationPaginationInput = {
   /** Page number (1-based) */
-  page?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars["Int"]["input"]>;
   /** Number of items per page (1-100) */
-  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** Priority level of a notification */
 export enum NotificationPriority {
-  High = 'HIGH',
-  Low = 'LOW',
-  Normal = 'NORMAL',
-  Urgent = 'URGENT'
+  High = "HIGH",
+  Low = "LOW",
+  Normal = "NORMAL",
+  Urgent = "URGENT",
 }
 
 /** A scheduled notification campaign */
 export type NotificationSchedule = {
-  __typename?: 'NotificationSchedule';
+  __typename?: "NotificationSchedule";
   /** When the schedule was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** ID of the user who created this schedule */
-  createdById: Scalars['ID']['output'];
+  createdById: Scalars["ID"]["output"];
   /** When the schedule expires */
-  endDate: Scalars['DateTime']['output'];
+  endDate: Scalars["DateTime"]["output"];
   /** Formatted time string (HH:MM) */
-  formattedTime: Scalars['String']['output'];
+  formattedTime: Scalars["String"]["output"];
   /** Scheduled hour (0-23) */
-  hour: Scalars['Int']['output'];
+  hour: Scalars["Int"]["output"];
   /** Unique identifier for the schedule (UUID) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether the schedule is enabled */
-  isActive: Scalars['Boolean']['output'];
+  isActive: Scalars["Boolean"]["output"];
   /** Whether the schedule is currently within its active time window */
-  isCurrentlyActive: Scalars['Boolean']['output'];
+  isCurrentlyActive: Scalars["Boolean"]["output"];
   /** Whether the schedule has passed its end date */
-  isExpired: Scalars['Boolean']['output'];
+  isExpired: Scalars["Boolean"]["output"];
   /** Whether the schedule has not yet reached its start date */
-  isUpcoming: Scalars['Boolean']['output'];
+  isUpcoming: Scalars["Boolean"]["output"];
   /** When the schedule last ran (null if never run) */
-  lastRun?: Maybe<Scalars['DateTime']['output']>;
+  lastRun?: Maybe<Scalars["DateTime"]["output"]>;
   /** Scheduled minute (0-59) */
-  minute: Scalars['Int']['output'];
+  minute: Scalars["Int"]["output"];
   /** Schedule name/campaign name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** Notification body content (optional for INFO type) */
-  notificationBody?: Maybe<Scalars['String']['output']>;
+  notificationBody?: Maybe<Scalars["String"]["output"]>;
   /** Notification title (optional for INFO type) */
-  notificationTitle?: Maybe<Scalars['String']['output']>;
+  notificationTitle?: Maybe<Scalars["String"]["output"]>;
   /** Type of notification to send */
   notificationType: NotificationScheduleType;
   /** Optional URL to include in the notification */
-  notificationUrl?: Maybe<Scalars['String']['output']>;
+  notificationUrl?: Maybe<Scalars["String"]["output"]>;
   /** When the schedule becomes active */
-  startDate: Scalars['DateTime']['output'];
+  startDate: Scalars["DateTime"]["output"];
   /** ID of the trip this schedule is associated with (optional) */
-  tripId?: Maybe<Scalars['ID']['output']>;
+  tripId?: Maybe<Scalars["ID"]["output"]>;
   /** When the schedule was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** Filter options for notification schedule queries */
 export type NotificationScheduleFilterInput = {
   /** Filter by active status */
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  isActive?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** Filter by notification type */
   notificationType?: InputMaybe<NotificationScheduleType>;
   /** Search by name */
-  search?: InputMaybe<Scalars['String']['input']>;
+  search?: InputMaybe<Scalars["String"]["input"]>;
   /** Filter by start date (from) */
-  startDateFrom?: InputMaybe<Scalars['DateTime']['input']>;
+  startDateFrom?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** Filter by start date (to) */
-  startDateTo?: InputMaybe<Scalars['DateTime']['input']>;
+  startDateTo?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** Filter by associated trip ID */
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 };
 
 /** Pagination metadata for notification schedule lists */
 export type NotificationSchedulePagination = {
-  __typename?: 'NotificationSchedulePagination';
+  __typename?: "NotificationSchedulePagination";
   /** Whether more items are available */
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
   /** Number of items per page */
-  limit: Scalars['Int']['output'];
+  limit: Scalars["Int"]["output"];
   /** Number of items skipped */
-  offset: Scalars['Int']['output'];
+  offset: Scalars["Int"]["output"];
   /** Total number of schedules available */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Pagination parameters for list queries */
 export type NotificationSchedulePaginationInput = {
   /** Maximum number of items to return (1-100) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Number of items to skip */
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** A simplified view of a notification schedule for list displays */
 export type NotificationScheduleSummary = {
-  __typename?: 'NotificationScheduleSummary';
+  __typename?: "NotificationScheduleSummary";
   /** Schedule end date */
-  endDate: Scalars['DateTime']['output'];
+  endDate: Scalars["DateTime"]["output"];
   /** Scheduled hour */
-  hour: Scalars['Int']['output'];
+  hour: Scalars["Int"]["output"];
   /** Unique identifier for the schedule */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether the schedule is enabled */
-  isActive: Scalars['Boolean']['output'];
+  isActive: Scalars["Boolean"]["output"];
   /** Scheduled minute */
-  minute: Scalars['Int']['output'];
+  minute: Scalars["Int"]["output"];
   /** Schedule name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** Type of notification */
   notificationType: NotificationScheduleType;
   /** Schedule start date */
-  startDate: Scalars['DateTime']['output'];
+  startDate: Scalars["DateTime"]["output"];
   /** Associated trip ID */
-  tripId?: Maybe<Scalars['ID']['output']>;
+  tripId?: Maybe<Scalars["ID"]["output"]>;
 };
 
 /** Type of scheduled notification */
 export enum NotificationScheduleType {
-  Announcement = 'ANNOUNCEMENT',
-  Challenge = 'CHALLENGE',
-  DailyRanking = 'DAILY_RANKING',
-  Info = 'INFO',
-  Reminder = 'REMINDER'
+  Announcement = "ANNOUNCEMENT",
+  Challenge = "CHALLENGE",
+  DailyRanking = "DAILY_RANKING",
+  Info = "INFO",
+  Reminder = "REMINDER",
 }
 
 /** A paginated list of notification schedules with metadata */
 export type NotificationSchedulesConnection = {
-  __typename?: 'NotificationSchedulesConnection';
+  __typename?: "NotificationSchedulesConnection";
   /** Pagination metadata */
   pagination: NotificationSchedulePagination;
   /** The schedules in this page */
@@ -2298,46 +2262,46 @@ export type NotificationSchedulesConnection = {
 
 /** Status of a notification */
 export enum NotificationStatus {
-  Cancelled = 'CANCELLED',
-  Draft = 'DRAFT',
-  Failed = 'FAILED',
-  Ready = 'READY',
-  Sent = 'SENT'
+  Cancelled = "CANCELLED",
+  Draft = "DRAFT",
+  Failed = "FAILED",
+  Ready = "READY",
+  Sent = "SENT",
 }
 
 /** Direction for ordering results */
 export enum OrderDirection {
-  Asc = 'asc',
-  Desc = 'desc'
+  Asc = "asc",
+  Desc = "desc",
 }
 
 /** Pagination information for activity feed */
 export type PaginationInfo = {
-  __typename?: 'PaginationInfo';
+  __typename?: "PaginationInfo";
   /** Whether there are more items */
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
   /** Number of items per page */
-  pageSize: Scalars['Int']['output'];
+  pageSize: Scalars["Int"]["output"];
 };
 
 /** Pagination parameters for list queries */
 export type PaginationInput = {
   /** Maximum number of items to return (1-100) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Number of items to skip */
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** Result of creating a public URL */
 export type PublicUrlResult = {
-  __typename?: 'PublicUrlResult';
+  __typename?: "PublicUrlResult";
   /** The public URL for accessing the file */
-  publicUrl: Scalars['String']['output'];
+  publicUrl: Scalars["String"]["output"];
 };
 
 /** A paginated list of reward purchases with metadata */
 export type PurchaseHistoryConnection = {
-  __typename?: 'PurchaseHistoryConnection';
+  __typename?: "PurchaseHistoryConnection";
   /** Pagination metadata */
   pagination: RewardPagination;
   /** The purchases in this page */
@@ -2347,25 +2311,25 @@ export type PurchaseHistoryConnection = {
 /** Input for purchasing a reward */
 export type PurchaseRewardInput = {
   /** Number of rewards to purchase (min 1) */
-  quantity: Scalars['Int']['input'];
+  quantity: Scalars["Int"]["input"];
   /** ID of the reward to purchase */
-  rewardId: Scalars['ID']['input'];
+  rewardId: Scalars["ID"]["input"];
 };
 
 /** Result of purchasing a reward */
 export type PurchaseRewardPayload = {
-  __typename?: 'PurchaseRewardPayload';
+  __typename?: "PurchaseRewardPayload";
   /** The purchase record */
   purchase: RewardPurchase;
   /** Remaining coins in the group after purchase */
-  remainingGroupCoins: Scalars['Int']['output'];
+  remainingGroupCoins: Scalars["Int"]["output"];
   /** Remaining quantity of the reward after purchase */
-  remainingRewardQuantity: Scalars['Int']['output'];
+  remainingRewardQuantity: Scalars["Int"]["output"];
 };
 
 /** Root query type for fetching data */
 export type Query = {
-  __typename?: 'Query';
+  __typename?: "Query";
   /** Get all currently active notification schedules (moderator+) */
   activeNotificationSchedules?: Maybe<Array<NotificationSchedule>>;
   /** Get activities for a trip (cursor pagination) */
@@ -2478,212 +2442,178 @@ export type Query = {
   votingProgress?: Maybe<VotingProgress>;
 };
 
-
 /** Root query type for fetching data */
 export type QueryActiveNotificationSchedulesArgs = {
   notificationType?: InputMaybe<NotificationScheduleType>;
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 };
-
 
 /** Root query type for fetching data */
 export type QueryActivitiesByTripArgs = {
   input: GetByTripInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryActivitiesByTripModerationArgs = {
   input: GetByTripModerationInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryActivityArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryAllNotificationsArgs = {
   input?: InputMaybe<GetAllNotificationsInput>;
 };
 
-
 /** Root query type for fetching data */
 export type QueryChallengeSubmissionArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryChallengeSubmissionByChallengeAndGroupArgs = {
-  challengeId: Scalars['ID']['input'];
-  groupId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
+  groupId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryChallengeSubmissionsArgs = {
-  challengeId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  challengeId: Scalars["ID"]["input"];
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   orderBy?: InputMaybe<SubmissionOrderBy>;
   orderDirection?: InputMaybe<OrderDirection>;
 };
-
 
 /** Root query type for fetching data */
 export type QueryCoinAdditionalInsightsArgs = {
   input: GetCoinAdditionalInsightsInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryCoinQuickStatsArgs = {
   input: GetCoinQuickStatsInput;
 };
-
 
 /** Root query type for fetching data */
 export type QueryCoinStatisticsArgs = {
   input: GetCoinStatisticsInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryCoinTransactionsArgs = {
   input: GetAllCoinTransactionsInput;
 };
-
 
 /** Root query type for fetching data */
 export type QueryCreateDownloadUrlArgs = {
   input: CreateDownloadUrlInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryCreatePublicUrlArgs = {
   input: CreatePublicUrlInput;
 };
-
 
 /** Root query type for fetching data */
 export type QueryDeliveryStatsArgs = {
   input?: InputMaybe<GetDeliveryStatsInput>;
 };
 
-
 /** Root query type for fetching data */
 export type QueryFailedDeliveriesArgs = {
   input?: InputMaybe<GetFailedDeliveriesInput>;
 };
 
-
 /** Root query type for fetching data */
 export type QueryGroupArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryGroupByCodeArgs = {
-  code: Scalars['String']['input'];
+  code: Scalars["String"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryGroupNamesByTripArgs = {
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryGroupRankingArgs = {
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryGroupsArgs = {
   pagination?: InputMaybe<GroupPaginationInput>;
 };
 
-
 /** Root query type for fetching data */
 export type QueryGroupsByOrganizerArgs = {
-  organizerId: Scalars['ID']['input'];
+  organizerId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryGroupsByTripArgs = {
   pagination?: InputMaybe<GroupPaginationInput>;
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryJudgedStaffVotingProgressArgs = {
   input: GetJudgedStaffVotingProgressInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryMostActiveAdminStatsArgs = {
   input: GetMostActiveAdminStatsInput;
 };
-
 
 /** Root query type for fetching data */
 export type QueryMyCoinTransactionsArgs = {
   input: GetUserCoinTransactionsInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryMyNotificationsArgs = {
   input?: InputMaybe<NotificationPaginationInput>;
 };
-
 
 /** Root query type for fetching data */
 export type QueryMyVotesArgs = {
   input: GetMyVotesInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryNotificationArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryNotificationDeliveriesArgs = {
   input?: InputMaybe<GetDeliveriesInput>;
 };
 
-
 /** Root query type for fetching data */
 export type QueryNotificationDeliveryByNotificationIdArgs = {
   input: GetDeliveryByNotificationIdInput;
 };
 
-
 /** Root query type for fetching data */
 export type QueryNotificationScheduleArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryNotificationScheduleExecutionHistoryArgs = {
   pagination?: InputMaybe<PaginationInput>;
-  scheduleId: Scalars['ID']['input'];
+  scheduleId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryNotificationSchedulesArgs = {
@@ -2691,101 +2621,85 @@ export type QueryNotificationSchedulesArgs = {
   pagination?: InputMaybe<PaginationInput>;
 };
 
-
 /** Root query type for fetching data */
 export type QueryPurchaseHistoryArgs = {
   pagination?: InputMaybe<PaginationInput>;
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryRewardArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryRewardsByTripArgs = {
   pagination?: InputMaybe<PaginationInput>;
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryRewardsByTripAdminArgs = {
   pagination?: InputMaybe<PaginationInput>;
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QuerySponsorArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QuerySponsorsByTripArgs = {
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QuerySubmissionReportsArgs = {
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryTotalAvailablePointsArgs = {
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryTripArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryTripAdminArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryTripsArgs = {
   pagination?: InputMaybe<TripPaginationInput>;
 };
 
-
 /** Root query type for fetching data */
 export type QueryUpcomingNotificationSchedulesArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  withinMinutes?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  withinMinutes?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 /** Root query type for fetching data */
 export type QueryUserArgs = {
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
-
 
 /** Root query type for fetching data */
 export type QueryUsersArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 };
-
 
 /** Root query type for fetching data */
 export type QueryVotesByChallengeArgs = {
   input: GetVotesByChallengeInput;
 };
-
 
 /** Root query type for fetching data */
 export type QueryVotingProgressArgs = {
@@ -2794,195 +2708,195 @@ export type QueryVotingProgressArgs = {
 
 /** Counts for each reaction type */
 export type ReactionCounts = {
-  __typename?: 'ReactionCounts';
+  __typename?: "ReactionCounts";
   /** Number of clap reactions */
-  clap: Scalars['Int']['output'];
+  clap: Scalars["Int"]["output"];
   /** Number of fire reactions */
-  fire: Scalars['Int']['output'];
+  fire: Scalars["Int"]["output"];
   /** Number of heart reactions */
-  heart: Scalars['Int']['output'];
+  heart: Scalars["Int"]["output"];
   /** Number of star reactions */
-  star: Scalars['Int']['output'];
+  star: Scalars["Int"]["output"];
 };
 
 /** Types of reactions users can add to activities */
 export enum ReactionType {
-  Clap = 'CLAP',
-  Fire = 'FIRE',
-  Heart = 'HEART',
-  Star = 'STAR'
+  Clap = "CLAP",
+  Fire = "FIRE",
+  Heart = "HEART",
+  Star = "STAR",
 }
 
 /** Summary of reactions on an activity */
 export type ReactionsSummary = {
-  __typename?: 'ReactionsSummary';
+  __typename?: "ReactionsSummary";
   /** Counts per reaction type */
   counts: ReactionCounts;
   /** Current user's reactions */
   myReactions: Array<ReactionType>;
   /** Total number of reactions */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Input for removing coins from a group */
 export type RemoveCoinsInput = {
   /** Amount of coins to remove (must be at least 1) */
-  amount: Scalars['Int']['input'];
+  amount: Scalars["Int"]["input"];
   /** ID of the group to remove coins from */
-  groupId: Scalars['ID']['input'];
+  groupId: Scalars["ID"]["input"];
   /** Reason for removing coins (optional) */
-  reason?: InputMaybe<Scalars['String']['input']>;
+  reason?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of the trip the group belongs to */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Input for removing a user from location sharing */
 export type RemoveSharingUserInput = {
   /** ID of the user to remove */
-  userId: Scalars['ID']['input'];
+  userId: Scalars["ID"]["input"];
 };
 
 /** Standard reasons for reporting a submission */
 export enum ReportReason {
-  Cheating = 'CHEATING',
-  Inappropriate = 'INAPPROPRIATE',
-  Other = 'OTHER',
-  Spam = 'SPAM',
-  WrongSubmission = 'WRONG_SUBMISSION'
+  Cheating = "CHEATING",
+  Inappropriate = "INAPPROPRIATE",
+  Other = "OTHER",
+  Spam = "SPAM",
+  WrongSubmission = "WRONG_SUBMISSION",
 }
 
 /** Action to take when reviewing a submission */
 export enum ReviewAction {
-  Approve = 'APPROVE',
-  Reject = 'REJECT'
+  Approve = "APPROVE",
+  Reject = "REJECT",
 }
 
 /** A reward that can be purchased with coins in a trip */
 export type Reward = {
-  __typename?: 'Reward';
+  __typename?: "Reward";
   /** Number of rewards available for purchase */
-  availableQuantity: Scalars['Int']['output'];
+  availableQuantity: Scalars["Int"]["output"];
   /** Whether the reward can be purchased (in stock and not hidden) */
-  canBePurchased: Scalars['Boolean']['output'];
+  canBePurchased: Scalars["Boolean"]["output"];
   /** Percentage of total trip points that this reward costs (1-100) */
-  coinCostPercentage: Scalars['Int']['output'];
+  coinCostPercentage: Scalars["Int"]["output"];
   /** When the reward was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** ID of the user who created this reward */
-  createdById: Scalars['ID']['output'];
+  createdById: Scalars["ID"]["output"];
   /** Reward description */
-  description: Scalars['String']['output'];
+  description: Scalars["String"]["output"];
   /** Unique identifier for the reward (UUID) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Array of reward image URLs */
-  images: Array<Scalars['String']['output']>;
+  images: Array<Scalars["String"]["output"]>;
   /** Whether the reward is hidden from users */
-  isHidden: Scalars['Boolean']['output'];
+  isHidden: Scalars["Boolean"]["output"];
   /** Whether the reward is currently in stock */
-  isInStock: Scalars['Boolean']['output'];
+  isInStock: Scalars["Boolean"]["output"];
   /** Reward name/title */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** Primary/main image URL (first image or null) */
-  primaryImage?: Maybe<Scalars['String']['output']>;
+  primaryImage?: Maybe<Scalars["String"]["output"]>;
   /** Number of times this reward has been purchased */
-  purchaseCount: Scalars['Int']['output'];
+  purchaseCount: Scalars["Int"]["output"];
   /** ID of the trip this reward belongs to */
-  tripId: Scalars['ID']['output'];
+  tripId: Scalars["ID"]["output"];
   /** When the reward was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** Pagination metadata for reward lists */
 export type RewardPagination = {
-  __typename?: 'RewardPagination';
+  __typename?: "RewardPagination";
   /** Whether more items are available */
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
   /** Number of items per page */
-  limit: Scalars['Int']['output'];
+  limit: Scalars["Int"]["output"];
   /** Number of items skipped */
-  offset: Scalars['Int']['output'];
+  offset: Scalars["Int"]["output"];
   /** Total number of rewards available */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** A purchase record for a reward */
 export type RewardPurchase = {
-  __typename?: 'RewardPurchase';
+  __typename?: "RewardPurchase";
   /** Method for collecting the reward (e.g., 'Pick up at hotel') */
-  collectionMethod?: Maybe<Scalars['String']['output']>;
+  collectionMethod?: Maybe<Scalars["String"]["output"]>;
   /** ID of the group that made the purchase */
-  groupId: Scalars['ID']['output'];
+  groupId: Scalars["ID"]["output"];
   /** Name of the group that made the purchase */
-  groupName?: Maybe<Scalars['String']['output']>;
+  groupName?: Maybe<Scalars["String"]["output"]>;
   /** Unique identifier for the purchase */
-  purchaseId: Scalars['ID']['output'];
+  purchaseId: Scalars["ID"]["output"];
   /** When the purchase was made */
-  purchasedAt: Scalars['DateTime']['output'];
+  purchasedAt: Scalars["DateTime"]["output"];
   /** ID of the user who made the purchase */
-  purchasedById: Scalars['ID']['output'];
+  purchasedById: Scalars["ID"]["output"];
   /** Name of the user who made the purchase */
-  purchasedByName?: Maybe<Scalars['String']['output']>;
+  purchasedByName?: Maybe<Scalars["String"]["output"]>;
   /** Number of rewards purchased */
-  quantity: Scalars['Int']['output'];
+  quantity: Scalars["Int"]["output"];
   /** ID of the purchased reward */
-  rewardId: Scalars['ID']['output'];
+  rewardId: Scalars["ID"]["output"];
   /** Name of the purchased reward */
-  rewardName: Scalars['String']['output'];
+  rewardName: Scalars["String"]["output"];
   /** Current status of the purchase */
   status: RewardPurchaseStatus;
   /** When the status was last updated */
-  statusUpdatedAt: Scalars['DateTime']['output'];
+  statusUpdatedAt: Scalars["DateTime"]["output"];
   /** ID of the user who last updated the status */
-  statusUpdatedById?: Maybe<Scalars['ID']['output']>;
+  statusUpdatedById?: Maybe<Scalars["ID"]["output"]>;
   /** Name of the user who last updated the status */
-  statusUpdatedByName?: Maybe<Scalars['String']['output']>;
+  statusUpdatedByName?: Maybe<Scalars["String"]["output"]>;
   /** Total coin cost for this purchase */
-  totalCost: Scalars['Int']['output'];
+  totalCost: Scalars["Int"]["output"];
 };
 
 /** Status of a reward purchase in its lifecycle */
 export enum RewardPurchaseStatus {
-  Accepted = 'ACCEPTED',
-  Bought = 'BOUGHT',
-  Cancelled = 'CANCELLED',
-  Delivered = 'DELIVERED',
-  InDelivery = 'IN_DELIVERY'
+  Accepted = "ACCEPTED",
+  Bought = "BOUGHT",
+  Cancelled = "CANCELLED",
+  Delivered = "DELIVERED",
+  InDelivery = "IN_DELIVERY",
 }
 
 /** A reward with dynamic pricing calculations */
 export type RewardWithCalculations = {
-  __typename?: 'RewardWithCalculations';
-  availableQuantity: Scalars['Int']['output'];
+  __typename?: "RewardWithCalculations";
+  availableQuantity: Scalars["Int"]["output"];
   /** Whether the user's group can afford this reward (null if groupCoins not provided) */
-  canAfford?: Maybe<Scalars['Boolean']['output']>;
-  canBePurchased: Scalars['Boolean']['output'];
+  canAfford?: Maybe<Scalars["Boolean"]["output"]>;
+  canBePurchased: Scalars["Boolean"]["output"];
   /** Static cost percentage (1-100) */
-  coinCostPercentage: Scalars['Int']['output'];
-  createdAt: Scalars['DateTime']['output'];
-  createdById: Scalars['ID']['output'];
+  coinCostPercentage: Scalars["Int"]["output"];
+  createdAt: Scalars["DateTime"]["output"];
+  createdById: Scalars["ID"]["output"];
   /** Description */
-  description: Scalars['String']['output'];
+  description: Scalars["String"]["output"];
   /** Calculated dynamic coin cost based on trip points */
-  dynamicCoinCost: Scalars['Int']['output'];
+  dynamicCoinCost: Scalars["Int"]["output"];
   /** Unique identifier */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Array of image URLs */
-  images: Array<Scalars['String']['output']>;
-  isHidden: Scalars['Boolean']['output'];
-  isInStock: Scalars['Boolean']['output'];
+  images: Array<Scalars["String"]["output"]>;
+  isHidden: Scalars["Boolean"]["output"];
+  isInStock: Scalars["Boolean"]["output"];
   /** Reward name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** Primary image */
-  primaryImage?: Maybe<Scalars['String']['output']>;
-  purchaseCount: Scalars['Int']['output'];
+  primaryImage?: Maybe<Scalars["String"]["output"]>;
+  purchaseCount: Scalars["Int"]["output"];
   /** Trip ID */
-  tripId: Scalars['ID']['output'];
-  updatedAt: Scalars['DateTime']['output'];
+  tripId: Scalars["ID"]["output"];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** A paginated list of rewards with metadata */
 export type RewardsConnection = {
-  __typename?: 'RewardsConnection';
+  __typename?: "RewardsConnection";
   /** Pagination metadata */
   pagination: RewardPagination;
   /** The rewards in this page */
@@ -2992,249 +2906,249 @@ export type RewardsConnection = {
 /** Input for sending mobile push notifications */
 export type SendMobileNotificationsInput = {
   /** ID of the notification to send */
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
 };
 
 /** Result of sending mobile push notifications */
 export type SendMobileNotificationsPayload = {
-  __typename?: 'SendMobileNotificationsPayload';
+  __typename?: "SendMobileNotificationsPayload";
   /** Number of notifications that failed to send */
-  failed: Scalars['Int']['output'];
+  failed: Scalars["Int"]["output"];
   /** Number of notifications successfully sent */
-  sent: Scalars['Int']['output'];
+  sent: Scalars["Int"]["output"];
   /** Whether the send operation was successful */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
   /** Total number of recipients targeted */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Input for pinning/unpinning an activity */
 export type SetPinnedInput = {
   /** Activity ID */
-  activityId: Scalars['ID']['input'];
+  activityId: Scalars["ID"]["input"];
   /** Whether to pin or unpin */
-  isPinned: Scalars['Boolean']['input'];
+  isPinned: Scalars["Boolean"]["input"];
 };
 
 /** Input for setting reward hidden status */
 export type SetRewardHiddenInput = {
   /** ID of the reward */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
   /** Whether the reward should be hidden */
-  isHidden: Scalars['Boolean']['input'];
+  isHidden: Scalars["Boolean"]["input"];
 };
 
 /** Result of setting reward hidden status */
 export type SetRewardHiddenPayload = {
-  __typename?: 'SetRewardHiddenPayload';
+  __typename?: "SetRewardHiddenPayload";
   /** The previous hidden status */
-  previousHidden: Scalars['Boolean']['output'];
+  previousHidden: Scalars["Boolean"]["output"];
   /** The reward with updated hidden status */
   reward: Reward;
 };
 
 /** User information for location sharing */
 export type SharingUserInfo = {
-  __typename?: 'SharingUserInfo';
+  __typename?: "SharingUserInfo";
   /** User's first name */
-  firstName?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars["String"]["output"]>;
   /** User ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** User's last name */
-  lastName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars["String"]["output"]>;
 };
 
 /** Result of adding or removing a sharing user */
 export type SharingUserPayload = {
-  __typename?: 'SharingUserPayload';
+  __typename?: "SharingUserPayload";
   /** The location with updated sharing list */
   location: Location;
 };
 
 /** A sponsor for a trip with logo and display settings */
 export type Sponsor = {
-  __typename?: 'Sponsor';
+  __typename?: "Sponsor";
   /** When the sponsor was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Sponsor description */
-  description: Scalars['String']['output'];
+  description: Scalars["String"]["output"];
   /** Whether the sponsor has custom logo sizing/positioning */
-  hasLogoAdjustments: Scalars['Boolean']['output'];
+  hasLogoAdjustments: Scalars["Boolean"]["output"];
   /** Logo height in pixels (for custom sizing) */
-  height?: Maybe<Scalars['Int']['output']>;
+  height?: Maybe<Scalars["Int"]["output"]>;
   /** Unique identifier for the sponsor */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether the sponsor is currently active */
-  isActive: Scalars['Boolean']['output'];
+  isActive: Scalars["Boolean"]["output"];
   /** URL path to sponsor logo image */
-  logoPath: Scalars['String']['output'];
+  logoPath: Scalars["String"]["output"];
   /** Sponsor name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** Horizontal offset in pixels */
-  offsetX?: Maybe<Scalars['Int']['output']>;
+  offsetX?: Maybe<Scalars["Int"]["output"]>;
   /** Vertical offset in pixels */
-  offsetY?: Maybe<Scalars['Int']['output']>;
+  offsetY?: Maybe<Scalars["Int"]["output"]>;
   /** When the sponsor was last updated */
-  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  updatedAt?: Maybe<Scalars["DateTime"]["output"]>;
 };
 
 /** Result of listing sponsors */
 export type SponsorListResult = {
-  __typename?: 'SponsorListResult';
+  __typename?: "SponsorListResult";
   /** List of sponsors */
   sponsors: Array<Sponsor>;
   /** Total number of sponsors matching the query */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Group information embedded in a submission */
 export type SubmissionGroupInfo = {
-  __typename?: 'SubmissionGroupInfo';
+  __typename?: "SubmissionGroupInfo";
   /** Group description */
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   /** Group ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Group image URL */
-  image?: Maybe<Scalars['String']['output']>;
+  image?: Maybe<Scalars["String"]["output"]>;
   /** Group name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
 };
 
 /** Field to order submissions by */
 export enum SubmissionOrderBy {
-  CreatedAt = 'createdAt',
-  VoteScore = 'voteScore'
+  CreatedAt = "createdAt",
+  VoteScore = "voteScore",
 }
 
 /** A report filed against a challenge submission */
 export type SubmissionReport = {
-  __typename?: 'SubmissionReport';
+  __typename?: "SubmissionReport";
   /** When the report was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Additional details provided by the reporter */
-  details?: Maybe<Scalars['String']['output']>;
+  details?: Maybe<Scalars["String"]["output"]>;
   /** Whether the report has additional details */
-  hasDetails: Scalars['Boolean']['output'];
+  hasDetails: Scalars["Boolean"]["output"];
   /** Unique identifier for the report */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Reason for the report */
   reason: ReportReason;
   /** Human-readable display text for the reason */
-  reasonDisplay: Scalars['String']['output'];
+  reasonDisplay: Scalars["String"]["output"];
   /** Reporter information with user details */
   reporter: SubmissionReportReporterInfo;
   /** ID of the user who filed the report */
-  reporterId: Scalars['ID']['output'];
+  reporterId: Scalars["ID"]["output"];
   /** ID of the submission being reported */
-  submissionId: Scalars['ID']['output'];
+  submissionId: Scalars["ID"]["output"];
 };
 
 /** Result of creating a submission report */
 export type SubmissionReportCreateResult = {
-  __typename?: 'SubmissionReportCreateResult';
+  __typename?: "SubmissionReportCreateResult";
   /** When the report was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Additional details provided by the reporter */
-  details?: Maybe<Scalars['String']['output']>;
+  details?: Maybe<Scalars["String"]["output"]>;
   /** Whether the report has additional details */
-  hasDetails: Scalars['Boolean']['output'];
+  hasDetails: Scalars["Boolean"]["output"];
   /** Unique identifier for the report */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Reason for the report */
   reason: ReportReason;
   /** Human-readable display text for the reason */
-  reasonDisplay: Scalars['String']['output'];
+  reasonDisplay: Scalars["String"]["output"];
   /** Reporter information (null on create) */
   reporter?: Maybe<SubmissionReportReporterInfo>;
   /** ID of the user who filed the report */
-  reporterId: Scalars['ID']['output'];
+  reporterId: Scalars["ID"]["output"];
   /** ID of the submission being reported */
-  submissionId: Scalars['ID']['output'];
+  submissionId: Scalars["ID"]["output"];
 };
 
 /** Paginated list of submission reports */
 export type SubmissionReportListResult = {
-  __typename?: 'SubmissionReportListResult';
+  __typename?: "SubmissionReportListResult";
   /** List of reports */
   reports: Array<SubmissionReport>;
   /** Total number of reports (for pagination) */
-  totalCount: Scalars['Int']['output'];
+  totalCount: Scalars["Int"]["output"];
 };
 
 /** Reporter information with participant and user details */
 export type SubmissionReportReporterInfo = {
-  __typename?: 'SubmissionReportReporterInfo';
+  __typename?: "SubmissionReportReporterInfo";
   /** Participant ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** User details of the reporter */
   user: SubmissionReportUserInfo;
 };
 
 /** User information for a reporter */
 export type SubmissionReportUserInfo = {
-  __typename?: 'SubmissionReportUserInfo';
+  __typename?: "SubmissionReportUserInfo";
   /** User's email address */
-  email?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars["String"]["output"]>;
   /** User's first name */
-  firstName: Scalars['String']['output'];
+  firstName: Scalars["String"]["output"];
   /** Whether the user has an avatar image */
-  hasAvatar: Scalars['Boolean']['output'];
+  hasAvatar: Scalars["Boolean"]["output"];
   /** User ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** User's last name */
-  lastName: Scalars['String']['output'];
+  lastName: Scalars["String"]["output"];
 };
 
 /** Reviewer information embedded in a submission */
 export type SubmissionReviewerInfo = {
-  __typename?: 'SubmissionReviewerInfo';
+  __typename?: "SubmissionReviewerInfo";
   /** Reviewer's email */
-  email?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars["String"]["output"]>;
   /** Reviewer's first name */
-  firstName: Scalars['String']['output'];
+  firstName: Scalars["String"]["output"];
   /** Reviewer user ID */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Reviewer's last name */
-  lastName: Scalars['String']['output'];
+  lastName: Scalars["String"]["output"];
 };
 
 /** The review status of a challenge submission */
 export enum SubmissionStatus {
-  Approved = 'APPROVED',
-  Pending = 'PENDING',
-  Rejected = 'REJECTED'
+  Approved = "APPROVED",
+  Pending = "PENDING",
+  Rejected = "REJECTED",
 }
 
 /** Vote statistics for a challenge submission */
 export type SubmissionVoteCount = {
-  __typename?: 'SubmissionVoteCount';
+  __typename?: "SubmissionVoteCount";
   /** ID of the submission */
-  submissionId: Scalars['ID']['output'];
+  submissionId: Scalars["ID"]["output"];
   /** Number of votes received */
-  voteCount: Scalars['Int']['output'];
+  voteCount: Scalars["Int"]["output"];
   /** Calculated vote score (weighted) */
-  voteScore: Scalars['Float']['output'];
+  voteScore: Scalars["Float"]["output"];
 };
 
 /** Input for submitting a single vote */
 export type SubmitVoteInput = {
   /** ID of the challenge */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
   /** Normalized weight for weighted voting (optional) */
-  normalizedWeight?: InputMaybe<Scalars['Float']['input']>;
+  normalizedWeight?: InputMaybe<Scalars["Float"]["input"]>;
   /** ID of the submission being voted for */
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
   /** ID of the trip (for participant validation) */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
   /** Points to award (optional) */
-  votePoints?: InputMaybe<Scalars['Int']['input']>;
+  votePoints?: InputMaybe<Scalars["Int"]["input"]>;
   /** Voting position (1, 2, or 3) */
-  votePosition: Scalars['Int']['input'];
+  votePosition: Scalars["Int"]["input"];
 };
 
 /** Result of submitting a single vote */
 export type SubmitVotePayload = {
-  __typename?: 'SubmitVotePayload';
+  __typename?: "SubmitVotePayload";
   /** The submitted vote */
   vote: ChallengeVote;
 };
@@ -3242,18 +3156,18 @@ export type SubmitVotePayload = {
 /** Input for submitting multiple votes at once */
 export type SubmitVotesInput = {
   /** ID of the challenge */
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
   /** ID of the trip (for participant validation) */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
   /** List of votes to submit (at least 1 required) */
   votes: Array<VoteInput>;
 };
 
 /** Result of submitting multiple votes */
 export type SubmitVotesPayload = {
-  __typename?: 'SubmitVotesPayload';
+  __typename?: "SubmitVotesPayload";
   /** Total number of votes cast */
-  totalVotesCast: Scalars['Int']['output'];
+  totalVotesCast: Scalars["Int"]["output"];
   /** The submitted votes */
   votes: Array<ChallengeVote>;
 };
@@ -3261,18 +3175,18 @@ export type SubmitVotesPayload = {
 /** Input for toggling a reaction on an activity */
 export type ToggleReactionInput = {
   /** Activity ID */
-  activityId: Scalars['ID']['input'];
+  activityId: Scalars["ID"]["input"];
   /** Type of reaction */
   reactionType: ReactionType;
 };
 
 /** Result of toggling a reaction */
 export type ToggleReactionResult = {
-  __typename?: 'ToggleReactionResult';
+  __typename?: "ToggleReactionResult";
   /** Activity ID */
-  activityId: Scalars['ID']['output'];
+  activityId: Scalars["ID"]["output"];
   /** Whether reaction is now active */
-  isActive: Scalars['Boolean']['output'];
+  isActive: Scalars["Boolean"]["output"];
   /** Reaction type that was toggled */
   reactionType: ReactionType;
   /** Updated reactions summary */
@@ -3281,107 +3195,107 @@ export type ToggleReactionResult = {
 
 /** Result of toggling schedule active status */
 export type ToggleScheduleActivePayload = {
-  __typename?: 'ToggleScheduleActivePayload';
+  __typename?: "ToggleScheduleActivePayload";
   /** The schedule with toggled status */
   schedule: NotificationSchedule;
 };
 
 /** Total available points for a trip */
 export type TotalAvailablePointsPayload = {
-  __typename?: 'TotalAvailablePointsPayload';
+  __typename?: "TotalAvailablePointsPayload";
   /** Total available points in the trip */
-  totalPoints: Scalars['Int']['output'];
+  totalPoints: Scalars["Int"]["output"];
 };
 
 /** Input for tracking delivery completion */
 export type TrackDeliveryCompleteInput = {
   /** Error details if any failures occurred */
-  errors?: InputMaybe<Scalars['String']['input']>;
+  errors?: InputMaybe<Scalars["String"]["input"]>;
   /** Number of failed deliveries */
-  failureCount: Scalars['Int']['input'];
+  failureCount: Scalars["Int"]["input"];
   /** ID of the notification that was delivered */
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
   /** Number of successful deliveries */
-  successCount: Scalars['Int']['input'];
+  successCount: Scalars["Int"]["input"];
   /** Total number of recipients */
-  totalRecipients: Scalars['Int']['input'];
+  totalRecipients: Scalars["Int"]["input"];
 };
 
 /** Result of tracking delivery completion */
 export type TrackDeliveryCompletePayload = {
-  __typename?: 'TrackDeliveryCompletePayload';
+  __typename?: "TrackDeliveryCompletePayload";
   /** Whether the tracking was recorded successfully */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Input for tracking delivery failure */
 export type TrackDeliveryFailureInput = {
   /** Error message describing the failure */
-  error: Scalars['String']['input'];
+  error: Scalars["String"]["input"];
   /** ID of the notification that failed */
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
 };
 
 /** Result of tracking delivery failure */
 export type TrackDeliveryFailurePayload = {
-  __typename?: 'TrackDeliveryFailurePayload';
+  __typename?: "TrackDeliveryFailurePayload";
   /** Whether the failure was recorded successfully */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** Input for tracking delivery start */
 export type TrackDeliveryStartInput = {
   /** ID of the notification being delivered */
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
 };
 
 /** Result of tracking delivery start */
 export type TrackDeliveryStartPayload = {
-  __typename?: 'TrackDeliveryStartPayload';
+  __typename?: "TrackDeliveryStartPayload";
   /** Whether the tracking was recorded successfully */
-  success: Scalars['Boolean']['output'];
+  success: Scalars["Boolean"]["output"];
 };
 
 /** A trip/event in the application */
 export type Trip = {
-  __typename?: 'Trip';
+  __typename?: "Trip";
   /** Path to background image */
-  backgroundImagePath?: Maybe<Scalars['String']['output']>;
+  backgroundImagePath?: Maybe<Scalars["String"]["output"]>;
   /** When the trip was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** Trip description */
-  description?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars["String"]["output"]>;
   /** When the trip ends */
-  endDate: Scalars['DateTime']['output'];
+  endDate: Scalars["DateTime"]["output"];
   /** Unique trip identifier */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether the trip is in active status */
-  isActive: Scalars['Boolean']['output'];
+  isActive: Scalars["Boolean"]["output"];
   /** Whether the trip is cancelled */
-  isCancelled: Scalars['Boolean']['output'];
+  isCancelled: Scalars["Boolean"]["output"];
   /** Whether the trip is completed */
-  isCompleted: Scalars['Boolean']['output'];
+  isCompleted: Scalars["Boolean"]["output"];
   /** Whether the trip is in planning status */
-  isPlanning: Scalars['Boolean']['output'];
+  isPlanning: Scalars["Boolean"]["output"];
   /** Trip name */
-  name: Scalars['String']['output'];
+  name: Scalars["String"]["output"];
   /** When the trip starts */
-  startDate: Scalars['DateTime']['output'];
+  startDate: Scalars["DateTime"]["output"];
   /** Trip status */
   status: TripStatus;
   /** When the trip was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** Input for fetching a trip by ID */
 export type TripByIdInput = {
   /** Trip ID to fetch */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
 
 /** Result of fetching a list of trips */
 export type TripListResult = {
-  __typename?: 'TripListResult';
+  __typename?: "TripListResult";
   /** Pagination information */
   pagination: TripPaginationInfo;
   /** List of trips */
@@ -3390,87 +3304,87 @@ export type TripListResult = {
 
 /** Pagination information for trip list */
 export type TripPaginationInfo = {
-  __typename?: 'TripPaginationInfo';
+  __typename?: "TripPaginationInfo";
   /** Whether there are more items */
-  hasMore: Scalars['Boolean']['output'];
+  hasMore: Scalars["Boolean"]["output"];
   /** Number of items per page */
-  limit: Scalars['Int']['output'];
+  limit: Scalars["Int"]["output"];
   /** Number of items skipped */
-  offset: Scalars['Int']['output'];
+  offset: Scalars["Int"]["output"];
   /** Total number of trips */
-  total: Scalars['Int']['output'];
+  total: Scalars["Int"]["output"];
 };
 
 /** Pagination input for trip queries */
 export type TripPaginationInput = {
   /** Maximum number of trips to return (1-100) */
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   /** Number of trips to skip */
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** Status of a trip */
 export enum TripStatus {
-  Active = 'ACTIVE',
-  Cancelled = 'CANCELLED',
-  Completed = 'COMPLETED',
-  Planning = 'PLANNING'
+  Active = "ACTIVE",
+  Cancelled = "CANCELLED",
+  Completed = "COMPLETED",
+  Planning = "PLANNING",
 }
 
 /** Input for unhiding an activity */
 export type UnhideActivityInput = {
   /** Activity ID to unhide */
-  activityId: Scalars['ID']['input'];
+  activityId: Scalars["ID"]["input"];
 };
 
 /** Input for unlinking a sponsor from a trip */
 export type UnlinkSponsorFromTripInput = {
   /** ID of the sponsor to unlink */
-  sponsorId: Scalars['ID']['input'];
+  sponsorId: Scalars["ID"]["input"];
   /** ID of the trip to unlink from */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Result of unlinking a sponsor from a trip */
 export type UnlinkSponsorFromTripPayload = {
-  __typename?: 'UnlinkSponsorFromTripPayload';
+  __typename?: "UnlinkSponsorFromTripPayload";
   /** ID of the sponsor */
-  sponsorId: Scalars['ID']['output'];
+  sponsorId: Scalars["ID"]["output"];
   /** ID of the trip */
-  tripId: Scalars['ID']['output'];
+  tripId: Scalars["ID"]["output"];
   /** Whether the unlink was successful */
-  unlinked: Scalars['Boolean']['output'];
+  unlinked: Scalars["Boolean"]["output"];
 };
 
 /** Input for updating an activity */
 export type UpdateActivityInput = {
   /** Activity ID to update */
-  activityId: Scalars['ID']['input'];
+  activityId: Scalars["ID"]["input"];
   /** New description (null to clear) */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Pin/unpin the activity */
-  isPinned?: InputMaybe<Scalars['Boolean']['input']>;
+  isPinned?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** New title */
-  title?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** Input for updating an existing group */
 export type UpdateGroupInput = {
   /** New description (null to clear, max 500 characters) */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of the group to update */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
   /** New image URL (null to clear) */
-  image?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<Scalars["String"]["input"]>;
   /** New group name (1-100 characters) */
-  name?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of the trip (for validation) */
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 };
 
 /** Result of updating a group */
 export type UpdateGroupPayload = {
-  __typename?: 'UpdateGroupPayload';
+  __typename?: "UpdateGroupPayload";
   /** The updated group */
   group: Group;
 };
@@ -3478,18 +3392,18 @@ export type UpdateGroupPayload = {
 /** Input for updating the last run timestamp */
 export type UpdateLastRunInput = {
   /** ID of the schedule */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
   /** When the schedule last ran */
-  lastRunAt: Scalars['DateTime']['input'];
+  lastRunAt: Scalars["DateTime"]["input"];
   /** Error message if the run failed */
-  lastRunError?: InputMaybe<Scalars['String']['input']>;
+  lastRunError?: InputMaybe<Scalars["String"]["input"]>;
   /** Status of the last run */
   lastRunStatus: LastRunStatus;
 };
 
 /** Result of updating the last run timestamp */
 export type UpdateLastRunPayload = {
-  __typename?: 'UpdateLastRunPayload';
+  __typename?: "UpdateLastRunPayload";
   /** The schedule with updated last run timestamp */
   schedule: NotificationSchedule;
 };
@@ -3497,24 +3411,24 @@ export type UpdateLastRunPayload = {
 /** Input for updating a user's location */
 export type UpdateLocationInput = {
   /** Accuracy in meters */
-  accuracy?: InputMaybe<Scalars['Float']['input']>;
+  accuracy?: InputMaybe<Scalars["Float"]["input"]>;
   /** Altitude in meters */
-  altitude?: InputMaybe<Scalars['Float']['input']>;
+  altitude?: InputMaybe<Scalars["Float"]["input"]>;
   /** Altitude accuracy in meters */
-  altitudeAccuracy?: InputMaybe<Scalars['Float']['input']>;
+  altitudeAccuracy?: InputMaybe<Scalars["Float"]["input"]>;
   /** Heading (0-360 degrees) */
-  heading?: InputMaybe<Scalars['Float']['input']>;
+  heading?: InputMaybe<Scalars["Float"]["input"]>;
   /** Latitude (-90 to 90) */
-  latitude?: InputMaybe<Scalars['Float']['input']>;
+  latitude?: InputMaybe<Scalars["Float"]["input"]>;
   /** Longitude (-180 to 180) */
-  longitude?: InputMaybe<Scalars['Float']['input']>;
+  longitude?: InputMaybe<Scalars["Float"]["input"]>;
   /** Speed in meters per second */
-  speed?: InputMaybe<Scalars['Float']['input']>;
+  speed?: InputMaybe<Scalars["Float"]["input"]>;
 };
 
 /** Result of updating a location */
 export type UpdateLocationPayload = {
-  __typename?: 'UpdateLocationPayload';
+  __typename?: "UpdateLocationPayload";
   /** The updated location */
   location: Location;
 };
@@ -3522,14 +3436,14 @@ export type UpdateLocationPayload = {
 /** Input for updating own purchase status (group leader only) */
 export type UpdateMyPurchaseStatusInput = {
   /** ID of the purchase to update */
-  purchaseId: Scalars['ID']['input'];
+  purchaseId: Scalars["ID"]["input"];
   /** New status (IN_DELIVERY or CANCELLED only) */
   status: RewardPurchaseStatus;
 };
 
 /** Result of updating own purchase status (group leader only) */
 export type UpdateMyPurchaseStatusPayload = {
-  __typename?: 'UpdateMyPurchaseStatusPayload';
+  __typename?: "UpdateMyPurchaseStatusPayload";
   /** The previous status before the update */
   previousStatus: RewardPurchaseStatus;
   /** The updated purchase record */
@@ -3539,20 +3453,20 @@ export type UpdateMyPurchaseStatusPayload = {
 /** Input for updating a notification */
 export type UpdateNotificationInput = {
   /** New body content */
-  body?: InputMaybe<Scalars['String']['input']>;
+  body?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of notification to update */
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
   /** New priority */
   priority?: InputMaybe<NotificationPriority>;
   /** New title */
-  title?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars["String"]["input"]>;
   /** New URL (null to clear) */
-  url?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** Result of updating a notification */
 export type UpdateNotificationResult = {
-  __typename?: 'UpdateNotificationResult';
+  __typename?: "UpdateNotificationResult";
   /** The updated notification */
   notification: Notification;
 };
@@ -3560,30 +3474,30 @@ export type UpdateNotificationResult = {
 /** Input for updating an existing notification schedule */
 export type UpdateNotificationScheduleInput = {
   /** New end date */
-  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  endDate?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** New scheduled hour (0-23) */
-  hour?: InputMaybe<Scalars['Int']['input']>;
+  hour?: InputMaybe<Scalars["Int"]["input"]>;
   /** ID of the schedule to update */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
   /** New active status */
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  isActive?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** New scheduled minute (0-59) */
-  minute?: InputMaybe<Scalars['Int']['input']>;
+  minute?: InputMaybe<Scalars["Int"]["input"]>;
   /** New schedule name (1-100 characters) */
-  name?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
   /** New notification body (max 2000 chars) */
-  notificationBody?: InputMaybe<Scalars['String']['input']>;
+  notificationBody?: InputMaybe<Scalars["String"]["input"]>;
   /** New notification title (max 200 chars) */
-  notificationTitle?: InputMaybe<Scalars['String']['input']>;
+  notificationTitle?: InputMaybe<Scalars["String"]["input"]>;
   /** New notification URL (max 500 chars) */
-  notificationUrl?: InputMaybe<Scalars['String']['input']>;
+  notificationUrl?: InputMaybe<Scalars["String"]["input"]>;
   /** New start date */
-  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  startDate?: InputMaybe<Scalars["DateTime"]["input"]>;
 };
 
 /** Result of updating a notification schedule */
 export type UpdateNotificationSchedulePayload = {
-  __typename?: 'UpdateNotificationSchedulePayload';
+  __typename?: "UpdateNotificationSchedulePayload";
   /** The updated schedule */
   schedule: NotificationSchedule;
 };
@@ -3593,12 +3507,12 @@ export type UpdateNotificationStatusInput = {
   /** New status to set */
   newStatus: NotificationStatus;
   /** ID of notification to update */
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
 };
 
 /** Result of updating notification status */
 export type UpdateNotificationStatusResult = {
-  __typename?: 'UpdateNotificationStatusResult';
+  __typename?: "UpdateNotificationStatusResult";
   /** New status */
   newStatus: NotificationStatus;
   /** The notification with updated status */
@@ -3610,43 +3524,43 @@ export type UpdateNotificationStatusResult = {
 /** Input for updating a purchase status (admin/staff only) */
 export type UpdatePurchaseStatusInput = {
   /** Collection method (required for ACCEPTED status) */
-  collectionMethod?: InputMaybe<Scalars['String']['input']>;
+  collectionMethod?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of the purchase to update */
-  purchaseId: Scalars['ID']['input'];
+  purchaseId: Scalars["ID"]["input"];
   /** New status to transition to */
   status: RewardPurchaseStatus;
 };
 
 /** Result of updating a purchase status */
 export type UpdatePurchaseStatusPayload = {
-  __typename?: 'UpdatePurchaseStatusPayload';
+  __typename?: "UpdatePurchaseStatusPayload";
   /** The previous status before the update */
   previousStatus: RewardPurchaseStatus;
   /** The updated purchase record */
   purchase: RewardPurchase;
   /** Whether coins were refunded (only when cancelling) */
-  refunded: Scalars['Boolean']['output'];
+  refunded: Scalars["Boolean"]["output"];
 };
 
 /** Input for updating an existing reward */
 export type UpdateRewardInput = {
   /** New available quantity (0-1000000) */
-  availableQuantity?: InputMaybe<Scalars['Int']['input']>;
+  availableQuantity?: InputMaybe<Scalars["Int"]["input"]>;
   /** New percentage of total trip points (1-100) */
-  coinCost?: InputMaybe<Scalars['Int']['input']>;
+  coinCost?: InputMaybe<Scalars["Int"]["input"]>;
   /** New description (max 2000 characters) */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of the reward to update */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
   /** New array of image URLs (max 10) */
-  images?: InputMaybe<Array<Scalars['String']['input']>>;
+  images?: InputMaybe<Array<Scalars["String"]["input"]>>;
   /** New reward name (1-200 characters) */
-  name?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** Result of updating a reward */
 export type UpdateRewardPayload = {
-  __typename?: 'UpdateRewardPayload';
+  __typename?: "UpdateRewardPayload";
   /** The updated reward */
   reward: Reward;
 };
@@ -3654,14 +3568,14 @@ export type UpdateRewardPayload = {
 /** Input for updating location sharing settings */
 export type UpdateSharingSettingsInput = {
   /** Whether to enable location sharing */
-  isSharingLocation: Scalars['Boolean']['input'];
+  isSharingLocation: Scalars["Boolean"]["input"];
   /** IDs of users to share location with */
-  userIdsToShareWith?: InputMaybe<Array<Scalars['ID']['input']>>;
+  userIdsToShareWith?: InputMaybe<Array<Scalars["ID"]["input"]>>;
 };
 
 /** Result of updating sharing settings */
 export type UpdateSharingSettingsPayload = {
-  __typename?: 'UpdateSharingSettingsPayload';
+  __typename?: "UpdateSharingSettingsPayload";
   /** The updated sharing settings */
   settings: LocationSharingSettings;
 };
@@ -3669,26 +3583,26 @@ export type UpdateSharingSettingsPayload = {
 /** Input for updating an existing sponsor */
 export type UpdateSponsorInput = {
   /** New sponsor description (1-2000 characters) */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** New logo height in pixels (null to clear) */
-  height?: InputMaybe<Scalars['Int']['input']>;
+  height?: InputMaybe<Scalars["Int"]["input"]>;
   /** ID of the sponsor to update */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
   /** New active status */
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  isActive?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** New logo URL path */
-  logoPath?: InputMaybe<Scalars['String']['input']>;
+  logoPath?: InputMaybe<Scalars["String"]["input"]>;
   /** New sponsor name (1-200 characters) */
-  name?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
   /** New horizontal offset in pixels (null to clear) */
-  offsetX?: InputMaybe<Scalars['Int']['input']>;
+  offsetX?: InputMaybe<Scalars["Int"]["input"]>;
   /** New vertical offset in pixels (null to clear) */
-  offsetY?: InputMaybe<Scalars['Int']['input']>;
+  offsetY?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
 /** Result of updating a sponsor */
 export type UpdateSponsorPayload = {
-  __typename?: 'UpdateSponsorPayload';
+  __typename?: "UpdateSponsorPayload";
   /** The updated sponsor */
   sponsor: Sponsor;
 };
@@ -3696,118 +3610,118 @@ export type UpdateSponsorPayload = {
 /** Input for updating a challenge submission */
 export type UpdateSubmissionInput = {
   /** Points to award (for APPROVE action) */
-  awardedPoints?: InputMaybe<Scalars['Int']['input']>;
+  awardedPoints?: InputMaybe<Scalars["Int"]["input"]>;
   /** Bonus points to award */
-  bonusPoints?: InputMaybe<Scalars['Int']['input']>;
+  bonusPoints?: InputMaybe<Scalars["Int"]["input"]>;
   /** New image IDs (replaces existing) */
-  imageIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  imageIds?: InputMaybe<Array<Scalars["String"]["input"]>>;
   /** New latitude (null to remove) */
-  latitude?: InputMaybe<Scalars['Float']['input']>;
+  latitude?: InputMaybe<Scalars["Float"]["input"]>;
   /** New longitude (null to remove) */
-  longitude?: InputMaybe<Scalars['Float']['input']>;
+  longitude?: InputMaybe<Scalars["Float"]["input"]>;
   /** Ranking position 1-3 (for APPROVE action, null to clear) */
-  ranking?: InputMaybe<Scalars['Int']['input']>;
+  ranking?: InputMaybe<Scalars["Int"]["input"]>;
   /** Reason for rejection (required for REJECT) */
-  rejectionReason?: InputMaybe<Scalars['String']['input']>;
+  rejectionReason?: InputMaybe<Scalars["String"]["input"]>;
   /** Review action (APPROVE or REJECT) */
   reviewAction?: InputMaybe<ReviewAction>;
   /** ID of reviewer (required for review actions) */
-  reviewedById?: InputMaybe<Scalars['ID']['input']>;
+  reviewedById?: InputMaybe<Scalars["ID"]["input"]>;
   /** ID of the submission to update */
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
   /** New text content (null to remove) */
-  textContent?: InputMaybe<Scalars['String']['input']>;
+  textContent?: InputMaybe<Scalars["String"]["input"]>;
   /** New video ID (null to remove) */
-  videoId?: InputMaybe<Scalars['String']['input']>;
+  videoId?: InputMaybe<Scalars["String"]["input"]>;
 };
 
 /** Input for updating a trip */
 export type UpdateTripInput = {
   /** URL to background image */
-  backgroundImagePath?: InputMaybe<Scalars['String']['input']>;
+  backgroundImagePath?: InputMaybe<Scalars["String"]["input"]>;
   /** Trip description */
-  description?: InputMaybe<Scalars['String']['input']>;
+  description?: InputMaybe<Scalars["String"]["input"]>;
   /** Trip end date */
-  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  endDate?: InputMaybe<Scalars["DateTime"]["input"]>;
   /** Trip ID to update */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
   /** Trip name */
-  name?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars["String"]["input"]>;
   /** Trip start date */
-  startDate?: InputMaybe<Scalars['DateTime']['input']>;
+  startDate?: InputMaybe<Scalars["DateTime"]["input"]>;
 };
 
 /** Input for updating an existing user */
 export type UpdateUserInput = {
   /** User's first name (2-100 characters, no digits) */
-  firstName?: InputMaybe<Scalars['String']['input']>;
+  firstName?: InputMaybe<Scalars["String"]["input"]>;
   /** Whether the user has an avatar */
-  hasAvatar?: InputMaybe<Scalars['Boolean']['input']>;
+  hasAvatar?: InputMaybe<Scalars["Boolean"]["input"]>;
   /** User's last name (2-100 characters, no digits) */
-  lastName?: InputMaybe<Scalars['String']['input']>;
+  lastName?: InputMaybe<Scalars["String"]["input"]>;
   /** ID of the user to update */
-  userId: Scalars['ID']['input'];
+  userId: Scalars["ID"]["input"];
 };
 
 /** Result of creating a signed upload URL for resumable uploads */
 export type UploadUrlResult = {
-  __typename?: 'UploadUrlResult';
+  __typename?: "UploadUrlResult";
   /** The storage bucket name */
-  bucket: Scalars['String']['output'];
+  bucket: Scalars["String"]["output"];
   /** The path to the object within the bucket */
-  objectPath: Scalars['String']['output'];
+  objectPath: Scalars["String"]["output"];
   /** The resumable upload endpoint URL */
-  resumableUrl: Scalars['String']['output'];
+  resumableUrl: Scalars["String"]["output"];
   /** The full storage path (bucket/path) */
-  storagePath: Scalars['String']['output'];
+  storagePath: Scalars["String"]["output"];
   /** The signed upload token (X-Ups-Authorization header) */
-  token: Scalars['String']['output'];
+  token: Scalars["String"]["output"];
 };
 
 /** A user in the Mirai App system */
 export type User = {
-  __typename?: 'User';
+  __typename?: "User";
   /** External authentication provider user ID */
-  authUserId: Scalars['String']['output'];
+  authUserId: Scalars["String"]["output"];
   /** When the user account was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** User's first name */
-  firstName: Scalars['String']['output'];
+  firstName: Scalars["String"]["output"];
   /** Computed full name (firstName + lastName) */
-  fullName: Scalars['String']['output'];
+  fullName: Scalars["String"]["output"];
   /** Whether the user has uploaded an avatar image */
-  hasAvatar: Scalars['Boolean']['output'];
+  hasAvatar: Scalars["Boolean"]["output"];
   /** Unique identifier for the user (UUID) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** Whether the user has admin privileges */
-  isAdmin: Scalars['Boolean']['output'];
+  isAdmin: Scalars["Boolean"]["output"];
   /** Whether the user has moderator privileges or higher */
-  isModerator: Scalars['Boolean']['output'];
+  isModerator: Scalars["Boolean"]["output"];
   /** User's last name */
-  lastName: Scalars['String']['output'];
+  lastName: Scalars["String"]["output"];
   /** When the user was last active (null if never seen) */
-  lastSeenOn?: Maybe<Scalars['DateTime']['output']>;
+  lastSeenOn?: Maybe<Scalars["DateTime"]["output"]>;
   /** User's role in the system */
   role: UserRole;
 };
 
 /** Result of creating a new user */
 export type UserCreateResult = {
-  __typename?: 'UserCreateResult';
+  __typename?: "UserCreateResult";
   /** External authentication provider user ID */
-  authUserId: Scalars['String']['output'];
+  authUserId: Scalars["String"]["output"];
   /** When the user account was created */
-  createdAt: Scalars['DateTime']['output'];
+  createdAt: Scalars["DateTime"]["output"];
   /** User's first name */
-  firstName: Scalars['String']['output'];
+  firstName: Scalars["String"]["output"];
   /** Computed full name (firstName + lastName) */
-  fullName: Scalars['String']['output'];
+  fullName: Scalars["String"]["output"];
   /** Whether the user has uploaded an avatar image */
-  hasAvatar: Scalars['Boolean']['output'];
+  hasAvatar: Scalars["Boolean"]["output"];
   /** Unique identifier for the user (UUID) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** User's last name */
-  lastName: Scalars['String']['output'];
+  lastName: Scalars["String"]["output"];
   /** User's role in the system */
   role: UserRole;
 };
@@ -3815,1162 +3729,5081 @@ export type UserCreateResult = {
 /** Input for fetching a user by ID */
 export type UserInput = {
   /** Unique user ID */
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 };
 
 /** User roles in the system */
 export enum UserRole {
-  Admin = 'ADMIN',
-  Moderator = 'MODERATOR',
-  Service = 'SERVICE',
-  User = 'USER'
+  Admin = "ADMIN",
+  Moderator = "MODERATOR",
+  Service = "SERVICE",
+  User = "USER",
 }
 
 /** Result of updating a user */
 export type UserUpdateResult = {
-  __typename?: 'UserUpdateResult';
+  __typename?: "UserUpdateResult";
   /** External authentication provider user ID */
-  authUserId: Scalars['String']['output'];
+  authUserId: Scalars["String"]["output"];
   /** User's first name */
-  firstName: Scalars['String']['output'];
+  firstName: Scalars["String"]["output"];
   /** Computed full name (firstName + lastName) */
-  fullName: Scalars['String']['output'];
+  fullName: Scalars["String"]["output"];
   /** Whether the user has uploaded an avatar image */
-  hasAvatar: Scalars['Boolean']['output'];
+  hasAvatar: Scalars["Boolean"]["output"];
   /** Unique identifier for the user (UUID) */
-  id: Scalars['ID']['output'];
+  id: Scalars["ID"]["output"];
   /** User's last name */
-  lastName: Scalars['String']['output'];
+  lastName: Scalars["String"]["output"];
   /** User's role in the system */
   role: UserRole;
   /** When the user was last updated */
-  updatedAt: Scalars['DateTime']['output'];
+  updatedAt: Scalars["DateTime"]["output"];
 };
 
 /** Input for a single vote in a batch submission */
 export type VoteInput = {
   /** Normalized weight for weighted voting (optional) */
-  normalizedWeight?: InputMaybe<Scalars['Float']['input']>;
+  normalizedWeight?: InputMaybe<Scalars["Float"]["input"]>;
   /** ID of the submission being voted for */
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
   /** Points to award (optional) */
-  votePoints?: InputMaybe<Scalars['Int']['input']>;
+  votePoints?: InputMaybe<Scalars["Int"]["input"]>;
   /** Voting position (1, 2, or 3) */
-  votePosition: Scalars['Int']['input'];
+  votePosition: Scalars["Int"]["input"];
 };
 
 /** Current voting progress for a challenge */
 export type VotingProgress = {
-  __typename?: 'VotingProgress';
+  __typename?: "VotingProgress";
   /** ID of the challenge */
-  challengeId: Scalars['ID']['output'];
+  challengeId: Scalars["ID"]["output"];
   /** Vote statistics per submission (sorted by score) */
   submissionStats: Array<SubmissionVoteCount>;
   /** Total number of votes cast across all submissions */
-  totalVotes: Scalars['Int']['output'];
+  totalVotes: Scalars["Int"]["output"];
 };
 
-export type UserFieldsFragment = { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean };
-
-export type UserSummaryFieldsFragment = { __typename?: 'User', id: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean };
-
-export type UserCreateResultFieldsFragment = { __typename?: 'UserCreateResult', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any };
-
-export type UserUpdateResultFieldsFragment = { __typename?: 'UserUpdateResult', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, updatedAt: any };
-
-export type TripFieldsFragment = { __typename?: 'Trip', id: string, name: string, description?: string | null, startDate: any, endDate: any, isActive: boolean, isPlanning: boolean, isCompleted: boolean, isCancelled: boolean, status: TripStatus, backgroundImagePath?: string | null, createdAt: any, updatedAt: any };
-
-export type TripSummaryFieldsFragment = { __typename?: 'Trip', id: string, name: string, description?: string | null, startDate: any, endDate: any, status: TripStatus };
-
-export type GroupFieldsFragment = { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any };
-
-export type GroupSummaryFieldsFragment = { __typename?: 'GroupSummary', id: string, name: string };
-
-export type GroupRankingFieldsFragment = { __typename?: 'GroupRanking', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any };
-
-export type ActivityFieldsFragment = { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null };
-
-export type ActivityAdminFieldsFragment = { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string };
-
-export type HiddenActivityFieldsFragment = { __typename?: 'HiddenActivityResult', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, hiddenAt: any, hiddenReason?: string | null, updatedAt: any };
-
-export type ChallengeSubmissionFieldsFragment = { __typename?: 'ChallengeSubmission', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null };
-
-export type ChallengeSubmissionCreateResultFieldsFragment = { __typename?: 'ChallengeSubmissionCreateResult', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null };
-
-export type ChallengeSubmissionUpdateResultFieldsFragment = { __typename?: 'ChallengeSubmissionUpdateResult', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null };
-
-export type SubmissionGroupFieldsFragment = { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null };
-
-export type SubmissionReviewerFieldsFragment = { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null };
-
-export type ChallengeVoteFieldsFragment = { __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any };
-
-export type ChallengeVoteListFieldsFragment = { __typename?: 'ChallengeVoteList', totalVotes: number, votes: Array<{ __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any }> };
-
-export type ChallengeVoteAdminListFieldsFragment = { __typename?: 'ChallengeVoteAdminList', totalVotes: number, uniqueVoters: number, votes: Array<{ __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any }> };
-
-export type LocationFieldsFragment = { __typename?: 'Location', id: string, userId: string, latitude?: number | null, longitude?: number | null, accuracy?: number | null, altitude?: number | null, altitudeAccuracy?: number | null, heading?: number | null, speed?: number | null, isSharingLocation: boolean, timestamp: any, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> };
-
-export type LocationSummaryFieldsFragment = { __typename?: 'Location', id: string, userId: string, latitude?: number | null, longitude?: number | null, isSharingLocation: boolean, timestamp: any };
-
-export type FriendLocationFieldsFragment = { __typename?: 'FriendLocation', id: string, userId: string, latitude?: number | null, longitude?: number | null, accuracy?: number | null, altitude?: number | null, heading?: number | null, speed?: number | null, isSharingLocation: boolean, distanceKm?: number | null, timestamp: any };
-
-export type LocationSharingSettingsFieldsFragment = { __typename?: 'LocationSharingSettings', isSharingLocation: boolean, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> };
-
-export type SharingUserFieldsFragment = { __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null };
-
-export type NotificationFieldsFragment = { __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null };
-
-export type NotificationWithCreatorFieldsFragment = { __typename?: 'NotificationInfo', id: string, title: string, body: string, url?: string | null, tripId?: string | null, createdAt: any, createdBy?: { __typename?: 'NotificationCreator', id: string, firstName?: string | null, lastName?: string | null, authUserId?: string | null } | null };
-
-export type NotificationCreatorFieldsFragment = { __typename?: 'NotificationCreator', id: string, firstName?: string | null, lastName?: string | null, authUserId?: string | null };
-
-export type NotificationScheduleFieldsFragment = { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any };
-
-export type NotificationScheduleSummaryFieldsFragment = { __typename?: 'NotificationScheduleSummary', id: string, name: string, notificationType: NotificationScheduleType, hour: number, minute: number, isActive: boolean, startDate: any, endDate: any, tripId?: string | null };
-
-export type NotificationDeliveryFieldsFragment = { __typename?: 'NotificationDelivery', id: string, notificationId: string, scheduleId?: string | null, tripId: string, status: DeliveryStatus, deliveryStartedAt: any, deliveryCompletedAt?: any | null, totalRecipients: number, successCount: number, failureCount: number, errorLog?: string | null, createdAt: any, updatedAt: any, notification?: { __typename?: 'NotificationInfo', id: string, title: string, body: string, url?: string | null, tripId?: string | null, createdAt: any, createdBy?: { __typename?: 'NotificationCreator', id: string, firstName?: string | null, lastName?: string | null, authUserId?: string | null } | null } | null };
-
-export type ExecutionHistoryEntryFieldsFragment = { __typename?: 'ExecutionHistoryEntry', id: string, executedAt: any, notification?: { __typename?: 'ExecutionHistoryNotification', id: string, title: string, body: string, createdAt: any } | null };
-
-export type ExecutionHistoryNotificationFieldsFragment = { __typename?: 'ExecutionHistoryNotification', id: string, title: string, body: string, createdAt: any };
-
-export type SponsorFieldsFragment = { __typename?: 'Sponsor', id: string, name: string, description: string, logoPath: string, isActive: boolean, height?: number | null, offsetX?: number | null, offsetY?: number | null, hasLogoAdjustments: boolean, createdAt: any, updatedAt?: any | null };
-
-export type CoinTransactionFieldsFragment = { __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null };
-
-export type CoinTransactionGroupFieldsFragment = { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number };
-
-export type CoinTransactionAdminFieldsFragment = { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string };
-
-export type CoinTransactionResultFieldsFragment = { __typename?: 'CoinTransactionResult', id: string, amount: number, groupId: string, adminId: string, createdAt: any, transaction: { __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null } };
-
-export type RewardFieldsFragment = { __typename?: 'Reward', id: string, name: string, description: string, coinCostPercentage: number, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any };
-
-export type RewardWithCalculationsFieldsFragment = { __typename?: 'RewardWithCalculations', id: string, name: string, description: string, coinCostPercentage: number, dynamicCoinCost: number, canAfford?: boolean | null, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any };
-
-export type RewardPurchaseFieldsFragment = { __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any };
-
-export type SubmissionReportFieldsFragment = { __typename?: 'SubmissionReport', id: string, submissionId: string, reporterId: string, reason: ReportReason, reasonDisplay: string, details?: string | null, hasDetails: boolean, createdAt: any, reporter: { __typename?: 'SubmissionReportReporterInfo', id: string, user: { __typename?: 'SubmissionReportUserInfo', id: string, firstName: string, lastName: string, email?: string | null, hasAvatar: boolean } } };
-
-export type SubmissionReportCreateResultFieldsFragment = { __typename?: 'SubmissionReportCreateResult', id: string, submissionId: string, reporterId: string, reason: ReportReason, reasonDisplay: string, details?: string | null, hasDetails: boolean, createdAt: any };
-
-export type SubmissionReportReporterFieldsFragment = { __typename?: 'SubmissionReportReporterInfo', id: string, user: { __typename?: 'SubmissionReportUserInfo', id: string, firstName: string, lastName: string, email?: string | null, hasAvatar: boolean } };
-
-export type SubmissionReportUserFieldsFragment = { __typename?: 'SubmissionReportUserInfo', id: string, firstName: string, lastName: string, email?: string | null, hasAvatar: boolean };
-
-export type PaginationInfoFieldsFragment = { __typename?: 'PaginationInfo', hasMore: boolean, pageSize: number };
-
-export type OffsetPaginationFieldsFragment = { __typename?: 'GroupPagination', hasMore: boolean, limit: number, offset: number, total: number };
-
-export type TripPaginationInfoFieldsFragment = { __typename?: 'TripPaginationInfo', hasMore: boolean, limit: number, offset: number, total: number };
-
-export type NotificationPaginationInfoFieldsFragment = { __typename?: 'NotificationPaginationInfo', page: number, pageSize: number, total: number, totalPages: number };
-
-export type NotificationOffsetPaginationInfoFieldsFragment = { __typename?: 'NotificationOffsetPaginationInfo', hasMore: boolean, limit: number, offset: number, total: number };
-
-export type CoinTransactionPaginationFieldsFragment = { __typename?: 'CoinTransactionPagination', hasMore: boolean, limit: number, offset: number, total: number };
-
-export type RewardPaginationFieldsFragment = { __typename?: 'RewardPagination', hasMore: boolean, limit: number, offset: number, total: number };
-
-export type NotificationSchedulePaginationFieldsFragment = { __typename?: 'NotificationSchedulePagination', hasMore: boolean, limit: number, offset: number, total: number };
-
-export type DeliveryPaginationFieldsFragment = { __typename?: 'DeliveryPagination', limit: number, offset: number, total: number };
-
-export type ModerationPaginationInfoFieldsFragment = { __typename?: 'ModerationPaginationInfo', hasMore: boolean, page: number, pageSize: number, total: number, totalPages: number };
-
-export type ActivityCursorFieldsFragment = { __typename?: 'ActivityCursor', id: string, createdAt: any, isPinned: boolean };
-
-export type ActivityFeedResultFieldsFragment = { __typename?: 'ActivityFeedResult', activities: Array<{ __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null }>, nextCursor?: { __typename?: 'ActivityCursor', id: string, createdAt: any, isPinned: boolean } | null, pagination: { __typename?: 'PaginationInfo', hasMore: boolean, pageSize: number } };
-
-export type ActivityFeedModerationResultFieldsFragment = { __typename?: 'ActivityFeedModerationResult', activities: Array<{ __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null }>, pagination: { __typename?: 'ModerationPaginationInfo', hasMore: boolean, page: number, pageSize: number, total: number, totalPages: number } };
-
-export type GroupsConnectionFieldsFragment = { __typename?: 'GroupsConnection', groups: Array<{ __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any }>, pagination: { __typename?: 'GroupPagination', hasMore: boolean, limit: number, offset: number, total: number } };
-
-export type CoinTransactionsConnectionFieldsFragment = { __typename?: 'CoinTransactionsConnection', transactions: Array<{ __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null }>, pagination: { __typename?: 'CoinTransactionPagination', hasMore: boolean, limit: number, offset: number, total: number } };
-
-export type RewardsConnectionFieldsFragment = { __typename?: 'RewardsConnection', rewards: Array<{ __typename?: 'RewardWithCalculations', id: string, name: string, description: string, coinCostPercentage: number, dynamicCoinCost: number, canAfford?: boolean | null, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any }>, pagination: { __typename?: 'RewardPagination', hasMore: boolean, limit: number, offset: number, total: number } };
-
-export type PurchaseHistoryConnectionFieldsFragment = { __typename?: 'PurchaseHistoryConnection', purchases: Array<{ __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any }>, pagination: { __typename?: 'RewardPagination', hasMore: boolean, limit: number, offset: number, total: number } };
-
-export type NotificationSchedulesConnectionFieldsFragment = { __typename?: 'NotificationSchedulesConnection', schedules: Array<{ __typename?: 'NotificationScheduleSummary', id: string, name: string, notificationType: NotificationScheduleType, hour: number, minute: number, isActive: boolean, startDate: any, endDate: any, tripId?: string | null }>, pagination: { __typename?: 'NotificationSchedulePagination', hasMore: boolean, limit: number, offset: number, total: number } };
-
-export type NotificationDeliveryListResultFieldsFragment = { __typename?: 'NotificationDeliveryListResult', deliveries: Array<{ __typename?: 'NotificationDelivery', id: string, notificationId: string, scheduleId?: string | null, tripId: string, status: DeliveryStatus, deliveryStartedAt: any, deliveryCompletedAt?: any | null, totalRecipients: number, successCount: number, failureCount: number, errorLog?: string | null, createdAt: any, updatedAt: any, notification?: { __typename?: 'NotificationInfo', id: string, title: string, body: string, url?: string | null, tripId?: string | null, createdAt: any, createdBy?: { __typename?: 'NotificationCreator', id: string, firstName?: string | null, lastName?: string | null, authUserId?: string | null } | null } | null }>, pagination: { __typename?: 'DeliveryPagination', limit: number, offset: number, total: number } };
-
-export type ChallengeSubmissionListResultFieldsFragment = { __typename?: 'ChallengeSubmissionListResult', totalCount: number, submissions: Array<{ __typename?: 'ChallengeSubmission', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null }> };
-
-export type SubmissionReportListResultFieldsFragment = { __typename?: 'SubmissionReportListResult', totalCount: number, reports: Array<{ __typename?: 'SubmissionReport', id: string, submissionId: string, reporterId: string, reason: ReportReason, reasonDisplay: string, details?: string | null, hasDetails: boolean, createdAt: any, reporter: { __typename?: 'SubmissionReportReporterInfo', id: string, user: { __typename?: 'SubmissionReportUserInfo', id: string, firstName: string, lastName: string, email?: string | null, hasAvatar: boolean } } }> };
-
-export type FriendsLocationsConnectionFieldsFragment = { __typename?: 'FriendsLocationsConnection', total: number, locations: Array<{ __typename?: 'FriendLocation', id: string, userId: string, latitude?: number | null, longitude?: number | null, accuracy?: number | null, altitude?: number | null, heading?: number | null, speed?: number | null, isSharingLocation: boolean, distanceKm?: number | null, timestamp: any }> };
-
-export type TripListResultFieldsFragment = { __typename?: 'TripListResult', trips: Array<{ __typename?: 'Trip', id: string, name: string, description?: string | null, startDate: any, endDate: any, isActive: boolean, isPlanning: boolean, isCompleted: boolean, isCancelled: boolean, status: TripStatus, backgroundImagePath?: string | null, createdAt: any, updatedAt: any }>, pagination: { __typename?: 'TripPaginationInfo', hasMore: boolean, limit: number, offset: number, total: number } };
-
-export type SponsorListResultFieldsFragment = { __typename?: 'SponsorListResult', total: number, sponsors: Array<{ __typename?: 'Sponsor', id: string, name: string, description: string, logoPath: string, isActive: boolean, height?: number | null, offsetX?: number | null, offsetY?: number | null, hasLogoAdjustments: boolean, createdAt: any, updatedAt?: any | null }> };
-
-export type MyNotificationsResultFieldsFragment = { __typename?: 'MyNotificationsResult', notifications: Array<{ __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null }>, pagination: { __typename?: 'NotificationPaginationInfo', page: number, pageSize: number, total: number, totalPages: number } };
-
-export type AllNotificationsResultFieldsFragment = { __typename?: 'AllNotificationsResult', notifications: Array<{ __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null }>, pagination: { __typename?: 'NotificationOffsetPaginationInfo', hasMore: boolean, limit: number, offset: number, total: number } };
-
-export type CoinStatisticsFieldsFragment = { __typename?: 'CoinStatistics', addedCoins: number, removedCoins: number, netBalance: number, transactionCount: number, time: any };
-
-export type CoinQuickStatsFieldsFragment = { __typename?: 'CoinQuickStats', totalCoins: number, totalGroups: number, averageCoinsPerGroup: number, richestGroupId?: string | null, richestGroupName?: string | null, time: any };
-
-export type CoinAdditionalInsightsFieldsFragment = { __typename?: 'CoinAdditionalInsights', mostActiveAdmin?: { __typename?: 'FormattedUser', name: string, transactionCount: number } | null, recentTransactions: Array<{ __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null }> };
-
-export type FormattedUserFieldsFragment = { __typename?: 'FormattedUser', name: string, transactionCount: number };
-
-export type MostActiveAdminStatsFieldsFragment = { __typename?: 'MostActiveAdminStats', adminId: string, adminName?: string | null, transactionCount: number, totalAmount: number };
-
-export type GroupRankingResultFieldsFragment = { __typename?: 'GroupRankingResult', currentDate: any, data: Array<{ __typename?: 'GroupRanking', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any }> };
-
-export type DeliveryStatsFieldsFragment = { __typename?: 'DeliveryStats', totalDeliveries: number, totalSuccess: number, totalFailures: number, totalRecipients: number, successRate: number, avgSuccessPerDelivery: number, avgFailuresPerDelivery: number, statusBreakdown: { __typename?: 'DeliveryStatusBreakdown', success: number, failure: number, partialFailure: number, pending: number } };
-
-export type DeliveryStatusBreakdownFieldsFragment = { __typename?: 'DeliveryStatusBreakdown', success: number, failure: number, partialFailure: number, pending: number };
-
-export type VotingProgressFieldsFragment = { __typename?: 'VotingProgress', challengeId: string, totalVotes: number, submissionStats: Array<{ __typename?: 'SubmissionVoteCount', submissionId: string, voteCount: number, voteScore: number }> };
-
-export type SubmissionVoteCountFieldsFragment = { __typename?: 'SubmissionVoteCount', submissionId: string, voteCount: number, voteScore: number };
-
-export type JudgedStaffVotingProgressFieldsFragment = { __typename?: 'JudgedStaffVotingProgress', allAdminsVoted: boolean, totalAdmins: number, votedAdmins: number, pendingAdmins: number, eligibleSubmissionsCount: number, requiredPositions: number, adminProgress: Array<{ __typename?: 'AdminVotingInfo', participantId: string, hasVotedAll: boolean, votedPositions: Array<number> }> };
-
-export type AdminVotingInfoFieldsFragment = { __typename?: 'AdminVotingInfo', participantId: string, hasVotedAll: boolean, votedPositions: Array<number> };
-
-export type ReactionCountsFieldsFragment = { __typename?: 'ReactionCounts', clap: number, fire: number, heart: number, star: number };
-
-export type ReactionsSummaryFieldsFragment = { __typename?: 'ReactionsSummary', total: number, myReactions: Array<ReactionType>, counts: { __typename?: 'ReactionCounts', clap: number, fire: number, heart: number, star: number } };
-
-export type CreateGroupPayloadFieldsFragment = { __typename?: 'CreateGroupPayload', group: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } };
-
-export type UpdateGroupPayloadFieldsFragment = { __typename?: 'UpdateGroupPayload', group: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } };
-
-export type DeleteGroupPayloadFieldsFragment = { __typename?: 'DeleteGroupPayload', success: boolean };
-
-export type CreateRewardPayloadFieldsFragment = { __typename?: 'CreateRewardPayload', reward: { __typename?: 'Reward', id: string, name: string, description: string, coinCostPercentage: number, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any } };
-
-export type UpdateRewardPayloadFieldsFragment = { __typename?: 'UpdateRewardPayload', reward: { __typename?: 'Reward', id: string, name: string, description: string, coinCostPercentage: number, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any } };
-
-export type DeleteRewardPayloadFieldsFragment = { __typename?: 'DeleteRewardPayload', success: boolean, deletedRewardId: string };
-
-export type SetRewardHiddenPayloadFieldsFragment = { __typename?: 'SetRewardHiddenPayload', previousHidden: boolean, reward: { __typename?: 'Reward', id: string, name: string, description: string, coinCostPercentage: number, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any } };
-
-export type PurchaseRewardPayloadFieldsFragment = { __typename?: 'PurchaseRewardPayload', remainingGroupCoins: number, remainingRewardQuantity: number, purchase: { __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any } };
-
-export type UpdatePurchaseStatusPayloadFieldsFragment = { __typename?: 'UpdatePurchaseStatusPayload', previousStatus: RewardPurchaseStatus, refunded: boolean, purchase: { __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any } };
-
-export type UpdateMyPurchaseStatusPayloadFieldsFragment = { __typename?: 'UpdateMyPurchaseStatusPayload', previousStatus: RewardPurchaseStatus, purchase: { __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any } };
-
-export type CreateSponsorPayloadFieldsFragment = { __typename?: 'CreateSponsorPayload', sponsor: { __typename?: 'Sponsor', id: string, name: string, description: string, logoPath: string, isActive: boolean, height?: number | null, offsetX?: number | null, offsetY?: number | null, hasLogoAdjustments: boolean, createdAt: any, updatedAt?: any | null } };
-
-export type UpdateSponsorPayloadFieldsFragment = { __typename?: 'UpdateSponsorPayload', sponsor: { __typename?: 'Sponsor', id: string, name: string, description: string, logoPath: string, isActive: boolean, height?: number | null, offsetX?: number | null, offsetY?: number | null, hasLogoAdjustments: boolean, createdAt: any, updatedAt?: any | null } };
-
-export type DeleteSponsorPayloadFieldsFragment = { __typename?: 'DeleteSponsorPayload', success: boolean, id: string };
-
-export type LinkSponsorToTripPayloadFieldsFragment = { __typename?: 'LinkSponsorToTripPayload', linked: boolean, sponsorId: string, tripId: string };
-
-export type UnlinkSponsorFromTripPayloadFieldsFragment = { __typename?: 'UnlinkSponsorFromTripPayload', unlinked: boolean, sponsorId: string, tripId: string };
-
-export type CreateNotificationResultFieldsFragment = { __typename?: 'CreateNotificationResult', notification: { __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null } };
-
-export type UpdateNotificationResultFieldsFragment = { __typename?: 'UpdateNotificationResult', notification: { __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null } };
-
-export type DeleteNotificationResultFieldsFragment = { __typename?: 'DeleteNotificationResult', success: boolean };
-
-export type UpdateNotificationStatusResultFieldsFragment = { __typename?: 'UpdateNotificationStatusResult', previousStatus: NotificationStatus, newStatus: NotificationStatus, notification: { __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null } };
-
-export type CreateNotificationSchedulePayloadFieldsFragment = { __typename?: 'CreateNotificationSchedulePayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } };
-
-export type UpdateNotificationSchedulePayloadFieldsFragment = { __typename?: 'UpdateNotificationSchedulePayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } };
-
-export type DeleteNotificationSchedulePayloadFieldsFragment = { __typename?: 'DeleteNotificationSchedulePayload', success: boolean, message: string, deletedExecutionCount?: number | null };
-
-export type DuplicateNotificationSchedulePayloadFieldsFragment = { __typename?: 'DuplicateNotificationSchedulePayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } };
-
-export type ToggleScheduleActivePayloadFieldsFragment = { __typename?: 'ToggleScheduleActivePayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } };
-
-export type BulkToggleActivePayloadFieldsFragment = { __typename?: 'BulkToggleActivePayload', success: boolean, updatedCount: number };
-
-export type BulkDeleteNotificationSchedulesPayloadFieldsFragment = { __typename?: 'BulkDeleteNotificationSchedulesPayload', success: boolean, requestedCount: number, deletedCount: number, notFoundIds?: Array<string> | null };
-
-export type UpdateLastRunPayloadFieldsFragment = { __typename?: 'UpdateLastRunPayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } };
-
-export type SendMobileNotificationsPayloadFieldsFragment = { __typename?: 'SendMobileNotificationsPayload', success: boolean, sent: number, failed: number, total: number };
-
-export type TrackDeliveryStartPayloadFieldsFragment = { __typename?: 'TrackDeliveryStartPayload', success: boolean };
-
-export type TrackDeliveryCompletePayloadFieldsFragment = { __typename?: 'TrackDeliveryCompletePayload', success: boolean };
-
-export type TrackDeliveryFailurePayloadFieldsFragment = { __typename?: 'TrackDeliveryFailurePayload', success: boolean };
-
-export type DeleteActivityResultFieldsFragment = { __typename?: 'DeleteActivityResult', success: boolean };
-
-export type ToggleReactionResultFieldsFragment = { __typename?: 'ToggleReactionResult', activityId: string, reactionType: ReactionType, isActive: boolean, reactionsSummary: { __typename?: 'ReactionsSummary', total: number, myReactions: Array<ReactionType>, counts: { __typename?: 'ReactionCounts', clap: number, fire: number, heart: number, star: number } } };
-
-export type SubmitVotePayloadFieldsFragment = { __typename?: 'SubmitVotePayload', vote: { __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any } };
-
-export type SubmitVotesPayloadFieldsFragment = { __typename?: 'SubmitVotesPayload', totalVotesCast: number, votes: Array<{ __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any }> };
-
-export type ForceEndVotingPayloadFieldsFragment = { __typename?: 'ForceEndVotingPayload', success: boolean, challengeId: string, challengeStatus: string, finalized: boolean, totalVotes: number };
-
-export type DeleteTripResultFieldsFragment = { __typename?: 'DeleteTripResult', success: boolean };
-
-export type UpdateLocationPayloadFieldsFragment = { __typename?: 'UpdateLocationPayload', location: { __typename?: 'Location', id: string, userId: string, latitude?: number | null, longitude?: number | null, accuracy?: number | null, altitude?: number | null, altitudeAccuracy?: number | null, heading?: number | null, speed?: number | null, isSharingLocation: boolean, timestamp: any, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } };
-
-export type UpdateSharingSettingsPayloadFieldsFragment = { __typename?: 'UpdateSharingSettingsPayload', settings: { __typename?: 'LocationSharingSettings', isSharingLocation: boolean, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } };
-
-export type SharingUserPayloadFieldsFragment = { __typename?: 'SharingUserPayload', location: { __typename?: 'Location', id: string, userId: string, latitude?: number | null, longitude?: number | null, accuracy?: number | null, altitude?: number | null, altitudeAccuracy?: number | null, heading?: number | null, speed?: number | null, isSharingLocation: boolean, timestamp: any, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } };
-
-export type TotalAvailablePointsPayloadFieldsFragment = { __typename?: 'TotalAvailablePointsPayload', totalPoints: number };
-
-export type CheckInactiveUsersPayloadFieldsFragment = { __typename?: 'CheckInactiveUsersPayload', checked: number, notified: number, skipped: number, errors: number };
-
-export type DownloadUrlResultFieldsFragment = { __typename?: 'DownloadUrlResult', signedUrl: string, expiresAt: any };
-
-export type UploadUrlResultFieldsFragment = { __typename?: 'UploadUrlResult', bucket: string, storagePath: string, objectPath: string, resumableUrl: string, token: string };
-
-export type PublicUrlResultFieldsFragment = { __typename?: 'PublicUrlResult', publicUrl: string };
-
-export type ExecutionHistoryResultFieldsFragment = { __typename?: 'ExecutionHistoryResult', executions: Array<{ __typename?: 'ExecutionHistoryEntry', id: string, executedAt: any, notification?: { __typename?: 'ExecutionHistoryNotification', id: string, title: string, body: string, createdAt: any } | null }> };
+export type UserFieldsFragment = {
+  __typename?: "User";
+  id: string;
+  authUserId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  hasAvatar: boolean;
+  role: UserRole;
+  createdAt: any;
+  lastSeenOn?: any | null;
+  isAdmin: boolean;
+  isModerator: boolean;
+};
+
+export type UserSummaryFieldsFragment = {
+  __typename?: "User";
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  hasAvatar: boolean;
+};
+
+export type UserCreateResultFieldsFragment = {
+  __typename?: "UserCreateResult";
+  id: string;
+  authUserId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  hasAvatar: boolean;
+  role: UserRole;
+  createdAt: any;
+};
+
+export type UserUpdateResultFieldsFragment = {
+  __typename?: "UserUpdateResult";
+  id: string;
+  authUserId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  hasAvatar: boolean;
+  role: UserRole;
+  updatedAt: any;
+};
+
+export type TripFieldsFragment = {
+  __typename?: "Trip";
+  id: string;
+  name: string;
+  description?: string | null;
+  startDate: any;
+  endDate: any;
+  isActive: boolean;
+  isPlanning: boolean;
+  isCompleted: boolean;
+  isCancelled: boolean;
+  status: TripStatus;
+  backgroundImagePath?: string | null;
+  createdAt: any;
+  updatedAt: any;
+};
+
+export type TripSummaryFieldsFragment = {
+  __typename?: "Trip";
+  id: string;
+  name: string;
+  description?: string | null;
+  startDate: any;
+  endDate: any;
+  status: TripStatus;
+};
+
+export type GroupFieldsFragment = {
+  __typename?: "Group";
+  id: string;
+  name: string;
+  description?: string | null;
+  code: string;
+  image?: string | null;
+  coins: number;
+  isActive: boolean;
+  status: GroupStatus;
+  tripId: string;
+  organizerId: string;
+  createdAt: any;
+  updatedAt: any;
+};
+
+export type GroupSummaryFieldsFragment = {
+  __typename?: "GroupSummary";
+  id: string;
+  name: string;
+};
+
+export type GroupRankingFieldsFragment = {
+  __typename?: "GroupRanking";
+  id: string;
+  name: string;
+  description?: string | null;
+  code: string;
+  image?: string | null;
+  coins: number;
+  isActive: boolean;
+  status: GroupStatus;
+  tripId: string;
+  organizerId: string;
+  createdAt: any;
+};
+
+export type ActivityFieldsFragment = {
+  __typename?: "Activity";
+  id: string;
+  tripId: string;
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  activityType: ActivityType;
+  isPinned: boolean;
+  isHidden: boolean;
+  createdAt: any;
+  updatedAt: any;
+  admin?: {
+    __typename?: "ActivityAdmin";
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+};
+
+export type ActivityAdminFieldsFragment = {
+  __typename?: "ActivityAdmin";
+  id: string;
+  firstName: string;
+  lastName: string;
+};
+
+export type HiddenActivityFieldsFragment = {
+  __typename?: "HiddenActivityResult";
+  id: string;
+  tripId: string;
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  activityType: ActivityType;
+  isPinned: boolean;
+  isHidden: boolean;
+  hiddenAt: any;
+  hiddenReason?: string | null;
+  updatedAt: any;
+};
+
+export type ChallengeSubmissionFieldsFragment = {
+  __typename?: "ChallengeSubmission";
+  id: string;
+  challengeId: string;
+  groupId: string;
+  textContent?: string | null;
+  imageIds: Array<string>;
+  videoId?: string | null;
+  hasMedia: boolean;
+  hasLocation: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  awardedPoints: number;
+  bonusPoints: number;
+  totalPoints: number;
+  ranking?: number | null;
+  status: SubmissionStatus;
+  reviewedById?: string | null;
+  reviewedAt?: any | null;
+  rejectionReason?: string | null;
+  voteCount: number;
+  voteScore: number;
+  createdAt: any;
+  updatedAt: any;
+  reviewedBy?: {
+    __typename?: "SubmissionReviewerInfo";
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+  } | null;
+  group?: {
+    __typename?: "SubmissionGroupInfo";
+    id: string;
+    name: string;
+    description?: string | null;
+    image?: string | null;
+  } | null;
+};
+
+export type ChallengeSubmissionCreateResultFieldsFragment = {
+  __typename?: "ChallengeSubmissionCreateResult";
+  id: string;
+  challengeId: string;
+  groupId: string;
+  textContent?: string | null;
+  imageIds: Array<string>;
+  videoId?: string | null;
+  hasMedia: boolean;
+  hasLocation: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  awardedPoints: number;
+  bonusPoints: number;
+  totalPoints: number;
+  ranking?: number | null;
+  status: SubmissionStatus;
+  reviewedById?: string | null;
+  reviewedAt?: any | null;
+  rejectionReason?: string | null;
+  voteCount: number;
+  voteScore: number;
+  createdAt: any;
+  updatedAt: any;
+  reviewedBy?: {
+    __typename?: "SubmissionReviewerInfo";
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+  } | null;
+  group?: {
+    __typename?: "SubmissionGroupInfo";
+    id: string;
+    name: string;
+    description?: string | null;
+    image?: string | null;
+  } | null;
+};
+
+export type ChallengeSubmissionUpdateResultFieldsFragment = {
+  __typename?: "ChallengeSubmissionUpdateResult";
+  id: string;
+  challengeId: string;
+  groupId: string;
+  textContent?: string | null;
+  imageIds: Array<string>;
+  videoId?: string | null;
+  hasMedia: boolean;
+  hasLocation: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  awardedPoints: number;
+  bonusPoints: number;
+  totalPoints: number;
+  ranking?: number | null;
+  status: SubmissionStatus;
+  reviewedById?: string | null;
+  reviewedAt?: any | null;
+  rejectionReason?: string | null;
+  voteCount: number;
+  voteScore: number;
+  createdAt: any;
+  updatedAt: any;
+  reviewedBy?: {
+    __typename?: "SubmissionReviewerInfo";
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+  } | null;
+  group?: {
+    __typename?: "SubmissionGroupInfo";
+    id: string;
+    name: string;
+    description?: string | null;
+    image?: string | null;
+  } | null;
+};
+
+export type SubmissionGroupFieldsFragment = {
+  __typename?: "SubmissionGroupInfo";
+  id: string;
+  name: string;
+  description?: string | null;
+  image?: string | null;
+};
+
+export type SubmissionReviewerFieldsFragment = {
+  __typename?: "SubmissionReviewerInfo";
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+};
+
+export type ChallengeVoteFieldsFragment = {
+  __typename?: "ChallengeVote";
+  id: string;
+  challengeId: string;
+  submissionId: string;
+  voterId: string;
+  votePosition: number;
+  votePoints: number;
+  normalizedWeight: number;
+  votedAt: any;
+};
+
+export type ChallengeVoteListFieldsFragment = {
+  __typename?: "ChallengeVoteList";
+  totalVotes: number;
+  votes: Array<{
+    __typename?: "ChallengeVote";
+    id: string;
+    challengeId: string;
+    submissionId: string;
+    voterId: string;
+    votePosition: number;
+    votePoints: number;
+    normalizedWeight: number;
+    votedAt: any;
+  }>;
+};
+
+export type ChallengeVoteAdminListFieldsFragment = {
+  __typename?: "ChallengeVoteAdminList";
+  totalVotes: number;
+  uniqueVoters: number;
+  votes: Array<{
+    __typename?: "ChallengeVote";
+    id: string;
+    challengeId: string;
+    submissionId: string;
+    voterId: string;
+    votePosition: number;
+    votePoints: number;
+    normalizedWeight: number;
+    votedAt: any;
+  }>;
+};
+
+export type LocationFieldsFragment = {
+  __typename?: "Location";
+  id: string;
+  userId: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  accuracy?: number | null;
+  altitude?: number | null;
+  altitudeAccuracy?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  isSharingLocation: boolean;
+  timestamp: any;
+  usersToShareWith: Array<{
+    __typename?: "SharingUserInfo";
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  }>;
+};
+
+export type LocationSummaryFieldsFragment = {
+  __typename?: "Location";
+  id: string;
+  userId: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  isSharingLocation: boolean;
+  timestamp: any;
+};
+
+export type FriendLocationFieldsFragment = {
+  __typename?: "FriendLocation";
+  id: string;
+  userId: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  accuracy?: number | null;
+  altitude?: number | null;
+  heading?: number | null;
+  speed?: number | null;
+  isSharingLocation: boolean;
+  distanceKm?: number | null;
+  timestamp: any;
+};
+
+export type LocationSharingSettingsFieldsFragment = {
+  __typename?: "LocationSharingSettings";
+  isSharingLocation: boolean;
+  usersToShareWith: Array<{
+    __typename?: "SharingUserInfo";
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  }>;
+};
+
+export type SharingUserFieldsFragment = {
+  __typename?: "SharingUserInfo";
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+};
+
+export type NotificationFieldsFragment = {
+  __typename?: "Notification";
+  id: string;
+  title: string;
+  body: string;
+  isSent: boolean;
+  isScheduled: boolean;
+  isReadyToSend?: boolean | null;
+  status: NotificationStatus;
+  priority: NotificationPriority;
+  scheduledFor?: any | null;
+  sentAt?: any | null;
+  url?: string | null;
+  tripId?: string | null;
+  createdById: string;
+  createdAt: any;
+  updatedAt?: any | null;
+};
+
+export type NotificationWithCreatorFieldsFragment = {
+  __typename?: "NotificationInfo";
+  id: string;
+  title: string;
+  body: string;
+  url?: string | null;
+  tripId?: string | null;
+  createdAt: any;
+  createdBy?: {
+    __typename?: "NotificationCreator";
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    authUserId?: string | null;
+  } | null;
+};
+
+export type NotificationCreatorFieldsFragment = {
+  __typename?: "NotificationCreator";
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  authUserId?: string | null;
+};
+
+export type NotificationScheduleFieldsFragment = {
+  __typename?: "NotificationSchedule";
+  id: string;
+  name: string;
+  notificationType: NotificationScheduleType;
+  notificationTitle?: string | null;
+  notificationBody?: string | null;
+  notificationUrl?: string | null;
+  hour: number;
+  minute: number;
+  formattedTime: string;
+  startDate: any;
+  endDate: any;
+  isActive: boolean;
+  isCurrentlyActive: boolean;
+  isExpired: boolean;
+  isUpcoming: boolean;
+  lastRun?: any | null;
+  tripId?: string | null;
+  createdById: string;
+  createdAt: any;
+  updatedAt: any;
+};
+
+export type NotificationScheduleSummaryFieldsFragment = {
+  __typename?: "NotificationScheduleSummary";
+  id: string;
+  name: string;
+  notificationType: NotificationScheduleType;
+  hour: number;
+  minute: number;
+  isActive: boolean;
+  startDate: any;
+  endDate: any;
+  tripId?: string | null;
+};
+
+export type NotificationDeliveryFieldsFragment = {
+  __typename?: "NotificationDelivery";
+  id: string;
+  notificationId: string;
+  scheduleId?: string | null;
+  tripId: string;
+  status: DeliveryStatus;
+  deliveryStartedAt: any;
+  deliveryCompletedAt?: any | null;
+  totalRecipients: number;
+  successCount: number;
+  failureCount: number;
+  errorLog?: string | null;
+  createdAt: any;
+  updatedAt: any;
+  notification?: {
+    __typename?: "NotificationInfo";
+    id: string;
+    title: string;
+    body: string;
+    url?: string | null;
+    tripId?: string | null;
+    createdAt: any;
+    createdBy?: {
+      __typename?: "NotificationCreator";
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      authUserId?: string | null;
+    } | null;
+  } | null;
+};
+
+export type ExecutionHistoryEntryFieldsFragment = {
+  __typename?: "ExecutionHistoryEntry";
+  id: string;
+  executedAt: any;
+  notification?: {
+    __typename?: "ExecutionHistoryNotification";
+    id: string;
+    title: string;
+    body: string;
+    createdAt: any;
+  } | null;
+};
+
+export type ExecutionHistoryNotificationFieldsFragment = {
+  __typename?: "ExecutionHistoryNotification";
+  id: string;
+  title: string;
+  body: string;
+  createdAt: any;
+};
+
+export type SponsorFieldsFragment = {
+  __typename?: "Sponsor";
+  id: string;
+  name: string;
+  description: string;
+  logoPath: string;
+  isActive: boolean;
+  height?: number | null;
+  offsetX?: number | null;
+  offsetY?: number | null;
+  hasLogoAdjustments: boolean;
+  createdAt: any;
+  updatedAt?: any | null;
+};
+
+export type CoinTransactionFieldsFragment = {
+  __typename?: "CoinTransaction";
+  id: string;
+  amount: number;
+  reason?: string | null;
+  groupId: string;
+  adminId: string;
+  createdAt: any;
+  group?: {
+    __typename?: "CoinTransactionGroup";
+    id: string;
+    name: string;
+    coins: number;
+  } | null;
+  admin?: {
+    __typename?: "CoinTransactionAdmin";
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    fullName: string;
+  } | null;
+};
+
+export type CoinTransactionGroupFieldsFragment = {
+  __typename?: "CoinTransactionGroup";
+  id: string;
+  name: string;
+  coins: number;
+};
+
+export type CoinTransactionAdminFieldsFragment = {
+  __typename?: "CoinTransactionAdmin";
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  fullName: string;
+};
+
+export type CoinTransactionResultFieldsFragment = {
+  __typename?: "CoinTransactionResult";
+  id: string;
+  amount: number;
+  groupId: string;
+  adminId: string;
+  createdAt: any;
+  transaction: {
+    __typename?: "CoinTransaction";
+    id: string;
+    amount: number;
+    reason?: string | null;
+    groupId: string;
+    adminId: string;
+    createdAt: any;
+    group?: {
+      __typename?: "CoinTransactionGroup";
+      id: string;
+      name: string;
+      coins: number;
+    } | null;
+    admin?: {
+      __typename?: "CoinTransactionAdmin";
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      fullName: string;
+    } | null;
+  };
+};
+
+export type RewardFieldsFragment = {
+  __typename?: "Reward";
+  id: string;
+  name: string;
+  description: string;
+  coinCostPercentage: number;
+  availableQuantity: number;
+  isInStock: boolean;
+  canBePurchased: boolean;
+  images: Array<string>;
+  primaryImage?: string | null;
+  purchaseCount: number;
+  isHidden: boolean;
+  tripId: string;
+  createdById: string;
+  createdAt: any;
+  updatedAt: any;
+};
+
+export type RewardWithCalculationsFieldsFragment = {
+  __typename?: "RewardWithCalculations";
+  id: string;
+  name: string;
+  description: string;
+  coinCostPercentage: number;
+  dynamicCoinCost: number;
+  canAfford?: boolean | null;
+  availableQuantity: number;
+  isInStock: boolean;
+  canBePurchased: boolean;
+  images: Array<string>;
+  primaryImage?: string | null;
+  purchaseCount: number;
+  isHidden: boolean;
+  tripId: string;
+  createdById: string;
+  createdAt: any;
+  updatedAt: any;
+};
+
+export type RewardPurchaseFieldsFragment = {
+  __typename?: "RewardPurchase";
+  purchaseId: string;
+  rewardId: string;
+  rewardName: string;
+  groupId: string;
+  groupName?: string | null;
+  purchasedById: string;
+  purchasedByName?: string | null;
+  quantity: number;
+  totalCost: number;
+  status: RewardPurchaseStatus;
+  collectionMethod?: string | null;
+  statusUpdatedAt: any;
+  statusUpdatedById?: string | null;
+  statusUpdatedByName?: string | null;
+  purchasedAt: any;
+};
+
+export type SubmissionReportFieldsFragment = {
+  __typename?: "SubmissionReport";
+  id: string;
+  submissionId: string;
+  reporterId: string;
+  reason: ReportReason;
+  reasonDisplay: string;
+  details?: string | null;
+  hasDetails: boolean;
+  createdAt: any;
+  reporter: {
+    __typename?: "SubmissionReportReporterInfo";
+    id: string;
+    user: {
+      __typename?: "SubmissionReportUserInfo";
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+      hasAvatar: boolean;
+    };
+  };
+};
+
+export type SubmissionReportCreateResultFieldsFragment = {
+  __typename?: "SubmissionReportCreateResult";
+  id: string;
+  submissionId: string;
+  reporterId: string;
+  reason: ReportReason;
+  reasonDisplay: string;
+  details?: string | null;
+  hasDetails: boolean;
+  createdAt: any;
+};
+
+export type SubmissionReportReporterFieldsFragment = {
+  __typename?: "SubmissionReportReporterInfo";
+  id: string;
+  user: {
+    __typename?: "SubmissionReportUserInfo";
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    hasAvatar: boolean;
+  };
+};
+
+export type SubmissionReportUserFieldsFragment = {
+  __typename?: "SubmissionReportUserInfo";
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  hasAvatar: boolean;
+};
+
+export type PaginationInfoFieldsFragment = {
+  __typename?: "PaginationInfo";
+  hasMore: boolean;
+  pageSize: number;
+};
+
+export type OffsetPaginationFieldsFragment = {
+  __typename?: "GroupPagination";
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  total: number;
+};
+
+export type TripPaginationInfoFieldsFragment = {
+  __typename?: "TripPaginationInfo";
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  total: number;
+};
+
+export type NotificationPaginationInfoFieldsFragment = {
+  __typename?: "NotificationPaginationInfo";
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type NotificationOffsetPaginationInfoFieldsFragment = {
+  __typename?: "NotificationOffsetPaginationInfo";
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  total: number;
+};
+
+export type CoinTransactionPaginationFieldsFragment = {
+  __typename?: "CoinTransactionPagination";
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  total: number;
+};
+
+export type RewardPaginationFieldsFragment = {
+  __typename?: "RewardPagination";
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  total: number;
+};
+
+export type NotificationSchedulePaginationFieldsFragment = {
+  __typename?: "NotificationSchedulePagination";
+  hasMore: boolean;
+  limit: number;
+  offset: number;
+  total: number;
+};
+
+export type DeliveryPaginationFieldsFragment = {
+  __typename?: "DeliveryPagination";
+  limit: number;
+  offset: number;
+  total: number;
+};
+
+export type ModerationPaginationInfoFieldsFragment = {
+  __typename?: "ModerationPaginationInfo";
+  hasMore: boolean;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type ActivityCursorFieldsFragment = {
+  __typename?: "ActivityCursor";
+  id: string;
+  createdAt: any;
+  isPinned: boolean;
+};
+
+export type ActivityFeedResultFieldsFragment = {
+  __typename?: "ActivityFeedResult";
+  activities: Array<{
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  }>;
+  nextCursor?: {
+    __typename?: "ActivityCursor";
+    id: string;
+    createdAt: any;
+    isPinned: boolean;
+  } | null;
+  pagination: {
+    __typename?: "PaginationInfo";
+    hasMore: boolean;
+    pageSize: number;
+  };
+};
+
+export type ActivityFeedModerationResultFieldsFragment = {
+  __typename?: "ActivityFeedModerationResult";
+  activities: Array<{
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  }>;
+  pagination: {
+    __typename?: "ModerationPaginationInfo";
+    hasMore: boolean;
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type GroupsConnectionFieldsFragment = {
+  __typename?: "GroupsConnection";
+  groups: Array<{
+    __typename?: "Group";
+    id: string;
+    name: string;
+    description?: string | null;
+    code: string;
+    image?: string | null;
+    coins: number;
+    isActive: boolean;
+    status: GroupStatus;
+    tripId: string;
+    organizerId: string;
+    createdAt: any;
+    updatedAt: any;
+  }>;
+  pagination: {
+    __typename?: "GroupPagination";
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+    total: number;
+  };
+};
+
+export type CoinTransactionsConnectionFieldsFragment = {
+  __typename?: "CoinTransactionsConnection";
+  transactions: Array<{
+    __typename?: "CoinTransaction";
+    id: string;
+    amount: number;
+    reason?: string | null;
+    groupId: string;
+    adminId: string;
+    createdAt: any;
+    group?: {
+      __typename?: "CoinTransactionGroup";
+      id: string;
+      name: string;
+      coins: number;
+    } | null;
+    admin?: {
+      __typename?: "CoinTransactionAdmin";
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      fullName: string;
+    } | null;
+  }>;
+  pagination: {
+    __typename?: "CoinTransactionPagination";
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+    total: number;
+  };
+};
+
+export type RewardsConnectionFieldsFragment = {
+  __typename?: "RewardsConnection";
+  rewards: Array<{
+    __typename?: "RewardWithCalculations";
+    id: string;
+    name: string;
+    description: string;
+    coinCostPercentage: number;
+    dynamicCoinCost: number;
+    canAfford?: boolean | null;
+    availableQuantity: number;
+    isInStock: boolean;
+    canBePurchased: boolean;
+    images: Array<string>;
+    primaryImage?: string | null;
+    purchaseCount: number;
+    isHidden: boolean;
+    tripId: string;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  }>;
+  pagination: {
+    __typename?: "RewardPagination";
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+    total: number;
+  };
+};
+
+export type PurchaseHistoryConnectionFieldsFragment = {
+  __typename?: "PurchaseHistoryConnection";
+  purchases: Array<{
+    __typename?: "RewardPurchase";
+    purchaseId: string;
+    rewardId: string;
+    rewardName: string;
+    groupId: string;
+    groupName?: string | null;
+    purchasedById: string;
+    purchasedByName?: string | null;
+    quantity: number;
+    totalCost: number;
+    status: RewardPurchaseStatus;
+    collectionMethod?: string | null;
+    statusUpdatedAt: any;
+    statusUpdatedById?: string | null;
+    statusUpdatedByName?: string | null;
+    purchasedAt: any;
+  }>;
+  pagination: {
+    __typename?: "RewardPagination";
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+    total: number;
+  };
+};
+
+export type NotificationSchedulesConnectionFieldsFragment = {
+  __typename?: "NotificationSchedulesConnection";
+  schedules: Array<{
+    __typename?: "NotificationScheduleSummary";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    hour: number;
+    minute: number;
+    isActive: boolean;
+    startDate: any;
+    endDate: any;
+    tripId?: string | null;
+  }>;
+  pagination: {
+    __typename?: "NotificationSchedulePagination";
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+    total: number;
+  };
+};
+
+export type NotificationDeliveryListResultFieldsFragment = {
+  __typename?: "NotificationDeliveryListResult";
+  deliveries: Array<{
+    __typename?: "NotificationDelivery";
+    id: string;
+    notificationId: string;
+    scheduleId?: string | null;
+    tripId: string;
+    status: DeliveryStatus;
+    deliveryStartedAt: any;
+    deliveryCompletedAt?: any | null;
+    totalRecipients: number;
+    successCount: number;
+    failureCount: number;
+    errorLog?: string | null;
+    createdAt: any;
+    updatedAt: any;
+    notification?: {
+      __typename?: "NotificationInfo";
+      id: string;
+      title: string;
+      body: string;
+      url?: string | null;
+      tripId?: string | null;
+      createdAt: any;
+      createdBy?: {
+        __typename?: "NotificationCreator";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        authUserId?: string | null;
+      } | null;
+    } | null;
+  }>;
+  pagination: {
+    __typename?: "DeliveryPagination";
+    limit: number;
+    offset: number;
+    total: number;
+  };
+};
+
+export type ChallengeSubmissionListResultFieldsFragment = {
+  __typename?: "ChallengeSubmissionListResult";
+  totalCount: number;
+  submissions: Array<{
+    __typename?: "ChallengeSubmission";
+    id: string;
+    challengeId: string;
+    groupId: string;
+    textContent?: string | null;
+    imageIds: Array<string>;
+    videoId?: string | null;
+    hasMedia: boolean;
+    hasLocation: boolean;
+    latitude?: number | null;
+    longitude?: number | null;
+    awardedPoints: number;
+    bonusPoints: number;
+    totalPoints: number;
+    ranking?: number | null;
+    status: SubmissionStatus;
+    reviewedById?: string | null;
+    reviewedAt?: any | null;
+    rejectionReason?: string | null;
+    voteCount: number;
+    voteScore: number;
+    createdAt: any;
+    updatedAt: any;
+    reviewedBy?: {
+      __typename?: "SubmissionReviewerInfo";
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+    } | null;
+    group?: {
+      __typename?: "SubmissionGroupInfo";
+      id: string;
+      name: string;
+      description?: string | null;
+      image?: string | null;
+    } | null;
+  }>;
+};
+
+export type SubmissionReportListResultFieldsFragment = {
+  __typename?: "SubmissionReportListResult";
+  totalCount: number;
+  reports: Array<{
+    __typename?: "SubmissionReport";
+    id: string;
+    submissionId: string;
+    reporterId: string;
+    reason: ReportReason;
+    reasonDisplay: string;
+    details?: string | null;
+    hasDetails: boolean;
+    createdAt: any;
+    reporter: {
+      __typename?: "SubmissionReportReporterInfo";
+      id: string;
+      user: {
+        __typename?: "SubmissionReportUserInfo";
+        id: string;
+        firstName: string;
+        lastName: string;
+        email?: string | null;
+        hasAvatar: boolean;
+      };
+    };
+  }>;
+};
+
+export type FriendsLocationsConnectionFieldsFragment = {
+  __typename?: "FriendsLocationsConnection";
+  total: number;
+  locations: Array<{
+    __typename?: "FriendLocation";
+    id: string;
+    userId: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    accuracy?: number | null;
+    altitude?: number | null;
+    heading?: number | null;
+    speed?: number | null;
+    isSharingLocation: boolean;
+    distanceKm?: number | null;
+    timestamp: any;
+  }>;
+};
+
+export type TripListResultFieldsFragment = {
+  __typename?: "TripListResult";
+  trips: Array<{
+    __typename?: "Trip";
+    id: string;
+    name: string;
+    description?: string | null;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isPlanning: boolean;
+    isCompleted: boolean;
+    isCancelled: boolean;
+    status: TripStatus;
+    backgroundImagePath?: string | null;
+    createdAt: any;
+    updatedAt: any;
+  }>;
+  pagination: {
+    __typename?: "TripPaginationInfo";
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+    total: number;
+  };
+};
+
+export type SponsorListResultFieldsFragment = {
+  __typename?: "SponsorListResult";
+  total: number;
+  sponsors: Array<{
+    __typename?: "Sponsor";
+    id: string;
+    name: string;
+    description: string;
+    logoPath: string;
+    isActive: boolean;
+    height?: number | null;
+    offsetX?: number | null;
+    offsetY?: number | null;
+    hasLogoAdjustments: boolean;
+    createdAt: any;
+    updatedAt?: any | null;
+  }>;
+};
+
+export type MyNotificationsResultFieldsFragment = {
+  __typename?: "MyNotificationsResult";
+  notifications: Array<{
+    __typename?: "Notification";
+    id: string;
+    title: string;
+    body: string;
+    isSent: boolean;
+    isScheduled: boolean;
+    isReadyToSend?: boolean | null;
+    status: NotificationStatus;
+    priority: NotificationPriority;
+    scheduledFor?: any | null;
+    sentAt?: any | null;
+    url?: string | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt?: any | null;
+  }>;
+  pagination: {
+    __typename?: "NotificationPaginationInfo";
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type AllNotificationsResultFieldsFragment = {
+  __typename?: "AllNotificationsResult";
+  notifications: Array<{
+    __typename?: "Notification";
+    id: string;
+    title: string;
+    body: string;
+    isSent: boolean;
+    isScheduled: boolean;
+    isReadyToSend?: boolean | null;
+    status: NotificationStatus;
+    priority: NotificationPriority;
+    scheduledFor?: any | null;
+    sentAt?: any | null;
+    url?: string | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt?: any | null;
+  }>;
+  pagination: {
+    __typename?: "NotificationOffsetPaginationInfo";
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+    total: number;
+  };
+};
+
+export type CoinStatisticsFieldsFragment = {
+  __typename?: "CoinStatistics";
+  addedCoins: number;
+  removedCoins: number;
+  netBalance: number;
+  transactionCount: number;
+  time: any;
+};
+
+export type CoinQuickStatsFieldsFragment = {
+  __typename?: "CoinQuickStats";
+  totalCoins: number;
+  totalGroups: number;
+  averageCoinsPerGroup: number;
+  richestGroupId?: string | null;
+  richestGroupName?: string | null;
+  time: any;
+};
+
+export type CoinAdditionalInsightsFieldsFragment = {
+  __typename?: "CoinAdditionalInsights";
+  mostActiveAdmin?: {
+    __typename?: "FormattedUser";
+    name: string;
+    transactionCount: number;
+  } | null;
+  recentTransactions: Array<{
+    __typename?: "CoinTransaction";
+    id: string;
+    amount: number;
+    reason?: string | null;
+    groupId: string;
+    adminId: string;
+    createdAt: any;
+    group?: {
+      __typename?: "CoinTransactionGroup";
+      id: string;
+      name: string;
+      coins: number;
+    } | null;
+    admin?: {
+      __typename?: "CoinTransactionAdmin";
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      fullName: string;
+    } | null;
+  }>;
+};
+
+export type FormattedUserFieldsFragment = {
+  __typename?: "FormattedUser";
+  name: string;
+  transactionCount: number;
+};
+
+export type MostActiveAdminStatsFieldsFragment = {
+  __typename?: "MostActiveAdminStats";
+  adminId: string;
+  adminName?: string | null;
+  transactionCount: number;
+  totalAmount: number;
+};
+
+export type GroupRankingResultFieldsFragment = {
+  __typename?: "GroupRankingResult";
+  currentDate: any;
+  data: Array<{
+    __typename?: "GroupRanking";
+    id: string;
+    name: string;
+    description?: string | null;
+    code: string;
+    image?: string | null;
+    coins: number;
+    isActive: boolean;
+    status: GroupStatus;
+    tripId: string;
+    organizerId: string;
+    createdAt: any;
+  }>;
+};
+
+export type DeliveryStatsFieldsFragment = {
+  __typename?: "DeliveryStats";
+  totalDeliveries: number;
+  totalSuccess: number;
+  totalFailures: number;
+  totalRecipients: number;
+  successRate: number;
+  avgSuccessPerDelivery: number;
+  avgFailuresPerDelivery: number;
+  statusBreakdown: {
+    __typename?: "DeliveryStatusBreakdown";
+    success: number;
+    failure: number;
+    partialFailure: number;
+    pending: number;
+  };
+};
+
+export type DeliveryStatusBreakdownFieldsFragment = {
+  __typename?: "DeliveryStatusBreakdown";
+  success: number;
+  failure: number;
+  partialFailure: number;
+  pending: number;
+};
+
+export type VotingProgressFieldsFragment = {
+  __typename?: "VotingProgress";
+  challengeId: string;
+  totalVotes: number;
+  submissionStats: Array<{
+    __typename?: "SubmissionVoteCount";
+    submissionId: string;
+    voteCount: number;
+    voteScore: number;
+  }>;
+};
+
+export type SubmissionVoteCountFieldsFragment = {
+  __typename?: "SubmissionVoteCount";
+  submissionId: string;
+  voteCount: number;
+  voteScore: number;
+};
+
+export type JudgedStaffVotingProgressFieldsFragment = {
+  __typename?: "JudgedStaffVotingProgress";
+  allAdminsVoted: boolean;
+  totalAdmins: number;
+  votedAdmins: number;
+  pendingAdmins: number;
+  eligibleSubmissionsCount: number;
+  requiredPositions: number;
+  adminProgress: Array<{
+    __typename?: "AdminVotingInfo";
+    participantId: string;
+    hasVotedAll: boolean;
+    votedPositions: Array<number>;
+  }>;
+};
+
+export type AdminVotingInfoFieldsFragment = {
+  __typename?: "AdminVotingInfo";
+  participantId: string;
+  hasVotedAll: boolean;
+  votedPositions: Array<number>;
+};
+
+export type ReactionCountsFieldsFragment = {
+  __typename?: "ReactionCounts";
+  clap: number;
+  fire: number;
+  heart: number;
+  star: number;
+};
+
+export type ReactionsSummaryFieldsFragment = {
+  __typename?: "ReactionsSummary";
+  total: number;
+  myReactions: Array<ReactionType>;
+  counts: {
+    __typename?: "ReactionCounts";
+    clap: number;
+    fire: number;
+    heart: number;
+    star: number;
+  };
+};
+
+export type CreateGroupPayloadFieldsFragment = {
+  __typename?: "CreateGroupPayload";
+  group: {
+    __typename?: "Group";
+    id: string;
+    name: string;
+    description?: string | null;
+    code: string;
+    image?: string | null;
+    coins: number;
+    isActive: boolean;
+    status: GroupStatus;
+    tripId: string;
+    organizerId: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type UpdateGroupPayloadFieldsFragment = {
+  __typename?: "UpdateGroupPayload";
+  group: {
+    __typename?: "Group";
+    id: string;
+    name: string;
+    description?: string | null;
+    code: string;
+    image?: string | null;
+    coins: number;
+    isActive: boolean;
+    status: GroupStatus;
+    tripId: string;
+    organizerId: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type DeleteGroupPayloadFieldsFragment = {
+  __typename?: "DeleteGroupPayload";
+  success: boolean;
+};
+
+export type CreateRewardPayloadFieldsFragment = {
+  __typename?: "CreateRewardPayload";
+  reward: {
+    __typename?: "Reward";
+    id: string;
+    name: string;
+    description: string;
+    coinCostPercentage: number;
+    availableQuantity: number;
+    isInStock: boolean;
+    canBePurchased: boolean;
+    images: Array<string>;
+    primaryImage?: string | null;
+    purchaseCount: number;
+    isHidden: boolean;
+    tripId: string;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type UpdateRewardPayloadFieldsFragment = {
+  __typename?: "UpdateRewardPayload";
+  reward: {
+    __typename?: "Reward";
+    id: string;
+    name: string;
+    description: string;
+    coinCostPercentage: number;
+    availableQuantity: number;
+    isInStock: boolean;
+    canBePurchased: boolean;
+    images: Array<string>;
+    primaryImage?: string | null;
+    purchaseCount: number;
+    isHidden: boolean;
+    tripId: string;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type DeleteRewardPayloadFieldsFragment = {
+  __typename?: "DeleteRewardPayload";
+  success: boolean;
+  deletedRewardId: string;
+};
+
+export type SetRewardHiddenPayloadFieldsFragment = {
+  __typename?: "SetRewardHiddenPayload";
+  previousHidden: boolean;
+  reward: {
+    __typename?: "Reward";
+    id: string;
+    name: string;
+    description: string;
+    coinCostPercentage: number;
+    availableQuantity: number;
+    isInStock: boolean;
+    canBePurchased: boolean;
+    images: Array<string>;
+    primaryImage?: string | null;
+    purchaseCount: number;
+    isHidden: boolean;
+    tripId: string;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type PurchaseRewardPayloadFieldsFragment = {
+  __typename?: "PurchaseRewardPayload";
+  remainingGroupCoins: number;
+  remainingRewardQuantity: number;
+  purchase: {
+    __typename?: "RewardPurchase";
+    purchaseId: string;
+    rewardId: string;
+    rewardName: string;
+    groupId: string;
+    groupName?: string | null;
+    purchasedById: string;
+    purchasedByName?: string | null;
+    quantity: number;
+    totalCost: number;
+    status: RewardPurchaseStatus;
+    collectionMethod?: string | null;
+    statusUpdatedAt: any;
+    statusUpdatedById?: string | null;
+    statusUpdatedByName?: string | null;
+    purchasedAt: any;
+  };
+};
+
+export type UpdatePurchaseStatusPayloadFieldsFragment = {
+  __typename?: "UpdatePurchaseStatusPayload";
+  previousStatus: RewardPurchaseStatus;
+  refunded: boolean;
+  purchase: {
+    __typename?: "RewardPurchase";
+    purchaseId: string;
+    rewardId: string;
+    rewardName: string;
+    groupId: string;
+    groupName?: string | null;
+    purchasedById: string;
+    purchasedByName?: string | null;
+    quantity: number;
+    totalCost: number;
+    status: RewardPurchaseStatus;
+    collectionMethod?: string | null;
+    statusUpdatedAt: any;
+    statusUpdatedById?: string | null;
+    statusUpdatedByName?: string | null;
+    purchasedAt: any;
+  };
+};
+
+export type UpdateMyPurchaseStatusPayloadFieldsFragment = {
+  __typename?: "UpdateMyPurchaseStatusPayload";
+  previousStatus: RewardPurchaseStatus;
+  purchase: {
+    __typename?: "RewardPurchase";
+    purchaseId: string;
+    rewardId: string;
+    rewardName: string;
+    groupId: string;
+    groupName?: string | null;
+    purchasedById: string;
+    purchasedByName?: string | null;
+    quantity: number;
+    totalCost: number;
+    status: RewardPurchaseStatus;
+    collectionMethod?: string | null;
+    statusUpdatedAt: any;
+    statusUpdatedById?: string | null;
+    statusUpdatedByName?: string | null;
+    purchasedAt: any;
+  };
+};
+
+export type CreateSponsorPayloadFieldsFragment = {
+  __typename?: "CreateSponsorPayload";
+  sponsor: {
+    __typename?: "Sponsor";
+    id: string;
+    name: string;
+    description: string;
+    logoPath: string;
+    isActive: boolean;
+    height?: number | null;
+    offsetX?: number | null;
+    offsetY?: number | null;
+    hasLogoAdjustments: boolean;
+    createdAt: any;
+    updatedAt?: any | null;
+  };
+};
+
+export type UpdateSponsorPayloadFieldsFragment = {
+  __typename?: "UpdateSponsorPayload";
+  sponsor: {
+    __typename?: "Sponsor";
+    id: string;
+    name: string;
+    description: string;
+    logoPath: string;
+    isActive: boolean;
+    height?: number | null;
+    offsetX?: number | null;
+    offsetY?: number | null;
+    hasLogoAdjustments: boolean;
+    createdAt: any;
+    updatedAt?: any | null;
+  };
+};
+
+export type DeleteSponsorPayloadFieldsFragment = {
+  __typename?: "DeleteSponsorPayload";
+  success: boolean;
+  id: string;
+};
+
+export type LinkSponsorToTripPayloadFieldsFragment = {
+  __typename?: "LinkSponsorToTripPayload";
+  linked: boolean;
+  sponsorId: string;
+  tripId: string;
+};
+
+export type UnlinkSponsorFromTripPayloadFieldsFragment = {
+  __typename?: "UnlinkSponsorFromTripPayload";
+  unlinked: boolean;
+  sponsorId: string;
+  tripId: string;
+};
+
+export type CreateNotificationResultFieldsFragment = {
+  __typename?: "CreateNotificationResult";
+  notification: {
+    __typename?: "Notification";
+    id: string;
+    title: string;
+    body: string;
+    isSent: boolean;
+    isScheduled: boolean;
+    isReadyToSend?: boolean | null;
+    status: NotificationStatus;
+    priority: NotificationPriority;
+    scheduledFor?: any | null;
+    sentAt?: any | null;
+    url?: string | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt?: any | null;
+  };
+};
+
+export type UpdateNotificationResultFieldsFragment = {
+  __typename?: "UpdateNotificationResult";
+  notification: {
+    __typename?: "Notification";
+    id: string;
+    title: string;
+    body: string;
+    isSent: boolean;
+    isScheduled: boolean;
+    isReadyToSend?: boolean | null;
+    status: NotificationStatus;
+    priority: NotificationPriority;
+    scheduledFor?: any | null;
+    sentAt?: any | null;
+    url?: string | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt?: any | null;
+  };
+};
+
+export type DeleteNotificationResultFieldsFragment = {
+  __typename?: "DeleteNotificationResult";
+  success: boolean;
+};
+
+export type UpdateNotificationStatusResultFieldsFragment = {
+  __typename?: "UpdateNotificationStatusResult";
+  previousStatus: NotificationStatus;
+  newStatus: NotificationStatus;
+  notification: {
+    __typename?: "Notification";
+    id: string;
+    title: string;
+    body: string;
+    isSent: boolean;
+    isScheduled: boolean;
+    isReadyToSend?: boolean | null;
+    status: NotificationStatus;
+    priority: NotificationPriority;
+    scheduledFor?: any | null;
+    sentAt?: any | null;
+    url?: string | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt?: any | null;
+  };
+};
+
+export type CreateNotificationSchedulePayloadFieldsFragment = {
+  __typename?: "CreateNotificationSchedulePayload";
+  schedule: {
+    __typename?: "NotificationSchedule";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    notificationTitle?: string | null;
+    notificationBody?: string | null;
+    notificationUrl?: string | null;
+    hour: number;
+    minute: number;
+    formattedTime: string;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isCurrentlyActive: boolean;
+    isExpired: boolean;
+    isUpcoming: boolean;
+    lastRun?: any | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type UpdateNotificationSchedulePayloadFieldsFragment = {
+  __typename?: "UpdateNotificationSchedulePayload";
+  schedule: {
+    __typename?: "NotificationSchedule";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    notificationTitle?: string | null;
+    notificationBody?: string | null;
+    notificationUrl?: string | null;
+    hour: number;
+    minute: number;
+    formattedTime: string;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isCurrentlyActive: boolean;
+    isExpired: boolean;
+    isUpcoming: boolean;
+    lastRun?: any | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type DeleteNotificationSchedulePayloadFieldsFragment = {
+  __typename?: "DeleteNotificationSchedulePayload";
+  success: boolean;
+  message: string;
+  deletedExecutionCount?: number | null;
+};
+
+export type DuplicateNotificationSchedulePayloadFieldsFragment = {
+  __typename?: "DuplicateNotificationSchedulePayload";
+  schedule: {
+    __typename?: "NotificationSchedule";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    notificationTitle?: string | null;
+    notificationBody?: string | null;
+    notificationUrl?: string | null;
+    hour: number;
+    minute: number;
+    formattedTime: string;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isCurrentlyActive: boolean;
+    isExpired: boolean;
+    isUpcoming: boolean;
+    lastRun?: any | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type ToggleScheduleActivePayloadFieldsFragment = {
+  __typename?: "ToggleScheduleActivePayload";
+  schedule: {
+    __typename?: "NotificationSchedule";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    notificationTitle?: string | null;
+    notificationBody?: string | null;
+    notificationUrl?: string | null;
+    hour: number;
+    minute: number;
+    formattedTime: string;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isCurrentlyActive: boolean;
+    isExpired: boolean;
+    isUpcoming: boolean;
+    lastRun?: any | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type BulkToggleActivePayloadFieldsFragment = {
+  __typename?: "BulkToggleActivePayload";
+  success: boolean;
+  updatedCount: number;
+};
+
+export type BulkDeleteNotificationSchedulesPayloadFieldsFragment = {
+  __typename?: "BulkDeleteNotificationSchedulesPayload";
+  success: boolean;
+  requestedCount: number;
+  deletedCount: number;
+  notFoundIds?: Array<string> | null;
+};
+
+export type UpdateLastRunPayloadFieldsFragment = {
+  __typename?: "UpdateLastRunPayload";
+  schedule: {
+    __typename?: "NotificationSchedule";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    notificationTitle?: string | null;
+    notificationBody?: string | null;
+    notificationUrl?: string | null;
+    hour: number;
+    minute: number;
+    formattedTime: string;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isCurrentlyActive: boolean;
+    isExpired: boolean;
+    isUpcoming: boolean;
+    lastRun?: any | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
+
+export type SendMobileNotificationsPayloadFieldsFragment = {
+  __typename?: "SendMobileNotificationsPayload";
+  success: boolean;
+  sent: number;
+  failed: number;
+  total: number;
+};
+
+export type TrackDeliveryStartPayloadFieldsFragment = {
+  __typename?: "TrackDeliveryStartPayload";
+  success: boolean;
+};
+
+export type TrackDeliveryCompletePayloadFieldsFragment = {
+  __typename?: "TrackDeliveryCompletePayload";
+  success: boolean;
+};
+
+export type TrackDeliveryFailurePayloadFieldsFragment = {
+  __typename?: "TrackDeliveryFailurePayload";
+  success: boolean;
+};
+
+export type DeleteActivityResultFieldsFragment = {
+  __typename?: "DeleteActivityResult";
+  success: boolean;
+};
+
+export type ToggleReactionResultFieldsFragment = {
+  __typename?: "ToggleReactionResult";
+  activityId: string;
+  reactionType: ReactionType;
+  isActive: boolean;
+  reactionsSummary: {
+    __typename?: "ReactionsSummary";
+    total: number;
+    myReactions: Array<ReactionType>;
+    counts: {
+      __typename?: "ReactionCounts";
+      clap: number;
+      fire: number;
+      heart: number;
+      star: number;
+    };
+  };
+};
+
+export type SubmitVotePayloadFieldsFragment = {
+  __typename?: "SubmitVotePayload";
+  vote: {
+    __typename?: "ChallengeVote";
+    id: string;
+    challengeId: string;
+    submissionId: string;
+    voterId: string;
+    votePosition: number;
+    votePoints: number;
+    normalizedWeight: number;
+    votedAt: any;
+  };
+};
+
+export type SubmitVotesPayloadFieldsFragment = {
+  __typename?: "SubmitVotesPayload";
+  totalVotesCast: number;
+  votes: Array<{
+    __typename?: "ChallengeVote";
+    id: string;
+    challengeId: string;
+    submissionId: string;
+    voterId: string;
+    votePosition: number;
+    votePoints: number;
+    normalizedWeight: number;
+    votedAt: any;
+  }>;
+};
+
+export type ForceEndVotingPayloadFieldsFragment = {
+  __typename?: "ForceEndVotingPayload";
+  success: boolean;
+  challengeId: string;
+  challengeStatus: string;
+  finalized: boolean;
+  totalVotes: number;
+};
+
+export type DeleteTripResultFieldsFragment = {
+  __typename?: "DeleteTripResult";
+  success: boolean;
+};
+
+export type UpdateLocationPayloadFieldsFragment = {
+  __typename?: "UpdateLocationPayload";
+  location: {
+    __typename?: "Location";
+    id: string;
+    userId: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    accuracy?: number | null;
+    altitude?: number | null;
+    altitudeAccuracy?: number | null;
+    heading?: number | null;
+    speed?: number | null;
+    isSharingLocation: boolean;
+    timestamp: any;
+    usersToShareWith: Array<{
+      __typename?: "SharingUserInfo";
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+    }>;
+  };
+};
+
+export type UpdateSharingSettingsPayloadFieldsFragment = {
+  __typename?: "UpdateSharingSettingsPayload";
+  settings: {
+    __typename?: "LocationSharingSettings";
+    isSharingLocation: boolean;
+    usersToShareWith: Array<{
+      __typename?: "SharingUserInfo";
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+    }>;
+  };
+};
+
+export type SharingUserPayloadFieldsFragment = {
+  __typename?: "SharingUserPayload";
+  location: {
+    __typename?: "Location";
+    id: string;
+    userId: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    accuracy?: number | null;
+    altitude?: number | null;
+    altitudeAccuracy?: number | null;
+    heading?: number | null;
+    speed?: number | null;
+    isSharingLocation: boolean;
+    timestamp: any;
+    usersToShareWith: Array<{
+      __typename?: "SharingUserInfo";
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+    }>;
+  };
+};
+
+export type TotalAvailablePointsPayloadFieldsFragment = {
+  __typename?: "TotalAvailablePointsPayload";
+  totalPoints: number;
+};
+
+export type CheckInactiveUsersPayloadFieldsFragment = {
+  __typename?: "CheckInactiveUsersPayload";
+  checked: number;
+  notified: number;
+  skipped: number;
+  errors: number;
+};
+
+export type DownloadUrlResultFieldsFragment = {
+  __typename?: "DownloadUrlResult";
+  signedUrl: string;
+  expiresAt: any;
+};
+
+export type UploadUrlResultFieldsFragment = {
+  __typename?: "UploadUrlResult";
+  bucket: string;
+  storagePath: string;
+  objectPath: string;
+  resumableUrl: string;
+  token: string;
+};
+
+export type PublicUrlResultFieldsFragment = {
+  __typename?: "PublicUrlResult";
+  publicUrl: string;
+};
+
+export type ExecutionHistoryResultFieldsFragment = {
+  __typename?: "ExecutionHistoryResult";
+  executions: Array<{
+    __typename?: "ExecutionHistoryEntry";
+    id: string;
+    executedAt: any;
+    notification?: {
+      __typename?: "ExecutionHistoryNotification";
+      id: string;
+      title: string;
+      body: string;
+      createdAt: any;
+    } | null;
+  }>;
+};
 
 export type GetActivityQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetActivityQuery = { __typename?: 'Query', activity?: { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null } | null };
+export type GetActivityQuery = {
+  __typename?: "Query";
+  activity?: {
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  } | null;
+};
 
 export type GetActivitiesByTripQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  tripId: Scalars["ID"]["input"];
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
   cursor?: InputMaybe<ActivityCursorInput>;
 }>;
 
-
-export type GetActivitiesByTripQuery = { __typename?: 'Query', activitiesByTrip: { __typename?: 'ActivityFeedResult', activities: Array<{ __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null }>, nextCursor?: { __typename?: 'ActivityCursor', id: string, createdAt: any, isPinned: boolean } | null, pagination: { __typename?: 'PaginationInfo', hasMore: boolean, pageSize: number } } };
+export type GetActivitiesByTripQuery = {
+  __typename?: "Query";
+  activitiesByTrip: {
+    __typename?: "ActivityFeedResult";
+    activities: Array<{
+      __typename?: "Activity";
+      id: string;
+      tripId: string;
+      title: string;
+      description?: string | null;
+      imageUrl?: string | null;
+      activityType: ActivityType;
+      isPinned: boolean;
+      isHidden: boolean;
+      createdAt: any;
+      updatedAt: any;
+      admin?: {
+        __typename?: "ActivityAdmin";
+        id: string;
+        firstName: string;
+        lastName: string;
+      } | null;
+    }>;
+    nextCursor?: {
+      __typename?: "ActivityCursor";
+      id: string;
+      createdAt: any;
+      isPinned: boolean;
+    } | null;
+    pagination: {
+      __typename?: "PaginationInfo";
+      hasMore: boolean;
+      pageSize: number;
+    };
+  };
+};
 
 export type GetActivitiesByTripModerationQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
-  page?: InputMaybe<Scalars['Int']['input']>;
-  perPage?: InputMaybe<Scalars['Int']['input']>;
-  includeHidden?: InputMaybe<Scalars['Boolean']['input']>;
+  tripId: Scalars["ID"]["input"];
+  page?: InputMaybe<Scalars["Int"]["input"]>;
+  perPage?: InputMaybe<Scalars["Int"]["input"]>;
+  includeHidden?: InputMaybe<Scalars["Boolean"]["input"]>;
 }>;
 
-
-export type GetActivitiesByTripModerationQuery = { __typename?: 'Query', activitiesByTripModeration: { __typename?: 'ActivityFeedModerationResult', activities: Array<{ __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null }>, pagination: { __typename?: 'ModerationPaginationInfo', hasMore: boolean, page: number, pageSize: number, total: number, totalPages: number } } };
+export type GetActivitiesByTripModerationQuery = {
+  __typename?: "Query";
+  activitiesByTripModeration: {
+    __typename?: "ActivityFeedModerationResult";
+    activities: Array<{
+      __typename?: "Activity";
+      id: string;
+      tripId: string;
+      title: string;
+      description?: string | null;
+      imageUrl?: string | null;
+      activityType: ActivityType;
+      isPinned: boolean;
+      isHidden: boolean;
+      createdAt: any;
+      updatedAt: any;
+      admin?: {
+        __typename?: "ActivityAdmin";
+        id: string;
+        firstName: string;
+        lastName: string;
+      } | null;
+    }>;
+    pagination: {
+      __typename?: "ModerationPaginationInfo";
+      hasMore: boolean;
+      page: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+};
 
 export type CreateCustomActivityMutationVariables = Exact<{
   input: CreateCustomActivityInput;
 }>;
 
-
-export type CreateCustomActivityMutation = { __typename?: 'Mutation', createCustomActivity: { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null } };
+export type CreateCustomActivityMutation = {
+  __typename?: "Mutation";
+  createCustomActivity: {
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
+};
 
 export type CreateRankChangeActivityMutationVariables = Exact<{
   input: CreateRankChangeActivityInput;
 }>;
 
-
-export type CreateRankChangeActivityMutation = { __typename?: 'Mutation', createRankChangeActivity: { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null } };
+export type CreateRankChangeActivityMutation = {
+  __typename?: "Mutation";
+  createRankChangeActivity: {
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
+};
 
 export type CreateSubmissionActivityMutationVariables = Exact<{
   input: CreateSubmissionActivityInput;
 }>;
 
-
-export type CreateSubmissionActivityMutation = { __typename?: 'Mutation', createSubmissionActivity: { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null } };
+export type CreateSubmissionActivityMutation = {
+  __typename?: "Mutation";
+  createSubmissionActivity: {
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
+};
 
 export type UpdateActivityMutationVariables = Exact<{
   input: UpdateActivityInput;
 }>;
 
-
-export type UpdateActivityMutation = { __typename?: 'Mutation', updateActivity: { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null } };
+export type UpdateActivityMutation = {
+  __typename?: "Mutation";
+  updateActivity: {
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
+};
 
 export type DeleteActivityMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type DeleteActivityMutation = { __typename?: 'Mutation', deleteActivity: { __typename?: 'DeleteActivityResult', success: boolean } };
+export type DeleteActivityMutation = {
+  __typename?: "Mutation";
+  deleteActivity: { __typename?: "DeleteActivityResult"; success: boolean };
+};
 
 export type HideActivityMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  reason?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars["ID"]["input"];
+  reason?: InputMaybe<Scalars["String"]["input"]>;
 }>;
 
-
-export type HideActivityMutation = { __typename?: 'Mutation', hideActivity: { __typename?: 'HiddenActivityResult', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, hiddenAt: any, hiddenReason?: string | null, updatedAt: any } };
+export type HideActivityMutation = {
+  __typename?: "Mutation";
+  hideActivity: {
+    __typename?: "HiddenActivityResult";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    hiddenAt: any;
+    hiddenReason?: string | null;
+    updatedAt: any;
+  };
+};
 
 export type UnhideActivityMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type UnhideActivityMutation = { __typename?: 'Mutation', unhideActivity: { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null } };
+export type UnhideActivityMutation = {
+  __typename?: "Mutation";
+  unhideActivity: {
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
+};
 
 export type SetActivityPinnedMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  isPinned: Scalars['Boolean']['input'];
+  id: Scalars["ID"]["input"];
+  isPinned: Scalars["Boolean"]["input"];
 }>;
 
-
-export type SetActivityPinnedMutation = { __typename?: 'Mutation', setActivityPinned: { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null } };
+export type SetActivityPinnedMutation = {
+  __typename?: "Mutation";
+  setActivityPinned: {
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
+};
 
 export type ToggleActivityReactionMutationVariables = Exact<{
-  activityId: Scalars['ID']['input'];
+  activityId: Scalars["ID"]["input"];
   reaction: ReactionType;
 }>;
 
-
-export type ToggleActivityReactionMutation = { __typename?: 'Mutation', toggleActivityReaction: { __typename?: 'ToggleReactionResult', activityId: string, reactionType: ReactionType, isActive: boolean, reactionsSummary: { __typename?: 'ReactionsSummary', total: number, myReactions: Array<ReactionType>, counts: { __typename?: 'ReactionCounts', clap: number, fire: number, heart: number, star: number } } } };
+export type ToggleActivityReactionMutation = {
+  __typename?: "Mutation";
+  toggleActivityReaction: {
+    __typename?: "ToggleReactionResult";
+    activityId: string;
+    reactionType: ReactionType;
+    isActive: boolean;
+    reactionsSummary: {
+      __typename?: "ReactionsSummary";
+      total: number;
+      myReactions: Array<ReactionType>;
+      counts: {
+        __typename?: "ReactionCounts";
+        clap: number;
+        fire: number;
+        heart: number;
+        star: number;
+      };
+    };
+  };
+};
 
 export type GetChallengeSubmissionQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetChallengeSubmissionQuery = { __typename?: 'Query', challengeSubmission?: { __typename?: 'ChallengeSubmission', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null } | null };
+export type GetChallengeSubmissionQuery = {
+  __typename?: "Query";
+  challengeSubmission?: {
+    __typename?: "ChallengeSubmission";
+    id: string;
+    challengeId: string;
+    groupId: string;
+    textContent?: string | null;
+    imageIds: Array<string>;
+    videoId?: string | null;
+    hasMedia: boolean;
+    hasLocation: boolean;
+    latitude?: number | null;
+    longitude?: number | null;
+    awardedPoints: number;
+    bonusPoints: number;
+    totalPoints: number;
+    ranking?: number | null;
+    status: SubmissionStatus;
+    reviewedById?: string | null;
+    reviewedAt?: any | null;
+    rejectionReason?: string | null;
+    voteCount: number;
+    voteScore: number;
+    createdAt: any;
+    updatedAt: any;
+    reviewedBy?: {
+      __typename?: "SubmissionReviewerInfo";
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+    } | null;
+    group?: {
+      __typename?: "SubmissionGroupInfo";
+      id: string;
+      name: string;
+      description?: string | null;
+      image?: string | null;
+    } | null;
+  } | null;
+};
 
 export type GetChallengeSubmissionsQueryVariables = Exact<{
-  challengeId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  challengeId: Scalars["ID"]["input"];
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
   orderBy?: InputMaybe<SubmissionOrderBy>;
   orderDirection?: InputMaybe<OrderDirection>;
 }>;
 
-
-export type GetChallengeSubmissionsQuery = { __typename?: 'Query', challengeSubmissions?: { __typename?: 'ChallengeSubmissionListResult', totalCount: number, submissions: Array<{ __typename?: 'ChallengeSubmission', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null }> } | null };
+export type GetChallengeSubmissionsQuery = {
+  __typename?: "Query";
+  challengeSubmissions?: {
+    __typename?: "ChallengeSubmissionListResult";
+    totalCount: number;
+    submissions: Array<{
+      __typename?: "ChallengeSubmission";
+      id: string;
+      challengeId: string;
+      groupId: string;
+      textContent?: string | null;
+      imageIds: Array<string>;
+      videoId?: string | null;
+      hasMedia: boolean;
+      hasLocation: boolean;
+      latitude?: number | null;
+      longitude?: number | null;
+      awardedPoints: number;
+      bonusPoints: number;
+      totalPoints: number;
+      ranking?: number | null;
+      status: SubmissionStatus;
+      reviewedById?: string | null;
+      reviewedAt?: any | null;
+      rejectionReason?: string | null;
+      voteCount: number;
+      voteScore: number;
+      createdAt: any;
+      updatedAt: any;
+      reviewedBy?: {
+        __typename?: "SubmissionReviewerInfo";
+        id: string;
+        firstName: string;
+        lastName: string;
+        email?: string | null;
+      } | null;
+      group?: {
+        __typename?: "SubmissionGroupInfo";
+        id: string;
+        name: string;
+        description?: string | null;
+        image?: string | null;
+      } | null;
+    }>;
+  } | null;
+};
 
 export type GetChallengeSubmissionByChallengeAndGroupQueryVariables = Exact<{
-  challengeId: Scalars['ID']['input'];
-  groupId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
+  groupId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetChallengeSubmissionByChallengeAndGroupQuery = { __typename?: 'Query', challengeSubmissionByChallengeAndGroup?: { __typename?: 'ChallengeSubmission', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null } | null };
+export type GetChallengeSubmissionByChallengeAndGroupQuery = {
+  __typename?: "Query";
+  challengeSubmissionByChallengeAndGroup?: {
+    __typename?: "ChallengeSubmission";
+    id: string;
+    challengeId: string;
+    groupId: string;
+    textContent?: string | null;
+    imageIds: Array<string>;
+    videoId?: string | null;
+    hasMedia: boolean;
+    hasLocation: boolean;
+    latitude?: number | null;
+    longitude?: number | null;
+    awardedPoints: number;
+    bonusPoints: number;
+    totalPoints: number;
+    ranking?: number | null;
+    status: SubmissionStatus;
+    reviewedById?: string | null;
+    reviewedAt?: any | null;
+    rejectionReason?: string | null;
+    voteCount: number;
+    voteScore: number;
+    createdAt: any;
+    updatedAt: any;
+    reviewedBy?: {
+      __typename?: "SubmissionReviewerInfo";
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+    } | null;
+    group?: {
+      __typename?: "SubmissionGroupInfo";
+      id: string;
+      name: string;
+      description?: string | null;
+      image?: string | null;
+    } | null;
+  } | null;
+};
 
 export type GetVotesByChallengeQueryVariables = Exact<{
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetVotesByChallengeQuery = { __typename?: 'Query', votesByChallenge?: { __typename?: 'ChallengeVoteAdminList', totalVotes: number, uniqueVoters: number, votes: Array<{ __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any }> } | null };
+export type GetVotesByChallengeQuery = {
+  __typename?: "Query";
+  votesByChallenge?: {
+    __typename?: "ChallengeVoteAdminList";
+    totalVotes: number;
+    uniqueVoters: number;
+    votes: Array<{
+      __typename?: "ChallengeVote";
+      id: string;
+      challengeId: string;
+      submissionId: string;
+      voterId: string;
+      votePosition: number;
+      votePoints: number;
+      normalizedWeight: number;
+      votedAt: any;
+    }>;
+  } | null;
+};
 
 export type GetMyVotesQueryVariables = Exact<{
-  challengeId: Scalars['ID']['input'];
-  tripId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetMyVotesQuery = { __typename?: 'Query', myVotes?: { __typename?: 'ChallengeVoteList', totalVotes: number, votes: Array<{ __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any }> } | null };
+export type GetMyVotesQuery = {
+  __typename?: "Query";
+  myVotes?: {
+    __typename?: "ChallengeVoteList";
+    totalVotes: number;
+    votes: Array<{
+      __typename?: "ChallengeVote";
+      id: string;
+      challengeId: string;
+      submissionId: string;
+      voterId: string;
+      votePosition: number;
+      votePoints: number;
+      normalizedWeight: number;
+      votedAt: any;
+    }>;
+  } | null;
+};
 
 export type GetVotingProgressQueryVariables = Exact<{
-  challengeId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetVotingProgressQuery = { __typename?: 'Query', votingProgress?: { __typename?: 'VotingProgress', challengeId: string, totalVotes: number, submissionStats: Array<{ __typename?: 'SubmissionVoteCount', submissionId: string, voteCount: number, voteScore: number }> } | null };
+export type GetVotingProgressQuery = {
+  __typename?: "Query";
+  votingProgress?: {
+    __typename?: "VotingProgress";
+    challengeId: string;
+    totalVotes: number;
+    submissionStats: Array<{
+      __typename?: "SubmissionVoteCount";
+      submissionId: string;
+      voteCount: number;
+      voteScore: number;
+    }>;
+  } | null;
+};
 
 export type GetJudgedStaffVotingProgressQueryVariables = Exact<{
-  challengeId: Scalars['ID']['input'];
-  tripId: Scalars['ID']['input'];
-  adminParticipantIds: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
-  eligibleSubmissionsCount: Scalars['Int']['input'];
-  requiredPositions: Scalars['Int']['input'];
+  challengeId: Scalars["ID"]["input"];
+  tripId: Scalars["ID"]["input"];
+  adminParticipantIds: Array<Scalars["ID"]["input"]> | Scalars["ID"]["input"];
+  eligibleSubmissionsCount: Scalars["Int"]["input"];
+  requiredPositions: Scalars["Int"]["input"];
 }>;
 
-
-export type GetJudgedStaffVotingProgressQuery = { __typename?: 'Query', judgedStaffVotingProgress?: { __typename?: 'JudgedStaffVotingProgress', allAdminsVoted: boolean, eligibleSubmissionsCount: number, pendingAdmins: number, requiredPositions: number, totalAdmins: number, votedAdmins: number, adminProgress: Array<{ __typename?: 'AdminVotingInfo', participantId: string, hasVotedAll: boolean, votedPositions: Array<number> }> } | null };
+export type GetJudgedStaffVotingProgressQuery = {
+  __typename?: "Query";
+  judgedStaffVotingProgress?: {
+    __typename?: "JudgedStaffVotingProgress";
+    allAdminsVoted: boolean;
+    eligibleSubmissionsCount: number;
+    pendingAdmins: number;
+    requiredPositions: number;
+    totalAdmins: number;
+    votedAdmins: number;
+    adminProgress: Array<{
+      __typename?: "AdminVotingInfo";
+      participantId: string;
+      hasVotedAll: boolean;
+      votedPositions: Array<number>;
+    }>;
+  } | null;
+};
 
 export type CreateChallengeSubmissionMutationVariables = Exact<{
   input: CreateSubmissionInput;
 }>;
 
-
-export type CreateChallengeSubmissionMutation = { __typename?: 'Mutation', createChallengeSubmission?: { __typename?: 'ChallengeSubmissionCreateResult', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null } | null };
+export type CreateChallengeSubmissionMutation = {
+  __typename?: "Mutation";
+  createChallengeSubmission?: {
+    __typename?: "ChallengeSubmissionCreateResult";
+    id: string;
+    challengeId: string;
+    groupId: string;
+    textContent?: string | null;
+    imageIds: Array<string>;
+    videoId?: string | null;
+    hasMedia: boolean;
+    hasLocation: boolean;
+    latitude?: number | null;
+    longitude?: number | null;
+    awardedPoints: number;
+    bonusPoints: number;
+    totalPoints: number;
+    ranking?: number | null;
+    status: SubmissionStatus;
+    reviewedById?: string | null;
+    reviewedAt?: any | null;
+    rejectionReason?: string | null;
+    voteCount: number;
+    voteScore: number;
+    createdAt: any;
+    updatedAt: any;
+    reviewedBy?: {
+      __typename?: "SubmissionReviewerInfo";
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+    } | null;
+    group?: {
+      __typename?: "SubmissionGroupInfo";
+      id: string;
+      name: string;
+      description?: string | null;
+      image?: string | null;
+    } | null;
+  } | null;
+};
 
 export type UpdateChallengeSubmissionMutationVariables = Exact<{
   input: UpdateSubmissionInput;
 }>;
 
-
-export type UpdateChallengeSubmissionMutation = { __typename?: 'Mutation', updateChallengeSubmission?: { __typename?: 'ChallengeSubmissionUpdateResult', id: string, challengeId: string, groupId: string, textContent?: string | null, imageIds: Array<string>, videoId?: string | null, hasMedia: boolean, hasLocation: boolean, latitude?: number | null, longitude?: number | null, awardedPoints: number, bonusPoints: number, totalPoints: number, ranking?: number | null, status: SubmissionStatus, reviewedById?: string | null, reviewedAt?: any | null, rejectionReason?: string | null, voteCount: number, voteScore: number, createdAt: any, updatedAt: any, reviewedBy?: { __typename?: 'SubmissionReviewerInfo', id: string, firstName: string, lastName: string, email?: string | null } | null, group?: { __typename?: 'SubmissionGroupInfo', id: string, name: string, description?: string | null, image?: string | null } | null } | null };
+export type UpdateChallengeSubmissionMutation = {
+  __typename?: "Mutation";
+  updateChallengeSubmission?: {
+    __typename?: "ChallengeSubmissionUpdateResult";
+    id: string;
+    challengeId: string;
+    groupId: string;
+    textContent?: string | null;
+    imageIds: Array<string>;
+    videoId?: string | null;
+    hasMedia: boolean;
+    hasLocation: boolean;
+    latitude?: number | null;
+    longitude?: number | null;
+    awardedPoints: number;
+    bonusPoints: number;
+    totalPoints: number;
+    ranking?: number | null;
+    status: SubmissionStatus;
+    reviewedById?: string | null;
+    reviewedAt?: any | null;
+    rejectionReason?: string | null;
+    voteCount: number;
+    voteScore: number;
+    createdAt: any;
+    updatedAt: any;
+    reviewedBy?: {
+      __typename?: "SubmissionReviewerInfo";
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+    } | null;
+    group?: {
+      __typename?: "SubmissionGroupInfo";
+      id: string;
+      name: string;
+      description?: string | null;
+      image?: string | null;
+    } | null;
+  } | null;
+};
 
 export type DeleteChallengeSubmissionMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type DeleteChallengeSubmissionMutation = { __typename?: 'Mutation', deleteChallengeSubmission?: boolean | null };
+export type DeleteChallengeSubmissionMutation = {
+  __typename?: "Mutation";
+  deleteChallengeSubmission?: boolean | null;
+};
 
 export type CreateChallengeActivityMutationVariables = Exact<{
   input: CreateChallengeActivityInput;
 }>;
 
-
-export type CreateChallengeActivityMutation = { __typename?: 'Mutation', createChallengeActivity: { __typename?: 'Activity', id: string, tripId: string, title: string, description?: string | null, imageUrl?: string | null, activityType: ActivityType, isPinned: boolean, isHidden: boolean, createdAt: any, updatedAt: any, admin?: { __typename?: 'ActivityAdmin', id: string, firstName: string, lastName: string } | null } };
+export type CreateChallengeActivityMutation = {
+  __typename?: "Mutation";
+  createChallengeActivity: {
+    __typename?: "Activity";
+    id: string;
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    activityType: ActivityType;
+    isPinned: boolean;
+    isHidden: boolean;
+    createdAt: any;
+    updatedAt: any;
+    admin?: {
+      __typename?: "ActivityAdmin";
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
+};
 
 export type SubmitVoteMutationVariables = Exact<{
   input: SubmitVoteInput;
 }>;
 
-
-export type SubmitVoteMutation = { __typename?: 'Mutation', submitVote?: { __typename?: 'SubmitVotePayload', vote: { __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any } } | null };
+export type SubmitVoteMutation = {
+  __typename?: "Mutation";
+  submitVote?: {
+    __typename?: "SubmitVotePayload";
+    vote: {
+      __typename?: "ChallengeVote";
+      id: string;
+      challengeId: string;
+      submissionId: string;
+      voterId: string;
+      votePosition: number;
+      votePoints: number;
+      normalizedWeight: number;
+      votedAt: any;
+    };
+  } | null;
+};
 
 export type SubmitVotesMutationVariables = Exact<{
   input: SubmitVotesInput;
 }>;
 
-
-export type SubmitVotesMutation = { __typename?: 'Mutation', submitVotes?: { __typename?: 'SubmitVotesPayload', totalVotesCast: number, votes: Array<{ __typename?: 'ChallengeVote', id: string, challengeId: string, submissionId: string, voterId: string, votePosition: number, votePoints: number, normalizedWeight: number, votedAt: any }> } | null };
+export type SubmitVotesMutation = {
+  __typename?: "Mutation";
+  submitVotes?: {
+    __typename?: "SubmitVotesPayload";
+    totalVotesCast: number;
+    votes: Array<{
+      __typename?: "ChallengeVote";
+      id: string;
+      challengeId: string;
+      submissionId: string;
+      voterId: string;
+      votePosition: number;
+      votePoints: number;
+      normalizedWeight: number;
+      votedAt: any;
+    }>;
+  } | null;
+};
 
 export type ForceEndVotingMutationVariables = Exact<{
-  challengeId: Scalars['ID']['input'];
-  tripId: Scalars['ID']['input'];
+  challengeId: Scalars["ID"]["input"];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type ForceEndVotingMutation = { __typename?: 'Mutation', forceEndVoting?: { __typename?: 'ForceEndVotingPayload', success: boolean, finalized: boolean, challengeId: string, challengeStatus: string, totalVotes: number } | null };
+export type ForceEndVotingMutation = {
+  __typename?: "Mutation";
+  forceEndVoting?: {
+    __typename?: "ForceEndVotingPayload";
+    success: boolean;
+    finalized: boolean;
+    challengeId: string;
+    challengeStatus: string;
+    totalVotes: number;
+  } | null;
+};
 
 export type GetCoinStatisticsQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetCoinStatisticsQuery = { __typename?: 'Query', coinStatistics?: { __typename?: 'CoinStatistics', addedCoins: number, removedCoins: number, netBalance: number, transactionCount: number, time: any } | null };
+export type GetCoinStatisticsQuery = {
+  __typename?: "Query";
+  coinStatistics?: {
+    __typename?: "CoinStatistics";
+    addedCoins: number;
+    removedCoins: number;
+    netBalance: number;
+    transactionCount: number;
+    time: any;
+  } | null;
+};
 
 export type GetCoinQuickStatsQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetCoinQuickStatsQuery = { __typename?: 'Query', coinQuickStats?: { __typename?: 'CoinQuickStats', totalCoins: number, totalGroups: number, averageCoinsPerGroup: number, richestGroupId?: string | null, richestGroupName?: string | null, time: any } | null };
+export type GetCoinQuickStatsQuery = {
+  __typename?: "Query";
+  coinQuickStats?: {
+    __typename?: "CoinQuickStats";
+    totalCoins: number;
+    totalGroups: number;
+    averageCoinsPerGroup: number;
+    richestGroupId?: string | null;
+    richestGroupName?: string | null;
+    time: any;
+  } | null;
+};
 
 export type GetCoinAdditionalInsightsQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetCoinAdditionalInsightsQuery = { __typename?: 'Query', coinAdditionalInsights?: { __typename?: 'CoinAdditionalInsights', mostActiveAdmin?: { __typename?: 'FormattedUser', name: string, transactionCount: number } | null, recentTransactions: Array<{ __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null }> } | null };
+export type GetCoinAdditionalInsightsQuery = {
+  __typename?: "Query";
+  coinAdditionalInsights?: {
+    __typename?: "CoinAdditionalInsights";
+    mostActiveAdmin?: {
+      __typename?: "FormattedUser";
+      name: string;
+      transactionCount: number;
+    } | null;
+    recentTransactions: Array<{
+      __typename?: "CoinTransaction";
+      id: string;
+      amount: number;
+      reason?: string | null;
+      groupId: string;
+      adminId: string;
+      createdAt: any;
+      group?: {
+        __typename?: "CoinTransactionGroup";
+        id: string;
+        name: string;
+        coins: number;
+      } | null;
+      admin?: {
+        __typename?: "CoinTransactionAdmin";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        fullName: string;
+      } | null;
+    }>;
+  } | null;
+};
 
 export type GetCoinTransactionsQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  tripId: Scalars["ID"]["input"];
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetCoinTransactionsQuery = { __typename?: 'Query', coinTransactions?: { __typename?: 'CoinTransactionsConnection', transactions: Array<{ __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null }>, pagination: { __typename?: 'CoinTransactionPagination', hasMore: boolean, limit: number, offset: number, total: number } } | null };
+export type GetCoinTransactionsQuery = {
+  __typename?: "Query";
+  coinTransactions?: {
+    __typename?: "CoinTransactionsConnection";
+    transactions: Array<{
+      __typename?: "CoinTransaction";
+      id: string;
+      amount: number;
+      reason?: string | null;
+      groupId: string;
+      adminId: string;
+      createdAt: any;
+      group?: {
+        __typename?: "CoinTransactionGroup";
+        id: string;
+        name: string;
+        coins: number;
+      } | null;
+      admin?: {
+        __typename?: "CoinTransactionAdmin";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        fullName: string;
+      } | null;
+    }>;
+    pagination: {
+      __typename?: "CoinTransactionPagination";
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  } | null;
+};
 
 export type GetMyCoinTransactionsQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
-  groupId?: InputMaybe<Scalars['ID']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  tripId: Scalars["ID"]["input"];
+  groupId?: InputMaybe<Scalars["ID"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetMyCoinTransactionsQuery = { __typename?: 'Query', myCoinTransactions: Array<{ __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null }> };
+export type GetMyCoinTransactionsQuery = {
+  __typename?: "Query";
+  myCoinTransactions: Array<{
+    __typename?: "CoinTransaction";
+    id: string;
+    amount: number;
+    reason?: string | null;
+    groupId: string;
+    adminId: string;
+    createdAt: any;
+    group?: {
+      __typename?: "CoinTransactionGroup";
+      id: string;
+      name: string;
+      coins: number;
+    } | null;
+    admin?: {
+      __typename?: "CoinTransactionAdmin";
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      fullName: string;
+    } | null;
+  }>;
+};
 
 export type AddCoinsMutationVariables = Exact<{
   input: AddCoinsInput;
 }>;
 
-
-export type AddCoinsMutation = { __typename?: 'Mutation', addCoins?: { __typename?: 'CoinTransactionResult', id: string, amount: number, groupId: string, adminId: string, createdAt: any, transaction: { __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null } } | null };
+export type AddCoinsMutation = {
+  __typename?: "Mutation";
+  addCoins?: {
+    __typename?: "CoinTransactionResult";
+    id: string;
+    amount: number;
+    groupId: string;
+    adminId: string;
+    createdAt: any;
+    transaction: {
+      __typename?: "CoinTransaction";
+      id: string;
+      amount: number;
+      reason?: string | null;
+      groupId: string;
+      adminId: string;
+      createdAt: any;
+      group?: {
+        __typename?: "CoinTransactionGroup";
+        id: string;
+        name: string;
+        coins: number;
+      } | null;
+      admin?: {
+        __typename?: "CoinTransactionAdmin";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        fullName: string;
+      } | null;
+    };
+  } | null;
+};
 
 export type RemoveCoinsMutationVariables = Exact<{
   input: RemoveCoinsInput;
 }>;
 
-
-export type RemoveCoinsMutation = { __typename?: 'Mutation', removeCoins?: { __typename?: 'CoinTransactionResult', id: string, amount: number, groupId: string, adminId: string, createdAt: any, transaction: { __typename?: 'CoinTransaction', id: string, amount: number, reason?: string | null, groupId: string, adminId: string, createdAt: any, group?: { __typename?: 'CoinTransactionGroup', id: string, name: string, coins: number } | null, admin?: { __typename?: 'CoinTransactionAdmin', id: string, firstName?: string | null, lastName?: string | null, fullName: string } | null } } | null };
+export type RemoveCoinsMutation = {
+  __typename?: "Mutation";
+  removeCoins?: {
+    __typename?: "CoinTransactionResult";
+    id: string;
+    amount: number;
+    groupId: string;
+    adminId: string;
+    createdAt: any;
+    transaction: {
+      __typename?: "CoinTransaction";
+      id: string;
+      amount: number;
+      reason?: string | null;
+      groupId: string;
+      adminId: string;
+      createdAt: any;
+      group?: {
+        __typename?: "CoinTransactionGroup";
+        id: string;
+        name: string;
+        coins: number;
+      } | null;
+      admin?: {
+        __typename?: "CoinTransactionAdmin";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        fullName: string;
+      } | null;
+    };
+  } | null;
+};
 
 export type GetGroupQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetGroupQuery = { __typename?: 'Query', group?: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } | null };
+export type GetGroupQuery = {
+  __typename?: "Query";
+  group?: {
+    __typename?: "Group";
+    id: string;
+    name: string;
+    description?: string | null;
+    code: string;
+    image?: string | null;
+    coins: number;
+    isActive: boolean;
+    status: GroupStatus;
+    tripId: string;
+    organizerId: string;
+    createdAt: any;
+    updatedAt: any;
+  } | null;
+};
 
 export type GetGroupByCodeQueryVariables = Exact<{
-  code: Scalars['String']['input'];
+  code: Scalars["String"]["input"];
 }>;
 
-
-export type GetGroupByCodeQuery = { __typename?: 'Query', groupByCode?: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } | null };
+export type GetGroupByCodeQuery = {
+  __typename?: "Query";
+  groupByCode?: {
+    __typename?: "Group";
+    id: string;
+    name: string;
+    description?: string | null;
+    code: string;
+    image?: string | null;
+    coins: number;
+    isActive: boolean;
+    status: GroupStatus;
+    tripId: string;
+    organizerId: string;
+    createdAt: any;
+    updatedAt: any;
+  } | null;
+};
 
 export type GetGroupsQueryVariables = Exact<{
   pagination?: InputMaybe<GroupPaginationInput>;
 }>;
 
-
-export type GetGroupsQuery = { __typename?: 'Query', groups: { __typename?: 'GroupsConnection', groups: Array<{ __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any }>, pagination: { __typename?: 'GroupPagination', total: number, hasMore: boolean, limit: number, offset: number } } };
+export type GetGroupsQuery = {
+  __typename?: "Query";
+  groups: {
+    __typename?: "GroupsConnection";
+    groups: Array<{
+      __typename?: "Group";
+      id: string;
+      name: string;
+      description?: string | null;
+      code: string;
+      image?: string | null;
+      coins: number;
+      isActive: boolean;
+      status: GroupStatus;
+      tripId: string;
+      organizerId: string;
+      createdAt: any;
+      updatedAt: any;
+    }>;
+    pagination: {
+      __typename?: "GroupPagination";
+      total: number;
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+    };
+  };
+};
 
 export type GetGroupsByTripQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
   pagination?: InputMaybe<GroupPaginationInput>;
 }>;
 
-
-export type GetGroupsByTripQuery = { __typename?: 'Query', groupsByTrip: { __typename?: 'GroupsConnection', groups: Array<{ __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any }>, pagination: { __typename?: 'GroupPagination', total: number, hasMore: boolean, limit: number, offset: number } } };
+export type GetGroupsByTripQuery = {
+  __typename?: "Query";
+  groupsByTrip: {
+    __typename?: "GroupsConnection";
+    groups: Array<{
+      __typename?: "Group";
+      id: string;
+      name: string;
+      description?: string | null;
+      code: string;
+      image?: string | null;
+      coins: number;
+      isActive: boolean;
+      status: GroupStatus;
+      tripId: string;
+      organizerId: string;
+      createdAt: any;
+      updatedAt: any;
+    }>;
+    pagination: {
+      __typename?: "GroupPagination";
+      total: number;
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+    };
+  };
+};
 
 export type GetGroupsByOrganizerQueryVariables = Exact<{
-  organizerId: Scalars['ID']['input'];
+  organizerId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetGroupsByOrganizerQuery = { __typename?: 'Query', groupsByOrganizer: Array<{ __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any }> };
+export type GetGroupsByOrganizerQuery = {
+  __typename?: "Query";
+  groupsByOrganizer: Array<{
+    __typename?: "Group";
+    id: string;
+    name: string;
+    description?: string | null;
+    code: string;
+    image?: string | null;
+    coins: number;
+    isActive: boolean;
+    status: GroupStatus;
+    tripId: string;
+    organizerId: string;
+    createdAt: any;
+    updatedAt: any;
+  }>;
+};
 
 export type GetGroupNamesByTripQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetGroupNamesByTripQuery = { __typename?: 'Query', groupNamesByTrip: Array<{ __typename?: 'GroupSummary', id: string, name: string }> };
+export type GetGroupNamesByTripQuery = {
+  __typename?: "Query";
+  groupNamesByTrip: Array<{
+    __typename?: "GroupSummary";
+    id: string;
+    name: string;
+  }>;
+};
 
 export type GetGroupRankingQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetGroupRankingQuery = { __typename?: 'Query', groupRanking: { __typename?: 'GroupRankingResult', currentDate: any, data: Array<{ __typename?: 'GroupRanking', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any }> } };
+export type GetGroupRankingQuery = {
+  __typename?: "Query";
+  groupRanking: {
+    __typename?: "GroupRankingResult";
+    currentDate: any;
+    data: Array<{
+      __typename?: "GroupRanking";
+      id: string;
+      name: string;
+      description?: string | null;
+      code: string;
+      image?: string | null;
+      coins: number;
+      isActive: boolean;
+      status: GroupStatus;
+      tripId: string;
+      organizerId: string;
+      createdAt: any;
+    }>;
+  };
+};
 
 export type CreateGroupMutationVariables = Exact<{
   input: CreateGroupInput;
 }>;
 
-
-export type CreateGroupMutation = { __typename?: 'Mutation', createGroup: { __typename?: 'CreateGroupPayload', group: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } } };
+export type CreateGroupMutation = {
+  __typename?: "Mutation";
+  createGroup: {
+    __typename?: "CreateGroupPayload";
+    group: {
+      __typename?: "Group";
+      id: string;
+      name: string;
+      description?: string | null;
+      code: string;
+      image?: string | null;
+      coins: number;
+      isActive: boolean;
+      status: GroupStatus;
+      tripId: string;
+      organizerId: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  };
+};
 
 export type UpdateGroupMutationVariables = Exact<{
   input: UpdateGroupInput;
 }>;
 
-
-export type UpdateGroupMutation = { __typename?: 'Mutation', updateGroup: { __typename?: 'UpdateGroupPayload', group: { __typename?: 'Group', id: string, name: string, description?: string | null, code: string, image?: string | null, coins: number, isActive: boolean, status: GroupStatus, tripId: string, organizerId: string, createdAt: any, updatedAt: any } } };
+export type UpdateGroupMutation = {
+  __typename?: "Mutation";
+  updateGroup: {
+    __typename?: "UpdateGroupPayload";
+    group: {
+      __typename?: "Group";
+      id: string;
+      name: string;
+      description?: string | null;
+      code: string;
+      image?: string | null;
+      coins: number;
+      isActive: boolean;
+      status: GroupStatus;
+      tripId: string;
+      organizerId: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  };
+};
 
 export type DeleteGroupMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type DeleteGroupMutation = { __typename?: 'Mutation', deleteGroup: { __typename?: 'DeleteGroupPayload', success: boolean } };
+export type DeleteGroupMutation = {
+  __typename?: "Mutation";
+  deleteGroup: { __typename?: "DeleteGroupPayload"; success: boolean };
+};
 
 export type AddUserToSharingMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  userId: Scalars['ID']['input'];
+  groupId: Scalars["ID"]["input"];
+  userId: Scalars["ID"]["input"];
 }>;
 
-
-export type AddUserToSharingMutation = { __typename?: 'Mutation', addUserToSharing?: { __typename?: 'SharingUserPayload', location: { __typename?: 'Location', id: string, isSharingLocation: boolean, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } } | null };
+export type AddUserToSharingMutation = {
+  __typename?: "Mutation";
+  addUserToSharing?: {
+    __typename?: "SharingUserPayload";
+    location: {
+      __typename?: "Location";
+      id: string;
+      isSharingLocation: boolean;
+      usersToShareWith: Array<{
+        __typename?: "SharingUserInfo";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+      }>;
+    };
+  } | null;
+};
 
 export type RemoveUserFromSharingMutationVariables = Exact<{
-  groupId: Scalars['ID']['input'];
-  userId: Scalars['ID']['input'];
+  groupId: Scalars["ID"]["input"];
+  userId: Scalars["ID"]["input"];
 }>;
 
-
-export type RemoveUserFromSharingMutation = { __typename?: 'Mutation', removeUserFromSharing?: { __typename?: 'SharingUserPayload', location: { __typename?: 'Location', id: string, isSharingLocation: boolean, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } } | null };
+export type RemoveUserFromSharingMutation = {
+  __typename?: "Mutation";
+  removeUserFromSharing?: {
+    __typename?: "SharingUserPayload";
+    location: {
+      __typename?: "Location";
+      id: string;
+      isSharingLocation: boolean;
+      usersToShareWith: Array<{
+        __typename?: "SharingUserInfo";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+      }>;
+    };
+  } | null;
+};
 
 export type UpdateSharingSettingsMutationVariables = Exact<{
   input: UpdateSharingSettingsInput;
 }>;
 
-
-export type UpdateSharingSettingsMutation = { __typename?: 'Mutation', updateSharingSettings?: { __typename?: 'UpdateSharingSettingsPayload', settings: { __typename?: 'LocationSharingSettings', isSharingLocation: boolean, usersToShareWith: Array<{ __typename?: 'SharingUserInfo', id: string, firstName?: string | null, lastName?: string | null }> } } | null };
+export type UpdateSharingSettingsMutation = {
+  __typename?: "Mutation";
+  updateSharingSettings?: {
+    __typename?: "UpdateSharingSettingsPayload";
+    settings: {
+      __typename?: "LocationSharingSettings";
+      isSharingLocation: boolean;
+      usersToShareWith: Array<{
+        __typename?: "SharingUserInfo";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+      }>;
+    };
+  } | null;
+};
 
 export type GetNotificationQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetNotificationQuery = { __typename?: 'Query', notification?: { __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null } | null };
+export type GetNotificationQuery = {
+  __typename?: "Query";
+  notification?: {
+    __typename?: "Notification";
+    id: string;
+    title: string;
+    body: string;
+    isSent: boolean;
+    isScheduled: boolean;
+    isReadyToSend?: boolean | null;
+    status: NotificationStatus;
+    priority: NotificationPriority;
+    scheduledFor?: any | null;
+    sentAt?: any | null;
+    url?: string | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt?: any | null;
+  } | null;
+};
 
 export type GetMyNotificationsQueryVariables = Exact<{
-  page?: InputMaybe<Scalars['Int']['input']>;
-  perPage?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars["Int"]["input"]>;
+  perPage?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetMyNotificationsQuery = { __typename?: 'Query', myNotifications: { __typename?: 'MyNotificationsResult', notifications: Array<{ __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null }>, pagination: { __typename?: 'NotificationPaginationInfo', page: number, pageSize: number, total: number, totalPages: number } } };
+export type GetMyNotificationsQuery = {
+  __typename?: "Query";
+  myNotifications: {
+    __typename?: "MyNotificationsResult";
+    notifications: Array<{
+      __typename?: "Notification";
+      id: string;
+      title: string;
+      body: string;
+      isSent: boolean;
+      isScheduled: boolean;
+      isReadyToSend?: boolean | null;
+      status: NotificationStatus;
+      priority: NotificationPriority;
+      scheduledFor?: any | null;
+      sentAt?: any | null;
+      url?: string | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt?: any | null;
+    }>;
+    pagination: {
+      __typename?: "NotificationPaginationInfo";
+      page: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+};
 
 export type GetAllNotificationsQueryVariables = Exact<{
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 }>;
 
-
-export type GetAllNotificationsQuery = { __typename?: 'Query', allNotifications: { __typename?: 'AllNotificationsResult', notifications: Array<{ __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null }>, pagination: { __typename?: 'NotificationOffsetPaginationInfo', hasMore: boolean, limit: number, offset: number, total: number } } };
+export type GetAllNotificationsQuery = {
+  __typename?: "Query";
+  allNotifications: {
+    __typename?: "AllNotificationsResult";
+    notifications: Array<{
+      __typename?: "Notification";
+      id: string;
+      title: string;
+      body: string;
+      isSent: boolean;
+      isScheduled: boolean;
+      isReadyToSend?: boolean | null;
+      status: NotificationStatus;
+      priority: NotificationPriority;
+      scheduledFor?: any | null;
+      sentAt?: any | null;
+      url?: string | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt?: any | null;
+    }>;
+    pagination: {
+      __typename?: "NotificationOffsetPaginationInfo";
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+};
 
 export type GetNotificationSchedulesQueryVariables = Exact<{
-  tripId?: InputMaybe<Scalars['ID']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
+  isActive?: InputMaybe<Scalars["Boolean"]["input"]>;
   notificationType?: InputMaybe<NotificationScheduleType>;
-  search?: InputMaybe<Scalars['String']['input']>;
-  startDateFrom?: InputMaybe<Scalars['DateTime']['input']>;
-  startDateTo?: InputMaybe<Scalars['DateTime']['input']>;
+  search?: InputMaybe<Scalars["String"]["input"]>;
+  startDateFrom?: InputMaybe<Scalars["DateTime"]["input"]>;
+  startDateTo?: InputMaybe<Scalars["DateTime"]["input"]>;
 }>;
 
-
-export type GetNotificationSchedulesQuery = { __typename?: 'Query', notificationSchedules?: { __typename?: 'NotificationSchedulesConnection', schedules: Array<{ __typename?: 'NotificationScheduleSummary', id: string, name: string, notificationType: NotificationScheduleType, hour: number, minute: number, isActive: boolean, startDate: any, endDate: any, tripId?: string | null }>, pagination: { __typename?: 'NotificationSchedulePagination', hasMore: boolean, limit: number, offset: number, total: number } } | null };
+export type GetNotificationSchedulesQuery = {
+  __typename?: "Query";
+  notificationSchedules?: {
+    __typename?: "NotificationSchedulesConnection";
+    schedules: Array<{
+      __typename?: "NotificationScheduleSummary";
+      id: string;
+      name: string;
+      notificationType: NotificationScheduleType;
+      hour: number;
+      minute: number;
+      isActive: boolean;
+      startDate: any;
+      endDate: any;
+      tripId?: string | null;
+    }>;
+    pagination: {
+      __typename?: "NotificationSchedulePagination";
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  } | null;
+};
 
 export type GetNotificationScheduleQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetNotificationScheduleQuery = { __typename?: 'Query', notificationSchedule?: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } | null };
+export type GetNotificationScheduleQuery = {
+  __typename?: "Query";
+  notificationSchedule?: {
+    __typename?: "NotificationSchedule";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    notificationTitle?: string | null;
+    notificationBody?: string | null;
+    notificationUrl?: string | null;
+    hour: number;
+    minute: number;
+    formattedTime: string;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isCurrentlyActive: boolean;
+    isExpired: boolean;
+    isUpcoming: boolean;
+    lastRun?: any | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  } | null;
+};
 
 export type GetActiveNotificationSchedulesQueryVariables = Exact<{
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
   notificationType?: InputMaybe<NotificationScheduleType>;
 }>;
 
-
-export type GetActiveNotificationSchedulesQuery = { __typename?: 'Query', activeNotificationSchedules?: Array<{ __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any }> | null };
+export type GetActiveNotificationSchedulesQuery = {
+  __typename?: "Query";
+  activeNotificationSchedules?: Array<{
+    __typename?: "NotificationSchedule";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    notificationTitle?: string | null;
+    notificationBody?: string | null;
+    notificationUrl?: string | null;
+    hour: number;
+    minute: number;
+    formattedTime: string;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isCurrentlyActive: boolean;
+    isExpired: boolean;
+    isUpcoming: boolean;
+    lastRun?: any | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  }> | null;
+};
 
 export type GetUpcomingNotificationSchedulesQueryVariables = Exact<{
-  withinMinutes?: InputMaybe<Scalars['Int']['input']>;
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  withinMinutes?: InputMaybe<Scalars["Int"]["input"]>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 }>;
 
-
-export type GetUpcomingNotificationSchedulesQuery = { __typename?: 'Query', upcomingNotificationSchedules?: Array<{ __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any }> | null };
+export type GetUpcomingNotificationSchedulesQuery = {
+  __typename?: "Query";
+  upcomingNotificationSchedules?: Array<{
+    __typename?: "NotificationSchedule";
+    id: string;
+    name: string;
+    notificationType: NotificationScheduleType;
+    notificationTitle?: string | null;
+    notificationBody?: string | null;
+    notificationUrl?: string | null;
+    hour: number;
+    minute: number;
+    formattedTime: string;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isCurrentlyActive: boolean;
+    isExpired: boolean;
+    isUpcoming: boolean;
+    lastRun?: any | null;
+    tripId?: string | null;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  }> | null;
+};
 
 export type GetNotificationScheduleExecutionHistoryQueryVariables = Exact<{
-  scheduleId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  scheduleId: Scalars["ID"]["input"];
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetNotificationScheduleExecutionHistoryQuery = { __typename?: 'Query', notificationScheduleExecutionHistory?: { __typename?: 'ExecutionHistoryResult', executions: Array<{ __typename?: 'ExecutionHistoryEntry', id: string, executedAt: any, notification?: { __typename?: 'ExecutionHistoryNotification', id: string, title: string, body: string, createdAt: any } | null }> } | null };
+export type GetNotificationScheduleExecutionHistoryQuery = {
+  __typename?: "Query";
+  notificationScheduleExecutionHistory?: {
+    __typename?: "ExecutionHistoryResult";
+    executions: Array<{
+      __typename?: "ExecutionHistoryEntry";
+      id: string;
+      executedAt: any;
+      notification?: {
+        __typename?: "ExecutionHistoryNotification";
+        id: string;
+        title: string;
+        body: string;
+        createdAt: any;
+      } | null;
+    }>;
+  } | null;
+};
 
 export type GetNotificationDeliveriesQueryVariables = Exact<{
-  scheduleId?: InputMaybe<Scalars['ID']['input']>;
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  scheduleId?: InputMaybe<Scalars["ID"]["input"]>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
   status?: InputMaybe<DeliveryStatus>;
-  startDate?: InputMaybe<Scalars['DateTime']['input']>;
-  endDate?: InputMaybe<Scalars['DateTime']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars["DateTime"]["input"]>;
+  endDate?: InputMaybe<Scalars["DateTime"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetNotificationDeliveriesQuery = { __typename?: 'Query', notificationDeliveries: { __typename?: 'NotificationDeliveryListResult', deliveries: Array<{ __typename?: 'NotificationDelivery', id: string, notificationId: string, scheduleId?: string | null, tripId: string, status: DeliveryStatus, deliveryStartedAt: any, deliveryCompletedAt?: any | null, totalRecipients: number, successCount: number, failureCount: number, errorLog?: string | null, createdAt: any, updatedAt: any, notification?: { __typename?: 'NotificationInfo', id: string, title: string, body: string, url?: string | null, tripId?: string | null, createdAt: any, createdBy?: { __typename?: 'NotificationCreator', id: string, firstName?: string | null, lastName?: string | null, authUserId?: string | null } | null } | null }>, pagination: { __typename?: 'DeliveryPagination', limit: number, offset: number, total: number } } };
+export type GetNotificationDeliveriesQuery = {
+  __typename?: "Query";
+  notificationDeliveries: {
+    __typename?: "NotificationDeliveryListResult";
+    deliveries: Array<{
+      __typename?: "NotificationDelivery";
+      id: string;
+      notificationId: string;
+      scheduleId?: string | null;
+      tripId: string;
+      status: DeliveryStatus;
+      deliveryStartedAt: any;
+      deliveryCompletedAt?: any | null;
+      totalRecipients: number;
+      successCount: number;
+      failureCount: number;
+      errorLog?: string | null;
+      createdAt: any;
+      updatedAt: any;
+      notification?: {
+        __typename?: "NotificationInfo";
+        id: string;
+        title: string;
+        body: string;
+        url?: string | null;
+        tripId?: string | null;
+        createdAt: any;
+        createdBy?: {
+          __typename?: "NotificationCreator";
+          id: string;
+          firstName?: string | null;
+          lastName?: string | null;
+          authUserId?: string | null;
+        } | null;
+      } | null;
+    }>;
+    pagination: {
+      __typename?: "DeliveryPagination";
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+};
 
 export type GetNotificationDeliveryByNotificationIdQueryVariables = Exact<{
-  notificationId: Scalars['ID']['input'];
-  tripId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetNotificationDeliveryByNotificationIdQuery = { __typename?: 'Query', notificationDeliveryByNotificationId?: { __typename?: 'NotificationDelivery', id: string, notificationId: string, scheduleId?: string | null, tripId: string, status: DeliveryStatus, deliveryStartedAt: any, deliveryCompletedAt?: any | null, totalRecipients: number, successCount: number, failureCount: number, errorLog?: string | null, createdAt: any, updatedAt: any, notification?: { __typename?: 'NotificationInfo', id: string, title: string, body: string, url?: string | null, tripId?: string | null, createdAt: any, createdBy?: { __typename?: 'NotificationCreator', id: string, firstName?: string | null, lastName?: string | null, authUserId?: string | null } | null } | null } | null };
+export type GetNotificationDeliveryByNotificationIdQuery = {
+  __typename?: "Query";
+  notificationDeliveryByNotificationId?: {
+    __typename?: "NotificationDelivery";
+    id: string;
+    notificationId: string;
+    scheduleId?: string | null;
+    tripId: string;
+    status: DeliveryStatus;
+    deliveryStartedAt: any;
+    deliveryCompletedAt?: any | null;
+    totalRecipients: number;
+    successCount: number;
+    failureCount: number;
+    errorLog?: string | null;
+    createdAt: any;
+    updatedAt: any;
+    notification?: {
+      __typename?: "NotificationInfo";
+      id: string;
+      title: string;
+      body: string;
+      url?: string | null;
+      tripId?: string | null;
+      createdAt: any;
+      createdBy?: {
+        __typename?: "NotificationCreator";
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        authUserId?: string | null;
+      } | null;
+    } | null;
+  } | null;
+};
 
 export type GetFailedDeliveriesQueryVariables = Exact<{
-  tripId?: InputMaybe<Scalars['ID']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetFailedDeliveriesQuery = { __typename?: 'Query', failedDeliveries: { __typename?: 'NotificationDeliveryListResult', deliveries: Array<{ __typename?: 'NotificationDelivery', id: string, notificationId: string, scheduleId?: string | null, tripId: string, status: DeliveryStatus, deliveryStartedAt: any, deliveryCompletedAt?: any | null, totalRecipients: number, successCount: number, failureCount: number, errorLog?: string | null, createdAt: any, updatedAt: any, notification?: { __typename?: 'NotificationInfo', id: string, title: string, body: string, url?: string | null, tripId?: string | null, createdAt: any, createdBy?: { __typename?: 'NotificationCreator', id: string, firstName?: string | null, lastName?: string | null, authUserId?: string | null } | null } | null }>, pagination: { __typename?: 'DeliveryPagination', limit: number, offset: number, total: number } } };
+export type GetFailedDeliveriesQuery = {
+  __typename?: "Query";
+  failedDeliveries: {
+    __typename?: "NotificationDeliveryListResult";
+    deliveries: Array<{
+      __typename?: "NotificationDelivery";
+      id: string;
+      notificationId: string;
+      scheduleId?: string | null;
+      tripId: string;
+      status: DeliveryStatus;
+      deliveryStartedAt: any;
+      deliveryCompletedAt?: any | null;
+      totalRecipients: number;
+      successCount: number;
+      failureCount: number;
+      errorLog?: string | null;
+      createdAt: any;
+      updatedAt: any;
+      notification?: {
+        __typename?: "NotificationInfo";
+        id: string;
+        title: string;
+        body: string;
+        url?: string | null;
+        tripId?: string | null;
+        createdAt: any;
+        createdBy?: {
+          __typename?: "NotificationCreator";
+          id: string;
+          firstName?: string | null;
+          lastName?: string | null;
+          authUserId?: string | null;
+        } | null;
+      } | null;
+    }>;
+    pagination: {
+      __typename?: "DeliveryPagination";
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  };
+};
 
 export type GetDeliveryStatsQueryVariables = Exact<{
-  tripId?: InputMaybe<Scalars['ID']['input']>;
-  scheduleId?: InputMaybe<Scalars['ID']['input']>;
-  startDate?: InputMaybe<Scalars['DateTime']['input']>;
-  endDate?: InputMaybe<Scalars['DateTime']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
+  scheduleId?: InputMaybe<Scalars["ID"]["input"]>;
+  startDate?: InputMaybe<Scalars["DateTime"]["input"]>;
+  endDate?: InputMaybe<Scalars["DateTime"]["input"]>;
 }>;
 
-
-export type GetDeliveryStatsQuery = { __typename?: 'Query', deliveryStats: { __typename?: 'DeliveryStats', totalDeliveries: number, totalSuccess: number, totalFailures: number, totalRecipients: number, successRate: number, avgSuccessPerDelivery: number, avgFailuresPerDelivery: number, statusBreakdown: { __typename?: 'DeliveryStatusBreakdown', success: number, failure: number, partialFailure: number, pending: number } } };
+export type GetDeliveryStatsQuery = {
+  __typename?: "Query";
+  deliveryStats: {
+    __typename?: "DeliveryStats";
+    totalDeliveries: number;
+    totalSuccess: number;
+    totalFailures: number;
+    totalRecipients: number;
+    successRate: number;
+    avgSuccessPerDelivery: number;
+    avgFailuresPerDelivery: number;
+    statusBreakdown: {
+      __typename?: "DeliveryStatusBreakdown";
+      success: number;
+      failure: number;
+      partialFailure: number;
+      pending: number;
+    };
+  };
+};
 
 export type CreateNotificationMutationVariables = Exact<{
-  title: Scalars['String']['input'];
-  body: Scalars['String']['input'];
+  title: Scalars["String"]["input"];
+  body: Scalars["String"]["input"];
   priority?: InputMaybe<NotificationPriority>;
-  tripId?: InputMaybe<Scalars['ID']['input']>;
-  url?: InputMaybe<Scalars['String']['input']>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
+  url?: InputMaybe<Scalars["String"]["input"]>;
 }>;
 
-
-export type CreateNotificationMutation = { __typename?: 'Mutation', createNotification: { __typename?: 'CreateNotificationResult', notification: { __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null } } };
+export type CreateNotificationMutation = {
+  __typename?: "Mutation";
+  createNotification: {
+    __typename?: "CreateNotificationResult";
+    notification: {
+      __typename?: "Notification";
+      id: string;
+      title: string;
+      body: string;
+      isSent: boolean;
+      isScheduled: boolean;
+      isReadyToSend?: boolean | null;
+      status: NotificationStatus;
+      priority: NotificationPriority;
+      scheduledFor?: any | null;
+      sentAt?: any | null;
+      url?: string | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt?: any | null;
+    };
+  };
+};
 
 export type UpdateNotificationMutationVariables = Exact<{
-  notificationId: Scalars['ID']['input'];
-  title?: InputMaybe<Scalars['String']['input']>;
-  body?: InputMaybe<Scalars['String']['input']>;
+  notificationId: Scalars["ID"]["input"];
+  title?: InputMaybe<Scalars["String"]["input"]>;
+  body?: InputMaybe<Scalars["String"]["input"]>;
   priority?: InputMaybe<NotificationPriority>;
-  url?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars["String"]["input"]>;
 }>;
 
-
-export type UpdateNotificationMutation = { __typename?: 'Mutation', updateNotification: { __typename?: 'UpdateNotificationResult', notification: { __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null } } };
+export type UpdateNotificationMutation = {
+  __typename?: "Mutation";
+  updateNotification: {
+    __typename?: "UpdateNotificationResult";
+    notification: {
+      __typename?: "Notification";
+      id: string;
+      title: string;
+      body: string;
+      isSent: boolean;
+      isScheduled: boolean;
+      isReadyToSend?: boolean | null;
+      status: NotificationStatus;
+      priority: NotificationPriority;
+      scheduledFor?: any | null;
+      sentAt?: any | null;
+      url?: string | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt?: any | null;
+    };
+  };
+};
 
 export type DeleteNotificationMutationVariables = Exact<{
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
 }>;
 
-
-export type DeleteNotificationMutation = { __typename?: 'Mutation', deleteNotification: { __typename?: 'DeleteNotificationResult', success: boolean } };
+export type DeleteNotificationMutation = {
+  __typename?: "Mutation";
+  deleteNotification: {
+    __typename?: "DeleteNotificationResult";
+    success: boolean;
+  };
+};
 
 export type CreateNotificationScheduleMutationVariables = Exact<{
-  name: Scalars['String']['input'];
-  hour: Scalars['Int']['input'];
-  minute: Scalars['Int']['input'];
-  startDate: Scalars['DateTime']['input'];
-  endDate: Scalars['DateTime']['input'];
+  name: Scalars["String"]["input"];
+  hour: Scalars["Int"]["input"];
+  minute: Scalars["Int"]["input"];
+  startDate: Scalars["DateTime"]["input"];
+  endDate: Scalars["DateTime"]["input"];
   notificationType: NotificationScheduleType;
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
-  notificationTitle?: InputMaybe<Scalars['String']['input']>;
-  notificationBody?: InputMaybe<Scalars['String']['input']>;
-  notificationUrl?: InputMaybe<Scalars['String']['input']>;
-  tripId?: InputMaybe<Scalars['ID']['input']>;
+  isActive?: InputMaybe<Scalars["Boolean"]["input"]>;
+  notificationTitle?: InputMaybe<Scalars["String"]["input"]>;
+  notificationBody?: InputMaybe<Scalars["String"]["input"]>;
+  notificationUrl?: InputMaybe<Scalars["String"]["input"]>;
+  tripId?: InputMaybe<Scalars["ID"]["input"]>;
 }>;
 
-
-export type CreateNotificationScheduleMutation = { __typename?: 'Mutation', createNotificationSchedule?: { __typename?: 'CreateNotificationSchedulePayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } } | null };
+export type CreateNotificationScheduleMutation = {
+  __typename?: "Mutation";
+  createNotificationSchedule?: {
+    __typename?: "CreateNotificationSchedulePayload";
+    schedule: {
+      __typename?: "NotificationSchedule";
+      id: string;
+      name: string;
+      notificationType: NotificationScheduleType;
+      notificationTitle?: string | null;
+      notificationBody?: string | null;
+      notificationUrl?: string | null;
+      hour: number;
+      minute: number;
+      formattedTime: string;
+      startDate: any;
+      endDate: any;
+      isActive: boolean;
+      isCurrentlyActive: boolean;
+      isExpired: boolean;
+      isUpcoming: boolean;
+      lastRun?: any | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  } | null;
+};
 
 export type UpdateNotificationScheduleMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  name?: InputMaybe<Scalars['String']['input']>;
-  hour?: InputMaybe<Scalars['Int']['input']>;
-  minute?: InputMaybe<Scalars['Int']['input']>;
-  startDate?: InputMaybe<Scalars['DateTime']['input']>;
-  endDate?: InputMaybe<Scalars['DateTime']['input']>;
-  isActive?: InputMaybe<Scalars['Boolean']['input']>;
-  notificationTitle?: InputMaybe<Scalars['String']['input']>;
-  notificationBody?: InputMaybe<Scalars['String']['input']>;
-  notificationUrl?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars["ID"]["input"];
+  name?: InputMaybe<Scalars["String"]["input"]>;
+  hour?: InputMaybe<Scalars["Int"]["input"]>;
+  minute?: InputMaybe<Scalars["Int"]["input"]>;
+  startDate?: InputMaybe<Scalars["DateTime"]["input"]>;
+  endDate?: InputMaybe<Scalars["DateTime"]["input"]>;
+  isActive?: InputMaybe<Scalars["Boolean"]["input"]>;
+  notificationTitle?: InputMaybe<Scalars["String"]["input"]>;
+  notificationBody?: InputMaybe<Scalars["String"]["input"]>;
+  notificationUrl?: InputMaybe<Scalars["String"]["input"]>;
 }>;
 
-
-export type UpdateNotificationScheduleMutation = { __typename?: 'Mutation', updateNotificationSchedule?: { __typename?: 'UpdateNotificationSchedulePayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } } | null };
+export type UpdateNotificationScheduleMutation = {
+  __typename?: "Mutation";
+  updateNotificationSchedule?: {
+    __typename?: "UpdateNotificationSchedulePayload";
+    schedule: {
+      __typename?: "NotificationSchedule";
+      id: string;
+      name: string;
+      notificationType: NotificationScheduleType;
+      notificationTitle?: string | null;
+      notificationBody?: string | null;
+      notificationUrl?: string | null;
+      hour: number;
+      minute: number;
+      formattedTime: string;
+      startDate: any;
+      endDate: any;
+      isActive: boolean;
+      isCurrentlyActive: boolean;
+      isExpired: boolean;
+      isUpcoming: boolean;
+      lastRun?: any | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  } | null;
+};
 
 export type DeleteNotificationScheduleMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type DeleteNotificationScheduleMutation = { __typename?: 'Mutation', deleteNotificationSchedule?: { __typename?: 'DeleteNotificationSchedulePayload', success: boolean, message: string, deletedExecutionCount?: number | null } | null };
+export type DeleteNotificationScheduleMutation = {
+  __typename?: "Mutation";
+  deleteNotificationSchedule?: {
+    __typename?: "DeleteNotificationSchedulePayload";
+    success: boolean;
+    message: string;
+    deletedExecutionCount?: number | null;
+  } | null;
+};
 
 export type DuplicateNotificationScheduleMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type DuplicateNotificationScheduleMutation = { __typename?: 'Mutation', duplicateNotificationSchedule?: { __typename?: 'DuplicateNotificationSchedulePayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } } | null };
+export type DuplicateNotificationScheduleMutation = {
+  __typename?: "Mutation";
+  duplicateNotificationSchedule?: {
+    __typename?: "DuplicateNotificationSchedulePayload";
+    schedule: {
+      __typename?: "NotificationSchedule";
+      id: string;
+      name: string;
+      notificationType: NotificationScheduleType;
+      notificationTitle?: string | null;
+      notificationBody?: string | null;
+      notificationUrl?: string | null;
+      hour: number;
+      minute: number;
+      formattedTime: string;
+      startDate: any;
+      endDate: any;
+      isActive: boolean;
+      isCurrentlyActive: boolean;
+      isExpired: boolean;
+      isUpcoming: boolean;
+      lastRun?: any | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  } | null;
+};
 
 export type ToggleNotificationScheduleActiveMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type ToggleNotificationScheduleActiveMutation = { __typename?: 'Mutation', toggleNotificationScheduleActive?: { __typename?: 'ToggleScheduleActivePayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } } | null };
+export type ToggleNotificationScheduleActiveMutation = {
+  __typename?: "Mutation";
+  toggleNotificationScheduleActive?: {
+    __typename?: "ToggleScheduleActivePayload";
+    schedule: {
+      __typename?: "NotificationSchedule";
+      id: string;
+      name: string;
+      notificationType: NotificationScheduleType;
+      notificationTitle?: string | null;
+      notificationBody?: string | null;
+      notificationUrl?: string | null;
+      hour: number;
+      minute: number;
+      formattedTime: string;
+      startDate: any;
+      endDate: any;
+      isActive: boolean;
+      isCurrentlyActive: boolean;
+      isExpired: boolean;
+      isUpcoming: boolean;
+      lastRun?: any | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  } | null;
+};
 
 export type BulkToggleNotificationScheduleActiveMutationVariables = Exact<{
-  ids: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
-  isActive: Scalars['Boolean']['input'];
+  ids: Array<Scalars["ID"]["input"]> | Scalars["ID"]["input"];
+  isActive: Scalars["Boolean"]["input"];
 }>;
 
-
-export type BulkToggleNotificationScheduleActiveMutation = { __typename?: 'Mutation', bulkToggleNotificationScheduleActive?: { __typename?: 'BulkToggleActivePayload', success: boolean, updatedCount: number } | null };
+export type BulkToggleNotificationScheduleActiveMutation = {
+  __typename?: "Mutation";
+  bulkToggleNotificationScheduleActive?: {
+    __typename?: "BulkToggleActivePayload";
+    success: boolean;
+    updatedCount: number;
+  } | null;
+};
 
 export type BulkDeleteNotificationScheduleMutationVariables = Exact<{
-  ids: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+  ids: Array<Scalars["ID"]["input"]> | Scalars["ID"]["input"];
 }>;
 
-
-export type BulkDeleteNotificationScheduleMutation = { __typename?: 'Mutation', bulkDeleteNotificationSchedules?: { __typename?: 'BulkDeleteNotificationSchedulesPayload', success: boolean, requestedCount: number, deletedCount: number, notFoundIds?: Array<string> | null } | null };
+export type BulkDeleteNotificationScheduleMutation = {
+  __typename?: "Mutation";
+  bulkDeleteNotificationSchedules?: {
+    __typename?: "BulkDeleteNotificationSchedulesPayload";
+    success: boolean;
+    requestedCount: number;
+    deletedCount: number;
+    notFoundIds?: Array<string> | null;
+  } | null;
+};
 
 export type UpdateNotificationScheduleLastRunMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
-  lastRunAt: Scalars['DateTime']['input'];
+  id: Scalars["ID"]["input"];
+  lastRunAt: Scalars["DateTime"]["input"];
   lastRunStatus: LastRunStatus;
-  lastRunError?: InputMaybe<Scalars['String']['input']>;
+  lastRunError?: InputMaybe<Scalars["String"]["input"]>;
 }>;
 
-
-export type UpdateNotificationScheduleLastRunMutation = { __typename?: 'Mutation', updateNotificationScheduleLastRun?: { __typename?: 'UpdateLastRunPayload', schedule: { __typename?: 'NotificationSchedule', id: string, name: string, notificationType: NotificationScheduleType, notificationTitle?: string | null, notificationBody?: string | null, notificationUrl?: string | null, hour: number, minute: number, formattedTime: string, startDate: any, endDate: any, isActive: boolean, isCurrentlyActive: boolean, isExpired: boolean, isUpcoming: boolean, lastRun?: any | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt: any } } | null };
+export type UpdateNotificationScheduleLastRunMutation = {
+  __typename?: "Mutation";
+  updateNotificationScheduleLastRun?: {
+    __typename?: "UpdateLastRunPayload";
+    schedule: {
+      __typename?: "NotificationSchedule";
+      id: string;
+      name: string;
+      notificationType: NotificationScheduleType;
+      notificationTitle?: string | null;
+      notificationBody?: string | null;
+      notificationUrl?: string | null;
+      hour: number;
+      minute: number;
+      formattedTime: string;
+      startDate: any;
+      endDate: any;
+      isActive: boolean;
+      isCurrentlyActive: boolean;
+      isExpired: boolean;
+      isUpcoming: boolean;
+      lastRun?: any | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  } | null;
+};
 
 export type UpdateNotificationStatusMutationVariables = Exact<{
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
   newStatus: NotificationStatus;
 }>;
 
-
-export type UpdateNotificationStatusMutation = { __typename?: 'Mutation', updateNotificationStatus: { __typename?: 'UpdateNotificationStatusResult', previousStatus: NotificationStatus, newStatus: NotificationStatus, notification: { __typename?: 'Notification', id: string, title: string, body: string, isSent: boolean, isScheduled: boolean, isReadyToSend?: boolean | null, status: NotificationStatus, priority: NotificationPriority, scheduledFor?: any | null, sentAt?: any | null, url?: string | null, tripId?: string | null, createdById: string, createdAt: any, updatedAt?: any | null } } };
+export type UpdateNotificationStatusMutation = {
+  __typename?: "Mutation";
+  updateNotificationStatus: {
+    __typename?: "UpdateNotificationStatusResult";
+    previousStatus: NotificationStatus;
+    newStatus: NotificationStatus;
+    notification: {
+      __typename?: "Notification";
+      id: string;
+      title: string;
+      body: string;
+      isSent: boolean;
+      isScheduled: boolean;
+      isReadyToSend?: boolean | null;
+      status: NotificationStatus;
+      priority: NotificationPriority;
+      scheduledFor?: any | null;
+      sentAt?: any | null;
+      url?: string | null;
+      tripId?: string | null;
+      createdById: string;
+      createdAt: any;
+      updatedAt?: any | null;
+    };
+  };
+};
 
 export type SendMobileNotificationsMutationVariables = Exact<{
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
 }>;
 
-
-export type SendMobileNotificationsMutation = { __typename?: 'Mutation', sendMobileNotifications?: { __typename?: 'SendMobileNotificationsPayload', success: boolean, sent: number, failed: number, total: number } | null };
+export type SendMobileNotificationsMutation = {
+  __typename?: "Mutation";
+  sendMobileNotifications?: {
+    __typename?: "SendMobileNotificationsPayload";
+    success: boolean;
+    sent: number;
+    failed: number;
+    total: number;
+  } | null;
+};
 
 export type TrackDeliveryStartMutationVariables = Exact<{
-  notificationId: Scalars['ID']['input'];
+  notificationId: Scalars["ID"]["input"];
 }>;
 
-
-export type TrackDeliveryStartMutation = { __typename?: 'Mutation', trackDeliveryStart?: { __typename?: 'TrackDeliveryStartPayload', success: boolean } | null };
+export type TrackDeliveryStartMutation = {
+  __typename?: "Mutation";
+  trackDeliveryStart?: {
+    __typename?: "TrackDeliveryStartPayload";
+    success: boolean;
+  } | null;
+};
 
 export type TrackDeliveryCompleteMutationVariables = Exact<{
-  notificationId: Scalars['ID']['input'];
-  totalRecipients: Scalars['Int']['input'];
-  successCount: Scalars['Int']['input'];
-  failureCount: Scalars['Int']['input'];
-  errors?: InputMaybe<Scalars['String']['input']>;
+  notificationId: Scalars["ID"]["input"];
+  totalRecipients: Scalars["Int"]["input"];
+  successCount: Scalars["Int"]["input"];
+  failureCount: Scalars["Int"]["input"];
+  errors?: InputMaybe<Scalars["String"]["input"]>;
 }>;
 
-
-export type TrackDeliveryCompleteMutation = { __typename?: 'Mutation', trackDeliveryComplete?: { __typename?: 'TrackDeliveryCompletePayload', success: boolean } | null };
+export type TrackDeliveryCompleteMutation = {
+  __typename?: "Mutation";
+  trackDeliveryComplete?: {
+    __typename?: "TrackDeliveryCompletePayload";
+    success: boolean;
+  } | null;
+};
 
 export type TrackDeliveryFailureMutationVariables = Exact<{
-  notificationId: Scalars['ID']['input'];
-  error: Scalars['String']['input'];
+  notificationId: Scalars["ID"]["input"];
+  error: Scalars["String"]["input"];
 }>;
 
-
-export type TrackDeliveryFailureMutation = { __typename?: 'Mutation', trackDeliveryFailure?: { __typename?: 'TrackDeliveryFailurePayload', success: boolean } | null };
+export type TrackDeliveryFailureMutation = {
+  __typename?: "Mutation";
+  trackDeliveryFailure?: {
+    __typename?: "TrackDeliveryFailurePayload";
+    success: boolean;
+  } | null;
+};
 
 export type GetRewardQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetRewardQuery = { __typename?: 'Query', reward?: { __typename?: 'Reward', id: string, name: string, description: string, coinCostPercentage: number, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any } | null };
+export type GetRewardQuery = {
+  __typename?: "Query";
+  reward?: {
+    __typename?: "Reward";
+    id: string;
+    name: string;
+    description: string;
+    coinCostPercentage: number;
+    availableQuantity: number;
+    isInStock: boolean;
+    canBePurchased: boolean;
+    images: Array<string>;
+    primaryImage?: string | null;
+    purchaseCount: number;
+    isHidden: boolean;
+    tripId: string;
+    createdById: string;
+    createdAt: any;
+    updatedAt: any;
+  } | null;
+};
 
 export type GetRewardsByTripQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  tripId: Scalars["ID"]["input"];
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetRewardsByTripQuery = { __typename?: 'Query', rewardsByTrip?: { __typename?: 'RewardsConnection', rewards: Array<{ __typename?: 'RewardWithCalculations', id: string, name: string, description: string, coinCostPercentage: number, dynamicCoinCost: number, canAfford?: boolean | null, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any }>, pagination: { __typename?: 'RewardPagination', hasMore: boolean, limit: number, offset: number, total: number } } | null };
+export type GetRewardsByTripQuery = {
+  __typename?: "Query";
+  rewardsByTrip?: {
+    __typename?: "RewardsConnection";
+    rewards: Array<{
+      __typename?: "RewardWithCalculations";
+      id: string;
+      name: string;
+      description: string;
+      coinCostPercentage: number;
+      dynamicCoinCost: number;
+      canAfford?: boolean | null;
+      availableQuantity: number;
+      isInStock: boolean;
+      canBePurchased: boolean;
+      images: Array<string>;
+      primaryImage?: string | null;
+      purchaseCount: number;
+      isHidden: boolean;
+      tripId: string;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    }>;
+    pagination: {
+      __typename?: "RewardPagination";
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  } | null;
+};
 
 export type GetRewardsByTripAdminQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  tripId: Scalars["ID"]["input"];
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetRewardsByTripAdminQuery = { __typename?: 'Query', rewardsByTripAdmin?: { __typename?: 'RewardsConnection', rewards: Array<{ __typename?: 'RewardWithCalculations', id: string, name: string, description: string, coinCostPercentage: number, dynamicCoinCost: number, canAfford?: boolean | null, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any }>, pagination: { __typename?: 'RewardPagination', hasMore: boolean, limit: number, offset: number, total: number } } | null };
+export type GetRewardsByTripAdminQuery = {
+  __typename?: "Query";
+  rewardsByTripAdmin?: {
+    __typename?: "RewardsConnection";
+    rewards: Array<{
+      __typename?: "RewardWithCalculations";
+      id: string;
+      name: string;
+      description: string;
+      coinCostPercentage: number;
+      dynamicCoinCost: number;
+      canAfford?: boolean | null;
+      availableQuantity: number;
+      isInStock: boolean;
+      canBePurchased: boolean;
+      images: Array<string>;
+      primaryImage?: string | null;
+      purchaseCount: number;
+      isHidden: boolean;
+      tripId: string;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    }>;
+    pagination: {
+      __typename?: "RewardPagination";
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  } | null;
+};
 
 export type GetPurchaseHistoryQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  tripId: Scalars["ID"]["input"];
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetPurchaseHistoryQuery = { __typename?: 'Query', purchaseHistory?: { __typename?: 'PurchaseHistoryConnection', purchases: Array<{ __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any }>, pagination: { __typename?: 'RewardPagination', hasMore: boolean, limit: number, offset: number, total: number } } | null };
+export type GetPurchaseHistoryQuery = {
+  __typename?: "Query";
+  purchaseHistory?: {
+    __typename?: "PurchaseHistoryConnection";
+    purchases: Array<{
+      __typename?: "RewardPurchase";
+      purchaseId: string;
+      rewardId: string;
+      rewardName: string;
+      groupId: string;
+      groupName?: string | null;
+      purchasedById: string;
+      purchasedByName?: string | null;
+      quantity: number;
+      totalCost: number;
+      status: RewardPurchaseStatus;
+      collectionMethod?: string | null;
+      statusUpdatedAt: any;
+      statusUpdatedById?: string | null;
+      statusUpdatedByName?: string | null;
+      purchasedAt: any;
+    }>;
+    pagination: {
+      __typename?: "RewardPagination";
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+      total: number;
+    };
+  } | null;
+};
 
 export type GetTotalAvailablePointsQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetTotalAvailablePointsQuery = { __typename?: 'Query', totalAvailablePoints?: { __typename?: 'TotalAvailablePointsPayload', totalPoints: number } | null };
+export type GetTotalAvailablePointsQuery = {
+  __typename?: "Query";
+  totalAvailablePoints?: {
+    __typename?: "TotalAvailablePointsPayload";
+    totalPoints: number;
+  } | null;
+};
 
 export type CreateRewardMutationVariables = Exact<{
   input: CreateRewardInput;
 }>;
 
-
-export type CreateRewardMutation = { __typename?: 'Mutation', createReward?: { __typename?: 'CreateRewardPayload', reward: { __typename?: 'Reward', id: string, name: string, description: string, coinCostPercentage: number, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any } } | null };
+export type CreateRewardMutation = {
+  __typename?: "Mutation";
+  createReward?: {
+    __typename?: "CreateRewardPayload";
+    reward: {
+      __typename?: "Reward";
+      id: string;
+      name: string;
+      description: string;
+      coinCostPercentage: number;
+      availableQuantity: number;
+      isInStock: boolean;
+      canBePurchased: boolean;
+      images: Array<string>;
+      primaryImage?: string | null;
+      purchaseCount: number;
+      isHidden: boolean;
+      tripId: string;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  } | null;
+};
 
 export type UpdateRewardMutationVariables = Exact<{
   input: UpdateRewardInput;
 }>;
 
-
-export type UpdateRewardMutation = { __typename?: 'Mutation', updateReward?: { __typename?: 'UpdateRewardPayload', reward: { __typename?: 'Reward', id: string, name: string, description: string, coinCostPercentage: number, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any } } | null };
+export type UpdateRewardMutation = {
+  __typename?: "Mutation";
+  updateReward?: {
+    __typename?: "UpdateRewardPayload";
+    reward: {
+      __typename?: "Reward";
+      id: string;
+      name: string;
+      description: string;
+      coinCostPercentage: number;
+      availableQuantity: number;
+      isInStock: boolean;
+      canBePurchased: boolean;
+      images: Array<string>;
+      primaryImage?: string | null;
+      purchaseCount: number;
+      isHidden: boolean;
+      tripId: string;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  } | null;
+};
 
 export type DeleteRewardMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type DeleteRewardMutation = { __typename?: 'Mutation', deleteReward?: { __typename?: 'DeleteRewardPayload', success: boolean, deletedRewardId: string } | null };
+export type DeleteRewardMutation = {
+  __typename?: "Mutation";
+  deleteReward?: {
+    __typename?: "DeleteRewardPayload";
+    success: boolean;
+    deletedRewardId: string;
+  } | null;
+};
 
 export type PurchaseRewardMutationVariables = Exact<{
   input: PurchaseRewardInput;
 }>;
 
-
-export type PurchaseRewardMutation = { __typename?: 'Mutation', purchaseReward?: { __typename?: 'PurchaseRewardPayload', remainingGroupCoins: number, remainingRewardQuantity: number, purchase: { __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any } } | null };
+export type PurchaseRewardMutation = {
+  __typename?: "Mutation";
+  purchaseReward?: {
+    __typename?: "PurchaseRewardPayload";
+    remainingGroupCoins: number;
+    remainingRewardQuantity: number;
+    purchase: {
+      __typename?: "RewardPurchase";
+      purchaseId: string;
+      rewardId: string;
+      rewardName: string;
+      groupId: string;
+      groupName?: string | null;
+      purchasedById: string;
+      purchasedByName?: string | null;
+      quantity: number;
+      totalCost: number;
+      status: RewardPurchaseStatus;
+      collectionMethod?: string | null;
+      statusUpdatedAt: any;
+      statusUpdatedById?: string | null;
+      statusUpdatedByName?: string | null;
+      purchasedAt: any;
+    };
+  } | null;
+};
 
 export type SetRewardHiddenMutationVariables = Exact<{
-  rewardId: Scalars['ID']['input'];
-  isHidden: Scalars['Boolean']['input'];
+  rewardId: Scalars["ID"]["input"];
+  isHidden: Scalars["Boolean"]["input"];
 }>;
 
-
-export type SetRewardHiddenMutation = { __typename?: 'Mutation', setRewardHidden?: { __typename?: 'SetRewardHiddenPayload', previousHidden: boolean, reward: { __typename?: 'Reward', id: string, name: string, description: string, coinCostPercentage: number, availableQuantity: number, isInStock: boolean, canBePurchased: boolean, images: Array<string>, primaryImage?: string | null, purchaseCount: number, isHidden: boolean, tripId: string, createdById: string, createdAt: any, updatedAt: any } } | null };
+export type SetRewardHiddenMutation = {
+  __typename?: "Mutation";
+  setRewardHidden?: {
+    __typename?: "SetRewardHiddenPayload";
+    previousHidden: boolean;
+    reward: {
+      __typename?: "Reward";
+      id: string;
+      name: string;
+      description: string;
+      coinCostPercentage: number;
+      availableQuantity: number;
+      isInStock: boolean;
+      canBePurchased: boolean;
+      images: Array<string>;
+      primaryImage?: string | null;
+      purchaseCount: number;
+      isHidden: boolean;
+      tripId: string;
+      createdById: string;
+      createdAt: any;
+      updatedAt: any;
+    };
+  } | null;
+};
 
 export type UpdatePurchaseStatusMutationVariables = Exact<{
   input: UpdatePurchaseStatusInput;
 }>;
 
-
-export type UpdatePurchaseStatusMutation = { __typename?: 'Mutation', updatePurchaseStatus?: { __typename?: 'UpdatePurchaseStatusPayload', previousStatus: RewardPurchaseStatus, refunded: boolean, purchase: { __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any } } | null };
+export type UpdatePurchaseStatusMutation = {
+  __typename?: "Mutation";
+  updatePurchaseStatus?: {
+    __typename?: "UpdatePurchaseStatusPayload";
+    previousStatus: RewardPurchaseStatus;
+    refunded: boolean;
+    purchase: {
+      __typename?: "RewardPurchase";
+      purchaseId: string;
+      rewardId: string;
+      rewardName: string;
+      groupId: string;
+      groupName?: string | null;
+      purchasedById: string;
+      purchasedByName?: string | null;
+      quantity: number;
+      totalCost: number;
+      status: RewardPurchaseStatus;
+      collectionMethod?: string | null;
+      statusUpdatedAt: any;
+      statusUpdatedById?: string | null;
+      statusUpdatedByName?: string | null;
+      purchasedAt: any;
+    };
+  } | null;
+};
 
 export type UpdateMyPurchaseStatusMutationVariables = Exact<{
   input: UpdateMyPurchaseStatusInput;
 }>;
 
-
-export type UpdateMyPurchaseStatusMutation = { __typename?: 'Mutation', updateMyPurchaseStatus?: { __typename?: 'UpdateMyPurchaseStatusPayload', previousStatus: RewardPurchaseStatus, purchase: { __typename?: 'RewardPurchase', purchaseId: string, rewardId: string, rewardName: string, groupId: string, groupName?: string | null, purchasedById: string, purchasedByName?: string | null, quantity: number, totalCost: number, status: RewardPurchaseStatus, collectionMethod?: string | null, statusUpdatedAt: any, statusUpdatedById?: string | null, statusUpdatedByName?: string | null, purchasedAt: any } } | null };
+export type UpdateMyPurchaseStatusMutation = {
+  __typename?: "Mutation";
+  updateMyPurchaseStatus?: {
+    __typename?: "UpdateMyPurchaseStatusPayload";
+    previousStatus: RewardPurchaseStatus;
+    purchase: {
+      __typename?: "RewardPurchase";
+      purchaseId: string;
+      rewardId: string;
+      rewardName: string;
+      groupId: string;
+      groupName?: string | null;
+      purchasedById: string;
+      purchasedByName?: string | null;
+      quantity: number;
+      totalCost: number;
+      status: RewardPurchaseStatus;
+      collectionMethod?: string | null;
+      statusUpdatedAt: any;
+      statusUpdatedById?: string | null;
+      statusUpdatedByName?: string | null;
+      purchasedAt: any;
+    };
+  } | null;
+};
 
 export type GetSponsorQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetSponsorQuery = { __typename?: 'Query', sponsor?: { __typename?: 'Sponsor', id: string, name: string, description: string, logoPath: string, isActive: boolean, height?: number | null, offsetX?: number | null, offsetY?: number | null, hasLogoAdjustments: boolean, createdAt: any, updatedAt?: any | null } | null };
+export type GetSponsorQuery = {
+  __typename?: "Query";
+  sponsor?: {
+    __typename?: "Sponsor";
+    id: string;
+    name: string;
+    description: string;
+    logoPath: string;
+    isActive: boolean;
+    height?: number | null;
+    offsetX?: number | null;
+    offsetY?: number | null;
+    hasLogoAdjustments: boolean;
+    createdAt: any;
+    updatedAt?: any | null;
+  } | null;
+};
 
 export type GetSponsorsByTripQueryVariables = Exact<{
-  tripId: Scalars['ID']['input'];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetSponsorsByTripQuery = { __typename?: 'Query', sponsorsByTrip?: Array<{ __typename?: 'Sponsor', id: string, name: string, description: string, logoPath: string, isActive: boolean, height?: number | null, offsetX?: number | null, offsetY?: number | null, hasLogoAdjustments: boolean, createdAt: any, updatedAt?: any | null }> | null };
+export type GetSponsorsByTripQuery = {
+  __typename?: "Query";
+  sponsorsByTrip?: Array<{
+    __typename?: "Sponsor";
+    id: string;
+    name: string;
+    description: string;
+    logoPath: string;
+    isActive: boolean;
+    height?: number | null;
+    offsetX?: number | null;
+    offsetY?: number | null;
+    hasLogoAdjustments: boolean;
+    createdAt: any;
+    updatedAt?: any | null;
+  }> | null;
+};
 
 export type CreateSponsorMutationVariables = Exact<{
   input: CreateSponsorInput;
 }>;
 
-
-export type CreateSponsorMutation = { __typename?: 'Mutation', createSponsor?: { __typename?: 'CreateSponsorPayload', sponsor: { __typename?: 'Sponsor', id: string, name: string, description: string, logoPath: string, isActive: boolean, height?: number | null, offsetX?: number | null, offsetY?: number | null, hasLogoAdjustments: boolean, createdAt: any, updatedAt?: any | null } } | null };
+export type CreateSponsorMutation = {
+  __typename?: "Mutation";
+  createSponsor?: {
+    __typename?: "CreateSponsorPayload";
+    sponsor: {
+      __typename?: "Sponsor";
+      id: string;
+      name: string;
+      description: string;
+      logoPath: string;
+      isActive: boolean;
+      height?: number | null;
+      offsetX?: number | null;
+      offsetY?: number | null;
+      hasLogoAdjustments: boolean;
+      createdAt: any;
+      updatedAt?: any | null;
+    };
+  } | null;
+};
 
 export type UpdateSponsorMutationVariables = Exact<{
   input: UpdateSponsorInput;
 }>;
 
-
-export type UpdateSponsorMutation = { __typename?: 'Mutation', updateSponsor?: { __typename?: 'UpdateSponsorPayload', sponsor: { __typename?: 'Sponsor', id: string, name: string, description: string, logoPath: string, isActive: boolean, height?: number | null, offsetX?: number | null, offsetY?: number | null, hasLogoAdjustments: boolean, createdAt: any, updatedAt?: any | null } } | null };
+export type UpdateSponsorMutation = {
+  __typename?: "Mutation";
+  updateSponsor?: {
+    __typename?: "UpdateSponsorPayload";
+    sponsor: {
+      __typename?: "Sponsor";
+      id: string;
+      name: string;
+      description: string;
+      logoPath: string;
+      isActive: boolean;
+      height?: number | null;
+      offsetX?: number | null;
+      offsetY?: number | null;
+      hasLogoAdjustments: boolean;
+      createdAt: any;
+      updatedAt?: any | null;
+    };
+  } | null;
+};
 
 export type DeleteSponsorMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type DeleteSponsorMutation = { __typename?: 'Mutation', deleteSponsor?: { __typename?: 'DeleteSponsorPayload', success: boolean, id: string } | null };
+export type DeleteSponsorMutation = {
+  __typename?: "Mutation";
+  deleteSponsor?: {
+    __typename?: "DeleteSponsorPayload";
+    success: boolean;
+    id: string;
+  } | null;
+};
 
 export type LinkSponsorToTripMutationVariables = Exact<{
-  sponsorId: Scalars['ID']['input'];
-  tripId: Scalars['ID']['input'];
+  sponsorId: Scalars["ID"]["input"];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type LinkSponsorToTripMutation = { __typename?: 'Mutation', linkSponsorToTrip?: { __typename?: 'LinkSponsorToTripPayload', linked: boolean, sponsorId: string, tripId: string } | null };
+export type LinkSponsorToTripMutation = {
+  __typename?: "Mutation";
+  linkSponsorToTrip?: {
+    __typename?: "LinkSponsorToTripPayload";
+    linked: boolean;
+    sponsorId: string;
+    tripId: string;
+  } | null;
+};
 
 export type UnlinkSponsorFromTripMutationVariables = Exact<{
-  sponsorId: Scalars['ID']['input'];
-  tripId: Scalars['ID']['input'];
+  sponsorId: Scalars["ID"]["input"];
+  tripId: Scalars["ID"]["input"];
 }>;
 
-
-export type UnlinkSponsorFromTripMutation = { __typename?: 'Mutation', unlinkSponsorFromTrip?: { __typename?: 'UnlinkSponsorFromTripPayload', unlinked: boolean, sponsorId: string, tripId: string } | null };
+export type UnlinkSponsorFromTripMutation = {
+  __typename?: "Mutation";
+  unlinkSponsorFromTrip?: {
+    __typename?: "UnlinkSponsorFromTripPayload";
+    unlinked: boolean;
+    sponsorId: string;
+    tripId: string;
+  } | null;
+};
 
 export type GetSubmissionReportsQueryVariables = Exact<{
-  submissionId: Scalars['ID']['input'];
+  submissionId: Scalars["ID"]["input"];
 }>;
 
-
-export type GetSubmissionReportsQuery = { __typename?: 'Query', submissionReports?: { __typename?: 'SubmissionReportListResult', totalCount: number, reports: Array<{ __typename?: 'SubmissionReport', id: string, submissionId: string, reporterId: string, reason: ReportReason, reasonDisplay: string, details?: string | null, hasDetails: boolean, createdAt: any, reporter: { __typename?: 'SubmissionReportReporterInfo', id: string, user: { __typename?: 'SubmissionReportUserInfo', id: string, firstName: string, lastName: string, email?: string | null, hasAvatar: boolean } } }> } | null };
+export type GetSubmissionReportsQuery = {
+  __typename?: "Query";
+  submissionReports?: {
+    __typename?: "SubmissionReportListResult";
+    totalCount: number;
+    reports: Array<{
+      __typename?: "SubmissionReport";
+      id: string;
+      submissionId: string;
+      reporterId: string;
+      reason: ReportReason;
+      reasonDisplay: string;
+      details?: string | null;
+      hasDetails: boolean;
+      createdAt: any;
+      reporter: {
+        __typename?: "SubmissionReportReporterInfo";
+        id: string;
+        user: {
+          __typename?: "SubmissionReportUserInfo";
+          id: string;
+          firstName: string;
+          lastName: string;
+          email?: string | null;
+          hasAvatar: boolean;
+        };
+      };
+    }>;
+  } | null;
+};
 
 export type CreateSubmissionReportMutationVariables = Exact<{
   input: CreateReportInput;
 }>;
 
-
-export type CreateSubmissionReportMutation = { __typename?: 'Mutation', createSubmissionReport?: { __typename?: 'SubmissionReportCreateResult', id: string, submissionId: string, reporterId: string, reason: ReportReason, reasonDisplay: string, details?: string | null, hasDetails: boolean, createdAt: any } | null };
+export type CreateSubmissionReportMutation = {
+  __typename?: "Mutation";
+  createSubmissionReport?: {
+    __typename?: "SubmissionReportCreateResult";
+    id: string;
+    submissionId: string;
+    reporterId: string;
+    reason: ReportReason;
+    reasonDisplay: string;
+    details?: string | null;
+    hasDetails: boolean;
+    createdAt: any;
+  } | null;
+};
 
 export type GetTripQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetTripQuery = { __typename?: 'Query', trip?: { __typename?: 'Trip', id: string, name: string, description?: string | null, startDate: any, endDate: any, isActive: boolean, isPlanning: boolean, isCompleted: boolean, isCancelled: boolean, status: TripStatus, backgroundImagePath?: string | null, createdAt: any, updatedAt: any } | null };
+export type GetTripQuery = {
+  __typename?: "Query";
+  trip?: {
+    __typename?: "Trip";
+    id: string;
+    name: string;
+    description?: string | null;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isPlanning: boolean;
+    isCompleted: boolean;
+    isCancelled: boolean;
+    status: TripStatus;
+    backgroundImagePath?: string | null;
+    createdAt: any;
+    updatedAt: any;
+  } | null;
+};
 
 export type GetTripsQueryVariables = Exact<{
   pagination?: InputMaybe<TripPaginationInput>;
 }>;
 
-
-export type GetTripsQuery = { __typename?: 'Query', trips: { __typename?: 'TripListResult', trips: Array<{ __typename?: 'Trip', id: string, name: string, description?: string | null, startDate: any, endDate: any, isActive: boolean, isPlanning: boolean, isCompleted: boolean, isCancelled: boolean, status: TripStatus, backgroundImagePath?: string | null, createdAt: any, updatedAt: any }>, pagination: { __typename?: 'TripPaginationInfo', total: number, hasMore: boolean, limit: number, offset: number } } };
+export type GetTripsQuery = {
+  __typename?: "Query";
+  trips: {
+    __typename?: "TripListResult";
+    trips: Array<{
+      __typename?: "Trip";
+      id: string;
+      name: string;
+      description?: string | null;
+      startDate: any;
+      endDate: any;
+      isActive: boolean;
+      isPlanning: boolean;
+      isCompleted: boolean;
+      isCancelled: boolean;
+      status: TripStatus;
+      backgroundImagePath?: string | null;
+      createdAt: any;
+      updatedAt: any;
+    }>;
+    pagination: {
+      __typename?: "TripPaginationInfo";
+      total: number;
+      hasMore: boolean;
+      limit: number;
+      offset: number;
+    };
+  };
+};
 
 export type GetTripAdminQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type GetTripAdminQuery = { __typename?: 'Query', tripAdmin?: { __typename?: 'Trip', id: string, name: string, description?: string | null, startDate: any, endDate: any, isActive: boolean, isPlanning: boolean, isCompleted: boolean, isCancelled: boolean, status: TripStatus, backgroundImagePath?: string | null, createdAt: any, updatedAt: any } | null };
+export type GetTripAdminQuery = {
+  __typename?: "Query";
+  tripAdmin?: {
+    __typename?: "Trip";
+    id: string;
+    name: string;
+    description?: string | null;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isPlanning: boolean;
+    isCompleted: boolean;
+    isCancelled: boolean;
+    status: TripStatus;
+    backgroundImagePath?: string | null;
+    createdAt: any;
+    updatedAt: any;
+  } | null;
+};
 
 export type CreateTripMutationVariables = Exact<{
   input: CreateTripInput;
 }>;
 
-
-export type CreateTripMutation = { __typename?: 'Mutation', createTrip: { __typename?: 'Trip', id: string, name: string, description?: string | null, startDate: any, endDate: any, isActive: boolean, isPlanning: boolean, isCompleted: boolean, isCancelled: boolean, status: TripStatus, backgroundImagePath?: string | null, createdAt: any, updatedAt: any } };
+export type CreateTripMutation = {
+  __typename?: "Mutation";
+  createTrip: {
+    __typename?: "Trip";
+    id: string;
+    name: string;
+    description?: string | null;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isPlanning: boolean;
+    isCompleted: boolean;
+    isCancelled: boolean;
+    status: TripStatus;
+    backgroundImagePath?: string | null;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
 
 export type UpdateTripMutationVariables = Exact<{
   input: UpdateTripInput;
 }>;
 
-
-export type UpdateTripMutation = { __typename?: 'Mutation', updateTrip: { __typename?: 'Trip', id: string, name: string, description?: string | null, startDate: any, endDate: any, isActive: boolean, isPlanning: boolean, isCompleted: boolean, isCancelled: boolean, status: TripStatus, backgroundImagePath?: string | null, createdAt: any, updatedAt: any } };
+export type UpdateTripMutation = {
+  __typename?: "Mutation";
+  updateTrip: {
+    __typename?: "Trip";
+    id: string;
+    name: string;
+    description?: string | null;
+    startDate: any;
+    endDate: any;
+    isActive: boolean;
+    isPlanning: boolean;
+    isCompleted: boolean;
+    isCancelled: boolean;
+    status: TripStatus;
+    backgroundImagePath?: string | null;
+    createdAt: any;
+    updatedAt: any;
+  };
+};
 
 export type DeleteTripMutationVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
-
-export type DeleteTripMutation = { __typename?: 'Mutation', deleteTrip: { __typename?: 'DeleteTripResult', success: boolean } };
+export type DeleteTripMutation = {
+  __typename?: "Mutation";
+  deleteTrip: { __typename?: "DeleteTripResult"; success: boolean };
+};
 
 export type GetUserQueryVariables = Exact<{
-  id: Scalars['ID']['input'];
+  id: Scalars["ID"]["input"];
 }>;
 
+export type GetUserQuery = {
+  __typename?: "Query";
+  user?: {
+    __typename?: "User";
+    id: string;
+    authUserId: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    hasAvatar: boolean;
+    role: UserRole;
+    createdAt: any;
+    lastSeenOn?: any | null;
+    isAdmin: boolean;
+    isModerator: boolean;
+  } | null;
+};
 
-export type GetUserQuery = { __typename?: 'Query', user?: { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean } | null };
+export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never }>;
 
-export type GetCurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetCurrentUserQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean } | null };
+export type GetCurrentUserQuery = {
+  __typename?: "Query";
+  me?: {
+    __typename?: "User";
+    id: string;
+    authUserId: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    hasAvatar: boolean;
+    role: UserRole;
+    createdAt: any;
+    lastSeenOn?: any | null;
+    isAdmin: boolean;
+    isModerator: boolean;
+  } | null;
+};
 
 export type GetUsersQueryVariables = Exact<{
-  limit?: InputMaybe<Scalars['Int']['input']>;
-  offset?: InputMaybe<Scalars['Int']['input']>;
+  limit?: InputMaybe<Scalars["Int"]["input"]>;
+  offset?: InputMaybe<Scalars["Int"]["input"]>;
 }>;
 
-
-export type GetUsersQuery = { __typename?: 'Query', users?: Array<{ __typename?: 'User', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any, lastSeenOn?: any | null, isAdmin: boolean, isModerator: boolean }> | null };
+export type GetUsersQuery = {
+  __typename?: "Query";
+  users?: Array<{
+    __typename?: "User";
+    id: string;
+    authUserId: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    hasAvatar: boolean;
+    role: UserRole;
+    createdAt: any;
+    lastSeenOn?: any | null;
+    isAdmin: boolean;
+    isModerator: boolean;
+  }> | null;
+};
 
 export type CreateUserMutationVariables = Exact<{
   input: CreateUserInput;
 }>;
 
-
-export type CreateUserMutation = { __typename?: 'Mutation', createUser?: { __typename?: 'UserCreateResult', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, createdAt: any } | null };
+export type CreateUserMutation = {
+  __typename?: "Mutation";
+  createUser?: {
+    __typename?: "UserCreateResult";
+    id: string;
+    authUserId: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    hasAvatar: boolean;
+    role: UserRole;
+    createdAt: any;
+  } | null;
+};
 
 export type UpdateUserMutationVariables = Exact<{
   input: UpdateUserInput;
 }>;
 
-
-export type UpdateUserMutation = { __typename?: 'Mutation', updateUser?: { __typename?: 'UserUpdateResult', id: string, authUserId: string, firstName: string, lastName: string, fullName: string, hasAvatar: boolean, role: UserRole, updatedAt: any } | null };
-
+export type UpdateUserMutation = {
+  __typename?: "Mutation";
+  updateUser?: {
+    __typename?: "UserUpdateResult";
+    id: string;
+    authUserId: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    hasAvatar: boolean;
+    role: UserRole;
+    updatedAt: any;
+  } | null;
+};
 
 export const UserFieldsFragmentDoc = `
     """
@@ -6493,25 +10326,33 @@ export const GetActivityDocument = `
 }
     ${ActivityFieldsFragmentDoc}`;
 
-export const useGetActivityQuery = <
-      TData = GetActivityQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetActivityQueryVariables,
-      options?: Omit<UseQueryOptions<GetActivityQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetActivityQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetActivityQuery, TError, TData>(
-      {
-    queryKey: ['GetActivity', variables],
-    queryFn: fetcher<GetActivityQuery, GetActivityQueryVariables>(client, GetActivityDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetActivityQuery = <TData = GetActivityQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables: GetActivityQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetActivityQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetActivityQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetActivityQuery, TError, TData>({
+    queryKey: ["GetActivity", variables],
+    queryFn: fetcher<GetActivityQuery, GetActivityQueryVariables>(
+      client,
+      GetActivityDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetActivityQuery.getKey = (variables: GetActivityQueryVariables) => ['GetActivity', variables];
+useGetActivityQuery.getKey = (variables: GetActivityQueryVariables) => [
+  "GetActivity",
+  variables,
+];
 
 export const GetActivitiesByTripDocument = `
     query GetActivitiesByTrip($tripId: ID!, $limit: Int, $cursor: ActivityCursorInput) {
@@ -6532,24 +10373,36 @@ ${ActivityCursorFieldsFragmentDoc}
 ${PaginationInfoFieldsFragmentDoc}`;
 
 export const useGetActivitiesByTripQuery = <
-      TData = GetActivitiesByTripQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetActivitiesByTripQueryVariables,
-      options?: Omit<UseQueryOptions<GetActivitiesByTripQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetActivitiesByTripQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetActivitiesByTripQuery, TError, TData>(
-      {
-    queryKey: ['GetActivitiesByTrip', variables],
-    queryFn: fetcher<GetActivitiesByTripQuery, GetActivitiesByTripQueryVariables>(client, GetActivitiesByTripDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetActivitiesByTripQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetActivitiesByTripQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetActivitiesByTripQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetActivitiesByTripQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetActivitiesByTripQuery, TError, TData>({
+    queryKey: ["GetActivitiesByTrip", variables],
+    queryFn: fetcher<
+      GetActivitiesByTripQuery,
+      GetActivitiesByTripQueryVariables
+    >(client, GetActivitiesByTripDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetActivitiesByTripQuery.getKey = (variables: GetActivitiesByTripQueryVariables) => ['GetActivitiesByTrip', variables];
+useGetActivitiesByTripQuery.getKey = (
+  variables: GetActivitiesByTripQueryVariables,
+) => ["GetActivitiesByTrip", variables];
 
 export const GetActivitiesByTripModerationDocument = `
     query GetActivitiesByTripModeration($tripId: ID!, $page: Int, $perPage: Int, $includeHidden: Boolean) {
@@ -6568,24 +10421,36 @@ export const GetActivitiesByTripModerationDocument = `
 ${ModerationPaginationInfoFieldsFragmentDoc}`;
 
 export const useGetActivitiesByTripModerationQuery = <
-      TData = GetActivitiesByTripModerationQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetActivitiesByTripModerationQueryVariables,
-      options?: Omit<UseQueryOptions<GetActivitiesByTripModerationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetActivitiesByTripModerationQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetActivitiesByTripModerationQuery, TError, TData>(
-      {
-    queryKey: ['GetActivitiesByTripModeration', variables],
-    queryFn: fetcher<GetActivitiesByTripModerationQuery, GetActivitiesByTripModerationQueryVariables>(client, GetActivitiesByTripModerationDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetActivitiesByTripModerationQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetActivitiesByTripModerationQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetActivitiesByTripModerationQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetActivitiesByTripModerationQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetActivitiesByTripModerationQuery, TError, TData>({
+    queryKey: ["GetActivitiesByTripModeration", variables],
+    queryFn: fetcher<
+      GetActivitiesByTripModerationQuery,
+      GetActivitiesByTripModerationQueryVariables
+    >(client, GetActivitiesByTripModerationDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetActivitiesByTripModerationQuery.getKey = (variables: GetActivitiesByTripModerationQueryVariables) => ['GetActivitiesByTripModeration', variables];
+useGetActivitiesByTripModerationQuery.getKey = (
+  variables: GetActivitiesByTripModerationQueryVariables,
+) => ["GetActivitiesByTripModeration", variables];
 
 export const CreateCustomActivityDocument = `
     mutation CreateCustomActivity($input: CreateCustomActivityInput!) {
@@ -6596,21 +10461,33 @@ export const CreateCustomActivityDocument = `
     ${ActivityFieldsFragmentDoc}`;
 
 export const useCreateCustomActivityMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateCustomActivityMutation, TError, CreateCustomActivityMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateCustomActivityMutation, TError, CreateCustomActivityMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateCustomActivity'],
-    mutationFn: (variables?: CreateCustomActivityMutationVariables) => fetcher<CreateCustomActivityMutation, CreateCustomActivityMutationVariables>(client, CreateCustomActivityDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateCustomActivityMutation,
+    TError,
+    CreateCustomActivityMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateCustomActivityMutation,
+    TError,
+    CreateCustomActivityMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateCustomActivity"],
+    mutationFn: (variables?: CreateCustomActivityMutationVariables) =>
+      fetcher<
+        CreateCustomActivityMutation,
+        CreateCustomActivityMutationVariables
+      >(client, CreateCustomActivityDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const CreateRankChangeActivityDocument = `
     mutation CreateRankChangeActivity($input: CreateRankChangeActivityInput!) {
@@ -6621,21 +10498,33 @@ export const CreateRankChangeActivityDocument = `
     ${ActivityFieldsFragmentDoc}`;
 
 export const useCreateRankChangeActivityMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateRankChangeActivityMutation, TError, CreateRankChangeActivityMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateRankChangeActivityMutation, TError, CreateRankChangeActivityMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateRankChangeActivity'],
-    mutationFn: (variables?: CreateRankChangeActivityMutationVariables) => fetcher<CreateRankChangeActivityMutation, CreateRankChangeActivityMutationVariables>(client, CreateRankChangeActivityDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateRankChangeActivityMutation,
+    TError,
+    CreateRankChangeActivityMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateRankChangeActivityMutation,
+    TError,
+    CreateRankChangeActivityMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateRankChangeActivity"],
+    mutationFn: (variables?: CreateRankChangeActivityMutationVariables) =>
+      fetcher<
+        CreateRankChangeActivityMutation,
+        CreateRankChangeActivityMutationVariables
+      >(client, CreateRankChangeActivityDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const CreateSubmissionActivityDocument = `
     mutation CreateSubmissionActivity($input: CreateSubmissionActivityInput!) {
@@ -6646,21 +10535,33 @@ export const CreateSubmissionActivityDocument = `
     ${ActivityFieldsFragmentDoc}`;
 
 export const useCreateSubmissionActivityMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateSubmissionActivityMutation, TError, CreateSubmissionActivityMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateSubmissionActivityMutation, TError, CreateSubmissionActivityMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateSubmissionActivity'],
-    mutationFn: (variables?: CreateSubmissionActivityMutationVariables) => fetcher<CreateSubmissionActivityMutation, CreateSubmissionActivityMutationVariables>(client, CreateSubmissionActivityDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateSubmissionActivityMutation,
+    TError,
+    CreateSubmissionActivityMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateSubmissionActivityMutation,
+    TError,
+    CreateSubmissionActivityMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateSubmissionActivity"],
+    mutationFn: (variables?: CreateSubmissionActivityMutationVariables) =>
+      fetcher<
+        CreateSubmissionActivityMutation,
+        CreateSubmissionActivityMutationVariables
+      >(client, CreateSubmissionActivityDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const UpdateActivityDocument = `
     mutation UpdateActivity($input: UpdateActivityInput!) {
@@ -6670,22 +10571,33 @@ export const UpdateActivityDocument = `
 }
     ${ActivityFieldsFragmentDoc}`;
 
-export const useUpdateActivityMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateActivityMutation, TError, UpdateActivityMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateActivityMutation, TError, UpdateActivityMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateActivity'],
-    mutationFn: (variables?: UpdateActivityMutationVariables) => fetcher<UpdateActivityMutation, UpdateActivityMutationVariables>(client, UpdateActivityDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useUpdateActivityMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateActivityMutation,
+    TError,
+    UpdateActivityMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateActivityMutation,
+    TError,
+    UpdateActivityMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateActivity"],
+    mutationFn: (variables?: UpdateActivityMutationVariables) =>
+      fetcher<UpdateActivityMutation, UpdateActivityMutationVariables>(
+        client,
+        UpdateActivityDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const DeleteActivityDocument = `
     mutation DeleteActivity($id: ID!) {
@@ -6695,22 +10607,33 @@ export const DeleteActivityDocument = `
 }
     ${DeleteActivityResultFieldsFragmentDoc}`;
 
-export const useDeleteActivityMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DeleteActivityMutation, TError, DeleteActivityMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DeleteActivityMutation, TError, DeleteActivityMutationVariables, TContext>(
-      {
-    mutationKey: ['DeleteActivity'],
-    mutationFn: (variables?: DeleteActivityMutationVariables) => fetcher<DeleteActivityMutation, DeleteActivityMutationVariables>(client, DeleteActivityDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useDeleteActivityMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DeleteActivityMutation,
+    TError,
+    DeleteActivityMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DeleteActivityMutation,
+    TError,
+    DeleteActivityMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DeleteActivity"],
+    mutationFn: (variables?: DeleteActivityMutationVariables) =>
+      fetcher<DeleteActivityMutation, DeleteActivityMutationVariables>(
+        client,
+        DeleteActivityDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const HideActivityDocument = `
     mutation HideActivity($id: ID!, $reason: String) {
@@ -6720,22 +10643,33 @@ export const HideActivityDocument = `
 }
     ${HiddenActivityFieldsFragmentDoc}`;
 
-export const useHideActivityMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<HideActivityMutation, TError, HideActivityMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<HideActivityMutation, TError, HideActivityMutationVariables, TContext>(
-      {
-    mutationKey: ['HideActivity'],
-    mutationFn: (variables?: HideActivityMutationVariables) => fetcher<HideActivityMutation, HideActivityMutationVariables>(client, HideActivityDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useHideActivityMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    HideActivityMutation,
+    TError,
+    HideActivityMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    HideActivityMutation,
+    TError,
+    HideActivityMutationVariables,
+    TContext
+  >({
+    mutationKey: ["HideActivity"],
+    mutationFn: (variables?: HideActivityMutationVariables) =>
+      fetcher<HideActivityMutation, HideActivityMutationVariables>(
+        client,
+        HideActivityDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UnhideActivityDocument = `
     mutation UnhideActivity($id: ID!) {
@@ -6745,22 +10679,33 @@ export const UnhideActivityDocument = `
 }
     ${ActivityFieldsFragmentDoc}`;
 
-export const useUnhideActivityMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UnhideActivityMutation, TError, UnhideActivityMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UnhideActivityMutation, TError, UnhideActivityMutationVariables, TContext>(
-      {
-    mutationKey: ['UnhideActivity'],
-    mutationFn: (variables?: UnhideActivityMutationVariables) => fetcher<UnhideActivityMutation, UnhideActivityMutationVariables>(client, UnhideActivityDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useUnhideActivityMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UnhideActivityMutation,
+    TError,
+    UnhideActivityMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UnhideActivityMutation,
+    TError,
+    UnhideActivityMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UnhideActivity"],
+    mutationFn: (variables?: UnhideActivityMutationVariables) =>
+      fetcher<UnhideActivityMutation, UnhideActivityMutationVariables>(
+        client,
+        UnhideActivityDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const SetActivityPinnedDocument = `
     mutation SetActivityPinned($id: ID!, $isPinned: Boolean!) {
@@ -6771,21 +10716,35 @@ export const SetActivityPinnedDocument = `
     ${ActivityFieldsFragmentDoc}`;
 
 export const useSetActivityPinnedMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<SetActivityPinnedMutation, TError, SetActivityPinnedMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<SetActivityPinnedMutation, TError, SetActivityPinnedMutationVariables, TContext>(
-      {
-    mutationKey: ['SetActivityPinned'],
-    mutationFn: (variables?: SetActivityPinnedMutationVariables) => fetcher<SetActivityPinnedMutation, SetActivityPinnedMutationVariables>(client, SetActivityPinnedDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    SetActivityPinnedMutation,
+    TError,
+    SetActivityPinnedMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    SetActivityPinnedMutation,
+    TError,
+    SetActivityPinnedMutationVariables,
+    TContext
+  >({
+    mutationKey: ["SetActivityPinned"],
+    mutationFn: (variables?: SetActivityPinnedMutationVariables) =>
+      fetcher<SetActivityPinnedMutation, SetActivityPinnedMutationVariables>(
+        client,
+        SetActivityPinnedDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const ToggleActivityReactionDocument = `
     mutation ToggleActivityReaction($activityId: ID!, $reaction: ReactionType!) {
@@ -6798,21 +10757,33 @@ export const ToggleActivityReactionDocument = `
     ${ToggleReactionResultFieldsFragmentDoc}`;
 
 export const useToggleActivityReactionMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<ToggleActivityReactionMutation, TError, ToggleActivityReactionMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<ToggleActivityReactionMutation, TError, ToggleActivityReactionMutationVariables, TContext>(
-      {
-    mutationKey: ['ToggleActivityReaction'],
-    mutationFn: (variables?: ToggleActivityReactionMutationVariables) => fetcher<ToggleActivityReactionMutation, ToggleActivityReactionMutationVariables>(client, ToggleActivityReactionDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    ToggleActivityReactionMutation,
+    TError,
+    ToggleActivityReactionMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    ToggleActivityReactionMutation,
+    TError,
+    ToggleActivityReactionMutationVariables,
+    TContext
+  >({
+    mutationKey: ["ToggleActivityReaction"],
+    mutationFn: (variables?: ToggleActivityReactionMutationVariables) =>
+      fetcher<
+        ToggleActivityReactionMutation,
+        ToggleActivityReactionMutationVariables
+      >(client, ToggleActivityReactionDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const GetChallengeSubmissionDocument = `
     query GetChallengeSubmission($id: ID!) {
@@ -6823,24 +10794,36 @@ export const GetChallengeSubmissionDocument = `
     ${ChallengeSubmissionFieldsFragmentDoc}`;
 
 export const useGetChallengeSubmissionQuery = <
-      TData = GetChallengeSubmissionQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetChallengeSubmissionQueryVariables,
-      options?: Omit<UseQueryOptions<GetChallengeSubmissionQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetChallengeSubmissionQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetChallengeSubmissionQuery, TError, TData>(
-      {
-    queryKey: ['GetChallengeSubmission', variables],
-    queryFn: fetcher<GetChallengeSubmissionQuery, GetChallengeSubmissionQueryVariables>(client, GetChallengeSubmissionDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetChallengeSubmissionQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetChallengeSubmissionQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetChallengeSubmissionQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetChallengeSubmissionQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetChallengeSubmissionQuery, TError, TData>({
+    queryKey: ["GetChallengeSubmission", variables],
+    queryFn: fetcher<
+      GetChallengeSubmissionQuery,
+      GetChallengeSubmissionQueryVariables
+    >(client, GetChallengeSubmissionDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetChallengeSubmissionQuery.getKey = (variables: GetChallengeSubmissionQueryVariables) => ['GetChallengeSubmission', variables];
+useGetChallengeSubmissionQuery.getKey = (
+  variables: GetChallengeSubmissionQueryVariables,
+) => ["GetChallengeSubmission", variables];
 
 export const GetChallengeSubmissionsDocument = `
     query GetChallengeSubmissions($challengeId: ID!, $limit: Int = 20, $offset: Int = 0, $orderBy: SubmissionOrderBy = voteScore, $orderDirection: OrderDirection = desc) {
@@ -6860,24 +10843,36 @@ export const GetChallengeSubmissionsDocument = `
     ${ChallengeSubmissionFieldsFragmentDoc}`;
 
 export const useGetChallengeSubmissionsQuery = <
-      TData = GetChallengeSubmissionsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetChallengeSubmissionsQueryVariables,
-      options?: Omit<UseQueryOptions<GetChallengeSubmissionsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetChallengeSubmissionsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetChallengeSubmissionsQuery, TError, TData>(
-      {
-    queryKey: ['GetChallengeSubmissions', variables],
-    queryFn: fetcher<GetChallengeSubmissionsQuery, GetChallengeSubmissionsQueryVariables>(client, GetChallengeSubmissionsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetChallengeSubmissionsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetChallengeSubmissionsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetChallengeSubmissionsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetChallengeSubmissionsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetChallengeSubmissionsQuery, TError, TData>({
+    queryKey: ["GetChallengeSubmissions", variables],
+    queryFn: fetcher<
+      GetChallengeSubmissionsQuery,
+      GetChallengeSubmissionsQueryVariables
+    >(client, GetChallengeSubmissionsDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetChallengeSubmissionsQuery.getKey = (variables: GetChallengeSubmissionsQueryVariables) => ['GetChallengeSubmissions', variables];
+useGetChallengeSubmissionsQuery.getKey = (
+  variables: GetChallengeSubmissionsQueryVariables,
+) => ["GetChallengeSubmissions", variables];
 
 export const GetChallengeSubmissionByChallengeAndGroupDocument = `
     query GetChallengeSubmissionByChallengeAndGroup($challengeId: ID!, $groupId: ID!) {
@@ -6891,24 +10886,49 @@ export const GetChallengeSubmissionByChallengeAndGroupDocument = `
     ${ChallengeSubmissionFieldsFragmentDoc}`;
 
 export const useGetChallengeSubmissionByChallengeAndGroupQuery = <
-      TData = GetChallengeSubmissionByChallengeAndGroupQuery,
-      TError = unknown
+  TData = GetChallengeSubmissionByChallengeAndGroupQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetChallengeSubmissionByChallengeAndGroupQueryVariables,
+  options?: Omit<
+    UseQueryOptions<
+      GetChallengeSubmissionByChallengeAndGroupQuery,
+      TError,
+      TData
+    >,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetChallengeSubmissionByChallengeAndGroupQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<
+    GetChallengeSubmissionByChallengeAndGroupQuery,
+    TError,
+    TData
+  >({
+    queryKey: ["GetChallengeSubmissionByChallengeAndGroup", variables],
+    queryFn: fetcher<
+      GetChallengeSubmissionByChallengeAndGroupQuery,
+      GetChallengeSubmissionByChallengeAndGroupQueryVariables
     >(
-      client: GraphQLClient,
-      variables: GetChallengeSubmissionByChallengeAndGroupQueryVariables,
-      options?: Omit<UseQueryOptions<GetChallengeSubmissionByChallengeAndGroupQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetChallengeSubmissionByChallengeAndGroupQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetChallengeSubmissionByChallengeAndGroupQuery, TError, TData>(
-      {
-    queryKey: ['GetChallengeSubmissionByChallengeAndGroup', variables],
-    queryFn: fetcher<GetChallengeSubmissionByChallengeAndGroupQuery, GetChallengeSubmissionByChallengeAndGroupQueryVariables>(client, GetChallengeSubmissionByChallengeAndGroupDocument, variables, headers),
-    ...options
-  }
-    )};
+      client,
+      GetChallengeSubmissionByChallengeAndGroupDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetChallengeSubmissionByChallengeAndGroupQuery.getKey = (variables: GetChallengeSubmissionByChallengeAndGroupQueryVariables) => ['GetChallengeSubmissionByChallengeAndGroup', variables];
+useGetChallengeSubmissionByChallengeAndGroupQuery.getKey = (
+  variables: GetChallengeSubmissionByChallengeAndGroupQueryVariables,
+) => ["GetChallengeSubmissionByChallengeAndGroup", variables];
 
 export const GetVotesByChallengeDocument = `
     query GetVotesByChallenge($challengeId: ID!) {
@@ -6923,24 +10943,36 @@ export const GetVotesByChallengeDocument = `
     ${ChallengeVoteFieldsFragmentDoc}`;
 
 export const useGetVotesByChallengeQuery = <
-      TData = GetVotesByChallengeQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetVotesByChallengeQueryVariables,
-      options?: Omit<UseQueryOptions<GetVotesByChallengeQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetVotesByChallengeQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetVotesByChallengeQuery, TError, TData>(
-      {
-    queryKey: ['GetVotesByChallenge', variables],
-    queryFn: fetcher<GetVotesByChallengeQuery, GetVotesByChallengeQueryVariables>(client, GetVotesByChallengeDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetVotesByChallengeQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetVotesByChallengeQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetVotesByChallengeQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetVotesByChallengeQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetVotesByChallengeQuery, TError, TData>({
+    queryKey: ["GetVotesByChallenge", variables],
+    queryFn: fetcher<
+      GetVotesByChallengeQuery,
+      GetVotesByChallengeQueryVariables
+    >(client, GetVotesByChallengeDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetVotesByChallengeQuery.getKey = (variables: GetVotesByChallengeQueryVariables) => ['GetVotesByChallenge', variables];
+useGetVotesByChallengeQuery.getKey = (
+  variables: GetVotesByChallengeQueryVariables,
+) => ["GetVotesByChallenge", variables];
 
 export const GetMyVotesDocument = `
     query GetMyVotes($challengeId: ID!, $tripId: ID!) {
@@ -6953,25 +10985,33 @@ export const GetMyVotesDocument = `
 }
     ${ChallengeVoteFieldsFragmentDoc}`;
 
-export const useGetMyVotesQuery = <
-      TData = GetMyVotesQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetMyVotesQueryVariables,
-      options?: Omit<UseQueryOptions<GetMyVotesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetMyVotesQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetMyVotesQuery, TError, TData>(
-      {
-    queryKey: ['GetMyVotes', variables],
-    queryFn: fetcher<GetMyVotesQuery, GetMyVotesQueryVariables>(client, GetMyVotesDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetMyVotesQuery = <TData = GetMyVotesQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables: GetMyVotesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetMyVotesQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetMyVotesQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetMyVotesQuery, TError, TData>({
+    queryKey: ["GetMyVotes", variables],
+    queryFn: fetcher<GetMyVotesQuery, GetMyVotesQueryVariables>(
+      client,
+      GetMyVotesDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetMyVotesQuery.getKey = (variables: GetMyVotesQueryVariables) => ['GetMyVotes', variables];
+useGetMyVotesQuery.getKey = (variables: GetMyVotesQueryVariables) => [
+  "GetMyVotes",
+  variables,
+];
 
 export const GetVotingProgressDocument = `
     query GetVotingProgress($challengeId: ID!) {
@@ -6988,24 +11028,38 @@ export const GetVotingProgressDocument = `
     `;
 
 export const useGetVotingProgressQuery = <
-      TData = GetVotingProgressQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetVotingProgressQueryVariables,
-      options?: Omit<UseQueryOptions<GetVotingProgressQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetVotingProgressQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetVotingProgressQuery, TError, TData>(
-      {
-    queryKey: ['GetVotingProgress', variables],
-    queryFn: fetcher<GetVotingProgressQuery, GetVotingProgressQueryVariables>(client, GetVotingProgressDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetVotingProgressQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetVotingProgressQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetVotingProgressQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetVotingProgressQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetVotingProgressQuery, TError, TData>({
+    queryKey: ["GetVotingProgress", variables],
+    queryFn: fetcher<GetVotingProgressQuery, GetVotingProgressQueryVariables>(
+      client,
+      GetVotingProgressDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetVotingProgressQuery.getKey = (variables: GetVotingProgressQueryVariables) => ['GetVotingProgress', variables];
+useGetVotingProgressQuery.getKey = (
+  variables: GetVotingProgressQueryVariables,
+) => ["GetVotingProgress", variables];
 
 export const GetJudgedStaffVotingProgressDocument = `
     query GetJudgedStaffVotingProgress($challengeId: ID!, $tripId: ID!, $adminParticipantIds: [ID!]!, $eligibleSubmissionsCount: Int!, $requiredPositions: Int!) {
@@ -7028,24 +11082,36 @@ export const GetJudgedStaffVotingProgressDocument = `
     `;
 
 export const useGetJudgedStaffVotingProgressQuery = <
-      TData = GetJudgedStaffVotingProgressQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetJudgedStaffVotingProgressQueryVariables,
-      options?: Omit<UseQueryOptions<GetJudgedStaffVotingProgressQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetJudgedStaffVotingProgressQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetJudgedStaffVotingProgressQuery, TError, TData>(
-      {
-    queryKey: ['GetJudgedStaffVotingProgress', variables],
-    queryFn: fetcher<GetJudgedStaffVotingProgressQuery, GetJudgedStaffVotingProgressQueryVariables>(client, GetJudgedStaffVotingProgressDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetJudgedStaffVotingProgressQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetJudgedStaffVotingProgressQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetJudgedStaffVotingProgressQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetJudgedStaffVotingProgressQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetJudgedStaffVotingProgressQuery, TError, TData>({
+    queryKey: ["GetJudgedStaffVotingProgress", variables],
+    queryFn: fetcher<
+      GetJudgedStaffVotingProgressQuery,
+      GetJudgedStaffVotingProgressQueryVariables
+    >(client, GetJudgedStaffVotingProgressDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetJudgedStaffVotingProgressQuery.getKey = (variables: GetJudgedStaffVotingProgressQueryVariables) => ['GetJudgedStaffVotingProgress', variables];
+useGetJudgedStaffVotingProgressQuery.getKey = (
+  variables: GetJudgedStaffVotingProgressQueryVariables,
+) => ["GetJudgedStaffVotingProgress", variables];
 
 export const CreateChallengeSubmissionDocument = `
     mutation CreateChallengeSubmission($input: CreateSubmissionInput!) {
@@ -7056,21 +11122,33 @@ export const CreateChallengeSubmissionDocument = `
     ${ChallengeSubmissionCreateResultFieldsFragmentDoc}`;
 
 export const useCreateChallengeSubmissionMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateChallengeSubmissionMutation, TError, CreateChallengeSubmissionMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateChallengeSubmissionMutation, TError, CreateChallengeSubmissionMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateChallengeSubmission'],
-    mutationFn: (variables?: CreateChallengeSubmissionMutationVariables) => fetcher<CreateChallengeSubmissionMutation, CreateChallengeSubmissionMutationVariables>(client, CreateChallengeSubmissionDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateChallengeSubmissionMutation,
+    TError,
+    CreateChallengeSubmissionMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateChallengeSubmissionMutation,
+    TError,
+    CreateChallengeSubmissionMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateChallengeSubmission"],
+    mutationFn: (variables?: CreateChallengeSubmissionMutationVariables) =>
+      fetcher<
+        CreateChallengeSubmissionMutation,
+        CreateChallengeSubmissionMutationVariables
+      >(client, CreateChallengeSubmissionDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const UpdateChallengeSubmissionDocument = `
     mutation UpdateChallengeSubmission($input: UpdateSubmissionInput!) {
@@ -7081,21 +11159,33 @@ export const UpdateChallengeSubmissionDocument = `
     ${ChallengeSubmissionUpdateResultFieldsFragmentDoc}`;
 
 export const useUpdateChallengeSubmissionMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateChallengeSubmissionMutation, TError, UpdateChallengeSubmissionMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateChallengeSubmissionMutation, TError, UpdateChallengeSubmissionMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateChallengeSubmission'],
-    mutationFn: (variables?: UpdateChallengeSubmissionMutationVariables) => fetcher<UpdateChallengeSubmissionMutation, UpdateChallengeSubmissionMutationVariables>(client, UpdateChallengeSubmissionDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateChallengeSubmissionMutation,
+    TError,
+    UpdateChallengeSubmissionMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateChallengeSubmissionMutation,
+    TError,
+    UpdateChallengeSubmissionMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateChallengeSubmission"],
+    mutationFn: (variables?: UpdateChallengeSubmissionMutationVariables) =>
+      fetcher<
+        UpdateChallengeSubmissionMutation,
+        UpdateChallengeSubmissionMutationVariables
+      >(client, UpdateChallengeSubmissionDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const DeleteChallengeSubmissionDocument = `
     mutation DeleteChallengeSubmission($id: ID!) {
@@ -7104,21 +11194,33 @@ export const DeleteChallengeSubmissionDocument = `
     `;
 
 export const useDeleteChallengeSubmissionMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DeleteChallengeSubmissionMutation, TError, DeleteChallengeSubmissionMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DeleteChallengeSubmissionMutation, TError, DeleteChallengeSubmissionMutationVariables, TContext>(
-      {
-    mutationKey: ['DeleteChallengeSubmission'],
-    mutationFn: (variables?: DeleteChallengeSubmissionMutationVariables) => fetcher<DeleteChallengeSubmissionMutation, DeleteChallengeSubmissionMutationVariables>(client, DeleteChallengeSubmissionDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DeleteChallengeSubmissionMutation,
+    TError,
+    DeleteChallengeSubmissionMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DeleteChallengeSubmissionMutation,
+    TError,
+    DeleteChallengeSubmissionMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DeleteChallengeSubmission"],
+    mutationFn: (variables?: DeleteChallengeSubmissionMutationVariables) =>
+      fetcher<
+        DeleteChallengeSubmissionMutation,
+        DeleteChallengeSubmissionMutationVariables
+      >(client, DeleteChallengeSubmissionDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const CreateChallengeActivityDocument = `
     mutation CreateChallengeActivity($input: CreateChallengeActivityInput!) {
@@ -7129,21 +11231,33 @@ export const CreateChallengeActivityDocument = `
     ${ActivityFieldsFragmentDoc}`;
 
 export const useCreateChallengeActivityMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateChallengeActivityMutation, TError, CreateChallengeActivityMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateChallengeActivityMutation, TError, CreateChallengeActivityMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateChallengeActivity'],
-    mutationFn: (variables?: CreateChallengeActivityMutationVariables) => fetcher<CreateChallengeActivityMutation, CreateChallengeActivityMutationVariables>(client, CreateChallengeActivityDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateChallengeActivityMutation,
+    TError,
+    CreateChallengeActivityMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateChallengeActivityMutation,
+    TError,
+    CreateChallengeActivityMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateChallengeActivity"],
+    mutationFn: (variables?: CreateChallengeActivityMutationVariables) =>
+      fetcher<
+        CreateChallengeActivityMutation,
+        CreateChallengeActivityMutationVariables
+      >(client, CreateChallengeActivityDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const SubmitVoteDocument = `
     mutation SubmitVote($input: SubmitVoteInput!) {
@@ -7155,22 +11269,33 @@ export const SubmitVoteDocument = `
 }
     ${ChallengeVoteFieldsFragmentDoc}`;
 
-export const useSubmitVoteMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<SubmitVoteMutation, TError, SubmitVoteMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<SubmitVoteMutation, TError, SubmitVoteMutationVariables, TContext>(
-      {
-    mutationKey: ['SubmitVote'],
-    mutationFn: (variables?: SubmitVoteMutationVariables) => fetcher<SubmitVoteMutation, SubmitVoteMutationVariables>(client, SubmitVoteDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useSubmitVoteMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    SubmitVoteMutation,
+    TError,
+    SubmitVoteMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    SubmitVoteMutation,
+    TError,
+    SubmitVoteMutationVariables,
+    TContext
+  >({
+    mutationKey: ["SubmitVote"],
+    mutationFn: (variables?: SubmitVoteMutationVariables) =>
+      fetcher<SubmitVoteMutation, SubmitVoteMutationVariables>(
+        client,
+        SubmitVoteDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const SubmitVotesDocument = `
     mutation SubmitVotes($input: SubmitVotesInput!) {
@@ -7183,22 +11308,33 @@ export const SubmitVotesDocument = `
 }
     ${ChallengeVoteFieldsFragmentDoc}`;
 
-export const useSubmitVotesMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<SubmitVotesMutation, TError, SubmitVotesMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<SubmitVotesMutation, TError, SubmitVotesMutationVariables, TContext>(
-      {
-    mutationKey: ['SubmitVotes'],
-    mutationFn: (variables?: SubmitVotesMutationVariables) => fetcher<SubmitVotesMutation, SubmitVotesMutationVariables>(client, SubmitVotesDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useSubmitVotesMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    SubmitVotesMutation,
+    TError,
+    SubmitVotesMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    SubmitVotesMutation,
+    TError,
+    SubmitVotesMutationVariables,
+    TContext
+  >({
+    mutationKey: ["SubmitVotes"],
+    mutationFn: (variables?: SubmitVotesMutationVariables) =>
+      fetcher<SubmitVotesMutation, SubmitVotesMutationVariables>(
+        client,
+        SubmitVotesDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const ForceEndVotingDocument = `
     mutation ForceEndVoting($challengeId: ID!, $tripId: ID!) {
@@ -7212,22 +11348,33 @@ export const ForceEndVotingDocument = `
 }
     `;
 
-export const useForceEndVotingMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<ForceEndVotingMutation, TError, ForceEndVotingMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<ForceEndVotingMutation, TError, ForceEndVotingMutationVariables, TContext>(
-      {
-    mutationKey: ['ForceEndVoting'],
-    mutationFn: (variables?: ForceEndVotingMutationVariables) => fetcher<ForceEndVotingMutation, ForceEndVotingMutationVariables>(client, ForceEndVotingDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useForceEndVotingMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    ForceEndVotingMutation,
+    TError,
+    ForceEndVotingMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    ForceEndVotingMutation,
+    TError,
+    ForceEndVotingMutationVariables,
+    TContext
+  >({
+    mutationKey: ["ForceEndVoting"],
+    mutationFn: (variables?: ForceEndVotingMutationVariables) =>
+      fetcher<ForceEndVotingMutation, ForceEndVotingMutationVariables>(
+        client,
+        ForceEndVotingDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const GetCoinStatisticsDocument = `
     query GetCoinStatistics($tripId: ID!) {
@@ -7238,24 +11385,38 @@ export const GetCoinStatisticsDocument = `
     ${CoinStatisticsFieldsFragmentDoc}`;
 
 export const useGetCoinStatisticsQuery = <
-      TData = GetCoinStatisticsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetCoinStatisticsQueryVariables,
-      options?: Omit<UseQueryOptions<GetCoinStatisticsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetCoinStatisticsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetCoinStatisticsQuery, TError, TData>(
-      {
-    queryKey: ['GetCoinStatistics', variables],
-    queryFn: fetcher<GetCoinStatisticsQuery, GetCoinStatisticsQueryVariables>(client, GetCoinStatisticsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetCoinStatisticsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetCoinStatisticsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetCoinStatisticsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetCoinStatisticsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetCoinStatisticsQuery, TError, TData>({
+    queryKey: ["GetCoinStatistics", variables],
+    queryFn: fetcher<GetCoinStatisticsQuery, GetCoinStatisticsQueryVariables>(
+      client,
+      GetCoinStatisticsDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetCoinStatisticsQuery.getKey = (variables: GetCoinStatisticsQueryVariables) => ['GetCoinStatistics', variables];
+useGetCoinStatisticsQuery.getKey = (
+  variables: GetCoinStatisticsQueryVariables,
+) => ["GetCoinStatistics", variables];
 
 export const GetCoinQuickStatsDocument = `
     query GetCoinQuickStats($tripId: ID!) {
@@ -7266,24 +11427,38 @@ export const GetCoinQuickStatsDocument = `
     ${CoinQuickStatsFieldsFragmentDoc}`;
 
 export const useGetCoinQuickStatsQuery = <
-      TData = GetCoinQuickStatsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetCoinQuickStatsQueryVariables,
-      options?: Omit<UseQueryOptions<GetCoinQuickStatsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetCoinQuickStatsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetCoinQuickStatsQuery, TError, TData>(
-      {
-    queryKey: ['GetCoinQuickStats', variables],
-    queryFn: fetcher<GetCoinQuickStatsQuery, GetCoinQuickStatsQueryVariables>(client, GetCoinQuickStatsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetCoinQuickStatsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetCoinQuickStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetCoinQuickStatsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetCoinQuickStatsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetCoinQuickStatsQuery, TError, TData>({
+    queryKey: ["GetCoinQuickStats", variables],
+    queryFn: fetcher<GetCoinQuickStatsQuery, GetCoinQuickStatsQueryVariables>(
+      client,
+      GetCoinQuickStatsDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetCoinQuickStatsQuery.getKey = (variables: GetCoinQuickStatsQueryVariables) => ['GetCoinQuickStats', variables];
+useGetCoinQuickStatsQuery.getKey = (
+  variables: GetCoinQuickStatsQueryVariables,
+) => ["GetCoinQuickStats", variables];
 
 export const GetCoinAdditionalInsightsDocument = `
     query GetCoinAdditionalInsights($tripId: ID!) {
@@ -7294,24 +11469,36 @@ export const GetCoinAdditionalInsightsDocument = `
     ${CoinAdditionalInsightsFieldsFragmentDoc}`;
 
 export const useGetCoinAdditionalInsightsQuery = <
-      TData = GetCoinAdditionalInsightsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetCoinAdditionalInsightsQueryVariables,
-      options?: Omit<UseQueryOptions<GetCoinAdditionalInsightsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetCoinAdditionalInsightsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetCoinAdditionalInsightsQuery, TError, TData>(
-      {
-    queryKey: ['GetCoinAdditionalInsights', variables],
-    queryFn: fetcher<GetCoinAdditionalInsightsQuery, GetCoinAdditionalInsightsQueryVariables>(client, GetCoinAdditionalInsightsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetCoinAdditionalInsightsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetCoinAdditionalInsightsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetCoinAdditionalInsightsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetCoinAdditionalInsightsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetCoinAdditionalInsightsQuery, TError, TData>({
+    queryKey: ["GetCoinAdditionalInsights", variables],
+    queryFn: fetcher<
+      GetCoinAdditionalInsightsQuery,
+      GetCoinAdditionalInsightsQueryVariables
+    >(client, GetCoinAdditionalInsightsDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetCoinAdditionalInsightsQuery.getKey = (variables: GetCoinAdditionalInsightsQueryVariables) => ['GetCoinAdditionalInsights', variables];
+useGetCoinAdditionalInsightsQuery.getKey = (
+  variables: GetCoinAdditionalInsightsQueryVariables,
+) => ["GetCoinAdditionalInsights", variables];
 
 export const GetCoinTransactionsDocument = `
     query GetCoinTransactions($tripId: ID!, $limit: Int, $offset: Int) {
@@ -7324,24 +11511,36 @@ export const GetCoinTransactionsDocument = `
     ${CoinTransactionsConnectionFieldsFragmentDoc}`;
 
 export const useGetCoinTransactionsQuery = <
-      TData = GetCoinTransactionsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetCoinTransactionsQueryVariables,
-      options?: Omit<UseQueryOptions<GetCoinTransactionsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetCoinTransactionsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetCoinTransactionsQuery, TError, TData>(
-      {
-    queryKey: ['GetCoinTransactions', variables],
-    queryFn: fetcher<GetCoinTransactionsQuery, GetCoinTransactionsQueryVariables>(client, GetCoinTransactionsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetCoinTransactionsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetCoinTransactionsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetCoinTransactionsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetCoinTransactionsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetCoinTransactionsQuery, TError, TData>({
+    queryKey: ["GetCoinTransactions", variables],
+    queryFn: fetcher<
+      GetCoinTransactionsQuery,
+      GetCoinTransactionsQueryVariables
+    >(client, GetCoinTransactionsDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetCoinTransactionsQuery.getKey = (variables: GetCoinTransactionsQueryVariables) => ['GetCoinTransactions', variables];
+useGetCoinTransactionsQuery.getKey = (
+  variables: GetCoinTransactionsQueryVariables,
+) => ["GetCoinTransactions", variables];
 
 export const GetMyCoinTransactionsDocument = `
     query GetMyCoinTransactions($tripId: ID!, $groupId: ID, $limit: Int) {
@@ -7352,24 +11551,36 @@ export const GetMyCoinTransactionsDocument = `
     ${CoinTransactionFieldsFragmentDoc}`;
 
 export const useGetMyCoinTransactionsQuery = <
-      TData = GetMyCoinTransactionsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetMyCoinTransactionsQueryVariables,
-      options?: Omit<UseQueryOptions<GetMyCoinTransactionsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetMyCoinTransactionsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetMyCoinTransactionsQuery, TError, TData>(
-      {
-    queryKey: ['GetMyCoinTransactions', variables],
-    queryFn: fetcher<GetMyCoinTransactionsQuery, GetMyCoinTransactionsQueryVariables>(client, GetMyCoinTransactionsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetMyCoinTransactionsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetMyCoinTransactionsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetMyCoinTransactionsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetMyCoinTransactionsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetMyCoinTransactionsQuery, TError, TData>({
+    queryKey: ["GetMyCoinTransactions", variables],
+    queryFn: fetcher<
+      GetMyCoinTransactionsQuery,
+      GetMyCoinTransactionsQueryVariables
+    >(client, GetMyCoinTransactionsDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetMyCoinTransactionsQuery.getKey = (variables: GetMyCoinTransactionsQueryVariables) => ['GetMyCoinTransactions', variables];
+useGetMyCoinTransactionsQuery.getKey = (
+  variables: GetMyCoinTransactionsQueryVariables,
+) => ["GetMyCoinTransactions", variables];
 
 export const AddCoinsDocument = `
     mutation AddCoins($input: AddCoinsInput!) {
@@ -7379,22 +11590,33 @@ export const AddCoinsDocument = `
 }
     ${CoinTransactionResultFieldsFragmentDoc}`;
 
-export const useAddCoinsMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<AddCoinsMutation, TError, AddCoinsMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<AddCoinsMutation, TError, AddCoinsMutationVariables, TContext>(
-      {
-    mutationKey: ['AddCoins'],
-    mutationFn: (variables?: AddCoinsMutationVariables) => fetcher<AddCoinsMutation, AddCoinsMutationVariables>(client, AddCoinsDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useAddCoinsMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    AddCoinsMutation,
+    TError,
+    AddCoinsMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    AddCoinsMutation,
+    TError,
+    AddCoinsMutationVariables,
+    TContext
+  >({
+    mutationKey: ["AddCoins"],
+    mutationFn: (variables?: AddCoinsMutationVariables) =>
+      fetcher<AddCoinsMutation, AddCoinsMutationVariables>(
+        client,
+        AddCoinsDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const RemoveCoinsDocument = `
     mutation RemoveCoins($input: RemoveCoinsInput!) {
@@ -7404,22 +11626,33 @@ export const RemoveCoinsDocument = `
 }
     ${CoinTransactionResultFieldsFragmentDoc}`;
 
-export const useRemoveCoinsMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<RemoveCoinsMutation, TError, RemoveCoinsMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<RemoveCoinsMutation, TError, RemoveCoinsMutationVariables, TContext>(
-      {
-    mutationKey: ['RemoveCoins'],
-    mutationFn: (variables?: RemoveCoinsMutationVariables) => fetcher<RemoveCoinsMutation, RemoveCoinsMutationVariables>(client, RemoveCoinsDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useRemoveCoinsMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    RemoveCoinsMutation,
+    TError,
+    RemoveCoinsMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    RemoveCoinsMutation,
+    TError,
+    RemoveCoinsMutationVariables,
+    TContext
+  >({
+    mutationKey: ["RemoveCoins"],
+    mutationFn: (variables?: RemoveCoinsMutationVariables) =>
+      fetcher<RemoveCoinsMutation, RemoveCoinsMutationVariables>(
+        client,
+        RemoveCoinsDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const GetGroupDocument = `
     query GetGroup($id: ID!) {
@@ -7429,25 +11662,30 @@ export const GetGroupDocument = `
 }
     ${GroupFieldsFragmentDoc}`;
 
-export const useGetGroupQuery = <
-      TData = GetGroupQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetGroupQueryVariables,
-      options?: Omit<UseQueryOptions<GetGroupQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetGroupQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetGroupQuery, TError, TData>(
-      {
-    queryKey: ['GetGroup', variables],
-    queryFn: fetcher<GetGroupQuery, GetGroupQueryVariables>(client, GetGroupDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetGroupQuery = <TData = GetGroupQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables: GetGroupQueryVariables,
+  options?: Omit<UseQueryOptions<GetGroupQuery, TError, TData>, "queryKey"> & {
+    queryKey?: UseQueryOptions<GetGroupQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetGroupQuery, TError, TData>({
+    queryKey: ["GetGroup", variables],
+    queryFn: fetcher<GetGroupQuery, GetGroupQueryVariables>(
+      client,
+      GetGroupDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetGroupQuery.getKey = (variables: GetGroupQueryVariables) => ['GetGroup', variables];
+useGetGroupQuery.getKey = (variables: GetGroupQueryVariables) => [
+  "GetGroup",
+  variables,
+];
 
 export const GetGroupByCodeDocument = `
     query GetGroupByCode($code: String!) {
@@ -7458,24 +11696,35 @@ export const GetGroupByCodeDocument = `
     ${GroupFieldsFragmentDoc}`;
 
 export const useGetGroupByCodeQuery = <
-      TData = GetGroupByCodeQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetGroupByCodeQueryVariables,
-      options?: Omit<UseQueryOptions<GetGroupByCodeQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetGroupByCodeQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetGroupByCodeQuery, TError, TData>(
-      {
-    queryKey: ['GetGroupByCode', variables],
-    queryFn: fetcher<GetGroupByCodeQuery, GetGroupByCodeQueryVariables>(client, GetGroupByCodeDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetGroupByCodeQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetGroupByCodeQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetGroupByCodeQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetGroupByCodeQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetGroupByCodeQuery, TError, TData>({
+    queryKey: ["GetGroupByCode", variables],
+    queryFn: fetcher<GetGroupByCodeQuery, GetGroupByCodeQueryVariables>(
+      client,
+      GetGroupByCodeDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetGroupByCodeQuery.getKey = (variables: GetGroupByCodeQueryVariables) => ['GetGroupByCode', variables];
+useGetGroupByCodeQuery.getKey = (variables: GetGroupByCodeQueryVariables) => [
+  "GetGroupByCode",
+  variables,
+];
 
 export const GetGroupsDocument = `
     query GetGroups($pagination: GroupPaginationInput) {
@@ -7493,25 +11742,29 @@ export const GetGroupsDocument = `
 }
     ${GroupFieldsFragmentDoc}`;
 
-export const useGetGroupsQuery = <
-      TData = GetGroupsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetGroupsQueryVariables,
-      options?: Omit<UseQueryOptions<GetGroupsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetGroupsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetGroupsQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetGroups'] : ['GetGroups', variables],
-    queryFn: fetcher<GetGroupsQuery, GetGroupsQueryVariables>(client, GetGroupsDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetGroupsQuery = <TData = GetGroupsQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables?: GetGroupsQueryVariables,
+  options?: Omit<UseQueryOptions<GetGroupsQuery, TError, TData>, "queryKey"> & {
+    queryKey?: UseQueryOptions<GetGroupsQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetGroupsQuery, TError, TData>({
+    queryKey:
+      variables === undefined ? ["GetGroups"] : ["GetGroups", variables],
+    queryFn: fetcher<GetGroupsQuery, GetGroupsQueryVariables>(
+      client,
+      GetGroupsDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetGroupsQuery.getKey = (variables?: GetGroupsQueryVariables) => variables === undefined ? ['GetGroups'] : ['GetGroups', variables];
+useGetGroupsQuery.getKey = (variables?: GetGroupsQueryVariables) =>
+  variables === undefined ? ["GetGroups"] : ["GetGroups", variables];
 
 export const GetGroupsByTripDocument = `
     query GetGroupsByTrip($tripId: ID!, $pagination: GroupPaginationInput) {
@@ -7530,24 +11783,35 @@ export const GetGroupsByTripDocument = `
     ${GroupFieldsFragmentDoc}`;
 
 export const useGetGroupsByTripQuery = <
-      TData = GetGroupsByTripQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetGroupsByTripQueryVariables,
-      options?: Omit<UseQueryOptions<GetGroupsByTripQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetGroupsByTripQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetGroupsByTripQuery, TError, TData>(
-      {
-    queryKey: ['GetGroupsByTrip', variables],
-    queryFn: fetcher<GetGroupsByTripQuery, GetGroupsByTripQueryVariables>(client, GetGroupsByTripDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetGroupsByTripQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetGroupsByTripQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetGroupsByTripQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetGroupsByTripQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetGroupsByTripQuery, TError, TData>({
+    queryKey: ["GetGroupsByTrip", variables],
+    queryFn: fetcher<GetGroupsByTripQuery, GetGroupsByTripQueryVariables>(
+      client,
+      GetGroupsByTripDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetGroupsByTripQuery.getKey = (variables: GetGroupsByTripQueryVariables) => ['GetGroupsByTrip', variables];
+useGetGroupsByTripQuery.getKey = (variables: GetGroupsByTripQueryVariables) => [
+  "GetGroupsByTrip",
+  variables,
+];
 
 export const GetGroupsByOrganizerDocument = `
     query GetGroupsByOrganizer($organizerId: ID!) {
@@ -7558,24 +11822,36 @@ export const GetGroupsByOrganizerDocument = `
     ${GroupFieldsFragmentDoc}`;
 
 export const useGetGroupsByOrganizerQuery = <
-      TData = GetGroupsByOrganizerQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetGroupsByOrganizerQueryVariables,
-      options?: Omit<UseQueryOptions<GetGroupsByOrganizerQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetGroupsByOrganizerQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetGroupsByOrganizerQuery, TError, TData>(
-      {
-    queryKey: ['GetGroupsByOrganizer', variables],
-    queryFn: fetcher<GetGroupsByOrganizerQuery, GetGroupsByOrganizerQueryVariables>(client, GetGroupsByOrganizerDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetGroupsByOrganizerQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetGroupsByOrganizerQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetGroupsByOrganizerQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetGroupsByOrganizerQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetGroupsByOrganizerQuery, TError, TData>({
+    queryKey: ["GetGroupsByOrganizer", variables],
+    queryFn: fetcher<
+      GetGroupsByOrganizerQuery,
+      GetGroupsByOrganizerQueryVariables
+    >(client, GetGroupsByOrganizerDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetGroupsByOrganizerQuery.getKey = (variables: GetGroupsByOrganizerQueryVariables) => ['GetGroupsByOrganizer', variables];
+useGetGroupsByOrganizerQuery.getKey = (
+  variables: GetGroupsByOrganizerQueryVariables,
+) => ["GetGroupsByOrganizer", variables];
 
 export const GetGroupNamesByTripDocument = `
     query GetGroupNamesByTrip($tripId: ID!) {
@@ -7586,24 +11862,36 @@ export const GetGroupNamesByTripDocument = `
     ${GroupSummaryFieldsFragmentDoc}`;
 
 export const useGetGroupNamesByTripQuery = <
-      TData = GetGroupNamesByTripQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetGroupNamesByTripQueryVariables,
-      options?: Omit<UseQueryOptions<GetGroupNamesByTripQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetGroupNamesByTripQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetGroupNamesByTripQuery, TError, TData>(
-      {
-    queryKey: ['GetGroupNamesByTrip', variables],
-    queryFn: fetcher<GetGroupNamesByTripQuery, GetGroupNamesByTripQueryVariables>(client, GetGroupNamesByTripDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetGroupNamesByTripQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetGroupNamesByTripQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetGroupNamesByTripQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetGroupNamesByTripQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetGroupNamesByTripQuery, TError, TData>({
+    queryKey: ["GetGroupNamesByTrip", variables],
+    queryFn: fetcher<
+      GetGroupNamesByTripQuery,
+      GetGroupNamesByTripQueryVariables
+    >(client, GetGroupNamesByTripDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetGroupNamesByTripQuery.getKey = (variables: GetGroupNamesByTripQueryVariables) => ['GetGroupNamesByTrip', variables];
+useGetGroupNamesByTripQuery.getKey = (
+  variables: GetGroupNamesByTripQueryVariables,
+) => ["GetGroupNamesByTrip", variables];
 
 export const GetGroupRankingDocument = `
     query GetGroupRanking($tripId: ID!) {
@@ -7617,24 +11905,35 @@ export const GetGroupRankingDocument = `
     ${GroupRankingFieldsFragmentDoc}`;
 
 export const useGetGroupRankingQuery = <
-      TData = GetGroupRankingQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetGroupRankingQueryVariables,
-      options?: Omit<UseQueryOptions<GetGroupRankingQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetGroupRankingQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetGroupRankingQuery, TError, TData>(
-      {
-    queryKey: ['GetGroupRanking', variables],
-    queryFn: fetcher<GetGroupRankingQuery, GetGroupRankingQueryVariables>(client, GetGroupRankingDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetGroupRankingQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetGroupRankingQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetGroupRankingQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetGroupRankingQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetGroupRankingQuery, TError, TData>({
+    queryKey: ["GetGroupRanking", variables],
+    queryFn: fetcher<GetGroupRankingQuery, GetGroupRankingQueryVariables>(
+      client,
+      GetGroupRankingDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetGroupRankingQuery.getKey = (variables: GetGroupRankingQueryVariables) => ['GetGroupRanking', variables];
+useGetGroupRankingQuery.getKey = (variables: GetGroupRankingQueryVariables) => [
+  "GetGroupRanking",
+  variables,
+];
 
 export const CreateGroupDocument = `
     mutation CreateGroup($input: CreateGroupInput!) {
@@ -7646,22 +11945,33 @@ export const CreateGroupDocument = `
 }
     ${GroupFieldsFragmentDoc}`;
 
-export const useCreateGroupMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateGroupMutation, TError, CreateGroupMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateGroupMutation, TError, CreateGroupMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateGroup'],
-    mutationFn: (variables?: CreateGroupMutationVariables) => fetcher<CreateGroupMutation, CreateGroupMutationVariables>(client, CreateGroupDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useCreateGroupMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateGroupMutation,
+    TError,
+    CreateGroupMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateGroupMutation,
+    TError,
+    CreateGroupMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateGroup"],
+    mutationFn: (variables?: CreateGroupMutationVariables) =>
+      fetcher<CreateGroupMutation, CreateGroupMutationVariables>(
+        client,
+        CreateGroupDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UpdateGroupDocument = `
     mutation UpdateGroup($input: UpdateGroupInput!) {
@@ -7673,22 +11983,33 @@ export const UpdateGroupDocument = `
 }
     ${GroupFieldsFragmentDoc}`;
 
-export const useUpdateGroupMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateGroupMutation, TError, UpdateGroupMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateGroupMutation, TError, UpdateGroupMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateGroup'],
-    mutationFn: (variables?: UpdateGroupMutationVariables) => fetcher<UpdateGroupMutation, UpdateGroupMutationVariables>(client, UpdateGroupDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useUpdateGroupMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateGroupMutation,
+    TError,
+    UpdateGroupMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateGroupMutation,
+    TError,
+    UpdateGroupMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateGroup"],
+    mutationFn: (variables?: UpdateGroupMutationVariables) =>
+      fetcher<UpdateGroupMutation, UpdateGroupMutationVariables>(
+        client,
+        UpdateGroupDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const DeleteGroupDocument = `
     mutation DeleteGroup($id: ID!) {
@@ -7698,22 +12019,33 @@ export const DeleteGroupDocument = `
 }
     `;
 
-export const useDeleteGroupMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DeleteGroupMutation, TError, DeleteGroupMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DeleteGroupMutation, TError, DeleteGroupMutationVariables, TContext>(
-      {
-    mutationKey: ['DeleteGroup'],
-    mutationFn: (variables?: DeleteGroupMutationVariables) => fetcher<DeleteGroupMutation, DeleteGroupMutationVariables>(client, DeleteGroupDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useDeleteGroupMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DeleteGroupMutation,
+    TError,
+    DeleteGroupMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DeleteGroupMutation,
+    TError,
+    DeleteGroupMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DeleteGroup"],
+    mutationFn: (variables?: DeleteGroupMutationVariables) =>
+      fetcher<DeleteGroupMutation, DeleteGroupMutationVariables>(
+        client,
+        DeleteGroupDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const AddUserToSharingDocument = `
     mutation AddUserToSharing($groupId: ID!, $userId: ID!) {
@@ -7732,21 +12064,35 @@ export const AddUserToSharingDocument = `
     `;
 
 export const useAddUserToSharingMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<AddUserToSharingMutation, TError, AddUserToSharingMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<AddUserToSharingMutation, TError, AddUserToSharingMutationVariables, TContext>(
-      {
-    mutationKey: ['AddUserToSharing'],
-    mutationFn: (variables?: AddUserToSharingMutationVariables) => fetcher<AddUserToSharingMutation, AddUserToSharingMutationVariables>(client, AddUserToSharingDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    AddUserToSharingMutation,
+    TError,
+    AddUserToSharingMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    AddUserToSharingMutation,
+    TError,
+    AddUserToSharingMutationVariables,
+    TContext
+  >({
+    mutationKey: ["AddUserToSharing"],
+    mutationFn: (variables?: AddUserToSharingMutationVariables) =>
+      fetcher<AddUserToSharingMutation, AddUserToSharingMutationVariables>(
+        client,
+        AddUserToSharingDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const RemoveUserFromSharingDocument = `
     mutation RemoveUserFromSharing($groupId: ID!, $userId: ID!) {
@@ -7765,21 +12111,33 @@ export const RemoveUserFromSharingDocument = `
     `;
 
 export const useRemoveUserFromSharingMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<RemoveUserFromSharingMutation, TError, RemoveUserFromSharingMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<RemoveUserFromSharingMutation, TError, RemoveUserFromSharingMutationVariables, TContext>(
-      {
-    mutationKey: ['RemoveUserFromSharing'],
-    mutationFn: (variables?: RemoveUserFromSharingMutationVariables) => fetcher<RemoveUserFromSharingMutation, RemoveUserFromSharingMutationVariables>(client, RemoveUserFromSharingDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    RemoveUserFromSharingMutation,
+    TError,
+    RemoveUserFromSharingMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    RemoveUserFromSharingMutation,
+    TError,
+    RemoveUserFromSharingMutationVariables,
+    TContext
+  >({
+    mutationKey: ["RemoveUserFromSharing"],
+    mutationFn: (variables?: RemoveUserFromSharingMutationVariables) =>
+      fetcher<
+        RemoveUserFromSharingMutation,
+        RemoveUserFromSharingMutationVariables
+      >(client, RemoveUserFromSharingDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const UpdateSharingSettingsDocument = `
     mutation UpdateSharingSettings($input: UpdateSharingSettingsInput!) {
@@ -7797,21 +12155,33 @@ export const UpdateSharingSettingsDocument = `
     `;
 
 export const useUpdateSharingSettingsMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateSharingSettingsMutation, TError, UpdateSharingSettingsMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateSharingSettingsMutation, TError, UpdateSharingSettingsMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateSharingSettings'],
-    mutationFn: (variables?: UpdateSharingSettingsMutationVariables) => fetcher<UpdateSharingSettingsMutation, UpdateSharingSettingsMutationVariables>(client, UpdateSharingSettingsDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateSharingSettingsMutation,
+    TError,
+    UpdateSharingSettingsMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateSharingSettingsMutation,
+    TError,
+    UpdateSharingSettingsMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateSharingSettings"],
+    mutationFn: (variables?: UpdateSharingSettingsMutationVariables) =>
+      fetcher<
+        UpdateSharingSettingsMutation,
+        UpdateSharingSettingsMutationVariables
+      >(client, UpdateSharingSettingsDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const GetNotificationDocument = `
     """
@@ -7827,24 +12197,35 @@ query GetNotification($id: ID!) {
     ${NotificationFieldsFragmentDoc}`;
 
 export const useGetNotificationQuery = <
-      TData = GetNotificationQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetNotificationQueryVariables,
-      options?: Omit<UseQueryOptions<GetNotificationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetNotificationQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetNotificationQuery, TError, TData>(
-      {
-    queryKey: ['GetNotification', variables],
-    queryFn: fetcher<GetNotificationQuery, GetNotificationQueryVariables>(client, GetNotificationDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetNotificationQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetNotificationQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetNotificationQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetNotificationQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetNotificationQuery, TError, TData>({
+    queryKey: ["GetNotification", variables],
+    queryFn: fetcher<GetNotificationQuery, GetNotificationQueryVariables>(
+      client,
+      GetNotificationDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetNotificationQuery.getKey = (variables: GetNotificationQueryVariables) => ['GetNotification', variables];
+useGetNotificationQuery.getKey = (variables: GetNotificationQueryVariables) => [
+  "GetNotification",
+  variables,
+];
 
 export const GetMyNotificationsDocument = `
     """
@@ -7860,24 +12241,44 @@ query GetMyNotifications($page: Int, $perPage: Int) {
     ${MyNotificationsResultFieldsFragmentDoc}`;
 
 export const useGetMyNotificationsQuery = <
-      TData = GetMyNotificationsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetMyNotificationsQueryVariables,
-      options?: Omit<UseQueryOptions<GetMyNotificationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetMyNotificationsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetMyNotificationsQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetMyNotifications'] : ['GetMyNotifications', variables],
-    queryFn: fetcher<GetMyNotificationsQuery, GetMyNotificationsQueryVariables>(client, GetMyNotificationsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetMyNotificationsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetMyNotificationsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetMyNotificationsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetMyNotificationsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetMyNotificationsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetMyNotifications"]
+        : ["GetMyNotifications", variables],
+    queryFn: fetcher<GetMyNotificationsQuery, GetMyNotificationsQueryVariables>(
+      client,
+      GetMyNotificationsDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetMyNotificationsQuery.getKey = (variables?: GetMyNotificationsQueryVariables) => variables === undefined ? ['GetMyNotifications'] : ['GetMyNotifications', variables];
+useGetMyNotificationsQuery.getKey = (
+  variables?: GetMyNotificationsQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetMyNotifications"]
+    : ["GetMyNotifications", variables];
 
 export const GetAllNotificationsDocument = `
     """
@@ -7895,24 +12296,42 @@ query GetAllNotifications($limit: Int, $offset: Int, $tripId: ID) {
     ${AllNotificationsResultFieldsFragmentDoc}`;
 
 export const useGetAllNotificationsQuery = <
-      TData = GetAllNotificationsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetAllNotificationsQueryVariables,
-      options?: Omit<UseQueryOptions<GetAllNotificationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetAllNotificationsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetAllNotificationsQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetAllNotifications'] : ['GetAllNotifications', variables],
-    queryFn: fetcher<GetAllNotificationsQuery, GetAllNotificationsQueryVariables>(client, GetAllNotificationsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetAllNotificationsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetAllNotificationsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetAllNotificationsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetAllNotificationsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetAllNotificationsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetAllNotifications"]
+        : ["GetAllNotifications", variables],
+    queryFn: fetcher<
+      GetAllNotificationsQuery,
+      GetAllNotificationsQueryVariables
+    >(client, GetAllNotificationsDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetAllNotificationsQuery.getKey = (variables?: GetAllNotificationsQueryVariables) => variables === undefined ? ['GetAllNotifications'] : ['GetAllNotifications', variables];
+useGetAllNotificationsQuery.getKey = (
+  variables?: GetAllNotificationsQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetAllNotifications"]
+    : ["GetAllNotifications", variables];
 
 export const GetNotificationSchedulesDocument = `
     """
@@ -7931,24 +12350,42 @@ query GetNotificationSchedules($tripId: ID, $limit: Int, $offset: Int, $isActive
     ${NotificationSchedulesConnectionFieldsFragmentDoc}`;
 
 export const useGetNotificationSchedulesQuery = <
-      TData = GetNotificationSchedulesQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetNotificationSchedulesQueryVariables,
-      options?: Omit<UseQueryOptions<GetNotificationSchedulesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetNotificationSchedulesQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetNotificationSchedulesQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetNotificationSchedules'] : ['GetNotificationSchedules', variables],
-    queryFn: fetcher<GetNotificationSchedulesQuery, GetNotificationSchedulesQueryVariables>(client, GetNotificationSchedulesDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetNotificationSchedulesQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetNotificationSchedulesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetNotificationSchedulesQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetNotificationSchedulesQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetNotificationSchedulesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetNotificationSchedules"]
+        : ["GetNotificationSchedules", variables],
+    queryFn: fetcher<
+      GetNotificationSchedulesQuery,
+      GetNotificationSchedulesQueryVariables
+    >(client, GetNotificationSchedulesDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetNotificationSchedulesQuery.getKey = (variables?: GetNotificationSchedulesQueryVariables) => variables === undefined ? ['GetNotificationSchedules'] : ['GetNotificationSchedules', variables];
+useGetNotificationSchedulesQuery.getKey = (
+  variables?: GetNotificationSchedulesQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetNotificationSchedules"]
+    : ["GetNotificationSchedules", variables];
 
 export const GetNotificationScheduleDocument = `
     """
@@ -7964,24 +12401,36 @@ query GetNotificationSchedule($id: ID!) {
     ${NotificationScheduleFieldsFragmentDoc}`;
 
 export const useGetNotificationScheduleQuery = <
-      TData = GetNotificationScheduleQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetNotificationScheduleQueryVariables,
-      options?: Omit<UseQueryOptions<GetNotificationScheduleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetNotificationScheduleQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetNotificationScheduleQuery, TError, TData>(
-      {
-    queryKey: ['GetNotificationSchedule', variables],
-    queryFn: fetcher<GetNotificationScheduleQuery, GetNotificationScheduleQueryVariables>(client, GetNotificationScheduleDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetNotificationScheduleQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetNotificationScheduleQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetNotificationScheduleQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetNotificationScheduleQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetNotificationScheduleQuery, TError, TData>({
+    queryKey: ["GetNotificationSchedule", variables],
+    queryFn: fetcher<
+      GetNotificationScheduleQuery,
+      GetNotificationScheduleQueryVariables
+    >(client, GetNotificationScheduleDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetNotificationScheduleQuery.getKey = (variables: GetNotificationScheduleQueryVariables) => ['GetNotificationSchedule', variables];
+useGetNotificationScheduleQuery.getKey = (
+  variables: GetNotificationScheduleQueryVariables,
+) => ["GetNotificationSchedule", variables];
 
 export const GetActiveNotificationSchedulesDocument = `
     """
@@ -8000,24 +12449,42 @@ query GetActiveNotificationSchedules($tripId: ID, $notificationType: Notificatio
     ${NotificationScheduleFieldsFragmentDoc}`;
 
 export const useGetActiveNotificationSchedulesQuery = <
-      TData = GetActiveNotificationSchedulesQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetActiveNotificationSchedulesQueryVariables,
-      options?: Omit<UseQueryOptions<GetActiveNotificationSchedulesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetActiveNotificationSchedulesQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetActiveNotificationSchedulesQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetActiveNotificationSchedules'] : ['GetActiveNotificationSchedules', variables],
-    queryFn: fetcher<GetActiveNotificationSchedulesQuery, GetActiveNotificationSchedulesQueryVariables>(client, GetActiveNotificationSchedulesDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetActiveNotificationSchedulesQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetActiveNotificationSchedulesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetActiveNotificationSchedulesQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetActiveNotificationSchedulesQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetActiveNotificationSchedulesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetActiveNotificationSchedules"]
+        : ["GetActiveNotificationSchedules", variables],
+    queryFn: fetcher<
+      GetActiveNotificationSchedulesQuery,
+      GetActiveNotificationSchedulesQueryVariables
+    >(client, GetActiveNotificationSchedulesDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetActiveNotificationSchedulesQuery.getKey = (variables?: GetActiveNotificationSchedulesQueryVariables) => variables === undefined ? ['GetActiveNotificationSchedules'] : ['GetActiveNotificationSchedules', variables];
+useGetActiveNotificationSchedulesQuery.getKey = (
+  variables?: GetActiveNotificationSchedulesQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetActiveNotificationSchedules"]
+    : ["GetActiveNotificationSchedules", variables];
 
 export const GetUpcomingNotificationSchedulesDocument = `
     """
@@ -8034,24 +12501,42 @@ query GetUpcomingNotificationSchedules($withinMinutes: Int = 30, $tripId: ID) {
     ${NotificationScheduleFieldsFragmentDoc}`;
 
 export const useGetUpcomingNotificationSchedulesQuery = <
-      TData = GetUpcomingNotificationSchedulesQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetUpcomingNotificationSchedulesQueryVariables,
-      options?: Omit<UseQueryOptions<GetUpcomingNotificationSchedulesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUpcomingNotificationSchedulesQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetUpcomingNotificationSchedulesQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetUpcomingNotificationSchedules'] : ['GetUpcomingNotificationSchedules', variables],
-    queryFn: fetcher<GetUpcomingNotificationSchedulesQuery, GetUpcomingNotificationSchedulesQueryVariables>(client, GetUpcomingNotificationSchedulesDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetUpcomingNotificationSchedulesQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetUpcomingNotificationSchedulesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetUpcomingNotificationSchedulesQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetUpcomingNotificationSchedulesQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetUpcomingNotificationSchedulesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetUpcomingNotificationSchedules"]
+        : ["GetUpcomingNotificationSchedules", variables],
+    queryFn: fetcher<
+      GetUpcomingNotificationSchedulesQuery,
+      GetUpcomingNotificationSchedulesQueryVariables
+    >(client, GetUpcomingNotificationSchedulesDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetUpcomingNotificationSchedulesQuery.getKey = (variables?: GetUpcomingNotificationSchedulesQueryVariables) => variables === undefined ? ['GetUpcomingNotificationSchedules'] : ['GetUpcomingNotificationSchedules', variables];
+useGetUpcomingNotificationSchedulesQuery.getKey = (
+  variables?: GetUpcomingNotificationSchedulesQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetUpcomingNotificationSchedules"]
+    : ["GetUpcomingNotificationSchedules", variables];
 
 export const GetNotificationScheduleExecutionHistoryDocument = `
     """
@@ -8071,24 +12556,45 @@ query GetNotificationScheduleExecutionHistory($scheduleId: ID!, $limit: Int, $of
     ${ExecutionHistoryResultFieldsFragmentDoc}`;
 
 export const useGetNotificationScheduleExecutionHistoryQuery = <
-      TData = GetNotificationScheduleExecutionHistoryQuery,
-      TError = unknown
+  TData = GetNotificationScheduleExecutionHistoryQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetNotificationScheduleExecutionHistoryQueryVariables,
+  options?: Omit<
+    UseQueryOptions<
+      GetNotificationScheduleExecutionHistoryQuery,
+      TError,
+      TData
+    >,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetNotificationScheduleExecutionHistoryQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetNotificationScheduleExecutionHistoryQuery, TError, TData>({
+    queryKey: ["GetNotificationScheduleExecutionHistory", variables],
+    queryFn: fetcher<
+      GetNotificationScheduleExecutionHistoryQuery,
+      GetNotificationScheduleExecutionHistoryQueryVariables
     >(
-      client: GraphQLClient,
-      variables: GetNotificationScheduleExecutionHistoryQueryVariables,
-      options?: Omit<UseQueryOptions<GetNotificationScheduleExecutionHistoryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetNotificationScheduleExecutionHistoryQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetNotificationScheduleExecutionHistoryQuery, TError, TData>(
-      {
-    queryKey: ['GetNotificationScheduleExecutionHistory', variables],
-    queryFn: fetcher<GetNotificationScheduleExecutionHistoryQuery, GetNotificationScheduleExecutionHistoryQueryVariables>(client, GetNotificationScheduleExecutionHistoryDocument, variables, headers),
-    ...options
-  }
-    )};
+      client,
+      GetNotificationScheduleExecutionHistoryDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetNotificationScheduleExecutionHistoryQuery.getKey = (variables: GetNotificationScheduleExecutionHistoryQueryVariables) => ['GetNotificationScheduleExecutionHistory', variables];
+useGetNotificationScheduleExecutionHistoryQuery.getKey = (
+  variables: GetNotificationScheduleExecutionHistoryQueryVariables,
+) => ["GetNotificationScheduleExecutionHistory", variables];
 
 export const GetNotificationDeliveriesDocument = `
     """
@@ -8106,24 +12612,42 @@ query GetNotificationDeliveries($scheduleId: ID, $tripId: ID, $status: DeliveryS
     ${NotificationDeliveryListResultFieldsFragmentDoc}`;
 
 export const useGetNotificationDeliveriesQuery = <
-      TData = GetNotificationDeliveriesQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetNotificationDeliveriesQueryVariables,
-      options?: Omit<UseQueryOptions<GetNotificationDeliveriesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetNotificationDeliveriesQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetNotificationDeliveriesQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetNotificationDeliveries'] : ['GetNotificationDeliveries', variables],
-    queryFn: fetcher<GetNotificationDeliveriesQuery, GetNotificationDeliveriesQueryVariables>(client, GetNotificationDeliveriesDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetNotificationDeliveriesQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetNotificationDeliveriesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetNotificationDeliveriesQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetNotificationDeliveriesQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetNotificationDeliveriesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetNotificationDeliveries"]
+        : ["GetNotificationDeliveries", variables],
+    queryFn: fetcher<
+      GetNotificationDeliveriesQuery,
+      GetNotificationDeliveriesQueryVariables
+    >(client, GetNotificationDeliveriesDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetNotificationDeliveriesQuery.getKey = (variables?: GetNotificationDeliveriesQueryVariables) => variables === undefined ? ['GetNotificationDeliveries'] : ['GetNotificationDeliveries', variables];
+useGetNotificationDeliveriesQuery.getKey = (
+  variables?: GetNotificationDeliveriesQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetNotificationDeliveries"]
+    : ["GetNotificationDeliveries", variables];
 
 export const GetNotificationDeliveryByNotificationIdDocument = `
     """
@@ -8141,24 +12665,45 @@ query GetNotificationDeliveryByNotificationId($notificationId: ID!, $tripId: ID!
     ${NotificationDeliveryFieldsFragmentDoc}`;
 
 export const useGetNotificationDeliveryByNotificationIdQuery = <
-      TData = GetNotificationDeliveryByNotificationIdQuery,
-      TError = unknown
+  TData = GetNotificationDeliveryByNotificationIdQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetNotificationDeliveryByNotificationIdQueryVariables,
+  options?: Omit<
+    UseQueryOptions<
+      GetNotificationDeliveryByNotificationIdQuery,
+      TError,
+      TData
+    >,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetNotificationDeliveryByNotificationIdQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetNotificationDeliveryByNotificationIdQuery, TError, TData>({
+    queryKey: ["GetNotificationDeliveryByNotificationId", variables],
+    queryFn: fetcher<
+      GetNotificationDeliveryByNotificationIdQuery,
+      GetNotificationDeliveryByNotificationIdQueryVariables
     >(
-      client: GraphQLClient,
-      variables: GetNotificationDeliveryByNotificationIdQueryVariables,
-      options?: Omit<UseQueryOptions<GetNotificationDeliveryByNotificationIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetNotificationDeliveryByNotificationIdQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetNotificationDeliveryByNotificationIdQuery, TError, TData>(
-      {
-    queryKey: ['GetNotificationDeliveryByNotificationId', variables],
-    queryFn: fetcher<GetNotificationDeliveryByNotificationIdQuery, GetNotificationDeliveryByNotificationIdQueryVariables>(client, GetNotificationDeliveryByNotificationIdDocument, variables, headers),
-    ...options
-  }
-    )};
+      client,
+      GetNotificationDeliveryByNotificationIdDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetNotificationDeliveryByNotificationIdQuery.getKey = (variables: GetNotificationDeliveryByNotificationIdQueryVariables) => ['GetNotificationDeliveryByNotificationId', variables];
+useGetNotificationDeliveryByNotificationIdQuery.getKey = (
+  variables: GetNotificationDeliveryByNotificationIdQueryVariables,
+) => ["GetNotificationDeliveryByNotificationId", variables];
 
 export const GetFailedDeliveriesDocument = `
     """
@@ -8174,24 +12719,42 @@ query GetFailedDeliveries($tripId: ID, $limit: Int, $offset: Int) {
     ${NotificationDeliveryListResultFieldsFragmentDoc}`;
 
 export const useGetFailedDeliveriesQuery = <
-      TData = GetFailedDeliveriesQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetFailedDeliveriesQueryVariables,
-      options?: Omit<UseQueryOptions<GetFailedDeliveriesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetFailedDeliveriesQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetFailedDeliveriesQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetFailedDeliveries'] : ['GetFailedDeliveries', variables],
-    queryFn: fetcher<GetFailedDeliveriesQuery, GetFailedDeliveriesQueryVariables>(client, GetFailedDeliveriesDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetFailedDeliveriesQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetFailedDeliveriesQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetFailedDeliveriesQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetFailedDeliveriesQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetFailedDeliveriesQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetFailedDeliveries"]
+        : ["GetFailedDeliveries", variables],
+    queryFn: fetcher<
+      GetFailedDeliveriesQuery,
+      GetFailedDeliveriesQueryVariables
+    >(client, GetFailedDeliveriesDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetFailedDeliveriesQuery.getKey = (variables?: GetFailedDeliveriesQueryVariables) => variables === undefined ? ['GetFailedDeliveries'] : ['GetFailedDeliveries', variables];
+useGetFailedDeliveriesQuery.getKey = (
+  variables?: GetFailedDeliveriesQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetFailedDeliveries"]
+    : ["GetFailedDeliveries", variables];
 
 export const GetDeliveryStatsDocument = `
     """
@@ -8209,24 +12772,44 @@ query GetDeliveryStats($tripId: ID, $scheduleId: ID, $startDate: DateTime, $endD
     ${DeliveryStatsFieldsFragmentDoc}`;
 
 export const useGetDeliveryStatsQuery = <
-      TData = GetDeliveryStatsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetDeliveryStatsQueryVariables,
-      options?: Omit<UseQueryOptions<GetDeliveryStatsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetDeliveryStatsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetDeliveryStatsQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetDeliveryStats'] : ['GetDeliveryStats', variables],
-    queryFn: fetcher<GetDeliveryStatsQuery, GetDeliveryStatsQueryVariables>(client, GetDeliveryStatsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetDeliveryStatsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetDeliveryStatsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetDeliveryStatsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetDeliveryStatsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetDeliveryStatsQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetDeliveryStats"]
+        : ["GetDeliveryStats", variables],
+    queryFn: fetcher<GetDeliveryStatsQuery, GetDeliveryStatsQueryVariables>(
+      client,
+      GetDeliveryStatsDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetDeliveryStatsQuery.getKey = (variables?: GetDeliveryStatsQueryVariables) => variables === undefined ? ['GetDeliveryStats'] : ['GetDeliveryStats', variables];
+useGetDeliveryStatsQuery.getKey = (
+  variables?: GetDeliveryStatsQueryVariables,
+) =>
+  variables === undefined
+    ? ["GetDeliveryStats"]
+    : ["GetDeliveryStats", variables];
 
 export const CreateNotificationDocument = `
     """
@@ -8244,21 +12827,35 @@ mutation CreateNotification($title: String!, $body: String!, $priority: Notifica
     ${CreateNotificationResultFieldsFragmentDoc}`;
 
 export const useCreateNotificationMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateNotificationMutation, TError, CreateNotificationMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateNotificationMutation, TError, CreateNotificationMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateNotification'],
-    mutationFn: (variables?: CreateNotificationMutationVariables) => fetcher<CreateNotificationMutation, CreateNotificationMutationVariables>(client, CreateNotificationDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateNotificationMutation,
+    TError,
+    CreateNotificationMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateNotificationMutation,
+    TError,
+    CreateNotificationMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateNotification"],
+    mutationFn: (variables?: CreateNotificationMutationVariables) =>
+      fetcher<CreateNotificationMutation, CreateNotificationMutationVariables>(
+        client,
+        CreateNotificationDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UpdateNotificationDocument = `
     """
@@ -8276,21 +12873,35 @@ mutation UpdateNotification($notificationId: ID!, $title: String, $body: String,
     ${UpdateNotificationResultFieldsFragmentDoc}`;
 
 export const useUpdateNotificationMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateNotificationMutation, TError, UpdateNotificationMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateNotificationMutation, TError, UpdateNotificationMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateNotification'],
-    mutationFn: (variables?: UpdateNotificationMutationVariables) => fetcher<UpdateNotificationMutation, UpdateNotificationMutationVariables>(client, UpdateNotificationDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateNotificationMutation,
+    TError,
+    UpdateNotificationMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateNotificationMutation,
+    TError,
+    UpdateNotificationMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateNotification"],
+    mutationFn: (variables?: UpdateNotificationMutationVariables) =>
+      fetcher<UpdateNotificationMutation, UpdateNotificationMutationVariables>(
+        client,
+        UpdateNotificationDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const DeleteNotificationDocument = `
     """
@@ -8306,21 +12917,35 @@ mutation DeleteNotification($notificationId: ID!) {
     ${DeleteNotificationResultFieldsFragmentDoc}`;
 
 export const useDeleteNotificationMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DeleteNotificationMutation, TError, DeleteNotificationMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DeleteNotificationMutation, TError, DeleteNotificationMutationVariables, TContext>(
-      {
-    mutationKey: ['DeleteNotification'],
-    mutationFn: (variables?: DeleteNotificationMutationVariables) => fetcher<DeleteNotificationMutation, DeleteNotificationMutationVariables>(client, DeleteNotificationDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DeleteNotificationMutation,
+    TError,
+    DeleteNotificationMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DeleteNotificationMutation,
+    TError,
+    DeleteNotificationMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DeleteNotification"],
+    mutationFn: (variables?: DeleteNotificationMutationVariables) =>
+      fetcher<DeleteNotificationMutation, DeleteNotificationMutationVariables>(
+        client,
+        DeleteNotificationDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const CreateNotificationScheduleDocument = `
     """
@@ -8339,21 +12964,33 @@ mutation CreateNotificationSchedule($name: String!, $hour: Int!, $minute: Int!, 
     ${CreateNotificationSchedulePayloadFieldsFragmentDoc}`;
 
 export const useCreateNotificationScheduleMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateNotificationScheduleMutation, TError, CreateNotificationScheduleMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateNotificationScheduleMutation, TError, CreateNotificationScheduleMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateNotificationSchedule'],
-    mutationFn: (variables?: CreateNotificationScheduleMutationVariables) => fetcher<CreateNotificationScheduleMutation, CreateNotificationScheduleMutationVariables>(client, CreateNotificationScheduleDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateNotificationScheduleMutation,
+    TError,
+    CreateNotificationScheduleMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateNotificationScheduleMutation,
+    TError,
+    CreateNotificationScheduleMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateNotificationSchedule"],
+    mutationFn: (variables?: CreateNotificationScheduleMutationVariables) =>
+      fetcher<
+        CreateNotificationScheduleMutation,
+        CreateNotificationScheduleMutationVariables
+      >(client, CreateNotificationScheduleDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const UpdateNotificationScheduleDocument = `
     """
@@ -8372,21 +13009,33 @@ mutation UpdateNotificationSchedule($id: ID!, $name: String, $hour: Int, $minute
     ${UpdateNotificationSchedulePayloadFieldsFragmentDoc}`;
 
 export const useUpdateNotificationScheduleMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateNotificationScheduleMutation, TError, UpdateNotificationScheduleMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateNotificationScheduleMutation, TError, UpdateNotificationScheduleMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateNotificationSchedule'],
-    mutationFn: (variables?: UpdateNotificationScheduleMutationVariables) => fetcher<UpdateNotificationScheduleMutation, UpdateNotificationScheduleMutationVariables>(client, UpdateNotificationScheduleDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateNotificationScheduleMutation,
+    TError,
+    UpdateNotificationScheduleMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateNotificationScheduleMutation,
+    TError,
+    UpdateNotificationScheduleMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateNotificationSchedule"],
+    mutationFn: (variables?: UpdateNotificationScheduleMutationVariables) =>
+      fetcher<
+        UpdateNotificationScheduleMutation,
+        UpdateNotificationScheduleMutationVariables
+      >(client, UpdateNotificationScheduleDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const DeleteNotificationScheduleDocument = `
     """
@@ -8402,21 +13051,33 @@ mutation DeleteNotificationSchedule($id: ID!) {
     ${DeleteNotificationSchedulePayloadFieldsFragmentDoc}`;
 
 export const useDeleteNotificationScheduleMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DeleteNotificationScheduleMutation, TError, DeleteNotificationScheduleMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DeleteNotificationScheduleMutation, TError, DeleteNotificationScheduleMutationVariables, TContext>(
-      {
-    mutationKey: ['DeleteNotificationSchedule'],
-    mutationFn: (variables?: DeleteNotificationScheduleMutationVariables) => fetcher<DeleteNotificationScheduleMutation, DeleteNotificationScheduleMutationVariables>(client, DeleteNotificationScheduleDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DeleteNotificationScheduleMutation,
+    TError,
+    DeleteNotificationScheduleMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DeleteNotificationScheduleMutation,
+    TError,
+    DeleteNotificationScheduleMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DeleteNotificationSchedule"],
+    mutationFn: (variables?: DeleteNotificationScheduleMutationVariables) =>
+      fetcher<
+        DeleteNotificationScheduleMutation,
+        DeleteNotificationScheduleMutationVariables
+      >(client, DeleteNotificationScheduleDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const DuplicateNotificationScheduleDocument = `
     """
@@ -8432,21 +13093,33 @@ mutation DuplicateNotificationSchedule($id: ID!) {
     ${DuplicateNotificationSchedulePayloadFieldsFragmentDoc}`;
 
 export const useDuplicateNotificationScheduleMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DuplicateNotificationScheduleMutation, TError, DuplicateNotificationScheduleMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DuplicateNotificationScheduleMutation, TError, DuplicateNotificationScheduleMutationVariables, TContext>(
-      {
-    mutationKey: ['DuplicateNotificationSchedule'],
-    mutationFn: (variables?: DuplicateNotificationScheduleMutationVariables) => fetcher<DuplicateNotificationScheduleMutation, DuplicateNotificationScheduleMutationVariables>(client, DuplicateNotificationScheduleDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DuplicateNotificationScheduleMutation,
+    TError,
+    DuplicateNotificationScheduleMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DuplicateNotificationScheduleMutation,
+    TError,
+    DuplicateNotificationScheduleMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DuplicateNotificationSchedule"],
+    mutationFn: (variables?: DuplicateNotificationScheduleMutationVariables) =>
+      fetcher<
+        DuplicateNotificationScheduleMutation,
+        DuplicateNotificationScheduleMutationVariables
+      >(client, DuplicateNotificationScheduleDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const ToggleNotificationScheduleActiveDocument = `
     """
@@ -8462,21 +13135,35 @@ mutation ToggleNotificationScheduleActive($id: ID!) {
     ${ToggleScheduleActivePayloadFieldsFragmentDoc}`;
 
 export const useToggleNotificationScheduleActiveMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<ToggleNotificationScheduleActiveMutation, TError, ToggleNotificationScheduleActiveMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<ToggleNotificationScheduleActiveMutation, TError, ToggleNotificationScheduleActiveMutationVariables, TContext>(
-      {
-    mutationKey: ['ToggleNotificationScheduleActive'],
-    mutationFn: (variables?: ToggleNotificationScheduleActiveMutationVariables) => fetcher<ToggleNotificationScheduleActiveMutation, ToggleNotificationScheduleActiveMutationVariables>(client, ToggleNotificationScheduleActiveDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    ToggleNotificationScheduleActiveMutation,
+    TError,
+    ToggleNotificationScheduleActiveMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    ToggleNotificationScheduleActiveMutation,
+    TError,
+    ToggleNotificationScheduleActiveMutationVariables,
+    TContext
+  >({
+    mutationKey: ["ToggleNotificationScheduleActive"],
+    mutationFn: (
+      variables?: ToggleNotificationScheduleActiveMutationVariables,
+    ) =>
+      fetcher<
+        ToggleNotificationScheduleActiveMutation,
+        ToggleNotificationScheduleActiveMutationVariables
+      >(client, ToggleNotificationScheduleActiveDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const BulkToggleNotificationScheduleActiveDocument = `
     """
@@ -8492,21 +13179,40 @@ mutation BulkToggleNotificationScheduleActive($ids: [ID!]!, $isActive: Boolean!)
     ${BulkToggleActivePayloadFieldsFragmentDoc}`;
 
 export const useBulkToggleNotificationScheduleActiveMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<BulkToggleNotificationScheduleActiveMutation, TError, BulkToggleNotificationScheduleActiveMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<BulkToggleNotificationScheduleActiveMutation, TError, BulkToggleNotificationScheduleActiveMutationVariables, TContext>(
-      {
-    mutationKey: ['BulkToggleNotificationScheduleActive'],
-    mutationFn: (variables?: BulkToggleNotificationScheduleActiveMutationVariables) => fetcher<BulkToggleNotificationScheduleActiveMutation, BulkToggleNotificationScheduleActiveMutationVariables>(client, BulkToggleNotificationScheduleActiveDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    BulkToggleNotificationScheduleActiveMutation,
+    TError,
+    BulkToggleNotificationScheduleActiveMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    BulkToggleNotificationScheduleActiveMutation,
+    TError,
+    BulkToggleNotificationScheduleActiveMutationVariables,
+    TContext
+  >({
+    mutationKey: ["BulkToggleNotificationScheduleActive"],
+    mutationFn: (
+      variables?: BulkToggleNotificationScheduleActiveMutationVariables,
+    ) =>
+      fetcher<
+        BulkToggleNotificationScheduleActiveMutation,
+        BulkToggleNotificationScheduleActiveMutationVariables
+      >(
+        client,
+        BulkToggleNotificationScheduleActiveDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const BulkDeleteNotificationScheduleDocument = `
     """
@@ -8522,21 +13228,33 @@ mutation BulkDeleteNotificationSchedule($ids: [ID!]!) {
     ${BulkDeleteNotificationSchedulesPayloadFieldsFragmentDoc}`;
 
 export const useBulkDeleteNotificationScheduleMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<BulkDeleteNotificationScheduleMutation, TError, BulkDeleteNotificationScheduleMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<BulkDeleteNotificationScheduleMutation, TError, BulkDeleteNotificationScheduleMutationVariables, TContext>(
-      {
-    mutationKey: ['BulkDeleteNotificationSchedule'],
-    mutationFn: (variables?: BulkDeleteNotificationScheduleMutationVariables) => fetcher<BulkDeleteNotificationScheduleMutation, BulkDeleteNotificationScheduleMutationVariables>(client, BulkDeleteNotificationScheduleDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    BulkDeleteNotificationScheduleMutation,
+    TError,
+    BulkDeleteNotificationScheduleMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    BulkDeleteNotificationScheduleMutation,
+    TError,
+    BulkDeleteNotificationScheduleMutationVariables,
+    TContext
+  >({
+    mutationKey: ["BulkDeleteNotificationSchedule"],
+    mutationFn: (variables?: BulkDeleteNotificationScheduleMutationVariables) =>
+      fetcher<
+        BulkDeleteNotificationScheduleMutation,
+        BulkDeleteNotificationScheduleMutationVariables
+      >(client, BulkDeleteNotificationScheduleDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const UpdateNotificationScheduleLastRunDocument = `
     """
@@ -8555,21 +13273,40 @@ mutation UpdateNotificationScheduleLastRun($id: ID!, $lastRunAt: DateTime!, $las
     ${UpdateLastRunPayloadFieldsFragmentDoc}`;
 
 export const useUpdateNotificationScheduleLastRunMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateNotificationScheduleLastRunMutation, TError, UpdateNotificationScheduleLastRunMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateNotificationScheduleLastRunMutation, TError, UpdateNotificationScheduleLastRunMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateNotificationScheduleLastRun'],
-    mutationFn: (variables?: UpdateNotificationScheduleLastRunMutationVariables) => fetcher<UpdateNotificationScheduleLastRunMutation, UpdateNotificationScheduleLastRunMutationVariables>(client, UpdateNotificationScheduleLastRunDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateNotificationScheduleLastRunMutation,
+    TError,
+    UpdateNotificationScheduleLastRunMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateNotificationScheduleLastRunMutation,
+    TError,
+    UpdateNotificationScheduleLastRunMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateNotificationScheduleLastRun"],
+    mutationFn: (
+      variables?: UpdateNotificationScheduleLastRunMutationVariables,
+    ) =>
+      fetcher<
+        UpdateNotificationScheduleLastRunMutation,
+        UpdateNotificationScheduleLastRunMutationVariables
+      >(
+        client,
+        UpdateNotificationScheduleLastRunDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UpdateNotificationStatusDocument = `
     """
@@ -8587,21 +13324,33 @@ mutation UpdateNotificationStatus($notificationId: ID!, $newStatus: Notification
     ${UpdateNotificationStatusResultFieldsFragmentDoc}`;
 
 export const useUpdateNotificationStatusMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateNotificationStatusMutation, TError, UpdateNotificationStatusMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateNotificationStatusMutation, TError, UpdateNotificationStatusMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateNotificationStatus'],
-    mutationFn: (variables?: UpdateNotificationStatusMutationVariables) => fetcher<UpdateNotificationStatusMutation, UpdateNotificationStatusMutationVariables>(client, UpdateNotificationStatusDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateNotificationStatusMutation,
+    TError,
+    UpdateNotificationStatusMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateNotificationStatusMutation,
+    TError,
+    UpdateNotificationStatusMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateNotificationStatus"],
+    mutationFn: (variables?: UpdateNotificationStatusMutationVariables) =>
+      fetcher<
+        UpdateNotificationStatusMutation,
+        UpdateNotificationStatusMutationVariables
+      >(client, UpdateNotificationStatusDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const SendMobileNotificationsDocument = `
     """
@@ -8617,21 +13366,33 @@ mutation SendMobileNotifications($notificationId: ID!) {
     ${SendMobileNotificationsPayloadFieldsFragmentDoc}`;
 
 export const useSendMobileNotificationsMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<SendMobileNotificationsMutation, TError, SendMobileNotificationsMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<SendMobileNotificationsMutation, TError, SendMobileNotificationsMutationVariables, TContext>(
-      {
-    mutationKey: ['SendMobileNotifications'],
-    mutationFn: (variables?: SendMobileNotificationsMutationVariables) => fetcher<SendMobileNotificationsMutation, SendMobileNotificationsMutationVariables>(client, SendMobileNotificationsDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    SendMobileNotificationsMutation,
+    TError,
+    SendMobileNotificationsMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    SendMobileNotificationsMutation,
+    TError,
+    SendMobileNotificationsMutationVariables,
+    TContext
+  >({
+    mutationKey: ["SendMobileNotifications"],
+    mutationFn: (variables?: SendMobileNotificationsMutationVariables) =>
+      fetcher<
+        SendMobileNotificationsMutation,
+        SendMobileNotificationsMutationVariables
+      >(client, SendMobileNotificationsDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const TrackDeliveryStartDocument = `
     """
@@ -8647,21 +13408,35 @@ mutation TrackDeliveryStart($notificationId: ID!) {
     ${TrackDeliveryStartPayloadFieldsFragmentDoc}`;
 
 export const useTrackDeliveryStartMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<TrackDeliveryStartMutation, TError, TrackDeliveryStartMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<TrackDeliveryStartMutation, TError, TrackDeliveryStartMutationVariables, TContext>(
-      {
-    mutationKey: ['TrackDeliveryStart'],
-    mutationFn: (variables?: TrackDeliveryStartMutationVariables) => fetcher<TrackDeliveryStartMutation, TrackDeliveryStartMutationVariables>(client, TrackDeliveryStartDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    TrackDeliveryStartMutation,
+    TError,
+    TrackDeliveryStartMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    TrackDeliveryStartMutation,
+    TError,
+    TrackDeliveryStartMutationVariables,
+    TContext
+  >({
+    mutationKey: ["TrackDeliveryStart"],
+    mutationFn: (variables?: TrackDeliveryStartMutationVariables) =>
+      fetcher<TrackDeliveryStartMutation, TrackDeliveryStartMutationVariables>(
+        client,
+        TrackDeliveryStartDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const TrackDeliveryCompleteDocument = `
     """
@@ -8680,21 +13455,33 @@ mutation TrackDeliveryComplete($notificationId: ID!, $totalRecipients: Int!, $su
     ${TrackDeliveryCompletePayloadFieldsFragmentDoc}`;
 
 export const useTrackDeliveryCompleteMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<TrackDeliveryCompleteMutation, TError, TrackDeliveryCompleteMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<TrackDeliveryCompleteMutation, TError, TrackDeliveryCompleteMutationVariables, TContext>(
-      {
-    mutationKey: ['TrackDeliveryComplete'],
-    mutationFn: (variables?: TrackDeliveryCompleteMutationVariables) => fetcher<TrackDeliveryCompleteMutation, TrackDeliveryCompleteMutationVariables>(client, TrackDeliveryCompleteDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    TrackDeliveryCompleteMutation,
+    TError,
+    TrackDeliveryCompleteMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    TrackDeliveryCompleteMutation,
+    TError,
+    TrackDeliveryCompleteMutationVariables,
+    TContext
+  >({
+    mutationKey: ["TrackDeliveryComplete"],
+    mutationFn: (variables?: TrackDeliveryCompleteMutationVariables) =>
+      fetcher<
+        TrackDeliveryCompleteMutation,
+        TrackDeliveryCompleteMutationVariables
+      >(client, TrackDeliveryCompleteDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const TrackDeliveryFailureDocument = `
     """
@@ -8710,21 +13497,33 @@ mutation TrackDeliveryFailure($notificationId: ID!, $error: String!) {
     ${TrackDeliveryFailurePayloadFieldsFragmentDoc}`;
 
 export const useTrackDeliveryFailureMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<TrackDeliveryFailureMutation, TError, TrackDeliveryFailureMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<TrackDeliveryFailureMutation, TError, TrackDeliveryFailureMutationVariables, TContext>(
-      {
-    mutationKey: ['TrackDeliveryFailure'],
-    mutationFn: (variables?: TrackDeliveryFailureMutationVariables) => fetcher<TrackDeliveryFailureMutation, TrackDeliveryFailureMutationVariables>(client, TrackDeliveryFailureDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    TrackDeliveryFailureMutation,
+    TError,
+    TrackDeliveryFailureMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    TrackDeliveryFailureMutation,
+    TError,
+    TrackDeliveryFailureMutationVariables,
+    TContext
+  >({
+    mutationKey: ["TrackDeliveryFailure"],
+    mutationFn: (variables?: TrackDeliveryFailureMutationVariables) =>
+      fetcher<
+        TrackDeliveryFailureMutation,
+        TrackDeliveryFailureMutationVariables
+      >(client, TrackDeliveryFailureDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const GetRewardDocument = `
     """
@@ -8738,25 +13537,30 @@ query GetReward($id: ID!) {
 }
     ${RewardFieldsFragmentDoc}`;
 
-export const useGetRewardQuery = <
-      TData = GetRewardQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetRewardQueryVariables,
-      options?: Omit<UseQueryOptions<GetRewardQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetRewardQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetRewardQuery, TError, TData>(
-      {
-    queryKey: ['GetReward', variables],
-    queryFn: fetcher<GetRewardQuery, GetRewardQueryVariables>(client, GetRewardDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetRewardQuery = <TData = GetRewardQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables: GetRewardQueryVariables,
+  options?: Omit<UseQueryOptions<GetRewardQuery, TError, TData>, "queryKey"> & {
+    queryKey?: UseQueryOptions<GetRewardQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetRewardQuery, TError, TData>({
+    queryKey: ["GetReward", variables],
+    queryFn: fetcher<GetRewardQuery, GetRewardQueryVariables>(
+      client,
+      GetRewardDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetRewardQuery.getKey = (variables: GetRewardQueryVariables) => ['GetReward', variables];
+useGetRewardQuery.getKey = (variables: GetRewardQueryVariables) => [
+  "GetReward",
+  variables,
+];
 
 export const GetRewardsByTripDocument = `
     """
@@ -8772,24 +13576,38 @@ query GetRewardsByTrip($tripId: ID!, $limit: Int = 30, $offset: Int = 0) {
     ${RewardsConnectionFieldsFragmentDoc}`;
 
 export const useGetRewardsByTripQuery = <
-      TData = GetRewardsByTripQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetRewardsByTripQueryVariables,
-      options?: Omit<UseQueryOptions<GetRewardsByTripQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetRewardsByTripQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetRewardsByTripQuery, TError, TData>(
-      {
-    queryKey: ['GetRewardsByTrip', variables],
-    queryFn: fetcher<GetRewardsByTripQuery, GetRewardsByTripQueryVariables>(client, GetRewardsByTripDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetRewardsByTripQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetRewardsByTripQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetRewardsByTripQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetRewardsByTripQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetRewardsByTripQuery, TError, TData>({
+    queryKey: ["GetRewardsByTrip", variables],
+    queryFn: fetcher<GetRewardsByTripQuery, GetRewardsByTripQueryVariables>(
+      client,
+      GetRewardsByTripDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetRewardsByTripQuery.getKey = (variables: GetRewardsByTripQueryVariables) => ['GetRewardsByTrip', variables];
+useGetRewardsByTripQuery.getKey = (
+  variables: GetRewardsByTripQueryVariables,
+) => ["GetRewardsByTrip", variables];
 
 export const GetRewardsByTripAdminDocument = `
     """
@@ -8807,24 +13625,36 @@ query GetRewardsByTripAdmin($tripId: ID!, $limit: Int = 30, $offset: Int = 0) {
     ${RewardsConnectionFieldsFragmentDoc}`;
 
 export const useGetRewardsByTripAdminQuery = <
-      TData = GetRewardsByTripAdminQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetRewardsByTripAdminQueryVariables,
-      options?: Omit<UseQueryOptions<GetRewardsByTripAdminQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetRewardsByTripAdminQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetRewardsByTripAdminQuery, TError, TData>(
-      {
-    queryKey: ['GetRewardsByTripAdmin', variables],
-    queryFn: fetcher<GetRewardsByTripAdminQuery, GetRewardsByTripAdminQueryVariables>(client, GetRewardsByTripAdminDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetRewardsByTripAdminQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetRewardsByTripAdminQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetRewardsByTripAdminQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetRewardsByTripAdminQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetRewardsByTripAdminQuery, TError, TData>({
+    queryKey: ["GetRewardsByTripAdmin", variables],
+    queryFn: fetcher<
+      GetRewardsByTripAdminQuery,
+      GetRewardsByTripAdminQueryVariables
+    >(client, GetRewardsByTripAdminDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetRewardsByTripAdminQuery.getKey = (variables: GetRewardsByTripAdminQueryVariables) => ['GetRewardsByTripAdmin', variables];
+useGetRewardsByTripAdminQuery.getKey = (
+  variables: GetRewardsByTripAdminQueryVariables,
+) => ["GetRewardsByTripAdmin", variables];
 
 export const GetPurchaseHistoryDocument = `
     """
@@ -8839,24 +13669,38 @@ query GetPurchaseHistory($tripId: ID!, $limit: Int = 30, $offset: Int = 0) {
     ${PurchaseHistoryConnectionFieldsFragmentDoc}`;
 
 export const useGetPurchaseHistoryQuery = <
-      TData = GetPurchaseHistoryQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetPurchaseHistoryQueryVariables,
-      options?: Omit<UseQueryOptions<GetPurchaseHistoryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetPurchaseHistoryQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetPurchaseHistoryQuery, TError, TData>(
-      {
-    queryKey: ['GetPurchaseHistory', variables],
-    queryFn: fetcher<GetPurchaseHistoryQuery, GetPurchaseHistoryQueryVariables>(client, GetPurchaseHistoryDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetPurchaseHistoryQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetPurchaseHistoryQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetPurchaseHistoryQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetPurchaseHistoryQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetPurchaseHistoryQuery, TError, TData>({
+    queryKey: ["GetPurchaseHistory", variables],
+    queryFn: fetcher<GetPurchaseHistoryQuery, GetPurchaseHistoryQueryVariables>(
+      client,
+      GetPurchaseHistoryDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetPurchaseHistoryQuery.getKey = (variables: GetPurchaseHistoryQueryVariables) => ['GetPurchaseHistory', variables];
+useGetPurchaseHistoryQuery.getKey = (
+  variables: GetPurchaseHistoryQueryVariables,
+) => ["GetPurchaseHistory", variables];
 
 export const GetTotalAvailablePointsDocument = `
     """
@@ -8871,24 +13715,36 @@ query GetTotalAvailablePoints($tripId: ID!) {
     ${TotalAvailablePointsPayloadFieldsFragmentDoc}`;
 
 export const useGetTotalAvailablePointsQuery = <
-      TData = GetTotalAvailablePointsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetTotalAvailablePointsQueryVariables,
-      options?: Omit<UseQueryOptions<GetTotalAvailablePointsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetTotalAvailablePointsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetTotalAvailablePointsQuery, TError, TData>(
-      {
-    queryKey: ['GetTotalAvailablePoints', variables],
-    queryFn: fetcher<GetTotalAvailablePointsQuery, GetTotalAvailablePointsQueryVariables>(client, GetTotalAvailablePointsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetTotalAvailablePointsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetTotalAvailablePointsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetTotalAvailablePointsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetTotalAvailablePointsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetTotalAvailablePointsQuery, TError, TData>({
+    queryKey: ["GetTotalAvailablePoints", variables],
+    queryFn: fetcher<
+      GetTotalAvailablePointsQuery,
+      GetTotalAvailablePointsQueryVariables
+    >(client, GetTotalAvailablePointsDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetTotalAvailablePointsQuery.getKey = (variables: GetTotalAvailablePointsQueryVariables) => ['GetTotalAvailablePoints', variables];
+useGetTotalAvailablePointsQuery.getKey = (
+  variables: GetTotalAvailablePointsQueryVariables,
+) => ["GetTotalAvailablePoints", variables];
 
 export const CreateRewardDocument = `
     """
@@ -8902,22 +13758,33 @@ mutation CreateReward($input: CreateRewardInput!) {
 }
     ${CreateRewardPayloadFieldsFragmentDoc}`;
 
-export const useCreateRewardMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateRewardMutation, TError, CreateRewardMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateRewardMutation, TError, CreateRewardMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateReward'],
-    mutationFn: (variables?: CreateRewardMutationVariables) => fetcher<CreateRewardMutation, CreateRewardMutationVariables>(client, CreateRewardDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useCreateRewardMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateRewardMutation,
+    TError,
+    CreateRewardMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateRewardMutation,
+    TError,
+    CreateRewardMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateReward"],
+    mutationFn: (variables?: CreateRewardMutationVariables) =>
+      fetcher<CreateRewardMutation, CreateRewardMutationVariables>(
+        client,
+        CreateRewardDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UpdateRewardDocument = `
     """
@@ -8931,22 +13798,33 @@ mutation UpdateReward($input: UpdateRewardInput!) {
 }
     ${UpdateRewardPayloadFieldsFragmentDoc}`;
 
-export const useUpdateRewardMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateRewardMutation, TError, UpdateRewardMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateRewardMutation, TError, UpdateRewardMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateReward'],
-    mutationFn: (variables?: UpdateRewardMutationVariables) => fetcher<UpdateRewardMutation, UpdateRewardMutationVariables>(client, UpdateRewardDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useUpdateRewardMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateRewardMutation,
+    TError,
+    UpdateRewardMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateRewardMutation,
+    TError,
+    UpdateRewardMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateReward"],
+    mutationFn: (variables?: UpdateRewardMutationVariables) =>
+      fetcher<UpdateRewardMutation, UpdateRewardMutationVariables>(
+        client,
+        UpdateRewardDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const DeleteRewardDocument = `
     """
@@ -8960,22 +13838,33 @@ mutation DeleteReward($id: ID!) {
 }
     ${DeleteRewardPayloadFieldsFragmentDoc}`;
 
-export const useDeleteRewardMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DeleteRewardMutation, TError, DeleteRewardMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DeleteRewardMutation, TError, DeleteRewardMutationVariables, TContext>(
-      {
-    mutationKey: ['DeleteReward'],
-    mutationFn: (variables?: DeleteRewardMutationVariables) => fetcher<DeleteRewardMutation, DeleteRewardMutationVariables>(client, DeleteRewardDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useDeleteRewardMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DeleteRewardMutation,
+    TError,
+    DeleteRewardMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DeleteRewardMutation,
+    TError,
+    DeleteRewardMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DeleteReward"],
+    mutationFn: (variables?: DeleteRewardMutationVariables) =>
+      fetcher<DeleteRewardMutation, DeleteRewardMutationVariables>(
+        client,
+        DeleteRewardDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const PurchaseRewardDocument = `
     """
@@ -8989,22 +13878,33 @@ mutation PurchaseReward($input: PurchaseRewardInput!) {
 }
     ${PurchaseRewardPayloadFieldsFragmentDoc}`;
 
-export const usePurchaseRewardMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<PurchaseRewardMutation, TError, PurchaseRewardMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<PurchaseRewardMutation, TError, PurchaseRewardMutationVariables, TContext>(
-      {
-    mutationKey: ['PurchaseReward'],
-    mutationFn: (variables?: PurchaseRewardMutationVariables) => fetcher<PurchaseRewardMutation, PurchaseRewardMutationVariables>(client, PurchaseRewardDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const usePurchaseRewardMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    PurchaseRewardMutation,
+    TError,
+    PurchaseRewardMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    PurchaseRewardMutation,
+    TError,
+    PurchaseRewardMutationVariables,
+    TContext
+  >({
+    mutationKey: ["PurchaseReward"],
+    mutationFn: (variables?: PurchaseRewardMutationVariables) =>
+      fetcher<PurchaseRewardMutation, PurchaseRewardMutationVariables>(
+        client,
+        PurchaseRewardDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const SetRewardHiddenDocument = `
     """
@@ -9019,21 +13919,35 @@ mutation SetRewardHidden($rewardId: ID!, $isHidden: Boolean!) {
     ${SetRewardHiddenPayloadFieldsFragmentDoc}`;
 
 export const useSetRewardHiddenMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<SetRewardHiddenMutation, TError, SetRewardHiddenMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<SetRewardHiddenMutation, TError, SetRewardHiddenMutationVariables, TContext>(
-      {
-    mutationKey: ['SetRewardHidden'],
-    mutationFn: (variables?: SetRewardHiddenMutationVariables) => fetcher<SetRewardHiddenMutation, SetRewardHiddenMutationVariables>(client, SetRewardHiddenDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    SetRewardHiddenMutation,
+    TError,
+    SetRewardHiddenMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    SetRewardHiddenMutation,
+    TError,
+    SetRewardHiddenMutationVariables,
+    TContext
+  >({
+    mutationKey: ["SetRewardHidden"],
+    mutationFn: (variables?: SetRewardHiddenMutationVariables) =>
+      fetcher<SetRewardHiddenMutation, SetRewardHiddenMutationVariables>(
+        client,
+        SetRewardHiddenDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UpdatePurchaseStatusDocument = `
     """
@@ -9048,21 +13962,33 @@ mutation UpdatePurchaseStatus($input: UpdatePurchaseStatusInput!) {
     ${UpdatePurchaseStatusPayloadFieldsFragmentDoc}`;
 
 export const useUpdatePurchaseStatusMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdatePurchaseStatusMutation, TError, UpdatePurchaseStatusMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdatePurchaseStatusMutation, TError, UpdatePurchaseStatusMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdatePurchaseStatus'],
-    mutationFn: (variables?: UpdatePurchaseStatusMutationVariables) => fetcher<UpdatePurchaseStatusMutation, UpdatePurchaseStatusMutationVariables>(client, UpdatePurchaseStatusDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdatePurchaseStatusMutation,
+    TError,
+    UpdatePurchaseStatusMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdatePurchaseStatusMutation,
+    TError,
+    UpdatePurchaseStatusMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdatePurchaseStatus"],
+    mutationFn: (variables?: UpdatePurchaseStatusMutationVariables) =>
+      fetcher<
+        UpdatePurchaseStatusMutation,
+        UpdatePurchaseStatusMutationVariables
+      >(client, UpdatePurchaseStatusDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const UpdateMyPurchaseStatusDocument = `
     """
@@ -9077,21 +14003,33 @@ mutation UpdateMyPurchaseStatus($input: UpdateMyPurchaseStatusInput!) {
     ${UpdateMyPurchaseStatusPayloadFieldsFragmentDoc}`;
 
 export const useUpdateMyPurchaseStatusMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateMyPurchaseStatusMutation, TError, UpdateMyPurchaseStatusMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateMyPurchaseStatusMutation, TError, UpdateMyPurchaseStatusMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateMyPurchaseStatus'],
-    mutationFn: (variables?: UpdateMyPurchaseStatusMutationVariables) => fetcher<UpdateMyPurchaseStatusMutation, UpdateMyPurchaseStatusMutationVariables>(client, UpdateMyPurchaseStatusDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateMyPurchaseStatusMutation,
+    TError,
+    UpdateMyPurchaseStatusMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateMyPurchaseStatusMutation,
+    TError,
+    UpdateMyPurchaseStatusMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateMyPurchaseStatus"],
+    mutationFn: (variables?: UpdateMyPurchaseStatusMutationVariables) =>
+      fetcher<
+        UpdateMyPurchaseStatusMutation,
+        UpdateMyPurchaseStatusMutationVariables
+      >(client, UpdateMyPurchaseStatusDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const GetSponsorDocument = `
     """
@@ -9105,25 +14043,33 @@ query GetSponsor($id: ID!) {
 }
     ${SponsorFieldsFragmentDoc}`;
 
-export const useGetSponsorQuery = <
-      TData = GetSponsorQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetSponsorQueryVariables,
-      options?: Omit<UseQueryOptions<GetSponsorQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSponsorQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetSponsorQuery, TError, TData>(
-      {
-    queryKey: ['GetSponsor', variables],
-    queryFn: fetcher<GetSponsorQuery, GetSponsorQueryVariables>(client, GetSponsorDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetSponsorQuery = <TData = GetSponsorQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables: GetSponsorQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSponsorQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetSponsorQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetSponsorQuery, TError, TData>({
+    queryKey: ["GetSponsor", variables],
+    queryFn: fetcher<GetSponsorQuery, GetSponsorQueryVariables>(
+      client,
+      GetSponsorDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetSponsorQuery.getKey = (variables: GetSponsorQueryVariables) => ['GetSponsor', variables];
+useGetSponsorQuery.getKey = (variables: GetSponsorQueryVariables) => [
+  "GetSponsor",
+  variables,
+];
 
 export const GetSponsorsByTripDocument = `
     """
@@ -9138,24 +14084,38 @@ query GetSponsorsByTrip($tripId: ID!) {
     ${SponsorFieldsFragmentDoc}`;
 
 export const useGetSponsorsByTripQuery = <
-      TData = GetSponsorsByTripQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetSponsorsByTripQueryVariables,
-      options?: Omit<UseQueryOptions<GetSponsorsByTripQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSponsorsByTripQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetSponsorsByTripQuery, TError, TData>(
-      {
-    queryKey: ['GetSponsorsByTrip', variables],
-    queryFn: fetcher<GetSponsorsByTripQuery, GetSponsorsByTripQueryVariables>(client, GetSponsorsByTripDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetSponsorsByTripQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetSponsorsByTripQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSponsorsByTripQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetSponsorsByTripQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetSponsorsByTripQuery, TError, TData>({
+    queryKey: ["GetSponsorsByTrip", variables],
+    queryFn: fetcher<GetSponsorsByTripQuery, GetSponsorsByTripQueryVariables>(
+      client,
+      GetSponsorsByTripDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetSponsorsByTripQuery.getKey = (variables: GetSponsorsByTripQueryVariables) => ['GetSponsorsByTrip', variables];
+useGetSponsorsByTripQuery.getKey = (
+  variables: GetSponsorsByTripQueryVariables,
+) => ["GetSponsorsByTrip", variables];
 
 export const CreateSponsorDocument = `
     """
@@ -9170,22 +14130,33 @@ mutation CreateSponsor($input: CreateSponsorInput!) {
 }
     ${CreateSponsorPayloadFieldsFragmentDoc}`;
 
-export const useCreateSponsorMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateSponsorMutation, TError, CreateSponsorMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateSponsorMutation, TError, CreateSponsorMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateSponsor'],
-    mutationFn: (variables?: CreateSponsorMutationVariables) => fetcher<CreateSponsorMutation, CreateSponsorMutationVariables>(client, CreateSponsorDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useCreateSponsorMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateSponsorMutation,
+    TError,
+    CreateSponsorMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateSponsorMutation,
+    TError,
+    CreateSponsorMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateSponsor"],
+    mutationFn: (variables?: CreateSponsorMutationVariables) =>
+      fetcher<CreateSponsorMutation, CreateSponsorMutationVariables>(
+        client,
+        CreateSponsorDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UpdateSponsorDocument = `
     """
@@ -9201,22 +14172,33 @@ mutation UpdateSponsor($input: UpdateSponsorInput!) {
 }
     ${UpdateSponsorPayloadFieldsFragmentDoc}`;
 
-export const useUpdateSponsorMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateSponsorMutation, TError, UpdateSponsorMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateSponsorMutation, TError, UpdateSponsorMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateSponsor'],
-    mutationFn: (variables?: UpdateSponsorMutationVariables) => fetcher<UpdateSponsorMutation, UpdateSponsorMutationVariables>(client, UpdateSponsorDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useUpdateSponsorMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateSponsorMutation,
+    TError,
+    UpdateSponsorMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateSponsorMutation,
+    TError,
+    UpdateSponsorMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateSponsor"],
+    mutationFn: (variables?: UpdateSponsorMutationVariables) =>
+      fetcher<UpdateSponsorMutation, UpdateSponsorMutationVariables>(
+        client,
+        UpdateSponsorDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const DeleteSponsorDocument = `
     """
@@ -9232,22 +14214,33 @@ mutation DeleteSponsor($id: ID!) {
 }
     ${DeleteSponsorPayloadFieldsFragmentDoc}`;
 
-export const useDeleteSponsorMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DeleteSponsorMutation, TError, DeleteSponsorMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DeleteSponsorMutation, TError, DeleteSponsorMutationVariables, TContext>(
-      {
-    mutationKey: ['DeleteSponsor'],
-    mutationFn: (variables?: DeleteSponsorMutationVariables) => fetcher<DeleteSponsorMutation, DeleteSponsorMutationVariables>(client, DeleteSponsorDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useDeleteSponsorMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DeleteSponsorMutation,
+    TError,
+    DeleteSponsorMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DeleteSponsorMutation,
+    TError,
+    DeleteSponsorMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DeleteSponsor"],
+    mutationFn: (variables?: DeleteSponsorMutationVariables) =>
+      fetcher<DeleteSponsorMutation, DeleteSponsorMutationVariables>(
+        client,
+        DeleteSponsorDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const LinkSponsorToTripDocument = `
     """
@@ -9264,21 +14257,35 @@ mutation LinkSponsorToTrip($sponsorId: ID!, $tripId: ID!) {
     ${LinkSponsorToTripPayloadFieldsFragmentDoc}`;
 
 export const useLinkSponsorToTripMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<LinkSponsorToTripMutation, TError, LinkSponsorToTripMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<LinkSponsorToTripMutation, TError, LinkSponsorToTripMutationVariables, TContext>(
-      {
-    mutationKey: ['LinkSponsorToTrip'],
-    mutationFn: (variables?: LinkSponsorToTripMutationVariables) => fetcher<LinkSponsorToTripMutation, LinkSponsorToTripMutationVariables>(client, LinkSponsorToTripDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    LinkSponsorToTripMutation,
+    TError,
+    LinkSponsorToTripMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    LinkSponsorToTripMutation,
+    TError,
+    LinkSponsorToTripMutationVariables,
+    TContext
+  >({
+    mutationKey: ["LinkSponsorToTrip"],
+    mutationFn: (variables?: LinkSponsorToTripMutationVariables) =>
+      fetcher<LinkSponsorToTripMutation, LinkSponsorToTripMutationVariables>(
+        client,
+        LinkSponsorToTripDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UnlinkSponsorFromTripDocument = `
     """
@@ -9295,21 +14302,33 @@ mutation UnlinkSponsorFromTrip($sponsorId: ID!, $tripId: ID!) {
     ${UnlinkSponsorFromTripPayloadFieldsFragmentDoc}`;
 
 export const useUnlinkSponsorFromTripMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UnlinkSponsorFromTripMutation, TError, UnlinkSponsorFromTripMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UnlinkSponsorFromTripMutation, TError, UnlinkSponsorFromTripMutationVariables, TContext>(
-      {
-    mutationKey: ['UnlinkSponsorFromTrip'],
-    mutationFn: (variables?: UnlinkSponsorFromTripMutationVariables) => fetcher<UnlinkSponsorFromTripMutation, UnlinkSponsorFromTripMutationVariables>(client, UnlinkSponsorFromTripDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UnlinkSponsorFromTripMutation,
+    TError,
+    UnlinkSponsorFromTripMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UnlinkSponsorFromTripMutation,
+    TError,
+    UnlinkSponsorFromTripMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UnlinkSponsorFromTrip"],
+    mutationFn: (variables?: UnlinkSponsorFromTripMutationVariables) =>
+      fetcher<
+        UnlinkSponsorFromTripMutation,
+        UnlinkSponsorFromTripMutationVariables
+      >(client, UnlinkSponsorFromTripDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const GetSubmissionReportsDocument = `
     query GetSubmissionReports($submissionId: ID!) {
@@ -9323,24 +14342,36 @@ export const GetSubmissionReportsDocument = `
     ${SubmissionReportFieldsFragmentDoc}`;
 
 export const useGetSubmissionReportsQuery = <
-      TData = GetSubmissionReportsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetSubmissionReportsQueryVariables,
-      options?: Omit<UseQueryOptions<GetSubmissionReportsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetSubmissionReportsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetSubmissionReportsQuery, TError, TData>(
-      {
-    queryKey: ['GetSubmissionReports', variables],
-    queryFn: fetcher<GetSubmissionReportsQuery, GetSubmissionReportsQueryVariables>(client, GetSubmissionReportsDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetSubmissionReportsQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetSubmissionReportsQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetSubmissionReportsQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<
+      GetSubmissionReportsQuery,
+      TError,
+      TData
+    >["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetSubmissionReportsQuery, TError, TData>({
+    queryKey: ["GetSubmissionReports", variables],
+    queryFn: fetcher<
+      GetSubmissionReportsQuery,
+      GetSubmissionReportsQueryVariables
+    >(client, GetSubmissionReportsDocument, variables, headers),
+    ...options,
+  });
+};
 
-useGetSubmissionReportsQuery.getKey = (variables: GetSubmissionReportsQueryVariables) => ['GetSubmissionReports', variables];
+useGetSubmissionReportsQuery.getKey = (
+  variables: GetSubmissionReportsQueryVariables,
+) => ["GetSubmissionReports", variables];
 
 export const CreateSubmissionReportDocument = `
     mutation CreateSubmissionReport($input: CreateReportInput!) {
@@ -9351,21 +14382,33 @@ export const CreateSubmissionReportDocument = `
     ${SubmissionReportCreateResultFieldsFragmentDoc}`;
 
 export const useCreateSubmissionReportMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateSubmissionReportMutation, TError, CreateSubmissionReportMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateSubmissionReportMutation, TError, CreateSubmissionReportMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateSubmissionReport'],
-    mutationFn: (variables?: CreateSubmissionReportMutationVariables) => fetcher<CreateSubmissionReportMutation, CreateSubmissionReportMutationVariables>(client, CreateSubmissionReportDocument, variables, headers)(),
-    ...options
-  }
-    )};
+  TError = unknown,
+  TContext = unknown,
+>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateSubmissionReportMutation,
+    TError,
+    CreateSubmissionReportMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateSubmissionReportMutation,
+    TError,
+    CreateSubmissionReportMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateSubmissionReport"],
+    mutationFn: (variables?: CreateSubmissionReportMutationVariables) =>
+      fetcher<
+        CreateSubmissionReportMutation,
+        CreateSubmissionReportMutationVariables
+      >(client, CreateSubmissionReportDocument, variables, headers)(),
+    ...options,
+  });
+};
 
 export const GetTripDocument = `
     query GetTrip($id: ID!) {
@@ -9375,25 +14418,30 @@ export const GetTripDocument = `
 }
     ${TripFieldsFragmentDoc}`;
 
-export const useGetTripQuery = <
-      TData = GetTripQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetTripQueryVariables,
-      options?: Omit<UseQueryOptions<GetTripQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetTripQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetTripQuery, TError, TData>(
-      {
-    queryKey: ['GetTrip', variables],
-    queryFn: fetcher<GetTripQuery, GetTripQueryVariables>(client, GetTripDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetTripQuery = <TData = GetTripQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables: GetTripQueryVariables,
+  options?: Omit<UseQueryOptions<GetTripQuery, TError, TData>, "queryKey"> & {
+    queryKey?: UseQueryOptions<GetTripQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetTripQuery, TError, TData>({
+    queryKey: ["GetTrip", variables],
+    queryFn: fetcher<GetTripQuery, GetTripQueryVariables>(
+      client,
+      GetTripDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetTripQuery.getKey = (variables: GetTripQueryVariables) => ['GetTrip', variables];
+useGetTripQuery.getKey = (variables: GetTripQueryVariables) => [
+  "GetTrip",
+  variables,
+];
 
 export const GetTripsDocument = `
     query GetTrips($pagination: TripPaginationInput) {
@@ -9411,25 +14459,28 @@ export const GetTripsDocument = `
 }
     ${TripFieldsFragmentDoc}`;
 
-export const useGetTripsQuery = <
-      TData = GetTripsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetTripsQueryVariables,
-      options?: Omit<UseQueryOptions<GetTripsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetTripsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetTripsQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetTrips'] : ['GetTrips', variables],
-    queryFn: fetcher<GetTripsQuery, GetTripsQueryVariables>(client, GetTripsDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetTripsQuery = <TData = GetTripsQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables?: GetTripsQueryVariables,
+  options?: Omit<UseQueryOptions<GetTripsQuery, TError, TData>, "queryKey"> & {
+    queryKey?: UseQueryOptions<GetTripsQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetTripsQuery, TError, TData>({
+    queryKey: variables === undefined ? ["GetTrips"] : ["GetTrips", variables],
+    queryFn: fetcher<GetTripsQuery, GetTripsQueryVariables>(
+      client,
+      GetTripsDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetTripsQuery.getKey = (variables?: GetTripsQueryVariables) => variables === undefined ? ['GetTrips'] : ['GetTrips', variables];
+useGetTripsQuery.getKey = (variables?: GetTripsQueryVariables) =>
+  variables === undefined ? ["GetTrips"] : ["GetTrips", variables];
 
 export const GetTripAdminDocument = `
     query GetTripAdmin($id: ID!) {
@@ -9440,24 +14491,35 @@ export const GetTripAdminDocument = `
     ${TripFieldsFragmentDoc}`;
 
 export const useGetTripAdminQuery = <
-      TData = GetTripAdminQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetTripAdminQueryVariables,
-      options?: Omit<UseQueryOptions<GetTripAdminQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetTripAdminQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetTripAdminQuery, TError, TData>(
-      {
-    queryKey: ['GetTripAdmin', variables],
-    queryFn: fetcher<GetTripAdminQuery, GetTripAdminQueryVariables>(client, GetTripAdminDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetTripAdminQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables: GetTripAdminQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetTripAdminQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetTripAdminQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetTripAdminQuery, TError, TData>({
+    queryKey: ["GetTripAdmin", variables],
+    queryFn: fetcher<GetTripAdminQuery, GetTripAdminQueryVariables>(
+      client,
+      GetTripAdminDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetTripAdminQuery.getKey = (variables: GetTripAdminQueryVariables) => ['GetTripAdmin', variables];
+useGetTripAdminQuery.getKey = (variables: GetTripAdminQueryVariables) => [
+  "GetTripAdmin",
+  variables,
+];
 
 export const CreateTripDocument = `
     mutation CreateTrip($input: CreateTripInput!) {
@@ -9467,22 +14529,33 @@ export const CreateTripDocument = `
 }
     ${TripFieldsFragmentDoc}`;
 
-export const useCreateTripMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateTripMutation, TError, CreateTripMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateTripMutation, TError, CreateTripMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateTrip'],
-    mutationFn: (variables?: CreateTripMutationVariables) => fetcher<CreateTripMutation, CreateTripMutationVariables>(client, CreateTripDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useCreateTripMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateTripMutation,
+    TError,
+    CreateTripMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateTripMutation,
+    TError,
+    CreateTripMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateTrip"],
+    mutationFn: (variables?: CreateTripMutationVariables) =>
+      fetcher<CreateTripMutation, CreateTripMutationVariables>(
+        client,
+        CreateTripDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UpdateTripDocument = `
     mutation UpdateTrip($input: UpdateTripInput!) {
@@ -9492,22 +14565,33 @@ export const UpdateTripDocument = `
 }
     ${TripFieldsFragmentDoc}`;
 
-export const useUpdateTripMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateTripMutation, TError, UpdateTripMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateTripMutation, TError, UpdateTripMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateTrip'],
-    mutationFn: (variables?: UpdateTripMutationVariables) => fetcher<UpdateTripMutation, UpdateTripMutationVariables>(client, UpdateTripDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useUpdateTripMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateTripMutation,
+    TError,
+    UpdateTripMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateTripMutation,
+    TError,
+    UpdateTripMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateTrip"],
+    mutationFn: (variables?: UpdateTripMutationVariables) =>
+      fetcher<UpdateTripMutation, UpdateTripMutationVariables>(
+        client,
+        UpdateTripDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const DeleteTripDocument = `
     mutation DeleteTrip($id: ID!) {
@@ -9517,22 +14601,33 @@ export const DeleteTripDocument = `
 }
     `;
 
-export const useDeleteTripMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<DeleteTripMutation, TError, DeleteTripMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<DeleteTripMutation, TError, DeleteTripMutationVariables, TContext>(
-      {
-    mutationKey: ['DeleteTrip'],
-    mutationFn: (variables?: DeleteTripMutationVariables) => fetcher<DeleteTripMutation, DeleteTripMutationVariables>(client, DeleteTripDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useDeleteTripMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    DeleteTripMutation,
+    TError,
+    DeleteTripMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    DeleteTripMutation,
+    TError,
+    DeleteTripMutationVariables,
+    TContext
+  >({
+    mutationKey: ["DeleteTrip"],
+    mutationFn: (variables?: DeleteTripMutationVariables) =>
+      fetcher<DeleteTripMutation, DeleteTripMutationVariables>(
+        client,
+        DeleteTripDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const GetUserDocument = `
     query GetUser($id: ID!) {
@@ -9542,25 +14637,30 @@ export const GetUserDocument = `
 }
     ${UserFieldsFragmentDoc}`;
 
-export const useGetUserQuery = <
-      TData = GetUserQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: GetUserQueryVariables,
-      options?: Omit<UseQueryOptions<GetUserQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUserQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetUserQuery, TError, TData>(
-      {
-    queryKey: ['GetUser', variables],
-    queryFn: fetcher<GetUserQuery, GetUserQueryVariables>(client, GetUserDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetUserQuery = <TData = GetUserQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables: GetUserQueryVariables,
+  options?: Omit<UseQueryOptions<GetUserQuery, TError, TData>, "queryKey"> & {
+    queryKey?: UseQueryOptions<GetUserQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetUserQuery, TError, TData>({
+    queryKey: ["GetUser", variables],
+    queryFn: fetcher<GetUserQuery, GetUserQueryVariables>(
+      client,
+      GetUserDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetUserQuery.getKey = (variables: GetUserQueryVariables) => ['GetUser', variables];
+useGetUserQuery.getKey = (variables: GetUserQueryVariables) => [
+  "GetUser",
+  variables,
+];
 
 export const GetCurrentUserDocument = `
     query GetCurrentUser {
@@ -9571,24 +14671,36 @@ export const GetCurrentUserDocument = `
     ${UserFieldsFragmentDoc}`;
 
 export const useGetCurrentUserQuery = <
-      TData = GetCurrentUserQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetCurrentUserQueryVariables,
-      options?: Omit<UseQueryOptions<GetCurrentUserQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetCurrentUserQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetCurrentUserQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetCurrentUser'] : ['GetCurrentUser', variables],
-    queryFn: fetcher<GetCurrentUserQuery, GetCurrentUserQueryVariables>(client, GetCurrentUserDocument, variables, headers),
-    ...options
-  }
-    )};
+  TData = GetCurrentUserQuery,
+  TError = unknown,
+>(
+  client: GraphQLClient,
+  variables?: GetCurrentUserQueryVariables,
+  options?: Omit<
+    UseQueryOptions<GetCurrentUserQuery, TError, TData>,
+    "queryKey"
+  > & {
+    queryKey?: UseQueryOptions<GetCurrentUserQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetCurrentUserQuery, TError, TData>({
+    queryKey:
+      variables === undefined
+        ? ["GetCurrentUser"]
+        : ["GetCurrentUser", variables],
+    queryFn: fetcher<GetCurrentUserQuery, GetCurrentUserQueryVariables>(
+      client,
+      GetCurrentUserDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetCurrentUserQuery.getKey = (variables?: GetCurrentUserQueryVariables) => variables === undefined ? ['GetCurrentUser'] : ['GetCurrentUser', variables];
+useGetCurrentUserQuery.getKey = (variables?: GetCurrentUserQueryVariables) =>
+  variables === undefined ? ["GetCurrentUser"] : ["GetCurrentUser", variables];
 
 export const GetUsersDocument = `
     query GetUsers($limit: Int = 20, $offset: Int = 0) {
@@ -9598,25 +14710,28 @@ export const GetUsersDocument = `
 }
     ${UserFieldsFragmentDoc}`;
 
-export const useGetUsersQuery = <
-      TData = GetUsersQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables?: GetUsersQueryVariables,
-      options?: Omit<UseQueryOptions<GetUsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<GetUsersQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<GetUsersQuery, TError, TData>(
-      {
-    queryKey: variables === undefined ? ['GetUsers'] : ['GetUsers', variables],
-    queryFn: fetcher<GetUsersQuery, GetUsersQueryVariables>(client, GetUsersDocument, variables, headers),
-    ...options
-  }
-    )};
+export const useGetUsersQuery = <TData = GetUsersQuery, TError = unknown>(
+  client: GraphQLClient,
+  variables?: GetUsersQueryVariables,
+  options?: Omit<UseQueryOptions<GetUsersQuery, TError, TData>, "queryKey"> & {
+    queryKey?: UseQueryOptions<GetUsersQuery, TError, TData>["queryKey"];
+  },
+  headers?: RequestInit["headers"],
+) => {
+  return useQuery<GetUsersQuery, TError, TData>({
+    queryKey: variables === undefined ? ["GetUsers"] : ["GetUsers", variables],
+    queryFn: fetcher<GetUsersQuery, GetUsersQueryVariables>(
+      client,
+      GetUsersDocument,
+      variables,
+      headers,
+    ),
+    ...options,
+  });
+};
 
-useGetUsersQuery.getKey = (variables?: GetUsersQueryVariables) => variables === undefined ? ['GetUsers'] : ['GetUsers', variables];
+useGetUsersQuery.getKey = (variables?: GetUsersQueryVariables) =>
+  variables === undefined ? ["GetUsers"] : ["GetUsers", variables];
 
 export const CreateUserDocument = `
     mutation CreateUser($input: CreateUserInput!) {
@@ -9626,22 +14741,33 @@ export const CreateUserDocument = `
 }
     ${UserCreateResultFieldsFragmentDoc}`;
 
-export const useCreateUserMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<CreateUserMutation, TError, CreateUserMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<CreateUserMutation, TError, CreateUserMutationVariables, TContext>(
-      {
-    mutationKey: ['CreateUser'],
-    mutationFn: (variables?: CreateUserMutationVariables) => fetcher<CreateUserMutation, CreateUserMutationVariables>(client, CreateUserDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useCreateUserMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    CreateUserMutation,
+    TError,
+    CreateUserMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    CreateUserMutation,
+    TError,
+    CreateUserMutationVariables,
+    TContext
+  >({
+    mutationKey: ["CreateUser"],
+    mutationFn: (variables?: CreateUserMutationVariables) =>
+      fetcher<CreateUserMutation, CreateUserMutationVariables>(
+        client,
+        CreateUserDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
 
 export const UpdateUserDocument = `
     mutation UpdateUser($input: UpdateUserInput!) {
@@ -9651,19 +14777,30 @@ export const UpdateUserDocument = `
 }
     ${UserUpdateResultFieldsFragmentDoc}`;
 
-export const useUpdateUserMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateUserMutation, TError, UpdateUserMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateUserMutation, TError, UpdateUserMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateUser'],
-    mutationFn: (variables?: UpdateUserMutationVariables) => fetcher<UpdateUserMutation, UpdateUserMutationVariables>(client, UpdateUserDocument, variables, headers)(),
-    ...options
-  }
-    )};
+export const useUpdateUserMutation = <TError = unknown, TContext = unknown>(
+  client: GraphQLClient,
+  options?: UseMutationOptions<
+    UpdateUserMutation,
+    TError,
+    UpdateUserMutationVariables,
+    TContext
+  >,
+  headers?: RequestInit["headers"],
+) => {
+  return useMutation<
+    UpdateUserMutation,
+    TError,
+    UpdateUserMutationVariables,
+    TContext
+  >({
+    mutationKey: ["UpdateUser"],
+    mutationFn: (variables?: UpdateUserMutationVariables) =>
+      fetcher<UpdateUserMutation, UpdateUserMutationVariables>(
+        client,
+        UpdateUserDocument,
+        variables,
+        headers,
+      )(),
+    ...options,
+  });
+};
