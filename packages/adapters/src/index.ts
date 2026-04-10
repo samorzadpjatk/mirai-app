@@ -202,6 +202,7 @@ export { NotificationScheduleMapper } from "./mappers/prisma/NotificationSchedul
 export { ChallengeVoteMapper } from "./mappers/prisma/ChallengeVoteMapper";
 export { SubmissionReportMapper } from "./mappers/prisma/SubmissionReportMapper";
 export { SponsorMapper } from "./mappers/prisma/SponsorMapper";
+export { UserAgentMapper } from "./mappers/prisma/UserAgentMapper";
 
 // =============================================================================
 // Phase 1: Drizzle ORM Migration Mappers
@@ -223,6 +224,7 @@ export { SponsorDrizzleMapper } from "./mappers/drizzle/SponsorDrizzleMapper";
 export { SubmissionReportDrizzleMapper } from "./mappers/drizzle/SubmissionReportDrizzleMapper";
 export { NotificationScheduleDrizzleMapper } from "./mappers/drizzle/NotificationScheduleDrizzleMapper";
 export { NotificationDeliveryDrizzleMapper } from "./mappers/drizzle/NotificationDeliveryDrizzleMapper";
+export { UserAgentDrizzleMapper } from "./mappers/drizzle/UserAgentDrizzleMapper";
 
 // =============================================================================
 // Phase 1: Drizzle ORM Migration Repositories
