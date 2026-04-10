@@ -1,10 +1,10 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { TransactionItem } from "@mirai-app/frameworks/trpc/hooks";
+import type { CoinTransaction } from "@mirai-app/graphql-types";
 
 interface TransactionCardProps {
-  transaction: TransactionItem;
+  transaction: CoinTransaction;
 }
 
 function formatDate(dateString: string) {
@@ -21,15 +21,14 @@ function formatDate(dateString: string) {
 export function TransactionCard({ transaction }: TransactionCardProps) {
   const isPositive = transaction.amount > 0;
   const amountLabel = `${isPositive ? "+" : ""}${transaction.amount}`;
-  const adminName =
-    `${transaction.admin.firstName} ${transaction.admin.lastName}`.trim();
+  const adminName = transaction.admin?.fullName ?? "Unknown";
 
   return (
     <Card className="h-full space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-text-primary">
-            {transaction.group.name}
+            {transaction.group?.name ?? "Unknown Group"}
           </h3>
           <p className="text-sm text-text-secondary">
             {formatDate(transaction.createdAt)}
@@ -50,7 +49,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
         <p className="text-sm text-text-secondary">{transaction.reason}</p>
       ) : null}
 
-      <p className="text-sm text-text-muted">Admin: {adminName || "Unknown"}</p>
+      <p className="text-sm text-text-muted">Admin: {adminName}</p>
     </Card>
   );
 }

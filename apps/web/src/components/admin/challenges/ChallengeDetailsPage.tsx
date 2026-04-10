@@ -1,128 +1,26 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import { graphqlClient } from "@mirai-app/graphql-types/client";
+import {
+  useGetChallengeQuery,
+  useUpdateChallengeMutation,
+  useDeleteChallengeMutation,
+} from "@mirai-app/graphql-types";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
 import { ChallengeAnalyticsPanel } from "./ChallengeAnalyticsPanel";
+import type { ChallengeStatus, Challenge } from "@mirai-app/graphql-types";
 
 interface ChallengeDetailsPageProps {
   tripId: string;
   challengeId: string;
 }
 
-type ChallengeStatus =
-  | "HIDDEN"
-  | "VISIBLE"
-  | "ACTIVE"
-  | "VOTING_PHASE"
-  | "COMPLETED"
-  | "CANCELLED";
-
-interface ChallengeDetails {
-  id: string;
-  tripId: string;
-  name: string;
-  description: string;
-  image: string | null;
-  submissionType: string;
-  scoringCategory: string;
-  status: ChallengeStatus;
-  startTime: string | null;
-  endTime: string | null;
-  votingStartTime: string | null;
-  votingEndTime: string | null;
-  isRecurring: boolean;
-  dailyStartTime: string | null;
-  dailyEndTime: string | null;
-  basePoints: number | null;
-  firstPlacePoints: number | null;
-  secondPlacePoints: number | null;
-  thirdPlacePoints: number | null;
-  autoApprove: boolean;
-  targetLatitude: number | null;
-  targetLongitude: number | null;
-  qrCodeValue: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const parseChallengeStatus = (value: unknown): ChallengeStatus => {
-  if (
-    value === "HIDDEN" ||
-    value === "VISIBLE" ||
-    value === "ACTIVE" ||
-    value === "VOTING_PHASE" ||
-    value === "COMPLETED" ||
-    value === "CANCELLED"
-  ) {
-    return value;
-  }
-
-  return "HIDDEN";
-};
-
-const parseNullableString = (value: unknown): string | null =>
-  typeof value === "string" ? value : null;
-
-const parseNullableNumber = (value: unknown): number | null =>
-  typeof value === "number" ? value : null;
-
-const parseChallengeDetails = (value: unknown): ChallengeDetails | null => {
-  if (!isObject(value)) {
-    return null;
-  }
-
-  if (
-    typeof value.id !== "string" ||
-    typeof value.tripId !== "string" ||
-    typeof value.name !== "string"
-  ) {
-    return null;
-  }
-
-  return {
-    id: value.id,
-    tripId: value.tripId,
-    name: value.name,
-    description: typeof value.description === "string" ? value.description : "",
-    image: parseNullableString(value.image),
-    submissionType:
-      typeof value.submissionType === "string" ? value.submissionType : "IMAGE",
-    scoringCategory:
-      typeof value.scoringCategory === "string"
-        ? value.scoringCategory
-        : "JUDGED_STAFF",
-    status: parseChallengeStatus(value.status),
-    startTime: parseNullableString(value.startTime),
-    endTime: parseNullableString(value.endTime),
-    votingStartTime: parseNullableString(value.votingStartTime),
-    votingEndTime: parseNullableString(value.votingEndTime),
-    isRecurring: Boolean(value.isRecurring),
-    dailyStartTime: parseNullableString(value.dailyStartTime),
-    dailyEndTime: parseNullableString(value.dailyEndTime),
-    basePoints: parseNullableNumber(value.basePoints),
-    firstPlacePoints: parseNullableNumber(value.firstPlacePoints),
-    secondPlacePoints: parseNullableNumber(value.secondPlacePoints),
-    thirdPlacePoints: parseNullableNumber(value.thirdPlacePoints),
-    autoApprove: Boolean(value.autoApprove),
-    targetLatitude: parseNullableNumber(value.targetLatitude),
-    targetLongitude: parseNullableNumber(value.targetLongitude),
-    qrCodeValue:
-      parseNullableString(value.qrCodeValue) ??
-      parseNullableString(value.expectedValue),
-    createdAt: parseNullableString(value.createdAt),
-    updatedAt: parseNullableString(value.updatedAt),
-  };
-};
-
-const formatDateTime = (value: string | null): string => {
+const formatDateTime = (value: string | null | undefined): string => {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -136,39 +34,26 @@ const formatStatusLabel = (value: string): string =>
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join(" ");
 
+// Helper to safely extract challenge data from GraphQL response
+const getChallengeFromData = (
+  data: { challenge?: Challenge | null } | undefined,
+): Challenge | null => {
+  return data?.challenge ?? null;
+};
+
 export function ChallengeDetailsPage({
   tripId,
   challengeId,
 }: ChallengeDetailsPageProps) {
-  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
-  const detailsQuery = useQuery({
-    queryKey: ["challenge", "details", challengeId, tripId],
-    enabled: Boolean(challengeId) && Boolean(tripId),
-    queryFn: async () => {
-      const result = await trpcClient.challenge.getById.query({
-        id: challengeId,
-        tripId,
-      });
+  const detailsQuery = useGetChallengeQuery(
+    graphqlClient,
+    { id: challengeId, tripId },
+    { enabled: Boolean(challengeId) && Boolean(tripId) },
+  );
 
-      const parsed = parseChallengeDetails(result);
-      if (!parsed) {
-        throw new Error("Invalid challenge response");
-      }
-
-      return parsed;
-    },
-  });
-
-  const updateStatusMutation = useMutation({
-    mutationFn: async (status: ChallengeStatus) => {
-      return trpcClient.challenge.update.mutate({
-        id: challengeId,
-        tripId,
-        status,
-      });
-    },
+  const updateStatusMutation = useUpdateChallengeMutation(graphqlClient, {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
@@ -181,38 +66,27 @@ export function ChallengeDetailsPage({
     },
   });
 
-  const forceCloseVotingMutation = useMutation({
-    mutationFn: async () => {
-      return trpcClient.challenge.forceCloseVoting.mutate({
-        id: challengeId,
-        tripId,
-      });
+  const deleteMutation = useDeleteChallengeMutation(graphqlClient, {
+    onSuccess: () => {
+      appToast.success("Challenge deleted.");
+      window.location.href = "/challenges";
     },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["challenge", "details", challengeId, tripId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["challenges", tripId],
-        }),
-      ]);
+    onError: (error) => {
+      const message = error.message || "Failed to delete challenge.";
+      appToast.error(message);
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      return trpcClient.challenge.delete.mutate({
-        id: challengeId,
-        tripId,
-      });
-    },
-  });
+  const challenge = getChallengeFromData(detailsQuery.data);
 
   const changeStatus = async (status: ChallengeStatus, label: string) => {
     const toastId = appToast.loading(`${label}...`);
     try {
-      await updateStatusMutation.mutateAsync(status);
+      await updateStatusMutation.mutateAsync({
+        id: challengeId,
+        tripId,
+        status,
+      });
       appToast.dismiss(toastId);
       appToast.success(`Challenge moved to ${formatStatusLabel(status)}.`);
     } catch (error) {
@@ -226,19 +100,17 @@ export function ChallengeDetailsPage({
   };
 
   const completeChallenge = async () => {
-    const challenge = detailsQuery.data;
     if (!challenge) return;
 
     const toastId = appToast.loading("Completing challenge...");
     try {
-      if (
-        challenge.scoringCategory === "PEER_VOTING" &&
-        challenge.status === "VOTING_PHASE"
-      ) {
-        await forceCloseVotingMutation.mutateAsync();
-      } else {
-        await updateStatusMutation.mutateAsync("COMPLETED");
-      }
+      // For PEER_VOTING challenges in VOTING_PHASE, we complete them directly
+      // (force close voting functionality is handled by status update)
+      await updateStatusMutation.mutateAsync({
+        id: challengeId,
+        tripId,
+        status: "COMPLETED",
+      });
 
       appToast.dismiss(toastId);
       appToast.success("Challenge completed.");
@@ -262,10 +134,8 @@ export function ChallengeDetailsPage({
 
     const toastId = appToast.loading("Deleting challenge...");
     try {
-      await deleteMutation.mutateAsync();
+      await deleteMutation.mutateAsync({ id: challengeId, tripId });
       appToast.dismiss(toastId);
-      appToast.success("Challenge deleted.");
-      window.location.href = "/challenges";
     } catch (error) {
       appToast.dismiss(toastId);
       const message =
@@ -278,11 +148,9 @@ export function ChallengeDetailsPage({
     return <LoadingSpinner label="Loading challenge..." />;
   }
 
-  if (detailsQuery.error || !detailsQuery.data) {
+  if (detailsQuery.error || !challenge) {
     return <ErrorMessage message="Could not load challenge details." />;
   }
-
-  const challenge = detailsQuery.data;
 
   return (
     <section className="space-y-5">
@@ -441,9 +309,7 @@ export function ChallengeDetailsPage({
             type="button"
             variant="secondary"
             disabled={
-              updateStatusMutation.isPending ||
-              forceCloseVotingMutation.isPending ||
-              challenge.status === "COMPLETED"
+              updateStatusMutation.isPending || challenge.status === "COMPLETED"
             }
             onClick={() => void completeChallenge()}
           >

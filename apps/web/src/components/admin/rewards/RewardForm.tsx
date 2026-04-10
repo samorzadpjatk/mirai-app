@@ -2,35 +2,58 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
-import { useAdminRewards } from "@mirai-app/frameworks/trpc/hooks";
+import {
+  useGetRewardQuery,
+  useGetTotalAvailablePointsQuery,
+  useCreateRewardMutation,
+  useUpdateRewardMutation,
+  useSetRewardHiddenMutation,
+  useDeleteRewardMutation,
+} from "@mirai-app/graphql-types";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";
+import { env } from "../../../lib/env";
 
 interface RewardFormProps {
   mode: "create" | "edit";
   rewardId?: string;
 }
 
-const createStoragePath = (tripId: string, fileName: string): string => {
-  const extension = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
-  return `rewards/${tripId}/reward-${Date.now()}.${extension}`;
-};
+const createGraphQLClient = (): GraphQLClient => {
+  const getAuthToken = (): string | null => {
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((c) =>
+      c.trim().startsWith("sb-access-token="),
+    );
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  };
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
 
 export function RewardForm({ mode, rewardId }: RewardFormProps) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
   const isEditMode = mode === "edit";
-  const trpcClient = useTRPCClient();
+  const client = useMemo(() => createGraphQLClient(), []);
+  const queryClient = useQueryClient();
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [coinCostPercentage, setCoinCostPercentage] = useState("");
@@ -39,17 +62,6 @@ export function RewardForm({ mode, rewardId }: RewardFormProps) {
   const [existingImagePath, setExistingImagePath] = useState("");
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-
-  const {
-    createReward,
-    isCreatingReward,
-    updateReward,
-    isUpdatingReward,
-    setRewardHidden,
-    isSettingRewardHidden,
-    deleteReward,
-    isDeletingReward,
-  } = useAdminRewards(tripId, "");
 
   const {
     status: uploadStatus,
@@ -63,82 +75,98 @@ export function RewardForm({ mode, rewardId }: RewardFormProps) {
     verifyFileAccessible,
   } = useWebFileUpload();
 
-  const rewardQuery = useQuery({
-    queryKey: ["rewards", "details", rewardId],
-    enabled: isEditMode && Boolean(rewardId),
-    queryFn: async () => {
-      const result = await trpcClient.reward.getById.query({
-        id: rewardId ?? "",
+  // GraphQL Queries
+  const { data: rewardData, isLoading: rewardLoading } = useGetRewardQuery(
+    client,
+    { id: rewardId ?? "" },
+    { enabled: isEditMode && Boolean(rewardId) },
+  );
+
+  const { data: totalPointsData } = useGetTotalAvailablePointsQuery(
+    client,
+    { tripId },
+    { enabled: Boolean(tripId) },
+  );
+
+  // GraphQL Mutations
+  const createRewardMutation = useCreateRewardMutation(client, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
       });
-      if (!isObject(result) || typeof result.id !== "string") {
-        throw new Error("Invalid reward response.");
-      }
-      return result;
     },
   });
 
+  const updateRewardMutation = useUpdateRewardMutation(client, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
+      });
+      if (rewardId) {
+        await queryClient.invalidateQueries({
+          queryKey: ["GetReward", { id: rewardId }],
+        });
+      }
+    },
+  });
+
+  const setRewardHiddenMutation = useSetRewardHiddenMutation(client, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
+      });
+      if (rewardId) {
+        await queryClient.invalidateQueries({
+          queryKey: ["GetReward", { id: rewardId }],
+        });
+      }
+    },
+  });
+
+  const deleteRewardMutation = useDeleteRewardMutation(client, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetRewardsByTripAdmin"],
+      });
+    },
+  });
+
+  // Populate form when editing
   useEffect(() => {
-    if (!isEditMode || !rewardQuery.data) {
+    if (!isEditMode || !rewardData?.reward) {
       return;
     }
 
-    const reward = rewardQuery.data;
+    const reward = rewardData.reward;
 
-    setName(typeof reward.name === "string" ? reward.name : "");
-    setDescription(
-      typeof reward.description === "string" ? reward.description : "",
-    );
-    setCoinCostPercentage(
-      typeof reward.originalCoinCost === "number"
-        ? String(reward.originalCoinCost)
-        : typeof reward.coinCost === "number"
-          ? String(reward.coinCost)
-          : "",
-    );
-    setAvailableQuantity(
-      typeof reward.availableQuantity === "number"
-        ? String(reward.availableQuantity)
-        : "",
-    );
-    setIsHidden(Boolean(reward.isHidden));
-    setExistingImagePath(typeof reward.image === "string" ? reward.image : "");
-    setExistingImageUrl(
-      typeof reward.signedImageUrl === "string" ? reward.signedImageUrl : null,
-    );
-  }, [isEditMode, rewardQuery.data]);
+    setName(reward.name);
+    setDescription(reward.description);
+    setCoinCostPercentage(String(reward.coinCostPercentage));
+    setAvailableQuantity(String(reward.availableQuantity));
+    setIsHidden(reward.isHidden);
+    setExistingImagePath(reward.primaryImage ?? (reward.images[0] || ""));
+    setExistingImageUrl(reward.primaryImage ?? (reward.images[0] || null));
+  }, [isEditMode, rewardData]);
 
   const isSaving =
-    isCreatingReward || isUpdatingReward || isSettingRewardHidden;
+    createRewardMutation.isPending ||
+    updateRewardMutation.isPending ||
+    setRewardHiddenMutation.isPending;
   const isUploading = uploadStatus === "uploading";
-
-  const totalPointsQuery = useQuery({
-    queryKey: ["rewards", "total-points", tripId],
-    enabled: Boolean(tripId),
-    queryFn: async () => {
-      const result = await trpcClient.reward.getTotalAvailablePoints.query({
-        tripId,
-      });
-      if (!isObject(result) || typeof result.totalPoints !== "number") {
-        return 0;
-      }
-      return result.totalPoints;
-    },
-  });
+  const isDeletingReward = deleteRewardMutation.isPending;
 
   const calculatedCoins = useMemo(() => {
     const percentage = Number.parseInt(coinCostPercentage, 10);
-    const total = totalPointsQuery.data ?? 0;
+    const total = totalPointsData?.totalAvailablePoints?.totalPoints ?? 0;
 
     if (!Number.isFinite(percentage) || percentage <= 0 || total <= 0) {
       return null;
     }
 
     return Math.max(1, Math.round(total * (percentage / 100)));
-  }, [coinCostPercentage, totalPointsQuery.data]);
+  }, [coinCostPercentage, totalPointsData]);
 
-  const onSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
 
@@ -185,7 +213,7 @@ export function RewardForm({ mode, rewardId }: RewardFormProps) {
       let imagePath = existingImagePath || "";
 
       if (selectedFile) {
-        const storagePath = createStoragePath(tripId, selectedFile.name);
+        const storagePath = `rewards/${tripId}/reward-${Date.now()}.${selectedFile.name.split(".").pop()?.toLowerCase() ?? "jpg"}`;
         const uploadResult = await upload({
           storagePath,
           file: selectedFile,
@@ -197,28 +225,35 @@ export function RewardForm({ mode, rewardId }: RewardFormProps) {
       }
 
       if (isEditMode) {
-        await updateReward({
-          id: rewardId ?? "",
-          name: trimmedName,
-          description: trimmedDescription,
-          coinCost: parsedCoinCost,
-          availableQuantity: parsedQuantity,
-          image: imagePath || null,
+        await updateRewardMutation.mutateAsync({
+          input: {
+            id: rewardId ?? "",
+            name: trimmedName,
+            description: trimmedDescription,
+            coinCost: parsedCoinCost,
+            availableQuantity: parsedQuantity,
+            images: imagePath ? [imagePath] : [],
+          },
         });
 
-        const currentHiddenValue = Boolean(rewardQuery.data?.isHidden);
+        const currentHiddenValue = rewardData?.reward?.isHidden ?? false;
         if (currentHiddenValue !== isHidden) {
-          await setRewardHidden({ id: rewardId ?? "", isHidden });
+          await setRewardHiddenMutation.mutateAsync({
+            rewardId: rewardId ?? "",
+            isHidden,
+          });
         }
       } else {
-        await createReward({
-          tripId,
-          name: trimmedName,
-          description: trimmedDescription,
-          coinCost: parsedCoinCost,
-          availableQuantity: parsedQuantity,
-          image: imagePath || undefined,
-          isHidden,
+        await createRewardMutation.mutateAsync({
+          input: {
+            tripId,
+            name: trimmedName,
+            description: trimmedDescription,
+            coinCost: parsedCoinCost,
+            availableQuantity: parsedQuantity,
+            images: imagePath ? [imagePath] : [],
+            isHidden,
+          },
         });
       }
 
@@ -248,7 +283,7 @@ export function RewardForm({ mode, rewardId }: RewardFormProps) {
 
     const toastId = appToast.loading("Deleting reward...");
     try {
-      await deleteReward({ id: rewardId });
+      await deleteRewardMutation.mutateAsync({ id: rewardId });
       appToast.dismiss(toastId);
       appToast.success("Reward deleted.");
       window.location.href = "/rewards";
@@ -260,11 +295,11 @@ export function RewardForm({ mode, rewardId }: RewardFormProps) {
     }
   };
 
-  if (isEditMode && rewardQuery.isLoading) {
+  if (isEditMode && rewardLoading) {
     return <LoadingSpinner label="Loading reward..." />;
   }
 
-  if (isEditMode && !rewardQuery.data) {
+  if (isEditMode && !rewardData?.reward) {
     return <ErrorMessage message="Could not load reward details." />;
   }
 
@@ -308,7 +343,7 @@ export function RewardForm({ mode, rewardId }: RewardFormProps) {
       {calculatedCoins != null ? (
         <p className="text-sm text-text-secondary">
           Dynamic price preview: {calculatedCoins} coins ({coinCostPercentage}%
-          of {totalPointsQuery.data ?? 0})
+          of {totalPointsData?.totalAvailablePoints?.totalPoints ?? 0})
         </p>
       ) : null}
 

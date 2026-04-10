@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import { useState, useMemo } from "react";
+import { GraphQLClient } from "graphql-request";
+import { env } from "../../../lib/env";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import { Modal } from "../../ui/Modal";
@@ -21,6 +22,27 @@ interface SubmissionCardProps {
     details?: string,
   ) => Promise<void>;
 }
+
+const getAuthToken = () => {
+  const cookies = document.cookie.split(";");
+  const tokenCookie = cookies.find((c) =>
+    c.trim().startsWith("sb-access-token="),
+  );
+  return tokenCookie ? tokenCookie.split("=")[1] : null;
+};
+
+const createGraphQLClient = () => {
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
 
 const formatDateTime = (value: string): string => {
   const date = new Date(value);
@@ -64,7 +86,7 @@ export function SubmissionCard({
   onReject,
   onFlag,
 }: SubmissionCardProps) {
-  const trpcClient = useTRPCClient();
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [flagOpen, setFlagOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState(
@@ -83,19 +105,31 @@ export function SubmissionCard({
 
     setIsOpeningImage(true);
     try {
-      const response = await trpcClient.storage.createDownloadUrl.query({
-        storagePath,
-      });
+      const result = await graphqlClient.request<{
+        createDownloadUrl?: {
+          signedUrl?: string;
+        };
+      }>(
+        `
+        query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+          createDownloadUrl(input: $input) {
+            signedUrl
+          }
+        }
+        `,
+        {
+          input: {
+            storagePath,
+          },
+        },
+      );
 
-      if (
-        typeof response !== "object" ||
-        response === null ||
-        typeof (response as { signedUrl?: unknown }).signedUrl !== "string"
-      ) {
+      const signedUrl = result.createDownloadUrl?.signedUrl;
+      if (!signedUrl) {
         throw new Error("Could not create download URL for image.");
       }
 
-      setPreviewImageUrl((response as { signedUrl: string }).signedUrl);
+      setPreviewImageUrl(signedUrl);
     } catch (error) {
       appToast.error(
         error instanceof Error

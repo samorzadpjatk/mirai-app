@@ -10,7 +10,12 @@ import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import { graphqlClient } from "@mirai-app/graphql-types/client";
+import {
+  useGetChallengeQuery,
+  useCreateChallengeMutation,
+  useUpdateChallengeMutation,
+} from "@mirai-app/graphql-types";
 import { useChallengeForm } from "../../../hooks/admin/useChallengeForm";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";
@@ -25,6 +30,11 @@ import {
   toVotingDurationDraft,
   toVotingDurationHours,
 } from "./challengeFormConstants";
+import type {
+  Challenge,
+  CreateChallengeInput,
+  UpdateChallengeInput,
+} from "@mirai-app/graphql-types";
 
 interface ChallengeFormProps {
   mode: "create" | "edit";
@@ -36,103 +46,44 @@ const createStoragePath = (tripId: string, fileName: string): string => {
   return `challenge/${tripId}/cover-${Date.now()}.${extension}`;
 };
 
-const normalizeChallengeRecord = (value: unknown) => {
-  if (typeof value !== "object" || value === null) {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  if (typeof record.id !== "string") {
+const normalizeChallengeRecord = (challenge: Challenge | null | undefined) => {
+  if (!challenge) {
     return null;
   }
 
   return {
-    id: record.id,
-    name: typeof record.name === "string" ? record.name : "",
-    description:
-      typeof record.description === "string" ? record.description : "",
-    image: typeof record.image === "string" ? record.image : "",
-    submissionType:
-      typeof record.submissionType === "string"
-        ? record.submissionType
-        : "IMAGE",
-    scoringCategory:
-      typeof record.scoringCategory === "string"
-        ? record.scoringCategory
-        : "SPEED",
-    isRecurring: Boolean(record.isRecurring),
-    dailyStartTime:
-      typeof record.dailyStartTime === "string" ? record.dailyStartTime : "",
-    dailyEndTime:
-      typeof record.dailyEndTime === "string" ? record.dailyEndTime : "",
-    basePoints:
-      typeof record.basePoints === "number" ? record.basePoints : null,
-    firstPlacePoints:
-      typeof record.firstPlacePoints === "number"
-        ? record.firstPlacePoints
-        : null,
-    secondPlacePoints:
-      typeof record.secondPlacePoints === "number"
-        ? record.secondPlacePoints
-        : null,
-    thirdPlacePoints:
-      typeof record.thirdPlacePoints === "number"
-        ? record.thirdPlacePoints
-        : null,
-    status:
-      record.status === "HIDDEN" ||
-      record.status === "VISIBLE" ||
-      record.status === "ACTIVE" ||
-      record.status === "VOTING_PHASE" ||
-      record.status === "COMPLETED" ||
-      record.status === "CANCELLED"
-        ? record.status
-        : "HIDDEN",
-    startTime:
-      typeof record.startTime === "string" || record.startTime instanceof Date
-        ? record.startTime
-        : null,
-    endTime:
-      typeof record.endTime === "string" || record.endTime instanceof Date
-        ? record.endTime
-        : null,
-    votingStartTime:
-      typeof record.votingStartTime === "string" ||
-      record.votingStartTime instanceof Date
-        ? record.votingStartTime
-        : null,
-    votingEndTime:
-      typeof record.votingEndTime === "string" ||
-      record.votingEndTime instanceof Date
-        ? record.votingEndTime
-        : null,
-    targetLatitude:
-      typeof record.targetLatitude === "number" ? record.targetLatitude : null,
-    targetLongitude:
-      typeof record.targetLongitude === "number"
-        ? record.targetLongitude
-        : null,
-    qrCodeValue:
-      typeof record.qrCodeValue === "string"
-        ? record.qrCodeValue
-        : typeof record.expectedValue === "string"
-          ? record.expectedValue
-          : "",
+    id: challenge.id,
+    name: challenge.name ?? "",
+    description: challenge.description ?? "",
+    image: challenge.image ?? "",
+    submissionType: challenge.submissionType,
+    scoringCategory: challenge.scoringCategory,
+    isRecurring: challenge.isRecurring ?? false,
+    dailyStartTime: challenge.dailyStartTime ?? "",
+    dailyEndTime: challenge.dailyEndTime ?? "",
+    basePoints: challenge.basePoints ?? null,
+    firstPlacePoints: challenge.firstPlacePoints ?? null,
+    secondPlacePoints: challenge.secondPlacePoints ?? null,
+    thirdPlacePoints: challenge.thirdPlacePoints ?? null,
+    status: challenge.status,
+    startTime: challenge.startTime ?? null,
+    endTime: challenge.endTime ?? null,
+    votingStartTime: challenge.votingStartTime ?? null,
+    votingEndTime: challenge.votingEndTime ?? null,
+    targetLatitude: challenge.targetLatitude ?? null,
+    targetLongitude: challenge.targetLongitude ?? null,
+    qrCodeValue: challenge.qrCodeValue ?? challenge.expectedValue ?? "",
     textExpectedPhrase:
-      typeof record.textExpectedPhrase === "string"
-        ? record.textExpectedPhrase
-        : typeof record.expectedValue === "string" &&
-            record.submissionType === "TEXT"
-          ? record.expectedValue
-          : "",
-    autoApprove: Boolean(record.autoApprove),
+      challenge.textExpectedPhrase ??
+      (challenge.submissionType === "TEXT" ? challenge.expectedValue : "") ??
+      "",
+    autoApprove: challenge.autoApprove ?? false,
   };
 };
 
 export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
-  const trpcClient = useTRPCClient();
   const isEditMode = mode === "edit";
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -168,24 +119,21 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
     verifyFileAccessible,
   } = useWebFileUpload();
 
-  const challengeQuery = useQuery({
-    queryKey: ["challenge", "details", challengeId, tripId],
-    enabled: isEditMode && Boolean(challengeId && tripId),
-    queryFn: async () => {
-      const result = await trpcClient.challenge.getById.query({
-        id: challengeId ?? "",
-        tripId,
-      });
-      return normalizeChallengeRecord(result);
-    },
-  });
+  // GraphQL query for challenge details
+  const challengeQuery = useGetChallengeQuery(
+    graphqlClient,
+    { id: challengeId ?? "", tripId },
+    { enabled: isEditMode && Boolean(challengeId && tripId) },
+  );
 
   useEffect(() => {
-    if (!isEditMode || !challengeQuery.data) {
+    if (!isEditMode || !challengeQuery.data?.challenge) {
       return;
     }
 
-    const source = challengeQuery.data;
+    const source = normalizeChallengeRecord(challengeQuery.data.challenge);
+    if (!source) return;
+
     const votingDraft = toVotingDurationDraft(
       source.votingStartTime,
       source.votingEndTime,
@@ -227,16 +175,29 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
     });
   }, [challengeQuery.data, isEditMode, resetForm]);
 
-  const createChallengeMutation = useMutation({
-    mutationFn: (
-      input: Parameters<typeof trpcClient.challenge.create.mutate>[0],
-    ) => trpcClient.challenge.create.mutate(input),
+  // GraphQL mutations
+  const createChallengeMutation = useCreateChallengeMutation(graphqlClient, {
+    onSuccess: () => {
+      appToast.success("Challenge created successfully.");
+      window.location.href = "/challenges";
+    },
+    onError: (error) => {
+      const message = error.message || "Failed to create challenge.";
+      setFormError(message);
+      appToast.error(message);
+    },
   });
 
-  const updateChallengeMutation = useMutation({
-    mutationFn: (
-      input: Parameters<typeof trpcClient.challenge.update.mutate>[0],
-    ) => trpcClient.challenge.update.mutate(input),
+  const updateChallengeMutation = useUpdateChallengeMutation(graphqlClient, {
+    onSuccess: () => {
+      appToast.success("Challenge updated successfully.");
+      window.location.href = "/challenges";
+    },
+    onError: (error) => {
+      const message = error.message || "Failed to update challenge.";
+      setFormError(message);
+      appToast.error(message);
+    },
   });
 
   const isSaving =
@@ -297,9 +258,7 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
     return null;
   };
 
-  const onSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
 
@@ -338,7 +297,7 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
         await verifyFileAccessible(uploadResult.storagePath);
       }
 
-      const payload: Record<string, unknown> = {
+      const basePayload = {
         tripId,
         name: form.title.trim(),
         description: form.description.trim() || null,
@@ -396,23 +355,17 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
       };
 
       if (isEditMode) {
-        payload.id = challengeId;
-        await updateChallengeMutation.mutateAsync(
-          payload as Parameters<typeof trpcClient.challenge.update.mutate>[0],
-        );
+        await updateChallengeMutation.mutateAsync({
+          ...basePayload,
+          id: challengeId!,
+        } as UpdateChallengeInput);
       } else {
         await createChallengeMutation.mutateAsync(
-          payload as Parameters<typeof trpcClient.challenge.create.mutate>[0],
+          basePayload as CreateChallengeInput,
         );
       }
 
       appToast.dismiss(toastId);
-      appToast.success(
-        isEditMode
-          ? "Challenge updated successfully."
-          : "Challenge created successfully.",
-      );
-      window.location.href = "/challenges";
     } catch (error) {
       appToast.dismiss(toastId);
       const message =
@@ -430,7 +383,7 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
     return <LoadingSpinner label="Loading challenge..." />;
   }
 
-  if (isEditMode && !challengeQuery.data) {
+  if (isEditMode && !challengeQuery.data?.challenge) {
     return <ErrorMessage message="Could not load challenge details." />;
   }
 

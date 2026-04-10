@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { GraphQLClient } from "graphql-request";
+import { useQueryClient } from "@tanstack/react-query";
 import { Select } from "../../ui/Select";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
@@ -11,11 +13,33 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import {
-  useAdminSchedules,
-  type NotificationSchedule,
-} from "@mirai-app/frameworks/trpc/hooks";
+  useGetNotificationSchedulesQuery,
+  useCreateNotificationScheduleMutation,
+  useUpdateNotificationScheduleMutation,
+  useDeleteNotificationScheduleMutation,
+  useToggleNotificationScheduleActiveMutation,
+  type GetNotificationSchedulesQuery,
+} from "@mirai-app/graphql-types";
 import { useTrip } from "../../../contexts/TripContext";
 import { ScheduleCard } from "./ScheduleCard";
+import { env } from "../../../lib/env";
+
+const createGraphQLClient = (): GraphQLClient => {
+  const getAuthToken = (): string | null => {
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((c) =>
+      c.trim().startsWith("sb-access-token="),
+    );
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  };
+
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    },
+  });
+};
 
 interface ScheduleFormState {
   name: string;
@@ -88,6 +112,9 @@ function buildScheduleWindow(dateValue: string, timeValue: string) {
   };
 }
 
+type NotificationSchedule =
+  GetNotificationSchedulesQuery["notificationSchedules"]["schedules"][number];
+
 export function SchedulesPage() {
   const { selectedTrip, isLoading: tripsLoading } = useTrip();
   const selectedTripId = selectedTrip?.id ?? "";
@@ -104,19 +131,98 @@ export function SchedulesPage() {
     time: getDefaultTimeString(),
   }));
 
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+  const queryClient = useQueryClient();
+
   const {
-    schedules,
+    data: schedulesData,
     isLoading,
     refetch,
-    createSchedule,
-    updateSchedule,
-    deleteSchedule,
-    toggleSchedule,
-    isCreating,
-    isUpdating,
-    isDeleting,
-    isToggling,
-  } = useAdminSchedules(selectedTripId || undefined);
+  } = useGetNotificationSchedulesQuery(
+    graphqlClient,
+    {
+      tripId: selectedTripId || undefined,
+      limit: 100,
+      offset: 0,
+    },
+    {
+      enabled: Boolean(selectedTripId),
+    },
+  );
+
+  const schedules = useMemo(
+    () => schedulesData?.notificationSchedules?.schedules ?? [],
+    [schedulesData],
+  );
+
+  const createScheduleMutation = useCreateNotificationScheduleMutation(
+    graphqlClient,
+    {
+      onSuccess: () => {
+        appToast.success("Schedule created.");
+        queryClient.invalidateQueries({
+          queryKey: ["GetNotificationSchedules"],
+        });
+        closeCreateModal();
+      },
+      onError: (error) => {
+        appToast.error(
+          error instanceof Error ? error.message : "Create failed.",
+        );
+      },
+    },
+  );
+
+  const updateScheduleMutation = useUpdateNotificationScheduleMutation(
+    graphqlClient,
+    {
+      onSuccess: () => {
+        appToast.success("Schedule updated.");
+        queryClient.invalidateQueries({
+          queryKey: ["GetNotificationSchedules"],
+        });
+        closeEditModal();
+      },
+      onError: (error) => {
+        appToast.error(
+          error instanceof Error ? error.message : "Update failed.",
+        );
+      },
+    },
+  );
+
+  const deleteScheduleMutation = useDeleteNotificationScheduleMutation(
+    graphqlClient,
+    {
+      onSuccess: () => {
+        appToast.success("Schedule deleted.");
+        queryClient.invalidateQueries({
+          queryKey: ["GetNotificationSchedules"],
+        });
+      },
+      onError: (error) => {
+        appToast.error(
+          error instanceof Error ? error.message : "Delete failed.",
+        );
+      },
+    },
+  );
+
+  const toggleScheduleMutation = useToggleNotificationScheduleActiveMutation(
+    graphqlClient,
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ["GetNotificationSchedules"],
+        });
+      },
+      onError: (error) => {
+        appToast.error(
+          error instanceof Error ? error.message : "Toggle failed.",
+        );
+      },
+    },
+  );
 
   const filteredSchedules = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase();
@@ -135,8 +241,7 @@ export function SchedulesPage() {
 
       return (
         schedule.name.toLowerCase().includes(normalized) ||
-        schedule.message.toLowerCase().includes(normalized) ||
-        (schedule.tripName ?? "").toLowerCase().includes(normalized)
+        schedule.notificationType.toLowerCase().includes(normalized)
       );
     });
   }, [schedules, searchTerm, statusFilter]);
@@ -168,7 +273,7 @@ export function SchedulesPage() {
 
     setFormState({
       name: schedule.name,
-      message: schedule.notificationBody ?? schedule.message,
+      message: schedule.notificationBody ?? "",
       date,
       time,
     });
@@ -187,27 +292,22 @@ export function SchedulesPage() {
 
     try {
       const window = buildScheduleWindow(formState.date, formState.time);
-      const toastId = appToast.loading("Creating schedule...");
 
-      await createSchedule({
+      await createScheduleMutation.mutateAsync({
         name: formState.name.trim(),
         tripId: selectedTripId,
         notificationType: "custom",
         notificationTitle: formState.name.trim(),
         notificationBody: formState.message.trim(),
         notificationUrl: "/ranking",
-        startDate: window.startDate,
-        endDate: window.endDate,
+        startDate: window.startDate.toISOString(),
+        endDate: window.endDate.toISOString(),
         hour: window.hour,
         minute: window.minute,
         isActive: true,
       });
-
-      appToast.dismiss(toastId);
-      appToast.success("Schedule created.");
-      closeCreateModal();
-    } catch (error) {
-      appToast.error(error instanceof Error ? error.message : "Create failed.");
+    } catch {
+      // Error handled by mutation onError
     }
   };
 
@@ -223,25 +323,20 @@ export function SchedulesPage() {
 
     try {
       const window = buildScheduleWindow(formState.date, formState.time);
-      const toastId = appToast.loading("Updating schedule...");
 
-      await updateSchedule({
+      await updateScheduleMutation.mutateAsync({
         id: editingSchedule.id,
         name: formState.name.trim(),
         notificationTitle: formState.name.trim(),
         notificationBody: formState.message.trim(),
         notificationUrl: "/ranking",
-        startDate: window.startDate,
-        endDate: window.endDate,
+        startDate: window.startDate.toISOString(),
+        endDate: window.endDate.toISOString(),
         hour: window.hour,
         minute: window.minute,
       });
-
-      appToast.dismiss(toastId);
-      appToast.success("Schedule updated.");
-      closeEditModal();
-    } catch (error) {
-      appToast.error(error instanceof Error ? error.message : "Update failed.");
+    } catch {
+      // Error handled by mutation onError
     }
   };
 
@@ -251,22 +346,18 @@ export function SchedulesPage() {
       return;
     }
 
-    const toastId = appToast.loading("Deleting schedule...");
     try {
-      await deleteSchedule(scheduleId);
-      appToast.dismiss(toastId);
-      appToast.success("Schedule deleted.");
-    } catch (error) {
-      appToast.dismiss(toastId);
-      appToast.error(error instanceof Error ? error.message : "Delete failed.");
+      await deleteScheduleMutation.mutateAsync({ id: scheduleId });
+    } catch {
+      // Error handled by mutation onError
     }
   };
 
   const handleToggle = async (scheduleId: string) => {
     try {
-      await toggleSchedule(scheduleId);
-    } catch (error) {
-      appToast.error(error instanceof Error ? error.message : "Toggle failed.");
+      await toggleScheduleMutation.mutateAsync({ id: scheduleId });
+    } catch {
+      // Error handled by mutation onError
     }
   };
 
@@ -325,8 +416,8 @@ export function SchedulesPage() {
               onEdit={openEditModal}
               onDelete={handleDelete}
               onToggle={handleToggle}
-              isDeleting={isDeleting}
-              isToggling={isToggling}
+              isDeleting={deleteScheduleMutation.isPending}
+              isToggling={toggleScheduleMutation.isPending}
             />
           ))}
         </div>
@@ -374,8 +465,11 @@ export function SchedulesPage() {
             <Button variant="secondary" onClick={closeCreateModal}>
               Cancel
             </Button>
-            <Button disabled={isCreating} onClick={() => void handleCreate()}>
-              {isCreating ? "Creating..." : "Create"}
+            <Button
+              disabled={createScheduleMutation.isPending}
+              onClick={() => void handleCreate()}
+            >
+              {createScheduleMutation.isPending ? "Creating..." : "Create"}
             </Button>
           </div>
         </div>
@@ -423,8 +517,11 @@ export function SchedulesPage() {
             <Button variant="secondary" onClick={closeEditModal}>
               Cancel
             </Button>
-            <Button disabled={isUpdating} onClick={() => void handleUpdate()}>
-              {isUpdating ? "Updating..." : "Update"}
+            <Button
+              disabled={updateScheduleMutation.isPending}
+              onClick={() => void handleUpdate()}
+            >
+              {updateScheduleMutation.isPending ? "Updating..." : "Update"}
             </Button>
           </div>
         </div>

@@ -6,11 +6,11 @@ import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import {
-  useAdminChallenges,
-  type ChallengeFilterStatus,
-  type ChallengeSortBy,
-} from "@mirai-app/frameworks/trpc/hooks";
+import { useGetChallengesQuery, graphqlClient } from "@mirai-app/graphql-types";
+import type {
+  ChallengeFilterStatus,
+  ChallengeSortBy,
+} from "@mirai-app/graphql-types";
 import { ChallengeCard } from "./ChallengeCard";
 import { useTrip } from "../../../contexts/TripContext";
 
@@ -45,25 +45,60 @@ export function ChallengesPage() {
     useState<ChallengeFilterStatus>("ALL");
   const [sortBy, setSortBy] = useState<ChallengeSortBy>("priority");
 
-  const {
-    challenges,
-    allChallengesCount,
-    statusCounts,
-    challengesLoading,
-    challengesHasNextPage,
-    challengesFetchingNextPage,
-    fetchMoreChallenges,
-    challengesPagination,
-  } = useAdminChallenges(tripId, searchTerm, statusFilter, sortBy);
+  const challengesQuery = useGetChallengesQuery(
+    graphqlClient,
+    {
+      tripId,
+      search: searchTerm || undefined,
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+      sortBy,
+      first: 20,
+    },
+    { enabled: Boolean(tripId) },
+  );
+
+  const challenges = useMemo(() => {
+    return (
+      challengesQuery.data?.challenges.edges.map((edge) => edge.node) ?? []
+    );
+  }, [challengesQuery.data]);
+
+  const pagination = challengesQuery.data?.challenges.pageInfo;
+  const allChallengesCount = challengesQuery.data?.challenges.totalCount ?? 0;
+
+  const statusCounts = useMemo(() => {
+    const counts = {
+      ALL: allChallengesCount,
+      HIDDEN: 0,
+      VISIBLE: 0,
+      ACTIVE: 0,
+      VOTING_PHASE: 0,
+      COMPLETED: 0,
+      CANCELLED: 0,
+    };
+    // Count from current fetched challenges
+    challenges.forEach((c) => {
+      if (c.status && counts[c.status as keyof typeof counts] !== undefined) {
+        counts[c.status as keyof typeof counts]++;
+      }
+    });
+    return counts;
+  }, [challenges, allChallengesCount]);
 
   const totalCountLabel = useMemo(() => {
-    const total = challengesPagination?.total;
+    const total = allChallengesCount;
     if (typeof total !== "number") {
       return null;
     }
 
     return `${challenges.length} / ${total} challenges`;
-  }, [challenges.length, challengesPagination?.total]);
+  }, [challenges.length, allChallengesCount]);
+
+  const fetchMoreChallenges = async () => {
+    if (pagination?.hasNextPage && pagination.endCursor) {
+      await challengesQuery.fetchNextPage();
+    }
+  };
 
   if (!tripId) {
     return <ErrorMessage message="Please select a trip first." />;
@@ -130,11 +165,11 @@ export function ChallengesPage() {
         </p>
       </div>
 
-      {challengesLoading ? (
+      {challengesQuery.isLoading ? (
         <LoadingSpinner label="Loading challenges..." />
       ) : null}
 
-      {!challengesLoading && challenges.length === 0 ? (
+      {!challengesQuery.isLoading && challenges.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border-subtle bg-card p-6 text-sm text-text-secondary">
           No challenges found for this filter.
         </p>
@@ -155,14 +190,16 @@ export function ChallengesPage() {
         <p className="text-sm text-text-muted">{totalCountLabel}</p>
       ) : null}
 
-      {challengesHasNextPage ? (
+      {pagination?.hasNextPage ? (
         <div>
           <Button
             variant="secondary"
-            disabled={challengesFetchingNextPage}
+            disabled={challengesQuery.isFetchingNextPage}
             onClick={() => void fetchMoreChallenges()}
           >
-            {challengesFetchingNextPage ? "Loading more..." : "Load more"}
+            {challengesQuery.isFetchingNextPage
+              ? "Loading more..."
+              : "Load more"}
           </Button>
         </div>
       ) : null}

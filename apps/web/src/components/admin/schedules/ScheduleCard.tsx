@@ -2,7 +2,10 @@
 
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
-import type { NotificationSchedule } from "@mirai-app/frameworks/trpc/hooks";
+import type { GetNotificationSchedulesQuery } from "@mirai-app/graphql-types";
+
+type NotificationSchedule =
+  GetNotificationSchedulesQuery["notificationSchedules"]["schedules"][number];
 
 interface ScheduleCardProps {
   schedule: NotificationSchedule;
@@ -39,7 +42,7 @@ export function ScheduleCard({
             {schedule.name}
           </h3>
           <p className="mt-1 text-sm text-text-secondary">
-            {schedule.message || "No message"}
+            {schedule.notificationBody || "No message"}
           </p>
         </div>
         <span
@@ -56,11 +59,12 @@ export function ScheduleCard({
       <div className="grid gap-2 text-sm text-text-secondary md:grid-cols-2">
         <p>
           <span className="font-medium text-text-primary">Trip:</span>{" "}
-          {schedule.tripName ?? "Global"}
+          {schedule.tripId ?? "Global"}
         </p>
         <p>
           <span className="font-medium text-text-primary">Trigger:</span>{" "}
-          {schedule.triggerTime}
+          {schedule.hour.toString().padStart(2, "0")}:
+          {schedule.minute.toString().padStart(2, "0")}
         </p>
         <p>
           <span className="font-medium text-text-primary">Start:</span>{" "}

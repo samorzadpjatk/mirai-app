@@ -1,21 +1,21 @@
 "use client";
 
-import type { AdminGroup } from "@mirai-app/frameworks/trpc/hooks";
+import type { GetGroupsByTripQuery } from "@mirai-app/graphql-types";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 
+type Group = GetGroupsByTripQuery["groupsByTrip"]["groups"][number];
+
 interface GroupCardProps {
-  group: AdminGroup;
+  group: Group;
   onAssign?: () => void;
   editHref?: string;
 }
 
 export function GroupCard({ group, onAssign, editHref }: GroupCardProps) {
-  const organizerName = group.organizer
-    ? [group.organizer.firstName, group.organizer.lastName]
-        .filter(Boolean)
-        .join(" ") || "Unknown"
-    : "Not assigned";
+  // Note: GraphQL Group type doesn't include organizer info directly
+  // The organizer name display is simplified
+  const organizerName = "Not assigned";
 
   const actionCount = Number(Boolean(editHref)) + Number(Boolean(onAssign));
 
@@ -40,7 +40,8 @@ export function GroupCard({ group, onAssign, editHref }: GroupCardProps) {
       </div>
 
       <div className="text-sm text-text-secondary">
-        {group._count.participants} members
+        {/* Note: GraphQL Group type doesn't include _count.participants */}
+        Group members
       </div>
 
       <div

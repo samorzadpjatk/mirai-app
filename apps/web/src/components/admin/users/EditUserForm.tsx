@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminUsers } from "@mirai-app/frameworks/trpc/hooks";
+import {
+  useGetUserQuery,
+  useUpdateUserMutation,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "../../../lib/graphql-client";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
 
@@ -18,21 +21,21 @@ interface EditUserFormProps {
 export function EditUserForm({ userId }: EditUserFormProps) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
-  const {
-    getUserDetails,
-    updateName,
-    updateWristNumber,
-    updateHouseNumber,
-    isUpdatingName,
-    isUpdatingWristNumber,
-    isUpdatingHouseNumber,
-  } = useAdminUsers(tripId, "", "firstName");
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["users", "details", tripId, userId],
-    queryFn: () => getUserDetails(userId),
-    enabled: Boolean(tripId && userId),
-  });
+  const {
+    data: userData,
+    isLoading,
+    error,
+  } = useGetUserQuery(
+    graphqlClient,
+    { id: userId },
+    {
+      enabled: Boolean(tripId && userId),
+    },
+  );
+
+  const updateUserMutation = useUpdateUserMutation(graphqlClient);
+  const isSaving = updateUserMutation.isPending;
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -41,27 +44,22 @@ export function EditUserForm({ userId }: EditUserFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!data) {
+    if (!userData?.user) {
       return;
     }
 
-    setFirstName(data.firstName ?? "");
-    setLastName(data.lastName ?? "");
-    setWristNumber(data.wristNumber ?? "");
-    setHouseNumber(data.houseNumber ?? "");
-  }, [data]);
-
-  const isSaving =
-    isUpdatingName || isUpdatingWristNumber || isUpdatingHouseNumber;
+    setFirstName(userData.user.firstName ?? "");
+    setLastName(userData.user.lastName ?? "");
+    setWristNumber(userData.user.wristNumber ?? "");
+    setHouseNumber(userData.user.houseNumber ?? "");
+  }, [userData]);
 
   const canSubmit = useMemo(
     () => firstName.trim().length > 0 && lastName.trim().length > 0,
     [firstName, lastName],
   );
 
-  const onSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
 
@@ -73,14 +71,15 @@ export function EditUserForm({ userId }: EditUserFormProps) {
     const toastId = appToast.loading("Saving user changes...");
 
     try {
-      await updateName({
-        userId,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
+      await updateUserMutation.mutateAsync({
+        input: {
+          id: userId,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          wristNumber: wristNumber || undefined,
+          houseNumber: houseNumber || undefined,
+        },
       });
-
-      await updateWristNumber({ userId, wristNumber });
-      await updateHouseNumber({ userId, houseNumber });
 
       appToast.dismiss(toastId);
       appToast.success("User updated successfully.");
@@ -100,9 +99,11 @@ export function EditUserForm({ userId }: EditUserFormProps) {
     return <LoadingSpinner label="Loading user..." />;
   }
 
-  if (error || !data) {
+  if (error || !userData?.user) {
     return <ErrorMessage message="Could not load user details." />;
   }
+
+  const data = userData.user;
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">

@@ -1,14 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { GraphQLClient } from "graphql-request";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { GroupCard } from "./GroupCard";
 import { GroupAssignmentModal } from "./GroupAssignmentModal";
-import { useAdminGroups } from "@mirai-app/frameworks/trpc/hooks";
+import { useGetGroupsByTripQuery } from "@mirai-app/graphql-types";
 import { useTrip } from "../../../contexts/TripContext";
+import { env } from "../../../lib/env";
+
+const DEFAULT_PAGE_SIZE = 20;
+
+const createGraphQLClient = (): GraphQLClient => {
+  const getAuthToken = (): string | null => {
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((c) =>
+      c.trim().startsWith("sb-access-token="),
+    );
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  };
+
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    },
+  });
+};
 
 export function GroupsPage() {
   const { selectedTrip } = useTrip();
@@ -16,24 +37,55 @@ export function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [pageOffset, setPageOffset] = useState(0);
+
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+
   const {
-    groups,
-    groupsLoading,
-    groupsError,
-    groupsHasNextPage,
-    groupsFetchingNextPage,
-    fetchMoreGroups,
-    groupsPagination,
-  } = useAdminGroups(tripId, searchTerm);
+    data: groupsData,
+    isLoading: groupsLoading,
+    error: groupsError,
+    isFetching,
+  } = useGetGroupsByTripQuery(
+    graphqlClient,
+    {
+      tripId,
+      pagination: {
+        limit: DEFAULT_PAGE_SIZE,
+        offset: pageOffset,
+      },
+    },
+    {
+      enabled: Boolean(tripId),
+      staleTime: 30000,
+    },
+  );
+
+  const groups = useMemo(() => {
+    return groupsData?.groupsByTrip?.groups ?? [];
+  }, [groupsData]);
+
+  const pagination = useMemo(() => {
+    return groupsData?.groupsByTrip?.pagination;
+  }, [groupsData]);
+
+  const groupsHasNextPage = pagination?.hasMore ?? false;
+  const groupsFetchingNextPage = isFetching && pageOffset > 0;
 
   const totalCountLabel = useMemo(() => {
-    const total = groupsPagination?.total;
+    const total = pagination?.total;
     if (typeof total !== "number") {
       return null;
     }
 
     return `${groups.length} / ${total} groups`;
-  }, [groups.length, groupsPagination?.total]);
+  }, [groups.length, pagination?.total]);
+
+  const fetchMoreGroups = () => {
+    if (groupsHasNextPage && pagination) {
+      setPageOffset(pagination.offset + pagination.limit);
+    }
+  };
 
   if (!tripId) {
     return <ErrorMessage message="Please select a trip first." />;

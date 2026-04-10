@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import { GraphQLClient } from "graphql-request";
+import { env } from "../../../lib/env";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import type { VotingSubmission } from "../../../hooks/admin/useStaffVoting";
@@ -14,6 +16,27 @@ interface VotingCardProps {
   disabled?: boolean;
 }
 
+const getAuthToken = () => {
+  const cookies = document.cookie.split(";");
+  const tokenCookie = cookies.find((c) =>
+    c.trim().startsWith("sb-access-token="),
+  );
+  return tokenCookie ? tokenCookie.split("=")[1] : null;
+};
+
+const createGraphQLClient = () => {
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
+
 export function VotingCard({
   submission,
   title,
@@ -21,26 +44,32 @@ export function VotingCard({
   onPick,
   disabled = false,
 }: VotingCardProps) {
-  const trpcClient = useTRPCClient();
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
 
   const imageQuery = useQuery({
     queryKey: ["voting-card-image", submission.id, submission.imagePath],
     enabled: Boolean(submission.imagePath),
     queryFn: async () => {
-      const result = await trpcClient.storage.createDownloadUrl.query({
-        storagePath: submission.imagePath,
-      });
+      const result = await graphqlClient.request<{
+        createDownloadUrl?: {
+          signedUrl?: string;
+        };
+      }>(
+        `
+        query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+          createDownloadUrl(input: $input) {
+            signedUrl
+          }
+        }
+        `,
+        {
+          input: {
+            storagePath: submission.imagePath,
+          },
+        },
+      );
 
-      if (
-        typeof result === "object" &&
-        result !== null &&
-        "signedUrl" in result &&
-        typeof (result as { signedUrl?: unknown }).signedUrl === "string"
-      ) {
-        return (result as { signedUrl: string }).signedUrl;
-      }
-
-      return null;
+      return result.createDownloadUrl?.signedUrl ?? null;
     },
   });
 

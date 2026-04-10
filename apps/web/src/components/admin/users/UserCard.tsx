@@ -1,17 +1,14 @@
 "use client";
 
-import type { AdminUser } from "@mirai-app/frameworks/trpc/hooks";
+import type { User } from "@mirai-app/graphql-types";
 import { Card } from "../../ui/Card";
 
 interface UserCardProps {
-  user: AdminUser;
+  user: User;
 }
 
 export function UserCard({ user }: UserCardProps) {
-  const userName =
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
-    (user.email ?? "Unknown user");
-  const groupName = user.group?.name ?? "Not selected";
+  const userName = user.fullName || user.email || "Unknown user";
   const bannedUntilLabel = user.bannedUntil
     ? new Date(user.bannedUntil).toLocaleString()
     : null;
@@ -29,7 +26,9 @@ export function UserCard({ user }: UserCardProps) {
               Banned until {bannedUntilLabel}
             </p>
           ) : null}
-          <p className="mt-1 text-sm text-primary">Group: {groupName}</p>
+          <p className="mt-1 text-sm text-primary">
+            Group: {user.group?.name ?? "Not selected"}
+          </p>
         </div>
 
         {user.role === "ADMIN" ? (

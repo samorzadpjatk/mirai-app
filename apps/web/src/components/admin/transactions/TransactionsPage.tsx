@@ -6,9 +6,10 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { useTrip } from "../../../contexts/TripContext";
 import {
-  useAdminTransactions,
-  type TransactionItem,
-} from "@mirai-app/frameworks/trpc/hooks";
+  useGetCoinTransactionsQuery,
+  type CoinTransaction,
+} from "@mirai-app/graphql-types";
+import { graphqlClient } from "../../../lib/graphql-client";
 import { TransactionsFilters } from "./TransactionsFilters";
 import { TransactionCard } from "./TransactionCard";
 
@@ -24,23 +25,35 @@ export function TransactionsPage() {
   const [dateTo, setDateTo] = useState("");
 
   const {
-    transactions,
-    groups,
+    data: transactionsData,
     isLoading,
-    isRefetching,
+    isFetching,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-    groupsLoading,
     refetch,
-  } = useAdminTransactions(selectedTripId);
+  } = useGetCoinTransactionsQuery(
+    graphqlClient,
+    {
+      tripId: selectedTripId,
+      pagination: { limit: 50, offset: 0 },
+    },
+    {
+      enabled: Boolean(selectedTripId),
+    },
+  );
 
-  const filteredTransactions = useMemo<TransactionItem[]>(() => {
+  const transactions = useMemo(
+    () => transactionsData?.coinTransactions?.transactions ?? [],
+    [transactionsData],
+  );
+
+  const filteredTransactions = useMemo<CoinTransaction[]>(() => {
     let filtered = transactions;
 
     if (selectedGroupId !== "all") {
       filtered = filtered.filter(
-        (transaction) => transaction.group.id === selectedGroupId,
+        (transaction) => transaction.group?.id === selectedGroupId,
       );
     }
 
@@ -74,10 +87,7 @@ export function TransactionsPage() {
     }
 
     return filtered.filter((transaction) => {
-      const adminName =
-        `${transaction.admin.firstName} ${transaction.admin.lastName}`
-          .trim()
-          .toLowerCase();
+      const adminName = (transaction.admin?.fullName ?? "").toLowerCase();
       return adminName.includes(normalized);
     });
   }, [
@@ -108,6 +118,17 @@ export function TransactionsPage() {
     };
   }, [filteredTransactions]);
 
+  // Extract groups from transactions for filter dropdown
+  const groups = useMemo(() => {
+    const groupMap = new Map<string, { id: string; name: string }>();
+    transactions.forEach((t) => {
+      if (t.group && !groupMap.has(t.group.id)) {
+        groupMap.set(t.group.id, t.group);
+      }
+    });
+    return Array.from(groupMap.values());
+  }, [transactions]);
+
   if (tripsLoading) {
     return <LoadingSpinner label="Loading trips..." />;
   }
@@ -126,12 +147,12 @@ export function TransactionsPage() {
       <div className="flex items-center gap-2">
         <Button
           variant="secondary"
-          disabled={!selectedTripId || isRefetching}
+          disabled={!selectedTripId || isFetching}
           onClick={() => {
             void refetch();
           }}
         >
-          {isRefetching ? "Refreshing..." : "Refresh"}
+          {isFetching ? "Refreshing..." : "Refresh"}
         </Button>
       </div>
 
@@ -155,14 +176,11 @@ export function TransactionsPage() {
         />
       ) : null}
 
-      {selectedTripId && (isLoading || groupsLoading) ? (
+      {selectedTripId && isLoading ? (
         <LoadingSpinner label="Loading transactions..." />
       ) : null}
 
-      {selectedTripId &&
-      !isLoading &&
-      !groupsLoading &&
-      filteredTransactions.length === 0 ? (
+      {selectedTripId && !isLoading && filteredTransactions.length === 0 ? (
         <ErrorMessage message="No transactions found for current filters." />
       ) : null}
 

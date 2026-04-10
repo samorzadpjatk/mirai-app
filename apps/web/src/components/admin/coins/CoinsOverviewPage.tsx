@@ -1,18 +1,57 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { GraphQLClient } from "graphql-request";
 import { Input } from "../../ui/Input";
 import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { useTrip } from "../../../contexts/TripContext";
-import { useAdminCoins } from "@mirai-app/frameworks/trpc/hooks";
+import { useGetGroupsByTripQuery } from "@mirai-app/graphql-types";
+import { env } from "../../../lib/env";
+
+const createGraphQLClient = (): GraphQLClient => {
+  const getAuthToken = (): string | null => {
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((c) =>
+      c.trim().startsWith("sb-access-token="),
+    );
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  };
+
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
 
 export function CoinsOverviewPage() {
   const { selectedTrip, isLoading: tripsLoading } = useTrip();
   const selectedTripId = selectedTrip?.id ?? "";
   const [searchTerm, setSearchTerm] = useState("");
-  const { groups, groupsLoading } = useAdminCoins(selectedTripId);
+
+  const client = useMemo(() => createGraphQLClient(), []);
+
+  const { data, isLoading: groupsLoading } = useGetGroupsByTripQuery(
+    client,
+    {
+      tripId: selectedTripId,
+    },
+    {
+      enabled: Boolean(selectedTripId),
+      staleTime: 30000,
+    },
+  );
+
+  const groups = useMemo(() => {
+    return data?.groupsByTrip?.groups ?? [];
+  }, [data]);
 
   const filteredGroups = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase();
@@ -21,16 +60,7 @@ export function CoinsOverviewPage() {
     }
 
     return groups.filter((group) => {
-      const organizerName = group.organizer
-        ? `${group.organizer.firstName ?? ""} ${group.organizer.lastName ?? ""}`
-            .trim()
-            .toLowerCase()
-        : "";
-
-      return (
-        group.name.toLowerCase().includes(normalized) ||
-        organizerName.includes(normalized)
-      );
+      return group.name.toLowerCase().includes(normalized);
     });
   }, [groups, searchTerm]);
 
@@ -67,7 +97,7 @@ export function CoinsOverviewPage() {
           label="Search groups"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Group or organizer"
+          placeholder="Search by group name"
           disabled={!selectedTripId}
         />
       </div>
@@ -110,11 +140,6 @@ export function CoinsOverviewPage() {
       {selectedTripId && filteredGroups.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredGroups.map((group) => {
-            const organizerName = group.organizer
-              ? `${group.organizer.firstName ?? ""} ${group.organizer.lastName ?? ""}`.trim() ||
-                "Unknown"
-              : "Not assigned";
-
             const addHref = `/coins/operation?mode=add&groupId=${encodeURIComponent(group.id)}`;
             const removeHref = `/coins/operation?mode=remove&groupId=${encodeURIComponent(group.id)}`;
 
@@ -126,10 +151,7 @@ export function CoinsOverviewPage() {
                       {group.name}
                     </h3>
                     <p className="text-sm text-text-secondary">
-                      Organizer: {organizerName}
-                    </p>
-                    <p className="text-xs text-text-muted">
-                      {group._count.participants} members
+                      Code: {group.code}
                     </p>
                   </div>
                   <span className="rounded-full bg-accent px-3 py-1 text-sm font-semibold text-white">

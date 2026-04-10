@@ -6,9 +6,18 @@ import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminUsers, type UserSearchField } from "@mirai-app/frameworks/trpc/hooks";
+import { useGetUsersQuery, type User } from "@mirai-app/graphql-types";
+import { graphqlClient } from "../../../lib/graphql-client";
 import { UserCard } from "./UserCard";
 import { useTrip } from "../../../contexts/TripContext";
+
+type UserSearchField =
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "wristNumber"
+  | "houseNumber"
+  | "groupName";
 
 const searchFieldOptions: { value: UserSearchField; label: string }[] = [
   { value: "firstName", label: "First name" },
@@ -29,23 +38,60 @@ export function UsersPage() {
   const [field, setField] = useState<UserSearchField>("firstName");
 
   const {
-    users,
-    usersLoading,
-    usersError,
-    usersHasNextPage,
-    usersFetchingNextPage,
-    fetchMoreUsers,
-    usersPagination,
-  } = useAdminUsers(tripId, searchTerm, field);
+    data: usersData,
+    isLoading: usersLoading,
+    error: usersError,
+    hasNextPage: usersHasNextPage,
+    isFetchingNextPage: usersFetchingNextPage,
+    fetchNextPage: fetchMoreUsers,
+  } = useGetUsersQuery(
+    graphqlClient,
+    {
+      limit: 50,
+      offset: 0,
+    },
+    {
+      enabled: Boolean(tripId),
+    },
+  );
+
+  const users = useMemo(() => {
+    let result = usersData?.users ?? [];
+
+    // Client-side filtering based on search term and field
+    if (searchTerm.trim()) {
+      const normalized = searchTerm.trim().toLowerCase();
+      result = result.filter((user: User) => {
+        switch (field) {
+          case "firstName":
+            return user.firstName?.toLowerCase().includes(normalized);
+          case "lastName":
+            return user.lastName?.toLowerCase().includes(normalized);
+          case "email":
+            return user.email?.toLowerCase().includes(normalized);
+          case "wristNumber":
+            return user.wristNumber?.toLowerCase().includes(normalized);
+          case "houseNumber":
+            return user.houseNumber?.toLowerCase().includes(normalized);
+          case "groupName":
+            return user.group?.name?.toLowerCase().includes(normalized);
+          default:
+            return true;
+        }
+      });
+    }
+
+    return result;
+  }, [usersData?.users, searchTerm, field]);
 
   const totalCountLabel = useMemo(() => {
-    const totalCount = usersPagination?.totalCount;
+    const totalCount = usersData?.totalCount;
     if (typeof totalCount !== "number") {
       return null;
     }
 
     return `${users.length} / ${totalCount} users`;
-  }, [users.length, usersPagination?.totalCount]);
+  }, [users.length, usersData?.totalCount]);
 
   if (!tripId) {
     return <ErrorMessage message="Please select a trip first." />;

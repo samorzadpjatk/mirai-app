@@ -1,8 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import { GraphQLClient } from "graphql-request";
+import {
+  useGetVotesByChallengeQuery,
+  type GetVotesByChallengeQuery,
+} from "@mirai-app/graphql-types";
+import { env } from "../../../lib/env";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 import { ErrorMessage } from "../../ui/ErrorMessage";
@@ -20,6 +24,27 @@ interface JudgingPageProps {
   challengeId: string;
 }
 
+const getAuthToken = () => {
+  const cookies = document.cookie.split(";");
+  const tokenCookie = cookies.find((c) =>
+    c.trim().startsWith("sb-access-token="),
+  );
+  return tokenCookie ? tokenCookie.split("=")[1] : null;
+};
+
+const createGraphQLClient = () => {
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
+
 const formatDate = (value: string): string => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -32,7 +57,8 @@ const formatDate = (value: string): string => {
 export function JudgingPage({ challengeId }: JudgingPageProps) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
-  const trpcClient = useTRPCClient();
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+
   const {
     challenge,
     submissions,
@@ -52,19 +78,14 @@ export function JudgingPage({ challengeId }: JudgingPageProps) {
     "ALL" | "PENDING" | "APPROVED" | "REJECTED"
   >("ALL");
 
-  const challengeVotesQuery = useQuery({
-    queryKey: ["challenge", "votes", challengeId],
-    enabled: Boolean(challengeId),
-    queryFn: async () => {
-      const result = await trpcClient.challengeVote.getByChallenge.query({
-        challengeId,
-      });
-
-      return Array.isArray(result)
-        ? result.filter((item) => typeof item === "object" && item !== null)
-        : [];
+  // Votes query using generated GraphQL hook
+  const challengeVotesQuery = useGetVotesByChallengeQuery(
+    graphqlClient,
+    { challengeId },
+    {
+      enabled: Boolean(challengeId),
     },
-  });
+  );
 
   const filteredSubmissions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -177,7 +198,8 @@ export function JudgingPage({ challengeId }: JudgingPageProps) {
           {approvedSubmissions.length} • Rejected {rejectedSubmissions.length}
         </p>
         <p className="text-sm text-text-secondary">
-          Votes recorded: {challengeVotesQuery.data?.length ?? 0}
+          Votes recorded:{" "}
+          {challengeVotesQuery.data?.votesByChallenge?.votes?.length ?? 0}
         </p>
       </Card>
 

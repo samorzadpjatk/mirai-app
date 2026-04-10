@@ -1,14 +1,37 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { GraphQLClient } from "graphql-request";
 import type { FormEvent } from "react";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminGroups } from "@mirai-app/frameworks/trpc/hooks";
+import {
+  useCreateGroupMutation,
+  useGetUsersQuery,
+} from "@mirai-app/graphql-types";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
+import { env } from "../../../lib/env";
+
+const createGraphQLClient = (): GraphQLClient => {
+  const getAuthToken = (): string | null => {
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((c) =>
+      c.trim().startsWith("sb-access-token="),
+    );
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  };
+
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    },
+  });
+};
+
 export function CreateGroupForm() {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
@@ -16,10 +39,33 @@ export function CreateGroupForm() {
   const [selectedOrganizerId, setSelectedOrganizerId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { users, usersLoading, createGroup, isCreatingGroup } = useAdminGroups(
-    tripId,
-    "",
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+
+  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery(
+    graphqlClient,
+    {
+      limit: 100,
+      offset: 0,
+    },
+    {
+      enabled: Boolean(tripId),
+    },
   );
+
+  const users = useMemo(() => usersData?.users ?? [], [usersData]);
+
+  const createGroupMutation = useCreateGroupMutation(graphqlClient, {
+    onSuccess: () => {
+      appToast.success("Group created successfully.");
+      window.location.href = "/groups";
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "Failed to create group.";
+      appToast.error(message);
+      setFormError(message);
+    },
+  });
 
   const organizerOptions = useMemo(() => {
     const options = [{ value: "", label: "Select organizer (optional)" }];
@@ -39,9 +85,7 @@ export function CreateGroupForm() {
     return groupName.trim().length > 0;
   }, [groupName]);
 
-  const onSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
 
@@ -54,20 +98,16 @@ export function CreateGroupForm() {
     const toastId = appToast.loading("Creating group...");
 
     try {
-      await createGroup({
-        tripId,
-        name,
-        organizerId: selectedOrganizerId || undefined,
+      await createGroupMutation.mutateAsync({
+        input: {
+          tripId,
+          name,
+          organizerId: selectedOrganizerId || undefined,
+        },
       });
       appToast.dismiss(toastId);
-      appToast.success("Group created successfully.");
-      window.location.href = "/groups";
-    } catch (error) {
+    } catch {
       appToast.dismiss(toastId);
-      const message =
-        error instanceof Error ? error.message : "Failed to create group.";
-      appToast.error(message);
-      setFormError(message);
     }
   };
 
@@ -94,8 +134,11 @@ export function CreateGroupForm() {
       {formError ? <ErrorMessage message={formError} /> : null}
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={!canSubmit || isCreatingGroup}>
-          {isCreatingGroup ? "Creating..." : "Create group"}
+        <Button
+          type="submit"
+          disabled={!canSubmit || createGroupMutation.isPending}
+        >
+          {createGroupMutation.isPending ? "Creating..." : "Create group"}
         </Button>
         <a
           href="/groups"

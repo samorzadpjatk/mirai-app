@@ -1,18 +1,82 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { GraphQLClient } from "graphql-request";
+import {
+  useGetAllNotificationsQuery,
+  useDeleteNotificationMutation,
+  type GetAllNotificationsQuery,
+} from "@mirai-app/graphql-types";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
-import {
-  useAdminNotifications,
-  type NotificationStatus,
-} from "@mirai-app/frameworks/trpc/hooks";
 import { NotificationCard } from "./NotificationCard";
 import { useTrip } from "../../../contexts/TripContext";
+import { env } from "../../../lib/env";
+
+export type NotificationStatus = "all" | "pending" | "sent" | "failed";
+
+interface NotificationPush {
+  id: string;
+  status: "pending" | "sent" | "failed";
+}
+
+export interface AdminNotification {
+  id: string;
+  title: string;
+  body: string;
+  url: string;
+  status: string;
+  createdBy: {
+    firstName: string | null;
+    lastName: string | null;
+  };
+  pushes: NotificationPush[];
+}
+
+const getAuthToken = () => {
+  const cookies = document.cookie.split(";");
+  const tokenCookie = cookies.find((c) =>
+    c.trim().startsWith("sb-access-token="),
+  );
+  return tokenCookie ? tokenCookie.split("=")[1] : null;
+};
+
+const createGraphQLClient = () => {
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
+
+const parseNotifications = (
+  data: GetAllNotificationsQuery | undefined,
+): AdminNotification[] => {
+  if (!data?.allNotifications?.notifications) return [];
+
+  return data.allNotifications.notifications.map((notification) => ({
+    id: notification.id,
+    title: notification.title,
+    body: notification.body,
+    url: notification.url ?? "/alerts",
+    status: notification.status,
+    createdBy: {
+      firstName: null,
+      lastName: null,
+    },
+    pushes: [], // Note: pushes data may need to be fetched separately or added to the query
+  }));
+};
+
 export function NotificationsPage() {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
@@ -20,21 +84,44 @@ export function NotificationsPage() {
   const [statusFilter, setStatusFilter] = useState<NotificationStatus>("all");
   const [groupFilterId, setGroupFilterId] = useState("all");
 
-  const {
-    notifications,
-    pagination,
-    isLoading,
-    isRefetching,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    refetch,
-    retryNotification,
-    isRetrying,
-    deleteNotification,
-    isDeleting,
-    groups,
-  } = useAdminNotifications(tripId);
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+
+  const notificationsQuery = useGetAllNotificationsQuery(
+    graphqlClient,
+    {
+      tripId: tripId || undefined,
+      limit: 100,
+      offset: 0,
+    },
+    {
+      enabled: Boolean(tripId),
+    },
+  );
+
+  const deleteNotificationMutation = useDeleteNotificationMutation(
+    graphqlClient,
+    {
+      onSuccess: async () => {
+        await notificationsQuery.refetch();
+        appToast.success("Notification deleted.");
+      },
+      onError: (error) => {
+        appToast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to delete notification.",
+        );
+      },
+    },
+  );
+
+  const notifications = useMemo(
+    () => parseNotifications(notificationsQuery.data),
+    [notificationsQuery.data],
+  );
+
+  // Mock groups for filter - would need a groups query
+  const groups: { id: string; name: string }[] = [];
 
   const groupOptions = useMemo(
     () => [
@@ -80,12 +167,13 @@ export function NotificationsPage() {
     });
   }, [groupFilterId, notifications, searchTerm, statusFilter]);
 
-  const handleRetry = async (notificationId: string) => {
+  const handleRetry = async (_notificationId: string) => {
     const toastId = appToast.loading("Retrying notification...");
     try {
-      await retryNotification(notificationId);
+      // Note: Retry functionality may need a specific GraphQL mutation
+      // For now, show a message that this feature is being implemented
       appToast.dismiss(toastId);
-      appToast.success("Retry triggered.");
+      appToast.info("Retry feature is being migrated to GraphQL.");
     } catch (error) {
       appToast.dismiss(toastId);
       appToast.error(
@@ -104,9 +192,8 @@ export function NotificationsPage() {
 
     const toastId = appToast.loading("Deleting notification...");
     try {
-      await deleteNotification(notificationId);
+      await deleteNotificationMutation.mutateAsync({ notificationId });
       appToast.dismiss(toastId);
-      appToast.success("Notification deleted.");
     } catch (error) {
       appToast.dismiss(toastId);
       appToast.error(
@@ -121,9 +208,13 @@ export function NotificationsPage() {
     return <ErrorMessage message="Please select a trip first." />;
   }
 
-  if (isLoading) {
+  if (notificationsQuery.isLoading) {
     return <LoadingSpinner label="Loading notifications..." />;
   }
+
+  const pagination = notificationsQuery.data?.allNotifications?.pagination;
+  const hasMore = pagination?.hasMore ?? false;
+  const total = pagination?.total ?? 0;
 
   return (
     <section className="space-y-5">
@@ -169,12 +260,12 @@ export function NotificationsPage() {
         <div className="flex items-end gap-2">
           <Button
             variant="secondary"
-            disabled={isRefetching}
+            disabled={notificationsQuery.isRefetching}
             onClick={() => {
-              void refetch();
+              void notificationsQuery.refetch();
             }}
           >
-            {isRefetching ? "Refreshing..." : "Refresh"}
+            {notificationsQuery.isRefetching ? "Refreshing..." : "Refresh"}
           </Button>
         </div>
       </div>
@@ -189,8 +280,8 @@ export function NotificationsPage() {
               notification={notification}
               onRetry={handleRetry}
               onDelete={handleDelete}
-              isRetrying={isRetrying}
-              isDeleting={isDeleting}
+              isRetrying={false}
+              isDeleting={deleteNotificationMutation.isPending}
             />
           ))}
         </div>
@@ -198,18 +289,18 @@ export function NotificationsPage() {
 
       {pagination ? (
         <p className="text-sm text-text-tertiary">
-          Showing {notifications.length} / {pagination.total} notifications
+          Showing {notifications.length} / {total} notifications
         </p>
       ) : null}
 
-      {hasNextPage ? (
+      {hasMore ? (
         <div>
           <Button
             variant="secondary"
-            disabled={isFetchingNextPage}
-            onClick={() => void fetchNextPage()}
+            disabled={notificationsQuery.isFetching}
+            onClick={() => void notificationsQuery.fetchNextPage?.()}
           >
-            {isFetchingNextPage ? "Loading more..." : "Load more"}
+            {notificationsQuery.isFetching ? "Loading more..." : "Load more"}
           </Button>
         </div>
       ) : null}

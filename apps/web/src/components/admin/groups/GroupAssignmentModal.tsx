@@ -1,14 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { GraphQLClient } from "graphql-request";
 import { Modal } from "../../ui/Modal";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import {
-  useAdminGroups,
-  type AdminGroup as Group,
-} from "@mirai-app/frameworks/trpc/hooks";
+  useGetGroupsByTripQuery,
+  useGetUsersQuery,
+  type GetGroupsByTripQuery,
+} from "@mirai-app/graphql-types";
 import { appToast } from "../../../lib/toast";
+import { env } from "../../../lib/env";
+
+type Group = GetGroupsByTripQuery["groupsByTrip"]["groups"][number];
 
 interface GroupAssignmentModalProps {
   isOpen: boolean;
@@ -17,6 +22,23 @@ interface GroupAssignmentModalProps {
   group: Group | null;
 }
 
+const createGraphQLClient = (): GraphQLClient => {
+  const getAuthToken = (): string | null => {
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((c) =>
+      c.trim().startsWith("sb-access-token="),
+    );
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  };
+
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    },
+  });
+};
+
 export function GroupAssignmentModal({
   isOpen,
   onClose,
@@ -24,19 +46,50 @@ export function GroupAssignmentModal({
   group,
 }: GroupAssignmentModalProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
 
-  const { users, usersLoading, assignUserToGroup, isAssigningUser } =
-    useAdminGroups(tripId, "");
+  // Fetch all groups to get participant information
+  const { data: groupsData } = useGetGroupsByTripQuery(
+    graphqlClient,
+    {
+      tripId,
+      pagination: { limit: 100, offset: 0 },
+    },
+    {
+      enabled: Boolean(tripId) && isOpen,
+    },
+  );
 
+  // Fetch all users in the trip
+  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery(
+    graphqlClient,
+    {
+      limit: 100,
+      offset: 0,
+    },
+    {
+      enabled: isOpen,
+    },
+  );
+
+  const users = useMemo(() => {
+    return usersData?.users ?? [];
+  }, [usersData]);
+
+  // Get the full group data with participants from the query
+  const fullGroup = useMemo(() => {
+    if (!group) return null;
+    return (
+      groupsData?.groupsByTrip?.groups.find((g) => g.id === group.id) ?? null
+    );
+  }, [group, groupsData]);
+
+  // Filter out users already in the group
+  // Note: GraphQL Group type doesn't expose participants directly,
+  // so we show all users. This differs from the tRPC implementation.
   const availableUsers = useMemo(() => {
-    if (!group) return [];
-    return users.filter((user) => {
-      const isInGroup = group.participants?.some(
-        (p: unknown) => (p as { userId?: string })?.userId === user.id,
-      );
-      return !isInGroup;
-    });
-  }, [users, group]);
+    return users;
+  }, [users]);
 
   const handleAssign = async () => {
     if (!group || !selectedUserId) return;
@@ -44,13 +97,13 @@ export function GroupAssignmentModal({
     const toastId = appToast.loading("Assigning user to group...");
 
     try {
-      await assignUserToGroup({
-        userId: selectedUserId,
-        tripId,
-        groupId: group.id,
-      });
+      // Note: GraphQL schema doesn't have a direct mutation for adding users to groups
+      // This functionality would need to be implemented in the backend
+      // For now, we'll show a placeholder implementation
       appToast.dismiss(toastId);
-      appToast.success("User assigned successfully.");
+      appToast.error(
+        "Group assignment via GraphQL is not yet implemented. Please use the API directly.",
+      );
       setSelectedUserId(null);
       onClose();
     } catch (error) {
@@ -73,9 +126,7 @@ export function GroupAssignmentModal({
       <div className="space-y-4">
         <div>
           <p className="font-medium text-text-primary">{group.name}</p>
-          <p className="text-sm text-text-muted">
-            Current members: {group._count.participants}
-          </p>
+          <p className="text-sm text-text-muted">Group code: {group.code}</p>
         </div>
 
         {usersLoading ? (
@@ -117,11 +168,8 @@ export function GroupAssignmentModal({
           <Button variant="secondary" onClick={handleClose}>
             Cancel
           </Button>
-          <Button
-            onClick={handleAssign}
-            disabled={!selectedUserId || isAssigningUser}
-          >
-            {isAssigningUser ? "Assigning..." : "Assign"}
+          <Button onClick={handleAssign} disabled={!selectedUserId}>
+            Assign
           </Button>
         </div>
       </div>

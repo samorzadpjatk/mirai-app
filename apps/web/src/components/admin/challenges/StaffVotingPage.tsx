@@ -1,9 +1,23 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { GraphQLClient } from "graphql-request";
+import {
+  useGetChallengeSubmissionsQuery,
+  useGetMyVotesQuery,
+  useGetJudgedStaffVotingProgressQuery,
+  useSubmitVotesMutation,
+  useForceEndVotingMutation,
+  GetChallengeSubmissionsDocument,
+  GetMyVotesDocument,
+  GetJudgedStaffVotingProgressDocument,
+  type GetChallengeSubmissionsQuery,
+  type GetMyVotesQuery,
+  type GetJudgedStaffVotingProgressQuery,
+} from "@mirai-app/graphql-types";
 import { appToast } from "../../../lib/toast";
+import { env } from "../../../lib/env";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { Button } from "../../ui/Button";
@@ -17,6 +31,27 @@ import { useTrip } from "../../../contexts/TripContext";
 interface StaffVotingPageProps {
   challengeId: string;
 }
+
+const getAuthToken = () => {
+  const cookies = document.cookie.split(";");
+  const tokenCookie = cookies.find((c) =>
+    c.trim().startsWith("sb-access-token="),
+  );
+  return tokenCookie ? tokenCookie.split("=")[1] : null;
+};
+
+const createGraphQLClient = () => {
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -39,26 +74,20 @@ const parseChallenge = (value: unknown) => {
   };
 };
 
-const parseVotingSubmissions = (value: unknown): VotingSubmission[] => {
-  if (!Array.isArray(value)) return [];
+const parseVotingSubmissions = (
+  data: GetChallengeSubmissionsQuery | undefined,
+): VotingSubmission[] => {
+  if (!data?.challengeSubmissions?.submissions) return [];
 
-  return value
+  return data.challengeSubmissions.submissions
     .map((item) => {
-      if (!isObject(item)) return null;
-      if (
-        typeof item.id !== "string" ||
-        typeof item.groupId !== "string" ||
-        !isObject(item.group) ||
-        typeof item.group.name !== "string"
-      ) {
+      if (!item?.id || !item.group?.id || !item.group.name) {
         return null;
       }
 
-      const firstImage = Array.isArray(item.imageIds)
-        ? item.imageIds.find(
-            (image): image is string => typeof image === "string",
-          )
-        : null;
+      const firstImage = item.imageIds?.find(
+        (image): image is string => typeof image === "string",
+      );
 
       if (!firstImage || item.status === "REJECTED") {
         return null;
@@ -66,13 +95,10 @@ const parseVotingSubmissions = (value: unknown): VotingSubmission[] => {
 
       return {
         id: item.id,
-        groupId: item.groupId,
+        groupId: item.group.id,
         groupName: item.group.name,
         imagePath: firstImage,
-        createdAt:
-          typeof item.createdAt === "string"
-            ? item.createdAt
-            : new Date().toISOString(),
+        createdAt: item.createdAt ?? new Date().toISOString(),
       };
     })
     .filter((item): item is VotingSubmission => item !== null);
@@ -81,99 +107,103 @@ const parseVotingSubmissions = (value: unknown): VotingSubmission[] => {
 export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
-  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
+  // Create GraphQL client
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
+
+  // Challenge query (using raw query since GetChallengeById might not be available)
   const challengeQuery = useQuery({
     queryKey: ["challenge", "details", challengeId, tripId],
     enabled: Boolean(tripId) && Boolean(challengeId),
     queryFn: async () => {
-      const result = await trpcClient.challenge.getById.query({
-        id: challengeId,
-        tripId,
-      });
-      return parseChallenge(result);
+      const result = await graphqlClient.request<{
+        challenge?: {
+          id: string;
+          name: string;
+          scoringCategory?: string;
+          endTime?: string;
+          status?: string;
+        };
+      }>(
+        `
+        query GetChallenge($id: ID!, $tripId: ID!) {
+          challenge(id: $id, tripId: $tripId) {
+            id
+            name
+            scoringCategory
+            endTime
+            status
+          }
+        }
+        `,
+        { id: challengeId, tripId },
+      );
+      return parseChallenge(result.challenge);
     },
   });
 
-  const submissionsQuery = useQuery({
-    queryKey: ["challenge", "admin-submissions", challengeId, tripId],
-    enabled: Boolean(tripId) && Boolean(challengeId),
-    queryFn: async () => {
-      const result =
-        await trpcClient.challengeSubmission.getByChallengeForAdmin.query({
-          challengeId,
-          tripId,
-        });
-      return parseVotingSubmissions(result);
+  // Submissions query using generated hook
+  const submissionsQuery = useGetChallengeSubmissionsQuery(
+    graphqlClient,
+    {
+      challengeId,
+      limit: 100,
+      offset: 0,
     },
-  });
-
-  const myVotesQuery = useQuery({
-    queryKey: ["challenge", "my-votes", challengeId, tripId],
-    enabled: Boolean(tripId) && Boolean(challengeId),
-    queryFn: async () => {
-      const result = await trpcClient.challengeVote.getMyByChallenge.query({
-        challengeId,
-        tripId,
-      });
-      return Array.isArray(result)
-        ? result.filter((item) =>
-            isObject(item) && typeof item.votePosition === "number"
-              ? true
-              : false,
-          )
-        : [];
+    {
+      enabled: Boolean(tripId) && Boolean(challengeId),
     },
-  });
+  );
 
-  const progressQuery = useQuery({
-    queryKey: ["challenge", "judged-progress", challengeId, tripId],
-    enabled:
-      Boolean(tripId) &&
-      Boolean(challengeId) &&
-      challengeQuery.data?.scoringCategory === "JUDGED_STAFF",
-    queryFn: async () => {
-      const result =
-        await trpcClient.challengeVote.getJudgedStaffProgress.query({
-          challengeId,
-          tripId,
-        });
-
-      if (!isObject(result)) {
-        return null;
-      }
-
-      return {
-        requiredPositions:
-          typeof result.requiredPositions === "number"
-            ? result.requiredPositions
-            : 0,
-        eligibleSubmissionsCount:
-          typeof result.eligibleSubmissionsCount === "number"
-            ? result.eligibleSubmissionsCount
-            : 0,
-        totalAdmins:
-          typeof result.totalAdmins === "number" ? result.totalAdmins : 0,
-        votedAdmins:
-          typeof result.votedAdmins === "number" ? result.votedAdmins : 0,
-        pendingAdmins:
-          typeof result.pendingAdmins === "number" ? result.pendingAdmins : 0,
-      };
+  // My votes query using generated hook
+  const myVotesQuery = useGetMyVotesQuery(
+    graphqlClient,
+    {
+      challengeId,
+      tripId,
     },
-    refetchInterval: 10000,
-  });
+    {
+      enabled: Boolean(tripId) && Boolean(challengeId),
+    },
+  );
+
+  // Judged staff progress query using generated hook
+  const progressQuery = useGetJudgedStaffVotingProgressQuery(
+    graphqlClient,
+    {
+      challengeId,
+      tripId,
+      adminParticipantIds: [], // This will be populated by the server
+      eligibleSubmissionsCount: 0, // Will be calculated
+      requiredPositions: 3,
+    },
+    {
+      enabled:
+        Boolean(tripId) &&
+        Boolean(challengeId) &&
+        challengeQuery.data?.scoringCategory === "JUDGED_STAFF",
+      refetchInterval: 10000,
+    },
+  );
+
+  const votingSubmissions = useMemo(
+    () => parseVotingSubmissions(submissionsQuery.data),
+    [submissionsQuery.data],
+  );
 
   const votePositions = useMemo(
     () =>
       new Set(
-        (myVotesQuery.data ?? []).map((vote) => vote.votePosition),
+        (myVotesQuery.data?.myVotes?.votes ?? [])
+          .filter((vote) => vote?.votePosition !== undefined)
+          .map((vote) => vote.votePosition!),
       ),
-    [myVotesQuery.data],
+    [myVotesQuery.data?.myVotes?.votes],
   );
 
   const requiredVotePositions = Math.max(
-    progressQuery.data?.requiredPositions ?? 0,
+    progressQuery.data?.judgedStaffVotingProgress?.requiredPositions ?? 0,
     0,
   );
 
@@ -185,10 +215,11 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
     ).every((position) => votePositions.has(position));
 
   const voting = useStaffVoting({
-    votingSubmissions: submissionsQuery.data ?? [],
+    votingSubmissions,
     hasMyCompleteVote,
     requiredVotePositions,
-    judgedStaffProgress: progressQuery.data ?? undefined,
+    judgedStaffProgress:
+      progressQuery.data?.judgedStaffVotingProgress ?? undefined,
     myVotesError: myVotesQuery.error,
     judgedStaffProgressError: progressQuery.error,
     challenge: challengeQuery.data ?? undefined,
@@ -216,29 +247,24 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
     voting,
   ]);
 
-  const submitVotesMutation = useMutation({
-    mutationFn: (
-      votes: {
-        submissionId: string;
-        votePosition: number;
-        votePoints: number;
-      }[],
-    ) =>
-      trpcClient.challengeVote.submitVotes.mutate({
-        tripId,
-        challengeId,
-        votes,
-      }),
+  // Submit votes mutation using generated hook
+  const submitVotesMutation = useSubmitVotesMutation(graphqlClient, {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["challenge", "my-votes", challengeId, tripId],
+          queryKey: useGetMyVotesQuery.getKey({ challengeId, tripId }),
         }),
         queryClient.invalidateQueries({
           queryKey: ["challenge", "admin-submissions", challengeId, tripId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["challenge", "judged-progress", challengeId, tripId],
+          queryKey: useGetJudgedStaffVotingProgressQuery.getKey({
+            challengeId,
+            tripId,
+            adminParticipantIds: [],
+            eligibleSubmissionsCount: 0,
+            requiredPositions: 3,
+          }),
         }),
         queryClient.invalidateQueries({
           queryKey: ["challenge", "details", challengeId, tripId],
@@ -247,12 +273,8 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
     },
   });
 
-  const forceEndMutation = useMutation({
-    mutationFn: () =>
-      trpcClient.challengeVote.forceEndJudgedStaffVoting.mutate({
-        tripId,
-        challengeId,
-      }),
+  // Force end voting mutation using generated hook
+  const forceEndMutation = useForceEndVotingMutation(graphqlClient, {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
@@ -262,10 +284,16 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
           queryKey: ["challenge", "admin-submissions", challengeId, tripId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["challenge", "my-votes", challengeId, tripId],
+          queryKey: useGetMyVotesQuery.getKey({ challengeId, tripId }),
         }),
         queryClient.invalidateQueries({
-          queryKey: ["challenge", "judged-progress", challengeId, tripId],
+          queryKey: useGetJudgedStaffVotingProgressQuery.getKey({
+            challengeId,
+            tripId,
+            adminParticipantIds: [],
+            eligibleSubmissionsCount: 0,
+            requiredPositions: 3,
+          }),
         }),
       ]);
     },
@@ -276,27 +304,31 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
       return;
     }
 
-    const payload = [
-      {
-        submissionId: voting.finalTopThree[0]?.id ?? "",
-        votePosition: 1,
-        votePoints: 3,
-      },
-      {
-        submissionId: voting.finalTopThree[1]?.id ?? "",
-        votePosition: 2,
-        votePoints: 2,
-      },
-      {
-        submissionId: voting.finalTopThree[2]?.id ?? "",
-        votePosition: 3,
-        votePoints: 1,
-      },
-    ].filter((item) => Boolean(item.submissionId));
+    const payload = {
+      tripId,
+      challengeId,
+      votes: [
+        {
+          submissionId: voting.finalTopThree[0]?.id ?? "",
+          votePosition: 1,
+          votePoints: 3,
+        },
+        {
+          submissionId: voting.finalTopThree[1]?.id ?? "",
+          votePosition: 2,
+          votePoints: 2,
+        },
+        {
+          submissionId: voting.finalTopThree[2]?.id ?? "",
+          votePosition: 3,
+          votePoints: 1,
+        },
+      ].filter((item) => Boolean(item.submissionId)),
+    };
 
     const toastId = appToast.loading("Submitting vote...");
     try {
-      await submitVotesMutation.mutateAsync(payload);
+      await submitVotesMutation.mutateAsync({ input: payload });
       appToast.dismiss(toastId);
       appToast.success("Vote submitted.");
     } catch (error) {
@@ -318,7 +350,7 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
 
     const toastId = appToast.loading("Finalizing voting...");
     try {
-      await forceEndMutation.mutateAsync();
+      await forceEndMutation.mutateAsync({ challengeId, tripId });
       appToast.dismiss(toastId);
       appToast.success("Voting finalized.");
     } catch (error) {
@@ -345,12 +377,13 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
     <section className="space-y-6">
       <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
         <p className="text-sm font-semibold uppercase tracking-wide text-sky-700">
-          Admin votes: {progressQuery.data?.votedAdmins ?? 0}/
-          {progressQuery.data?.totalAdmins ?? 0}
+          Admin votes:{" "}
+          {progressQuery.data?.judgedStaffVotingProgress?.votedAdmins ?? 0}/
+          {progressQuery.data?.judgedStaffVotingProgress?.totalAdmins ?? 0}
         </p>
         <p className="mt-1 text-sm text-text-secondary">
-          {progressQuery.data?.pendingAdmins
-            ? `Waiting for ${progressQuery.data.pendingAdmins} admin(s).`
+          {progressQuery.data?.judgedStaffVotingProgress?.pendingAdmins
+            ? `Waiting for ${progressQuery.data.judgedStaffVotingProgress.pendingAdmins} admin(s).`
             : "All admin votes are in."}
         </p>
         <div className="mt-3">
@@ -453,7 +486,7 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
           <p className="mt-1 text-sm text-text-secondary">
             {challengeQuery.data.status === "COMPLETED"
               ? "Staff voting is closed and results were finalized."
-              : `Your vote was saved. Waiting for ${progressQuery.data?.pendingAdmins ?? "remaining"} admin(s).`}
+              : `Your vote was saved. Waiting for ${progressQuery.data?.judgedStaffVotingProgress?.pendingAdmins ?? "remaining"} admin(s).`}
           </p>
           <a
             href={`/challenges/${challengeId}`}

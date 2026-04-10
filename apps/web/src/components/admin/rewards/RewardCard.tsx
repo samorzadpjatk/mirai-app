@@ -1,14 +1,19 @@
 "use client";
 
 import { Card } from "../../ui/Card";
-import type { Reward } from "@mirai-app/frameworks/trpc/hooks";
+import type { RewardWithCalculationsFieldsFragment } from "@mirai-app/graphql-types";
 
 interface RewardCardProps {
-  reward: Reward;
+  reward: RewardWithCalculationsFieldsFragment;
   editHref?: string;
 }
 
 export function RewardCard({ reward, editHref }: RewardCardProps) {
+  // Calculate display values from GraphQL fields
+  const coinCost = reward.dynamicCoinCost ?? 0;
+  const imageUrl = reward.primaryImage ?? (reward.images[0] || null);
+  const purchasedCount = reward.purchaseCount ?? 0;
+
   return (
     <Card className="flex h-full flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -31,9 +36,9 @@ export function RewardCard({ reward, editHref }: RewardCardProps) {
         )}
       </div>
 
-      {reward.signedImageUrl || reward.image ? (
+      {imageUrl ? (
         <img
-          src={reward.signedImageUrl ?? reward.image ?? undefined}
+          src={imageUrl}
           alt={reward.name}
           className="h-48 w-full rounded-lg border border-border-subtle object-cover"
         />
@@ -42,7 +47,7 @@ export function RewardCard({ reward, editHref }: RewardCardProps) {
       <div className="grid gap-2 text-sm text-text-secondary md:grid-cols-2">
         <p>
           <span className="font-medium text-text-primary">Price:</span>{" "}
-          {reward.coinCost} coins
+          {coinCost} coins
         </p>
         <p>
           <span className="font-medium text-text-primary">Quantity:</span>{" "}
@@ -50,11 +55,7 @@ export function RewardCard({ reward, editHref }: RewardCardProps) {
         </p>
         <p>
           <span className="font-medium text-text-primary">Purchased:</span>{" "}
-          {reward.purchasedCount}
-        </p>
-        <p>
-          <span className="font-medium text-text-primary">Created by:</span>{" "}
-          {reward.createdByName}
+          {purchasedCount}
         </p>
       </div>
 

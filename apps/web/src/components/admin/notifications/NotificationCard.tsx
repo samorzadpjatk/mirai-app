@@ -2,7 +2,22 @@
 
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
-import type { AdminNotification } from "@mirai-app/frameworks/trpc/hooks";
+
+export interface AdminNotification {
+  id: string;
+  title: string;
+  body: string;
+  url: string;
+  status: string;
+  createdBy: {
+    firstName: string | null;
+    lastName: string | null;
+  };
+  pushes: Array<{
+    id: string;
+    status: "pending" | "sent" | "failed";
+  }>;
+}
 
 interface NotificationCardProps {
   notification: AdminNotification;

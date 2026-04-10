@@ -1,35 +1,89 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { GraphQLClient } from "graphql-request";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminRewards } from "@mirai-app/frameworks/trpc/hooks";
+import { useGetRewardsByTripAdminQuery } from "@mirai-app/graphql-types";
 import { RewardCard } from "./RewardCard";
 import { useTrip } from "../../../contexts/TripContext";
+import { env } from "../../../lib/env";
+
+const PAGE_SIZE = 30;
+
+const createGraphQLClient = (): GraphQLClient => {
+  const getAuthToken = (): string | null => {
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((c) =>
+      c.trim().startsWith("sb-access-token="),
+    );
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  };
+
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
+
 export function RewardsPage() {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentOffset, setCurrentOffset] = useState(0);
 
-  const {
-    rewards,
-    rewardsLoading,
-    rewardsError,
-    rewardsHasNextPage,
-    rewardsFetchingNextPage,
-    fetchMoreRewards,
-    rewardsPagination,
-  } = useAdminRewards(tripId, searchTerm);
+  const client = useMemo(() => createGraphQLClient(), []);
 
+  const { data, isLoading, error, isFetching } = useGetRewardsByTripAdminQuery(
+    client,
+    {
+      tripId,
+      limit: PAGE_SIZE,
+      offset: currentOffset,
+    },
+    {
+      enabled: Boolean(tripId),
+      staleTime: 30000,
+    },
+  );
+
+  const rewards = useMemo(() => {
+    const allRewards = data?.rewardsByTripAdmin?.rewards ?? [];
+    if (!searchTerm.trim()) {
+      return allRewards;
+    }
+    const normalized = searchTerm.toLowerCase();
+    return allRewards.filter(
+      (reward) =>
+        reward.name.toLowerCase().includes(normalized) ||
+        reward.description.toLowerCase().includes(normalized),
+    );
+  }, [data?.rewardsByTripAdmin?.rewards, searchTerm]);
+
+  const pagination = data?.rewardsByTripAdmin?.pagination;
   const totalCountLabel = useMemo(() => {
-    const total = rewardsPagination?.total;
+    const total = pagination?.total;
     if (typeof total !== "number") {
       return null;
     }
     return `${rewards.length} / ${total} rewards`;
-  }, [rewards.length, rewardsPagination?.total]);
+  }, [rewards.length, pagination?.total]);
+
+  const hasNextPage = pagination?.hasMore ?? false;
+
+  const fetchMoreRewards = () => {
+    if (hasNextPage && pagination) {
+      setCurrentOffset(pagination.offset + pagination.limit);
+    }
+  };
 
   if (!tripId) {
     return <ErrorMessage message="Please select a trip first." />;
@@ -59,13 +113,13 @@ export function RewardsPage() {
         />
       </div>
 
-      {rewardsLoading ? <LoadingSpinner label="Loading rewards..." /> : null}
+      {isLoading ? <LoadingSpinner label="Loading rewards..." /> : null}
 
-      {!rewardsLoading && rewardsError ? (
+      {!isLoading && error ? (
         <ErrorMessage message="Could not load rewards. Please try again." />
       ) : null}
 
-      {!rewardsLoading && !rewardsError && rewards.length === 0 ? (
+      {!isLoading && !error && rewards.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-card p-6 text-sm text-text-secondary">
           No rewards found for this trip.
         </p>
@@ -85,14 +139,14 @@ export function RewardsPage() {
         <p className="text-sm text-text-tertiary">{totalCountLabel}</p>
       ) : null}
 
-      {rewardsHasNextPage ? (
+      {hasNextPage ? (
         <div>
           <Button
             variant="secondary"
-            disabled={rewardsFetchingNextPage}
+            disabled={isFetching}
             onClick={() => void fetchMoreRewards()}
           >
-            {rewardsFetchingNextPage ? "Loading more..." : "Load more"}
+            {isFetching ? "Loading more..." : "Load more"}
           </Button>
         </div>
       ) : null}

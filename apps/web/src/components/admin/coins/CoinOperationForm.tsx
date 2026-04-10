@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { GraphQLClient } from "graphql-request";
+import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
@@ -9,12 +11,38 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
-import { useAdminCoins } from "@mirai-app/frameworks/trpc/hooks";
+import {
+  useGetGroupsByTripQuery,
+  useAddCoinsMutation,
+  useRemoveCoinsMutation,
+} from "@mirai-app/graphql-types";
+import { env } from "../../../lib/env";
 
 interface CoinOperationFormProps {
   operation: "add" | "remove";
   initialGroupId: string;
 }
+
+const createGraphQLClient = (): GraphQLClient => {
+  const getAuthToken = (): string | null => {
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((c) =>
+      c.trim().startsWith("sb-access-token="),
+    );
+    return tokenCookie ? tokenCookie.split("=")[1] : null;
+  };
+
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
 
 export function CoinOperationForm({
   operation,
@@ -26,14 +54,40 @@ export function CoinOperationForm({
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
 
-  const {
-    groups,
-    groupsLoading,
-    addCoins,
-    removeCoins,
-    isAddingCoins,
-    isRemovingCoins,
-  } = useAdminCoins(tripId);
+  const client = useMemo(() => createGraphQLClient(), []);
+  const queryClient = useQueryClient();
+
+  const { data: groupsData, isLoading: groupsLoading } =
+    useGetGroupsByTripQuery(
+      client,
+      {
+        tripId,
+      },
+      {
+        enabled: Boolean(tripId),
+        staleTime: 30000,
+      },
+    );
+
+  const groups = useMemo(() => {
+    return groupsData?.groupsByTrip?.groups ?? [];
+  }, [groupsData]);
+
+  const addCoinsMutation = useAddCoinsMutation(client, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetGroupsByTrip"],
+      });
+    },
+  });
+
+  const removeCoinsMutation = useRemoveCoinsMutation(client, {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["GetGroupsByTrip"],
+      });
+    },
+  });
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === groupId) ?? null,
@@ -46,7 +100,10 @@ export function CoinOperationForm({
     }
   }, [groups, groupId]);
 
-  const isSubmitting = operation === "add" ? isAddingCoins : isRemovingCoins;
+  const isSubmitting =
+    operation === "add"
+      ? addCoinsMutation.isPending
+      : removeCoinsMutation.isPending;
 
   const title = operation === "add" ? "Add Coins" : "Remove Coins";
   const submitLabel = operation === "add" ? "Add coins" : "Remove coins";
@@ -72,9 +129,21 @@ export function CoinOperationForm({
     const toastId = appToast.loading(`${submitLabel}...`);
     try {
       if (operation === "add") {
-        await addCoins(groupId, numericAmount, reason.trim());
+        await addCoinsMutation.mutateAsync({
+          input: {
+            groupId,
+            amount: numericAmount,
+            reason: reason.trim(),
+          },
+        });
       } else {
-        await removeCoins(groupId, numericAmount, reason.trim());
+        await removeCoinsMutation.mutateAsync({
+          input: {
+            groupId,
+            amount: numericAmount,
+            reason: reason.trim(),
+          },
+        });
       }
 
       appToast.dismiss(toastId);

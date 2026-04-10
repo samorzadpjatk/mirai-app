@@ -5,7 +5,8 @@ import type { FormEvent } from "react";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useAdminUsers } from "@mirai-app/frameworks/trpc/hooks";
+import { useCreateUserMutation } from "@mirai-app/graphql-types";
+import { graphqlClient } from "../../../lib/graphql-client";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
 
@@ -20,7 +21,8 @@ export function CreateUserForm() {
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const { createUser, isCreatingUser } = useAdminUsers(tripId, "", "firstName");
+  const createUserMutation = useCreateUserMutation(graphqlClient);
+  const isCreatingUser = createUserMutation.isPending;
 
   const canSubmit = useMemo(() => {
     return (
@@ -31,9 +33,7 @@ export function CreateUserForm() {
     );
   }, [email, firstName, lastName]);
 
-  const onSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(null);
 
@@ -54,11 +54,13 @@ export function CreateUserForm() {
     const toastId = appToast.loading("Creating user...");
 
     try {
-      await createUser({
-        tripId,
-        firstName: nextFirstName,
-        lastName: nextLastName,
-        email: nextEmail,
+      await createUserMutation.mutateAsync({
+        input: {
+          tripId,
+          firstName: nextFirstName,
+          lastName: nextLastName,
+          email: nextEmail,
+        },
       });
       appToast.dismiss(toastId);
       appToast.success("User created successfully.");
