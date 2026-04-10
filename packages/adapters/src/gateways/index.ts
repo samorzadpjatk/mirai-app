@@ -39,6 +39,15 @@ export { DrizzleNotificationRepository } from "./DrizzleNotificationRepository";
 export { DrizzleActivityFeedRepository } from "./DrizzleActivityFeedRepository";
 export { DrizzleRewardRepository } from "./DrizzleRewardRepository";
 
+// Additional Drizzle repositories for complete migration
+export { DrizzleChallengeSubmissionRepository } from "./DrizzleChallengeSubmissionRepository";
+export { DrizzleChallengeVoteRepository } from "./DrizzleChallengeVoteRepository";
+export { DrizzleCoinTransactionRepository } from "./DrizzleCoinTransactionRepository";
+export { DrizzleNotificationDeliveryRepository } from "./DrizzleNotificationDeliveryRepository";
+export { DrizzleNotificationScheduleRepository } from "./DrizzleNotificationScheduleRepository";
+export { DrizzleSponsorRepository } from "./DrizzleSponsorRepository";
+export { DrizzleSubmissionReportRepository } from "./DrizzleSubmissionReportRepository";
+
 // =============================================================================
 // Auth Adapters (Phase 0: Supabase-Agnostic Architecture)
 // =============================================================================

@@ -212,6 +212,15 @@ export { NotificationDrizzleMapper } from "./mappers/NotificationDrizzleMapper";
 export { ActivityFeedDrizzleMapper } from "./mappers/ActivityFeedDrizzleMapper";
 export { RewardDrizzleMapper } from "./mappers/RewardDrizzleMapper";
 
+// Additional Drizzle mappers for complete migration
+export { ChallengeSubmissionDrizzleMapper } from "./mappers/ChallengeSubmissionDrizzleMapper";
+export { ChallengeVoteDrizzleMapper } from "./mappers/ChallengeVoteDrizzleMapper";
+export { CoinTransactionDrizzleMapper } from "./mappers/CoinTransactionDrizzleMapper";
+export { SponsorDrizzleMapper } from "./mappers/SponsorDrizzleMapper";
+export { SubmissionReportDrizzleMapper } from "./mappers/SubmissionReportDrizzleMapper";
+export { NotificationScheduleDrizzleMapper } from "./mappers/NotificationScheduleDrizzleMapper";
+export { NotificationDeliveryDrizzleMapper } from "./mappers/NotificationDeliveryDrizzleMapper";
+
 // =============================================================================
 // Phase 1: Drizzle ORM Migration Repositories
 // =============================================================================
@@ -228,6 +237,15 @@ export { DrizzleLocationRepository } from "./gateways/DrizzleLocationRepository"
 export { DrizzleNotificationRepository } from "./gateways/DrizzleNotificationRepository";
 export { DrizzleActivityFeedRepository } from "./gateways/DrizzleActivityFeedRepository";
 export { DrizzleRewardRepository } from "./gateways/DrizzleRewardRepository";
+
+// Additional Drizzle repositories for complete migration
+export { DrizzleChallengeSubmissionRepository } from "./gateways/DrizzleChallengeSubmissionRepository";
+export { DrizzleChallengeVoteRepository } from "./gateways/DrizzleChallengeVoteRepository";
+export { DrizzleCoinTransactionRepository } from "./gateways/DrizzleCoinTransactionRepository";
+export { DrizzleNotificationDeliveryRepository } from "./gateways/DrizzleNotificationDeliveryRepository";
+export { DrizzleNotificationScheduleRepository } from "./gateways/DrizzleNotificationScheduleRepository";
+export { DrizzleSponsorRepository } from "./gateways/DrizzleSponsorRepository";
+export { DrizzleSubmissionReportRepository } from "./gateways/DrizzleSubmissionReportRepository";
 
 // Re-export inner layers for convenience
 export type {

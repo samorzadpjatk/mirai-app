@@ -43,3 +43,9 @@ export * from "./coinTransaction";
 
 // Reward schemas
 export * from "./reward";
+
+// Sponsor schemas
+export * from "./sponsor";
+
+// Submission Report schemas
+export * from "./submissionReport";
