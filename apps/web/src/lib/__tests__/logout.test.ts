@@ -9,15 +9,22 @@ import {
 } from "bun:test";
 
 // Set required environment variables BEFORE any imports
+// Note: These values must be consistent with other test files due to module caching
 process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
 process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
+process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
 
 // Store original values
 let cookies: string[] = [];
 let logout: () => Promise<void>;
 let originalDocumentCookieDescriptor: PropertyDescriptor | undefined;
 let originalWindowLocationDescriptor: PropertyDescriptor | undefined;
+let originalConsoleError: typeof console.error;
+
+// Mock console.error to suppress expected error messages during tests
+originalConsoleError = console.error;
+console.error = mock(() => {});
 
 // Mock modules
 const mockSignOut = mock(() => Promise.resolve());
@@ -110,6 +117,8 @@ afterAll(() => {
       originalWindowLocationDescriptor,
     );
   }
+  // Restore console.error
+  console.error = originalConsoleError;
 });
 
 describe("[INTEGRATION] logout", () => {

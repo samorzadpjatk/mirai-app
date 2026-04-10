@@ -1,14 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 // Set required environment variables BEFORE any imports
-process.env.PUBLIC_SUPABASE_URL =
-  process.env.PUBLIC_SUPABASE_URL || "http://localhost:54321";
-process.env.PUBLIC_SUPABASE_ANON_KEY =
-  process.env.PUBLIC_SUPABASE_ANON_KEY || "test-anon-key";
-process.env.PUBLIC_TRPC_API_URL =
-  process.env.PUBLIC_TRPC_API_URL || "http://localhost:3000/api/trpc";
-process.env.PUBLIC_TRPC_WS_URL =
-  process.env.PUBLIC_TRPC_WS_URL || "ws://localhost:3000/api/trpc";
+// Note: These values must be consistent with other test files due to module caching
+process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
+process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
+process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
+process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
 
 describe("[INTEGRATION] env.ts with valid environment variables", () => {
   test("exports env object with all required properties", async () => {

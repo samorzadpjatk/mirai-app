@@ -1,8 +1,9 @@
 // Set environment variables BEFORE any imports execute
+// Note: These values must be consistent with other test files due to module caching
 process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
-process.env.PUBLIC_SUPABASE_ANON_KEY = "mock-anon-key";
-process.env.PUBLIC_TRPC_API_URL = "http://localhost:3001/trpc";
-process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3001/trpc";
+process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
+process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
+process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
 
 import { describe, expect, test, beforeEach, mock } from "bun:test";
 
@@ -34,13 +35,14 @@ mock.module("../supabase", () => ({
   },
 }));
 
-// Import after mocks
-import { onAuthUserFetch, checkIsAdminUser } from "../auth";
-import { authStore } from "@mirai-app/frameworks/auth/client";
+// Dynamic imports after mocks and env setup
+let onAuthUserFetch: (authUserId: string) => Promise<any>;
+let checkIsAdminUser: () => Promise<boolean>;
+let authStore: any;
 
-// Reset authStore before each test
+// Reset authStore helper
 const resetAuthStore = () => {
-  authStore.setState({
+  authStore?.setState({
     user: null,
     session: null,
     isLoading: false,
@@ -48,7 +50,15 @@ const resetAuthStore = () => {
   });
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  // Dynamic import after mocks are set up
+  const authModule = await import("../auth");
+  const authStoreModule = await import("@mirai-app/frameworks/auth/client");
+  onAuthUserFetch = authModule.onAuthUserFetch;
+  checkIsAdminUser = authModule.checkIsAdminUser;
+  authStore = authStoreModule.authStore;
+
+  // Reset authStore and mocks
   resetAuthStore();
   mockQuery.mockClear();
   mockCleanup.mockClear();

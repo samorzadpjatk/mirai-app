@@ -1,9 +1,9 @@
 /// <reference lib="dom" />
 
 // Set up environment variables at the very top
-// Note: These will be set after imports are hoisted, so the hook must be dynamically imported
+// Note: These values must be consistent with other test files due to module caching
 process.env.PUBLIC_SUPABASE_URL = "http://localhost:54321";
-process.env.PUBLIC_SUPABASE_ANON_KEY = "mock-anon-key";
+process.env.PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 process.env.PUBLIC_TRPC_API_URL = "http://localhost:3000/api/trpc";
 process.env.PUBLIC_TRPC_WS_URL = "ws://localhost:3000/api/trpc";
 
@@ -33,13 +33,38 @@ mock.module("@mirai-app/frameworks/trpc/client", () => ({
       },
     },
   }),
+  // Include getTRPCClient for compatibility with other tests
+  getTRPCClient: () => ({
+    client: {
+      user: {
+        getMy: {
+          query: () => Promise.resolve(null),
+        },
+      },
+    },
+    cleanup: () => Promise.resolve(),
+  }),
 }));
+
+// Store for mock auth state
+let mockAuthState = {
+  user: null,
+  session: { access_token: "mock-access-token" },
+  isLoading: false,
+  isAuthenticated: false,
+};
 
 mock.module("@mirai-app/frameworks/auth/client", () => ({
   authStore: {
-    getState: () => ({
-      session: { access_token: "mock-access-token" },
-    }),
+    getState: () => mockAuthState,
+    setState: (updater: any) => {
+      if (typeof updater === "function") {
+        mockAuthState = updater(mockAuthState);
+      } else {
+        mockAuthState = { ...mockAuthState, ...updater };
+      }
+    },
+    subscribe: () => () => {},
   },
 }));
 

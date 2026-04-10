@@ -26,6 +26,21 @@ mock.module("@trpc/client", () => ({
     query: () => Promise.resolve({ json: { role: "ADMIN" } }),
   }),
   httpBatchLink: (opts: unknown) => opts,
+  // Include other commonly used exports to prevent breaking other tests
+  TRPCClientError: class TRPCClientError extends Error {},
+  TRPCUntypedClient: class TRPCUntypedClient {},
+  createTRPCClient: () => ({}),
+  createTRPCProxyClient: () => ({}),
+  getUntypedClient: () => ({}),
+  httpLink: (opts: unknown) => opts,
+  httpBatchStreamLink: (opts: unknown) => opts,
+  wsLink: () => ({}),
+  loggerLink: () => ({}),
+  splitLink: () => ({}),
+  // For @mirai-app/frameworks/trpc/client compatibility
+  useTRPC: () => ({}),
+  useTRPCClient: () => ({}),
+  useSubscription: () => ({}),
 }));
 
 mock.module("../lib/env", () => ({
