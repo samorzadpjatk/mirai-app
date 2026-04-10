@@ -24,22 +24,23 @@ export type {
 // =============================================================================
 // Drizzle ORM Repositories (Phase 1 Migration)
 // =============================================================================
-export { DrizzleUserRepository } from "./drizzle/DrizzleUserRepository";
-export { DrizzleTripRepository } from "./drizzle/DrizzleTripRepository";
-export { DrizzleGroupRepository } from "./drizzle/DrizzleGroupRepository";
-export { DrizzleChallengeRepository } from "./drizzle/DrizzleChallengeRepository";
-export { DrizzleLocationRepository } from "./drizzle/DrizzleLocationRepository";
-export { DrizzleNotificationRepository } from "./drizzle/DrizzleNotificationRepository";
-export { DrizzleActivityFeedRepository } from "./drizzle/DrizzleActivityFeedRepository";
-export { DrizzleRewardRepository } from "./drizzle/DrizzleRewardRepository";
-export { DrizzleChallengeSubmissionRepository } from "./drizzle/DrizzleChallengeSubmissionRepository";
-export { DrizzleChallengeVoteRepository } from "./drizzle/DrizzleChallengeVoteRepository";
-export { DrizzleCoinTransactionRepository } from "./drizzle/DrizzleCoinTransactionRepository";
-export { DrizzleNotificationDeliveryRepository } from "./drizzle/DrizzleNotificationDeliveryRepository";
-export { DrizzleNotificationScheduleRepository } from "./drizzle/DrizzleNotificationScheduleRepository";
-export { DrizzleSponsorRepository } from "./drizzle/DrizzleSponsorRepository";
-export { DrizzleSubmissionReportRepository } from "./drizzle/DrizzleSubmissionReportRepository";
-export { DrizzleTelemetryAdapter } from "./drizzle/DrizzleTelemetryAdapter";
+export { DrizzleUserRepository } from "./drizzle/user";
+export { DrizzleTripRepository } from "./drizzle/trip";
+export { DrizzleGroupRepository } from "./drizzle/group";
+export { DrizzleChallengeRepository } from "./drizzle/challenge";
+export { DrizzleLocationRepository } from "./drizzle/location";
+export { DrizzleNotificationRepository } from "./drizzle/notification";
+export { DrizzleActivityFeedRepository } from "./drizzle/activity-feed";
+export { DrizzleRewardRepository } from "./drizzle/reward";
+export { DrizzleChallengeSubmissionRepository } from "./drizzle/challenge-submission";
+export { DrizzleChallengeVoteRepository } from "./drizzle/challenge-vote";
+export { DrizzleCoinTransactionRepository } from "./drizzle/coin-transaction";
+export { DrizzleNotificationDeliveryRepository } from "./drizzle/notification-delivery";
+export { DrizzleNotificationScheduleRepository } from "./drizzle/notification-schedule";
+export { DrizzleSponsorRepository } from "./drizzle/sponsor";
+export { DrizzleSubmissionReportRepository } from "./drizzle/submission-report";
+export { DrizzleTelemetryAdapter } from "./drizzle/telemetry";
+export { DrizzleEventRepository } from "./drizzle/event";
 
 // =============================================================================
 // In-Memory Repositories (Phase 2: Testing Infrastructure)

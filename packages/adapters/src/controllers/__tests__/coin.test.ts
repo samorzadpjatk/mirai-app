@@ -1,5 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { CoinController } from "../coin-controller";
+import { CoinController } from "../coin";
 import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
 import { ok, err } from "@mirai-app/domain";
 

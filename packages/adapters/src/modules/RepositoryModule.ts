@@ -68,25 +68,25 @@ import { createStaticModule, type StaticModule } from "awilix-modular";
 // Drizzle Repository Imports
 // =============================================================================
 
-import { DrizzleUserRepository } from "../gateways/drizzle/DrizzleUserRepository";
-import { DrizzleTripRepository } from "../gateways/drizzle/DrizzleTripRepository";
-import { DrizzleGroupRepository } from "../gateways/drizzle/DrizzleGroupRepository";
-import { DrizzleChallengeRepository } from "../gateways/drizzle/DrizzleChallengeRepository";
-import { DrizzleLocationRepository } from "../gateways/drizzle/DrizzleLocationRepository";
-import { DrizzleNotificationRepository } from "../gateways/drizzle/DrizzleNotificationRepository";
-import { DrizzleChallengeSubmissionRepository } from "../gateways/drizzle/DrizzleChallengeSubmissionRepository";
-import { DrizzleChallengeVoteRepository } from "../gateways/drizzle/DrizzleChallengeVoteRepository";
-import { DrizzleActivityFeedRepository } from "../gateways/drizzle/DrizzleActivityFeedRepository";
-import { DrizzleSponsorRepository } from "../gateways/drizzle/DrizzleSponsorRepository";
-import { DrizzleSubmissionReportRepository } from "../gateways/drizzle/DrizzleSubmissionReportRepository";
+import { DrizzleUserRepository } from "../gateways/drizzle/user";
+import { DrizzleTripRepository } from "../gateways/drizzle/trip";
+import { DrizzleGroupRepository } from "../gateways/drizzle/group";
+import { DrizzleChallengeRepository } from "../gateways/drizzle/challenge";
+import { DrizzleLocationRepository } from "../gateways/drizzle/location";
+import { DrizzleNotificationRepository } from "../gateways/drizzle/notification";
+import { DrizzleChallengeSubmissionRepository } from "../gateways/drizzle/challenge-submission";
+import { DrizzleChallengeVoteRepository } from "../gateways/drizzle/challenge-vote";
+import { DrizzleActivityFeedRepository } from "../gateways/drizzle/activity-feed";
+import { DrizzleSponsorRepository } from "../gateways/drizzle/sponsor";
+import { DrizzleSubmissionReportRepository } from "../gateways/drizzle/submission-report";
 import {
   DrizzleRewardRepository,
   DrizzleRewardPurchaseRepository,
-} from "../gateways/drizzle/DrizzleRewardRepository";
-import { DrizzleCoinTransactionRepository } from "../gateways/drizzle/DrizzleCoinTransactionRepository";
-import { DrizzleNotificationDeliveryRepository } from "../gateways/drizzle/DrizzleNotificationDeliveryRepository";
-import { DrizzleNotificationScheduleRepository } from "../gateways/drizzle/DrizzleNotificationScheduleRepository";
-import { DrizzleEventRepository } from "../gateways/drizzle/DrizzleEventRepository";
+} from "../gateways/drizzle/reward";
+import { DrizzleCoinTransactionRepository } from "../gateways/drizzle/coin-transaction";
+import { DrizzleNotificationDeliveryRepository } from "../gateways/drizzle/notification-delivery";
+import { DrizzleNotificationScheduleRepository } from "../gateways/drizzle/notification-schedule";
+import { DrizzleEventRepository } from "../gateways/drizzle/event";
 
 // =============================================================================
 // Type Imports (for type definitions)

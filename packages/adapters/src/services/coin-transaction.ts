@@ -3,7 +3,7 @@ import { coinTransactions } from "@mirai-app/frameworks/drizzle/schema/coinTrans
 import { groups } from "@mirai-app/frameworks/drizzle/schema/group";
 import { tripParticipants } from "@mirai-app/frameworks/drizzle/schema/trip";
 import { eq, and, desc } from "drizzle-orm";
-import type { CoinTransactionController } from "../controllers/coin-transaction-controller";
+import type { CoinTransactionController } from "../controllers/coin-transaction";
 
 /**
  * DrizzleCoinTransactionService

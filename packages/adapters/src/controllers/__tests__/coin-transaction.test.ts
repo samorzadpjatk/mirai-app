@@ -1,5 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { CoinTransactionController } from "../coin-transaction-controller";
+import { CoinTransactionController } from "../coin-transaction";
 import type {
   GetCoinStatisticsUseCase,
   GetMostActiveAdminStatsUseCase,
