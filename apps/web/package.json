@@ -20,6 +20,8 @@
     "@astrojs/react": "^5.0.2",
     "@mirai-app/adapters": "workspace:*",
     "@mirai-app/frameworks": "workspace:*",
+    "@mirai-app/graphql-types": "workspace:*",
+    "graphql-request": "^7.1.2",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query": "^5.90.20",
     "@types/react": "^19.2.14",
