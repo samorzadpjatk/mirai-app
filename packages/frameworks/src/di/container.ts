@@ -207,7 +207,7 @@ export const container: AwilixContainer<any> = new Proxy(
  * Create a child container for request scoping
  *
  * Child containers inherit registrations from parent but can override
- * with request-specific values (e.g., request IDs, user context, PrismaClient).
+ * with request-specific values (e.g., request IDs, user context, Drizzle client).
  *
  * @param parent - Parent container (defaults to root container)
  * @returns New scoped container
@@ -216,7 +216,7 @@ export const container: AwilixContainer<any> = new Proxy(
  * ```typescript
  * const requestContainer = createChildContainer();
  * requestContainer.register({
- *   prisma: asValue(prisma),
+ *   drizzle: asValue(db),
  *   requestId: asValue(requestId),
  * });
  * const controller = requestContainer.resolve("userController");

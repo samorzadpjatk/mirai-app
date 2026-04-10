@@ -3,11 +3,6 @@ import { TYPES, ServiceIdentifier, ServiceIdentifierValue } from "../types";
 
 describe("[UNIT] TYPES - Service Identifiers", () => {
   describe("Required Symbols (Step 4 Success Criteria)", () => {
-    it("should have PrismaClient symbol", () => {
-      expect(TYPES.PrismaClient).toBeDefined();
-      expect(typeof TYPES.PrismaClient).toBe("symbol");
-    });
-
     it("should have UserRepository symbol", () => {
       expect(TYPES.UserRepository).toBeDefined();
       expect(typeof TYPES.UserRepository).toBe("symbol");
@@ -30,12 +25,6 @@ describe("[UNIT] TYPES - Service Identifiers", () => {
   });
 
   describe("Cross-Realm Compatibility (Symbol.for())", () => {
-    it("should use Symbol.for() for PrismaClient", () => {
-      const fromTypes = TYPES.PrismaClient;
-      const recreated = Symbol.for("PrismaClient");
-      expect(fromTypes).toBe(recreated);
-    });
-
     it("should use Symbol.for() for UserRepository", () => {
       const fromTypes = TYPES.UserRepository;
       const recreated = Symbol.for("UserRepository");
@@ -68,15 +57,14 @@ describe("[UNIT] TYPES - Service Identifiers", () => {
       expect(symbols.length).toBe(uniqueSymbols.size);
     });
 
-    it("should have 35 total symbols", () => {
+    it("should have 34 total symbols", () => {
       const keys = Object.keys(TYPES);
-      expect(keys.length).toBe(35);
+      expect(keys.length).toBe(34);
     });
   });
 
   describe("Symbol Organization by Category", () => {
     it("should have Framework Services", () => {
-      expect(TYPES.PrismaClient).toBeDefined();
       expect(TYPES.SupabaseClient).toBeDefined();
     });
 
@@ -129,7 +117,6 @@ describe("[UNIT] TYPES - Service Identifiers", () => {
 
   describe("Symbol Descriptions", () => {
     it("should have proper descriptions for required symbols", () => {
-      expect(TYPES.PrismaClient.description).toBe("PrismaClient");
       expect(TYPES.UserRepository.description).toBe("UserRepository");
       expect(TYPES.ChallengeRepository.description).toBe("ChallengeRepository");
       expect(TYPES.GroupRepository.description).toBe("GroupRepository");

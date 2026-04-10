@@ -10,7 +10,7 @@
  * ┌─────────────────────────────────────────┐
  * │          Frameworks Layer               │
  * │  ┌─────────┐ ┌─────────┐ ┌─────────┐  │
- * │  │  tRPC   │ │ Drizzle │ │ Supabase│  │
+ * │  │GraphQL  │ │ Drizzle │ │ Supabase│  │
  * │  │ Config  │ │ Client  │ │ Client  │  │
  * │  └─────────┘ └─────────┘ └─────────┘  │
  * └─────────────────────────────────────────┘
@@ -24,26 +24,18 @@
  *
  * ## Usage
  *
- * ### tRPC Server Configuration
+ * ### GraphQL Server Configuration
  * ```typescript
- * import { createTRPCRouter, publicProcedure } from "@mirai-app/frameworks/trpc/server";
+ * import { builder, schema } from "@mirai-app/frameworks/graphql";
  *
- * export const myRouter = createTRPCRouter({
- *   get: publicProcedure.query(async ({ ctx }) => {
- *     return ctx.db.user.findMany();
+ * export const Query = builder.queryType({
+ *   fields: (t) => ({
+ *     users: t.field({
+ *       type: [User],
+ *       resolve: () => db.query.users.findMany(),
+ *     }),
  *   }),
  * });
- * ```
- *
- * ### tRPC Client Configuration
- * ```typescript
- * import { getTRPCClient } from "@mirai-app/frameworks/trpc/client";
- *
- * const { client, cleanup } = getTRPCClient(
- *   "https://api.example.com/trpc",
- *   "wss://api.example.com/trpc",
- *   "auth-token"
- * );
  * ```
  *
  * ### Drizzle ORM Client
@@ -63,34 +55,6 @@
  * );
  * ```
  */
-
-// =============================================================================
-// tRPC Configuration
-// =============================================================================
-
-// Client-side tRPC (for React apps)
-export { getTRPCClient, type TRPCClientWrapper } from "./trpc/client";
-
-// Server-side tRPC (for backend)
-export {
-  createTRPCRouter,
-  createCallerFactory,
-  baseProcedure,
-  publicProcedure,
-  getPlatformFromUserAgent,
-  getAccessTokenFromHeaders,
-  type TRPCContext,
-  type CreateContextOptions,
-} from "./trpc/server";
-
-// Router factory utilities
-export {
-  createNamespaceRouter,
-  validateRouterConfig,
-  ROUTER_NAMING,
-  ROUTER_PATTERNS,
-  type RouterConfig,
-} from "./trpc/router-factory";
 
 // =============================================================================
 // Dependency Injection
@@ -115,7 +79,7 @@ export { createDrizzleClient, type DrizzleDb } from "./drizzle/client";
 export * from "./drizzle/schema";
 
 // =============================================================================
-// Phase 3: GraphQL API Configuration (tRPC Coexistence)
+// Phase 3: GraphQL API Configuration
 // =============================================================================
 
 export { builder, schemaBuilder, type GraphQLContext } from "./graphql/builder";

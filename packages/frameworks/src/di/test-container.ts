@@ -166,11 +166,11 @@ export function createTestContainer(): AwilixContainer {
  * ```typescript
  * const container = createConfiguredTestContainer((c) => {
  *   c.register({
- *     prisma: asValue(mockPrisma),
+ *     drizzle: asValue(mockDb),
  *   });
  * });
  *
- * // All module-registered classes will use the bound PrismaClient
+ * // All module-registered classes will use the bound Drizzle client
  * const repo = container.resolve("userRepository");
  * ```
  */

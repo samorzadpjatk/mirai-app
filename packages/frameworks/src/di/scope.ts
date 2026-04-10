@@ -1,7 +1,7 @@
 /**
  * Request Scoping Utilities
  *
- * Provides utilities for managing request-scoped containers in tRPC and other
+ * Provides utilities for managing request-scoped containers in GraphQL and other
  * request-handling contexts. Integrates with awilix-modular's DIContext for
  * proper dependency lifecycle management.
  *
@@ -9,18 +9,18 @@
  *
  * - Request-scoped container creation
  * - Automatic cleanup on request completion
- * - PrismaClient binding per request
+ * - Drizzle database binding per request
  * - Request ID and user context injection
  *
  * ## Usage
  *
- * ### In tRPC Context
+ * ### In GraphQL Context
  *
  * ```typescript
- * export const createTRPCContext = async (opts) => {
+ * export const createGraphQLContext = async (opts) => {
  *   const { db, supabase } = await createContextData(opts);
  *   const scope = createRequestScope({
- *     prisma: db,
+ *     drizzle: db,
  *     requestId: generateRequestId(),
  *     userContext: opts.user,
  *   });
@@ -32,19 +32,6 @@
  *     dispose: scope.dispose,
  *   };
  * };
- * ```
- *
- * ### In tRPC Procedures
- *
- * ```typescript
- * export const userRouter = createTRPCRouter({
- *   getById: protectedProcedure
- *     .input(z.object({ id: z.string() }))
- *     .query(async ({ ctx, input }) => {
- *       const controller = ctx.container.resolve("userController");
- *       return controller.getById(input);
- *     }),
- * });
  * ```
  *
  * @module scope
@@ -61,8 +48,8 @@ import { getContainer, createChildContainer } from "./container";
  * Request scope configuration
  */
 export interface RequestScopeConfig {
-  /** PrismaClient instance for this request */
-  prisma?: unknown;
+  /** Drizzle database instance for this request */
+  drizzle?: unknown;
 
   /** Unique request identifier */
   requestId?: string;
@@ -108,12 +95,12 @@ export interface RequestScope {
  * @example
  * ```typescript
  * const scope = createRequestScope({
- *   prisma: db,
+ *   drizzle: db,
  *   requestId: "req-123",
  *   userContext: { userId: "user-456", role: "admin" },
  * });
  *
- * try {
+ *   try {
  *   const controller = scope.container.resolve("userController");
  *   return await controller.getById({ id: "123" });
  * } finally {
@@ -131,8 +118,8 @@ export function createRequestScope(config: RequestScopeConfig): RequestScope {
     requestId: asValue(requestId),
   };
 
-  if (config.prisma) {
-    registrations.prisma = asValue(config.prisma);
+  if (config.drizzle) {
+    registrations.drizzle = asValue(config.drizzle);
   }
 
   if (config.userContext !== undefined) {
@@ -161,26 +148,6 @@ export function createRequestScope(config: RequestScopeConfig): RequestScope {
   };
 }
 
-/**
- * Create a minimal request scope with just PrismaClient
- *
- * Simplified version for basic use cases where only PrismaClient
- * needs to be request-scoped.
- *
- * @param prisma - PrismaClient instance
- * @returns Request scope with container
- *
- * @example
- * ```typescript
- * const scope = createPrismaScope(db);
- * const repo = scope.container.resolve("userRepository");
- * // repo has access to the request-scoped PrismaClient
- * ```
- */
-export function createPrismaScope(prisma: unknown): RequestScope {
-  return createRequestScope({ prisma });
-}
-
 // =============================================================================
 // Scoped Execution
 // =============================================================================
@@ -198,7 +165,7 @@ export function createPrismaScope(prisma: unknown): RequestScope {
  * @example
  * ```typescript
  * const result = await withRequestScope(
- *   { prisma: db, requestId: "batch-123" },
+ *   { drizzle: db, requestId: "batch-123" },
  *   async (scope) => {
  *     const useCase = scope.container.resolve("processBatchUseCase");
  *     return await useCase.execute(batchData);

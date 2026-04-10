@@ -30,7 +30,7 @@
  * - **Repositories**: `{EntityName}Repository` (e.g., `UserRepository`)
  * - **Controllers**: `{EntityName}Controller` (e.g., `UserController`)
  * - **Services**: `{Domain}Service` (e.g., `CoinService`, `RankingService`)
- * - **Infrastructure**: Descriptive names (e.g., `PrismaClient`, `Logger`, `Cache`)
+ * - **Infrastructure**: Descriptive names (e.g., `DrizzleClient`, `Logger`, `Cache`)
  * - **Request Context**: `{ContextItem}` (e.g., `RequestId`, `UserContext`)
  *
  * ## Organization
@@ -49,10 +49,6 @@
 // =============================================================================
 // Framework Services
 // =============================================================================
-
-/** Symbol for PrismaClient database connection */
-export type PrismaClientSymbol = typeof PRISMA_CLIENT_SYMBOL;
-const PRISMA_CLIENT_SYMBOL: unique symbol = Symbol.for("PrismaClient");
 
 /** Symbol for Supabase client */
 export type SupabaseClientSymbol = typeof SUPABASE_CLIENT_SYMBOL;
@@ -265,12 +261,11 @@ const USER_CONTEXT_SYMBOL: unique symbol = Symbol.for("UserContext");
  * ```typescript
  * import { TYPES } from "./types";
  *
- * container.register(TYPES.UserRepository, asClass(PrismaUserRepository));
+ * container.register(TYPES.UserRepository, asClass(DrizzleUserRepository));
  * ```
  */
 export const TYPES = {
   // Framework Services
-  PrismaClient: PRISMA_CLIENT_SYMBOL,
   SupabaseClient: SUPABASE_CLIENT_SYMBOL,
 
   // Repository Layer

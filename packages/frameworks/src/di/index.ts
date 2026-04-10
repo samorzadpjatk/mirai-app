@@ -98,8 +98,6 @@ export {
 export {
   /** Create a request-scoped container */
   createRequestScope,
-  /** Create a minimal scope with just PrismaClient */
-  createPrismaScope,
   /** Execute function within a request scope */
   withRequestScope,
   /** Check if container is scoped */

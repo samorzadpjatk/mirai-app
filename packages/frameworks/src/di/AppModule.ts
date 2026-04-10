@@ -8,10 +8,10 @@
  *
  * ```
  * AppModule (root)
- * ├── RepositoryModule         (data access layer - 16 repositories)
+ * ├── RepositoryModule         (data access layer - 17 repositories)
  * ├── BaseUseCaseModule        (core business logic - 75 use cases)
  * ├── AuthUseCaseModule        (auth/telemetry use cases + ports)
- * ├── ControllerModule         (API layer - 17 controllers)
+ * ├── ControllerModule         (API layer - GraphQL controllers)
  * └── FrameworkModule          (infrastructure services)
  * ```
  *
@@ -66,7 +66,7 @@ import { UseCaseModule as AuthUseCaseModule } from "@mirai-app/adapters/modules/
 // Provides auth/telemetry use cases and port abstractions
 
 // ControllerModule is imported from adapters package
-// Provides all 17 tRPC controllers as injectable services
+// Provides all GraphQL controllers as injectable services
 
 // =============================================================================
 // Module Type Definitions
@@ -192,7 +192,7 @@ export const AppModule: StaticModule<any> = createStaticModule<AppModuleDef>({
    * causing import-time circular dependencies.
    */
   imports: [
-    RepositoryModule, // Data access layer - 16 repositories
+    RepositoryModule, // Data access layer - 17 repositories
     BaseUseCaseModule, // Core use cases - 75 use cases
     AuthUseCaseModule, // Auth/telemetry use cases + ports
     // Lazy-loaded module: factory function prevents circular deps
@@ -200,7 +200,7 @@ export const AppModule: StaticModule<any> = createStaticModule<AppModuleDef>({
     // Named function preserves module name for introspection
     function loadControllerModule() {
       return ControllerModule;
-    }, // API layer - 17 controllers (lazy-loaded)
+    }, // API layer - GraphQL controllers (lazy-loaded)
   ],
 
   /**
