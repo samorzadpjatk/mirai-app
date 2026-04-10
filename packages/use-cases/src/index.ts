@@ -70,6 +70,34 @@ export type {
   TelemetryError,
 } from "./ports/TelemetryPort";
 
+// =============================================================================
+// Realtime & Storage Ports (Phase 0: Supabase-Agnostic Architecture)
+// =============================================================================
+
+// RealtimePort exports
+export type {
+  RealtimePort,
+  RealtimeSubscription,
+  ChannelConfig,
+  PresenceState,
+  ConnectionState,
+  RealtimeError,
+  ConnectionError,
+  SubscriptionError,
+} from "./ports/RealtimePort";
+
+// StoragePort exports
+export type {
+  StoragePort,
+  FileMetadata,
+  UploadOptions,
+  SignedUrlInfo,
+  StorageError,
+  FileNotFoundError,
+  UploadError,
+  BucketNotFoundError,
+} from "./ports/StoragePort";
+
 export {
   type UseCaseNotFoundError,
   type UseCaseConflictError,

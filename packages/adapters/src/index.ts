@@ -69,6 +69,25 @@ export { PrismaChallengeVoteRepository } from "./gateways/PrismaChallengeVoteRep
 export { PrismaSubmissionReportRepository } from "./gateways/PrismaSubmissionReportRepository";
 export { PrismaSponsorRepository } from "./gateways/PrismaSponsorRepository";
 
+// =============================================================================
+// Phase 0: Supabase-Agnostic Architecture Adapters
+// =============================================================================
+
+// Auth Adapters
+export { SupabaseAuthAdapter } from "./gateways/auth/SupabaseAuthAdapter";
+
+// Realtime Adapters
+export {
+  SupabaseRealtimeAdapter,
+  InMemoryRealtimeAdapter,
+} from "./gateways/realtime";
+
+// Storage Adapters
+export {
+  SupabaseStorageAdapter,
+  InMemoryStorageAdapter,
+} from "./gateways/storage";
+
 // Services (Domain logic utilities)
 export { PrismaTripPointsCalculator } from "./services/PrismaTripPointsCalculator";
 export { PrismaGroupCoinsService } from "./services/PrismaGroupCoinsService";
@@ -134,6 +153,11 @@ export { NotificationScheduleMapper } from "./mappers/NotificationScheduleMapper
 export { ChallengeVoteMapper } from "./mappers/ChallengeVoteMapper";
 export { SubmissionReportMapper } from "./mappers/SubmissionReportMapper";
 export { SponsorMapper } from "./mappers/SponsorMapper";
+
+// =============================================================================
+// Phase 1: Drizzle ORM Migration Mappers
+// =============================================================================
+export { UserDrizzleMapper } from "./mappers/UserDrizzleMapper";
 
 // Re-export inner layers for convenience
 export type {
