@@ -91,7 +91,6 @@ import { PrismaChallengeSubmissionRepository } from "../gateways/PrismaChallenge
 import { PrismaChallengeVoteRepository } from "../gateways/PrismaChallengeVoteRepository";
 import { PrismaActivityFeedRepository } from "../gateways/PrismaActivityFeedRepository";
 import { PrismaSponsorRepository } from "../gateways/PrismaSponsorRepository";
-import { PrismaSubmissionReportRepository } from "../gateways/PrismaSubmissionReportRepository";
 import {
   PrismaRewardRepository,
   PrismaRewardPurchaseRepository,
@@ -331,7 +330,7 @@ export interface RepositoryModuleDef {
       | typeof PrismaSponsorRepository
       | typeof DrizzleSponsorRepository;
     [REPOSITORY_TOKENS.SubmissionReportRepository]:
-      | typeof PrismaSubmissionReportRepository
+      
       | typeof DrizzleSubmissionReportRepository;
     [REPOSITORY_TOKENS.RewardRepository]:
       | typeof PrismaRewardRepository
@@ -412,11 +411,6 @@ function createSponsorRepository(cradle: Cradle): SponsorRepository {
   return new PrismaSponsorRepository(cradle.prisma);
 }
 
-function createSubmissionReportRepository(
-  cradle: Cradle,
-): SubmissionReportRepository {
-  return new PrismaSubmissionReportRepository(cradle.prisma);
-}
 
 function createRewardRepository(cradle: Cradle): RewardRepository {
   return new PrismaRewardRepository(cradle.prisma);
@@ -590,7 +584,6 @@ export { PrismaChallengeSubmissionRepository } from "../gateways/PrismaChallenge
 export { PrismaChallengeVoteRepository } from "../gateways/PrismaChallengeVoteRepository";
 export { PrismaActivityFeedRepository } from "../gateways/PrismaActivityFeedRepository";
 export { PrismaSponsorRepository } from "../gateways/PrismaSponsorRepository";
-export { PrismaSubmissionReportRepository } from "../gateways/PrismaSubmissionReportRepository";
 export {
   PrismaRewardRepository,
   PrismaRewardPurchaseRepository,

@@ -9,7 +9,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
-import { PrismaCoinTransactionRepository } from "../../gateways/PrismaCoinTransactionRepository";
+import { DrizzleCoinTransactionRepository } from "../../gateways/drizzle/DrizzleCoinTransactionRepository";
 import { PrismaCoinService } from "../../services/PrismaCoinService";
 import { PrismaRankingActivityService } from "../../services/PrismaRankingActivityService";
 import { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
@@ -17,7 +17,7 @@ import { requireModerator } from "../controller-helpers";
 
 // Helper to create coin service from context
 const createCoinService = (ctx: { db: unknown }) => {
-  const coinRepo = new PrismaCoinTransactionRepository(ctx.db);
+  const coinRepo = new DrizzleCoinTransactionRepository(ctx.db);
   const rankingActivityService = new PrismaRankingActivityService(ctx.db);
   return new PrismaCoinService(
     ctx.db,

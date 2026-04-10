@@ -10,7 +10,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 import { NotificationDeliveryController } from "../../controllers/notification-delivery-controller";
-import { PrismaNotificationDeliveryRepository } from "../../gateways/PrismaNotificationDeliveryRepository";
+import { DrizzleNotificationDeliveryRepository } from "../../gateways/drizzle/DrizzleNotificationDeliveryRepository";
 import { requireAdmin } from "../controller-helpers";
 import {
   GetDeliveriesUseCase,
@@ -21,7 +21,7 @@ import {
 
 // Helper to create notification delivery controller from context
 const createNotificationDeliveryController = (ctx: { db: unknown }) => {
-  const deliveryRepo = new PrismaNotificationDeliveryRepository(ctx.db);
+  const deliveryRepo = new DrizzleNotificationDeliveryRepository(ctx.db);
   return new NotificationDeliveryController(
     new GetDeliveriesUseCase(deliveryRepo),
     new GetDeliveryByNotificationIdUseCase(deliveryRepo),

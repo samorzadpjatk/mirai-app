@@ -32,7 +32,13 @@ import ScopeAuthPlugin from "@pothos/plugin-scope-auth";
 import DataLoaderPlugin from "@pothos/plugin-dataloader";
 import RelayPlugin from "@pothos/plugin-relay";
 import { DateTimeResolver } from "graphql-scalars";
-import type { GetUserOutput } from "@mirai-app/use-cases";
+import type {
+  GetUserOutput,
+  GetSubmissionOutput,
+  CreateSubmissionOutput,
+  UpdateSubmissionOutput,
+  ListSubmissionsByChallengeOutput,
+} from "@mirai-app/use-cases";
 import type { UserRole } from "@mirai-app/domain";
 
 // =============================================================================
@@ -64,6 +70,24 @@ export interface PothosTypes {
   Objects: {
     // User domain - mapped from GetUserOutput DTO
     User: GetUserOutput;
+
+    // ChallengeSubmission domain - mapped from use case DTOs
+    ChallengeSubmission: GetSubmissionOutput;
+    ChallengeSubmissionCreateResult: CreateSubmissionOutput;
+    ChallengeSubmissionUpdateResult: UpdateSubmissionOutput;
+    ChallengeSubmissionListResult: ListSubmissionsByChallengeOutput;
+    SubmissionGroupInfo: {
+      id: string;
+      name: string;
+      description: string | null;
+      image: string | null;
+    };
+    SubmissionReviewerInfo: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+    };
   };
 
   // Scalars
@@ -94,6 +118,7 @@ export interface PothosTypes {
  */
 export const builder = new SchemaBuilder<PothosTypes>({
   plugins: [ScopeAuthPlugin, DataLoaderPlugin, RelayPlugin],
+  notStrict: true,
 
   // Scope auth configuration
   scopeAuth: {

@@ -19,19 +19,12 @@ export type {
 // Prisma ORM Repositories (Legacy)
 // =============================================================================
 export { PrismaUserRepository } from "./prisma/PrismaUserRepository";
-export { PrismaChallengeRepository } from "./prisma/PrismaChallengeRepository";
-export { PrismaGroupRepository } from "./prisma/PrismaGroupRepository";
 export { PrismaTripRepository } from "./prisma/PrismaTripRepository";
-export { PrismaLocationRepository } from "./prisma/PrismaLocationRepository";
-export { PrismaChallengeSubmissionRepository } from "./prisma/PrismaChallengeSubmissionRepository";
 export { PrismaChallengeVoteRepository } from "./prisma/PrismaChallengeVoteRepository";
 export { PrismaActivityFeedRepository } from "./prisma/PrismaActivityFeedRepository";
 export { PrismaNotificationRepository } from "./prisma/PrismaNotificationRepository";
-export { PrismaNotificationDeliveryRepository } from "./prisma/PrismaNotificationDeliveryRepository";
 export { PrismaNotificationScheduleRepository } from "./prisma/PrismaNotificationScheduleRepository";
 export { PrismaRewardRepository } from "./prisma/PrismaRewardRepository";
-export { PrismaCoinTransactionRepository } from "./prisma/PrismaCoinTransactionRepository";
-export { PrismaSponsorRepository } from "./prisma/PrismaSponsorRepository";
 export { PrismaSubmissionReportRepository } from "./prisma/PrismaSubmissionReportRepository";
 export { PrismaTelemetryAdapter } from "./prisma/PrismaTelemetryAdapter";
 

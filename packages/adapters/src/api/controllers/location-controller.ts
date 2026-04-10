@@ -10,7 +10,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 import { LocationController } from "../../controllers/location-controller";
-import { PrismaLocationRepository } from "../../gateways/PrismaLocationRepository";
+import { DrizzleLocationRepository } from "../../gateways/drizzle/DrizzleLocationRepository";
 import { requireAuth } from "../controller-helpers";
 
 // Helper to map error to TRPC error code
@@ -28,7 +28,7 @@ export const locationController = {
     const authContext = await requireAuth(ctx.headers, ctx.di);
 
     const controller = new LocationController(
-      new PrismaLocationRepository(ctx.db),
+      new DrizzleLocationRepository(ctx.db),
     );
     const result = await controller.getByUserId({ userId: authContext.userId });
     if (!result.success) {
@@ -57,7 +57,7 @@ export const locationController = {
       const authContext = await requireAuth(ctx.headers, ctx.di);
 
       const controller = new LocationController(
-        new PrismaLocationRepository(ctx.db),
+        new DrizzleLocationRepository(ctx.db),
       );
       const result = await controller.update({
         userId: authContext.userId,
@@ -77,7 +77,7 @@ export const locationController = {
     const authContext = await requireAuth(ctx.headers, ctx.di);
 
     const controller = new LocationController(
-      new PrismaLocationRepository(ctx.db),
+      new DrizzleLocationRepository(ctx.db),
     );
     const result = await controller.list({
       viewerUserId: authContext.userId,
@@ -96,7 +96,7 @@ export const locationController = {
     const authContext = await requireAuth(ctx.headers, ctx.di);
 
     const controller = new LocationController(
-      new PrismaLocationRepository(ctx.db),
+      new DrizzleLocationRepository(ctx.db),
     );
     const result = await controller.getSharingSettings({
       userId: authContext.userId,
@@ -122,7 +122,7 @@ export const locationController = {
       const authContext = await requireAuth(ctx.headers, ctx.di);
 
       const controller = new LocationController(
-        new PrismaLocationRepository(ctx.db),
+        new DrizzleLocationRepository(ctx.db),
       );
       const result = await controller.updateSharingSettings({
         userId: authContext.userId,
@@ -149,7 +149,7 @@ export const locationController = {
       const authContext = await requireAuth(ctx.headers, ctx.di);
 
       const controller = new LocationController(
-        new PrismaLocationRepository(ctx.db),
+        new DrizzleLocationRepository(ctx.db),
       );
       const result = await controller.addSharingUser({
         ownerUserId: authContext.userId,
@@ -173,7 +173,7 @@ export const locationController = {
       const authContext = await requireAuth(ctx.headers, ctx.di);
 
       const controller = new LocationController(
-        new PrismaLocationRepository(ctx.db),
+        new DrizzleLocationRepository(ctx.db),
       );
       const result = await controller.removeSharingUser({
         ownerUserId: authContext.userId,

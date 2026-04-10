@@ -10,12 +10,10 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 import { SponsorController } from "../../controllers/sponsor-controller";
-import { PrismaSponsorRepository } from "../../gateways/PrismaSponsorRepository";
 import { requireAdmin } from "../controller-helpers";
 
 export const sponsorController = {
   getAll: publicProcedure.query(async ({ ctx }) => {
-    const repository = new PrismaSponsorRepository(ctx.db);
     const controller = new SponsorController(repository);
 
     const result = await controller.list({ activeOnly: true });
@@ -30,7 +28,6 @@ export const sponsorController = {
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
       const result = await controller.getById({ id: input.id });
@@ -50,7 +47,6 @@ export const sponsorController = {
   getByTripId: publicProcedure
     .input(z.object({ tripId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
       const result = await controller.getByTripId({ tripId: input.tripId });
@@ -83,7 +79,6 @@ export const sponsorController = {
       // Require admin role
       await requireAdmin(ctx.headers, ctx.di);
 
-      const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
       const result = await controller.create(input);
@@ -112,7 +107,6 @@ export const sponsorController = {
       // Require admin role
       await requireAdmin(ctx.headers, ctx.di);
 
-      const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
       const result = await controller.update({
@@ -138,7 +132,6 @@ export const sponsorController = {
       // Require admin role
       await requireAdmin(ctx.headers, ctx.di);
 
-      const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
       const result = await controller.delete({ id: input.id });
@@ -166,7 +159,6 @@ export const sponsorController = {
       // Require admin role
       await requireAdmin(ctx.headers, ctx.di);
 
-      const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
       const result = await controller.linkToTrip({
@@ -197,7 +189,6 @@ export const sponsorController = {
       // Require admin role
       await requireAdmin(ctx.headers, ctx.di);
 
-      const repository = new PrismaSponsorRepository(ctx.db);
       const controller = new SponsorController(repository);
 
       const result = await controller.unlinkFromTrip({

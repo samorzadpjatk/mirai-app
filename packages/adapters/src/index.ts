@@ -51,15 +51,9 @@ export {
   type PrismaModelDelegate,
 } from "./gateways/BasePrismaRepository";
 export { PrismaUserRepository } from "./gateways/prisma/PrismaUserRepository";
-export { PrismaCoinTransactionRepository } from "./gateways/prisma/PrismaCoinTransactionRepository";
-export { PrismaNotificationDeliveryRepository } from "./gateways/prisma/PrismaNotificationDeliveryRepository";
-export { PrismaChallengeRepository } from "./gateways/prisma/PrismaChallengeRepository";
 export { PrismaTripRepository } from "./gateways/prisma/PrismaTripRepository";
-export { PrismaGroupRepository } from "./gateways/prisma/PrismaGroupRepository";
 export { PrismaNotificationRepository } from "./gateways/prisma/PrismaNotificationRepository";
 export { PrismaActivityFeedRepository } from "./gateways/prisma/PrismaActivityFeedRepository";
-export { PrismaChallengeSubmissionRepository } from "./gateways/prisma/PrismaChallengeSubmissionRepository";
-export { PrismaLocationRepository } from "./gateways/prisma/PrismaLocationRepository";
 export {
   PrismaRewardRepository,
   PrismaRewardPurchaseRepository,
@@ -67,7 +61,6 @@ export {
 export { PrismaNotificationScheduleRepository } from "./gateways/prisma/PrismaNotificationScheduleRepository";
 export { PrismaChallengeVoteRepository } from "./gateways/prisma/PrismaChallengeVoteRepository";
 export { PrismaSubmissionReportRepository } from "./gateways/prisma/PrismaSubmissionReportRepository";
-export { PrismaSponsorRepository } from "./gateways/prisma/PrismaSponsorRepository";
 
 // =============================================================================
 // Phase 0: Supabase-Agnostic Architecture Adapters

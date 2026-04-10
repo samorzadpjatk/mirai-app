@@ -10,7 +10,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 import { CoinTransactionController } from "../../controllers/coin-transaction-controller";
-import { PrismaCoinTransactionRepository } from "../../gateways/PrismaCoinTransactionRepository";
+import { DrizzleCoinTransactionRepository } from "../../gateways/drizzle/DrizzleCoinTransactionRepository";
 import { PrismaCoinTransactionService } from "../../services/PrismaCoinTransactionService";
 import { requireAuth, requireModerator } from "../controller-helpers";
 import {
@@ -38,7 +38,7 @@ const formatUserFullName = (user?: {
 
 // Helper to create coin transaction controller from context
 const createCoinTransactionController = (ctx: { db: unknown }) => {
-  const coinRepo = new PrismaCoinTransactionRepository(ctx.db as never);
+  const coinRepo = new DrizzleCoinTransactionRepository(ctx.db as never);
   return new CoinTransactionController(
     new GetCoinStatisticsUseCase(coinRepo),
     new GetMostActiveAdminStatsUseCase(coinRepo),
@@ -212,7 +212,7 @@ export const coinTransactionController = {
       const controller = createCoinTransactionController(ctx);
       const service = new PrismaCoinTransactionService(
         ctx.db,
-        new PrismaCoinTransactionRepository(ctx.db),
+        new DrizzleCoinTransactionRepository(ctx.db),
       );
 
       const result = await service.getCoinTransactionsForUser({

@@ -1,5 +1,5 @@
 import type { Prisma } from "@mirai-app/frameworks/prisma";
-import type { PrismaCoinTransactionRepository } from "../gateways/PrismaCoinTransactionRepository";
+import type { DrizzleCoinTransactionRepository } from "../gateways/drizzle/DrizzleCoinTransactionRepository";
 import type { AddCoinsUseCase, RemoveCoinsUseCase } from "@mirai-app/use-cases";
 import {
   PrismaRankingActivityService,
@@ -15,7 +15,7 @@ import {
 export class PrismaCoinService {
   constructor(
     private prisma: Prisma.TransactionClient,
-    private coinRepo: PrismaCoinTransactionRepository,
+    private coinRepo: DrizzleCoinTransactionRepository,
     private addCoinsUseCase: AddCoinsUseCase,
     private removeCoinsUseCase: RemoveCoinsUseCase,
     private rankingActivityService: PrismaRankingActivityService,

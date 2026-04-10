@@ -8,7 +8,7 @@ import type { LocationId } from "@mirai-app/domain";
  * from any location repository implementation.
  *
  * Implementations (in adapters layer):
- * - PrismaLocationRepository: Uses Prisma ORM
+ * - DrizzleLocationRepository: Uses Drizzle ORM
  * - InMemoryLocationRepository: For testing
  */
 export interface LocationRepository {

@@ -10,7 +10,6 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 import { GroupController } from "../../controllers/group-controller";
-import { PrismaGroupRepository } from "../../gateways/PrismaGroupRepository";
 import {
   requireAuth,
   requireModerator,
@@ -24,7 +23,7 @@ export const groupController = {
       // Require moderator role
       await requireModerator(ctx.headers, ctx.di);
 
-      const repo = new PrismaGroupRepository(ctx.db);
+      const repo = new DrizzleGroupRepository(ctx.db);
       const groups = await repo.findByTripId(input.tripId);
       return groups.map((g) => ({ id: g.id, name: g.name }));
     }),
@@ -45,7 +44,7 @@ export const groupController = {
       // Require authentication
       await requireAuth(ctx.headers, ctx.di);
 
-      const repo = new PrismaGroupRepository(ctx.db);
+      const repo = new DrizzleGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.getByTripId({ tripId: input.tripId });
 
@@ -69,7 +68,7 @@ export const groupController = {
       // Require authentication
       await requireAuth(ctx.headers, ctx.di);
 
-      const repo = new PrismaGroupRepository(ctx.db);
+      const repo = new DrizzleGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.getById({ id: input.id });
 
@@ -98,7 +97,7 @@ export const groupController = {
       // Require authentication
       const authContext = await requireAuth(ctx.headers, ctx.di);
 
-      const repo = new PrismaGroupRepository(ctx.db);
+      const repo = new DrizzleGroupRepository(ctx.db);
       const controller = new GroupController(repo);
 
       // Generate a unique code
@@ -135,7 +134,7 @@ export const groupController = {
       // Require authentication
       await requireAuth(ctx.headers, ctx.di);
 
-      const repo = new PrismaGroupRepository(ctx.db);
+      const repo = new DrizzleGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.update({
         groupId: input.id,
@@ -156,7 +155,7 @@ export const groupController = {
       // Require admin role
       await requireAdmin(ctx.headers, ctx.di);
 
-      const repo = new PrismaGroupRepository(ctx.db);
+      const repo = new DrizzleGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.delete({ id: input.id });
 
@@ -183,7 +182,7 @@ export const groupController = {
       // Require moderator role
       await requireModerator(ctx.headers, ctx.di);
 
-      const repo = new PrismaGroupRepository(ctx.db);
+      const repo = new DrizzleGroupRepository(ctx.db);
       const controller = new GroupController(repo);
       const result = await controller.addCoins({
         groupId: input.groupId,
@@ -202,7 +201,7 @@ export const groupController = {
       // Require authentication
       await requireAuth(ctx.headers, ctx.di);
 
-      const repo = new PrismaGroupRepository(ctx.db);
+      const repo = new DrizzleGroupRepository(ctx.db);
       const groups = await repo.findByTripId(input.tripId);
       return {
         data: groups.sort((a, b) => b.coins - a.coins),

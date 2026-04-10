@@ -11,9 +11,9 @@ import { TRPCError } from "@trpc/server";
 import { publicProcedure } from "../trpc";
 import { RewardController } from "../../controllers/reward-controller";
 import {
-  PrismaRewardRepository,
-  PrismaRewardPurchaseRepository,
-} from "../../gateways/PrismaRewardRepository";
+  DrizzleRewardRepository,
+  DrizzleRewardPurchaseRepository,
+} from "../../gateways/drizzle/DrizzleRewardRepository";
 import { PrismaTripPointsCalculator } from "../../services/PrismaTripPointsCalculator";
 import { PrismaGroupCoinsService } from "../../services/PrismaGroupCoinsService";
 import { PrismaTripAccessChecker } from "../../services/PrismaTripAccessChecker";
@@ -21,8 +21,8 @@ import { requireAuth, requireModerator } from "../controller-helpers";
 
 // Helper to create reward controller with dependencies
 const createRewardController = (ctx: { db: unknown }) => {
-  const rewardRepo = new PrismaRewardRepository(ctx.db);
-  const purchaseRepo = new PrismaRewardPurchaseRepository(ctx.db);
+  const rewardRepo = new DrizzleRewardRepository(ctx.db);
+  const purchaseRepo = new DrizzleRewardPurchaseRepository(ctx.db);
   const pointsCalculator = new PrismaTripPointsCalculator(ctx.db);
   const coinsService = new PrismaGroupCoinsService(ctx.db);
   const accessChecker = new PrismaTripAccessChecker(ctx.db);
