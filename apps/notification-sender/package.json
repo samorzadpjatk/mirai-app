@@ -17,8 +17,7 @@
     "clean": "rm -rf node_modules"
   },
   "dependencies": {
-    "@mirai-app/frameworks": "workspace:*",
-    "@trpc/client": "^11.8.1"
+    "@mirai-app/frameworks": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.7.2",
