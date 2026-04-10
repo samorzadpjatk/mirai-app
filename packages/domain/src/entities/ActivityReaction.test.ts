@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { ActivityReaction } from "./ActivityReaction";
+import { REACTION_TYPES } from "./ActivityFeed";
 
 describe("[UNIT] ActivityReaction Entity", () => {
   describe("ActivityReaction.create", () => {
@@ -7,7 +8,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "like",
+        reactionType: "heart",
       });
 
       expect(result.kind).toBe("ok");
@@ -15,7 +16,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
         expect(result.value.id).toBeDefined();
         expect(result.value.activityId).toBe("activity-123");
         expect(result.value.userId).toBe("user-456");
-        expect(result.value.reactionType).toBe("like");
+        expect(result.value.reactionType).toBe("heart");
         expect(result.value.createdAt).toBeInstanceOf(Date);
       }
     });
@@ -24,7 +25,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
       const result = ActivityReaction.create({
         activityId: "",
         userId: "user-456",
-        reactionType: "like",
+        reactionType: "heart",
       });
 
       expect(result.kind).toBe("err");
@@ -34,7 +35,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "",
-        reactionType: "like",
+        reactionType: "heart",
       });
 
       expect(result.kind).toBe("err");
@@ -49,61 +50,89 @@ describe("[UNIT] ActivityReaction Entity", () => {
 
       expect(result.kind).toBe("err");
     });
+
+    it("should reject invalid reaction type", () => {
+      const result = ActivityReaction.create({
+        activityId: "activity-123",
+        userId: "user-456",
+        reactionType: "invalid",
+      });
+
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toContain("Invalid reaction type");
+      }
+    });
+
+    it("should accept all valid reaction types", () => {
+      for (const reactionType of REACTION_TYPES) {
+        const result = ActivityReaction.create({
+          activityId: "activity-123",
+          userId: "user-456",
+          reactionType,
+        });
+
+        expect(result.kind).toBe("ok");
+        if (result.kind === "ok") {
+          expect(result.value.reactionType).toBe(reactionType);
+        }
+      }
+    });
   });
 
   describe("ActivityReaction type checks", () => {
-    it("should identify like reaction", () => {
+    it("should identify heart reaction", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "like",
+        reactionType: "heart",
       });
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
-        expect(result.value.isLike()).toBe(true);
-        expect(result.value.isLove()).toBe(false);
-        expect(result.value.isOfType("like")).toBe(true);
+        expect(result.value.isHeart()).toBe(true);
+        expect(result.value.isFire()).toBe(false);
+        expect(result.value.isOfType("heart")).toBe(true);
       }
     });
 
-    it("should identify love reaction", () => {
+    it("should identify fire reaction", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "love",
+        reactionType: "fire",
       });
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
-        expect(result.value.isLove()).toBe(true);
-        expect(result.value.isLike()).toBe(false);
+        expect(result.value.isFire()).toBe(true);
+        expect(result.value.isHeart()).toBe(false);
       }
     });
 
-    it("should identify celebrate reaction", () => {
+    it("should identify clap reaction", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "celebrate",
+        reactionType: "clap",
       });
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
-        expect(result.value.isCelebrate()).toBe(true);
+        expect(result.value.isClap()).toBe(true);
       }
     });
 
-    it("should identify funny reaction", () => {
+    it("should identify star reaction", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "funny",
+        reactionType: "star",
       });
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
-        expect(result.value.isFunny()).toBe(true);
+        expect(result.value.isStar()).toBe(true);
       }
     });
 
@@ -111,13 +140,10 @@ describe("[UNIT] ActivityReaction Entity", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "LIKE",
+        reactionType: "HEART",
       });
 
-      expect(result.kind).toBe("ok");
-      if (result.kind === "ok") {
-        expect(result.value.isLike()).toBe(true);
-      }
+      expect(result.kind).toBe("err");
     });
   });
 
@@ -126,13 +152,13 @@ describe("[UNIT] ActivityReaction Entity", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "like",
+        reactionType: "heart",
       });
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
         expect(result.value.getCompositeId()).toBe(
-          "activity-123:user-456:like",
+          "activity-123:user-456:heart",
         );
       }
     });
@@ -143,20 +169,20 @@ describe("[UNIT] ActivityReaction Entity", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "like",
+        reactionType: "heart",
       });
 
       expect(result.kind).toBe("ok");
       if (result.kind === "ok") {
-        expect(result.value.matches("activity-123", "user-456", "like")).toBe(
+        expect(result.value.matches("activity-123", "user-456", "heart")).toBe(
           true,
         );
-        expect(result.value.matches("activity-123", "user-456", "love")).toBe(
+        expect(result.value.matches("activity-123", "user-456", "fire")).toBe(
           false,
         );
-        expect(result.value.matches("other-activity", "user-456", "like")).toBe(
-          false,
-        );
+        expect(
+          result.value.matches("other-activity", "user-456", "heart"),
+        ).toBe(false);
       }
     });
   });
@@ -166,7 +192,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "like",
+        reactionType: "heart",
       });
 
       expect(result.kind).toBe("ok");
@@ -180,7 +206,7 @@ describe("[UNIT] ActivityReaction Entity", () => {
       const result = ActivityReaction.create({
         activityId: "activity-123",
         userId: "user-456",
-        reactionType: "like",
+        reactionType: "heart",
       });
 
       expect(result.kind).toBe("ok");

@@ -1,5 +1,6 @@
 import type { Result } from "../utils/result";
 import { ok, err } from "../utils/result";
+import { REACTION_TYPES } from "./ActivityFeed";
 
 /**
  * Validation rules for ActivityReaction data
@@ -57,6 +58,16 @@ export class ActivityReaction {
       );
     }
 
+    // Validate reaction type is one of the allowed types
+    const trimmedType = props.reactionType.trim();
+    if (
+      !REACTION_TYPES.includes(trimmedType as (typeof REACTION_TYPES)[number])
+    ) {
+      return err(
+        `Invalid reaction type: ${trimmedType}. Must be one of: ${REACTION_TYPES.join(", ")}`,
+      );
+    }
+
     const now = new Date();
 
     return ok(
@@ -64,7 +75,7 @@ export class ActivityReaction {
         props.id ?? crypto.randomUUID(),
         props.activityId.trim(),
         props.userId.trim(),
-        props.reactionType.trim(),
+        trimmedType,
         props.createdAt ?? now,
       ),
     );
@@ -88,20 +99,20 @@ export class ActivityReaction {
   /**
    * Common reaction type checks
    */
-  isLike(): boolean {
-    return this.isOfType("like");
+  isHeart(): boolean {
+    return this.isOfType("heart");
   }
 
-  isLove(): boolean {
-    return this.isOfType("love");
+  isFire(): boolean {
+    return this.isOfType("fire");
   }
 
-  isCelebrate(): boolean {
-    return this.isOfType("celebrate");
+  isClap(): boolean {
+    return this.isOfType("clap");
   }
 
-  isFunny(): boolean {
-    return this.isOfType("funny");
+  isStar(): boolean {
+    return this.isOfType("star");
   }
 
   /**
