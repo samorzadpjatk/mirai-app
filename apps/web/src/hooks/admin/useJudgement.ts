@@ -1,7 +1,41 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import { useMemo } from "react";
+import { GraphQLClient } from "graphql-request";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryOptions,
+} from "@tanstack/react-query";
+import {
+  useGetVotesByChallengeQuery,
+  useSubmitVoteMutation,
+  useGetChallengeSubmissionsQuery,
+  type GetChallengeSubmissionsQuery,
+} from "@mirai-app/graphql-types";
+import { env } from "../lib/env";
+
+const getAuthToken = () => {
+  const cookies = document.cookie.split(";");
+  const tokenCookie = cookies.find((c) =>
+    c.trim().startsWith("sb-access-token="),
+  );
+  return tokenCookie ? tokenCookie.split("=")[1] : null;
+};
+
+const createGraphQLClient = () => {
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
 
 type ChallengeStatus =
   | "HIDDEN"
@@ -44,6 +78,50 @@ export interface JudgementSubmission {
     image: string | null;
   };
 }
+
+// GraphQL query to get challenge by ID
+const GET_CHALLENGE_QUERY = `
+  query GetChallenge($id: ID!, $tripId: ID!) {
+    challenge(id: $id, tripId: $tripId) {
+      id
+      name
+      scoringCategory
+      status
+      basePoints
+      firstPlacePoints
+      secondPlacePoints
+      thirdPlacePoints
+    }
+  }
+`;
+
+// GraphQL mutation for reviewing submissions
+const REVIEW_SUBMISSION_MUTATION = `
+  mutation ReviewChallengeSubmission($input: ReviewChallengeSubmissionInput!) {
+    reviewChallengeSubmission(input: $input) {
+      submission {
+        id
+        status
+        rejectionReason
+        awardedPoints
+        bonusPoints
+        ranking
+      }
+    }
+  }
+`;
+
+// GraphQL mutation for updating challenge status
+const UPDATE_CHALLENGE_MUTATION = `
+  mutation UpdateChallenge($input: UpdateChallengeInput!) {
+    updateChallenge(input: $input) {
+      challenge {
+        id
+        status
+      }
+    }
+  }
+`;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -149,20 +227,71 @@ const parseSubmission = (value: unknown): JudgementSubmission | null => {
   };
 };
 
+const parseSubmissionsFromQuery = (
+  data: GetChallengeSubmissionsQuery | undefined,
+): JudgementSubmission[] => {
+  if (!data?.challengeSubmissions?.submissions) return [];
+
+  return data.challengeSubmissions.submissions
+    .map((item) => {
+      if (!item?.id || !item.group?.id || !item.group.name) return null;
+
+      const status = item.status as JudgementSubmission["status"] | undefined;
+      if (!status || !["PENDING", "APPROVED", "REJECTED"].includes(status)) {
+        return null;
+      }
+
+      return {
+        id: item.id,
+        status,
+        imageIds: (item.imageIds?.filter(
+          (id): id is string => typeof id === "string",
+        ) ?? []) as string[],
+        videoId: item.videoId ?? null,
+        textContent: item.textContent ?? null,
+        latitude: item.latitude ?? null,
+        longitude: item.longitude ?? null,
+        voteScore: item.voteScore ?? 0,
+        voteCount: item.voteCount ?? 0,
+        ranking: item.ranking ?? null,
+        awardedPoints: item.awardedPoints ?? 0,
+        bonusPoints: item.bonusPoints ?? 0,
+        rejectionReason: item.rejectionReason ?? null,
+        createdAt: item.createdAt ?? new Date().toISOString(),
+        group: {
+          id: item.group.id,
+          name: item.group.name,
+          image: item.group.image ?? null,
+        },
+      };
+    })
+    .filter((item): item is JudgementSubmission => item !== null);
+};
+
 export function useJudgement(tripId: string, challengeId: string) {
-  const trpcClient = useTRPCClient();
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
   const queryClient = useQueryClient();
 
+  // Challenge query using raw GraphQL
   const challengeQuery = useQuery({
     queryKey: ["challenge", "details", challengeId, tripId],
     enabled: Boolean(tripId) && Boolean(challengeId),
     queryFn: async () => {
-      const result = await trpcClient.challenge.getById.query({
-        id: challengeId,
-        tripId,
-      });
+      const result = await graphqlClient.request<{
+        challenge?: {
+          id: string;
+          tripId: string;
+          name: string;
+          scoringCategory?: string;
+          status?: ChallengeStatus;
+          basePoints?: number;
+          firstPlacePoints?: number | null;
+          secondPlacePoints?: number | null;
+          thirdPlacePoints?: number | null;
+        };
+      }>(GET_CHALLENGE_QUERY, { id: challengeId, tripId });
 
-      const parsed = parseChallenge(result);
+      const parsed = parseChallenge(result.challenge);
       if (!parsed) {
         throw new Error("Invalid challenge payload.");
       }
@@ -171,41 +300,65 @@ export function useJudgement(tripId: string, challengeId: string) {
     },
   });
 
-  const submissionsQuery = useQuery({
-    queryKey: ["challenge", "admin-submissions", challengeId, tripId],
-    enabled: Boolean(tripId) && Boolean(challengeId),
-    queryFn: async () => {
-      const result =
-        await trpcClient.challengeSubmission.getByChallengeForAdmin.query({
-          tripId,
-          challengeId,
-        });
-
-      if (!Array.isArray(result)) {
-        return [] as JudgementSubmission[];
-      }
-
-      return result
-        .map(parseSubmission)
-        .filter((submission): submission is JudgementSubmission =>
-          Boolean(submission),
-        );
+  // Submissions query using generated GraphQL hook
+  const submissionsQuery = useGetChallengeSubmissionsQuery(
+    graphqlClient,
+    {
+      challengeId,
+      tripId,
+      limit: 100,
+      offset: 0,
     },
-  });
+    {
+      enabled: Boolean(tripId) && Boolean(challengeId),
+    },
+  );
 
+  // Votes query using generated GraphQL hook
+  const votesQuery = useGetVotesByChallengeQuery(
+    graphqlClient,
+    { challengeId },
+    {
+      enabled: Boolean(challengeId),
+    },
+  );
+
+  // Review mutation using raw GraphQL (since specific mutation may not be in generated hooks)
   const reviewMutation = useMutation({
-    mutationFn: (input: {
+    mutationFn: async (input: {
       id: string;
       status: "APPROVED" | "REJECTED";
       rejectionReason?: string;
       awardedPoints?: number;
       bonusPoints?: number;
       ranking?: 1 | 2 | 3;
-    }) => trpcClient.challengeSubmission.review.mutate(input),
+    }) => {
+      const result = await graphqlClient.request<{
+        reviewChallengeSubmission?: {
+          submission?: {
+            id: string;
+            status: string;
+          };
+        };
+      }>(REVIEW_SUBMISSION_MUTATION, {
+        input: {
+          submissionId: input.id,
+          status: input.status,
+          rejectionReason: input.rejectionReason,
+          awardedPoints: input.awardedPoints,
+          bonusPoints: input.bonusPoints,
+          ranking: input.ranking,
+        },
+      });
+      return result;
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["challenge", "admin-submissions", challengeId, tripId],
+          queryKey: useGetChallengeSubmissionsQuery.getKey({
+            challengeId,
+            tripId,
+          }),
         }),
         queryClient.invalidateQueries({
           queryKey: ["challenge", "details", challengeId, tripId],
@@ -217,13 +370,24 @@ export function useJudgement(tripId: string, challengeId: string) {
     },
   });
 
+  // Complete challenge mutation using raw GraphQL
   const completeChallengeMutation = useMutation({
     mutationFn: async () => {
-      return trpcClient.challenge.update.mutate({
-        id: challengeId,
-        tripId,
-        status: "COMPLETED",
+      const result = await graphqlClient.request<{
+        updateChallenge?: {
+          challenge?: {
+            id: string;
+            status: string;
+          };
+        };
+      }>(UPDATE_CHALLENGE_MUTATION, {
+        input: {
+          id: challengeId,
+          tripId,
+          status: "COMPLETED",
+        },
       });
+      return result;
     },
     onSuccess: async () => {
       await Promise.all([
@@ -231,7 +395,10 @@ export function useJudgement(tripId: string, challengeId: string) {
           queryKey: ["challenge", "details", challengeId, tripId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["challenge", "admin-submissions", challengeId, tripId],
+          queryKey: useGetChallengeSubmissionsQuery.getKey({
+            challengeId,
+            tripId,
+          }),
         }),
         queryClient.invalidateQueries({
           queryKey: ["challenges", tripId],
@@ -240,7 +407,11 @@ export function useJudgement(tripId: string, challengeId: string) {
     },
   });
 
-  const submissions = submissionsQuery.data ?? [];
+  const submissions = useMemo(
+    () => parseSubmissionsFromQuery(submissionsQuery.data),
+    [submissionsQuery.data],
+  );
+
   const pendingSubmissions = submissions.filter(
     (submission) => submission.status === "PENDING",
   );
@@ -266,10 +437,13 @@ export function useJudgement(tripId: string, challengeId: string) {
     approvedSubmissions,
     rejectedSubmissions,
     rankedSubmissions,
+    votes: votesQuery.data?.votesByChallenge?.votes ?? [],
     isLoading: challengeQuery.isLoading || submissionsQuery.isLoading,
     isReviewing: reviewMutation.isPending,
     isCompleting: completeChallengeMutation.isPending,
     reviewSubmission: reviewMutation.mutateAsync,
     completeChallenge: completeChallengeMutation.mutateAsync,
+    refetchSubmissions: submissionsQuery.refetch,
+    refetchChallenge: challengeQuery.refetch,
   };
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import type { ChangeEvent } from "react";
+import { GraphQLClient } from "graphql-request";
 import { authStore } from "@mirai-app/frameworks/auth/client";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
 import { env } from "../lib/env";
 import {
   validateImageFile,
@@ -36,6 +36,51 @@ interface UploadTicket {
   objectPath: string;
   storagePath: string;
 }
+
+const getAuthToken = () => {
+  const cookies = document.cookie.split(";");
+  const tokenCookie = cookies.find((c) =>
+    c.trim().startsWith("sb-access-token="),
+  );
+  return tokenCookie ? tokenCookie.split("=")[1] : null;
+};
+
+const createGraphQLClient = () => {
+  return new GraphQLClient(env.graphqlUrl, {
+    headers: () => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    },
+  });
+};
+
+// GraphQL mutation for creating upload URL
+const CREATE_UPLOAD_URL_MUTATION = `
+  mutation CreateUploadUrl($input: CreateUploadUrlInput!) {
+    createUploadUrl(input: $input) {
+      token
+      bucket
+      objectPath
+      storagePath
+      url
+    }
+  }
+`;
+
+// GraphQL query for creating download URL
+const CREATE_DOWNLOAD_URL_QUERY = `
+  query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+    createDownloadUrl(input: $input) {
+      signedUrl
+      storagePath
+      expiresIn
+    }
+  }
+`;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -156,7 +201,7 @@ const uploadWithProgress = (
   });
 
 export function useWebFileUpload(validationOptions?: FileValidationOptions) {
-  const trpcClient = useTRPCClient();
+  const graphqlClient = useMemo(() => createGraphQLClient(), []);
 
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [progress, setProgress] = useState<UploadProgress>(initialProgress);
@@ -248,12 +293,26 @@ export function useWebFileUpload(validationOptions?: FileValidationOptions) {
       setResult(null);
 
       try {
-        const ticket = parseUploadTicket(
-          await trpcClient.storage.createUploadUrl.mutate({
+        // Use GraphQL mutation to get upload URL
+        const uploadUrlResult = await graphqlClient.request<{
+          createUploadUrl?: {
+            token: string;
+            bucket: string;
+            objectPath: string;
+            storagePath: string;
+          };
+        }>(CREATE_UPLOAD_URL_MUTATION, {
+          input: {
             storagePath: input.storagePath,
             upsert: input.upsert ?? true,
-          }),
-        );
+          },
+        });
+
+        if (!uploadUrlResult.createUploadUrl) {
+          throw new Error("Failed to get upload URL.");
+        }
+
+        const ticket = parseUploadTicket(uploadUrlResult.createUploadUrl);
 
         const signedUploadUrl = buildSignedUploadUrl(
           env.supabaseUrl,
@@ -299,17 +358,28 @@ export function useWebFileUpload(validationOptions?: FileValidationOptions) {
         throw new Error(message);
       }
     },
-    [selectedFile, trpcClient],
+    [selectedFile, graphqlClient],
   );
 
   const verifyFileAccessible = useCallback(
     async (storagePath: string): Promise<string> => {
-      const response = await trpcClient.storage.createDownloadUrl.query({
-        storagePath,
+      const response = await graphqlClient.request<{
+        createDownloadUrl?: {
+          signedUrl: string;
+        };
+      }>(CREATE_DOWNLOAD_URL_QUERY, {
+        input: {
+          storagePath,
+        },
       });
-      return parseSignedUrlResult(response);
+
+      if (!response.createDownloadUrl?.signedUrl) {
+        throw new Error("Failed to get download URL.");
+      }
+
+      return parseSignedUrlResult(response.createDownloadUrl);
     },
-    [trpcClient],
+    [graphqlClient],
   );
 
   return {
