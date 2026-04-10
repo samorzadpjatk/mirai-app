@@ -21,7 +21,7 @@ const mockMutate = mock(() =>
   }),
 );
 
-mock.module("@mirai-app/frameworks/trpc/client", () => ({
+mock.module("@mirai-app/frameworks/graphql/client", () => ({
   useTRPCClient: () => ({
     storage: {
       createUploadUrl: {

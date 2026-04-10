@@ -1,5 +1,5 @@
 import { authStore, type AuthUser } from "@mirai-app/frameworks/auth/client";
-import { getTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { getTRPCClient } from "@mirai-app/frameworks/graphql/client";
 import { supabase } from "./supabase";
 import { env } from "./env";
 
@@ -12,20 +12,30 @@ interface UserGetMyResponse {
   role: "USER" | "ADMIN" | "MODERATOR" | "SERVICE";
 }
 
+const GET_ME_QUERY = `
+  query GetMe {
+    me {
+      id
+      authUserId
+      email
+      firstName
+      lastName
+      role
+    }
+  }
+`;
+
 const getMyUser = async (
   accessToken: string,
 ): Promise<UserGetMyResponse | null> => {
   const { client, cleanup } = getTRPCClient(
-    env.trpcUrl,
-    env.trpcWsUrl,
+    env.graphqlUrl,
+    env.graphqlWsUrl,
     accessToken,
   );
   try {
-    return (
-      client as unknown as {
-        user: { getMy: { query: () => Promise<UserGetMyResponse> } };
-      }
-    ).user.getMy.query();
+    const result = await client.query<{ me: UserGetMyResponse }>(GET_ME_QUERY);
+    return result.me;
   } finally {
     await cleanup();
   }
@@ -76,7 +86,7 @@ export const onAuthUserFetch = async (
     });
   } catch (error) {
     console.warn(
-      "[web] tRPC user.getMy failed, falling back to Supabase",
+      "[web] GraphQL me query failed, falling back to Supabase",
       error,
     );
 

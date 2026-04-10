@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import { Modal } from "../../ui/Modal";

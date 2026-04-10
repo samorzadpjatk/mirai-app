@@ -1,6 +1,6 @@
 "use client";
 
-import { APIProvider } from "@mirai-app/frameworks/trpc/client";
+import { APIProvider } from "@mirai-app/frameworks/graphql/client";
 import { AuthProvider } from "../AuthProvider";
 import { TripProvider } from "../../contexts/TripContext";
 import { Header } from "../Header";
@@ -18,7 +18,7 @@ interface GlobalProvidersProps {
 /**
  * Provides the shared authenticated admin shell for every page island.
  *
- * This keeps auth, tRPC, trip context, header, and mobile nav in one
+ * This keeps auth, GraphQL, trip context, header, and mobile nav in one
  * persistent client island so page content can be code-split per route.
  */
 export default function GlobalProviders({
@@ -28,7 +28,7 @@ export default function GlobalProviders({
 }: GlobalProvidersProps) {
   return (
     <AuthProvider>
-      <APIProvider httpUrl={env.trpcUrl} wsUrl={env.trpcWsUrl}>
+      <APIProvider httpUrl={env.graphqlUrl} wsUrl={env.graphqlWsUrl}>
         <TripProvider>
           <div className="flex min-h-screen flex-col bg-background">
             <Toaster

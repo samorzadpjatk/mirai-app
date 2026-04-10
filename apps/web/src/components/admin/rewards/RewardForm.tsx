@@ -8,7 +8,7 @@ import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
-import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
 import { useAdminRewards } from "@mirai-app/frameworks/trpc/hooks";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";

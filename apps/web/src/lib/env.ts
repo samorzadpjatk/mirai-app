@@ -23,10 +23,10 @@ export const env = {
     getEnv("PUBLIC_SUPABASE_ANON_KEY"),
     "PUBLIC_SUPABASE_ANON_KEY",
   ),
-  trpcUrl: required(getEnv("PUBLIC_TRPC_API_URL"), "PUBLIC_TRPC_API_URL"),
-  trpcWsUrl:
-    getEnv("PUBLIC_TRPC_WS_URL") ??
-    required(getEnv("PUBLIC_TRPC_API_URL"), "PUBLIC_TRPC_API_URL")
+  graphqlUrl: required(getEnv("PUBLIC_GRAPHQL_URL"), "PUBLIC_GRAPHQL_URL"),
+  graphqlWsUrl:
+    getEnv("PUBLIC_GRAPHQL_WS_URL") ??
+    required(getEnv("PUBLIC_GRAPHQL_URL"), "PUBLIC_GRAPHQL_URL")
       .replace(/^https:/, "wss:")
       .replace(/^http:/, "ws:"),
 };

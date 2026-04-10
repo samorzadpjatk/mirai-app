@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
 
 export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
 

@@ -8,7 +8,7 @@ import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
-import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
 import { useAdminNotifications } from "@mirai-app/frameworks/trpc/hooks";
 import { useTrip } from "../../../contexts/TripContext";
 

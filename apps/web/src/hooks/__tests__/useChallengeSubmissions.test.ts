@@ -49,7 +49,7 @@ const mockGetByChallengeForAdmin = mock(() => Promise.resolve([]));
 const mockReview = mock(() => Promise.resolve({ success: true }));
 const mockCreateReport = mock(() => Promise.resolve({ success: true }));
 
-mock.module("@mirai-app/frameworks/trpc/client", () => ({
+mock.module("@mirai-app/frameworks/graphql/client", () => ({
   useTRPCClient: () => ({
     challengeSubmission: {
       getByChallengeForAdmin: {

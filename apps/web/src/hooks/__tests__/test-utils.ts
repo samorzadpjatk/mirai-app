@@ -53,7 +53,7 @@ export function createMockTRPCClient() {
 }
 
 /**
- * Mock module for @mirai-app/frameworks/trpc/client
+ * Mock module for @mirai-app/frameworks/graphql/client
  * Call this at the top of your test file before importing hooks
  */
 export function mockTRPCClient(
@@ -61,7 +61,7 @@ export function mockTRPCClient(
 ) {
   const client = mockClient ?? createMockTRPCClient();
 
-  mock.module("@mirai-app/frameworks/trpc/client", () => ({
+  mock.module("@mirai-app/frameworks/graphql/client", () => ({
     useTRPCClient: () => client,
     getTRPCClient: () => ({ client, cleanup: () => Promise.resolve() }),
   }));

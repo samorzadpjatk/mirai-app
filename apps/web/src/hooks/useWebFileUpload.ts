@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
 import { authStore } from "@mirai-app/frameworks/auth/client";
-import { useTRPCClient } from "@mirai-app/frameworks/trpc/client";
+import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
 import { env } from "../lib/env";
 import {
   validateImageFile,
