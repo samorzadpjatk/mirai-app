@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
-import { useTRPCClient } from "@mirai-app/frameworks/graphql/client";
+import {
+  useCreateCustomActivityMutation,
+  useUpdateActivityMutation,
+  useGetActivityByIdQuery,
+} from "@mirai-app/graphql-types";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
-import { useAdminActivity } from "@mirai-app/frameworks/trpc/hooks";
 import { useTrip } from "../../../contexts/TripContext";
 
 interface ActivityFormProps {
@@ -24,8 +26,18 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 export function ActivityForm({ mode, activityId }: ActivityFormProps) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
-  const trpcClient = useTRPCClient();
-  const { createCustom, updateActivity, isBusy } = useAdminActivity(tripId);
+
+  const { data: activity, isLoading: isActivityLoading } =
+    useGetActivityByIdQuery(
+      { id: activityId! },
+      { enabled: mode === "edit" && Boolean(activityId) },
+    );
+
+  const createCustom = useCreateCustomActivityMutation();
+  const updateActivity = useUpdateActivityMutation();
+
+  const isBusy = createCustom.isPending || updateActivity.isPending;
+
   const {
     selectedFile,
     previewUrl,
@@ -34,14 +46,6 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
     upload,
   } = useWebFileUpload();
 
-  const activityQuery = useQuery({
-    queryKey: ["activity", "by-id", activityId],
-    enabled: mode === "edit" && Boolean(activityId),
-    queryFn: () =>
-      trpcClient.activityFeed.getById.query({ id: activityId! }),
-  });
-
-  const activity = mode === "edit" ? activityQuery.data : null;
   const activityTitle =
     isObject(activity) && typeof activity.title === "string"
       ? activity.title
@@ -59,7 +63,7 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
   const [description, setDescription] = useState("");
   const [isPinned, setIsPinned] = useState(false);
 
-  if (mode === "edit" && activityQuery.isLoading) {
+  if (mode === "edit" && isActivityLoading) {
     return <LoadingSpinner label="Loading activity..." />;
   }
 
@@ -75,7 +79,7 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
     setTitle(activityTitle);
     setDescription(activityDescription);
     setIsPinned(activityPinned);
-  }, [activity, mode]);
+  }, [activity, mode, activityTitle, activityDescription, activityPinned]);
 
   const handleSubmit = async () => {
     const normalizedTitle = title.trim();
@@ -101,7 +105,7 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
     );
     try {
       if (mode === "create") {
-        await createCustom({
+        await createCustom.mutateAsync({
           tripId,
           title: normalizedTitle,
           description: description.trim() || null,
@@ -138,7 +142,7 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
           return;
         }
 
-        await updateActivity(payload);
+        await updateActivity.mutateAsync(payload);
         appToast.dismiss(toastId);
         appToast.success("Activity updated.");
         window.location.href = "/activity";
