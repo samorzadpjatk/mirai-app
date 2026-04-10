@@ -14,7 +14,7 @@ import {
 import { notifications } from "@mirai-app/frameworks/drizzle/schema/notification";
 import { eq, and, gte, lte, desc, asc, sql } from "drizzle-orm";
 import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
-import { NotificationScheduleDrizzleMapper } from "../../mappers/drizzle/NotificationScheduleDrizzleMapper";
+import { NotificationScheduleDrizzleMapper } from "../../mappers/drizzle/notification-schedule";
 
 /**
  * DrizzleNotificationScheduleRepository

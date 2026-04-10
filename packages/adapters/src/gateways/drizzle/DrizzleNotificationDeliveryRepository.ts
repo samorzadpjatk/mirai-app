@@ -10,7 +10,7 @@ import { notificationDeliveries } from "@mirai-app/frameworks/drizzle/schema/not
 import { notifications } from "@mirai-app/frameworks/drizzle/schema/notification";
 import { eq, and, or, desc, gte, lte, sql } from "drizzle-orm";
 import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
-import { NotificationDeliveryDrizzleMapper } from "../../mappers/drizzle/NotificationDeliveryDrizzleMapper";
+import { NotificationDeliveryDrizzleMapper } from "../../mappers/drizzle/notification-delivery";
 
 /**
  * DrizzleNotificationDeliveryRepository

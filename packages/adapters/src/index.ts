@@ -150,24 +150,24 @@ export { TokenExtractor } from "./utils/TokenExtractor";
 // =============================================================================
 // Mappers (Domain <-> DTO <-> Database) - Drizzle ORM
 // =============================================================================
-export { UserDrizzleMapper } from "./mappers/drizzle/UserDrizzleMapper";
-export { TripDrizzleMapper } from "./mappers/drizzle/TripDrizzleMapper";
-export { GroupDrizzleMapper } from "./mappers/drizzle/GroupDrizzleMapper";
-export { ChallengeDrizzleMapper } from "./mappers/drizzle/ChallengeDrizzleMapper";
-export { LocationDrizzleMapper } from "./mappers/drizzle/LocationDrizzleMapper";
-export { NotificationDrizzleMapper } from "./mappers/drizzle/NotificationDrizzleMapper";
-export { ActivityFeedDrizzleMapper } from "./mappers/drizzle/ActivityFeedDrizzleMapper";
-export { RewardDrizzleMapper } from "./mappers/drizzle/RewardDrizzleMapper";
+export { UserDrizzleMapper } from "./mappers/drizzle/user";
+export { TripDrizzleMapper } from "./mappers/drizzle/trip";
+export { GroupDrizzleMapper } from "./mappers/drizzle/group";
+export { ChallengeDrizzleMapper } from "./mappers/drizzle/challenge";
+export { LocationDrizzleMapper } from "./mappers/drizzle/location";
+export { NotificationDrizzleMapper } from "./mappers/drizzle/notification";
+export { ActivityFeedDrizzleMapper } from "./mappers/drizzle/activity-feed";
+export { RewardDrizzleMapper } from "./mappers/drizzle/reward";
 
 // Additional Drizzle mappers for complete migration
-export { ChallengeSubmissionDrizzleMapper } from "./mappers/drizzle/ChallengeSubmissionDrizzleMapper";
-export { ChallengeVoteDrizzleMapper } from "./mappers/drizzle/ChallengeVoteDrizzleMapper";
-export { CoinTransactionDrizzleMapper } from "./mappers/drizzle/CoinTransactionDrizzleMapper";
-export { SponsorDrizzleMapper } from "./mappers/drizzle/SponsorDrizzleMapper";
-export { SubmissionReportDrizzleMapper } from "./mappers/drizzle/SubmissionReportDrizzleMapper";
-export { NotificationScheduleDrizzleMapper } from "./mappers/drizzle/NotificationScheduleDrizzleMapper";
-export { NotificationDeliveryDrizzleMapper } from "./mappers/drizzle/NotificationDeliveryDrizzleMapper";
-export { UserAgentDrizzleMapper } from "./mappers/drizzle/UserAgentDrizzleMapper";
+export { ChallengeSubmissionDrizzleMapper } from "./mappers/drizzle/challenge-submission";
+export { ChallengeVoteDrizzleMapper } from "./mappers/drizzle/challenge-vote";
+export { CoinTransactionDrizzleMapper } from "./mappers/drizzle/coin-transaction";
+export { SponsorDrizzleMapper } from "./mappers/drizzle/sponsor";
+export { SubmissionReportDrizzleMapper } from "./mappers/drizzle/submission-report";
+export { NotificationScheduleDrizzleMapper } from "./mappers/drizzle/notification-schedule";
+export { NotificationDeliveryDrizzleMapper } from "./mappers/drizzle/notification-delivery";
+export { UserAgentDrizzleMapper } from "./mappers/drizzle/user-agent";
 
 // =============================================================================
 // Phase 1: Drizzle ORM Migration Repositories

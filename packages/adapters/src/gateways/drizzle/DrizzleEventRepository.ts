@@ -9,7 +9,7 @@ import { eq, and, gt, lt, gte, lte, sql, inArray } from "drizzle-orm";
 import { Event } from "@mirai-app/domain";
 import type { EventRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
-import { EventDrizzleMapper } from "../../mappers/drizzle/EventDrizzleMapper";
+import { EventDrizzleMapper } from "../../mappers/drizzle/event";
 
 /**
  * DrizzleEventRepository

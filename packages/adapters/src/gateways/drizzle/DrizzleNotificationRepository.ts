@@ -8,7 +8,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { Notification, type NotificationPriority } from "@mirai-app/domain";
 import type { NotificationRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
-import { NotificationDrizzleMapper } from "../../mappers/drizzle/NotificationDrizzleMapper";
+import { NotificationDrizzleMapper } from "../../mappers/drizzle/notification";
 
 /**
  * DrizzleNotificationRepository

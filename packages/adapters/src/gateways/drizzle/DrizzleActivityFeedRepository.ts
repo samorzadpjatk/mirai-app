@@ -14,7 +14,7 @@ import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
 import {
   ActivityFeedDrizzleMapper,
   ActivityReactionDrizzleMapper,
-} from "../../mappers/drizzle/ActivityFeedDrizzleMapper";
+} from "../../mappers/drizzle/activity-feed";
 
 /**
  * DrizzleActivityFeedRepository

@@ -21,7 +21,7 @@ import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
 import {
   RewardDrizzleMapper,
   RewardPurchaseDrizzleMapper,
-} from "../../mappers/drizzle/RewardDrizzleMapper";
+} from "../../mappers/drizzle/reward";
 
 /**
  * DrizzleRewardRepository

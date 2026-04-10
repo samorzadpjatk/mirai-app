@@ -10,7 +10,7 @@ import { coinTransactions } from "@mirai-app/frameworks/drizzle/schema/coinTrans
 import { groups } from "@mirai-app/frameworks/drizzle/schema/group";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
-import { CoinTransactionDrizzleMapper } from "../../mappers/drizzle/CoinTransactionDrizzleMapper";
+import { CoinTransactionDrizzleMapper } from "../../mappers/drizzle/coin-transaction";
 
 /**
  * DrizzleCoinTransactionRepository

@@ -8,7 +8,7 @@ import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { Location, type LocationId } from "@mirai-app/domain";
 import type { LocationRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../BaseDrizzleRepository";
-import { LocationDrizzleMapper } from "../../mappers/drizzle/LocationDrizzleMapper";
+import { LocationDrizzleMapper } from "../../mappers/drizzle/location";
 
 /**
  * DrizzleLocationRepository
