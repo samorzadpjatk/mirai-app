@@ -1,41 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
-import { GraphQLClient } from "graphql-request";
+import { useMemo, useCallback } from "react";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryOptions,
-} from "@tanstack/react-query";
-import {
-  useGetVotesByChallengeQuery,
-  useSubmitVoteMutation,
-  useGetChallengeSubmissionsQuery,
+  GetChallengeSubmissionsDocument,
+  GetVotesByChallengeDocument,
   type GetChallengeSubmissionsQuery,
-} from "@mirai-app/graphql-types";
-import { env } from "../lib/env";
-
-const getAuthToken = () => {
-  const cookies = document.cookie.split(";");
-  const tokenCookie = cookies.find((c) =>
-    c.trim().startsWith("sb-access-token="),
-  );
-  return tokenCookie ? tokenCookie.split("=")[1] : null;
-};
-
-const createGraphQLClient = () => {
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
+} from "@mirai-app/graphql-types/urql";
 
 type ChallengeStatus =
   | "HIDDEN"
@@ -269,63 +240,44 @@ const parseSubmissionsFromQuery = (
 };
 
 export function useJudgement(tripId: string, challengeId: string) {
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
-  const queryClient = useQueryClient();
+  const client = useClient();
 
-  // Challenge query using raw GraphQL
-  const challengeQuery = useQuery({
-    queryKey: ["challenge", "details", challengeId, tripId],
-    enabled: Boolean(tripId) && Boolean(challengeId),
-    queryFn: async () => {
-      const result = await graphqlClient.request<{
-        challenge?: {
-          id: string;
-          tripId: string;
-          name: string;
-          scoringCategory?: string;
-          status?: ChallengeStatus;
-          basePoints?: number;
-          firstPlacePoints?: number | null;
-          secondPlacePoints?: number | null;
-          thirdPlacePoints?: number | null;
-        };
-      }>(GET_CHALLENGE_QUERY, { id: challengeId, tripId });
-
-      const parsed = parseChallenge(result.challenge);
-      if (!parsed) {
-        throw new Error("Invalid challenge payload.");
-      }
-
-      return parsed;
-    },
+  // Challenge query using urql
+  const [challengeResult, reexecuteChallenge] = useQuery({
+    query: GET_CHALLENGE_QUERY,
+    variables: { id: challengeId, tripId },
+    pause: !tripId || !challengeId,
   });
 
-  // Submissions query using generated GraphQL hook
-  const submissionsQuery = useGetChallengeSubmissionsQuery(
-    graphqlClient,
-    {
+  const challenge = useMemo(() => {
+    if (!challengeResult.data?.challenge) return null;
+    return parseChallenge(challengeResult.data.challenge);
+  }, [challengeResult.data]);
+
+  // Submissions query using urql
+  const [submissionsResult, reexecuteSubmissions] = useQuery({
+    query: GetChallengeSubmissionsDocument,
+    variables: {
       challengeId,
       tripId,
       limit: 100,
       offset: 0,
     },
-    {
-      enabled: Boolean(tripId) && Boolean(challengeId),
-    },
-  );
+    pause: !tripId || !challengeId,
+  });
 
-  // Votes query using generated GraphQL hook
-  const votesQuery = useGetVotesByChallengeQuery(
-    graphqlClient,
-    { challengeId },
-    {
-      enabled: Boolean(challengeId),
-    },
-  );
+  // Votes query using urql
+  const [votesResult] = useQuery({
+    query: GetVotesByChallengeDocument,
+    variables: { challengeId },
+    pause: !challengeId,
+  });
 
-  // Review mutation using raw GraphQL (since specific mutation may not be in generated hooks)
-  const reviewMutation = useMutation({
-    mutationFn: async (input: {
+  // Review mutation using urql
+  const [, reviewMutation] = useMutation(REVIEW_SUBMISSION_MUTATION);
+
+  const reviewSubmission = useCallback(
+    async (input: {
       id: string;
       status: "APPROVED" | "REJECTED";
       rejectionReason?: string;
@@ -333,14 +285,7 @@ export function useJudgement(tripId: string, challengeId: string) {
       bonusPoints?: number;
       ranking?: 1 | 2 | 3;
     }) => {
-      const result = await graphqlClient.request<{
-        reviewChallengeSubmission?: {
-          submission?: {
-            id: string;
-            status: string;
-          };
-        };
-      }>(REVIEW_SUBMISSION_MUTATION, {
+      const result = await reviewMutation({
         input: {
           submissionId: input.id,
           status: input.status,
@@ -350,66 +295,54 @@ export function useJudgement(tripId: string, challengeId: string) {
           ranking: input.ranking,
         },
       });
-      return result;
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: useGetChallengeSubmissionsQuery.getKey({
-            challengeId,
-            tripId,
-          }),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["challenge", "details", challengeId, tripId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["challenges", tripId],
-        }),
-      ]);
-    },
-  });
 
-  // Complete challenge mutation using raw GraphQL
-  const completeChallengeMutation = useMutation({
-    mutationFn: async () => {
-      const result = await graphqlClient.request<{
-        updateChallenge?: {
-          challenge?: {
-            id: string;
-            status: string;
-          };
-        };
-      }>(UPDATE_CHALLENGE_MUTATION, {
-        input: {
-          id: challengeId,
-          tripId,
-          status: "COMPLETED",
-        },
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate related queries
+      client.invalidate(GetChallengeSubmissionsDocument, {
+        challengeId,
+        tripId,
+        limit: 100,
+        offset: 0,
       });
-      return result;
+
+      return result.data;
     },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["challenge", "details", challengeId, tripId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: useGetChallengeSubmissionsQuery.getKey({
-            challengeId,
-            tripId,
-          }),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["challenges", tripId],
-        }),
-      ]);
-    },
-  });
+    [reviewMutation, client, challengeId, tripId],
+  );
+
+  // Complete challenge mutation using urql
+  const [, completeChallengeMutation] = useMutation(UPDATE_CHALLENGE_MUTATION);
+
+  const completeChallenge = useCallback(async () => {
+    const result = await completeChallengeMutation({
+      input: {
+        id: challengeId,
+        tripId,
+        status: "COMPLETED",
+      },
+    });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    // Invalidate related queries
+    client.invalidate(GetChallengeSubmissionsDocument, {
+      challengeId,
+      tripId,
+      limit: 100,
+      offset: 0,
+    });
+
+    return result.data;
+  }, [completeChallengeMutation, client, challengeId, tripId]);
 
   const submissions = useMemo(
-    () => parseSubmissionsFromQuery(submissionsQuery.data),
-    [submissionsQuery.data],
+    () => parseSubmissionsFromQuery(submissionsResult.data),
+    [submissionsResult.data],
   );
 
   const pendingSubmissions = submissions.filter(
@@ -431,19 +364,19 @@ export function useJudgement(tripId: string, challengeId: string) {
   });
 
   return {
-    challenge: challengeQuery.data,
+    challenge,
     submissions,
     pendingSubmissions,
     approvedSubmissions,
     rejectedSubmissions,
     rankedSubmissions,
-    votes: votesQuery.data?.votesByChallenge?.votes ?? [],
-    isLoading: challengeQuery.isLoading || submissionsQuery.isLoading,
-    isReviewing: reviewMutation.isPending,
-    isCompleting: completeChallengeMutation.isPending,
-    reviewSubmission: reviewMutation.mutateAsync,
-    completeChallenge: completeChallengeMutation.mutateAsync,
-    refetchSubmissions: submissionsQuery.refetch,
-    refetchChallenge: challengeQuery.refetch,
+    votes: votesResult.data?.votesByChallenge?.votes ?? [],
+    isLoading: challengeResult.fetching || submissionsResult.fetching,
+    isReviewing: challengeResult.fetching,
+    isCompleting: challengeResult.fetching,
+    reviewSubmission,
+    completeChallenge,
+    refetchSubmissions: reexecuteSubmissions,
+    refetchChallenge: reexecuteChallenge,
   };
 }

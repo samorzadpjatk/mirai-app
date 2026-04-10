@@ -1,34 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
-import { GraphQLClient } from "graphql-request";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useCallback } from "react";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetChallengeSubmissionsQuery,
+  GetChallengeSubmissionsDocument,
   type GetChallengeSubmissionsQuery,
-} from "@mirai-app/graphql-types";
-import { env } from "../../lib/env";
-
-const getAuthToken = () => {
-  const cookies = document.cookie.split(";");
-  const tokenCookie = cookies.find((c) =>
-    c.trim().startsWith("sb-access-token="),
-  );
-  return tokenCookie ? tokenCookie.split("=")[1] : null;
-};
-
-const createGraphQLClient = () => {
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
+} from "@mirai-app/graphql-types/urql";
 
 export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -137,76 +114,69 @@ const parseSubmissionsFromQuery = (
 };
 
 export function useChallengeSubmissions(tripId: string, challengeId: string) {
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
-  const queryClient = useQueryClient();
+  const client = useClient();
 
-  const queryKey = useGetChallengeSubmissionsQuery.getKey({
-    challengeId,
-    tripId,
-  });
-
-  // Use generated GraphQL hook for submissions
-  const submissionsQuery = useGetChallengeSubmissionsQuery(
-    graphqlClient,
-    {
+  // Use urql's useQuery hook for submissions
+  const [submissionsResult, reexecuteSubmissions] = useQuery({
+    query: GetChallengeSubmissionsDocument,
+    variables: {
       challengeId,
       tripId,
       limit: 100,
       offset: 0,
     },
-    {
-      enabled: Boolean(tripId) && Boolean(challengeId),
-    },
-  );
+    pause: !tripId || !challengeId,
+  });
 
   const submissions = useMemo(
-    () => parseSubmissionsFromQuery(submissionsQuery.data),
-    [submissionsQuery.data],
+    () => parseSubmissionsFromQuery(submissionsResult.data),
+    [submissionsResult.data],
   );
 
-  // Review mutation using raw GraphQL
-  const reviewMutation = useMutation({
-    mutationFn: async (input: {
+  // Review mutation using urql
+  const [, reviewMutation] = useMutation(REVIEW_SUBMISSION_MUTATION);
+
+  const reviewSubmission = useCallback(
+    async (input: {
       id: string;
       status: "APPROVED" | "REJECTED";
       rejectionReason?: string;
     }) => {
-      const result = await graphqlClient.request<{
-        reviewChallengeSubmission?: {
-          submission?: {
-            id: string;
-            status: string;
-          };
-        };
-      }>(REVIEW_SUBMISSION_MUTATION, {
+      const result = await reviewMutation({
         input: {
           submissionId: input.id,
           status: input.status,
           rejectionReason: input.rejectionReason,
         },
       });
-      return result;
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey });
-      await queryClient.invalidateQueries({ queryKey: ["challenges", tripId] });
-    },
-  });
 
-  // Flag mutation using raw GraphQL
-  const flagMutation = useMutation({
-    mutationFn: async (input: {
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate cache after successful review
+      client.invalidate(GetChallengeSubmissionsDocument, {
+        challengeId,
+        tripId,
+        limit: 100,
+        offset: 0,
+      });
+
+      return result.data;
+    },
+    [reviewMutation, client, challengeId, tripId],
+  );
+
+  // Flag mutation using urql
+  const [, flagMutation] = useMutation(CREATE_SUBMISSION_REPORT_MUTATION);
+
+  const flagSubmission = useCallback(
+    async (input: {
       submissionId: string;
       reason: string;
       details?: string;
     }) => {
-      const result = await graphqlClient.request<{
-        createSubmissionReport?: {
-          report?: {
-            id: string;
-          };
-        };
-      }>(CREATE_SUBMISSION_REPORT_MUTATION, {
+      const result = await flagMutation({
         input: {
           tripId,
           submissionId: input.submissionId,
@@ -214,18 +184,24 @@ export function useChallengeSubmissions(tripId: string, challengeId: string) {
           details: input.details,
         },
       });
-      return result;
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      return result.data;
     },
-  });
+    [flagMutation, tripId],
+  );
 
   return {
     submissions,
-    isLoading: submissionsQuery.isLoading,
-    isRefetching: submissionsQuery.isRefetching,
-    refetch: submissionsQuery.refetch,
-    reviewSubmission: reviewMutation.mutateAsync,
-    isReviewing: reviewMutation.isPending,
-    flagSubmission: flagMutation.mutateAsync,
-    isFlagging: flagMutation.isPending,
+    isLoading: submissionsResult.fetching,
+    isRefetching: submissionsResult.stale && submissionsResult.fetching,
+    refetch: reexecuteSubmissions,
+    reviewSubmission,
+    isReviewing: submissionsResult.fetching,
+    flagSubmission,
+    isFlagging: submissionsResult.fetching,
   };
 }
