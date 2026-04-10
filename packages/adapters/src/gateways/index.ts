@@ -2,54 +2,58 @@
  * Gateways Index
  *
  * Re-exports all repository implementations for convenient importing.
+ * Organized by ORM library (Prisma and Drizzle).
  */
 
-export { PrismaUserRepository } from "./PrismaUserRepository";
-export { PrismaChallengeRepository } from "./PrismaChallengeRepository";
-export { PrismaGroupRepository } from "./PrismaGroupRepository";
-export { PrismaTripRepository } from "./PrismaTripRepository";
-export { PrismaLocationRepository } from "./PrismaLocationRepository";
-export { PrismaChallengeSubmissionRepository } from "./PrismaChallengeSubmissionRepository";
-export { PrismaChallengeVoteRepository } from "./PrismaChallengeVoteRepository";
-export { PrismaActivityFeedRepository } from "./PrismaActivityFeedRepository";
-export { PrismaNotificationRepository } from "./PrismaNotificationRepository";
-export { PrismaNotificationDeliveryRepository } from "./PrismaNotificationDeliveryRepository";
-export { PrismaNotificationScheduleRepository } from "./PrismaNotificationScheduleRepository";
-export { PrismaRewardRepository } from "./PrismaRewardRepository";
-export { PrismaCoinTransactionRepository } from "./PrismaCoinTransactionRepository";
-export { PrismaSponsorRepository } from "./PrismaSponsorRepository";
-export { PrismaSubmissionReportRepository } from "./PrismaSubmissionReportRepository";
-export { PrismaTelemetryAdapter } from "./PrismaTelemetryAdapter";
+// =============================================================================
+// Base Repository Classes
+// =============================================================================
 export { BasePrismaRepository } from "./BasePrismaRepository";
-
-// =============================================================================
-// Phase 1: Drizzle ORM Migration (Prisma to Drizzle)
-// =============================================================================
 export { BaseDrizzleRepository } from "./BaseDrizzleRepository";
 export type {
   DrizzleEntityMapper,
   DrizzleRepositoryConfig,
 } from "./BaseDrizzleRepository";
-export { DrizzleUserRepository } from "./DrizzleUserRepository";
-export { DrizzleTripRepository } from "./DrizzleTripRepository";
-export { DrizzleGroupRepository } from "./DrizzleGroupRepository";
-export { DrizzleChallengeRepository } from "./DrizzleChallengeRepository";
-export { DrizzleLocationRepository } from "./DrizzleLocationRepository";
-export { DrizzleNotificationRepository } from "./DrizzleNotificationRepository";
-export { DrizzleActivityFeedRepository } from "./DrizzleActivityFeedRepository";
-export { DrizzleRewardRepository } from "./DrizzleRewardRepository";
 
-// Additional Drizzle repositories for complete migration
-export { DrizzleChallengeSubmissionRepository } from "./DrizzleChallengeSubmissionRepository";
-export { DrizzleChallengeVoteRepository } from "./DrizzleChallengeVoteRepository";
-export { DrizzleCoinTransactionRepository } from "./DrizzleCoinTransactionRepository";
-export { DrizzleNotificationDeliveryRepository } from "./DrizzleNotificationDeliveryRepository";
-export { DrizzleNotificationScheduleRepository } from "./DrizzleNotificationScheduleRepository";
-export { DrizzleSponsorRepository } from "./DrizzleSponsorRepository";
-export { DrizzleSubmissionReportRepository } from "./DrizzleSubmissionReportRepository";
+// =============================================================================
+// Prisma ORM Repositories (Legacy)
+// =============================================================================
+export { PrismaUserRepository } from "./prisma/PrismaUserRepository";
+export { PrismaChallengeRepository } from "./prisma/PrismaChallengeRepository";
+export { PrismaGroupRepository } from "./prisma/PrismaGroupRepository";
+export { PrismaTripRepository } from "./prisma/PrismaTripRepository";
+export { PrismaLocationRepository } from "./prisma/PrismaLocationRepository";
+export { PrismaChallengeSubmissionRepository } from "./prisma/PrismaChallengeSubmissionRepository";
+export { PrismaChallengeVoteRepository } from "./prisma/PrismaChallengeVoteRepository";
+export { PrismaActivityFeedRepository } from "./prisma/PrismaActivityFeedRepository";
+export { PrismaNotificationRepository } from "./prisma/PrismaNotificationRepository";
+export { PrismaNotificationDeliveryRepository } from "./prisma/PrismaNotificationDeliveryRepository";
+export { PrismaNotificationScheduleRepository } from "./prisma/PrismaNotificationScheduleRepository";
+export { PrismaRewardRepository } from "./prisma/PrismaRewardRepository";
+export { PrismaCoinTransactionRepository } from "./prisma/PrismaCoinTransactionRepository";
+export { PrismaSponsorRepository } from "./prisma/PrismaSponsorRepository";
+export { PrismaSubmissionReportRepository } from "./prisma/PrismaSubmissionReportRepository";
+export { PrismaTelemetryAdapter } from "./prisma/PrismaTelemetryAdapter";
 
-// Drizzle telemetry adapter
-export { DrizzleTelemetryAdapter } from "./DrizzleTelemetryAdapter";
+// =============================================================================
+// Drizzle ORM Repositories (Phase 1 Migration)
+// =============================================================================
+export { DrizzleUserRepository } from "./drizzle/DrizzleUserRepository";
+export { DrizzleTripRepository } from "./drizzle/DrizzleTripRepository";
+export { DrizzleGroupRepository } from "./drizzle/DrizzleGroupRepository";
+export { DrizzleChallengeRepository } from "./drizzle/DrizzleChallengeRepository";
+export { DrizzleLocationRepository } from "./drizzle/DrizzleLocationRepository";
+export { DrizzleNotificationRepository } from "./drizzle/DrizzleNotificationRepository";
+export { DrizzleActivityFeedRepository } from "./drizzle/DrizzleActivityFeedRepository";
+export { DrizzleRewardRepository } from "./drizzle/DrizzleRewardRepository";
+export { DrizzleChallengeSubmissionRepository } from "./drizzle/DrizzleChallengeSubmissionRepository";
+export { DrizzleChallengeVoteRepository } from "./drizzle/DrizzleChallengeVoteRepository";
+export { DrizzleCoinTransactionRepository } from "./drizzle/DrizzleCoinTransactionRepository";
+export { DrizzleNotificationDeliveryRepository } from "./drizzle/DrizzleNotificationDeliveryRepository";
+export { DrizzleNotificationScheduleRepository } from "./drizzle/DrizzleNotificationScheduleRepository";
+export { DrizzleSponsorRepository } from "./drizzle/DrizzleSponsorRepository";
+export { DrizzleSubmissionReportRepository } from "./drizzle/DrizzleSubmissionReportRepository";
+export { DrizzleTelemetryAdapter } from "./drizzle/DrizzleTelemetryAdapter";
 
 // =============================================================================
 // Auth Adapters (Phase 0: Supabase-Agnostic Architecture)

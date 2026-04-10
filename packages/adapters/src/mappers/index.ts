@@ -1,23 +1,44 @@
 /**
- * Drizzle Mappers Index
+ * Mappers Index
  *
- * Re-exports all Drizzle entity mappers for convenient importing.
+ * Re-exports all entity mappers for convenient importing.
+ * Organized by ORM library (Prisma and Drizzle).
  */
 
-export { UserDrizzleMapper } from "./UserDrizzleMapper.js";
-export { TripDrizzleMapper } from "./TripDrizzleMapper.js";
-export { GroupDrizzleMapper } from "./GroupDrizzleMapper.js";
-export { ChallengeDrizzleMapper } from "./ChallengeDrizzleMapper.js";
-export { LocationDrizzleMapper } from "./LocationDrizzleMapper.js";
-export { NotificationDrizzleMapper } from "./NotificationDrizzleMapper.js";
-export { ActivityFeedDrizzleMapper } from "./ActivityFeedDrizzleMapper.js";
-export { RewardDrizzleMapper } from "./RewardDrizzleMapper.js";
+// =============================================================================
+// Prisma ORM Mappers (Legacy)
+// =============================================================================
+export { UserMapper } from "./prisma/UserMapper";
+export { TripMapper } from "./prisma/TripMapper";
+export { GroupMapper } from "./prisma/GroupMapper";
+export { ChallengeMapper } from "./prisma/ChallengeMapper";
+export { LocationMapper } from "./prisma/LocationMapper";
+export { NotificationMapper } from "./prisma/NotificationMapper";
+export { ActivityFeedMapper } from "./prisma/ActivityFeedMapper";
+export { RewardMapper, RewardPurchaseMapper } from "./prisma/RewardMapper";
+export { ChallengeSubmissionMapper } from "./prisma/ChallengeSubmissionMapper";
+export { ChallengeVoteMapper } from "./prisma/ChallengeVoteMapper";
+export { CoinTransactionMapper } from "./prisma/CoinTransactionMapper";
+export { SponsorMapper } from "./prisma/SponsorMapper";
+export { SubmissionReportMapper } from "./prisma/SubmissionReportMapper";
+export { NotificationScheduleMapper } from "./prisma/NotificationScheduleMapper";
+export { NotificationDeliveryMapper } from "./prisma/NotificationDeliveryMapper";
 
-// Additional Drizzle mappers for complete migration
-export { ChallengeSubmissionDrizzleMapper } from "./ChallengeSubmissionDrizzleMapper.js";
-export { ChallengeVoteDrizzleMapper } from "./ChallengeVoteDrizzleMapper.js";
-export { CoinTransactionDrizzleMapper } from "./CoinTransactionDrizzleMapper.js";
-export { SponsorDrizzleMapper } from "./SponsorDrizzleMapper.js";
-export { SubmissionReportDrizzleMapper } from "./SubmissionReportDrizzleMapper.js";
-export { NotificationScheduleDrizzleMapper } from "./NotificationScheduleDrizzleMapper.js";
-export { NotificationDeliveryDrizzleMapper } from "./NotificationDeliveryDrizzleMapper.js";
+// =============================================================================
+// Drizzle ORM Mappers (Phase 1 Migration)
+// =============================================================================
+export { UserDrizzleMapper } from "./drizzle/UserDrizzleMapper";
+export { TripDrizzleMapper } from "./drizzle/TripDrizzleMapper";
+export { GroupDrizzleMapper } from "./drizzle/GroupDrizzleMapper";
+export { ChallengeDrizzleMapper } from "./drizzle/ChallengeDrizzleMapper";
+export { LocationDrizzleMapper } from "./drizzle/LocationDrizzleMapper";
+export { NotificationDrizzleMapper } from "./drizzle/NotificationDrizzleMapper";
+export { ActivityFeedDrizzleMapper } from "./drizzle/ActivityFeedDrizzleMapper";
+export { RewardDrizzleMapper } from "./drizzle/RewardDrizzleMapper";
+export { ChallengeSubmissionDrizzleMapper } from "./drizzle/ChallengeSubmissionDrizzleMapper";
+export { ChallengeVoteDrizzleMapper } from "./drizzle/ChallengeVoteDrizzleMapper";
+export { CoinTransactionDrizzleMapper } from "./drizzle/CoinTransactionDrizzleMapper";
+export { SponsorDrizzleMapper } from "./drizzle/SponsorDrizzleMapper";
+export { SubmissionReportDrizzleMapper } from "./drizzle/SubmissionReportDrizzleMapper";
+export { NotificationScheduleDrizzleMapper } from "./drizzle/NotificationScheduleDrizzleMapper";
+export { NotificationDeliveryDrizzleMapper } from "./drizzle/NotificationDeliveryDrizzleMapper";

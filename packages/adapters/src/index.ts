@@ -50,24 +50,24 @@ export {
   type EntityMapper,
   type PrismaModelDelegate,
 } from "./gateways/BasePrismaRepository";
-export { PrismaUserRepository } from "./gateways/PrismaUserRepository";
-export { PrismaCoinTransactionRepository } from "./gateways/PrismaCoinTransactionRepository";
-export { PrismaNotificationDeliveryRepository } from "./gateways/PrismaNotificationDeliveryRepository";
-export { PrismaChallengeRepository } from "./gateways/PrismaChallengeRepository";
-export { PrismaTripRepository } from "./gateways/PrismaTripRepository";
-export { PrismaGroupRepository } from "./gateways/PrismaGroupRepository";
-export { PrismaNotificationRepository } from "./gateways/PrismaNotificationRepository";
-export { PrismaActivityFeedRepository } from "./gateways/PrismaActivityFeedRepository";
-export { PrismaChallengeSubmissionRepository } from "./gateways/PrismaChallengeSubmissionRepository";
-export { PrismaLocationRepository } from "./gateways/PrismaLocationRepository";
+export { PrismaUserRepository } from "./gateways/prisma/PrismaUserRepository";
+export { PrismaCoinTransactionRepository } from "./gateways/prisma/PrismaCoinTransactionRepository";
+export { PrismaNotificationDeliveryRepository } from "./gateways/prisma/PrismaNotificationDeliveryRepository";
+export { PrismaChallengeRepository } from "./gateways/prisma/PrismaChallengeRepository";
+export { PrismaTripRepository } from "./gateways/prisma/PrismaTripRepository";
+export { PrismaGroupRepository } from "./gateways/prisma/PrismaGroupRepository";
+export { PrismaNotificationRepository } from "./gateways/prisma/PrismaNotificationRepository";
+export { PrismaActivityFeedRepository } from "./gateways/prisma/PrismaActivityFeedRepository";
+export { PrismaChallengeSubmissionRepository } from "./gateways/prisma/PrismaChallengeSubmissionRepository";
+export { PrismaLocationRepository } from "./gateways/prisma/PrismaLocationRepository";
 export {
   PrismaRewardRepository,
   PrismaRewardPurchaseRepository,
-} from "./gateways/PrismaRewardRepository";
-export { PrismaNotificationScheduleRepository } from "./gateways/PrismaNotificationScheduleRepository";
-export { PrismaChallengeVoteRepository } from "./gateways/PrismaChallengeVoteRepository";
-export { PrismaSubmissionReportRepository } from "./gateways/PrismaSubmissionReportRepository";
-export { PrismaSponsorRepository } from "./gateways/PrismaSponsorRepository";
+} from "./gateways/prisma/PrismaRewardRepository";
+export { PrismaNotificationScheduleRepository } from "./gateways/prisma/PrismaNotificationScheduleRepository";
+export { PrismaChallengeVoteRepository } from "./gateways/prisma/PrismaChallengeVoteRepository";
+export { PrismaSubmissionReportRepository } from "./gateways/prisma/PrismaSubmissionReportRepository";
+export { PrismaSponsorRepository } from "./gateways/prisma/PrismaSponsorRepository";
 
 // =============================================================================
 // Phase 0: Supabase-Agnostic Architecture Adapters
@@ -185,41 +185,44 @@ export {
   type ControllerFactory,
 } from "./utils/repository-factory";
 
-// Mappers (Domain <-> DTO <-> Database)
-export { UserMapper } from "./mappers/UserMapper";
-export { ChallengeMapper } from "./mappers/ChallengeMapper";
-export { NotificationMapper } from "./mappers/NotificationMapper";
-export { TripMapper } from "./mappers/TripMapper";
-export { GroupMapper } from "./mappers/GroupMapper";
-export { ActivityFeedMapper } from "./mappers/ActivityFeedMapper";
-export { ChallengeSubmissionMapper } from "./mappers/ChallengeSubmissionMapper";
-export { LocationMapper } from "./mappers/LocationMapper";
-export { RewardMapper, RewardPurchaseMapper } from "./mappers/RewardMapper";
-export { NotificationScheduleMapper } from "./mappers/NotificationScheduleMapper";
-export { ChallengeVoteMapper } from "./mappers/ChallengeVoteMapper";
-export { SubmissionReportMapper } from "./mappers/SubmissionReportMapper";
-export { SponsorMapper } from "./mappers/SponsorMapper";
+// Mappers (Domain <-> DTO <-> Database) - Prisma (Legacy)
+export { UserMapper } from "./mappers/prisma/UserMapper";
+export { ChallengeMapper } from "./mappers/prisma/ChallengeMapper";
+export { NotificationMapper } from "./mappers/prisma/NotificationMapper";
+export { TripMapper } from "./mappers/prisma/TripMapper";
+export { GroupMapper } from "./mappers/prisma/GroupMapper";
+export { ActivityFeedMapper } from "./mappers/prisma/ActivityFeedMapper";
+export { ChallengeSubmissionMapper } from "./mappers/prisma/ChallengeSubmissionMapper";
+export { LocationMapper } from "./mappers/prisma/LocationMapper";
+export {
+  RewardMapper,
+  RewardPurchaseMapper,
+} from "./mappers/prisma/RewardMapper";
+export { NotificationScheduleMapper } from "./mappers/prisma/NotificationScheduleMapper";
+export { ChallengeVoteMapper } from "./mappers/prisma/ChallengeVoteMapper";
+export { SubmissionReportMapper } from "./mappers/prisma/SubmissionReportMapper";
+export { SponsorMapper } from "./mappers/prisma/SponsorMapper";
 
 // =============================================================================
 // Phase 1: Drizzle ORM Migration Mappers
 // =============================================================================
-export { UserDrizzleMapper } from "./mappers/UserDrizzleMapper";
-export { TripDrizzleMapper } from "./mappers/TripDrizzleMapper";
-export { GroupDrizzleMapper } from "./mappers/GroupDrizzleMapper";
-export { ChallengeDrizzleMapper } from "./mappers/ChallengeDrizzleMapper";
-export { LocationDrizzleMapper } from "./mappers/LocationDrizzleMapper";
-export { NotificationDrizzleMapper } from "./mappers/NotificationDrizzleMapper";
-export { ActivityFeedDrizzleMapper } from "./mappers/ActivityFeedDrizzleMapper";
-export { RewardDrizzleMapper } from "./mappers/RewardDrizzleMapper";
+export { UserDrizzleMapper } from "./mappers/drizzle/UserDrizzleMapper";
+export { TripDrizzleMapper } from "./mappers/drizzle/TripDrizzleMapper";
+export { GroupDrizzleMapper } from "./mappers/drizzle/GroupDrizzleMapper";
+export { ChallengeDrizzleMapper } from "./mappers/drizzle/ChallengeDrizzleMapper";
+export { LocationDrizzleMapper } from "./mappers/drizzle/LocationDrizzleMapper";
+export { NotificationDrizzleMapper } from "./mappers/drizzle/NotificationDrizzleMapper";
+export { ActivityFeedDrizzleMapper } from "./mappers/drizzle/ActivityFeedDrizzleMapper";
+export { RewardDrizzleMapper } from "./mappers/drizzle/RewardDrizzleMapper";
 
 // Additional Drizzle mappers for complete migration
-export { ChallengeSubmissionDrizzleMapper } from "./mappers/ChallengeSubmissionDrizzleMapper";
-export { ChallengeVoteDrizzleMapper } from "./mappers/ChallengeVoteDrizzleMapper";
-export { CoinTransactionDrizzleMapper } from "./mappers/CoinTransactionDrizzleMapper";
-export { SponsorDrizzleMapper } from "./mappers/SponsorDrizzleMapper";
-export { SubmissionReportDrizzleMapper } from "./mappers/SubmissionReportDrizzleMapper";
-export { NotificationScheduleDrizzleMapper } from "./mappers/NotificationScheduleDrizzleMapper";
-export { NotificationDeliveryDrizzleMapper } from "./mappers/NotificationDeliveryDrizzleMapper";
+export { ChallengeSubmissionDrizzleMapper } from "./mappers/drizzle/ChallengeSubmissionDrizzleMapper";
+export { ChallengeVoteDrizzleMapper } from "./mappers/drizzle/ChallengeVoteDrizzleMapper";
+export { CoinTransactionDrizzleMapper } from "./mappers/drizzle/CoinTransactionDrizzleMapper";
+export { SponsorDrizzleMapper } from "./mappers/drizzle/SponsorDrizzleMapper";
+export { SubmissionReportDrizzleMapper } from "./mappers/drizzle/SubmissionReportDrizzleMapper";
+export { NotificationScheduleDrizzleMapper } from "./mappers/drizzle/NotificationScheduleDrizzleMapper";
+export { NotificationDeliveryDrizzleMapper } from "./mappers/drizzle/NotificationDeliveryDrizzleMapper";
 
 // =============================================================================
 // Phase 1: Drizzle ORM Migration Repositories
@@ -229,26 +232,26 @@ export {
   type DrizzleEntityMapper,
   type DrizzleRepositoryConfig,
 } from "./gateways/BaseDrizzleRepository";
-export { DrizzleUserRepository } from "./gateways/DrizzleUserRepository";
-export { DrizzleTripRepository } from "./gateways/DrizzleTripRepository";
-export { DrizzleGroupRepository } from "./gateways/DrizzleGroupRepository";
-export { DrizzleChallengeRepository } from "./gateways/DrizzleChallengeRepository";
-export { DrizzleLocationRepository } from "./gateways/DrizzleLocationRepository";
-export { DrizzleNotificationRepository } from "./gateways/DrizzleNotificationRepository";
-export { DrizzleActivityFeedRepository } from "./gateways/DrizzleActivityFeedRepository";
-export { DrizzleRewardRepository } from "./gateways/DrizzleRewardRepository";
+export { DrizzleUserRepository } from "./gateways/drizzle/DrizzleUserRepository";
+export { DrizzleTripRepository } from "./gateways/drizzle/DrizzleTripRepository";
+export { DrizzleGroupRepository } from "./gateways/drizzle/DrizzleGroupRepository";
+export { DrizzleChallengeRepository } from "./gateways/drizzle/DrizzleChallengeRepository";
+export { DrizzleLocationRepository } from "./gateways/drizzle/DrizzleLocationRepository";
+export { DrizzleNotificationRepository } from "./gateways/drizzle/DrizzleNotificationRepository";
+export { DrizzleActivityFeedRepository } from "./gateways/drizzle/DrizzleActivityFeedRepository";
+export { DrizzleRewardRepository } from "./gateways/drizzle/DrizzleRewardRepository";
 
 // Additional Drizzle repositories for complete migration
-export { DrizzleChallengeSubmissionRepository } from "./gateways/DrizzleChallengeSubmissionRepository";
-export { DrizzleChallengeVoteRepository } from "./gateways/DrizzleChallengeVoteRepository";
-export { DrizzleCoinTransactionRepository } from "./gateways/DrizzleCoinTransactionRepository";
-export { DrizzleNotificationDeliveryRepository } from "./gateways/DrizzleNotificationDeliveryRepository";
-export { DrizzleNotificationScheduleRepository } from "./gateways/DrizzleNotificationScheduleRepository";
-export { DrizzleSponsorRepository } from "./gateways/DrizzleSponsorRepository";
-export { DrizzleSubmissionReportRepository } from "./gateways/DrizzleSubmissionReportRepository";
+export { DrizzleChallengeSubmissionRepository } from "./gateways/drizzle/DrizzleChallengeSubmissionRepository";
+export { DrizzleChallengeVoteRepository } from "./gateways/drizzle/DrizzleChallengeVoteRepository";
+export { DrizzleCoinTransactionRepository } from "./gateways/drizzle/DrizzleCoinTransactionRepository";
+export { DrizzleNotificationDeliveryRepository } from "./gateways/drizzle/DrizzleNotificationDeliveryRepository";
+export { DrizzleNotificationScheduleRepository } from "./gateways/drizzle/DrizzleNotificationScheduleRepository";
+export { DrizzleSponsorRepository } from "./gateways/drizzle/DrizzleSponsorRepository";
+export { DrizzleSubmissionReportRepository } from "./gateways/drizzle/DrizzleSubmissionReportRepository";
 
 // Drizzle telemetry adapter
-export { DrizzleTelemetryAdapter } from "./gateways/DrizzleTelemetryAdapter";
+export { DrizzleTelemetryAdapter } from "./gateways/drizzle/DrizzleTelemetryAdapter";
 
 // Re-export inner layers for convenience
 export type {
