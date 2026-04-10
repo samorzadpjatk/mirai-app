@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
-import { env } from "../../../lib/env";
+import { useQuery } from "urql";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import type { VotingSubmission } from "../../../hooks/admin/useStaffVoting";
@@ -16,27 +14,6 @@ interface VotingCardProps {
   disabled?: boolean;
 }
 
-const getAuthToken = () => {
-  const cookies = document.cookie.split(";");
-  const tokenCookie = cookies.find((c) =>
-    c.trim().startsWith("sb-access-token="),
-  );
-  return tokenCookie ? tokenCookie.split("=")[1] : null;
-};
-
-const createGraphQLClient = () => {
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
-
 export function VotingCard({
   submission,
   title,
@@ -44,47 +21,37 @@ export function VotingCard({
   onPick,
   disabled = false,
 }: VotingCardProps) {
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
-
-  const imageQuery = useQuery({
-    queryKey: ["voting-card-image", submission.id, submission.imagePath],
-    enabled: Boolean(submission.imagePath),
-    queryFn: async () => {
-      const result = await graphqlClient.request<{
-        createDownloadUrl?: {
-          signedUrl?: string;
-        };
-      }>(
-        `
-        query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
-          createDownloadUrl(input: $input) {
-            signedUrl
-          }
+  // Use urql's useQuery hook for fetching image URL
+  const [imageResult] = useQuery({
+    query: `
+      query CreateDownloadUrl($input: CreateDownloadUrlInput!) {
+        createDownloadUrl(input: $input) {
+          signedUrl
         }
-        `,
-        {
-          input: {
-            storagePath: submission.imagePath,
-          },
-        },
-      );
-
-      return result.createDownloadUrl?.signedUrl ?? null;
+      }
+    `,
+    variables: {
+      input: {
+        storagePath: submission.imagePath,
+      },
     },
+    pause: !submission.imagePath,
   });
+
+  const imageUrl = imageResult.data?.createDownloadUrl?.signedUrl ?? null;
 
   return (
     <Card className="h-full space-y-3 overflow-hidden p-0">
       <div className="aspect-[16/10] w-full bg-surface">
-        {imageQuery.data ? (
+        {imageUrl ? (
           <img
-            src={imageQuery.data}
+            src={imageUrl}
             alt={submission.groupName}
             className="h-full w-full object-cover"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-text-muted">
-            {imageQuery.isLoading ? "Loading image..." : "Image unavailable"}
+            {imageResult.fetching ? "Loading image..." : "Image unavailable"}
           </div>
         )}
       </div>

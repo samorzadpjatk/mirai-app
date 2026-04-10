@@ -1,19 +1,19 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { graphqlClient } from "@mirai-app/graphql-types/client";
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetChallengeQuery,
-  useUpdateChallengeMutation,
-  useDeleteChallengeMutation,
-} from "@mirai-app/graphql-types";
+  GetChallengeDocument,
+  UpdateChallengeDocument,
+  DeleteChallengeDocument,
+} from "@mirai-app/graphql-types/urql";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
 import { ChallengeAnalyticsPanel } from "./ChallengeAnalyticsPanel";
-import type { ChallengeStatus, Challenge } from "@mirai-app/graphql-types";
+import type { Challenge, ChallengeStatus } from "@mirai-app/graphql-types/urql";
 
 interface ChallengeDetailsPageProps {
   tripId: string;
@@ -45,50 +45,45 @@ export function ChallengeDetailsPage({
   tripId,
   challengeId,
 }: ChallengeDetailsPageProps) {
-  const queryClient = useQueryClient();
+  const client = useClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const detailsQuery = useGetChallengeQuery(
-    graphqlClient,
-    { id: challengeId, tripId },
-    { enabled: Boolean(challengeId) && Boolean(tripId) },
-  );
-
-  const updateStatusMutation = useUpdateChallengeMutation(graphqlClient, {
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["challenge", "details", challengeId, tripId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["challenges", tripId],
-        }),
-      ]);
-    },
+  // Fetch challenge using urql
+  const [challengeResult] = useQuery({
+    query: GetChallengeDocument,
+    variables: { id: challengeId, tripId },
+    pause: !challengeId || !tripId,
   });
 
-  const deleteMutation = useDeleteChallengeMutation(graphqlClient, {
-    onSuccess: () => {
-      appToast.success("Challenge deleted.");
-      window.location.href = "/challenges";
-    },
-    onError: (error) => {
-      const message = error.message || "Failed to delete challenge.";
-      appToast.error(message);
-    },
-  });
+  // Mutations using urql
+  const [, updateChallenge] = useMutation(UpdateChallengeDocument);
+  const [, deleteChallengeMutation] = useMutation(DeleteChallengeDocument);
 
-  const challenge = getChallengeFromData(detailsQuery.data);
+  const challenge = getChallengeFromData(challengeResult.data);
+
+  const invalidateChallenge = useCallback(() => {
+    client.invalidate(GetChallengeDocument, { id: challengeId, tripId });
+  }, [client, challengeId, tripId]);
 
   const changeStatus = async (status: ChallengeStatus, label: string) => {
+    setIsSubmitting(true);
     const toastId = appToast.loading(`${label}...`);
     try {
-      await updateStatusMutation.mutateAsync({
-        id: challengeId,
-        tripId,
-        status,
+      const result = await updateChallenge({
+        input: {
+          id: challengeId,
+          tripId,
+          status,
+        },
       });
+
+      if (result.error) {
+        throw result.error;
+      }
+
       appToast.dismiss(toastId);
       appToast.success(`Challenge moved to ${formatStatusLabel(status)}.`);
+      invalidateChallenge();
     } catch (error) {
       appToast.dismiss(toastId);
       const message =
@@ -96,24 +91,32 @@ export function ChallengeDetailsPage({
           ? error.message
           : `Failed to ${label.toLowerCase()}.`;
       appToast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const completeChallenge = async () => {
     if (!challenge) return;
 
+    setIsSubmitting(true);
     const toastId = appToast.loading("Completing challenge...");
     try {
-      // For PEER_VOTING challenges in VOTING_PHASE, we complete them directly
-      // (force close voting functionality is handled by status update)
-      await updateStatusMutation.mutateAsync({
-        id: challengeId,
-        tripId,
-        status: "COMPLETED",
+      const result = await updateChallenge({
+        input: {
+          id: challengeId,
+          tripId,
+          status: "COMPLETED",
+        },
       });
+
+      if (result.error) {
+        throw result.error;
+      }
 
       appToast.dismiss(toastId);
       appToast.success("Challenge completed.");
+      invalidateChallenge();
     } catch (error) {
       appToast.dismiss(toastId);
       const message =
@@ -121,6 +124,8 @@ export function ChallengeDetailsPage({
           ? error.message
           : "Failed to complete challenge.";
       appToast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -132,23 +137,32 @@ export function ChallengeDetailsPage({
       return;
     }
 
+    setIsSubmitting(true);
     const toastId = appToast.loading("Deleting challenge...");
     try {
-      await deleteMutation.mutateAsync({ id: challengeId, tripId });
+      const result = await deleteChallengeMutation({ id: challengeId, tripId });
+
+      if (result.error) {
+        throw result.error;
+      }
+
       appToast.dismiss(toastId);
+      appToast.success("Challenge deleted.");
+      window.location.href = "/challenges";
     } catch (error) {
       appToast.dismiss(toastId);
       const message =
         error instanceof Error ? error.message : "Failed to delete challenge.";
       appToast.error(message);
+      setIsSubmitting(false);
     }
   };
 
-  if (detailsQuery.isLoading) {
+  if (challengeResult.fetching) {
     return <LoadingSpinner label="Loading challenge..." />;
   }
 
-  if (detailsQuery.error || !challenge) {
+  if (challengeResult.error || !challenge) {
     return <ErrorMessage message="Could not load challenge details." />;
   }
 
@@ -287,10 +301,7 @@ export function ChallengeDetailsPage({
           <Button
             type="button"
             variant="secondary"
-            disabled={
-              updateStatusMutation.isPending ||
-              challenge.status === "VOTING_PHASE"
-            }
+            disabled={isSubmitting || challenge.status === "VOTING_PHASE"}
             onClick={() => void changeStatus("VOTING_PHASE", "Starting voting")}
           >
             Start voting
@@ -298,9 +309,7 @@ export function ChallengeDetailsPage({
           <Button
             type="button"
             variant="secondary"
-            disabled={
-              updateStatusMutation.isPending || challenge.status === "ACTIVE"
-            }
+            disabled={isSubmitting || challenge.status === "ACTIVE"}
             onClick={() => void changeStatus("ACTIVE", "Starting judging")}
           >
             Start judging
@@ -308,9 +317,7 @@ export function ChallengeDetailsPage({
           <Button
             type="button"
             variant="secondary"
-            disabled={
-              updateStatusMutation.isPending || challenge.status === "COMPLETED"
-            }
+            disabled={isSubmitting || challenge.status === "COMPLETED"}
             onClick={() => void completeChallenge()}
           >
             Complete
@@ -318,7 +325,7 @@ export function ChallengeDetailsPage({
           <Button
             type="button"
             variant="danger"
-            disabled={deleteMutation.isPending}
+            disabled={isSubmitting}
             onClick={() => void deleteChallenge()}
           >
             Delete

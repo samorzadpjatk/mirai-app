@@ -1,12 +1,13 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { Provider as UrqlProvider, useClient } from "urql";
+import { type ReactNode } from "react";
+import { urqlClient } from "../lib/urql-client";
 
 /**
- * QueryProvider - TanStack Query Client Provider
+ * QueryProvider - urql GraphQL Client Provider
  *
- * Wraps the application with QueryClientProvider for React Query hooks.
+ * Wraps the application with urql Provider for GraphQL hooks.
  * This provider should be placed high in the component tree, ideally in
  * the root layout or main app component.
  *
@@ -30,73 +31,36 @@ interface QueryProviderProps {
 }
 
 /**
- * Default QueryClient configuration
- *
- * These defaults optimize for data that doesn't change frequently
- * and reduce unnecessary network requests:
- *
- * - staleTime: 5 minutes - Data is considered fresh for 5 minutes
- * - refetchOnWindowFocus: false - Don't refetch when window regains focus
- * - retry: 1 - Only retry failed requests once
- * - refetchOnReconnect: true - Refetch when network reconnects
- */
-const createQueryClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        // Data stays fresh for 5 minutes
-        staleTime: 5 * 60 * 1000,
-        // Don't refetch when window regains focus
-        refetchOnWindowFocus: false,
-        // Refetch when network reconnects
-        refetchOnReconnect: true,
-        // Only retry once on failure
-        retry: 1,
-        // Cache data for 10 minutes
-        gcTime: 10 * 60 * 1000,
-      },
-      mutations: {
-        // Retry mutations once on failure
-        retry: 1,
-      },
-    },
-  });
-
-/**
  * QueryProvider Component
  *
- * Provides TanStack Query functionality to all child components.
- * Uses React state to ensure the QueryClient is only created once.
+ * Provides urql GraphQL functionality to all child components.
+ * Uses the preconfigured urql client from lib/urql-client.
  */
 export function QueryProvider({ children }: QueryProviderProps) {
-  // Use state to ensure QueryClient is only created once per component lifecycle
-  const [queryClient] = useState(createQueryClient);
-
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return <UrqlProvider value={urqlClient}>{children}</UrqlProvider>;
 }
 
 /**
- * Hook to access the QueryClient instance directly.
+ * Hook to access the urql client instance directly.
  * Useful for programmatic cache management.
  *
  * @example
  * ```tsx
- * import { useQueryClient } from "@tanstack/react-query";
+ * import { useUrqlClient } from "@/components/QueryProvider";
  *
  * function MyComponent() {
- *   const queryClient = useQueryClient();
+ *   const client = useUrqlClient();
  *
  *   const handleLogout = () => {
  *     // Clear all cached queries on logout
- *     queryClient.clear();
+ *     // urql doesn't have a clear() method like react-query
+ *     // Instead, invalidate specific queries or reload the page
  *   };
  *
  *   return <button onClick={handleLogout}>Logout</button>;
  * }
  * ```
  */
-export { useQueryClient } from "@tanstack/react-query";
+export { useClient as useUrqlClient } from "urql";
 
 export default QueryProvider;

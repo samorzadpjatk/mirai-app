@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
+import { useQuery, useMutation, useClient } from "urql";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
@@ -10,14 +9,14 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import {
-  useGetActivitiesByTripQuery,
-  useSetActivityPinnedMutation,
-  useHideActivityMutation,
-  useUnhideActivityMutation,
-  useDeleteActivityMutation,
+  GetActivitiesByTripDocument,
+  SetActivityPinnedDocument,
+  HideActivityDocument,
+  UnhideActivityDocument,
+  DeleteActivityDocument,
   type ActivityType,
   type ActivityFieldsFragment,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-types/urql";
 import { AdminActivityCard } from "./AdminActivityCard";
 import { useTrip } from "../../../contexts/TripContext";
 
@@ -34,97 +33,32 @@ const activityTypeFilters: { label: string; value: "all" | ActivityType }[] = [
 // This maintains backward compatibility with AdminActivityCard interface
 const getActivityGroupName = (_activity: ActivityFieldsFragment) => "";
 
-// Create GraphQL client (matches pattern in other admin components)
-const createGraphQLClient = () => {
-  const graphqlUrl =
-    process.env.NEXT_PUBLIC_GRAPHQL_URL || `${window.location.origin}/graphql`;
-
-  return new GraphQLClient(graphqlUrl, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-};
-
 export function ActivityPage() {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
   const [selectedType, setSelectedType] = useState<"all" | ActivityType>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const urqlClient = useClient();
 
-  const client = useMemo(() => createGraphQLClient(), []);
-  const queryClient = useQueryClient();
-
-  // Query for fetching activities
-  const {
-    data: activitiesData,
-    isLoading,
-    isFetching: isRefetching,
-    refetch,
-  } = useGetActivitiesByTripQuery(
-    client,
-    { tripId, limit: 100 },
-    {
-      enabled: !!tripId,
-    },
-  );
-
-  const activities = activitiesData?.activitiesByTrip.activities ?? [];
-
-  // Mutations
-  const setPinnedMutation = useSetActivityPinnedMutation(client, {
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["GetActivitiesByTrip", { tripId, limit: 100 }],
-      });
-    },
-    onError: (error) => {
-      appToast.error(
-        error instanceof Error ? error.message : "Pin update failed.",
-      );
-    },
+  // Query for fetching activities using urql
+  const [activitiesResult, refetch] = useQuery({
+    query: GetActivitiesByTripDocument,
+    variables: { tripId, limit: 100 },
+    pause: !tripId,
   });
 
-  const hideMutation = useHideActivityMutation(client, {
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["GetActivitiesByTrip", { tripId, limit: 100 }],
-      });
-    },
-    onError: (error) => {
-      appToast.error(error instanceof Error ? error.message : "Hide failed.");
-    },
-  });
+  const activities = activitiesResult.data?.activitiesByTrip.activities ?? [];
+  const isLoading = activitiesResult.fetching;
+  const isRefetching =
+    activitiesResult.fetching && activitiesResult.data !== undefined;
 
-  const unhideMutation = useUnhideActivityMutation(client, {
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["GetActivitiesByTrip", { tripId, limit: 100 }],
-      });
-    },
-    onError: (error) => {
-      appToast.error(error instanceof Error ? error.message : "Unhide failed.");
-    },
-  });
+  // Mutations using urql
+  const [, setPinned] = useMutation(SetActivityPinnedDocument);
+  const [, hideActivity] = useMutation(HideActivityDocument);
+  const [, unhideActivity] = useMutation(UnhideActivityDocument);
+  const [, deleteActivity] = useMutation(DeleteActivityDocument);
 
-  const deleteMutation = useDeleteActivityMutation(client, {
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["GetActivitiesByTrip", { tripId, limit: 100 }],
-      });
-      appToast.success("Activity deleted.");
-    },
-    onError: (error) => {
-      appToast.error(error instanceof Error ? error.message : "Delete failed.");
-    },
-  });
-
-  const isBusy =
-    setPinnedMutation.isPending ||
-    hideMutation.isPending ||
-    unhideMutation.isPending ||
-    deleteMutation.isPending;
+  const [isBusy, setIsBusy] = useState(false);
 
   const filteredActivities = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -142,17 +76,53 @@ export function ActivityPage() {
   }, [activities, searchTerm, selectedType]);
 
   const handlePin = async (activity: ActivityFieldsFragment) => {
-    await setPinnedMutation.mutateAsync({
-      id: activity.id,
-      isPinned: !activity.isPinned,
-    });
+    setIsBusy(true);
+    try {
+      const result = await setPinned({
+        id: activity.id,
+        isPinned: !activity.isPinned,
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate the query to refresh
+      await urqlClient.invalidate(GetActivitiesByTripDocument, {
+        tripId,
+        limit: 100,
+      });
+    } catch (error) {
+      appToast.error(
+        error instanceof Error ? error.message : "Pin update failed.",
+      );
+    } finally {
+      setIsBusy(false);
+    }
   };
 
   const handleHide = async (activity: ActivityFieldsFragment) => {
-    if (activity.isHidden) {
-      await unhideMutation.mutateAsync({ id: activity.id });
-    } else {
-      await hideMutation.mutateAsync({ id: activity.id });
+    setIsBusy(true);
+    try {
+      const result = activity.isHidden
+        ? await unhideActivity({ id: activity.id })
+        : await hideActivity({ id: activity.id });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate the query to refresh
+      await urqlClient.invalidate(GetActivitiesByTripDocument, {
+        tripId,
+        limit: 100,
+      });
+    } catch (error) {
+      appToast.error(
+        error instanceof Error ? error.message : "Hide/unhide failed.",
+      );
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -162,14 +132,32 @@ export function ActivityPage() {
       return;
     }
 
-    await deleteMutation.mutateAsync({ id: activity.id });
+    setIsBusy(true);
+    try {
+      const result = await deleteActivity({ id: activity.id });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate the query to refresh
+      await urqlClient.invalidate(GetActivitiesByTripDocument, {
+        tripId,
+        limit: 100,
+      });
+      appToast.success("Activity deleted.");
+    } catch (error) {
+      appToast.error(error instanceof Error ? error.message : "Delete failed.");
+    } finally {
+      setIsBusy(false);
+    }
   };
 
   if (!tripId) {
     return <ErrorMessage message="Please select a trip first." />;
   }
 
-  if (isLoading) {
+  if (isLoading && !activitiesResult.data) {
     return <LoadingSpinner label="Loading activities..." />;
   }
 
@@ -213,7 +201,7 @@ export function ActivityPage() {
             variant="secondary"
             disabled={isRefetching}
             onClick={() => {
-              void refetch();
+              refetch({ requestPolicy: "network-only" });
             }}
           >
             {isRefetching ? "Refreshing..." : "Refresh"}

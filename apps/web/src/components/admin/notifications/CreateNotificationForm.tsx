@@ -2,42 +2,19 @@
 
 import { useMemo, useState, useCallback } from "react";
 import type { FormEvent } from "react";
-import { GraphQLClient } from "graphql-request";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "urql";
 import {
-  useCreateNotificationMutation,
-  useSendMobileNotificationsMutation,
-} from "@mirai-app/graphql-types";
+  CreateNotificationDocument,
+  SendMobileNotificationsDocument,
+} from "@mirai-app/graphql-types/urql";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
-import { env } from "../../../lib/env";
 
 type AudienceType = "all" | "group";
-
-const getAuthToken = () => {
-  const cookies = document.cookie.split(";");
-  const tokenCookie = cookies.find((c) =>
-    c.trim().startsWith("sb-access-token="),
-  );
-  return tokenCookie ? tokenCookie.split("=")[1] : null;
-};
-
-const createGraphQLClient = () => {
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
 
 const buildNotificationUrl = (
   audienceType: AudienceType,
@@ -71,7 +48,6 @@ interface Group {
 export function CreateNotificationForm() {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -79,51 +55,27 @@ export function CreateNotificationForm() {
   const [groupId, setGroupId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Fetch groups using raw GraphQL query
-  const groupsQuery = useQuery({
-    queryKey: ["groups", tripId],
-    enabled: Boolean(tripId),
-    queryFn: async () => {
-      const result = await graphqlClient.request<{
-        groupsByTrip?: { groups: Group[] };
-      }>(GET_GROUPS_QUERY, { tripId });
-      return result.groupsByTrip?.groups ?? [];
-    },
+  // Fetch groups using urql
+  const [groupsResult] = useQuery({
+    query: GET_GROUPS_QUERY,
+    variables: { tripId },
+    pause: !tripId,
   });
 
-  const groups = groupsQuery.data ?? [];
+  const groups = useMemo(() => {
+    const data = groupsResult.data?.groupsByTrip?.groups;
+    return Array.isArray(data) ? data : [];
+  }, [groupsResult.data]);
 
-  const createNotificationMutation = useCreateNotificationMutation(
-    graphqlClient,
-    {
-      onError: (error) => {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to create notification.";
-        appToast.error(message);
-        setFormError(message);
-      },
-    },
+  // Create notification mutation using urql
+  const [, createNotification] = useMutation(CreateNotificationDocument);
+
+  // Send mobile notifications mutation using urql
+  const [, sendMobileNotifications] = useMutation(
+    SendMobileNotificationsDocument,
   );
 
-  const sendMobileNotificationsMutation = useSendMobileNotificationsMutation(
-    graphqlClient,
-    {
-      onError: (error) => {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to send notification.";
-        appToast.error(message);
-        setFormError(message);
-      },
-    },
-  );
-
-  const isSubmitting =
-    createNotificationMutation.isPending ||
-    sendMobileNotificationsMutation.isPending;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const groupOptions = useMemo(
     () => [
@@ -153,21 +105,34 @@ export function CreateNotificationForm() {
 
       const notificationUrl = buildNotificationUrl(audienceType, groupId);
       const toastId = appToast.loading("Sending notification...");
+      setIsSubmitting(true);
 
       try {
         // Create the notification
-        const result = await createNotificationMutation.mutateAsync({
-          title: normalizedTitle,
-          body: normalizedBody,
-          url: notificationUrl,
-          tripId: tripId || undefined,
+        const result = await createNotification({
+          input: {
+            title: normalizedTitle,
+            body: normalizedBody,
+            url: notificationUrl,
+            tripId: tripId || undefined,
+          },
         });
 
+        if (result.error) {
+          throw result.error;
+        }
+
         // Send the notification if creation was successful
-        if (result?.createNotification?.notification?.id) {
-          await sendMobileNotificationsMutation.mutateAsync({
-            notificationId: result.createNotification.notification.id,
+        if (result.data?.createNotification?.notification?.id) {
+          const sendResult = await sendMobileNotifications({
+            input: {
+              notificationId: result.data.createNotification.notification.id,
+            },
           });
+
+          if (sendResult.error) {
+            throw sendResult.error;
+          }
         }
 
         appToast.dismiss(toastId);
@@ -181,6 +146,8 @@ export function CreateNotificationForm() {
             : "Failed to send notification.";
         appToast.error(message);
         setFormError(message);
+      } finally {
+        setIsSubmitting(false);
       }
     },
     [
@@ -189,8 +156,8 @@ export function CreateNotificationForm() {
       audienceType,
       groupId,
       tripId,
-      createNotificationMutation,
-      sendMobileNotificationsMutation,
+      createNotification,
+      sendMobileNotifications,
     ],
   );
 

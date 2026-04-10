@@ -1,23 +1,19 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraphQLClient } from "graphql-request";
+import { useQuery, useMutation, useClient } from "urql";
 import {
-  useGetChallengeSubmissionsQuery,
-  useGetMyVotesQuery,
-  useGetJudgedStaffVotingProgressQuery,
-  useSubmitVotesMutation,
-  useForceEndVotingMutation,
+  GetChallengeDocument,
   GetChallengeSubmissionsDocument,
   GetMyVotesDocument,
   GetJudgedStaffVotingProgressDocument,
+  SubmitVotesDocument,
+  ForceEndVotingDocument,
   type GetChallengeSubmissionsQuery,
   type GetMyVotesQuery,
   type GetJudgedStaffVotingProgressQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-types/urql";
 import { appToast } from "../../../lib/toast";
-import { env } from "../../../lib/env";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { Button } from "../../ui/Button";
@@ -31,27 +27,6 @@ import { useTrip } from "../../../contexts/TripContext";
 interface StaffVotingPageProps {
   challengeId: string;
 }
-
-const getAuthToken = () => {
-  const cookies = document.cookie.split(";");
-  const tokenCookie = cookies.find((c) =>
-    c.trim().startsWith("sb-access-token="),
-  );
-  return tokenCookie ? tokenCookie.split("=")[1] : null;
-};
-
-const createGraphQLClient = () => {
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -107,85 +82,70 @@ const parseVotingSubmissions = (
 export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
-  const queryClient = useQueryClient();
+  const urqlClient = useClient();
 
-  // Create GraphQL client
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
-
-  // Challenge query (using raw query since GetChallengeById might not be available)
-  const challengeQuery = useQuery({
-    queryKey: ["challenge", "details", challengeId, tripId],
-    enabled: Boolean(tripId) && Boolean(challengeId),
-    queryFn: async () => {
-      const result = await graphqlClient.request<{
-        challenge?: {
-          id: string;
-          name: string;
-          scoringCategory?: string;
-          endTime?: string;
-          status?: string;
-        };
-      }>(
-        `
-        query GetChallenge($id: ID!, $tripId: ID!) {
-          challenge(id: $id, tripId: $tripId) {
-            id
-            name
-            scoringCategory
-            endTime
-            status
-          }
-        }
-        `,
-        { id: challengeId, tripId },
-      );
-      return parseChallenge(result.challenge);
-    },
+  // Challenge query using urql
+  const [challengeResult] = useQuery({
+    query: GetChallengeDocument,
+    variables: { id: challengeId, tripId },
+    pause: !tripId || !challengeId,
   });
 
-  // Submissions query using generated hook
-  const submissionsQuery = useGetChallengeSubmissionsQuery(
-    graphqlClient,
-    {
-      challengeId,
-      limit: 100,
-      offset: 0,
-    },
-    {
-      enabled: Boolean(tripId) && Boolean(challengeId),
-    },
-  );
+  const challengeQuery = {
+    data: challengeResult.data
+      ? { challenge: parseChallenge(challengeResult.data.challenge) }
+      : undefined,
+    fetching: challengeResult.fetching,
+    error: challengeResult.error,
+  };
 
-  // My votes query using generated hook
-  const myVotesQuery = useGetMyVotesQuery(
-    graphqlClient,
-    {
+  // Submissions query using urql
+  const [submissionsResult] = useQuery({
+    query: GetChallengeSubmissionsDocument,
+    variables: { challengeId, limit: 100, offset: 0 },
+    pause: !tripId || !challengeId,
+  });
+
+  const submissionsQuery = {
+    data: submissionsResult.data,
+    fetching: submissionsResult.fetching,
+    error: submissionsResult.error,
+  };
+
+  // My votes query using urql
+  const [myVotesResult] = useQuery({
+    query: GetMyVotesDocument,
+    variables: { challengeId, tripId },
+    pause: !tripId || !challengeId,
+  });
+
+  const myVotesQuery = {
+    data: myVotesResult.data,
+    fetching: myVotesResult.fetching,
+    error: myVotesResult.error,
+  };
+
+  // Judged staff progress query using urql
+  const [progressResult] = useQuery({
+    query: GetJudgedStaffVotingProgressDocument,
+    variables: {
       challengeId,
       tripId,
-    },
-    {
-      enabled: Boolean(tripId) && Boolean(challengeId),
-    },
-  );
-
-  // Judged staff progress query using generated hook
-  const progressQuery = useGetJudgedStaffVotingProgressQuery(
-    graphqlClient,
-    {
-      challengeId,
-      tripId,
-      adminParticipantIds: [], // This will be populated by the server
-      eligibleSubmissionsCount: 0, // Will be calculated
+      adminParticipantIds: [],
+      eligibleSubmissionsCount: 0,
       requiredPositions: 3,
     },
-    {
-      enabled:
-        Boolean(tripId) &&
-        Boolean(challengeId) &&
-        challengeQuery.data?.scoringCategory === "JUDGED_STAFF",
-      refetchInterval: 10000,
-    },
-  );
+    pause:
+      !tripId ||
+      !challengeId ||
+      challengeQuery.data?.challenge?.scoringCategory !== "JUDGED_STAFF",
+  });
+
+  const progressQuery = {
+    data: progressResult.data,
+    fetching: progressResult.fetching,
+    error: progressResult.error,
+  };
 
   const votingSubmissions = useMemo(
     () => parseVotingSubmissions(submissionsQuery.data),
@@ -222,82 +182,36 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
       progressQuery.data?.judgedStaffVotingProgress ?? undefined,
     myVotesError: myVotesQuery.error,
     judgedStaffProgressError: progressQuery.error,
-    challenge: challengeQuery.data ?? undefined,
+    challenge: challengeQuery.data?.challenge ?? undefined,
   });
 
   useEffect(() => {
     if (
-      challengeQuery.isLoading ||
-      submissionsQuery.isLoading ||
-      myVotesQuery.isLoading ||
-      progressQuery.isLoading
+      challengeQuery.fetching ||
+      submissionsQuery.fetching ||
+      myVotesQuery.fetching ||
+      progressQuery.fetching
     ) {
       return;
     }
 
-    if (challengeQuery.data) {
+    if (challengeQuery.data?.challenge) {
       voting.bootstrapVoting();
     }
   }, [
-    challengeQuery.data,
-    challengeQuery.isLoading,
-    myVotesQuery.isLoading,
-    progressQuery.isLoading,
-    submissionsQuery.isLoading,
+    challengeQuery.data?.challenge,
+    challengeQuery.fetching,
+    myVotesQuery.fetching,
+    progressQuery.fetching,
+    submissionsQuery.fetching,
     voting,
   ]);
 
-  // Submit votes mutation using generated hook
-  const submitVotesMutation = useSubmitVotesMutation(graphqlClient, {
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: useGetMyVotesQuery.getKey({ challengeId, tripId }),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["challenge", "admin-submissions", challengeId, tripId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: useGetJudgedStaffVotingProgressQuery.getKey({
-            challengeId,
-            tripId,
-            adminParticipantIds: [],
-            eligibleSubmissionsCount: 0,
-            requiredPositions: 3,
-          }),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["challenge", "details", challengeId, tripId],
-        }),
-      ]);
-    },
-  });
+  // Submit votes mutation using urql
+  const [, submitVotes] = useMutation(SubmitVotesDocument);
 
-  // Force end voting mutation using generated hook
-  const forceEndMutation = useForceEndVotingMutation(graphqlClient, {
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["challenge", "details", challengeId, tripId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["challenge", "admin-submissions", challengeId, tripId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: useGetMyVotesQuery.getKey({ challengeId, tripId }),
-        }),
-        queryClient.invalidateQueries({
-          queryKey: useGetJudgedStaffVotingProgressQuery.getKey({
-            challengeId,
-            tripId,
-            adminParticipantIds: [],
-            eligibleSubmissionsCount: 0,
-            requiredPositions: 3,
-          }),
-        }),
-      ]);
-    },
-  });
+  // Force end voting mutation using urql
+  const [, forceEndVoting] = useMutation(ForceEndVotingDocument);
 
   const handleSubmitPodium = async () => {
     if (voting.finalTopThree.length < voting.MIN_SUBMISSIONS_TO_VOTE) {
@@ -328,7 +242,31 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
 
     const toastId = appToast.loading("Submitting vote...");
     try {
-      await submitVotesMutation.mutateAsync({ input: payload });
+      const result = await submitVotes({ input: payload });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate queries
+      await urqlClient.invalidate(GetMyVotesDocument, { challengeId, tripId });
+      await urqlClient.invalidate(GetChallengeSubmissionsDocument, {
+        challengeId,
+        limit: 100,
+        offset: 0,
+      });
+      await urqlClient.invalidate(GetJudgedStaffVotingProgressDocument, {
+        challengeId,
+        tripId,
+        adminParticipantIds: [],
+        eligibleSubmissionsCount: 0,
+        requiredPositions: 3,
+      });
+      await urqlClient.invalidate(GetChallengeDocument, {
+        id: challengeId,
+        tripId,
+      });
+
       appToast.dismiss(toastId);
       appToast.success("Vote submitted.");
     } catch (error) {
@@ -350,7 +288,31 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
 
     const toastId = appToast.loading("Finalizing voting...");
     try {
-      await forceEndMutation.mutateAsync({ challengeId, tripId });
+      const result = await forceEndVoting({ challengeId, tripId });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      // Invalidate queries
+      await urqlClient.invalidate(GetChallengeDocument, {
+        id: challengeId,
+        tripId,
+      });
+      await urqlClient.invalidate(GetChallengeSubmissionsDocument, {
+        challengeId,
+        limit: 100,
+        offset: 0,
+      });
+      await urqlClient.invalidate(GetMyVotesDocument, { challengeId, tripId });
+      await urqlClient.invalidate(GetJudgedStaffVotingProgressDocument, {
+        challengeId,
+        tripId,
+        adminParticipantIds: [],
+        eligibleSubmissionsCount: 0,
+        requiredPositions: 3,
+      });
+
       appToast.dismiss(toastId);
       appToast.success("Voting finalized.");
     } catch (error) {
@@ -362,14 +324,14 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
   };
 
   if (
-    challengeQuery.isLoading ||
-    submissionsQuery.isLoading ||
-    myVotesQuery.isLoading
+    challengeQuery.fetching ||
+    submissionsQuery.fetching ||
+    myVotesQuery.fetching
   ) {
     return <LoadingSpinner label="Loading voting..." />;
   }
 
-  if (!challengeQuery.data) {
+  if (!challengeQuery.data?.challenge) {
     return <ErrorMessage message="Could not load challenge details." />;
   }
 
@@ -389,14 +351,13 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
         <div className="mt-3">
           <Button
             variant="danger"
-            disabled={forceEndMutation.isPending}
+            disabled={false}
             onClick={() => void handleForceEnd()}
           >
-            {forceEndMutation.isPending ? "Finalizing..." : "Force End Voting"}
+            Force End Voting
           </Button>
         </div>
       </div>
-
       {voting.phase === "comparing" ? (
         <>
           <div>
@@ -438,7 +399,6 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
           ) : null}
         </>
       ) : null}
-
       {voting.phase === "confirming" ? (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-text-primary">
@@ -464,27 +424,21 @@ export function StaffVotingPage({ challengeId }: StaffVotingPageProps) {
             <Button variant="secondary" onClick={() => voting.startComparing()}>
               Vote Again
             </Button>
-            <Button
-              disabled={submitVotesMutation.isPending}
-              onClick={() => void handleSubmitPodium()}
-            >
-              {submitVotesMutation.isPending
-                ? "Submitting..."
-                : "Confirm Podium"}
+            <Button disabled={false} onClick={() => void handleSubmitPodium()}>
+              Confirm Podium
             </Button>
           </div>
         </div>
       ) : null}
-
       {voting.phase === "done" ? (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
           <p className="text-lg font-semibold text-emerald-700">
-            {challengeQuery.data.status === "COMPLETED"
+            {challengeQuery.data.challenge.status === "COMPLETED"
               ? "Voting completed"
               : "Vote submitted"}
           </p>
           <p className="mt-1 text-sm text-text-secondary">
-            {challengeQuery.data.status === "COMPLETED"
+            {challengeQuery.data.challenge.status === "COMPLETED"
               ? "Staff voting is closed and results were finalized."
               : `Your vote was saved. Waiting for ${progressQuery.data?.judgedStaffVotingProgress?.pendingAdmins ?? "remaining"} admin(s).`}
           </p>

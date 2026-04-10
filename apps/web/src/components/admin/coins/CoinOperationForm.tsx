@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { GraphQLClient } from "graphql-request";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useClient } from "urql";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
@@ -12,37 +11,15 @@ import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
 import {
-  useGetGroupsByTripQuery,
-  useAddCoinsMutation,
-  useRemoveCoinsMutation,
-} from "@mirai-app/graphql-types";
-import { env } from "../../../lib/env";
+  GetGroupsByTripDocument,
+  AddCoinsDocument,
+  RemoveCoinsDocument,
+} from "@mirai-app/graphql-types/urql";
 
 interface CoinOperationFormProps {
   operation: "add" | "remove";
   initialGroupId: string;
 }
-
-const createGraphQLClient = (): GraphQLClient => {
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-      return headers;
-    },
-  });
-};
 
 export function CoinOperationForm({
   operation,
@@ -53,41 +30,24 @@ export function CoinOperationForm({
   const [groupId, setGroupId] = useState(initialGroupId || "");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const client = useMemo(() => createGraphQLClient(), []);
-  const queryClient = useQueryClient();
+  const client = useClient();
 
-  const { data: groupsData, isLoading: groupsLoading } =
-    useGetGroupsByTripQuery(
-      client,
-      {
-        tripId,
-      },
-      {
-        enabled: Boolean(tripId),
-        staleTime: 30000,
-      },
-    );
+  // Fetch groups using urql
+  const [groupsResult] = useQuery({
+    query: GetGroupsByTripDocument,
+    variables: { tripId },
+    pause: !tripId,
+  });
 
   const groups = useMemo(() => {
-    return groupsData?.groupsByTrip?.groups ?? [];
-  }, [groupsData]);
+    return groupsResult.data?.groupsByTrip?.groups ?? [];
+  }, [groupsResult.data]);
 
-  const addCoinsMutation = useAddCoinsMutation(client, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetGroupsByTrip"],
-      });
-    },
-  });
-
-  const removeCoinsMutation = useRemoveCoinsMutation(client, {
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["GetGroupsByTrip"],
-      });
-    },
-  });
+  // Mutations using urql
+  const [, addCoins] = useMutation(AddCoinsDocument);
+  const [, removeCoins] = useMutation(RemoveCoinsDocument);
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === groupId) ?? null,
@@ -100,10 +60,9 @@ export function CoinOperationForm({
     }
   }, [groups, groupId]);
 
-  const isSubmitting =
-    operation === "add"
-      ? addCoinsMutation.isPending
-      : removeCoinsMutation.isPending;
+  const invalidateGroups = () => {
+    client.invalidate(GetGroupsByTripDocument, { tripId });
+  };
 
   const title = operation === "add" ? "Add Coins" : "Remove Coins";
   const submitLabel = operation === "add" ? "Add coins" : "Remove coins";
@@ -126,28 +85,34 @@ export function CoinOperationForm({
       return;
     }
 
+    setIsSubmitting(true);
     const toastId = appToast.loading(`${submitLabel}...`);
+
     try {
-      if (operation === "add") {
-        await addCoinsMutation.mutateAsync({
-          input: {
-            groupId,
-            amount: numericAmount,
-            reason: reason.trim(),
-          },
-        });
-      } else {
-        await removeCoinsMutation.mutateAsync({
-          input: {
-            groupId,
-            amount: numericAmount,
-            reason: reason.trim(),
-          },
-        });
+      const result =
+        operation === "add"
+          ? await addCoins({
+              input: {
+                groupId,
+                amount: numericAmount,
+                reason: reason.trim(),
+              },
+            })
+          : await removeCoins({
+              input: {
+                groupId,
+                amount: numericAmount,
+                reason: reason.trim(),
+              },
+            });
+
+      if (result.error) {
+        throw result.error;
       }
 
       appToast.dismiss(toastId);
       appToast.success(`${title} completed.`);
+      invalidateGroups();
       setAmount("");
       setReason("");
     } catch (error) {
@@ -155,6 +120,8 @@ export function CoinOperationForm({
       appToast.error(
         error instanceof Error ? error.message : "Operation failed.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -181,8 +148,10 @@ export function CoinOperationForm({
               value: group.id,
               label: group.name,
             }))}
-            placeholder={groupsLoading ? "Loading groups..." : "Select group"}
-            disabled={!tripId || groupsLoading}
+            placeholder={
+              groupsResult.fetching ? "Loading groups..." : "Select group"
+            }
+            disabled={!tripId || groupsResult.fetching}
           />
         </div>
 

@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { GraphQLClient } from "graphql-request";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState, useCallback } from "react";
+import { useQuery, useMutation, useClient } from "urql";
 import { Select } from "../../ui/Select";
 import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
@@ -13,33 +12,15 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { appToast } from "../../../lib/toast";
 import {
-  useGetNotificationSchedulesQuery,
-  useCreateNotificationScheduleMutation,
-  useUpdateNotificationScheduleMutation,
-  useDeleteNotificationScheduleMutation,
-  useToggleNotificationScheduleActiveMutation,
+  GetNotificationSchedulesDocument,
+  CreateNotificationScheduleDocument,
+  UpdateNotificationScheduleDocument,
+  DeleteNotificationScheduleDocument,
+  ToggleNotificationScheduleActiveDocument,
   type GetNotificationSchedulesQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-types/urql";
 import { useTrip } from "../../../contexts/TripContext";
 import { ScheduleCard } from "./ScheduleCard";
-import { env } from "../../../lib/env";
-
-const createGraphQLClient = (): GraphQLClient => {
-  const getAuthToken = (): string | null => {
-    const cookies = document.cookie.split(";");
-    const tokenCookie = cookies.find((c) =>
-      c.trim().startsWith("sb-access-token="),
-    );
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  };
-
-  return new GraphQLClient(env.graphqlUrl, {
-    headers: () => {
-      const token = getAuthToken();
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    },
-  });
-};
 
 interface ScheduleFormState {
   name: string;
@@ -130,98 +111,32 @@ export function SchedulesPage() {
     date: getTomorrowDateString(),
     time: getDefaultTimeString(),
   }));
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const graphqlClient = useMemo(() => createGraphQLClient(), []);
-  const queryClient = useQueryClient();
+  const client = useClient();
 
-  const {
-    data: schedulesData,
-    isLoading,
-    refetch,
-  } = useGetNotificationSchedulesQuery(
-    graphqlClient,
-    {
+  // Fetch schedules using urql
+  const [schedulesResult, reexecuteSchedules] = useQuery({
+    query: GetNotificationSchedulesDocument,
+    variables: {
       tripId: selectedTripId || undefined,
       limit: 100,
       offset: 0,
     },
-    {
-      enabled: Boolean(selectedTripId),
-    },
-  );
+    pause: !selectedTripId,
+  });
 
   const schedules = useMemo(
-    () => schedulesData?.notificationSchedules?.schedules ?? [],
-    [schedulesData],
+    () => schedulesResult.data?.notificationSchedules?.schedules ?? [],
+    [schedulesResult.data],
   );
 
-  const createScheduleMutation = useCreateNotificationScheduleMutation(
-    graphqlClient,
-    {
-      onSuccess: () => {
-        appToast.success("Schedule created.");
-        queryClient.invalidateQueries({
-          queryKey: ["GetNotificationSchedules"],
-        });
-        closeCreateModal();
-      },
-      onError: (error) => {
-        appToast.error(
-          error instanceof Error ? error.message : "Create failed.",
-        );
-      },
-    },
-  );
-
-  const updateScheduleMutation = useUpdateNotificationScheduleMutation(
-    graphqlClient,
-    {
-      onSuccess: () => {
-        appToast.success("Schedule updated.");
-        queryClient.invalidateQueries({
-          queryKey: ["GetNotificationSchedules"],
-        });
-        closeEditModal();
-      },
-      onError: (error) => {
-        appToast.error(
-          error instanceof Error ? error.message : "Update failed.",
-        );
-      },
-    },
-  );
-
-  const deleteScheduleMutation = useDeleteNotificationScheduleMutation(
-    graphqlClient,
-    {
-      onSuccess: () => {
-        appToast.success("Schedule deleted.");
-        queryClient.invalidateQueries({
-          queryKey: ["GetNotificationSchedules"],
-        });
-      },
-      onError: (error) => {
-        appToast.error(
-          error instanceof Error ? error.message : "Delete failed.",
-        );
-      },
-    },
-  );
-
-  const toggleScheduleMutation = useToggleNotificationScheduleActiveMutation(
-    graphqlClient,
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: ["GetNotificationSchedules"],
-        });
-      },
-      onError: (error) => {
-        appToast.error(
-          error instanceof Error ? error.message : "Toggle failed.",
-        );
-      },
-    },
+  // Mutations using urql
+  const [, createSchedule] = useMutation(CreateNotificationScheduleDocument);
+  const [, updateSchedule] = useMutation(UpdateNotificationScheduleDocument);
+  const [, deleteSchedule] = useMutation(DeleteNotificationScheduleDocument);
+  const [, toggleSchedule] = useMutation(
+    ToggleNotificationScheduleActiveDocument,
   );
 
   const filteredSchedules = useMemo(() => {
@@ -279,6 +194,14 @@ export function SchedulesPage() {
     });
   };
 
+  const invalidateSchedules = useCallback(() => {
+    client.invalidate(GetNotificationSchedulesDocument, {
+      tripId: selectedTripId || undefined,
+      limit: 100,
+      offset: 0,
+    });
+  }, [client, selectedTripId]);
+
   const handleCreate = async () => {
     if (!selectedTripId) {
       appToast.error("Select a trip before creating schedules.");
@@ -290,24 +213,39 @@ export function SchedulesPage() {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       const window = buildScheduleWindow(formState.date, formState.time);
 
-      await createScheduleMutation.mutateAsync({
-        name: formState.name.trim(),
-        tripId: selectedTripId,
-        notificationType: "custom",
-        notificationTitle: formState.name.trim(),
-        notificationBody: formState.message.trim(),
-        notificationUrl: "/ranking",
-        startDate: window.startDate.toISOString(),
-        endDate: window.endDate.toISOString(),
-        hour: window.hour,
-        minute: window.minute,
-        isActive: true,
+      const result = await createSchedule({
+        input: {
+          name: formState.name.trim(),
+          tripId: selectedTripId,
+          notificationType: "custom",
+          notificationTitle: formState.name.trim(),
+          notificationBody: formState.message.trim(),
+          notificationUrl: "/ranking",
+          startDate: window.startDate.toISOString(),
+          endDate: window.endDate.toISOString(),
+          hour: window.hour,
+          minute: window.minute,
+          isActive: true,
+        },
       });
-    } catch {
-      // Error handled by mutation onError
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      appToast.success("Schedule created.");
+      invalidateSchedules();
+      closeCreateModal();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Create failed.";
+      appToast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -321,22 +259,37 @@ export function SchedulesPage() {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       const window = buildScheduleWindow(formState.date, formState.time);
 
-      await updateScheduleMutation.mutateAsync({
-        id: editingSchedule.id,
-        name: formState.name.trim(),
-        notificationTitle: formState.name.trim(),
-        notificationBody: formState.message.trim(),
-        notificationUrl: "/ranking",
-        startDate: window.startDate.toISOString(),
-        endDate: window.endDate.toISOString(),
-        hour: window.hour,
-        minute: window.minute,
+      const result = await updateSchedule({
+        input: {
+          id: editingSchedule.id,
+          name: formState.name.trim(),
+          notificationTitle: formState.name.trim(),
+          notificationBody: formState.message.trim(),
+          notificationUrl: "/ranking",
+          startDate: window.startDate.toISOString(),
+          endDate: window.endDate.toISOString(),
+          hour: window.hour,
+          minute: window.minute,
+        },
       });
-    } catch {
-      // Error handled by mutation onError
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      appToast.success("Schedule updated.");
+      invalidateSchedules();
+      closeEditModal();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Update failed.";
+      appToast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -347,21 +300,36 @@ export function SchedulesPage() {
     }
 
     try {
-      await deleteScheduleMutation.mutateAsync({ id: scheduleId });
-    } catch {
-      // Error handled by mutation onError
+      const result = await deleteSchedule({ id: scheduleId });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      appToast.success("Schedule deleted.");
+      invalidateSchedules();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Delete failed.";
+      appToast.error(message);
     }
   };
 
   const handleToggle = async (scheduleId: string) => {
     try {
-      await toggleScheduleMutation.mutateAsync({ id: scheduleId });
-    } catch {
-      // Error handled by mutation onError
+      const result = await toggleSchedule({ id: scheduleId });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      invalidateSchedules();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Toggle failed.";
+      appToast.error(message);
     }
   };
 
-  if (isLoading || tripsLoading) {
+  if (schedulesResult.fetching || tripsLoading) {
     return <LoadingSpinner label="Loading schedules..." />;
   }
 
@@ -394,7 +362,12 @@ export function SchedulesPage() {
           ]}
         />
         <div className="flex items-end gap-2 md:col-span-2">
-          <Button variant="secondary" onClick={() => void refetch()}>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              void reexecuteSchedules({ requestPolicy: "network-only" })
+            }
+          >
             Refresh
           </Button>
           <Button onClick={() => setIsCreateOpen(true)}>Create schedule</Button>
@@ -416,8 +389,8 @@ export function SchedulesPage() {
               onEdit={openEditModal}
               onDelete={handleDelete}
               onToggle={handleToggle}
-              isDeleting={deleteScheduleMutation.isPending}
-              isToggling={toggleScheduleMutation.isPending}
+              isDeleting={isSubmitting}
+              isToggling={isSubmitting}
             />
           ))}
         </div>
@@ -465,11 +438,8 @@ export function SchedulesPage() {
             <Button variant="secondary" onClick={closeCreateModal}>
               Cancel
             </Button>
-            <Button
-              disabled={createScheduleMutation.isPending}
-              onClick={() => void handleCreate()}
-            >
-              {createScheduleMutation.isPending ? "Creating..." : "Create"}
+            <Button disabled={isSubmitting} onClick={() => void handleCreate()}>
+              {isSubmitting ? "Creating..." : "Create"}
             </Button>
           </div>
         </div>
@@ -517,11 +487,8 @@ export function SchedulesPage() {
             <Button variant="secondary" onClick={closeEditModal}>
               Cancel
             </Button>
-            <Button
-              disabled={updateScheduleMutation.isPending}
-              onClick={() => void handleUpdate()}
-            >
-              {updateScheduleMutation.isPending ? "Updating..." : "Update"}
+            <Button disabled={isSubmitting} onClick={() => void handleUpdate()}>
+              {isSubmitting ? "Updating..." : "Update"}
             </Button>
           </div>
         </div>

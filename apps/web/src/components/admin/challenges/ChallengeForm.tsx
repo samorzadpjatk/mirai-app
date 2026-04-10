@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "urql";
 import { Input } from "../../ui/Input";
 import { TimeInput } from "../../ui/TimeInput";
 import { Select } from "../../ui/Select";
@@ -10,12 +10,14 @@ import { Button } from "../../ui/Button";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
-import { graphqlClient } from "@mirai-app/graphql-types/client";
 import {
-  useGetChallengeQuery,
-  useCreateChallengeMutation,
-  useUpdateChallengeMutation,
-} from "@mirai-app/graphql-types";
+  GetChallengeDocument,
+  CreateChallengeDocument,
+  UpdateChallengeDocument,
+  type CreateChallengeInput,
+  type UpdateChallengeInput,
+  type Challenge,
+} from "@mirai-app/graphql-types/urql";
 import { useChallengeForm } from "../../../hooks/admin/useChallengeForm";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";
@@ -30,11 +32,6 @@ import {
   toVotingDurationDraft,
   toVotingDurationHours,
 } from "./challengeFormConstants";
-import type {
-  Challenge,
-  CreateChallengeInput,
-  UpdateChallengeInput,
-} from "@mirai-app/graphql-types";
 
 interface ChallengeFormProps {
   mode: "create" | "edit";
@@ -68,15 +65,15 @@ const normalizeChallengeRecord = (challenge: Challenge | null | undefined) => {
     status: challenge.status,
     startTime: challenge.startTime ?? null,
     endTime: challenge.endTime ?? null,
-    votingStartTime: challenge.votingStartTime ?? null,
-    votingEndTime: challenge.votingEndTime ?? null,
+    votingStartTime: null as string | null,
+    votingEndTime: null as string | null,
     targetLatitude: challenge.targetLatitude ?? null,
     targetLongitude: challenge.targetLongitude ?? null,
-    qrCodeValue: challenge.qrCodeValue ?? challenge.expectedValue ?? "",
+    qrCodeValue: challenge.expectedValue ?? "",
     textExpectedPhrase:
-      challenge.textExpectedPhrase ??
-      (challenge.submissionType === "TEXT" ? challenge.expectedValue : "") ??
-      "",
+      challenge.submissionType === "TEXT"
+        ? (challenge.expectedValue ?? "")
+        : "",
     autoApprove: challenge.autoApprove ?? false,
   };
 };
@@ -119,19 +116,22 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
     verifyFileAccessible,
   } = useWebFileUpload();
 
-  // GraphQL query for challenge details
-  const challengeQuery = useGetChallengeQuery(
-    graphqlClient,
-    { id: challengeId ?? "", tripId },
-    { enabled: isEditMode && Boolean(challengeId && tripId) },
-  );
+  // GraphQL query for challenge details using urql
+  const [challengeResult] = useQuery({
+    query: GetChallengeDocument,
+    variables: { id: challengeId ?? "", tripId },
+    pause: !isEditMode || !challengeId || !tripId,
+  });
+
+  const challengeData = challengeResult.data?.challenge;
+  const challengeFetching = challengeResult.fetching;
 
   useEffect(() => {
-    if (!isEditMode || !challengeQuery.data?.challenge) {
+    if (!isEditMode || !challengeData) {
       return;
     }
 
-    const source = normalizeChallengeRecord(challengeQuery.data.challenge);
+    const source = normalizeChallengeRecord(challengeData);
     if (!source) return;
 
     const votingDraft = toVotingDurationDraft(
@@ -173,35 +173,13 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
       textExpectedPhrase: source.textExpectedPhrase,
       autoApprove: source.autoApprove,
     });
-  }, [challengeQuery.data, isEditMode, resetForm]);
+  }, [challengeData, isEditMode, resetForm]);
 
-  // GraphQL mutations
-  const createChallengeMutation = useCreateChallengeMutation(graphqlClient, {
-    onSuccess: () => {
-      appToast.success("Challenge created successfully.");
-      window.location.href = "/challenges";
-    },
-    onError: (error) => {
-      const message = error.message || "Failed to create challenge.";
-      setFormError(message);
-      appToast.error(message);
-    },
-  });
+  // GraphQL mutations using urql
+  const [, createChallenge] = useMutation(CreateChallengeDocument);
+  const [, updateChallenge] = useMutation(UpdateChallengeDocument);
 
-  const updateChallengeMutation = useUpdateChallengeMutation(graphqlClient, {
-    onSuccess: () => {
-      appToast.success("Challenge updated successfully.");
-      window.location.href = "/challenges";
-    },
-    onError: (error) => {
-      const message = error.message || "Failed to update challenge.";
-      setFormError(message);
-      appToast.error(message);
-    },
-  });
-
-  const isSaving =
-    createChallengeMutation.isPending || updateChallengeMutation.isPending;
+  const [isSaving, setIsSaving] = useState(false);
   const isUploading = uploadStatus === "uploading";
 
   const canSubmit = useMemo(() => {
@@ -278,6 +256,7 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
       return;
     }
 
+    setIsSaving(true);
     const toastId = appToast.loading(
       isEditMode ? "Updating challenge..." : "Creating challenge...",
     );
@@ -355,14 +334,30 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
       };
 
       if (isEditMode) {
-        await updateChallengeMutation.mutateAsync({
-          ...basePayload,
-          id: challengeId!,
-        } as UpdateChallengeInput);
+        const result = await updateChallenge({
+          input: {
+            ...basePayload,
+            id: challengeId!,
+          } as UpdateChallengeInput,
+        });
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        appToast.success("Challenge updated successfully.");
+        window.location.href = "/challenges";
       } else {
-        await createChallengeMutation.mutateAsync(
-          basePayload as CreateChallengeInput,
-        );
+        const result = await createChallenge({
+          input: basePayload as CreateChallengeInput,
+        });
+
+        if (result.error) {
+          throw result.error;
+        }
+
+        appToast.success("Challenge created successfully.");
+        window.location.href = "/challenges";
       }
 
       appToast.dismiss(toastId);
@@ -376,14 +371,16 @@ export function ChallengeForm({ mode, challengeId }: ChallengeFormProps) {
             : "Failed to create challenge.";
       setFormError(message);
       appToast.error(message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  if (isEditMode && challengeQuery.isLoading) {
+  if (isEditMode && challengeFetching) {
     return <LoadingSpinner label="Loading challenge..." />;
   }
 
-  if (isEditMode && !challengeQuery.data?.challenge) {
+  if (isEditMode && !challengeData) {
     return <ErrorMessage message="Could not load challenge details." />;
   }
 
