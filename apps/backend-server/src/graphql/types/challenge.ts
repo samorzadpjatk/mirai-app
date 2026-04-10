@@ -543,7 +543,7 @@ export const ChallengesConnectionType = builder.objectType(
 /**
  * Input for pagination
  */
-export const PaginationInput = builder.inputType("PaginationInput", {
+export const ChallengePaginationInput = builder.inputType("ChallengePaginationInput", {
   description: "Pagination parameters for list queries",
   fields: (t) => ({
     limit: t.int({

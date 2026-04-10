@@ -45,6 +45,17 @@ import { builder } from "./builder";
  */
 import "./types/User";
 import "./types/activityFeed";
+import "./types/notificationDelivery";
+import "./types/notifications";
+import "./types/challengeSubmission";
+import "./types/submissionReport";
+import "./types/challengeVote";
+import "./types/reward";
+import "./types/coin";
+import "./types/notificationSchedule";
+import "./types/storage";
+import "./types/location";
+import "./types/sponsor";
 
 /**
  * Import Query type and resolvers
@@ -57,6 +68,119 @@ import "./types/activityFeed";
  * - activity(id: ID!): Activity
  */
 import "./types/Query";
+
+/**
+ * Import notification sender resolvers
+ *
+ * This imports all notification sender mutations including:
+ * - sendMobileNotifications(input: SendMobileNotificationsInput!): SendMobileNotificationsPayload
+ * - trackDeliveryStart(input: TrackDeliveryStartInput!): TrackDeliveryStartPayload
+ * - trackDeliveryComplete(input: TrackDeliveryCompleteInput!): TrackDeliveryCompletePayload
+ * - trackDeliveryFailure(input: TrackDeliveryFailureInput!): TrackDeliveryFailurePayload
+ * - checkInactiveUsers: CheckInactiveUsersPayload
+ */
+import "./resolvers/notificationSender";
+
+/**
+ * Import reward resolvers
+ *
+ * This imports all reward queries and mutations including:
+ * - rewardsByTrip(tripId: ID!, pagination: PaginationInput): RewardsConnection!
+ * - rewardsByTripAdmin(tripId: ID!, pagination: PaginationInput): RewardsConnection!
+ * - reward(id: ID!): Reward
+ * - purchaseHistory(tripId: ID!, pagination: PaginationInput): PurchaseHistoryConnection!
+ * - totalAvailablePoints(tripId: ID!): TotalAvailablePointsPayload!
+ * - createReward(input: CreateRewardInput!): CreateRewardPayload!
+ * - updateReward(input: UpdateRewardInput!): UpdateRewardPayload!
+ * - setRewardHidden(input: SetRewardHiddenInput!): SetRewardHiddenPayload!
+ * - deleteReward(id: ID!): DeleteRewardPayload!
+ * - purchaseReward(input: PurchaseRewardInput!): PurchaseRewardPayload!
+ * - updatePurchaseStatus(input: UpdatePurchaseStatusInput!): UpdatePurchaseStatusPayload!
+ * - updateMyPurchaseStatus(input: UpdateMyPurchaseStatusInput!): UpdateMyPurchaseStatusPayload!
+ */
+import "./resolvers/reward";
+
+/**
+ * Import notifications resolvers
+ *
+ * This imports all notifications queries and mutations including:
+ * - myNotifications(input: NotificationPaginationInput): MyNotificationsResult!
+ * - allNotifications(input: GetAllNotificationsInput): AllNotificationsResult!
+ * - notification(id: ID!): Notification
+ * - createNotification(input: CreateNotificationInput!): CreateNotificationResult!
+ * - updateNotification(input: UpdateNotificationInput!): UpdateNotificationResult!
+ * - updateNotificationStatus(input: UpdateNotificationStatusInput!): UpdateNotificationStatusResult!
+ * - deleteNotification(input: DeleteNotificationInput!): DeleteNotificationResult!
+ */
+import "./resolvers/notifications";
+
+/**
+ * Import coin resolvers
+ *
+ * This imports all coin mutations including:
+ * - addCoins(input: AddCoinsInput!): CoinTransactionResult
+ * - removeCoins(input: RemoveCoinsInput!): CoinTransactionResult
+ */
+import "./resolvers/coin";
+
+/**
+ * Import notification schedule resolvers
+ *
+ * This imports all notification schedule queries and mutations including:
+ * - notificationSchedule(id: ID!): NotificationSchedule
+ * - notificationSchedules(...): NotificationSchedulesConnection!
+ * - activeNotificationSchedules(...): [NotificationSchedule!]!
+ * - upcomingNotificationSchedules(...): [NotificationSchedule!]!
+ * - notificationScheduleExecutionHistory(...): ExecutionHistoryResult!
+ * - createNotificationSchedule(input: CreateNotificationScheduleInput!): CreateNotificationSchedulePayload!
+ * - updateNotificationSchedule(input: UpdateNotificationScheduleInput!): UpdateNotificationSchedulePayload!
+ * - toggleNotificationScheduleActive(id: ID!): ToggleScheduleActivePayload!
+ * - duplicateNotificationSchedule(id: ID!): DuplicateNotificationSchedulePayload!
+ * - deleteNotificationSchedule(id: ID!): DeleteNotificationSchedulePayload!
+ * - bulkDeleteNotificationSchedules(ids: [ID!]!): BulkDeleteNotificationSchedulesPayload!
+ * - bulkToggleNotificationScheduleActive(ids: [ID!]!, isActive: Boolean!): BulkToggleActivePayload!
+ * - updateNotificationScheduleLastRun(input: UpdateLastRunInput!): UpdateLastRunPayload!
+ */
+import "./resolvers/notificationSchedule";
+
+/**
+ * Import challenge vote resolvers
+ *
+ * This imports all challenge vote queries and mutations including:
+ * - myVotes(input: GetMyVotesInput!): ChallengeVoteList!
+ * - votesByChallenge(input: GetVotesByChallengeInput!): ChallengeVoteAdminList!
+ * - votingProgress(input: GetVotingProgressInput!): VotingProgress!
+ * - judgedStaffVotingProgress(input: GetJudgedStaffVotingProgressInput!): JudgedStaffVotingProgress!
+ * - submitVote(input: SubmitVoteInput!): SubmitVotePayload!
+ * - submitVotes(input: SubmitVotesInput!): SubmitVotesPayload!
+ * - forceEndVoting(input: ForceEndVotingInput!): ForceEndVotingPayload!
+ */
+import "./resolvers/challengeVote";
+
+/**
+ * Import storage resolvers
+ *
+ * This imports all storage queries and mutations including:
+ * - createDownloadUrl(input: CreateDownloadUrlInput!): DownloadUrlResult
+ * - createPublicUrl(input: CreatePublicUrlInput!): PublicUrlResult
+ * - createUploadUrl(input: CreateUploadUrlInput!): UploadUrlResult
+ */
+import "./resolvers/storage";
+
+/**
+ * Import sponsor resolvers
+ *
+ * This imports all sponsor queries and mutations including:
+ * - sponsors: SponsorListResult!
+ * - sponsor(id: ID!): Sponsor
+ * - sponsorsByTrip(tripId: ID!): [Sponsor!]!
+ * - createSponsor(input: CreateSponsorInput!): CreateSponsorPayload!
+ * - updateSponsor(input: UpdateSponsorInput!): UpdateSponsorPayload!
+ * - deleteSponsor(id: ID!): DeleteSponsorPayload!
+ * - linkSponsorToTrip(input: LinkSponsorToTripInput!): LinkSponsorToTripPayload!
+ * - unlinkSponsorFromTrip(input: UnlinkSponsorFromTripInput!): UnlinkSponsorFromTripPayload!
+ */
+import "./resolvers/sponsor";
 
 // =============================================================================
 // Schema Building

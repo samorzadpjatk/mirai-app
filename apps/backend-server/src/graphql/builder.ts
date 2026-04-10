@@ -34,12 +34,45 @@ import RelayPlugin from "@pothos/plugin-relay";
 import { DateTimeResolver } from "graphql-scalars";
 import type {
   GetUserOutput,
+  CreateUserOutput,
+  UpdateUserOutput,
   GetSubmissionOutput,
   CreateSubmissionOutput,
   UpdateSubmissionOutput,
   ListSubmissionsByChallengeOutput,
+  CreateReportOutput,
+  GetReportsOutput,
+  ReportOutput,
+  ReporterOutput,
+  GetRewardOutput,
+  CreateRewardOutput,
+  UpdateRewardOutput,
+  SetRewardHiddenOutput,
+  DeleteRewardOutput,
+  PurchaseRewardOutput,
+  UpdatePurchaseStatusOutput,
+  UpdateMyPurchaseStatusOutput,
+  RewardWithCalculations,
+  PurchaseWithDetails,
+  VoteDTO,
+  ChallengeVoteDTO,
+  GetMyVotesOutput,
+  GetVotesByChallengeOutput,
+  GetChallengeVotingProgressOutput,
+  GetJudgedStaffVotingProgressOutput,
+  AdminVotingInfo,
+  SubmitVoteOutput,
+  SubmitVotesOutput,
+  ForceEndVotingOutput,
+  GetCoinStatisticsOutput,
+  GetCoinQuickStatsOutput,
+  GetMostActiveAdminStatsOutput,
+  GetCoinAdditionalInsightsOutput,
+  GetCoinTransactionsOutput,
 } from "@mirai-app/use-cases";
-import type { UserRole } from "@mirai-app/domain";
+import type { CoinTransaction } from "@mirai-app/use-cases";
+import type { UserRole, RewardPurchaseStatus } from "@mirai-app/domain";
+import type { NotificationScheduleOutput } from "@mirai-app/adapters";
 
 // =============================================================================
 // Type Definitions for Pothos
@@ -68,8 +101,10 @@ export interface PothosTypes {
 
   // Domain types mapped to GraphQL
   Objects: {
-    // User domain - mapped from GetUserOutput DTO
+    // User domain - mapped from use case DTOs
     User: GetUserOutput;
+    UserCreateResult: CreateUserOutput;
+    UserUpdateResult: UpdateUserOutput;
 
     // ChallengeSubmission domain - mapped from use case DTOs
     ChallengeSubmission: GetSubmissionOutput;
@@ -87,6 +122,686 @@ export interface PothosTypes {
       firstName: string;
       lastName: string;
       email: string | null;
+    };
+
+    // Reward domain - mapped from use case DTOs
+    Reward: GetRewardOutput;
+    RewardWithCalculations: RewardWithCalculations;
+    RewardCreateResult: CreateRewardOutput;
+    RewardUpdateResult: UpdateRewardOutput;
+    RewardSetHiddenResult: SetRewardHiddenOutput;
+    RewardDeleteResult: DeleteRewardOutput;
+    RewardPurchase: PurchaseWithDetails;
+    RewardPurchaseResult: PurchaseRewardOutput;
+    RewardPurchaseStatusUpdateResult: UpdatePurchaseStatusOutput;
+    RewardMyPurchaseStatusUpdateResult: UpdateMyPurchaseStatusOutput;
+
+    // Group domain - mapped from GroupController outputs
+    Group: {
+      id: string;
+      tripId: string;
+      name: string;
+      description: string | null;
+      image: string | null;
+      organizerId: string;
+      code: string;
+      coins: number;
+      status: string;
+      createdAt: Date;
+      updatedAt: Date;
+      isActive: boolean;
+    };
+    GroupSummary: {
+      id: string;
+      name: string;
+    };
+    GroupRanking: {
+      id: string;
+      tripId: string;
+      name: string;
+      description: string | null;
+      image: string | null;
+      organizerId: string;
+      code: string;
+      coins: number;
+      status: string;
+      createdAt: Date;
+      isActive: boolean;
+    };
+    GroupPagination: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    };
+    GroupsConnection: {
+      groups: unknown[];
+      pagination: unknown;
+    };
+    GroupRankingResult: {
+      data: unknown[];
+      currentDate: Date;
+    };
+    CreateGroupPayload: {
+      group: unknown;
+    };
+    UpdateGroupPayload: {
+      group: unknown;
+    };
+    DeleteGroupPayload: {
+      success: boolean;
+    };
+    AddCoinsPayload: {
+      id: string;
+      name: string;
+      previousCoins: number;
+      newCoins: number;
+      updatedAt: Date;
+    };
+
+    // SubmissionReport domain - mapped from use case DTOs
+    SubmissionReport: ReportOutput;
+    SubmissionReportCreateResult: CreateReportOutput;
+    SubmissionReportListResult: GetReportsOutput;
+    SubmissionReportUserInfo: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      hasAvatar: boolean;
+    };
+    SubmissionReportReporterInfo: ReporterOutput;
+
+    // Trip domain - mapped from TripController output
+    Trip: {
+      id: string;
+      name: string;
+      description: string | null;
+      startDate: Date;
+      endDate: Date;
+      backgroundImagePath: string | null;
+      status: string;
+      createdAt: Date;
+      updatedAt: Date;
+      isPlanning: boolean;
+      isActive: boolean;
+      isCompleted: boolean;
+      isCancelled: boolean;
+    };
+    TripPaginationInfo: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    };
+    TripListResult: {
+      trips: Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        startDate: Date;
+        endDate: Date;
+        status: string;
+        createdAt: Date;
+      }>;
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    };
+    DeleteTripResult: {
+      success: boolean;
+    };
+
+    // NotificationDelivery domain - mapped from NotificationDeliveryController outputs
+    NotificationDelivery: {
+      id: string;
+      notificationId: string;
+      tripId: string;
+      status: string;
+      totalRecipients: number;
+      successCount: number;
+      failureCount: number;
+      deliveryStartedAt: Date;
+      deliveryCompletedAt?: Date | null;
+      errorLog?: string | null;
+      scheduleId?: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      notification?: {
+        id: string;
+        title: string;
+        body: string;
+        url?: string | null;
+        createdAt: Date;
+        tripId?: string;
+        createdBy?: {
+          id: string;
+          firstName?: string | null;
+          lastName?: string | null;
+          authUserId?: string;
+        } | null;
+      } | null;
+    };
+    NotificationDeliveryListResult: {
+      deliveries: Array<{
+        id: string;
+        notificationId: string;
+        tripId: string;
+        status: string;
+        totalRecipients: number;
+        successCount: number;
+        failureCount: number;
+        deliveryStartedAt: Date;
+        deliveryCompletedAt?: Date | null;
+        errorLog?: string | null;
+        scheduleId?: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        notification?: {
+          id: string;
+          title: string;
+          body: string;
+          createdAt: Date;
+          createdBy?: {
+            id: string;
+            firstName?: string | null;
+            lastName?: string | null;
+          } | null;
+        } | null;
+      }>;
+      total: number;
+      limit: number;
+      offset: number;
+    };
+    DeliveryPagination: {
+      total: number;
+      limit: number;
+      offset: number;
+    };
+    DeliveryStats: {
+      totalDeliveries: number;
+      totalRecipients: number;
+      totalSuccess: number;
+      totalFailures: number;
+      avgSuccessPerDelivery: number;
+      avgFailuresPerDelivery: number;
+      successRate: number;
+      statusBreakdown: Record<string, number>;
+    };
+    DeliveryStatusBreakdown: Record<string, number>;
+    NotificationCreator: {
+      id: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      authUserId?: string;
+    };
+    NotificationInfo: {
+      id: string;
+      title: string;
+      body: string;
+      url?: string | null;
+      createdAt: Date;
+      tripId?: string;
+      createdBy?: {
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        authUserId?: string;
+      } | null;
+    };
+
+    // Notification domain - mapped from NotificationController outputs
+    Notification: {
+      id: string;
+      title: string;
+      body: string;
+      url: string | null;
+      status: string;
+      priority: string;
+      tripId: string | null;
+      createdById: string;
+      createdAt: Date;
+      updatedAt?: Date;
+      scheduledFor?: Date | null;
+      sentAt?: Date | null;
+      isSent: boolean;
+      isScheduled: boolean;
+      isReadyToSend?: boolean;
+    };
+    NotificationPaginationInfo: {
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    };
+    NotificationOffsetPaginationInfo: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    };
+    MyNotificationsResult: {
+      notifications: Array<{
+        id: string;
+        title: string;
+        body: string;
+        url: string | null;
+        status: string;
+        priority: string;
+        tripId: string | null;
+        createdById: string;
+        createdAt: Date;
+        isSent: boolean;
+      }>;
+      pagination: {
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      };
+    };
+    AllNotificationsResult: {
+      notifications: Array<{
+        id: string;
+        title: string;
+        body: string;
+        url: string | null;
+        status: string;
+        priority: string;
+        tripId: string | null;
+        createdById: string;
+        createdAt: Date;
+        isSent: boolean;
+      }>;
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    };
+    CreateNotificationResult: {
+      id: string;
+      title: string;
+      body: string;
+      url: string | null;
+      status: string;
+      priority: string;
+      tripId: string | null;
+      createdById: string;
+      createdAt: Date;
+      isScheduled: boolean;
+    };
+    UpdateNotificationResult: {
+      notification: {
+        id: string;
+        title: string;
+        body: string;
+        url: string | null;
+        status: string;
+        priority: string;
+        tripId: string | null;
+        updatedAt: Date;
+      };
+    };
+    UpdateNotificationStatusResult: {
+      id: string;
+      title: string;
+      previousStatus: string;
+      newStatus: string;
+      updatedAt: Date;
+    };
+    DeleteNotificationResult: {
+      success: boolean;
+    };
+
+    // Storage domain - mapped from StorageController outputs
+    UploadUrlResult: {
+      resumableUrl: string;
+      token: string;
+      bucket: string;
+      objectPath: string;
+      storagePath: string;
+    };
+    DownloadUrlResult: {
+      signedUrl: string;
+      expiresAt: string;
+    };
+    PublicUrlResult: {
+      publicUrl: string;
+    };
+
+    // Coin domain - mapped from CoinController outputs
+    CoinTransaction: {
+      id: string;
+      groupId: string;
+      amount: number;
+      reason?: string | null;
+      adminId: string;
+      createdAt: Date;
+      group?: {
+        id: string;
+        name: string;
+        coins: number;
+      } | null;
+      admin?: {
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+      } | null;
+    };
+    CoinTransactionResult: {
+      id: string;
+      groupId: string;
+      amount: number;
+      reason?: string | null;
+      adminId: string;
+      createdAt: Date;
+      group?: {
+        id: string;
+        name: string;
+        coins: number;
+      } | null;
+      admin?: {
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+      } | null;
+    };
+
+    // CoinTransaction domain - additional types for comprehensive coin management
+    CoinTransactionGroup: {
+      id: string;
+      name: string;
+      coins: number;
+    };
+    CoinTransactionAdmin: {
+      id: string;
+      firstName: string | null;
+      lastName: string | null;
+    };
+    CoinStatistics: {
+      transactionCount: number;
+      addedCoins: number;
+      removedCoins: number;
+      netBalance: number;
+      time: Date;
+    };
+    CoinQuickStats: {
+      totalCoins: number;
+      totalGroups: number;
+      averageCoinsPerGroup: number;
+      richestGroupId?: string;
+      richestGroupName?: string;
+      time: Date;
+    };
+    MostActiveAdminStats: {
+      adminId: string;
+      totalAmount: number;
+      transactionCount: number;
+    };
+    FormattedUser: {
+      name: string;
+      transactionCount: number;
+    };
+    CoinAdditionalInsights: {
+      mostActiveAdmin: {
+        name: string;
+        transactionCount: number;
+      } | null;
+      recentTransactions: Array<{
+        id: string;
+        groupId: string;
+        amount: number;
+        reason?: string | null;
+        adminId: string;
+        createdAt: Date;
+        group?: {
+          id: string;
+          name: string;
+          coins: number;
+        } | null;
+        admin?: {
+          id: string;
+          firstName?: string | null;
+          lastName?: string | null;
+        } | null;
+      }>;
+    };
+    CoinTransactionPagination: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    };
+    CoinTransactionsConnection: {
+      transactions: Array<{
+        id: string;
+        groupId: string;
+        amount: number;
+        reason?: string | null;
+        adminId: string;
+        createdAt: Date;
+        group?: {
+          id: string;
+          name: string;
+          coins: number;
+        } | null;
+        admin?: {
+          id: string;
+          firstName?: string | null;
+          lastName?: string | null;
+        } | null;
+      }>;
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    };
+
+    // ChallengeVote domain - mapped from use case DTOs
+    ChallengeVote: VoteDTO;
+    ChallengeVoteList: GetMyVotesOutput;
+    ChallengeVoteAdminList: GetVotesByChallengeOutput;
+    SubmissionVoteCount: {
+      submissionId: string;
+      voteCount: number;
+      voteScore: number;
+    };
+    VotingProgress: GetChallengeVotingProgressOutput;
+    JudgedStaffVotingProgress: GetJudgedStaffVotingProgressOutput;
+    AdminVotingInfo: AdminVotingInfo;
+    SubmitVotePayload: SubmitVoteOutput;
+    SubmitVotesPayload: SubmitVotesOutput;
+    ForceEndVotingPayload: ForceEndVotingOutput;
+
+    // NotificationSchedule domain - mapped from NotificationScheduleController outputs
+    NotificationSchedule: NotificationScheduleOutput;
+    NotificationScheduleSummary: NotificationScheduleOutput;
+    NotificationSchedulePagination: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    };
+    NotificationSchedulesConnection: {
+      schedules: NotificationScheduleOutput[];
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    };
+    ExecutionHistoryNotification: {
+      id: string;
+      title: string;
+      body: string;
+      createdAt: Date;
+    };
+    ExecutionHistoryEntry: {
+      id: string;
+      executedAt: Date;
+      notification: {
+        id: string;
+        title: string;
+        body: string;
+        createdAt: Date;
+      } | null;
+    };
+    ExecutionHistoryResult: {
+      executions: Array<{
+        id: string;
+        executedAt: Date;
+        notification: {
+          id: string;
+          title: string;
+          body: string;
+          createdAt: Date;
+        } | null;
+      }>;
+    };
+    CreateNotificationSchedulePayload: {
+      schedule: NotificationScheduleOutput;
+    };
+    UpdateNotificationSchedulePayload: {
+      schedule: NotificationScheduleOutput;
+    };
+    ToggleScheduleActivePayload: {
+      schedule: NotificationScheduleOutput;
+    };
+    DuplicateNotificationSchedulePayload: {
+      schedule: NotificationScheduleOutput;
+    };
+    DeleteNotificationSchedulePayload: {
+      success: boolean;
+      message: string;
+      deletedExecutionCount?: number;
+    };
+    BulkDeleteNotificationSchedulesPayload: {
+      success: boolean;
+      deletedCount: number;
+      requestedCount: number;
+      notFoundIds?: string[];
+    };
+    BulkToggleActivePayload: {
+      success: boolean;
+      updatedCount: number;
+    };
+    UpdateLastRunPayload: {
+      schedule: NotificationScheduleOutput;
+    };
+
+    // Location domain - mapped from LocationController outputs
+    Location: {
+      id: string;
+      userId: string;
+      latitude: number | null;
+      longitude: number | null;
+      accuracy: number | null;
+      altitude: number | null;
+      altitudeAccuracy: number | null;
+      heading: number | null;
+      speed: number | null;
+      isSharingLocation: boolean;
+      timestamp: Date;
+      usersToShareWith: Array<{
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+      }>;
+    };
+    SharingUserInfo: {
+      id: string;
+      firstName: string | null;
+      lastName: string | null;
+    };
+    FriendLocation: {
+      id: string;
+      userId: string;
+      latitude: number | null;
+      longitude: number | null;
+      accuracy: number | null;
+      altitude: number | null;
+      heading: number | null;
+      speed: number | null;
+      isSharingLocation: boolean;
+      timestamp: Date;
+      distanceKm?: number;
+    };
+    LocationSharingSettings: {
+      isSharingLocation: boolean;
+      usersToShareWith: Array<{
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+      }>;
+    };
+    UpdateLocationPayload: {
+      location: {
+        id: string;
+        userId: string;
+        latitude: number | null;
+        longitude: number | null;
+        accuracy: number | null;
+        altitude: number | null;
+        altitudeAccuracy: number | null;
+        heading: number | null;
+        speed: number | null;
+        isSharingLocation: boolean;
+        timestamp: Date;
+        usersToShareWith: Array<{
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+        }>;
+      };
+    };
+    UpdateSharingSettingsPayload: {
+      settings: {
+        id: string;
+        userId: string;
+        isSharingLocation: boolean;
+        usersToShareWith: Array<{
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+        }>;
+        timestamp: Date;
+      };
+    };
+    SharingUserPayload: {
+      location: {
+        id: string;
+        userId: string;
+        isSharingLocation: boolean;
+        usersToShareWith: Array<{
+          id: string;
+          firstName: string | null;
+          lastName: string | null;
+        }>;
+      };
+    };
+    FriendsLocationsConnection: {
+      locations: Array<{
+        id: string;
+        userId: string;
+        latitude: number | null;
+        longitude: number | null;
+        accuracy: number | null;
+        altitude: number | null;
+        heading: number | null;
+        speed: number | null;
+        isSharingLocation: boolean;
+        timestamp: Date;
+        distanceKm?: number;
+      }>;
+      total: number;
     };
   };
 
