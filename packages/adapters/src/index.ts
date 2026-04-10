@@ -103,6 +103,22 @@ export {
 } from "./services/PrismaRankingActivityService";
 
 // =============================================================================
+// Phase 1: Drizzle ORM Migration Services (New)
+// =============================================================================
+export { DrizzleTripPointsCalculator } from "./services/DrizzleTripPointsCalculator";
+export { DrizzleGroupCoinsService } from "./services/DrizzleGroupCoinsService";
+export { DrizzleTripAccessChecker } from "./services/DrizzleTripAccessChecker";
+export type { GroupLeaderCheckResult as DrizzleGroupLeaderCheckResult } from "./services/DrizzleTripAccessChecker";
+export { DrizzleCoinService } from "./services/DrizzleCoinService";
+export { DrizzleCoinTransactionService } from "./services/DrizzleCoinTransactionService";
+export { DrizzleNotificationSenderService } from "./services/DrizzleNotificationSenderService";
+export { DrizzleRewardService } from "./services/DrizzleRewardService";
+export {
+  DrizzleRankingActivityService,
+  type RankSnapshot as DrizzleRankSnapshot,
+} from "./services/DrizzleRankingActivityService";
+
+// =============================================================================
 // Phase 2: Real-Time Architecture (In-Process Services)
 // =============================================================================
 

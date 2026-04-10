@@ -35,5 +35,11 @@ export * from "./activityFeed";
 // Notification schemas
 export * from "./notification";
 
+// Notification Delivery schemas
+export * from "./notificationDelivery";
+
+// Coin Transaction schemas
+export * from "./coinTransaction";
+
 // Reward schemas
 export * from "./reward";
