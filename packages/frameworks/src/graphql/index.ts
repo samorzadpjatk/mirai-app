@@ -58,8 +58,7 @@ export {
 export {
   GraphQLProvider as TRPCProvider,
   useGraphQL as useTRPC,
-  useGraphQLClient as useTRPCClient,
-  getTRPCClient,
+  useGraphQLClient,
   type GraphQLClient,
   type GraphQLProcedures,
   type Procedure,
