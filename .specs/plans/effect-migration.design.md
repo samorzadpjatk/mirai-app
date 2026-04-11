@@ -2,7 +2,8 @@
 
 > **Comprehensive migration plan for the Mirai App monorepo from Promise-based patterns to Effect framework**  
 > **Status:** Validated  
-> **Last Updated:** 2026-04-12
+> **Last Updated:** 2026-04-12  
+> **Platform:** Bun (`@effect/platform-bun`), React Native (core `effect` only)
 
 ---
 
@@ -81,18 +82,72 @@ Apps:      Effect.runPromise in GraphQL resolvers
 | **expo-\* / react-native**      | Native dependencies stay, wrap native calls with Effect     |
 | **@effect/sql-drizzle**         | Replaces raw Drizzle with Effect-native SQL operations      |
 
-### Effect Ecosystem to Add
+### Effect Ecosystem by Package
+
+**Core (all packages):**
 
 ```json
 {
   "dependencies": {
-    "effect": "^3.15.0",
+    "effect": "^3.15.0"
+  }
+}
+```
+
+**Bun-based apps/packages (backend-server, notification-sender, seed, all packages):**
+
+```json
+{
+  "dependencies": {
     "@effect/platform": "^0.75.0",
-    "@effect/platform-node": "^0.75.0",
+    "@effect/platform-bun": "^0.75.0",
     "@effect/sql": "^0.30.0",
     "@effect/sql-drizzle": "^0.30.0"
   }
 }
+```
+
+**React Native / Expo (native app only):**
+
+```json
+{
+  "dependencies": {
+    "effect": "^3.15.0"
+    // NO @effect/platform packages - React Native uses its own runtime (JavaScriptCore/Hermes)
+    // Core Effect works fine, but platform-specific features (FileSystem, Path, etc.)
+    // need React Native specific implementations
+  }
+}
+```
+
+### Platform Package Strategy
+
+| Environment                   | Platform Package       | Notes                                                                                                       |
+| ----------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Bun** (backend, packages)   | `@effect/platform-bun` | Full FileSystem, Path, Terminal, Command support                                                            |
+| **React Native** (native app) | **None**               | Use core `effect` only. RN uses JavaScriptCore/Hermes, not Node/Bun. Platform APIs need custom RN wrappers. |
+
+### React Native Considerations
+
+React Native does **not** use `@effect/platform-*` packages because:
+
+- RN runs on JavaScriptCore (iOS) or Hermes (Android), not Node.js/Bun
+- File system access goes through `expo-file-system` (native bridge)
+- SQLite access goes through `expo-sqlite` (native bridge)
+- **Solution**: Keep using `expo-*` packages, wrap native calls with `Effect.tryPromise`
+
+**Example React Native pattern:**
+
+```typescript
+import * as FileSystem from "expo-file-system";
+import { Effect } from "effect";
+
+// Wrap native modules in Effect
+export const readFile = (uri: string) =>
+  Effect.tryPromise({
+    try: () => FileSystem.readAsStringAsync(uri),
+    catch: (error) => new FileSystemError({ cause: error }),
+  });
 ```
 
 ---
@@ -407,6 +462,7 @@ builder.queryField("user", (t) =>
 ```typescript
 // packages/frameworks/src/layers/AppLayer.ts
 import { Layer } from "effect";
+import { BunContext } from "@effect/platform-bun";
 import { SqlLive } from "./SqlLive";
 import { UserRepositoryLive } from "@mirai-app/adapters";
 import {
@@ -416,6 +472,7 @@ import {
 
 // Compose all application layers
 export const AppLayer = Layer.mergeAll(
+  BunContext.layer, // Bun platform context (FileSystem, Path, etc.)
   SqlLive, // Database connection pool
   UserRepositoryLive, // Repository implementations
   GetUserUseCaseLive, // Use case implementations
@@ -425,6 +482,27 @@ export const AppLayer = Layer.mergeAll(
 
 // Export type of all services for Runtime typing
 export type AppServices = typeof AppLayer;
+```
+
+### Main Entry Point (Bun)
+
+```typescript
+// apps/backend-server/src/index.ts
+import { BunRuntime } from "@effect/platform-bun";
+import { Effect } from "effect";
+import { AppLayer } from "@mirai-app/frameworks";
+import { createHonoServer } from "./hono-server";
+
+const program = Effect.gen(function* () {
+  const server = yield* createHonoServer;
+  yield* Effect.sync(() => {
+    console.log(`Server running on http://localhost:${server.port}`);
+  });
+  return server;
+}).pipe(Effect.provide(AppLayer));
+
+// Use BunRuntime for proper Bun integration
+BunRuntime.runMain(program);
 ```
 
 ---
