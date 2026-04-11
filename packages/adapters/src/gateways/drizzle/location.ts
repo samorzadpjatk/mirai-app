@@ -31,6 +31,10 @@ export class DrizzleLocationRepository
     });
   }
 
+  override async create(location: Location): Promise<Location> {
+    return super.create(location);
+  }
+
   async findByUserId(userId: string): Promise<Location | null> {
     const records = await this.db
       .select()
@@ -67,7 +71,7 @@ export class DrizzleLocationRepository
     return this.create(location);
   }
 
-  async delete(id: LocationId): Promise<void> {
+  override async delete(id: LocationId): Promise<void> {
     await this.db.delete(this.table).where(eq(this.table.id, id));
   }
 

@@ -5,10 +5,15 @@ import type { PgTable, TableConfig } from "drizzle-orm/pg-core";
 /**
  * Generic mapper interface for domain-drizzle conversions
  */
-export interface DrizzleEntityMapper<TDomain, TDrizzle, TInsert> {
+export interface DrizzleEntityMapper<
+  TDomain,
+  TDrizzle,
+  TInsert,
+  TInsertPartial = Partial<TInsert>,
+> {
   toDomain(record: TDrizzle): TDomain;
   toDrizzleInsert(entity: TDomain): TInsert;
-  toDrizzleUpdate(entity: TDomain): Partial<TInsert>;
+  toDrizzleUpdate(entity: TDomain): TInsertPartial;
 }
 
 /**
@@ -19,9 +24,10 @@ export interface DrizzleRepositoryConfig<
   TDrizzle,
   TInsert,
   TTable extends PgTable<TableConfig>,
+  TInsertPartial = Partial<TInsert>,
 > {
   table: TTable;
-  mapper: DrizzleEntityMapper<TDomain, TDrizzle, TInsert>;
+  mapper: DrizzleEntityMapper<TDomain, TDrizzle, TInsert, TInsertPartial>;
 }
 
 /**
@@ -61,6 +67,7 @@ export abstract class BaseDrizzleRepository<
   TDrizzle,
   TInsert,
   TTable extends PgTable<TableConfig>,
+  TInsertPartial = Partial<TInsert>,
 > {
   /**
    * The Drizzle database client for operations.
@@ -78,7 +85,12 @@ export abstract class BaseDrizzleRepository<
    * The mapper for domain-drizzle conversions.
    * @protected
    */
-  protected mapper: DrizzleEntityMapper<TDomain, TDrizzle, TInsert>;
+  protected mapper: DrizzleEntityMapper<
+    TDomain,
+    TDrizzle,
+    TInsert,
+    TInsertPartial
+  >;
 
   /**
    * Constructor for Drizzle repository
@@ -88,7 +100,13 @@ export abstract class BaseDrizzleRepository<
    */
   constructor(
     db: DrizzleDb,
-    config: DrizzleRepositoryConfig<TDomain, TDrizzle, TInsert, TTable>,
+    config: DrizzleRepositoryConfig<
+      TDomain,
+      TDrizzle,
+      TInsert,
+      TTable,
+      TInsertPartial
+    >,
   ) {
     this.db = db;
     this.table = config.table;

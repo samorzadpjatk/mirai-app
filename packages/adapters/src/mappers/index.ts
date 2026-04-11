@@ -5,20 +5,20 @@
  * All mappers now use Drizzle ORM (Prisma migration complete).
  */
 
-export { UserDrizzleMapper } from "./drizzle/UserDrizzleMapper";
-export { TripDrizzleMapper } from "./drizzle/TripDrizzleMapper";
-export { GroupDrizzleMapper } from "./drizzle/GroupDrizzleMapper";
-export { ChallengeDrizzleMapper } from "./drizzle/ChallengeDrizzleMapper";
-export { LocationDrizzleMapper } from "./drizzle/LocationDrizzleMapper";
-export { NotificationDrizzleMapper } from "./drizzle/NotificationDrizzleMapper";
-export { ActivityFeedDrizzleMapper } from "./drizzle/ActivityFeedDrizzleMapper";
-export { RewardDrizzleMapper } from "./drizzle/RewardDrizzleMapper";
-export { ChallengeSubmissionDrizzleMapper } from "./drizzle/ChallengeSubmissionDrizzleMapper";
-export { ChallengeVoteDrizzleMapper } from "./drizzle/ChallengeVoteDrizzleMapper";
-export { CoinTransactionDrizzleMapper } from "./drizzle/CoinTransactionDrizzleMapper";
-export { SponsorDrizzleMapper } from "./drizzle/SponsorDrizzleMapper";
-export { SubmissionReportDrizzleMapper } from "./drizzle/SubmissionReportDrizzleMapper";
-export { NotificationScheduleDrizzleMapper } from "./drizzle/NotificationScheduleDrizzleMapper";
-export { NotificationDeliveryDrizzleMapper } from "./drizzle/NotificationDeliveryDrizzleMapper";
-export { UserAgentDrizzleMapper } from "./drizzle/UserAgentDrizzleMapper";
-export { EventDrizzleMapper } from "./drizzle/EventDrizzleMapper";
+export { UserDrizzleMapper } from "./drizzle/user";
+export { TripDrizzleMapper } from "./drizzle/trip";
+export { GroupDrizzleMapper } from "./drizzle/group";
+export { ChallengeDrizzleMapper } from "./drizzle/challenge";
+export { LocationDrizzleMapper } from "./drizzle/location";
+export { NotificationDrizzleMapper } from "./drizzle/notification";
+export { ActivityFeedDrizzleMapper } from "./drizzle/activity-feed";
+export { RewardDrizzleMapper } from "./drizzle/reward";
+export { ChallengeSubmissionDrizzleMapper } from "./drizzle/challenge-submission";
+export { ChallengeVoteDrizzleMapper } from "./drizzle/challenge-vote";
+export { CoinTransactionDrizzleMapper } from "./drizzle/coin-transaction";
+export { SponsorDrizzleMapper } from "./drizzle/sponsor";
+export { SubmissionReportDrizzleMapper } from "./drizzle/submission-report";
+export { NotificationScheduleDrizzleMapper } from "./drizzle/notification-schedule";
+export { NotificationDeliveryDrizzleMapper } from "./drizzle/notification-delivery";
+export { UserAgentDrizzleMapper } from "./drizzle/user-agent";
+export { EventDrizzleMapper } from "./drizzle/event";

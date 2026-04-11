@@ -12,6 +12,8 @@
  * Base class for all API errors with status code information
  */
 export class ApiError extends Error {
+  override readonly name: string;
+
   constructor(
     message: string,
     public readonly statusCode: number,

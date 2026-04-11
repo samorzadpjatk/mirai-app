@@ -56,7 +56,7 @@ export class DatabaseError extends Error {
   readonly code = "DATABASE_ERROR" as const;
   readonly operation: string;
   override readonly message: string;
-  readonly cause?: unknown;
+  override readonly cause?: unknown;
 
   constructor(props: { operation: string; message: string; cause?: unknown }) {
     super(`Database error in '${props.operation}': ${props.message}`);
@@ -82,7 +82,7 @@ export class DatabaseConnectionError extends Error {
   readonly _tag = "DatabaseConnectionError" as const;
   readonly code = "CONNECTION_ERROR" as const;
   override readonly message: string;
-  readonly cause?: unknown;
+  override readonly cause?: unknown;
 
   constructor(props: { message: string; cause?: unknown }) {
     super(`Database connection failed: ${props.message}`);
@@ -109,7 +109,7 @@ export class DatabaseTransactionError extends Error {
   readonly code = "TRANSACTION_ERROR" as const;
   readonly operation: string;
   override readonly message: string;
-  readonly cause?: unknown;
+  override readonly cause?: unknown;
 
   constructor(props: { operation: string; message: string; cause?: unknown }) {
     super(`Transaction failed in '${props.operation}': ${props.message}`);
@@ -217,7 +217,7 @@ export class StorageError extends Error {
   readonly operation: string;
   readonly path: string;
   override readonly message: string;
-  readonly cause?: unknown;
+  override readonly cause?: unknown;
 
   constructor(props: {
     operation: string;

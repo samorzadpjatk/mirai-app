@@ -1,5 +1,5 @@
 import { Group, GroupStatus } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   groups,
   GroupSelect,

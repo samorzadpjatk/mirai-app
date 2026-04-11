@@ -1,7 +1,11 @@
 import type { SubmissionReportRepository } from "@mirai-app/use-cases";
 import type { SubmissionReport } from "@mirai-app/domain";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { submissionReports } from "@mirai-app/frameworks/drizzle/schema/submissionReport";
+import {
+  submissionReports,
+  type SubmissionReportSelect,
+  type SubmissionReportInsert,
+} from "@mirai-app/frameworks/drizzle/schema/submissionReport";
 import { tripParticipants } from "@mirai-app/frameworks/drizzle/schema/trip";
 import { users } from "@mirai-app/frameworks/drizzle/schema/user";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -28,18 +32,17 @@ const REPORTER_INCLUDE = {
 export class DrizzleSubmissionReportRepository
   extends BaseDrizzleRepository<
     SubmissionReport,
-    typeof submissionReports.$inferSelect,
-    Partial<typeof submissionReports.$inferInsert>,
-    Partial<typeof submissionReports.$inferInsert>
+    SubmissionReportSelect,
+    SubmissionReportInsert,
+    typeof submissionReports
   >
   implements SubmissionReportRepository
 {
   constructor(db: DrizzleDb) {
-    super(
-      db,
-      { table: submissionReports },
-      SubmissionReportDrizzleMapper.instance,
-    );
+    super(db, {
+      table: submissionReports,
+      mapper: SubmissionReportDrizzleMapper.instance,
+    });
   }
 
   /**
@@ -177,7 +180,7 @@ export class DrizzleSubmissionReportRepository
   /**
    * Override findById to include reporter info
    */
-  async findById(id: string): Promise<SubmissionReport | null> {
+  override async findById(id: string): Promise<SubmissionReport | null> {
     const [record] = await this.db
       .select({
         id: submissionReports.id,
@@ -221,37 +224,44 @@ export class DrizzleSubmissionReportRepository
   /**
    * Override findAll to include reporter info
    */
-  async findAll(options?: {
+  override async findAll(options?: {
     limit?: number;
     offset?: number;
   }): Promise<SubmissionReport[]> {
-    let query = this.db
-      .select({
-        id: submissionReports.id,
-        submissionId: submissionReports.submissionId,
-        reporterId: submissionReports.reporterId,
-        reason: submissionReports.reason,
-        details: submissionReports.details,
-        createdAt: submissionReports.createdAt,
-        participantId: tripParticipants.id,
-        userId: users.id,
-        userFirstName: users.firstName,
-        userLastName: users.lastName,
-        userHasAvatar: users.hasAvatar,
-      })
-      .from(submissionReports)
-      .leftJoin(
-        tripParticipants,
-        eq(submissionReports.reporterId, tripParticipants.id),
-      )
-      .leftJoin(users, eq(tripParticipants.userId, users.id))
-      .orderBy(desc(submissionReports.createdAt));
+    // Build query to avoid type widening issues
+    const buildQuery = () => {
+      let query = this.db
+        .select({
+          id: submissionReports.id,
+          submissionId: submissionReports.submissionId,
+          reporterId: submissionReports.reporterId,
+          reason: submissionReports.reason,
+          details: submissionReports.details,
+          createdAt: submissionReports.createdAt,
+          participantId: tripParticipants.id,
+          userId: users.id,
+          userFirstName: users.firstName,
+          userLastName: users.lastName,
+          userHasAvatar: users.hasAvatar,
+        })
+        .from(submissionReports)
+        .leftJoin(
+          tripParticipants,
+          eq(submissionReports.reporterId, tripParticipants.id),
+        )
+        .leftJoin(users, eq(tripParticipants.userId, users.id))
+        .orderBy(desc(submissionReports.createdAt));
+      return query;
+    };
+
+    // Apply pagination
+    let query = buildQuery();
 
     if (options?.limit) {
-      query = query.limit(options.limit);
+      query = query.limit(options.limit) as unknown as typeof query;
     }
     if (options?.offset) {
-      query = query.offset(options.offset);
+      query = query.offset(options.offset) as unknown as typeof query;
     }
 
     const records = await query;

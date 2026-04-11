@@ -123,7 +123,9 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       if (isErr(result)) {
         expect(result.error).toBeInstanceOf(InvalidTokenError);
         expect(result.error.message).toBe("Invalid or unknown token");
-        expect(result.error.token).toBe("unknown-token-123");
+        if (result.error._tag === "InvalidTokenError") {
+          expect(result.error.token).toBe("unknown-token-123");
+        }
       }
     });
 
@@ -164,7 +166,9 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       if (isErr(result)) {
         expect(result.error).toBeInstanceOf(SessionExpiredError);
         expect(result.error.message).toBe("Session has expired");
-        expect(result.error.sessionId).toBe(session.sessionId);
+        if (result.error._tag === "SessionExpiredError") {
+          expect(result.error.sessionId).toBe(session.sessionId);
+        }
       }
     });
 
@@ -241,7 +245,9 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       if (isErr(result)) {
         expect(result.error).toBeInstanceOf(SessionExpiredError);
         expect(result.error.message).toBe("No active session found");
-        expect(result.error.sessionId).toBe("non-existent-session");
+        if (result.error._tag === "SessionExpiredError") {
+          expect(result.error.sessionId).toBe("non-existent-session");
+        }
       }
     });
 
@@ -259,7 +265,9 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
       if (isErr(result)) {
         expect(result.error).toBeInstanceOf(SessionExpiredError);
         expect(result.error.message).toBe("Session has expired");
-        expect(result.error.sessionId).toBe(session.sessionId);
+        if (result.error._tag === "SessionExpiredError") {
+          expect(result.error.sessionId).toBe(session.sessionId);
+        }
       }
     });
 
@@ -682,11 +690,9 @@ describe("[UNIT] InMemoryAuthAdapter", () => {
 
       expect(isOk(result1)).toBe(true);
       expect(isOk(result2)).toBe(true);
-      expect(
-        result1.kind === "ok" &&
-          result2.kind === "ok" &&
-          result1.value.sessionId,
-      ).not.toBe(result2.value.sessionId);
+      if (isOk(result1) && isOk(result2)) {
+        expect(result1.value.sessionId).not.toBe(result2.value.sessionId);
+      }
     });
 
     it("should handle token format validation", async () => {

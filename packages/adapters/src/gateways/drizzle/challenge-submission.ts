@@ -1,10 +1,11 @@
-import type {
-  ChallengeSubmissionRepository,
-  ChallengeSubmission,
-  SubmissionStatus,
-} from "@mirai-app/use-cases";
+import type { ChallengeSubmissionRepository } from "@mirai-app/use-cases";
+import type { ChallengeSubmission, SubmissionStatus } from "@mirai-app/domain";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle";
-import { challengeSubmissions } from "@mirai-app/frameworks/drizzle/schema/challenge";
+import {
+  challengeSubmissions,
+  type ChallengeSubmissionSelect,
+  type ChallengeSubmissionInsert,
+} from "@mirai-app/frameworks/drizzle/schema/challenge";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { BaseDrizzleRepository } from "../base/repository";
 import { ChallengeSubmissionDrizzleMapper } from "../../mappers/drizzle/challenge-submission";
@@ -18,18 +19,17 @@ import { ChallengeSubmissionDrizzleMapper } from "../../mappers/drizzle/challeng
 export class DrizzleChallengeSubmissionRepository
   extends BaseDrizzleRepository<
     ChallengeSubmission,
-    typeof challengeSubmissions.$inferSelect,
-    Partial<typeof challengeSubmissions.$inferInsert>,
-    Partial<typeof challengeSubmissions.$inferInsert>
+    ChallengeSubmissionSelect,
+    ChallengeSubmissionInsert,
+    typeof challengeSubmissions
   >
   implements ChallengeSubmissionRepository
 {
   constructor(db: DrizzleDb) {
-    super(
-      db,
-      { table: challengeSubmissions },
-      ChallengeSubmissionDrizzleMapper.instance,
-    );
+    super(db, {
+      table: challengeSubmissions,
+      mapper: ChallengeSubmissionDrizzleMapper.instance,
+    });
   }
 
   /**
@@ -41,11 +41,11 @@ export class DrizzleChallengeSubmissionRepository
   ): Promise<ChallengeSubmission | null> {
     const [record] = await this.db
       .select()
-      .from(challengeSubmissions)
+      .from(this.table)
       .where(
         and(
-          eq(challengeSubmissions.challengeId, challengeId),
-          eq(challengeSubmissions.groupId, groupId),
+          eq(this.table.challengeId, challengeId),
+          eq(this.table.groupId, groupId),
         ),
       )
       .limit(1);
@@ -59,12 +59,9 @@ export class DrizzleChallengeSubmissionRepository
   async findByChallengeId(challengeId: string): Promise<ChallengeSubmission[]> {
     const records = await this.db
       .select()
-      .from(challengeSubmissions)
-      .where(eq(challengeSubmissions.challengeId, challengeId))
-      .orderBy(
-        desc(challengeSubmissions.voteScore),
-        asc(challengeSubmissions.createdAt),
-      );
+      .from(this.table)
+      .where(eq(this.table.challengeId, challengeId))
+      .orderBy(desc(this.table.voteScore), asc(this.table.createdAt));
 
     return records.map((record) => this.mapper.toDomain(record));
   }
@@ -75,9 +72,9 @@ export class DrizzleChallengeSubmissionRepository
   async findByGroupId(groupId: string): Promise<ChallengeSubmission[]> {
     const records = await this.db
       .select()
-      .from(challengeSubmissions)
-      .where(eq(challengeSubmissions.groupId, groupId))
-      .orderBy(desc(challengeSubmissions.createdAt));
+      .from(this.table)
+      .where(eq(this.table.groupId, groupId))
+      .orderBy(desc(this.table.createdAt));
 
     return records.map((record) => this.mapper.toDomain(record));
   }
@@ -88,9 +85,9 @@ export class DrizzleChallengeSubmissionRepository
   async findByStatus(status: SubmissionStatus): Promise<ChallengeSubmission[]> {
     const records = await this.db
       .select()
-      .from(challengeSubmissions)
-      .where(eq(challengeSubmissions.status, status))
-      .orderBy(desc(challengeSubmissions.createdAt));
+      .from(this.table)
+      .where(eq(this.table.status, status))
+      .orderBy(desc(this.table.createdAt));
 
     return records.map((record) => this.mapper.toDomain(record));
   }
@@ -107,47 +104,51 @@ export class DrizzleChallengeSubmissionRepository
     limit?: number;
     offset?: number;
   }): Promise<ChallengeSubmission[]> {
-    let query = this.db.select().from(challengeSubmissions);
+    const buildQuery = () => {
+      let query = this.db.select().from(this.table);
 
-    const conditions = [];
-    if (params.challengeId) {
-      conditions.push(eq(challengeSubmissions.challengeId, params.challengeId));
-    }
-    if (params.groupId) {
-      conditions.push(eq(challengeSubmissions.groupId, params.groupId));
-    }
-    if (params.status) {
-      conditions.push(eq(challengeSubmissions.status, params.status));
-    }
+      const conditions = [];
+      if (params.challengeId) {
+        conditions.push(eq(this.table.challengeId, params.challengeId));
+      }
+      if (params.groupId) {
+        conditions.push(eq(this.table.groupId, params.groupId));
+      }
+      if (params.status) {
+        conditions.push(eq(this.table.status, params.status));
+      }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as unknown as typeof query;
+      }
 
-    // Order by
-    if (params.orderBy === "voteScore") {
-      query = query.orderBy(
-        params.orderDirection === "asc"
-          ? asc(challengeSubmissions.voteScore)
-          : desc(challengeSubmissions.voteScore),
-      );
-    } else {
-      query = query.orderBy(
-        params.orderDirection === "asc"
-          ? asc(challengeSubmissions.createdAt)
-          : desc(challengeSubmissions.createdAt),
-      );
-    }
+      // Order by
+      if (params.orderBy === "voteScore") {
+        query = query.orderBy(
+          params.orderDirection === "asc"
+            ? asc(this.table.voteScore)
+            : desc(this.table.voteScore),
+        ) as unknown as typeof query;
+      } else {
+        query = query.orderBy(
+          params.orderDirection === "asc"
+            ? asc(this.table.createdAt)
+            : desc(this.table.createdAt),
+        ) as unknown as typeof query;
+      }
 
-    // Pagination
-    if (params.limit) {
-      query = query.limit(params.limit);
-    }
-    if (params.offset) {
-      query = query.offset(params.offset);
-    }
+      // Pagination
+      if (params.limit) {
+        query = query.limit(params.limit) as unknown as typeof query;
+      }
+      if (params.offset) {
+        query = query.offset(params.offset) as unknown as typeof query;
+      }
 
-    const records = await query;
+      return query;
+    };
+
+    const records = await buildQuery();
     return records.map((record) => this.mapper.toDomain(record));
   }
 
@@ -160,11 +161,11 @@ export class DrizzleChallengeSubmissionRepository
   ): Promise<boolean> {
     const [result] = await this.db
       .select({ count: sql<number>`count(*)::int` })
-      .from(challengeSubmissions)
+      .from(this.table)
       .where(
         and(
-          eq(challengeSubmissions.challengeId, challengeId),
-          eq(challengeSubmissions.groupId, groupId),
+          eq(this.table.challengeId, challengeId),
+          eq(this.table.groupId, groupId),
         ),
       )
       .limit(1);
@@ -178,8 +179,8 @@ export class DrizzleChallengeSubmissionRepository
   async countByChallengeId(challengeId: string): Promise<number> {
     const [result] = await this.db
       .select({ count: sql<number>`count(*)::int` })
-      .from(challengeSubmissions)
-      .where(eq(challengeSubmissions.challengeId, challengeId))
+      .from(this.table)
+      .where(eq(this.table.challengeId, challengeId))
       .limit(1);
 
     return result?.count ?? 0;
@@ -194,11 +195,11 @@ export class DrizzleChallengeSubmissionRepository
   ): Promise<number> {
     const [result] = await this.db
       .select({ count: sql<number>`count(*)::int` })
-      .from(challengeSubmissions)
+      .from(this.table)
       .where(
         and(
-          eq(challengeSubmissions.challengeId, challengeId),
-          eq(challengeSubmissions.status, status),
+          eq(this.table.challengeId, challengeId),
+          eq(this.table.status, status),
         ),
       )
       .limit(1);

@@ -1,5 +1,5 @@
 import { Trip, TripStatus } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   trips,
   TripSelect,
@@ -20,8 +20,6 @@ export class TripDrizzleMapper implements DrizzleEntityMapper<
    * Convert a Drizzle Trip record to a domain Trip entity
    */
   toDomain(record: TripSelect): Trip {
-    const status = this.mapStatusFromDrizzle(record.status ?? "PLANNING");
-
     const result = Trip.create({
       id: record.id,
       name: record.name,
@@ -29,7 +27,7 @@ export class TripDrizzleMapper implements DrizzleEntityMapper<
       startDate: record.startDate,
       endDate: record.endDate,
       backgroundImagePath: record.backgroundImagePath,
-      status,
+      status: (record as any).status ?? TripStatus.PLANNING,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -52,10 +50,9 @@ export class TripDrizzleMapper implements DrizzleEntityMapper<
       startDate: trip.startDate,
       endDate: trip.endDate,
       backgroundImagePath: trip.backgroundImagePath,
-      status: trip.status,
       createdAt: trip.createdAt,
       updatedAt: trip.updatedAt,
-    };
+    } as TripInsert;
   }
 
   /**
@@ -68,26 +65,8 @@ export class TripDrizzleMapper implements DrizzleEntityMapper<
       startDate: trip.startDate,
       endDate: trip.endDate,
       backgroundImagePath: trip.backgroundImagePath,
-      status: trip.status,
       updatedAt: new Date(),
-    };
-  }
-
-  /**
-   * Map Drizzle status string to TripStatus enum
-   */
-  private mapStatusFromDrizzle(status: string): TripStatus {
-    switch (status) {
-      case "ACTIVE":
-        return TripStatus.ACTIVE;
-      case "COMPLETED":
-        return TripStatus.COMPLETED;
-      case "CANCELLED":
-        return TripStatus.CANCELLED;
-      case "PLANNING":
-      default:
-        return TripStatus.PLANNING;
-    }
+    } as Partial<TripInsert>;
   }
 
   /**

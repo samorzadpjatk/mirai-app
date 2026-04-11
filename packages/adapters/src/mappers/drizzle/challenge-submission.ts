@@ -1,6 +1,9 @@
 import type { ChallengeSubmission } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
-import type { challengeSubmissions } from "@mirai-app/frameworks/drizzle/schema/challenge";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
+import {
+  type ChallengeSubmissionSelect,
+  type ChallengeSubmissionInsert,
+} from "@mirai-app/frameworks/drizzle/schema/challenge";
 
 /**
  * ChallengeSubmissionDrizzleMapper
@@ -10,16 +13,14 @@ import type { challengeSubmissions } from "@mirai-app/frameworks/drizzle/schema/
  */
 export class ChallengeSubmissionDrizzleMapper implements DrizzleEntityMapper<
   ChallengeSubmission,
-  typeof challengeSubmissions.$inferSelect,
-  Partial<typeof challengeSubmissions.$inferInsert>,
-  Partial<typeof challengeSubmissions.$inferInsert>
+  ChallengeSubmissionSelect,
+  ChallengeSubmissionInsert,
+  Partial<ChallengeSubmissionInsert>
 > {
   /**
    * Convert a Drizzle ChallengeSubmission record to a domain entity
    */
-  toDomain(
-    record: typeof challengeSubmissions.$inferSelect,
-  ): ChallengeSubmission {
+  toDomain(record: ChallengeSubmissionSelect): ChallengeSubmission {
     // Build the result manually since ChallengeSubmission.create may not match exactly
     return {
       id: record.id,
@@ -47,9 +48,7 @@ export class ChallengeSubmissionDrizzleMapper implements DrizzleEntityMapper<
   /**
    * Convert a domain ChallengeSubmission entity to Drizzle insert input
    */
-  toDrizzleCreate(
-    entity: ChallengeSubmission,
-  ): Partial<typeof challengeSubmissions.$inferInsert> {
+  toDrizzleInsert(entity: ChallengeSubmission): ChallengeSubmissionInsert {
     return {
       id: entity.id,
       challengeId: entity.challengeId,
@@ -78,7 +77,7 @@ export class ChallengeSubmissionDrizzleMapper implements DrizzleEntityMapper<
    */
   toDrizzleUpdate(
     entity: ChallengeSubmission,
-  ): Partial<typeof challengeSubmissions.$inferInsert> {
+  ): Partial<ChallengeSubmissionInsert> {
     return {
       challengeId: entity.challengeId,
       groupId: entity.groupId,
@@ -104,39 +103,32 @@ export class ChallengeSubmissionDrizzleMapper implements DrizzleEntityMapper<
    * Create a partial entity from Drizzle record (for updates)
    */
   fromPartial(
-    record: Partial<typeof challengeSubmissions.$inferSelect>,
+    record: Partial<ChallengeSubmissionSelect>,
   ): Partial<ChallengeSubmission> {
-    return {
-      ...(record.id && { id: record.id }),
-      ...(record.challengeId && { challengeId: record.challengeId }),
-      ...(record.groupId && { groupId: record.groupId }),
-      ...(record.imageIds && { imageIds: record.imageIds }),
-      ...(record.videoId !== undefined && { videoId: record.videoId }),
-      ...(record.textContent !== undefined && {
-        textContent: record.textContent,
-      }),
-      ...(record.latitude !== undefined && { latitude: record.latitude }),
-      ...(record.longitude !== undefined && { longitude: record.longitude }),
-      ...(record.status && {
-        status: record.status as "PENDING" | "APPROVED" | "REJECTED",
-      }),
-      ...(record.reviewedById !== undefined && {
-        reviewedById: record.reviewedById,
-      }),
-      ...(record.reviewedAt !== undefined && { reviewedAt: record.reviewedAt }),
-      ...(record.rejectionReason !== undefined && {
-        rejectionReason: record.rejectionReason,
-      }),
-      ...(record.awardedPoints !== undefined && {
-        awardedPoints: record.awardedPoints,
-      }),
-      ...(record.bonusPoints !== undefined && {
-        bonusPoints: record.bonusPoints,
-      }),
-      ...(record.ranking !== undefined && { ranking: record.ranking }),
-      ...(record.voteCount !== undefined && { voteCount: record.voteCount }),
-      ...(record.voteScore !== undefined && { voteScore: record.voteScore }),
-    };
+    const partial: Record<string, unknown> = {};
+    if (record.id) partial.id = record.id;
+    if (record.challengeId) partial.challengeId = record.challengeId;
+    if (record.groupId) partial.groupId = record.groupId;
+    if (record.imageIds) partial.imageIds = record.imageIds;
+    if (record.videoId !== undefined) partial.videoId = record.videoId;
+    if (record.textContent !== undefined)
+      partial.textContent = record.textContent;
+    if (record.latitude !== undefined) partial.latitude = record.latitude;
+    if (record.longitude !== undefined) partial.longitude = record.longitude;
+    if (record.status) partial.status = record.status;
+    if (record.reviewedById !== undefined)
+      partial.reviewedById = record.reviewedById;
+    if (record.reviewedAt !== undefined) partial.reviewedAt = record.reviewedAt;
+    if (record.rejectionReason !== undefined)
+      partial.rejectionReason = record.rejectionReason;
+    if (record.awardedPoints !== undefined)
+      partial.awardedPoints = record.awardedPoints;
+    if (record.bonusPoints !== undefined)
+      partial.bonusPoints = record.bonusPoints;
+    if (record.ranking !== undefined) partial.ranking = record.ranking;
+    if (record.voteCount !== undefined) partial.voteCount = record.voteCount;
+    if (record.voteScore !== undefined) partial.voteScore = record.voteScore;
+    return partial as Partial<ChallengeSubmission>;
   }
 
   static readonly instance = new ChallengeSubmissionDrizzleMapper();

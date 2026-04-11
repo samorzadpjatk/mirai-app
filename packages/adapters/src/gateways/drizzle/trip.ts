@@ -60,7 +60,7 @@ export class DrizzleTripRepository
   /**
    * Find trips with pagination
    */
-  async findAll(options?: {
+  override async findAll(options?: {
     limit?: number;
     offset?: number;
   }): Promise<Trip[]> {

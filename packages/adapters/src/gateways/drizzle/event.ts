@@ -72,34 +72,42 @@ export class DrizzleEventRepository
   /**
    * Find all events with pagination
    */
-  async findAll(options?: {
+  override async findAll(options?: {
     limit?: number;
     offset?: number;
     orderBy?: { column: string; direction: "asc" | "desc" };
   }): Promise<Event[]> {
-    let query = this.db.select().from(this.table);
-
-    // Apply ordering (default to startTime asc)
+    // Build order by clause
     const orderColumn = options?.orderBy?.column ?? "startTime";
     const orderDirection = options?.orderBy?.direction ?? "asc";
 
     const columnRef = (this.table as unknown as Record<string, unknown>)[
       orderColumn
     ];
-    if (columnRef) {
-      query = query.orderBy(
-        orderDirection === "asc"
-          ? (columnRef as never)
-          : sql`${columnRef as never} DESC`,
-      );
-    }
 
-    // Apply pagination
+    // Use a function to build the query to avoid type widening issues
+    const buildQuery = () => {
+      let query = this.db.select().from(this.table);
+
+      if (columnRef) {
+        query = query.orderBy(
+          orderDirection === "asc"
+            ? (columnRef as never)
+            : sql`${columnRef as never} DESC`,
+        ) as unknown as typeof query;
+      }
+
+      return query;
+    };
+
+    // Apply pagination and execute
+    let query = buildQuery();
+
     if (options?.limit) {
-      query = query.limit(options.limit) as typeof query;
+      query = query.limit(options.limit) as unknown as typeof query;
     }
     if (options?.offset) {
-      query = query.offset(options.offset) as typeof query;
+      query = query.offset(options.offset) as unknown as typeof query;
     }
 
     const records = await query;

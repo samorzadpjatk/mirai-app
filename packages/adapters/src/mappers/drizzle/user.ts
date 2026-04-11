@@ -1,5 +1,5 @@
 import { User, UserRole } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   users,
   UserSelect,

@@ -16,13 +16,16 @@ export class DrizzleChallengeVoteRepository
   extends BaseDrizzleRepository<
     ChallengeVote,
     typeof challengeVotes.$inferSelect,
-    Partial<typeof challengeVotes.$inferInsert>,
-    Partial<typeof challengeVotes.$inferInsert>
+    typeof challengeVotes.$inferInsert,
+    typeof challengeVotes
   >
   implements ChallengeVoteRepository
 {
   constructor(db: DrizzleDb) {
-    super(db, { table: challengeVotes }, ChallengeVoteDrizzleMapper.instance);
+    super(db, {
+      table: challengeVotes,
+      mapper: ChallengeVoteDrizzleMapper.instance,
+    });
   }
 
   /**
@@ -34,8 +37,12 @@ export class DrizzleChallengeVoteRepository
     }
 
     const createdRecords = await this.db.transaction(async (tx) => {
-      const results = [];
+      const results: (typeof challengeVotes.$inferSelect)[] = [];
       for (const vote of votes) {
+        // Map VotePosition (1, 2, 3) to enum ("UPVOTE", "NEUTRAL", "NEUTRAL")
+        const positionEnum: "UPVOTE" | "DOWNVOTE" | "NEUTRAL" =
+          vote.position.value === 1 ? "UPVOTE" : "NEUTRAL";
+
         const [inserted] = await tx
           .insert(challengeVotes)
           .values({
@@ -43,15 +50,17 @@ export class DrizzleChallengeVoteRepository
             challengeId: vote.challengeId,
             submissionId: vote.submissionId,
             voterId: vote.voterId,
-            tripParticipantId: (vote as any).tripParticipantId ?? vote.voterId,
-            position: vote.position as "UPVOTE" | "DOWNVOTE" | "NEUTRAL",
-            weight: vote.weight,
-            isStaffVote: vote.isStaffVote,
+            tripParticipantId: vote.voterId,
+            position: positionEnum,
+            weight: vote.weight.value,
+            isStaffVote: false,
             createdAt: vote.votedAt,
             updatedAt: vote.votedAt,
           })
           .returning();
-        results.push(inserted);
+        if (inserted) {
+          results.push(inserted);
+        }
       }
       return results;
     });

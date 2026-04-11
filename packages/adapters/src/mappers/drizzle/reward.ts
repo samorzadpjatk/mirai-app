@@ -3,7 +3,7 @@ import {
   RewardPurchase,
   RewardPurchaseStatus,
 } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   rewards,
   rewardPurchases,
@@ -25,13 +25,13 @@ export class RewardDrizzleMapper implements DrizzleEntityMapper<
 > {
   toDomain(record: RewardSelect): Reward {
     const result = Reward.create({
-      id: record.id,
+      id: record.id as any, // RewardId branded type
       name: record.name,
       description: record.description,
       availableQuantity: record.availableQuantity,
       isHidden: record.isHidden,
-      image: record.image,
-      coinCost: record.coinCost,
+      coinCostPercentage: (record as any).coinCostPercentage ?? 10, // Default to 10%
+      images: record.image ? [record.image] : [],
       tripId: record.tripId,
       createdById: record.createdById,
       createdAt: record.createdAt,
@@ -47,18 +47,17 @@ export class RewardDrizzleMapper implements DrizzleEntityMapper<
 
   toDrizzleInsert(reward: Reward): RewardInsert {
     return {
-      id: reward.id,
+      id: reward.id as string,
       name: reward.name,
       description: reward.description,
       availableQuantity: reward.availableQuantity,
       isHidden: reward.isHidden,
-      image: reward.image,
-      coinCost: reward.coinCost,
+      image: reward.images[0] ?? null,
       tripId: reward.tripId,
       createdById: reward.createdById,
       createdAt: reward.createdAt,
       updatedAt: reward.updatedAt,
-    };
+    } as any;
   }
 
   toDrizzleUpdate(reward: Reward): Partial<RewardInsert> {
@@ -67,10 +66,9 @@ export class RewardDrizzleMapper implements DrizzleEntityMapper<
       description: reward.description,
       availableQuantity: reward.availableQuantity,
       isHidden: reward.isHidden,
-      image: reward.image,
-      coinCost: reward.coinCost,
+      image: reward.images[0] ?? null,
       updatedAt: new Date(),
-    };
+    } as any;
   }
 
   static readonly instance = new RewardDrizzleMapper();
@@ -90,7 +88,7 @@ export class RewardPurchaseDrizzleMapper implements DrizzleEntityMapper<
     const status = this.mapStatusFromDrizzle(record.status);
 
     const result = RewardPurchase.create({
-      id: record.id,
+      id: record.id as any,
       rewardId: record.rewardId,
       groupId: record.groupId,
       quantity: record.quantity,
@@ -99,9 +97,7 @@ export class RewardPurchaseDrizzleMapper implements DrizzleEntityMapper<
       collectionMethod: record.collectionMethod,
       purchasedById: record.purchasedById,
       statusUpdatedById: record.statusUpdatedById,
-      statusUpdatedAt: record.statusUpdatedAt,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
+      statusUpdatedAt: record.statusUpdatedAt ?? undefined,
     });
 
     if (result.kind === "err") {
@@ -115,7 +111,7 @@ export class RewardPurchaseDrizzleMapper implements DrizzleEntityMapper<
 
   toDrizzleInsert(purchase: RewardPurchase): RewardPurchaseInsert {
     return {
-      id: purchase.id,
+      id: purchase.id as string,
       rewardId: purchase.rewardId,
       groupId: purchase.groupId,
       quantity: purchase.quantity,
@@ -125,9 +121,9 @@ export class RewardPurchaseDrizzleMapper implements DrizzleEntityMapper<
       purchasedById: purchase.purchasedById,
       statusUpdatedById: purchase.statusUpdatedById,
       statusUpdatedAt: purchase.statusUpdatedAt,
-      createdAt: purchase.createdAt,
-      updatedAt: purchase.updatedAt,
-    };
+      createdAt: (purchase as any).createdAt ?? new Date(),
+      updatedAt: (purchase as any).updatedAt ?? new Date(),
+    } as RewardPurchaseInsert;
   }
 
   toDrizzleUpdate(purchase: RewardPurchase): Partial<RewardPurchaseInsert> {
@@ -136,7 +132,7 @@ export class RewardPurchaseDrizzleMapper implements DrizzleEntityMapper<
       statusUpdatedById: purchase.statusUpdatedById,
       statusUpdatedAt: purchase.statusUpdatedAt,
       updatedAt: new Date(),
-    };
+    } as Partial<RewardPurchaseInsert>;
   }
 
   private mapStatusFromDrizzle(status: string): RewardPurchaseStatus {

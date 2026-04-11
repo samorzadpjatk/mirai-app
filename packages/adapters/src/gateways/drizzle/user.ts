@@ -5,8 +5,9 @@ import {
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
 import { eq } from "drizzle-orm";
-import { User } from "@mirai-app/domain";
+import { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "@mirai-app/use-cases";
+import { inArray } from "drizzle-orm";
 import { BaseDrizzleRepository } from "../base/repository";
 import { UserDrizzleMapper } from "../../mappers/drizzle/user";
 
@@ -38,7 +39,7 @@ export class DrizzleUserRepository
    *
    * This is the primary lookup method for user authentication.
    */
-  async findByAuthId(authUserId: string): Promise<User | null> {
+  async findByAuthUserId(authUserId: string): Promise<User | null> {
     const records = await this.db
       .select()
       .from(this.table)
@@ -58,21 +59,15 @@ export class DrizzleUserRepository
     const records = await this.db
       .select()
       .from(this.table)
-      .where(eq(this.table.id, ids[0]));
+      .where(inArray(this.table.id, ids));
 
-    // For multiple IDs, we need to use 'in' operator
-    // Drizzle ORM supports this via the 'inArray' helper
-    // But for simplicity, we'll use a different approach here
-    const allRecords = await this.db.select().from(this.table);
-    const filteredRecords = allRecords.filter((r) => ids.includes(r.id));
-
-    return filteredRecords.map((record) => this.mapper.toDomain(record));
+    return records.map((record) => this.mapper.toDomain(record));
   }
 
   /**
    * Find users by their role
    */
-  async findByRole(role: string): Promise<User[]> {
+  async findByRole(role: UserRole): Promise<User[]> {
     const records = await this.db
       .select()
       .from(this.table)
@@ -84,7 +79,7 @@ export class DrizzleUserRepository
   /**
    * Check if a user exists by authUserId
    */
-  async existsByAuthId(authUserId: string): Promise<boolean> {
+  async existsByAuthUserId(authUserId: string): Promise<boolean> {
     const records = await this.db
       .select({ id: this.table.id })
       .from(this.table)

@@ -1,11 +1,12 @@
 import { z } from "zod";
-import type {
-  GetCoinStatisticsUseCase,
-  GetMostActiveAdminStatsUseCase,
-  GetCoinTransactionsUseCase,
-  GetCoinQuickStatsUseCase,
-  GetCoinAdditionalInsightsUseCase,
-  GetCoinAdditionalInsightsOutput,
+import {
+  getUseCaseErrorMessage,
+  type GetCoinStatisticsUseCase,
+  type GetMostActiveAdminStatsUseCase,
+  type GetCoinTransactionsUseCase,
+  type GetCoinQuickStatsUseCase,
+  type GetCoinAdditionalInsightsUseCase,
+  type GetCoinAdditionalInsightsOutput,
 } from "@mirai-app/use-cases";
 
 /**
@@ -87,10 +88,7 @@ export class CoinTransactionController {
     if (result.kind === "err") {
       return {
         success: false,
-        error:
-          typeof result.error === "string"
-            ? result.error
-            : result.error.message,
+        error: getUseCaseErrorMessage(result.error),
       };
     }
 
@@ -118,10 +116,7 @@ export class CoinTransactionController {
     if (result.kind === "err") {
       return {
         success: false,
-        error:
-          typeof result.error === "string"
-            ? result.error
-            : result.error.message,
+        error: getUseCaseErrorMessage(result.error),
       };
     }
 
@@ -168,10 +163,7 @@ export class CoinTransactionController {
     if (result.kind === "err") {
       return {
         success: false,
-        error:
-          typeof result.error === "string"
-            ? result.error
-            : result.error.message,
+        error: getUseCaseErrorMessage(result.error),
       };
     }
 
@@ -221,10 +213,7 @@ export class CoinTransactionController {
     if (result.kind === "err") {
       return {
         success: false,
-        error:
-          typeof result.error === "string"
-            ? result.error
-            : result.error.message,
+        error: getUseCaseErrorMessage(result.error),
       };
     }
 
@@ -248,10 +237,7 @@ export class CoinTransactionController {
     if (result.kind === "err") {
       return {
         success: false,
-        error:
-          typeof result.error === "string"
-            ? result.error
-            : result.error.message,
+        error: getUseCaseErrorMessage(result.error),
       };
     }
 
@@ -265,6 +251,8 @@ export class CoinTransactionController {
       mostActiveAdmin: result.value.mostActiveAdmin,
       recentTransactions: result.value.recentTransactions.map((t) => ({
         id: t.id,
+        groupId: t.groupId,
+        adminId: t.adminId,
         amount: t.amount,
         reason: t.reason ?? null,
         createdAt: t.createdAt,
@@ -330,10 +318,7 @@ export class CoinTransactionController {
     if (result.kind === "err") {
       return {
         success: false,
-        error:
-          typeof result.error === "string"
-            ? result.error
-            : result.error.message,
+        error: getUseCaseErrorMessage(result.error),
       };
     }
 

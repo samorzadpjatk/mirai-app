@@ -24,7 +24,9 @@ interface User {
 
 type PrismaClient = {
   user: {
-    findFirst: (args: { where: { authUserId: string } }) => Promise<User | null>;
+    findFirst: (args: {
+      where: { authUserId: string };
+    }) => Promise<User | null>;
   };
 };
 
@@ -95,6 +97,8 @@ function getTokenExpiry(accessToken: string) {
 }
 
 export class AuthenticationError extends Error {
+  override readonly name: string;
+
   constructor(message = "Not Authenticated") {
     super(message);
     this.name = "AuthenticationError";
@@ -102,6 +106,8 @@ export class AuthenticationError extends Error {
 }
 
 export class AuthorizationError extends Error {
+  override readonly name: string;
+
   constructor(message = "Missing Required Permissions") {
     super(message);
     this.name = "AuthorizationError";

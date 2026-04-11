@@ -75,8 +75,10 @@ describe("[CONTRACT] InMemory Adapters", () => {
           expect(result.error).toBeInstanceOf(SessionExpiredError);
           expect(result.error._tag).toBe("SessionExpiredError");
           expect(result.error.code).toBe("SESSION_EXPIRED");
-          expect(result.error.sessionId).toBe(session.sessionId);
-          expect(result.error.expiredAt).toBeInstanceOf(Date);
+          if (result.error._tag === "SessionExpiredError") {
+            expect(result.error.sessionId).toBe(session.sessionId);
+            expect(result.error.expiredAt).toBeInstanceOf(Date);
+          }
         }
       });
 
@@ -169,7 +171,9 @@ describe("[CONTRACT] InMemory Adapters", () => {
           expect(result.error).toBeInstanceOf(SessionExpiredError);
           expect(result.error._tag).toBe("SessionExpiredError");
           expect(result.error.code).toBe("SESSION_EXPIRED");
-          expect(result.error.sessionId).toBe("missing-session-id");
+          if (result.error._tag === "SessionExpiredError") {
+            expect(result.error.sessionId).toBe("missing-session-id");
+          }
         }
       });
 
@@ -183,7 +187,9 @@ describe("[CONTRACT] InMemory Adapters", () => {
         expect(isErr(result)).toBe(true);
         if (isErr(result)) {
           expect(result.error).toBeInstanceOf(SessionExpiredError);
-          expect(result.error.expiredAt).toBeInstanceOf(Date);
+          if (result.error._tag === "SessionExpiredError") {
+            expect(result.error.expiredAt).toBeInstanceOf(Date);
+          }
         }
       });
 
@@ -256,7 +262,9 @@ describe("[CONTRACT] InMemory Adapters", () => {
           expect(result.error).toBeInstanceOf(SubscriptionError);
           expect(result.error._tag).toBe("SubscriptionError");
           expect(result.error.code).toBe("SUBSCRIPTION_ERROR");
-          expect(result.error.channel).toBe("test-channel");
+          if (result.error._tag === "SubscriptionError") {
+            expect(result.error.channel).toBe("test-channel");
+          }
         }
       });
 
@@ -321,8 +329,8 @@ describe("[CONTRACT] InMemory Adapters", () => {
         });
 
         expect(receivedMessages).toHaveLength(1);
-        expect(receivedMessages[0].event).toBe("test-event");
-        expect(receivedMessages[0].payload).toEqual({ key: "value" });
+        expect(receivedMessages[0]?.event).toBe("test-event");
+        expect(receivedMessages[0]?.payload).toEqual({ key: "value" });
       });
 
       it("should not fail when broadcasting to channel with no subscribers", async () => {
@@ -585,8 +593,10 @@ describe("[CONTRACT] InMemory Adapters", () => {
           expect(result.error).toBeInstanceOf(UploadError);
           expect(result.error._tag).toBe("UploadError");
           expect(result.error.code).toBe("UPLOAD_ERROR");
-          expect(result.error.bucket).toBe("bucket");
-          expect(result.error.path).toBe("file.txt");
+          if (result.error._tag === "UploadError") {
+            expect(result.error.bucket).toBe("bucket");
+            expect(result.error.path).toBe("file.txt");
+          }
         }
       });
 
@@ -660,8 +670,10 @@ describe("[CONTRACT] InMemory Adapters", () => {
           expect(result.error).toBeInstanceOf(FileNotFoundError);
           expect(result.error._tag).toBe("FileNotFoundError");
           expect(result.error.code).toBe("FILE_NOT_FOUND");
-          expect(result.error.bucket).toBe("bucket");
-          expect(result.error.path).toBe("missing.txt");
+          if (result.error._tag === "FileNotFoundError") {
+            expect(result.error.bucket).toBe("bucket");
+            expect(result.error.path).toBe("missing.txt");
+          }
         }
       });
 

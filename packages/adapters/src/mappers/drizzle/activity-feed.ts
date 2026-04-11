@@ -1,5 +1,5 @@
 import { ActivityFeed, ActivityReaction } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   activityFeed as activityFeedTable,
   activityReactions as activityReactionsTable,
@@ -24,9 +24,9 @@ export class ActivityFeedDrizzleMapper implements DrizzleEntityMapper<
    */
   toDomain(record: ActivityFeedSelect): ActivityFeed {
     const result = ActivityFeed.create({
-      id: record.id,
+      id: record.id as any, // ActivityId branded type
       tripId: record.tripId,
-      activityType: record.activityType,
+      activityType: record.activityType as any, // ActivityType branded type
       title: record.title,
       description: record.description,
       imageUrl: record.imageUrl,
@@ -38,8 +38,8 @@ export class ActivityFeedDrizzleMapper implements DrizzleEntityMapper<
       createdByAdmin: record.createdByAdmin,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
-      reactions: [], // Loaded separately
-    });
+      // reactions loaded separately
+    } as any);
 
     if (result.kind === "err") {
       throw new Error(

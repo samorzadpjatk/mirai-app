@@ -1,5 +1,5 @@
 import type { CoinTransaction } from "@mirai-app/use-cases";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type { coinTransactions } from "@mirai-app/frameworks/drizzle/schema/coinTransaction";
 
 /**
@@ -13,7 +13,6 @@ import type { coinTransactions } from "@mirai-app/frameworks/drizzle/schema/coin
 export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
   CoinTransaction,
   typeof coinTransactions.$inferSelect,
-  Partial<typeof coinTransactions.$inferInsert>,
   Partial<typeof coinTransactions.$inferInsert>
 > {
   /**
@@ -57,7 +56,7 @@ export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
   /**
    * Convert a CoinTransaction entity to Drizzle insert input
    */
-  toDrizzleCreate(
+  toDrizzleInsert(
     entity: CoinTransaction,
   ): Partial<typeof coinTransactions.$inferInsert> {
     return {
@@ -80,7 +79,7 @@ export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
     return {
       amount: entity.amount,
       reason: entity.reason ?? null,
-    };
+    } as Partial<typeof coinTransactions.$inferInsert>;
   }
 
   /**
@@ -89,13 +88,13 @@ export class CoinTransactionDrizzleMapper implements DrizzleEntityMapper<
   fromPartial(
     record: Partial<typeof coinTransactions.$inferSelect>,
   ): Partial<CoinTransaction> {
-    return {
-      ...(record.id && { id: record.id }),
-      ...(record.groupId && { groupId: record.groupId }),
-      ...(record.amount !== undefined && { amount: record.amount }),
-      ...(record.reason !== undefined && { reason: record.reason }),
-      ...(record.adminId && { adminId: record.adminId }),
-    };
+    const partial: Record<string, unknown> = {};
+    if (record.id) partial.id = record.id;
+    if (record.groupId) partial.groupId = record.groupId;
+    if (record.amount !== undefined) partial.amount = record.amount;
+    if (record.reason !== undefined) partial.reason = record.reason;
+    if (record.adminId) partial.adminId = record.adminId;
+    return partial as Partial<CoinTransaction>;
   }
 
   static readonly instance = new CoinTransactionDrizzleMapper();

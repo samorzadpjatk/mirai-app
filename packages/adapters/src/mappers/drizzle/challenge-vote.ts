@@ -1,5 +1,5 @@
-import type { ChallengeVote } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import { ChallengeVote } from "@mirai-app/domain";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type { challengeVotes } from "@mirai-app/frameworks/drizzle/schema/challenge";
 
 /**
@@ -11,42 +11,49 @@ import type { challengeVotes } from "@mirai-app/frameworks/drizzle/schema/challe
 export class ChallengeVoteDrizzleMapper implements DrizzleEntityMapper<
   ChallengeVote,
   typeof challengeVotes.$inferSelect,
-  Partial<typeof challengeVotes.$inferInsert>,
-  Partial<typeof challengeVotes.$inferInsert>
+  typeof challengeVotes.$inferInsert
 > {
   /**
    * Convert a Drizzle ChallengeVote record to a domain entity
    */
   toDomain(record: typeof challengeVotes.$inferSelect): ChallengeVote {
-    return {
-      id: record.id,
+    // Map Drizzle record to ChallengeVote using entity factory
+    const result = ChallengeVote.create({
+      id: record.id as any, // ChallengeVoteId branded type
       challengeId: record.challengeId,
       submissionId: record.submissionId,
       voterId: record.voterId,
-      position: record.position,
-      weight: record.weight,
-      isStaffVote: record.isStaffVote,
+      position:
+        record.position === "UPVOTE"
+          ? 1
+          : record.position === "DOWNVOTE"
+            ? -1
+            : 0,
       votedAt: record.createdAt,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
-    } as unknown as ChallengeVote;
+    });
+    if (result.kind === "err") {
+      throw new Error(`Failed to map ChallengeVote: ${result.error}`);
+    }
+    return result.value;
   }
 
   /**
    * Convert a domain ChallengeVote entity to Drizzle insert input
    */
-  toDrizzleCreate(
-    entity: ChallengeVote,
-  ): Partial<typeof challengeVotes.$inferInsert> {
+  toDrizzleInsert(entity: ChallengeVote): typeof challengeVotes.$inferInsert {
+    // Map VotePosition (1, 2, 3) to enum ("UPVOTE", "NEUTRAL", "NEUTRAL")
+    const positionEnum: "UPVOTE" | "DOWNVOTE" | "NEUTRAL" =
+      entity.position.value === 1 ? "UPVOTE" : "NEUTRAL";
+
     return {
       id: entity.id as string,
       challengeId: entity.challengeId,
       submissionId: entity.submissionId,
       voterId: entity.voterId,
-      tripParticipantId: (entity as any).tripParticipantId ?? entity.voterId,
-      position: entity.position as "UPVOTE" | "DOWNVOTE" | "NEUTRAL",
-      weight: entity.weight,
-      isStaffVote: entity.isStaffVote,
+      tripParticipantId: entity.voterId,
+      position: positionEnum,
+      weight: entity.weight.value,
+      isStaffVote: false,
       createdAt: entity.votedAt,
       updatedAt: entity.votedAt,
     };
@@ -58,10 +65,14 @@ export class ChallengeVoteDrizzleMapper implements DrizzleEntityMapper<
   toDrizzleUpdate(
     entity: ChallengeVote,
   ): Partial<typeof challengeVotes.$inferInsert> {
+    // Map VotePosition (1, 2, 3) to enum ("UPVOTE", "NEUTRAL", "NEUTRAL")
+    const positionEnum: "UPVOTE" | "DOWNVOTE" | "NEUTRAL" =
+      entity.position.value === 1 ? "UPVOTE" : "NEUTRAL";
+
     return {
-      position: entity.position as "UPVOTE" | "DOWNVOTE" | "NEUTRAL",
-      weight: entity.weight,
-      isStaffVote: entity.isStaffVote,
+      position: positionEnum,
+      weight: entity.weight.value,
+      isStaffVote: false,
       updatedAt: new Date(),
     };
   }
@@ -77,12 +88,7 @@ export class ChallengeVoteDrizzleMapper implements DrizzleEntityMapper<
       ...(record.challengeId && { challengeId: record.challengeId }),
       ...(record.submissionId && { submissionId: record.submissionId }),
       ...(record.voterId && { voterId: record.voterId }),
-      ...(record.position && { position: record.position }),
-      ...(record.weight !== undefined && { weight: record.weight }),
-      ...(record.isStaffVote !== undefined && {
-        isStaffVote: record.isStaffVote,
-      }),
-    };
+    } as Partial<ChallengeVote>;
   }
 
   static readonly instance = new ChallengeVoteDrizzleMapper();

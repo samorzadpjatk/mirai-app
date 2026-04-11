@@ -3,7 +3,7 @@ import {
   LocationAccuracy,
   type SharingUserInfo,
 } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   locations,
   LocationSelect,
@@ -27,7 +27,7 @@ export class LocationDrizzleMapper implements DrizzleEntityMapper<
     const accuracy = this.mapAccuracyFromValue(record.accuracy);
 
     const result = Location.create({
-      id: record.id,
+      id: record.id as any, // LocationId branded type
       userId: record.userId,
       latitude: record.latitude,
       longitude: record.longitude,
@@ -40,7 +40,7 @@ export class LocationDrizzleMapper implements DrizzleEntityMapper<
       timestamp: record.timestamp,
       lastInactivityNotification: record.lastInactivityNotification,
       usersToShareWith: [], // Loaded separately via join
-    });
+    } as any);
 
     if (result.kind === "err") {
       throw new Error(`Failed to map Location from Drizzle: ${result.error}`);
@@ -54,7 +54,7 @@ export class LocationDrizzleMapper implements DrizzleEntityMapper<
    */
   toDrizzleInsert(location: Location): LocationInsert {
     return {
-      id: location.id,
+      id: location.id as string,
       userId: location.userId,
       latitude: location.latitude,
       longitude: location.longitude,
@@ -63,10 +63,10 @@ export class LocationDrizzleMapper implements DrizzleEntityMapper<
       altitudeAccuracy: location.altitudeAccuracy,
       heading: location.heading,
       speed: location.speed,
-      isSharingLocation: location.isSharingLocation,
+      isSharingLocation: location.isSharingLocation(),
       timestamp: location.timestamp,
       lastInactivityNotification: location.lastInactivityNotification,
-    };
+    } as LocationInsert;
   }
 
   /**
@@ -81,10 +81,10 @@ export class LocationDrizzleMapper implements DrizzleEntityMapper<
       altitudeAccuracy: location.altitudeAccuracy,
       heading: location.heading,
       speed: location.speed,
-      isSharingLocation: location.isSharingLocation,
+      isSharingLocation: location.isSharingLocation(),
       timestamp: location.timestamp,
       lastInactivityNotification: location.lastInactivityNotification,
-    };
+    } as Partial<LocationInsert>;
   }
 
   /**

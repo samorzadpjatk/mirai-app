@@ -1,5 +1,5 @@
 import { Notification, NotificationPriority } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type {
   notifications,
   NotificationSelect,
@@ -19,7 +19,9 @@ export class NotificationDrizzleMapper implements DrizzleEntityMapper<
   /**
    * Convert a Drizzle Notification record to a domain Notification entity
    */
-  toDomain(record: NotificationSelect): Notification {
+  toDomain(
+    record: NotificationSelect & { createdById?: string },
+  ): Notification {
     const priority = this.mapPriorityFromDrizzle(record.priority ?? "NORMAL");
 
     const result = Notification.create({
@@ -29,6 +31,7 @@ export class NotificationDrizzleMapper implements DrizzleEntityMapper<
       body: record.body,
       url: record.url,
       priority,
+      createdById: record.createdById ?? "",
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -53,9 +56,10 @@ export class NotificationDrizzleMapper implements DrizzleEntityMapper<
       body: notification.body,
       url: notification.url,
       priority: notification.priority,
+      createdById: (notification as any).createdById ?? "",
       createdAt: notification.createdAt,
       updatedAt: notification.updatedAt,
-    };
+    } as NotificationInsert;
   }
 
   /**

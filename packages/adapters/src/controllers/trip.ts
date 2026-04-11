@@ -343,13 +343,18 @@ export class TripController {
     }
 
     // Apply status update
-    try {
-      const updatedTrip = trip.updateStatus(
-        parsed.data.newStatus as TripStatus,
-      );
+    const updateResult = trip.updateStatus(parsed.data.newStatus as TripStatus);
 
+    if (updateResult.kind === "err") {
+      return {
+        success: false,
+        error: `Failed to update status: ${updateResult.error.message}`,
+      };
+    }
+
+    try {
       // Persist changes
-      const saved = await this.tripRepository.update(updatedTrip);
+      const saved = await this.tripRepository.update(updateResult.value);
 
       return {
         success: true,

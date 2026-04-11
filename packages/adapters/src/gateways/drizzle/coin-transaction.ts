@@ -23,16 +23,15 @@ export class DrizzleCoinTransactionRepository
     CoinTransaction,
     typeof coinTransactions.$inferSelect,
     Partial<typeof coinTransactions.$inferInsert>,
-    Partial<typeof coinTransactions.$inferInsert>
+    typeof coinTransactions
   >
   implements CoinTransactionRepository
 {
   constructor(db: DrizzleDb) {
-    super(
-      db,
-      { table: coinTransactions },
-      CoinTransactionDrizzleMapper.instance,
-    );
+    super(db, {
+      table: coinTransactions,
+      mapper: CoinTransactionDrizzleMapper.instance,
+    });
   }
 
   /**
@@ -114,8 +113,8 @@ export class DrizzleCoinTransactionRepository
 
     return results.map((r) => ({
       adminId: r.adminId,
-      _sum: { amount: r._sum },
-      _count: { id: r._count },
+      _sum: { amount: r._sum ?? 0 },
+      _count: { id: r._count ?? 0 },
     }));
   }
 
@@ -143,8 +142,8 @@ export class DrizzleCoinTransactionRepository
       .innerJoin(groups, eq(coinTransactions.groupId, groups.id))
       .where(whereClause)
       .orderBy(desc(coinTransactions.createdAt))
-      .limit(pagination.limit)
-      .offset(pagination.offset);
+      .limit(pagination.limit ?? 10)
+      .offset(pagination.offset ?? 0);
 
     return results.map((r) =>
       this.mapper.toDomain({
@@ -221,7 +220,7 @@ export class DrizzleCoinTransactionRepository
 
     return results.map((r) => ({
       groupId: r.groupId,
-      _sum: { amount: r._sum },
+      _sum: { amount: r._sum ?? null },
     }));
   }
 
@@ -246,30 +245,44 @@ export class DrizzleCoinTransactionRepository
 
     return results.map((r) => ({
       adminId: r.adminId,
-      _count: { id: r._count },
+      _count: { id: r._count ?? 0 },
     }));
   }
 
   /**
    * Create a new transaction
    */
-  async create(data: {
-    groupId: string;
-    amount: number;
-    reason?: string;
-    adminId: string;
-  }): Promise<CoinTransaction> {
+  override async create(
+    data:
+      | CoinTransaction
+      | {
+          groupId: string;
+          amount: number;
+          reason?: string;
+          adminId: string;
+        },
+  ): Promise<CoinTransaction> {
+    const input = data as {
+      groupId: string;
+      amount: number;
+      reason?: string;
+      adminId: string;
+    };
     const [result] = await this.db
       .insert(coinTransactions)
       .values({
         tripId: "", // Will be populated from group lookup
-        groupId: data.groupId,
-        amount: data.amount,
-        reason: data.reason ?? null,
-        adminId: data.adminId,
+        groupId: input.groupId,
+        amount: input.amount,
+        reason: input.reason ?? null,
+        adminId: input.adminId,
         createdAt: new Date(),
       })
       .returning();
+
+    if (!result) {
+      throw new Error("Failed to create coin transaction: no record returned");
+    }
 
     return this.mapper.toDomain(result);
   }

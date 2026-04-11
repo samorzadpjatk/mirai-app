@@ -5,7 +5,7 @@ import {
   type GroupInsert,
 } from "@mirai-app/frameworks/drizzle/schema";
 import type { DrizzleDb } from "@mirai-app/frameworks/drizzle/client";
-import { Group, type GroupStatus } from "@mirai-app/domain";
+import { Group, GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import { GroupDrizzleMapper } from "../../mappers/drizzle/group";
@@ -98,7 +98,7 @@ export class DrizzleGroupRepository
   /**
    * Find groups with pagination
    */
-  async findAll(options?: {
+  override async findAll(options?: {
     limit?: number;
     offset?: number;
   }): Promise<Group[]> {

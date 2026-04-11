@@ -1,8 +1,8 @@
-import type {
+import {
   NotificationSchedule,
   NotificationScheduleType,
 } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type { notificationSchedules } from "@mirai-app/frameworks/drizzle/schema/notificationDelivery";
 
 /**
@@ -14,7 +14,6 @@ import type { notificationSchedules } from "@mirai-app/frameworks/drizzle/schema
 export class NotificationScheduleDrizzleMapper implements DrizzleEntityMapper<
   NotificationSchedule,
   typeof notificationSchedules.$inferSelect,
-  Partial<typeof notificationSchedules.$inferInsert>,
   Partial<typeof notificationSchedules.$inferInsert>
 > {
   /**
@@ -48,14 +47,14 @@ export class NotificationScheduleDrizzleMapper implements DrizzleEntityMapper<
   /**
    * Convert a domain NotificationSchedule entity to Drizzle insert input
    */
-  toDrizzleCreate(
+  toDrizzleInsert(
     entity: NotificationSchedule,
   ): Partial<typeof notificationSchedules.$inferInsert> {
     return {
       id: entity.id,
       tripId: entity.tripId ?? "",
       name: entity.name,
-      notificationType: entity.notificationType.toString(),
+      notificationType: entity.notificationType as string,
       content: entity.notificationBody ?? entity.name,
       scheduledFor: entity.startDate,
       createdBy: entity.createdById,
@@ -72,7 +71,7 @@ export class NotificationScheduleDrizzleMapper implements DrizzleEntityMapper<
   ): Partial<typeof notificationSchedules.$inferInsert> {
     return {
       name: entity.name,
-      notificationType: entity.notificationType.toString(),
+      notificationType: entity.notificationType as string,
       content: entity.notificationBody ?? entity.name,
       updatedAt: new Date(),
     };
@@ -84,14 +83,16 @@ export class NotificationScheduleDrizzleMapper implements DrizzleEntityMapper<
   fromPartial(
     record: Partial<typeof notificationSchedules.$inferSelect>,
   ): Partial<NotificationSchedule> {
-    return {
-      ...(record.id && { id: record.id }),
-      ...(record.tripId && { tripId: record.tripId }),
-      ...(record.name && { name: record.name }),
-      ...(record.notificationType && {
-        notificationType: this.mapTypeFromDrizzle(record.notificationType),
-      }),
-    };
+    const partial: Record<string, unknown> = {};
+    if (record.id) partial.id = record.id;
+    if (record.tripId) partial.tripId = record.tripId;
+    if (record.name) partial.name = record.name;
+    if (record.notificationType) {
+      partial.notificationType = this.mapTypeFromDrizzle(
+        record.notificationType,
+      );
+    }
+    return partial as Partial<NotificationSchedule>;
   }
 
   /**

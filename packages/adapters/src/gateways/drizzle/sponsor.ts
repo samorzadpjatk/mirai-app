@@ -20,12 +20,12 @@ export class DrizzleSponsorRepository
     Sponsor,
     typeof sponsors.$inferSelect,
     Partial<typeof sponsors.$inferInsert>,
-    Partial<typeof sponsors.$inferInsert>
+    typeof sponsors
   >
   implements SponsorRepository
 {
   constructor(db: DrizzleDb) {
-    super(db, { table: sponsors }, SponsorDrizzleMapper.instance);
+    super(db, { table: sponsors, mapper: SponsorDrizzleMapper.instance });
   }
 
   /**

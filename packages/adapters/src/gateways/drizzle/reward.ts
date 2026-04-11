@@ -12,10 +12,13 @@ import {
   Reward,
   RewardPurchase,
   type RewardPurchaseStatus,
+  type RewardId,
 } from "@mirai-app/domain";
 import type {
   RewardRepository,
   RewardPurchaseRepository,
+  PaginatedResult,
+  PaginationOptions,
 } from "@mirai-app/use-cases";
 import { BaseDrizzleRepository } from "../base/repository";
 import {
@@ -44,22 +47,76 @@ export class DrizzleRewardRepository
     });
   }
 
-  async findByTripId(tripId: string): Promise<Reward[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.tripId, tripId));
-    return records.map((r) => this.mapper.toDomain(r));
+  async findByTripId(
+    tripId: string,
+    options?: { includeHidden?: boolean } & PaginationOptions,
+  ): Promise<PaginatedResult<Reward>> {
+    const limit = options?.limit ?? 50;
+    const offset = options?.offset ?? 0;
+
+    let whereClause = eq(this.table.tripId, tripId);
+    if (!options?.includeHidden) {
+      whereClause = and(whereClause, eq(this.table.isHidden, false))!;
+    }
+
+    const [records, countResult] = await Promise.all([
+      this.db
+        .select()
+        .from(this.table)
+        .where(whereClause)
+        .limit(limit)
+        .offset(offset),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(this.table)
+        .where(whereClause),
+    ]);
+
+    const total = countResult[0]?.count ?? 0;
+
+    return {
+      items: records.map((r) => this.mapper.toDomain(r)),
+      total,
+      limit,
+      offset,
+      hasMore: offset + records.length < total,
+    };
   }
 
-  async findVisibleByTripId(tripId: string): Promise<Reward[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(
-        and(eq(this.table.tripId, tripId), eq(this.table.isHidden, false)),
-      );
-    return records.map((r) => this.mapper.toDomain(r));
+  async findVisibleByTripId(
+    tripId: string,
+    options?: PaginationOptions,
+  ): Promise<PaginatedResult<Reward>> {
+    const limit = options?.limit ?? 50;
+    const offset = options?.offset ?? 0;
+
+    const whereClause = and(
+      eq(this.table.tripId, tripId),
+      eq(this.table.isHidden, false),
+    )!;
+
+    const [records, countResult] = await Promise.all([
+      this.db
+        .select()
+        .from(this.table)
+        .where(whereClause)
+        .limit(limit)
+        .offset(offset),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(this.table)
+        .where(whereClause),
+    ]);
+
+    const total = countResult[0]?.count ?? 0;
+
+    return {
+      items: records.map((r) => this.mapper.toDomain(r)),
+      total,
+      limit,
+      offset,
+      hasMore: offset + records.length < total,
+    };
   }
 
   async findAvailableByTripId(tripId: string): Promise<Reward[]> {
@@ -120,6 +177,40 @@ export class DrizzleRewardRepository
     return this.mapper.toDomain(record);
   }
 
+  // Alias for interface compatibility
+  async decrementQuantity(id: RewardId, amount: number): Promise<Reward> {
+    return this.decrementAvailableQuantity(id, amount);
+  }
+
+  async incrementQuantity(id: RewardId, amount: number): Promise<Reward> {
+    const [record] = await this.db
+      .update(this.table)
+      .set({
+        availableQuantity: sql`${this.table.availableQuantity} + ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(this.table.id, id))
+      .returning();
+    if (!record) throw new Error(`Reward with id ${id} not found`);
+    return this.mapper.toDomain(record);
+  }
+
+  async hasPurchases(id: RewardId): Promise<boolean> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(rewardPurchases)
+      .where(eq(rewardPurchases.rewardId, id));
+    return (result[0]?.count ?? 0) > 0;
+  }
+
+  async getPurchaseCount(id: RewardId): Promise<number> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(rewardPurchases)
+      .where(eq(rewardPurchases.rewardId, id));
+    return result[0]?.count ?? 0;
+  }
+
   async countByTripId(tripId: string): Promise<number> {
     const result = await this.db
       .select({ count: sql<number>`count(*)::int` })
@@ -150,20 +241,103 @@ export class DrizzleRewardPurchaseRepository
     });
   }
 
-  async findByRewardId(rewardId: string): Promise<RewardPurchase[]> {
-    const records = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.rewardId, rewardId));
-    return records.map((r) => this.mapper.toDomain(r));
+  async findByRewardId(
+    rewardId: RewardId,
+    options?: PaginationOptions,
+  ): Promise<PaginatedResult<RewardPurchase>> {
+    const limit = options?.limit ?? 50;
+    const offset = options?.offset ?? 0;
+
+    const [records, countResult] = await Promise.all([
+      this.db
+        .select()
+        .from(this.table)
+        .where(eq(this.table.rewardId, rewardId))
+        .limit(limit)
+        .offset(offset),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(this.table)
+        .where(eq(this.table.rewardId, rewardId)),
+    ]);
+
+    const total = countResult[0]?.count ?? 0;
+
+    return {
+      items: records.map((r) => this.mapper.toDomain(r)),
+      total,
+      limit,
+      offset,
+      hasMore: offset + records.length < total,
+    };
   }
 
-  async findByGroupId(groupId: string): Promise<RewardPurchase[]> {
-    const records = await this.db
-      .select()
+  async findByGroupId(
+    groupId: string,
+    options?: PaginationOptions,
+  ): Promise<PaginatedResult<RewardPurchase>> {
+    const limit = options?.limit ?? 50;
+    const offset = options?.offset ?? 0;
+
+    const [records, countResult] = await Promise.all([
+      this.db
+        .select()
+        .from(this.table)
+        .where(eq(this.table.groupId, groupId))
+        .limit(limit)
+        .offset(offset),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(this.table)
+        .where(eq(this.table.groupId, groupId)),
+    ]);
+
+    const total = countResult[0]?.count ?? 0;
+
+    return {
+      items: records.map((r) => this.mapper.toDomain(r)),
+      total,
+      limit,
+      offset,
+      hasMore: offset + records.length < total,
+    };
+  }
+
+  async findByTripId(
+    tripId: string,
+    options?: { groupId?: string } & PaginationOptions,
+  ): Promise<PaginatedResult<RewardPurchase>> {
+    const limit = options?.limit ?? 50;
+    const offset = options?.offset ?? 0;
+
+    // Need to join with rewards table to filter by tripId
+    const baseQuery = this.db
+      .select({ purchase: this.table })
       .from(this.table)
-      .where(eq(this.table.groupId, groupId));
-    return records.map((r) => this.mapper.toDomain(r));
+      .innerJoin(rewards, eq(this.table.rewardId, rewards.id))
+      .where(eq(rewards.tripId, tripId));
+
+    const [records, countResult] = await Promise.all([
+      baseQuery
+        .limit(limit)
+        .offset(offset)
+        .then((rows) => rows.map((r) => r.purchase)),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(this.table)
+        .innerJoin(rewards, eq(this.table.rewardId, rewards.id))
+        .where(eq(rewards.tripId, tripId)),
+    ]);
+
+    const total = countResult[0]?.count ?? 0;
+
+    return {
+      items: records.map((r) => this.mapper.toDomain(r)),
+      total,
+      limit,
+      offset,
+      hasMore: offset + records.length < total,
+    };
   }
 
   async findByStatus(status: RewardPurchaseStatus): Promise<RewardPurchase[]> {
@@ -176,17 +350,24 @@ export class DrizzleRewardPurchaseRepository
 
   async updateStatus(
     id: string,
-    status: RewardPurchaseStatus,
-    statusUpdatedById: string,
+    status: string,
+    updatedById: string,
+    collectionMethod?: string | null,
   ): Promise<RewardPurchase> {
+    const updateData: Partial<RewardPurchaseInsert> = {
+      status: status as RewardPurchaseStatus,
+      statusUpdatedById: updatedById,
+      statusUpdatedAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    if (collectionMethod !== undefined) {
+      updateData.collectionMethod = collectionMethod;
+    }
+
     const [record] = await this.db
       .update(this.table)
-      .set({
-        status,
-        statusUpdatedById,
-        statusUpdatedAt: new Date(),
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(this.table.id, id))
       .returning();
     if (!record) throw new Error(`RewardPurchase with id ${id} not found`);
@@ -201,7 +382,7 @@ export class DrizzleRewardPurchaseRepository
     return result[0]?.count ?? 0;
   }
 
-  async countByRewardId(rewardId: string): Promise<number> {
+  async countByRewardId(rewardId: RewardId): Promise<number> {
     const result = await this.db
       .select({ count: sql<number>`count(*)::int` })
       .from(this.table)

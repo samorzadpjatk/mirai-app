@@ -1,6 +1,10 @@
 import type { SubmissionReport, ReporterInfo } from "@mirai-app/domain";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
-import type { submissionReports } from "@mirai-app/frameworks/drizzle/schema/submissionReport";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
+import {
+  submissionReports,
+  type SubmissionReportSelect,
+  type SubmissionReportInsert,
+} from "@mirai-app/frameworks/drizzle/schema/submissionReport";
 
 /**
  * SubmissionReportDrizzleMapper
@@ -10,15 +14,14 @@ import type { submissionReports } from "@mirai-app/frameworks/drizzle/schema/sub
  */
 export class SubmissionReportDrizzleMapper implements DrizzleEntityMapper<
   SubmissionReport,
-  typeof submissionReports.$inferSelect,
-  Partial<typeof submissionReports.$inferInsert>,
-  Partial<typeof submissionReports.$inferInsert>
+  SubmissionReportSelect,
+  SubmissionReportInsert
 > {
   /**
    * Convert a Drizzle SubmissionReport record to a domain entity
    */
   toDomain(
-    record: typeof submissionReports.$inferSelect & {
+    record: SubmissionReportSelect & {
       participantId?: string | null;
       userId?: string | null;
       userFirstName?: string | null;
@@ -54,25 +57,21 @@ export class SubmissionReportDrizzleMapper implements DrizzleEntityMapper<
   /**
    * Convert a domain SubmissionReport entity to Drizzle insert input
    */
-  toDrizzleCreate(
-    entity: SubmissionReport,
-  ): Partial<typeof submissionReports.$inferInsert> {
+  toDrizzleInsert(entity: SubmissionReport): SubmissionReportInsert {
     return {
-      id: entity.id,
+      id: entity.id as string,
       submissionId: entity.submissionId,
       reporterId: entity.reporterId,
-      reason: entity.reason,
+      reason: entity.reason as unknown as string,
       details: entity.details ?? null,
-      createdAt: entity.createdAt,
+      createdAt: (entity as any).createdAt ?? new Date(),
     };
   }
 
   /**
    * Convert a domain SubmissionReport entity to Drizzle update input
    */
-  toDrizzleUpdate(
-    entity: SubmissionReport,
-  ): Partial<typeof submissionReports.$inferInsert> {
+  toDrizzleUpdate(entity: SubmissionReport): Partial<SubmissionReportInsert> {
     return {
       details: entity.details ?? null,
     };
@@ -82,15 +81,15 @@ export class SubmissionReportDrizzleMapper implements DrizzleEntityMapper<
    * Create a partial entity from Drizzle record (for updates)
    */
   fromPartial(
-    record: Partial<typeof submissionReports.$inferSelect>,
+    record: Partial<SubmissionReportSelect>,
   ): Partial<SubmissionReport> {
-    return {
-      ...(record.id && { id: record.id }),
-      ...(record.submissionId && { submissionId: record.submissionId }),
-      ...(record.reporterId && { reporterId: record.reporterId }),
-      ...(record.reason && { reason: record.reason }),
-      ...(record.details !== undefined && { details: record.details }),
-    };
+    const partial: Record<string, unknown> = {};
+    if (record.id) partial.id = record.id;
+    if (record.submissionId) partial.submissionId = record.submissionId;
+    if (record.reporterId) partial.reporterId = record.reporterId;
+    if (record.reason) partial.reason = record.reason;
+    if (record.details !== undefined) partial.details = record.details;
+    return partial as Partial<SubmissionReport>;
   }
 
   static readonly instance = new SubmissionReportDrizzleMapper();

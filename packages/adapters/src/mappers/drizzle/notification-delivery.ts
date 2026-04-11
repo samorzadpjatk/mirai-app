@@ -2,7 +2,7 @@ import type {
   NotificationDelivery,
   DeliveryStatus,
 } from "@mirai-app/use-cases";
-import type { DrizzleEntityMapper } from "../gateways/base/repository";
+import type { DrizzleEntityMapper } from "../../gateways/base/repository";
 import type { notificationDeliveries } from "@mirai-app/frameworks/drizzle/schema/notificationDelivery";
 
 /**
@@ -14,7 +14,7 @@ import type { notificationDeliveries } from "@mirai-app/frameworks/drizzle/schem
 export class NotificationDeliveryDrizzleMapper implements DrizzleEntityMapper<
   NotificationDelivery,
   typeof notificationDeliveries.$inferSelect,
-  Partial<typeof notificationDeliveries.$inferInsert>,
+  typeof notificationDeliveries.$inferInsert,
   Partial<typeof notificationDeliveries.$inferInsert>
 > {
   /**
@@ -64,9 +64,9 @@ export class NotificationDeliveryDrizzleMapper implements DrizzleEntityMapper<
   /**
    * Convert a NotificationDelivery entity to Drizzle insert input
    */
-  toDrizzleCreate(
+  toDrizzleInsert(
     entity: NotificationDelivery,
-  ): Partial<typeof notificationDeliveries.$inferInsert> {
+  ): typeof notificationDeliveries.$inferInsert {
     return {
       id: entity.id,
       notificationId: entity.notificationId,
@@ -98,7 +98,7 @@ export class NotificationDeliveryDrizzleMapper implements DrizzleEntityMapper<
       deliveryCompletedAt: entity.deliveryCompletedAt ?? null,
       errors: entity.errorLog ?? null,
       updatedAt: new Date(),
-    };
+    } as Partial<typeof notificationDeliveries.$inferInsert>;
   }
 
   /**
@@ -107,21 +107,18 @@ export class NotificationDeliveryDrizzleMapper implements DrizzleEntityMapper<
   fromPartial(
     record: Partial<typeof notificationDeliveries.$inferSelect>,
   ): Partial<NotificationDelivery> {
-    return {
-      ...(record.id && { id: record.id }),
-      ...(record.notificationId && { notificationId: record.notificationId }),
-      ...(record.tripId !== undefined && { tripId: record.tripId ?? "" }),
-      ...(record.status && { status: record.status as DeliveryStatus }),
-      ...(record.totalRecipients !== undefined && {
-        totalRecipients: record.totalRecipients,
-      }),
-      ...(record.successCount !== undefined && {
-        successCount: record.successCount,
-      }),
-      ...(record.failureCount !== undefined && {
-        failureCount: record.failureCount,
-      }),
-    };
+    const partial: Record<string, unknown> = {};
+    if (record.id) partial.id = record.id;
+    if (record.notificationId) partial.notificationId = record.notificationId;
+    if (record.tripId !== undefined) partial.tripId = record.tripId ?? "";
+    if (record.status) partial.status = record.status;
+    if (record.totalRecipients !== undefined)
+      partial.totalRecipients = record.totalRecipients;
+    if (record.successCount !== undefined)
+      partial.successCount = record.successCount;
+    if (record.failureCount !== undefined)
+      partial.failureCount = record.failureCount;
+    return partial as Partial<NotificationDelivery>;
   }
 
   static readonly instance = new NotificationDeliveryDrizzleMapper();

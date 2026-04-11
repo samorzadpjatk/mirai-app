@@ -22,17 +22,17 @@ export class DrizzleNotificationDeliveryRepository
   extends BaseDrizzleRepository<
     NotificationDelivery,
     typeof notificationDeliveries.$inferSelect,
-    Partial<typeof notificationDeliveries.$inferInsert>,
+    typeof notificationDeliveries.$inferInsert,
+    typeof notificationDeliveries,
     Partial<typeof notificationDeliveries.$inferInsert>
   >
   implements NotificationDeliveryRepository
 {
   constructor(db: DrizzleDb) {
-    super(
-      db,
-      { table: notificationDeliveries },
-      NotificationDeliveryDrizzleMapper.instance,
-    );
+    super(db, {
+      table: notificationDeliveries,
+      mapper: NotificationDeliveryDrizzleMapper.instance,
+    });
   }
 
   /**
@@ -68,8 +68,8 @@ export class DrizzleNotificationDeliveryRepository
       )
       .where(whereClause)
       .orderBy(desc(notificationDeliveries.deliveryStartedAt))
-      .limit(pagination.limit)
-      .offset(pagination.offset);
+      .limit(pagination.limit ?? 50)
+      .offset(pagination.offset ?? 0);
 
     return results.map((r) =>
       this.mapper.toDomain({
@@ -248,8 +248,8 @@ export class DrizzleNotificationDeliveryRepository
         ),
       )
       .orderBy(desc(notificationDeliveries.deliveryStartedAt))
-      .limit(pagination.limit)
-      .offset(pagination.offset);
+      .limit(pagination.limit ?? 50)
+      .offset(pagination.offset ?? 0);
 
     return results.map((r) =>
       this.mapper.toDomain({

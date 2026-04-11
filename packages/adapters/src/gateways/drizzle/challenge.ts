@@ -110,7 +110,7 @@ export class DrizzleChallengeRepository
     return records.map((r) => this.mapper.toDomain(r));
   }
 
-  async findAll(options?: {
+  override async findAll(options?: {
     limit?: number;
     offset?: number;
   }): Promise<Challenge[]> {

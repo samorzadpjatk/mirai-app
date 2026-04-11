@@ -22,6 +22,9 @@ import {
   type PaginationOptions,
 } from "@mirai-app/domain";
 
+// Re-export types for consumers
+export type { NotificationScheduleOutput };
+
 /**
  * Input validation schemas for notification schedule controller
  */
