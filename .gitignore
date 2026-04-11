@@ -92,3 +92,5 @@ Thumbs.db
 # scan temporary files
 **/fastlane/test_output
 .specs/scratchpad/
+.specs/scratchpad/
+.specs/scratchpad/
