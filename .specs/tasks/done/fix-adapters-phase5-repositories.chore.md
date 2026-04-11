@@ -20,6 +20,7 @@ This task resolves approximately 138 TypeScript type errors across 15 Drizzle OR
 ### Scope
 
 **In Scope**:
+
 - All 17 Drizzle repository files in `packages/adapters/src/gateways/drizzle/`
 - BaseDrizzleRepository base class if needed
 - Type-only fixes (no runtime behavior changes)
@@ -28,6 +29,7 @@ This task resolves approximately 138 TypeScript type errors across 15 Drizzle OR
 - Generic type parameter fixes
 
 **Out of Scope**:
+
 - Runtime behavior changes
 - Test file fixes (covered separately)
 - Mapper implementations (Phase 4)
@@ -35,6 +37,7 @@ This task resolves approximately 138 TypeScript type errors across 15 Drizzle OR
 - Use case or domain layer changes
 
 **User Scenarios**:
+
 1. **Primary Flow**: A developer runs `bun tsc --noEmit` and sees zero type errors in the drizzle repository directory
 2. **Error Flow**: If type errors remain, they should be documented with clear next steps
 3. **Verification Flow**: CI pipeline passes TypeScript compilation for the adapters package
@@ -52,50 +55,50 @@ This task resolves approximately 138 TypeScript type errors across 15 Drizzle OR
 
 ### Functional Requirements
 
-- [ ] **AC1**: All repositories in `packages/adapters/src/gateways/drizzle/` compile without type errors
+- [x] **AC1**: All repositories in `packages/adapters/src/gateways/drizzle/` compile without type errors
   - Given: The adapters package source code
   - When: Running `bun tsc --noEmit` in the adapters package
   - Then: Zero type errors reported in the drizzle directory
 
-- [ ] **AC2**: Each repository correctly implements its corresponding use case port interface
+- [x] **AC2**: Each repository correctly implements its corresponding use case port interface
   - Given: A repository implementation
   - When: Comparing method signatures to the interface
   - Then: All required methods are present with matching signatures
 
-- [ ] **AC3**: BaseDrizzleRepository generic type parameters are correctly specified
+- [x] **AC3**: BaseDrizzleRepository generic type parameters are correctly specified
   - Given: Repository class extending BaseDrizzleRepository
   - When: Inspecting type parameters
   - Then: Parameters use proper Select, Insert, and Table types from schema
 
-- [ ] **AC4**: Method overrides use the `override` keyword where required
+- [x] **AC4**: Method overrides use the `override` keyword where required
   - Given: Methods overriding base class implementations
   - When: Running TypeScript compiler
   - Then: No TS4114 errors (missing override modifier)
 
-- [ ] **AC5**: Query builder patterns follow Drizzle ORM type-safe conventions
+- [x] **AC5**: Query builder patterns follow Drizzle ORM type-safe conventions
   - Given: Custom query methods using Drizzle query builder
   - When: Building and executing queries
   - Then: No query builder type mismatch errors (TS2740, TS2741)
 
 ### Non-Functional Requirements
 
-- [ ] **NF1**: No runtime behavior changes
+- [x] **NF1**: No runtime behavior changes
   - Given: Repository implementations before and after fixes
   - When: Comparing runtime behavior
   - Then: Only type annotations change, no logic modifications
 
-- [ ] **NF2**: All existing tests continue to pass
+- [x] **NF2**: All existing tests continue to pass
   - Given: The adapters package test suite
   - When: Running `bun test` in packages/adapters
   - Then: All tests pass (type fixes should not break tests)
 
 ### Definition of Done
 
-- [ ] All acceptance criteria pass
-- [ ] `bun tsc --noEmit` shows zero errors in drizzle repositories
-- [ ] No new test failures introduced
-- [ ] Code reviewed (self-review acceptable for type-only changes)
-- [ ] Changes documented in commit message
+- [x] All acceptance criteria pass
+- [x] `bun tsc --noEmit` shows zero errors in drizzle repositories
+- [x] No new test failures introduced
+- [x] Code reviewed (self-review acceptable for type-only changes)
+- [x] Changes documented in commit message
 
 ## Architecture Overview
 
@@ -118,6 +121,7 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
 ### Expected Changes
 
 **Files to Modify** (15 files with errors):
+
 - `activity-feed.ts` - 3 errors
 - `challenge-submission.ts` - 8 errors (heavy)
 - `challenge-vote.ts` - 6 errors
@@ -135,19 +139,23 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
 - `trip.ts` - 1 error
 
 **Files Clean** (no changes needed):
+
 - `telemetry.ts` - 0 errors
 - `user.ts` - 0 errors
 
 **Supporting Files** (may need updates):
+
 - `base/repository.ts` - BaseDrizzleRepository if generic type issues
 - `index.ts` - Barrel exports if type re-exports needed
 
 ### Integration Points
 
 **Upstream** (implements interfaces from):
+
 - `@mirai-app/use-cases` - Repository port interfaces
 
 **Downstream** (uses):
+
 - `@mirai-app/frameworks/drizzle/schema` - Table definitions and types
 - `@mirai-app/frameworks/drizzle/client` - DrizzleDb type
 - `@mirai-app/adapters/mappers/drizzle/*` - Entity mappers (Phase 4)
@@ -165,13 +173,13 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
 
 ### Overview
 
-| Phase | Description | Estimated Effort |
-|-------|-------------|------------------|
-| 1 | Fix simple files (1 error each) | 30 min |
-| 2 | Fix easy files (2-3 errors) | 1 hour |
-| 3 | Fix medium files (4-6 errors) | 2 hours |
-| 4 | Fix heavy files (7+ errors) | 2 hours |
-| 5 | Final verification | 30 min |
+| Phase | Description                     | Estimated Effort |
+| ----- | ------------------------------- | ---------------- |
+| 1     | Fix simple files (1 error each) | 30 min           |
+| 2     | Fix easy files (2-3 errors)     | 1 hour           |
+| 3     | Fix medium files (4-6 errors)   | 2 hours          |
+| 4     | Fix heavy files (7+ errors)     | 2 hours          |
+| 5     | Final verification              | 30 min           |
 
 **Total**: ~6 hours estimated
 **Risk Level**: Low - type-only changes with clear error messages
@@ -184,19 +192,20 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
 **Blockers**: None (these can be done in parallel)
 
 **Subtasks**:
-- [ ] **Step 1.1**: Fix challenge.ts
+
+- [x] **Step 1.1**: Fix challenge.ts
   - Add `override` modifier to `findAll` method
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 1.2**: Fix location.ts
+- [x] **Step 1.2**: Fix location.ts
   - Add `override` modifier to `create` method
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 1.3**: Fix notification.ts
+- [x] **Step 1.3**: Fix notification.ts
   - Fix interface implementation (NotificationRepository)
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 1.4**: Fix trip.ts
+- [x] **Step 1.4**: Fix trip.ts
   - Fix status property access on table type
   - Success criteria: File compiles with 0 errors
 
@@ -209,22 +218,23 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
 **Blockers**: None (can be done in parallel after Phase 1)
 
 **Subtasks**:
-- [ ] **Step 2.1**: Fix group.ts
+
+- [x] **Step 2.1**: Fix group.ts
   - Fix GroupStatus import type vs value usage
   - Add `override` modifier
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 2.2**: Fix event.ts
+- [x] **Step 2.2**: Fix event.ts
   - Add `override` modifier to `create`
   - Fix query builder type issues
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 2.3**: Fix activity-feed.ts
+- [x] **Step 2.3**: Fix activity-feed.ts
   - Fix method signature mismatches (findByTripId, addReaction)
   - Fix Result type property access
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 2.4**: Fix sponsor.ts
+- [x] **Step 2.4**: Fix sponsor.ts
   - Fix type constraint issues
   - Fix constructor argument count
   - Success criteria: File compiles with 0 errors
@@ -238,32 +248,33 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
 **Blockers**: None (can be done in parallel after Phase 2)
 
 **Subtasks**:
-- [ ] **Step 3.1**: Fix reward.ts
+
+- [x] **Step 3.1**: Fix reward.ts
   - Fix 4 method signature mismatches
   - Ensure return types match interface exactly
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 3.2**: Fix challenge-vote.ts
+- [x] **Step 3.2**: Fix challenge-vote.ts
   - Fix type constraint issues with Partial
   - Fix constructor argument count
   - Fix VotePosition conversion error
   - Fix query overload issues
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 3.3**: Fix coin-transaction.ts
+- [x] **Step 3.3**: Fix coin-transaction.ts
   - Fix type constraint issues
   - Fix constructor argument count
   - Fix number | undefined parameter issues
   - Fix method signature mismatch and add override
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 3.4**: Fix notification-delivery.ts
+- [x] **Step 3.4**: Fix notification-delivery.ts
   - Fix type constraint issues
   - Fix constructor argument count
   - Fix number | undefined parameter issues (4 locations)
   - Success criteria: File compiles with 0 errors
 
-- [ ] **Step 3.5**: Fix notification-schedule.ts
+- [x] **Step 3.5**: Fix notification-schedule.ts
   - Fix missing export (NotificationScheduleRepository)
   - Fix type constraint issues
   - Fix constructor argument count
@@ -280,7 +291,8 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
 **Blockers**: None (but these should be done after simpler files)
 
 **Subtasks**:
-- [ ] **Step 4.1**: Fix challenge-submission.ts
+
+- [x] **Step 4.1**: Fix challenge-submission.ts
   - Add missing exports to use-cases package
   - Fix type constraint issues (Partial<Shape>)
   - Fix constructor argument count
@@ -288,7 +300,7 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
   - Success criteria: File compiles with 0 errors
   - **Risk**: HIGH - May require changes to other packages
 
-- [ ] **Step 4.2**: Fix submission-report.ts
+- [x] **Step 4.2**: Fix submission-report.ts
   - Fix type constraint issues
   - Fix constructor argument count
   - Add missing override modifiers (2 methods)
@@ -305,17 +317,18 @@ This is a **mechanical refactoring** task focused on type corrections. The appro
 **Blockers**: Phases 1-4 must be complete
 
 **Subtasks**:
-- [ ] **Step 5.1**: Run full type check
+
+- [x] **Step 5.1**: Run full type check
   - Run `bun tsc --noEmit` in adapters package
   - Verify zero errors in drizzle directory
   - Success criteria: Zero type errors
 
-- [ ] **Step 5.2**: Run test suite
+- [x] **Step 5.2**: Run test suite
   - Run `bun test` in packages/adapters
   - Verify no test failures
   - Success criteria: All tests pass
 
-- [ ] **Step 5.3**: Check for regressions
+- [x] **Step 5.3**: Check for regressions
   - Review any new errors introduced
   - Verify in-memory repositories still work
   - Success criteria: No new issues
@@ -333,18 +346,21 @@ Phase 2 (Easy) ─────────┘
 ```
 
 **Group 1 - Phase 1 (Parallel)**:
+
 - Step 1.1: Fix challenge.ts [Agent: sonnet]
 - Step 1.2: Fix location.ts [Agent: sonnet]
 - Step 1.3: Fix notification.ts [Agent: sonnet]
 - Step 1.4: Fix trip.ts [Agent: sonnet]
 
 **Group 2 - Phase 2 (Parallel)**:
+
 - Step 2.1: Fix group.ts [Agent: sonnet]
 - Step 2.2: Fix event.ts [Agent: sonnet]
 - Step 2.3: Fix activity-feed.ts [Agent: sonnet]
 - Step 2.4: Fix sponsor.ts [Agent: sonnet]
 
 **Group 3 - Phase 3 (Parallel)**:
+
 - Step 3.1: Fix reward.ts [Agent: sonnet]
 - Step 3.2: Fix challenge-vote.ts [Agent: sonnet]
 - Step 3.3: Fix coin-transaction.ts [Agent: sonnet]
@@ -352,27 +368,30 @@ Phase 2 (Easy) ─────────┘
 - Step 3.5: Fix notification-schedule.ts [Agent: opus]
 
 **Group 4 - Phase 4 (Sequential recommended)**:
+
 - Step 4.1: Fix challenge-submission.ts [Agent: opus] - HIGH PRIORITY
 - Step 4.2: Fix submission-report.ts [Agent: opus]
 
 **Group 5 - Phase 5 (Sequential)**:
+
 - Step 5.1: Run full type check [Agent: sonnet]
 - Step 5.2: Run test suite [Agent: sonnet]
 - Step 5.3: Check for regressions [Agent: sonnet]
 
 ### Agent Assignment Guide
 
-| Complexity | Error Count | Recommended Agent |
-|------------|-------------|-------------------|
-| Simple | 1 | sonnet |
-| Easy | 2-3 | sonnet |
-| Medium | 4-6 | sonnet |
-| Heavy | 7+ | opus |
-| Verification | - | sonnet |
+| Complexity   | Error Count | Recommended Agent |
+| ------------ | ----------- | ----------------- |
+| Simple       | 1           | sonnet            |
+| Easy         | 2-3         | sonnet            |
+| Medium       | 4-6         | sonnet            |
+| Heavy        | 7+          | opus              |
+| Verification | -           | sonnet            |
 
 ### Critical Path
 
 The critical path is:
+
 1. Phase 1 (Simple files) - 30 min
 2. Phase 3 (Medium files) - 2 hours
 3. Phase 4 (Heavy files) - 2 hours
@@ -382,23 +401,23 @@ The critical path is:
 
 ### Risks and Mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
-| Missing type exports from other packages | Medium | High | Add exports to domain/use-cases as needed |
-| Query builder pattern changes require refactoring | Low | Medium | Consult Drizzle documentation, use type assertions |
-| Circular dependencies introduced | Low | High | Review imports carefully, run dependency-cruiser |
-| Test failures from type changes | Low | Medium | Run tests after each file, revert if needed |
+| Risk                                              | Likelihood | Impact | Mitigation                                         |
+| ------------------------------------------------- | ---------- | ------ | -------------------------------------------------- |
+| Missing type exports from other packages          | Medium     | High   | Add exports to domain/use-cases as needed          |
+| Query builder pattern changes require refactoring | Low        | Medium | Consult Drizzle documentation, use type assertions |
+| Circular dependencies introduced                  | Low        | High   | Review imports carefully, run dependency-cruiser   |
+| Test failures from type changes                   | Low        | Medium | Run tests after each file, revert if needed        |
 
 ## Verification
 
 ### Verification Summary
 
-| Step | Level | Type | Threshold |
-|------|-------|------|-----------|
-| All phases | Per-Step | Type Check | Zero errors per file |
-| Phase 5.1 | Panel | Full Type Check | 4.5/5.0 |
-| Phase 5.2 | Panel | Test Suite | 4.5/5.0 |
-| Phase 5.3 | Single | Regression Check | 4.0/5.0 |
+| Step       | Level    | Type             | Threshold            |
+| ---------- | -------- | ---------------- | -------------------- |
+| All phases | Per-Step | Type Check       | Zero errors per file |
+| Phase 5.1  | Panel    | Full Type Check  | 4.5/5.0              |
+| Phase 5.2  | Panel    | Test Suite       | 4.5/5.0              |
+| Phase 5.3  | Single   | Regression Check | 4.0/5.0              |
 
 ### Phase 1-4: Per-File Verification
 
@@ -407,6 +426,7 @@ Each implementation step should be verified with:
 **Verification Level**: Per-Item (each file)
 
 **Rubric**:
+
 1. File compiles without errors (weight: 0.50)
    - `bun tsc --noEmit` shows 0 errors for this file
    - 1=Errors remain, 5=Clean compile
@@ -426,6 +446,7 @@ Each implementation step should be verified with:
 **Verification Level**: Panel (3 judges)
 
 **Rubric**:
+
 1. Zero type errors (weight: 0.40)
    - `bun tsc --noEmit` shows 0 errors in drizzle directory
    - 1=Errors remain, 3=Some errors, 5=Zero errors
@@ -445,6 +466,7 @@ Each implementation step should be verified with:
 **Verification Level**: Panel (3 judges)
 
 **Rubric**:
+
 1. All tests pass (weight: 0.50)
    - `bun test` in adapters package passes
    - 1=Tests fail, 3=Some pass, 5=All pass
@@ -464,6 +486,7 @@ Each implementation step should be verified with:
 **Verification Level**: Single
 
 **Rubric**:
+
 1. In-memory repositories unaffected (weight: 0.40)
    - In-memory gateway implementations still work
    - 1=Broken, 3=Partial, 5=Fully functional
@@ -493,29 +516,32 @@ When implementing this task:
 ### Common Fix Patterns
 
 1. **Add `override` modifier**:
+
    ```typescript
    // Before
    async findAll(options?: { limit?: number }): Promise<Entity[]> { }
-   
+
    // After
    override async findAll(options?: { limit?: number }): Promise<Entity[]> { }
    ```
 
 2. **Fix generic type parameters**:
+
    ```typescript
    // Before (wrong)
    class Repo extends BaseDrizzleRepository<Entity, Select, Partial<Shape>, ...>
-   
+
    // After (correct)
    class Repo extends BaseDrizzleRepository<Entity, EntitySelect, EntityInsert, typeof table>
    ```
 
 3. **Fix query builder patterns**:
+
    ```typescript
    // Before
    let query = this.db.select().from(this.table);
    if (limit) query = query.limit(limit) as typeof query;
-   
+
    // After
    const records = await this.db
      .select()
