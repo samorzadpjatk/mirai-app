@@ -40,6 +40,42 @@ export {
   isValidDateRange,
 } from "./utils/validation";
 
+// NEW: Domain error types (created in Phase 1)
+export {
+  DomainError,
+  ValidationError,
+  StateTransitionError,
+  NotFoundError,
+} from "./errors/domain-errors";
+
+// NEW: Entity validation framework (created in Phase 1)
+export {
+  validate,
+  type StringRule,
+  type NumberRule,
+  type ArrayRule,
+} from "./utils/entity-validation";
+
+// NEW: State machine factory (created in Phase 1)
+export {
+  createStateMachine,
+  type StateMachineConfig,
+  type StateMachine,
+} from "./utils/state-machine";
+
+// NEW: Immutable update helpers (created in Phase 1)
+export {
+  timestamps,
+  withUpdatedAt,
+  updateEntity,
+  type Timestamps,
+  type TimestampOptions,
+  type DomainEntity,
+} from "./utils/immutable";
+
+// NEW: Entity helper functions (created in Phase 1)
+export { entityHelpers } from "./utils/entity-helpers";
+
 // Entities
 export * from "./entities/User";
 export * from "./entities/Challenge";
@@ -49,7 +85,8 @@ export * from "./entities/Group";
 export * from "./entities/Trip";
 export * from "./entities/ActivityFeed";
 export * from "./entities/ChallengeSubmission";
-export * from "./entities/Reward";
+// Reward - exclude RewardPurchaseStatus (exported from RewardPurchase instead)
+export { Reward, REWARD_PURCHASE_STATUSES } from "./entities/Reward";
 export * from "./entities/Location";
 export * from "./entities/ChallengeVote";
 export * from "./entities/Sponsor";
@@ -58,7 +95,7 @@ export * from "./entities/SubmissionReport";
 // Trip Management Entities
 export * from "./entities/TripResource";
 export * from "./entities/TripInsurance";
-export * from "./entities/TripInsuranceStep";
+// Note: TripInsuranceStep is now a nested interface within TripInsurance
 export * from "./entities/TripParticipant";
 export * from "./entities/TripSponsor";
 
@@ -69,20 +106,18 @@ export * from "./entities/UserEvent";
 // Group Management Entity
 export * from "./entities/GroupJoinRequest";
 
-// Activity Feed Entities
+// Activity Feed Entities (updated - child entities now nested)
 export * from "./entities/ActivityReaction";
-export * from "./entities/SubmissionActivity";
-export * from "./entities/ChallengeActivity";
-export * from "./entities/RankChangeActivity";
-export * from "./entities/UserPost";
+// Note: ChallengeActivity, RankChangeActivity, SubmissionActivity, UserPost
+// are now nested interfaces within ActivityFeed
 
 // Economy/Rewards Entities
 export * from "./entities/CoinTransaction";
 export * from "./entities/RewardPurchase";
 
-// Notification Entities
-export * from "./entities/NotificationScheduleExecution";
-export * from "./entities/NotificationPush";
+// Notification Entities (updated - child entities now nested)
+// Note: NotificationScheduleExecution removed (becomes simple execution log)
+// Note: NotificationPush is now a nested interface within NotificationDelivery
 export * from "./entities/NotificationDelivery";
 export * from "./entities/PushSubscription";
 
@@ -91,6 +126,16 @@ export * from "./entities/LocationSharingRequest";
 
 // System Entity
 export * from "./entities/UserAgent";
+
+// Nested Interfaces (re-exported from parent entities)
+export type {
+  ChallengeMetadata,
+  RankChangeMetadata,
+  SubmissionMetadata,
+  PostMetadata,
+} from "./entities/ActivityFeed";
+export type { InsuranceStep } from "./entities/TripInsurance";
+export type { PushDeliveryRecord } from "./entities/NotificationDelivery";
 
 // Value Objects
 export * from "./value-objects/UserId";
