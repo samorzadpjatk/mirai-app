@@ -78,6 +78,42 @@ export class UploadError extends Error {
 }
 
 /**
+ * Error thrown when download fails
+ */
+export class DownloadError extends Error {
+  readonly _tag = "DownloadError" as const;
+  readonly code = "DOWNLOAD_ERROR" as const;
+  readonly bucket: string;
+  readonly path: string;
+  override readonly message: string;
+
+  constructor(props: { message: string; bucket: string; path: string }) {
+    super(props.message);
+    this.message = props.message;
+    this.bucket = props.bucket;
+    this.path = props.path;
+  }
+}
+
+/**
+ * Error thrown when delete fails
+ */
+export class DeleteError extends Error {
+  readonly _tag = "DeleteError" as const;
+  readonly code = "DELETE_ERROR" as const;
+  readonly bucket: string;
+  readonly paths: string[];
+  override readonly message: string;
+
+  constructor(props: { message: string; bucket: string; paths: string[] }) {
+    super(props.message);
+    this.message = props.message;
+    this.bucket = props.bucket;
+    this.paths = props.paths;
+  }
+}
+
+/**
  * Error thrown when bucket does not exist or is not accessible
  */
 export class BucketNotFoundError extends Error {
@@ -143,6 +179,34 @@ export interface SignedUrlInfo {
   expiresInSeconds: number;
 }
 
+/**
+ * Storage configuration options
+ */
+export interface StorageConfig {
+  /** Default bucket name */
+  defaultBucket: string;
+  /** Region for storage */
+  region?: string;
+  /** Endpoint URL (for S3-compatible services) */
+  endpoint?: string;
+  /** Maximum file size in bytes */
+  maxFileSize?: number;
+  /** Allowed MIME types */
+  allowedContentTypes?: string[];
+}
+
+/**
+ * Result of a download operation
+ */
+export interface DownloadResult {
+  /** File data */
+  data: Buffer | Blob;
+  /** File metadata */
+  metadata: FileMetadata;
+  /** Content type */
+  contentType?: string;
+}
+
 // =============================================================================
 // Port Interface
 // =============================================================================
@@ -194,7 +258,7 @@ export interface StoragePort {
    *
    * @param bucket - The bucket/container name
    * @param path - The file path within the bucket
-   * @returns Promise<Result<Buffer | Blob, StorageError>>
+   * @returns Promise<Result<DownloadResult, StorageError | FileNotFoundError>>
    *
    * @example
    * ```typescript
@@ -204,7 +268,7 @@ export interface StoragePort {
    * );
    *
    * if (isOk(result)) {
-   *   const fileData = result.value;
+   *   const fileData = result.value.data;
    *   // Process file data
    * } else if (result.error instanceof FileNotFoundError) {
    *   console.error("File not found");
@@ -216,14 +280,14 @@ export interface StoragePort {
   download(
     bucket: string,
     path: string,
-  ): Promise<Result<Buffer | Blob, StorageError | FileNotFoundError>>;
+  ): Promise<Result<DownloadResult, StorageError | FileNotFoundError | DownloadError>>;
 
   /**
    * Delete one or more files from storage
    *
    * @param bucket - The bucket/container name
    * @param paths - Array of file paths to delete
-   * @returns Promise<Result<void, StorageError>>
+   * @returns Promise<Result<void, StorageError | DeleteError>>
    *
    * @example
    * ```typescript
@@ -242,7 +306,7 @@ export interface StoragePort {
   delete(
     bucket: string,
     paths: string[],
-  ): Promise<Result<void, StorageError | FileNotFoundError>>;
+  ): Promise<Result<void, StorageError | DeleteError>>;
 
   /**
    * Create a signed URL for temporary access to a file

@@ -64,7 +64,7 @@ export class AddSharingUserUseCase {
       });
 
       if (createResult.kind === "err") {
-        return err(createResult.error);
+        return err(createResult.error.message);
       }
 
       const saved = await this.locationRepository.create(createResult.value);
@@ -79,7 +79,7 @@ export class AddSharingUserUseCase {
     });
 
     if (addResult.kind === "err") {
-      return err(addResult.error);
+      return err(addResult.error.message);
     }
 
     // Persist changes

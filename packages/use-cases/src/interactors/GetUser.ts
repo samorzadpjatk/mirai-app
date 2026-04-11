@@ -1,6 +1,7 @@
 import type { UserRepository } from "../ports/UserRepository";
 import type { User } from "@mirai-app/domain";
-import { AppError } from "../errors";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for GetUser use case
@@ -45,26 +46,19 @@ export interface GetUserOutput {
 export class GetUserUseCase {
   constructor(private userRepository: UserRepository) {}
 
-  async execute(input: GetUserInput): Promise<GetUserOutput> {
+  async execute(input: GetUserInput): Promise<Result<GetUserOutput, string>> {
     let user: User | null;
     try {
       user = await this.userRepository.findById(input.userId);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "GetUser.findById",
-        message: "Failed to load user",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to load user");
     }
 
     if (!user) {
-      throw AppError.notFound({
-        entity: "User",
-        message: "User not found",
-      });
+      return err("User not found");
     }
 
-    return this.toOutput(user);
+    return ok(this.toOutput(user));
   }
 
   private toOutput(user: User): GetUserOutput {

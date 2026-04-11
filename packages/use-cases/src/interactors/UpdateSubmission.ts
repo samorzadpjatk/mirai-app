@@ -83,7 +83,7 @@ export class UpdateSubmissionUseCase {
         });
 
         if (approveResult.kind === "err") {
-          return err(approveResult.error);
+          return err(approveResult.error.message);
         }
         updatedSubmission = approveResult.value;
       } else if (input.reviewAction === "REJECT") {
@@ -93,7 +93,7 @@ export class UpdateSubmissionUseCase {
         });
 
         if (rejectResult.kind === "err") {
-          return err(rejectResult.error);
+          return err(rejectResult.error.message);
         }
         updatedSubmission = rejectResult.value;
       } else {
@@ -112,7 +112,7 @@ export class UpdateSubmissionUseCase {
       });
 
       if (updateResult.kind === "err") {
-        return err(updateResult.error);
+        return err(updateResult.error.message);
       }
       updatedSubmission = updateResult.value;
     }

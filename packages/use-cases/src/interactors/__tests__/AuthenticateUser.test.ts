@@ -102,10 +102,11 @@ function createMockAuthContext(props?: {
       return this.role === role;
     },
     hasRoleAtLeast: function (role: UserRole) {
-      const roleHierarchy = {
+      const roleHierarchy: Record<UserRole, number> = {
         [UserRole.ADMIN]: 3,
         [UserRole.MODERATOR]: 2,
         [UserRole.USER]: 1,
+        [UserRole.SERVICE]: 3,
       };
       return roleHierarchy[this.role] >= roleHierarchy[role];
     },

@@ -79,7 +79,7 @@ export class GetDeliveryByNotificationIdUseCase {
           ...(delivery.errorLog !== undefined && {
             errorLog: delivery.errorLog,
           }),
-          notification: delivery.notification,
+          notification: delivery.notification ?? null,
         },
       });
     } catch (error) {

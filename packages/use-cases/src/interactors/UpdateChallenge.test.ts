@@ -1,7 +1,7 @@
 import { describe, it, expect, mock } from "bun:test";
 import {
   UpdateChallengeUseCase,
-  UpdateChallengeInput,
+  type UpdateChallengeInput,
 } from "./UpdateChallenge";
 import {
   Challenge,
@@ -352,7 +352,7 @@ describe("[UNIT] UpdateChallengeUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error.message).toContain("name");
+        expect(result.error).toContain("name");
       }
       expect(mockRepo.update).not.toHaveBeenCalled();
     });

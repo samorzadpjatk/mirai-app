@@ -64,7 +64,7 @@ export class CreateLocationUseCase {
       });
 
       if (updateResult.kind === "err") {
-        return err(updateResult.error);
+        return err(updateResult.error.message);
       }
 
       const saved = await this.locationRepository.save(updateResult.value);
@@ -89,7 +89,7 @@ export class CreateLocationUseCase {
     });
 
     if (locationResult.kind === "err") {
-      return err(locationResult.error);
+      return err(locationResult.error.message);
     }
 
     // Persist location

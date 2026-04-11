@@ -394,10 +394,11 @@ type UseCaseClass =
   | typeof GetNotificationScheduleExecutionHistoryUseCase;
 
 // Module definition type
-export interface UseCaseModuleDef {
+interface UseCaseModuleDef {
   name: "UseCaseModule";
-  providers: Record<UseCaseToken, UseCaseClass>;
-  exports: UseCaseToken[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  providers: Record<string, any>;
+  exports: string[];
 }
 
 // Factory helper
@@ -407,8 +408,8 @@ const scoped = <T>(factory: (cradle: Cradle) => T) => ({
 });
 
 // Module export
-export const UseCaseModule: StaticModule<UseCaseModuleDef> =
-  createStaticModule<UseCaseModuleDef>({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const UseCaseModule: StaticModule<any> = createStaticModule({
     name: "UseCaseModule",
     providers: {
       [USE_CASE_TOKENS.GetUserUseCase]: scoped(
@@ -559,7 +560,7 @@ export const UseCaseModule: StaticModule<UseCaseModuleDef> =
         (c) => new GetRewardUseCase(c.rewardRepository),
       ),
       [USE_CASE_TOKENS.CreateRewardUseCase]: scoped(
-        (c) => new CreateRewardUseCase(c.rewardRepository),
+        (c) => new CreateRewardUseCase(c.rewardRepository, c.tripAccessChecker),
       ),
       [USE_CASE_TOKENS.UpdateRewardUseCase]: scoped(
         (c) => new UpdateRewardUseCase(c.rewardRepository),
@@ -585,13 +586,29 @@ export const UseCaseModule: StaticModule<UseCaseModuleDef> =
           ),
       ),
       [USE_CASE_TOKENS.UpdatePurchaseStatusUseCase]: scoped(
-        (c) => new UpdatePurchaseStatusUseCase(c.rewardPurchaseRepository),
+        (c) =>
+          new UpdatePurchaseStatusUseCase(
+            c.rewardRepository,
+            c.rewardPurchaseRepository,
+            c.groupCoinsService,
+            c.tripAccessChecker,
+          ),
       ),
       [USE_CASE_TOKENS.UpdateMyPurchaseStatusUseCase]: scoped(
-        (c) => new UpdateMyPurchaseStatusUseCase(c.rewardPurchaseRepository),
+        (c) =>
+          new UpdateMyPurchaseStatusUseCase(
+            c.rewardRepository,
+            c.rewardPurchaseRepository,
+            c.groupCoinsService,
+            c.tripAccessChecker,
+          ),
       ),
       [USE_CASE_TOKENS.GetPurchaseHistoryUseCase]: scoped(
-        (c) => new GetPurchaseHistoryUseCase(c.rewardPurchaseRepository),
+        (c) =>
+          new GetPurchaseHistoryUseCase(
+            c.rewardPurchaseRepository,
+            c.tripAccessChecker,
+          ),
       ),
       [USE_CASE_TOKENS.GetCoinStatisticsUseCase]: scoped(
         (c) => new GetCoinStatisticsUseCase(c.coinTransactionRepository),

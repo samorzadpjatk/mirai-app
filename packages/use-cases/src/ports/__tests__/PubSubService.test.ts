@@ -10,8 +10,8 @@
  */
 
 import { describe, it, expect } from "bun:test";
+import type { PubSubService } from "../PubSubService";
 import {
-  PubSubService,
   PubSubError,
   SubscriptionFailedError,
   PublishFailedError,

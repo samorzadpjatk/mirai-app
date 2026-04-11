@@ -36,8 +36,8 @@ export interface GetSubmissionByChallengeAndGroupOutput {
   group: {
     id: string;
     name: string;
-    description: string | null;
     image: string | null;
+    coins: number;
   } | null;
   reviewedBy: {
     id: string;
@@ -94,8 +94,8 @@ export class GetSubmissionByChallengeAndGroupUseCase {
     group: {
       id: string;
       name: string;
-      description: string | null;
       image: string | null;
+      coins: number;
     } | null;
     reviewedBy: {
       id: string;

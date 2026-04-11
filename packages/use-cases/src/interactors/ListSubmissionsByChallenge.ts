@@ -40,8 +40,8 @@ export interface ListSubmissionsByChallengeOutput {
     group: {
       id: string;
       name: string;
-      description: string | null;
       image: string | null;
+      coins: number;
     } | null;
     reviewedBy: {
       id: string;

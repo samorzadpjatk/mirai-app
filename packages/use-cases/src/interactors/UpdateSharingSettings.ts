@@ -57,7 +57,7 @@ export class UpdateSharingSettingsUseCase {
       });
 
       if (createResult.kind === "err") {
-        return err(createResult.error);
+        return err(createResult.error.message);
       }
 
       location = createResult.value;
@@ -73,7 +73,7 @@ export class UpdateSharingSettingsUseCase {
       if (input.usersToShareWith !== undefined) {
         const usersResult = location.updateSharingUsers(input.usersToShareWith);
         if (usersResult.kind === "err") {
-          return err(usersResult.error);
+          return err(usersResult.error.message);
         }
         location = usersResult.value;
       }

@@ -1,6 +1,7 @@
 import { User, UserRole } from "@mirai-app/domain";
 import type { UserRepository } from "../ports/UserRepository";
-import { AppError } from "../errors";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for CreateUser use case
@@ -47,24 +48,17 @@ export interface CreateUserOutput {
 export class CreateUserUseCase {
   constructor(private userRepository: UserRepository) {}
 
-  async execute(input: CreateUserInput): Promise<CreateUserOutput> {
+  async execute(input: CreateUserInput): Promise<Result<CreateUserOutput, string>> {
     // Check if user already exists
     let exists: boolean;
     try {
       exists = await this.userRepository.existsByAuthUserId(input.authUserId);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "CreateUser.existsByAuthUserId",
-        message: "Failed to check user uniqueness",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to check user existence");
     }
 
     if (exists) {
-      throw AppError.conflict({
-        entity: "User",
-        message: "User already exists with this authUserId",
-      });
+      return err("User with this auth ID already exists");
     }
 
     // Create domain entity
@@ -76,25 +70,18 @@ export class CreateUserUseCase {
     });
 
     if (userResult.kind === "err") {
-      throw AppError.validation({
-        field: "user",
-        message: userResult.error,
-      });
+      return err("User name is required");
     }
 
     // Save to repository
     let saved: User;
     try {
       saved = await this.userRepository.create(userResult.value);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "CreateUser.create",
-        message: "Failed to create user",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to create user");
     }
 
-    return this.toOutput(saved);
+    return ok(this.toOutput(saved));
   }
 
   private toOutput(user: User): CreateUserOutput {

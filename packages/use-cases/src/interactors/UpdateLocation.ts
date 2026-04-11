@@ -75,7 +75,7 @@ export class UpdateLocationUseCase {
       });
 
       if (createResult.kind === "err") {
-        return err(createResult.error);
+        return err(createResult.error.message);
       }
 
       const saved = await this.locationRepository.create(createResult.value);
@@ -104,7 +104,7 @@ export class UpdateLocationUseCase {
       });
 
       if (coordResult.kind === "err") {
-        return err(coordResult.error);
+        return err(coordResult.error.message);
       }
 
       updatedLocation = coordResult.value;

@@ -71,7 +71,7 @@ export class CreateSubmissionUseCase {
     });
 
     if (submissionResult.kind === "err") {
-      return err(submissionResult.error);
+      return err(submissionResult.error.message);
     }
 
     // Persist submission

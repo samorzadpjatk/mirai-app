@@ -83,7 +83,7 @@ export class AddReactionUseCase {
       });
 
       if (reactionResult.kind === "err") {
-        return err(reactionResult.error);
+        return err(reactionResult.error.message);
       }
 
       await this.activityFeedRepository.addReaction(reactionResult.value);
@@ -106,7 +106,7 @@ export class AddReactionUseCase {
       reactionsSummary: {
         total: counts.total,
         counts: counts.counts,
-        myReactions: userReactions.map((r) => r.reactionType),
+        myReactions: userReactions.map((r) => r.reactionType) as ReactionType[],
       },
     });
   }

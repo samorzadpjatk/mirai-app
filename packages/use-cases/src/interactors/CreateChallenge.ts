@@ -4,8 +4,9 @@ import {
   SubmissionType,
   ScoringCategory,
 } from "@mirai-app/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
-import { AppError } from "../errors";
 
 /**
  * Input for CreateChallenge use case
@@ -69,7 +70,7 @@ export interface CreateChallengeOutput {
 export class CreateChallengeUseCase {
   constructor(private challengeRepository: ChallengeRepository) {}
 
-  async execute(input: CreateChallengeInput): Promise<CreateChallengeOutput> {
+  async execute(input: CreateChallengeInput): Promise<Result<CreateChallengeOutput, string>> {
     // Create domain entity
     const challengeResult = Challenge.create({
       tripId: input.tripId,
@@ -117,25 +118,18 @@ export class CreateChallengeUseCase {
     });
 
     if (challengeResult.kind === "err") {
-      throw AppError.validation({
-        field: "challenge",
-        message: challengeResult.error,
-      });
+      return err(challengeResult.error.message);
     }
 
     // Save to repository
     let saved: import("@mirai-app/domain").Challenge;
     try {
       saved = await this.challengeRepository.create(challengeResult.value);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "CreateChallenge.create",
-        message: "Failed to create challenge",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to create challenge");
     }
 
-    return this.toOutput(saved);
+    return ok(this.toOutput(saved));
   }
 
   private toOutput(

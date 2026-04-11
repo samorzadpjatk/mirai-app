@@ -1,6 +1,7 @@
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
 import type { Challenge } from "@mirai-app/domain";
-import { AppError } from "../errors";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for GetChallenge use case
@@ -58,27 +59,20 @@ export interface GetChallengeOutput {
 export class GetChallengeUseCase {
   constructor(private challengeRepository: ChallengeRepository) {}
 
-  async execute(input: GetChallengeInput): Promise<GetChallengeOutput> {
+  async execute(input: GetChallengeInput): Promise<Result<GetChallengeOutput, string>> {
     // Load challenge
     let challenge: Challenge | null;
     try {
       challenge = await this.challengeRepository.findById(input.challengeId);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "GetChallenge.findById",
-        message: "Failed to load challenge",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to load challenge");
     }
 
     if (!challenge) {
-      throw AppError.notFound({
-        entity: "Challenge",
-        message: "Challenge not found",
-      });
+      return err("Challenge not found");
     }
 
-    return this.toOutput(challenge);
+    return ok(this.toOutput(challenge));
   }
 
   private toOutput(challenge: Challenge): GetChallengeOutput {

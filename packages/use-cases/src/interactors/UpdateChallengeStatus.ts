@@ -53,22 +53,22 @@ export class UpdateChallengeStatusUseCase {
     }
 
     // Apply status update
-    try {
-      const updatedChallenge = challenge.updateStatus(input.newStatus);
+    const updateResult = challenge.updateStatus(input.newStatus);
 
-      // Persist changes
-      const saved = await this.challengeRepository.update(updatedChallenge);
-
-      return ok({
-        id: saved.id,
-        tripId: saved.tripId,
-        name: saved.name,
-        previousStatus,
-        newStatus: saved.status,
-        updatedAt: saved.updatedAt,
-      });
-    } catch (error) {
-      return err(`Failed to update status: ${error}`);
+    if (updateResult.kind === "err") {
+      return err(updateResult.error.message);
     }
+
+    // Persist changes
+    const saved = await this.challengeRepository.update(updateResult.value);
+
+    return ok({
+      id: saved.id,
+      tripId: saved.tripId,
+      name: saved.name,
+      previousStatus,
+      newStatus: saved.status,
+      updatedAt: saved.updatedAt,
+    });
   }
 }

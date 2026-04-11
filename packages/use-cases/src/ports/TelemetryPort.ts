@@ -32,7 +32,8 @@ export class TelemetryError extends Error {
   readonly _tag = "TelemetryError" as const;
   readonly code = "TELEMETRY_ERROR" as const;
   readonly operation: string;
-  readonly cause?: unknown;
+  override readonly cause?: unknown;
+  override readonly message: string;
 
   constructor(props: { operation: string; message: string; cause?: unknown }) {
     super(`Telemetry error in '${props.operation}': ${props.message}`);

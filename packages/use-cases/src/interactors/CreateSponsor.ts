@@ -54,7 +54,7 @@ export class CreateSponsorUseCase {
     });
 
     if (sponsorResult.kind === "err") {
-      return err(sponsorResult.error);
+      return err(sponsorResult.error.message);
     }
 
     // Persist sponsor

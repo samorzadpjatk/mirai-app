@@ -93,7 +93,7 @@ export class GetPurchaseHistoryUseCase {
       groupId: purchase.groupId,
       groupName: "", // Would be populated from repository
       quantity: purchase.quantity,
-      totalCost: purchase.totalCost.toNumber(),
+      totalCost: purchase.totalCost,
       status: purchase.status,
       collectionMethod: purchase.collectionMethod,
       purchasedById: purchase.purchasedById,

@@ -1,6 +1,6 @@
 import type { UserRepository } from "../ports/UserRepository";
-import type { User } from "@mirai-app/domain";
-import { AppError } from "../errors";
+import type { User, Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for UpdateUser use case
@@ -47,24 +47,17 @@ export interface UpdateUserOutput {
 export class UpdateUserUseCase {
   constructor(private userRepository: UserRepository) {}
 
-  async execute(input: UpdateUserInput): Promise<UpdateUserOutput> {
+  async execute(input: UpdateUserInput): Promise<Result<UpdateUserOutput, string>> {
     // Load user
     let user: User | null;
     try {
       user = await this.userRepository.findById(input.userId);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "UpdateUser.findById",
-        message: "Failed to load user",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to load user");
     }
 
     if (!user) {
-      throw AppError.notFound({
-        entity: "User",
-        message: "User not found",
-      });
+      return err("User not found");
     }
 
     let updatedUser: User = user;
@@ -77,10 +70,7 @@ export class UpdateUserUseCase {
       });
 
       if (nameResult.kind === "err") {
-        throw AppError.validation({
-          field: "name",
-          message: nameResult.error,
-        });
+        return err(nameResult.error.message);
       }
 
       updatedUser = nameResult.value;
@@ -95,15 +85,11 @@ export class UpdateUserUseCase {
     let saved: User;
     try {
       saved = await this.userRepository.update(updatedUser);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "UpdateUser.update",
-        message: "Failed to update user",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to update user");
     }
 
-    return this.toOutput(saved);
+    return ok(this.toOutput(saved));
   }
 
   private toOutput(user: User): UpdateUserOutput {

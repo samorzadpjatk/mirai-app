@@ -82,7 +82,7 @@ export class UpdateChallengeUseCase {
       });
 
       if (detailsResult.kind === "err") {
-        return err(detailsResult.error);
+        return err(detailsResult.error.message);
       }
 
       updatedChallenge = detailsResult.value;
@@ -109,7 +109,7 @@ export class UpdateChallengeUseCase {
       });
 
       if (pointsResult.kind === "err") {
-        return err(pointsResult.error);
+        return err(pointsResult.error.message);
       }
 
       updatedChallenge = pointsResult.value;
@@ -134,7 +134,7 @@ export class UpdateChallengeUseCase {
       });
 
       if (scheduleResult.kind === "err") {
-        return err(scheduleResult.error);
+        return err(scheduleResult.error.message);
       }
 
       updatedChallenge = scheduleResult.value;

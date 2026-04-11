@@ -1,5 +1,5 @@
-import type { Result, RewardPurchaseStatus } from "@mirai-app/domain";
-import { ok, err, canTransitionPurchaseStatus } from "@mirai-app/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err, canTransitionPurchaseStatus, RewardPurchaseStatus, RewardId } from "@mirai-app/domain";
 import type {
   RewardRepository,
   RewardPurchaseRepository,
@@ -105,14 +105,14 @@ export class UpdatePurchaseStatusUseCase {
       // Refund coins to group
       await this.coinsService.addCoins(
         purchase.groupId,
-        purchase.totalCost.toNumber(),
+        purchase.totalCost,
         `Refunded reward claim: ${purchase.quantity}x reward`,
         input.updatedById,
       );
 
       // Restore reward quantity
       await this.rewardRepository.incrementQuantity(
-        purchase.rewardId,
+        RewardId.unsafeCreate(purchase.rewardId),
         purchase.quantity,
       );
 
@@ -132,7 +132,7 @@ export class UpdatePurchaseStatusUseCase {
       rewardId: updated.rewardId,
       groupId: updated.groupId,
       quantity: updated.quantity,
-      totalCost: updated.totalCost.toNumber(),
+      totalCost: updated.totalCost,
       status: updated.status,
       collectionMethod: updated.collectionMethod,
       statusUpdatedById: updated.statusUpdatedById ?? input.updatedById,

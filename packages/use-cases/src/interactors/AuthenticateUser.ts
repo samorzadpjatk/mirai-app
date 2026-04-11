@@ -32,7 +32,7 @@
  */
 
 import type { Result, AuthContext } from "@mirai-app/domain";
-import type { AuthPort, AuthError, InvalidTokenError } from "../ports/AuthPort";
+import type { AuthPort, AuthError, InvalidTokenError, SessionExpiredError } from "../ports/AuthPort";
 
 /**
  * Input for AuthenticateUser use case
@@ -106,7 +106,7 @@ export class AuthenticateUserUseCase {
    */
   async execute(
     input: AuthenticateUserInput,
-  ): Promise<Result<AuthContext, AuthError | InvalidTokenError>> {
+  ): Promise<Result<AuthContext, AuthError | InvalidTokenError | SessionExpiredError>> {
     // Delegate validation to the auth port
     // The port handles the actual authentication mechanism (Supabase, JWT, etc.)
     return this.authPort.validateToken(input.token);

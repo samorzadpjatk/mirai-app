@@ -36,8 +36,8 @@ export interface GetSubmissionOutput {
   group: {
     id: string;
     name: string;
-    description: string | null;
     image: string | null;
+    coins: number;
   } | null;
   reviewedBy: {
     id: string;
@@ -93,8 +93,8 @@ export class GetSubmissionUseCase {
     group: {
       id: string;
       name: string;
-      description: string | null;
       image: string | null;
+      coins: number;
     } | null;
     reviewedBy: {
       id: string;

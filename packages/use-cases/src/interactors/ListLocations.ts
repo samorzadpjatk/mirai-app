@@ -1,5 +1,5 @@
 import type { Result } from "@mirai-app/domain";
-import { ok, err, type Location } from "@mirai-app/domain";
+import { ok, err, type Location, calculateDistance } from "@mirai-app/domain";
 import type { LocationRepository } from "../ports/LocationRepository";
 
 /**
@@ -116,36 +116,17 @@ export class ListLocationsUseCase {
     // Calculate distance if center point provided
     if (
       input.centerLatitude !== undefined &&
-      input.centerLongitude !== undefined
+      input.centerLongitude !== undefined &&
+      location.latitude !== null &&
+      location.longitude !== null
     ) {
-      const centerLoc = { ...location };
-      // Create a temporary location at center for distance calculation
-      // We'll use the calculateDistance function directly via toExpoFormat comparison
-      const dist = location.distanceTo({
-        id: "temp" as unknown as typeof location.id,
-        userId: "temp",
-        latitude: input.centerLatitude,
-        longitude: input.centerLongitude,
-        accuracy: null,
-        altitude: null,
-        altitudeAccuracy: null,
-        heading: null,
-        speed: null,
-        sharingLocation: false,
-        timestamp: new Date(),
-        lastInactivityNotification: null,
-        usersToShareWith: [],
-        // Stub methods
-        isSharingLocation: () => false,
-        hasCoordinates: () => true,
-        isWithinRadius: () => false,
-        distanceTo: () =>
-          location.distanceTo({
-            ...location,
-            latitude: input.centerLatitude!,
-            longitude: input.centerLongitude!,
-          } as Location),
-      } as Location);
+      // Calculate distance using the calculateDistance function
+      const dist = calculateDistance(
+        location.latitude,
+        location.longitude,
+        input.centerLatitude,
+        input.centerLongitude,
+      );
 
       if (dist !== null) {
         output.distanceKm = dist;

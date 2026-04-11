@@ -1,9 +1,11 @@
-import type { Result, RewardPurchaseStatus } from "@mirai-app/domain";
+import type { Result } from "@mirai-app/domain";
 import {
   ok,
   err,
   canTransitionPurchaseStatus,
   REWARD_PURCHASE_STATUSES,
+  RewardPurchaseStatus,
+  RewardId,
 } from "@mirai-app/domain";
 import type {
   RewardRepository,
@@ -17,12 +19,12 @@ import type {
 /**
  * User-facing status update options (subset of full status transitions)
  */
-const USER_ALLOWED_TRANSITIONS: Record<string, RewardPurchaseStatus[]> = {
-  BOUGHT: ["CANCELLED"],
-  ACCEPTED: ["IN_DELIVERY"],
-  IN_DELIVERY: [],
-  CANCELLED: [],
-  DELIVERED: [],
+const USER_ALLOWED_TRANSITIONS: Record<RewardPurchaseStatus, RewardPurchaseStatus[]> = {
+  [RewardPurchaseStatus.BOUGHT]: [RewardPurchaseStatus.CANCELLED],
+  [RewardPurchaseStatus.ACCEPTED]: [RewardPurchaseStatus.IN_DELIVERY],
+  [RewardPurchaseStatus.IN_DELIVERY]: [],
+  [RewardPurchaseStatus.CANCELLED]: [],
+  [RewardPurchaseStatus.DELIVERED]: [],
 };
 
 /**
@@ -31,7 +33,7 @@ const USER_ALLOWED_TRANSITIONS: Record<string, RewardPurchaseStatus[]> = {
  */
 export interface UpdateMyPurchaseStatusInput {
   purchaseId: string;
-  newStatus: "IN_DELIVERY" | "CANCELLED";
+  newStatus: RewardPurchaseStatus;
   updatedById: string;
 }
 
@@ -93,29 +95,29 @@ export class UpdateMyPurchaseStatusUseCase {
     }
 
     // For CANCELLED, must be in BOUGHT status
-    if (input.newStatus === "CANCELLED" && purchase.status !== "BOUGHT") {
+    if (input.newStatus === RewardPurchaseStatus.CANCELLED && purchase.status !== RewardPurchaseStatus.BOUGHT) {
       return err("Only pending purchases can be cancelled");
     }
 
     // For IN_DELIVERY, must be in ACCEPTED status
-    if (input.newStatus === "IN_DELIVERY" && purchase.status !== "ACCEPTED") {
+    if (input.newStatus === RewardPurchaseStatus.IN_DELIVERY && purchase.status !== RewardPurchaseStatus.ACCEPTED) {
       return err("Purchase can be moved to in delivery only after acceptance");
     }
 
     // Handle refund if cancelling
     let refunded = false;
-    if (input.newStatus === "CANCELLED") {
+    if (input.newStatus === RewardPurchaseStatus.CANCELLED) {
       // Refund coins to group
       await this.coinsService.addCoins(
         purchase.groupId,
-        purchase.totalCost.toNumber(),
+        purchase.totalCost,
         `Cancelled reward claim by user: ${purchase.quantity}x reward`,
         input.updatedById,
       );
 
       // Restore reward quantity
       await this.rewardRepository.incrementQuantity(
-        purchase.rewardId,
+        RewardId.unsafeCreate(purchase.rewardId),
         purchase.quantity,
       );
 
@@ -135,7 +137,7 @@ export class UpdateMyPurchaseStatusUseCase {
       rewardId: updated.rewardId,
       groupId: updated.groupId,
       quantity: updated.quantity,
-      totalCost: updated.totalCost.toNumber(),
+      totalCost: updated.totalCost,
       status: updated.status,
       statusUpdatedAt: updated.statusUpdatedAt,
       refunded,

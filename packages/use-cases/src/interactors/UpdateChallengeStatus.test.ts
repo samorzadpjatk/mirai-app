@@ -1,7 +1,7 @@
 import { describe, it, expect, mock } from "bun:test";
 import {
   UpdateChallengeStatusUseCase,
-  UpdateChallengeStatusInput,
+  type UpdateChallengeStatusInput,
 } from "./UpdateChallengeStatus";
 import {
   Challenge,

@@ -66,16 +66,19 @@ describe("[UNIT] GetChallengeUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.id).toBe("challenge-456");
-      expect(result.name).toBe("Photo Challenge");
-      expect(result.tripId).toBe("trip-123");
-      expect(result.status).toBe("ACTIVE");
-      expect(result.basePoints).toBe(100);
-      expect(result.isActive).toBe(true);
-      expect(result.submissionType).toBe("IMAGE");
-      expect(result.scoringCategory).toBe("UNLIMITED");
-      expect(result.requiresLocation).toBe(false);
-      expect(result.requiresQRCode).toBe(false);
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("challenge-456");
+        expect(result.value.name).toBe("Photo Challenge");
+        expect(result.value.tripId).toBe("trip-123");
+        expect(result.value.status).toBe("ACTIVE");
+        expect(result.value.basePoints).toBe(100);
+        expect(result.value.isActive).toBe(true);
+        expect(result.value.submissionType).toBe("IMAGE");
+        expect(result.value.scoringCategory).toBe("UNLIMITED");
+        expect(result.value.requiresLocation).toBe(false);
+        expect(result.value.requiresQRCode).toBe(false);
+      }
       expect(mockRepo.findById).toHaveBeenCalledWith("challenge-456");
     });
 
@@ -105,10 +108,14 @@ describe("[UNIT] GetChallengeUseCase", () => {
         challengeId: "non-existent-id",
       };
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow(
-        "Challenge not found",
-      );
+      // Act
+      const result = await useCase.execute(input);
+
+      // Assert
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBe("Challenge not found");
+      }
       expect(mockRepo.findById).toHaveBeenCalledWith("non-existent-id");
     });
 
@@ -157,10 +164,13 @@ describe("[UNIT] GetChallengeUseCase", () => {
       const result2 = await useCase.execute(input);
 
       // Assert
-      expect(result2.submissionType).toBe("IMAGE_LOCATION");
-      expect(result2.requiresLocation).toBe(true);
-      expect(result2.targetLatitude).toBe(52.2297);
-      expect(result2.targetLongitude).toBe(21.0122);
+      expect(result2.kind).toBe("ok");
+      if (result2.kind === "ok") {
+        expect(result2.value.submissionType).toBe("IMAGE_LOCATION");
+        expect(result2.value.requiresLocation).toBe(true);
+        expect(result2.value.targetLatitude).toBe(52.2297);
+        expect(result2.value.targetLongitude).toBe(21.0122);
+      }
     });
 
     it("should return challenge with QR code requirements for QR_CODE type", async () => {
@@ -207,9 +217,12 @@ describe("[UNIT] GetChallengeUseCase", () => {
       const result2 = await useCase.execute(input);
 
       // Assert
-      expect(result2.submissionType).toBe("QR_CODE");
-      expect(result2.requiresQRCode).toBe(true);
-      expect(result2.expectedValue).toBe("secret-qr-code");
+      expect(result2.kind).toBe("ok");
+      if (result2.kind === "ok") {
+        expect(result2.value.submissionType).toBe("QR_CODE");
+        expect(result2.value.requiresQRCode).toBe(true);
+        expect(result2.value.expectedValue).toBe("secret-qr-code");
+      }
     });
 
     it("should return challenge with voting phase info for PEER_VOTING category", async () => {
@@ -256,8 +269,11 @@ describe("[UNIT] GetChallengeUseCase", () => {
       const result2 = await useCase.execute(input);
 
       // Assert
-      expect(result2.scoringCategory).toBe("PEER_VOTING");
-      expect(result2.hasVotingPhase).toBe(true);
+      expect(result2.kind).toBe("ok");
+      if (result2.kind === "ok") {
+        expect(result2.value.scoringCategory).toBe("PEER_VOTING");
+        expect(result2.value.hasVotingPhase).toBe(true);
+      }
     });
 
     it("should return hidden challenge with correct status", async () => {
@@ -295,8 +311,11 @@ describe("[UNIT] GetChallengeUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.status).toBe("HIDDEN");
-      expect(result.isActive).toBe(false);
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.status).toBe("HIDDEN");
+        expect(result.value.isActive).toBe(false);
+      }
     });
 
     it("should work with different repository implementations", async () => {
@@ -334,7 +353,10 @@ describe("[UNIT] GetChallengeUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.id).toBe("challenge-different-repo");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("challenge-different-repo");
+      }
     });
   });
 });

@@ -1,6 +1,7 @@
 import { ChallengeVote, validateVoteSet } from "@mirai-app/domain";
 import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
-import { AppError } from "../errors";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Single vote input for batch submission
@@ -69,27 +70,18 @@ export interface SubmitVotesOutput {
 export class SubmitVotesUseCase {
   constructor(private voteRepository: ChallengeVoteRepository) {}
 
-  async execute(input: SubmitVotesInput): Promise<SubmitVotesOutput> {
+  async execute(input: SubmitVotesInput): Promise<Result<SubmitVotesOutput, string>> {
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
-      throw AppError.validation({
-        field: "challengeId",
-        message: "challengeId is required",
-      });
+      return err("Challenge ID is required");
     }
 
     if (!input.voterId || input.voterId.trim() === "") {
-      throw AppError.validation({
-        field: "voterId",
-        message: "voterId is required",
-      });
+      return err("Voter ID is required");
     }
 
     if (!input.votes || input.votes.length === 0) {
-      throw AppError.validation({
-        field: "votes",
-        message: "at least one vote is required",
-      });
+      return err("At least one vote is required");
     }
 
     // Check if voter has already voted
@@ -99,19 +91,12 @@ export class SubmitVotesUseCase {
         input.challengeId,
         input.voterId,
       );
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "SubmitVotes.hasVoted",
-        message: "Failed to check if user has voted",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to check if user has voted");
     }
 
     if (hasVoted) {
-      throw AppError.conflict({
-        entity: "Vote",
-        message: "You have already voted in this challenge",
-      });
+      return err("You have already voted in this challenge");
     }
 
     // Validate vote set (pure validation - no async)
@@ -124,10 +109,7 @@ export class SubmitVotesUseCase {
     );
 
     if (!validation.isValid) {
-      throw AppError.validation({
-        field: "votes",
-        message: validation.error ?? "Invalid vote set",
-      });
+      return err(validation.error ?? "Invalid vote set");
     }
 
     // Create domain entities
@@ -145,10 +127,7 @@ export class SubmitVotesUseCase {
       });
 
       if (voteResult.kind === "err") {
-        throw AppError.validation({
-          field: "vote",
-          message: `Failed to create vote: ${voteResult.error}`,
-        });
+        return err(`Failed to create vote: ${voteResult.error}`);
       }
 
       voteEntities.push(voteResult.value);
@@ -158,18 +137,14 @@ export class SubmitVotesUseCase {
     let savedVotes: ChallengeVote[];
     try {
       savedVotes = await this.voteRepository.createMany(voteEntities);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "SubmitVotes.createMany",
-        message: "Failed to save votes",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to save votes");
     }
 
-    return {
+    return ok({
       votes: savedVotes.map((v) => this.toOutput(v)),
       totalVotesCast: savedVotes.length,
-    };
+    });
   }
 
   private toOutput(vote: ChallengeVote): VoteOutput {

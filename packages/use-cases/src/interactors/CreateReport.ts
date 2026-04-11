@@ -56,7 +56,7 @@ export class CreateReportUseCase {
       ...(input.details !== undefined && { details: input.details }),
     });
 
-    if (reportResult.isError()) {
+    if (reportResult.kind === "err") {
       return err(reportResult.error);
     }
 

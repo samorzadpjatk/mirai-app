@@ -1,6 +1,7 @@
 import type { GroupRepository } from "../ports/GroupRepository";
 import type { Group } from "@mirai-app/domain";
-import { AppError } from "../errors";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for UpdateGroup use case
@@ -53,31 +54,21 @@ export interface UpdateGroupOutput {
 export class UpdateGroupUseCase {
   constructor(private groupRepository: GroupRepository) {}
 
-  async execute(input: UpdateGroupInput): Promise<UpdateGroupOutput> {
+  async execute(input: UpdateGroupInput): Promise<Result<UpdateGroupOutput, string>> {
     // Load group
     let group: Group | null;
     try {
       group = await this.groupRepository.findById(input.groupId);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "UpdateGroup.findById",
-        message: "Failed to load group",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to load group");
     }
 
     if (!group) {
-      throw AppError.notFound({
-        entity: "Group",
-        message: "Group not found",
-      });
+      return err("Group not found");
     }
 
     if (group.isDeleted()) {
-      throw AppError.validation({
-        field: "status",
-        message: "Cannot update a deleted group",
-      });
+      return err("Cannot update a deleted group");
     }
 
     let updatedGroup: Group = group;
@@ -97,10 +88,7 @@ export class UpdateGroupUseCase {
       });
 
       if (detailsResult.kind === "err") {
-        throw AppError.validation({
-          field: "group",
-          message: detailsResult.error,
-        });
+        return err(detailsResult.error.message);
       }
 
       updatedGroup = detailsResult.value;
@@ -108,22 +96,22 @@ export class UpdateGroupUseCase {
 
     // Update organizer if provided
     if (input.organizerId !== undefined) {
-      updatedGroup = updatedGroup.changeOrganizer(input.organizerId);
+      const organizerResult = updatedGroup.changeOrganizer(input.organizerId);
+      if (organizerResult.kind === "err") {
+        return err(organizerResult.error.message);
+      }
+      updatedGroup = organizerResult.value;
     }
 
     // Save updated group
     let saved: Group;
     try {
       saved = await this.groupRepository.update(updatedGroup);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "UpdateGroup.update",
-        message: "Failed to update group",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to update group");
     }
 
-    return this.toOutput(saved);
+    return ok(this.toOutput(saved));
   }
 
   private toOutput(group: Group): UpdateGroupOutput {

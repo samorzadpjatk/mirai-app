@@ -1,7 +1,9 @@
 import type { ChallengeVoteRepository } from "../ports/ChallengeVoteRepository";
 import type { ChallengeRepository } from "../ports/ChallengeRepository";
 import type { ChallengeSubmissionRepository } from "../ports/ChallengeSubmissionRepository";
-import { AppError } from "../errors";
+import { ChallengeStatus } from "@mirai-app/domain";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for ForceEndVoting use case
@@ -61,110 +63,74 @@ export class ForceEndVotingUseCase {
     }) => Promise<void>,
   ) {}
 
-  async execute(input: ForceEndVotingInput): Promise<ForceEndVotingOutput> {
+  async execute(input: ForceEndVotingInput): Promise<Result<ForceEndVotingOutput, string>> {
     // Validate input
     if (!input.challengeId || input.challengeId.trim() === "") {
-      throw AppError.validation({
-        field: "challengeId",
-        message: "challengeId is required",
-      });
+      return err("Challenge ID is required");
     }
 
     if (!input.tripId || input.tripId.trim() === "") {
-      throw AppError.validation({
-        field: "tripId",
-        message: "tripId is required",
-      });
+      return err("Trip ID is required");
     }
 
     if (!input.adminId || input.adminId.trim() === "") {
-      throw AppError.validation({
-        field: "adminId",
-        message: "adminId is required",
-      });
+      return err("Admin ID is required");
     }
 
     // Fetch challenge
     let challenge: import("@mirai-app/domain").Challenge | null;
     try {
       challenge = await this.challengeRepository.findById(input.challengeId);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "ForceEndVoting.findById",
-        message: "Failed to load challenge",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to load challenge");
     }
 
     if (!challenge) {
-      throw AppError.notFound({
-        entity: "Challenge",
-        message: "Challenge not found",
-      });
+      return err("Challenge not found");
     }
 
     // Validate challenge is in correct trip
     if (challenge.tripId !== input.tripId) {
-      throw AppError.notFound({
-        entity: "Challenge",
-        message: "Challenge not found in trip",
-      });
+      return err("Challenge not found in trip");
     }
 
     // Validate it's a judged staff challenge
     if (challenge.scoringCategory !== "JUDGED_STAFF") {
-      throw AppError.conflict({
-        entity: "Challenge",
-        message: "Force end is available only for judged staff challenges",
-      });
+      return err("Force end is available only for judged staff challenges");
     }
 
     // Validate challenge is not already cancelled or completed
     if (challenge.status === "CANCELLED") {
-      throw AppError.conflict({
-        entity: "Challenge",
-        message: "Cancelled challenge cannot be finalized",
-      });
+      return err("Cancelled challenge cannot be finalized");
     }
 
     // Get votes for counting
     let votes: import("@mirai-app/domain").ChallengeVote[];
     try {
       votes = await this.voteRepository.findByChallengeId(input.challengeId);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "ForceEndVoting.findByChallengeId",
-        message: "Failed to load votes",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to load votes");
     }
 
     if (challenge.status === "COMPLETED") {
       // Already completed, treat as success but not finalized
-      return {
+      return ok({
         success: true,
         finalized: false,
         challengeId: input.challengeId,
         challengeStatus: "COMPLETED" as const,
         totalVotes: votes.length,
-      };
+      });
     }
 
     // Validate submission phase has ended
     if (!challenge.endTime) {
-      throw AppError.validation({
-        field: "endTime",
-        message: "Staff voting requires submission end time",
-      });
+      return err("Staff voting requires submission end time");
     }
 
     const now = new Date();
     if (challenge.endTime.getTime() > now.getTime()) {
-      throw AppError.conflict({
-        entity: "Challenge",
-        message:
-          "You can force end staff voting only after submission phase ends",
-      });
+      return err("You can force end staff voting only after submission phase ends");
     }
 
     // Recompute submission vote scores
@@ -174,26 +140,18 @@ export class ForceEndVotingUseCase {
         this.voteRepository,
         input.challengeId,
       );
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "ForceEndVoting.recomputeSubmissionVotes",
-        message: "Failed to recompute submission votes",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to recompute submission votes");
     }
 
     // Update challenge status to COMPLETED
     try {
       await this.challengeRepository.updateStatus(
         input.challengeId,
-        "COMPLETED",
+        ChallengeStatus.COMPLETED,
       );
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "ForceEndVoting.updateStatus",
-        message: "Failed to update challenge status",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to update challenge status");
     }
 
     // Trigger completion callback if provided (for activity feed, etc.)
@@ -204,22 +162,18 @@ export class ForceEndVotingUseCase {
           tripId: input.tripId,
           adminId: input.adminId,
         });
-      } catch (cause) {
-        throw AppError.repository({
-          operation: "ForceEndVoting.onChallengeCompleted",
-          message: "Failed to trigger completion callback",
-          cause,
-        });
+      } catch (_cause) {
+        return err("Failed to trigger completion callback");
       }
     }
 
-    return {
+    return ok({
       success: true,
       finalized: true,
       challengeId: input.challengeId,
       challengeStatus: "COMPLETED" as const,
       totalVotes: votes.length,
-    };
+    });
   }
 }
 

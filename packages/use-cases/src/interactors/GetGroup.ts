@@ -1,6 +1,7 @@
 import type { GroupRepository } from "../ports/GroupRepository";
 import type { Group } from "@mirai-app/domain";
-import { AppError } from "../errors";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for GetGroup use case
@@ -49,27 +50,20 @@ export interface GetGroupOutput {
 export class GetGroupUseCase {
   constructor(private groupRepository: GroupRepository) {}
 
-  async execute(input: GetGroupInput): Promise<GetGroupOutput> {
+  async execute(input: GetGroupInput): Promise<Result<GetGroupOutput, string>> {
     // Load group
     let group: Group | null;
     try {
       group = await this.groupRepository.findById(input.groupId);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "GetGroup.findById",
-        message: "Failed to load group",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to load group");
     }
 
     if (!group) {
-      throw AppError.notFound({
-        entity: "Group",
-        message: "Group not found",
-      });
+      return err("Group not found");
     }
 
-    return this.toOutput(group);
+    return ok(this.toOutput(group));
   }
 
   private toOutput(group: Group): GetGroupOutput {

@@ -64,7 +64,7 @@ export class UpdateSponsorUseCase {
     });
 
     if (updatedResult.kind === "err") {
-      return err(updatedResult.error);
+      return err(updatedResult.error.message);
     }
 
     // Persist updated sponsor

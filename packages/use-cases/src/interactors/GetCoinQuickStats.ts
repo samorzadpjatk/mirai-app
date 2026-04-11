@@ -73,7 +73,7 @@ export class GetCoinQuickStatsUseCase {
         totalCoins,
         totalGroups,
         averageCoinsPerGroup,
-        richestGroupId: richest?.groupId ?? null,
+        richestGroupId: richest?.groupId,
         time: new Date(),
       });
     } catch (error) {

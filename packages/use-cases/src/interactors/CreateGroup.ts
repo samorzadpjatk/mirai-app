@@ -1,6 +1,7 @@
 import { Group, GroupStatus } from "@mirai-app/domain";
 import type { GroupRepository } from "../ports/GroupRepository";
-import { AppError } from "../errors";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for CreateGroup use case
@@ -54,24 +55,17 @@ export interface CreateGroupOutput {
 export class CreateGroupUseCase {
   constructor(private groupRepository: GroupRepository) {}
 
-  async execute(input: CreateGroupInput): Promise<CreateGroupOutput> {
+  async execute(input: CreateGroupInput): Promise<Result<CreateGroupOutput, string>> {
     // Check if group code already exists
     let existingGroup: import("@mirai-app/domain").Group | null;
     try {
       existingGroup = await this.groupRepository.findByCode(input.code);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "CreateGroup.findByCode",
-        message: "Failed to check group code uniqueness",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to check group code");
     }
 
     if (existingGroup) {
-      throw AppError.conflict({
-        entity: "Group",
-        message: "Group code already exists",
-      });
+      return err("Group code already exists");
     }
 
     // Create domain entity
@@ -87,25 +81,18 @@ export class CreateGroupUseCase {
     });
 
     if (groupResult.kind === "err") {
-      throw AppError.validation({
-        field: "group",
-        message: groupResult.error,
-      });
+      return err(groupResult.error.message);
     }
 
     // Save to repository
     let saved: import("@mirai-app/domain").Group;
     try {
       saved = await this.groupRepository.create(groupResult.value);
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "CreateGroup.create",
-        message: "Failed to create group",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to create group");
     }
 
-    return this.toOutput(saved);
+    return ok(this.toOutput(saved));
   }
 
   private toOutput(

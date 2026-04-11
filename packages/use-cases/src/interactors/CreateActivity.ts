@@ -121,7 +121,7 @@ export class CreateActivityUseCase {
     });
 
     if (activityResult.kind === "err") {
-      return err(activityResult.error);
+      return err(activityResult.error.message);
     }
 
     // Persist activity

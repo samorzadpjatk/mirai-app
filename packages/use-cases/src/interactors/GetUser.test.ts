@@ -57,13 +57,16 @@ describe("[UNIT] GetUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.id).toBe("user-456");
-      expect(result.authUserId).toBe("auth-456");
-      expect(result.firstName).toBe("Jane");
-      expect(result.lastName).toBe("Smith");
-      expect(result.fullName).toBe("Jane Smith");
-      expect(result.role).toBe("USER");
-      expect(result.hasAvatar).toBe(false);
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("user-456");
+        expect(result.value.authUserId).toBe("auth-456");
+        expect(result.value.firstName).toBe("Jane");
+        expect(result.value.lastName).toBe("Smith");
+        expect(result.value.fullName).toBe("Jane Smith");
+        expect(result.value.role).toBe("USER");
+        expect(result.value.hasAvatar).toBe(false);
+      }
       expect(mockRepo.findById).toHaveBeenCalledWith("user-456");
     });
 
@@ -85,8 +88,14 @@ describe("[UNIT] GetUserUseCase", () => {
         userId: "non-existent-id",
       };
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("User not found");
+      // Act
+      const result = await useCase.execute(input);
+
+      // Assert
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBe("User not found");
+      }
       expect(mockRepo.findById).toHaveBeenCalledWith("non-existent-id");
     });
 
@@ -113,9 +122,12 @@ describe("[UNIT] GetUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.id).toBe("user-789");
-      expect(result.lastSeenOn).toBeNull();
-      expect(result.createdAt).toBeInstanceOf(Date);
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("user-789");
+        expect(result.value.lastSeenOn).toBeNull();
+        expect(result.value.createdAt).toBeInstanceOf(Date);
+      }
     });
 
     it("should return user with empty full name when both names are empty", async () => {
@@ -152,7 +164,10 @@ describe("[UNIT] GetUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.fullName).toBe("Unknown");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.fullName).toBe("Unknown");
+      }
     });
 
     it("should work with different repository implementations", async () => {
@@ -180,7 +195,10 @@ describe("[UNIT] GetUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.id).toBe("user-different-repo");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.id).toBe("user-different-repo");
+      }
     });
   });
 });

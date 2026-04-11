@@ -2,7 +2,8 @@ import type {
   CoinTransactionRepository,
   CoinTransaction,
 } from "../ports/CoinTransactionRepository";
-import { AppError } from "../errors";
+import type { Result } from "@mirai-app/domain";
+import { ok, err } from "@mirai-app/domain";
 
 /**
  * Input for RemoveCoins use case
@@ -43,45 +44,33 @@ export interface RemoveCoinsOutput {
 export class RemoveCoinsUseCase {
   constructor(private coinRepo: CoinTransactionRepository) {}
 
-  async execute(input: RemoveCoinsInput): Promise<RemoveCoinsOutput> {
+  async execute(input: RemoveCoinsInput): Promise<Result<RemoveCoinsOutput, string>> {
     // Verify group belongs to trip and is not deleted
     let groupCheck: {
       exists: boolean;
-      tripId: string | null;
-      isDeleted: boolean;
+      tripId?: string;
+      isDeleted?: boolean;
+      coins?: number;
     };
     try {
       groupCheck = await this.coinRepo.verifyGroupInTrip(
         input.groupId,
         input.tripId,
       );
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "RemoveCoins.verifyGroupInTrip",
-        message: "Failed to verify group",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to verify group");
     }
 
     if (!groupCheck.exists) {
-      throw AppError.notFound({
-        entity: "Group",
-        message: "Group not found",
-      });
+      return err("Group not found");
     }
 
     if (groupCheck.tripId !== input.tripId) {
-      throw AppError.conflict({
-        entity: "Group",
-        message: "Group does not belong to this trip",
-      });
+      return err("Group does not belong to this trip");
     }
 
     if (groupCheck.isDeleted) {
-      throw AppError.conflict({
-        entity: "Group",
-        message: "Group has been deleted",
-      });
+      return err("Group has been deleted");
     }
 
     // Check sufficient balance and decrement
@@ -91,19 +80,12 @@ export class RemoveCoinsUseCase {
         input.groupId,
         input.amount,
       );
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "RemoveCoins.decrementGroupCoins",
-        message: "Failed to decrement group coins",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to decrement group coins");
     }
 
     if (!decrementResult.success) {
-      throw AppError.conflict({
-        entity: "Coins",
-        message: "Group does not have enough coins",
-      });
+      return err("Group does not have enough coins");
     }
 
     // Create transaction record (negative amount for removal)
@@ -115,14 +97,10 @@ export class RemoveCoinsUseCase {
         ...(input.reason !== undefined && { reason: input.reason }),
         adminId: input.adminId,
       });
-    } catch (cause) {
-      throw AppError.repository({
-        operation: "RemoveCoins.create",
-        message: "Failed to create transaction",
-        cause,
-      });
+    } catch (_cause) {
+      return err("Failed to create transaction");
     }
 
-    return { transaction };
+    return ok({ transaction });
   }
 }

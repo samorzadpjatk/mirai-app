@@ -570,7 +570,6 @@ export {
 export {
   UseCaseModule,
   USE_CASE_TOKENS,
-  type UseCaseModuleDef,
   type UseCaseModuleDeps,
   type UseCaseToken,
 } from "./modules/UseCaseModule";
