@@ -9,20 +9,6 @@ import {
 } from "@mirai-app/domain";
 import { InMemoryChallengeRepository } from "@mirai-app/adapters/gateways/in-memory";
 
-async function runAsResult<T>(
-  fn: () => Promise<T>,
-): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
-  try {
-    const value = await fn();
-    return { kind: "ok", value };
-  } catch (error) {
-    return {
-      kind: "err",
-      error: error instanceof Error ? error.message : "Unexpected error",
-    };
-  }
-}
-
 describe("[UNIT] CreateChallengeUseCase", () => {
   let repo: InMemoryChallengeRepository;
   let useCase: CreateChallengeUseCase;
@@ -67,7 +53,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       const input = createValidInput();
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -98,7 +84,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -120,13 +106,10 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Unexpected error");
-      }
 
       // Verify no challenge was stored
       const stored = await repo.findAll();
@@ -142,13 +125,10 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Unexpected error");
-      }
 
       // Verify no challenge was stored
       const stored = await repo.findAll();
@@ -165,13 +145,10 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toBe("Unexpected error");
-      }
 
       // Verify no challenge was stored
       const stored = await repo.findAll();
@@ -191,7 +168,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -220,7 +197,7 @@ describe("[UNIT] CreateChallengeUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("ok");

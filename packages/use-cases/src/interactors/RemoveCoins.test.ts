@@ -48,8 +48,11 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
 
     const result = await useCase.execute(input);
 
-    expect(result.transaction.amount).toBe(-100); // Negative for removal
-    expect(result.transaction.groupId).toBe("group-1");
+    expect(result.kind).toBe("ok");
+    if (result.kind === "ok") {
+      expect(result.value.transaction.amount).toBe(-100); // Negative for removal
+      expect(result.value.transaction.groupId).toBe("group-1");
+    }
   });
 
   it("should return error when group not found", async () => {
@@ -62,7 +65,12 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    await expect(useCase.execute(input)).rejects.toThrow("Group not found");
+    const result = await useCase.execute(input);
+
+    expect(result.kind).toBe("err");
+    if (result.kind === "err") {
+      expect(result.error).toContain("Group not found");
+    }
   });
 
   it("should return error when group has insufficient balance", async () => {
@@ -77,9 +85,12 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    await expect(useCase.execute(input)).rejects.toThrow(
-      "not have enough coins",
-    );
+    const result = await useCase.execute(input);
+
+    expect(result.kind).toBe("err");
+    if (result.kind === "err") {
+      expect(result.error).toContain("not have enough coins");
+    }
   });
 
   it("should return error when group is deleted", async () => {
@@ -94,7 +105,12 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    await expect(useCase.execute(input)).rejects.toThrow("deleted");
+    const result = await useCase.execute(input);
+
+    expect(result.kind).toBe("err");
+    if (result.kind === "err") {
+      expect(result.error).toContain("deleted");
+    }
   });
 
   it("should create transaction with negative amount", async () => {
@@ -117,8 +133,9 @@ describe("[UNIT] RemoveCoinsUseCase", () => {
       adminId: "admin-1",
     };
 
-    await useCase.execute(input);
+    const result = await useCase.execute(input);
 
+    expect(result.kind).toBe("ok");
     expect(createMock).toHaveBeenCalledWith(
       expect.objectContaining({
         amount: -75,

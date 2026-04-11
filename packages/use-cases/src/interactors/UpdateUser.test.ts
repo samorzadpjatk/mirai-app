@@ -62,9 +62,12 @@ describe("[UNIT] UpdateUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.firstName).toBe("Jane");
-      expect(result.lastName).toBe("Smith");
-      expect(result.fullName).toBe("Jane Smith");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.firstName).toBe("Jane");
+        expect(result.value.lastName).toBe("Smith");
+        expect(result.value.fullName).toBe("Jane Smith");
+      }
       expect(mockRepo.findById).toHaveBeenCalledWith("user-456");
       expect(mockRepo.update).toHaveBeenCalled();
     });
@@ -105,8 +108,11 @@ describe("[UNIT] UpdateUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.firstName).toBe("NewFirst");
-      expect(result.lastName).toBe("Original");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.firstName).toBe("NewFirst");
+        expect(result.value.lastName).toBe("Original");
+      }
     });
 
     it("should update only last name when firstName not provided", async () => {
@@ -145,8 +151,11 @@ describe("[UNIT] UpdateUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.firstName).toBe("Original");
-      expect(result.lastName).toBe("NewLast");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.firstName).toBe("Original");
+        expect(result.value.lastName).toBe("NewLast");
+      }
     });
 
     it("should update hasAvatar status", async () => {
@@ -178,7 +187,10 @@ describe("[UNIT] UpdateUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.hasAvatar).toBe(true);
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.hasAvatar).toBe(true);
+      }
     });
 
     it("should return error when user not found", async () => {
@@ -200,8 +212,14 @@ describe("[UNIT] UpdateUserUseCase", () => {
         firstName: "NewName",
       };
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("User not found");
+      // Act
+      const result = await useCase.execute(input);
+
+      // Assert
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toContain("User not found");
+      }
       expect(mockRepo.findById).toHaveBeenCalledWith("non-existent");
       expect(mockRepo.update).not.toHaveBeenCalled();
     });
@@ -228,8 +246,14 @@ describe("[UNIT] UpdateUserUseCase", () => {
         lastName: "Doe",
       };
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("firstName");
+      // Act
+      const result = await useCase.execute(input);
+
+      // Assert
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toContain("firstName");
+      }
       expect(mockRepo.update).not.toHaveBeenCalled();
     });
 
@@ -255,8 +279,14 @@ describe("[UNIT] UpdateUserUseCase", () => {
         lastName: "Doe",
       };
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("digits");
+      // Act
+      const result = await useCase.execute(input);
+
+      // Assert
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toContain("digits");
+      }
       expect(mockRepo.update).not.toHaveBeenCalled();
     });
 
@@ -300,10 +330,13 @@ describe("[UNIT] UpdateUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.firstName).toBe("New");
-      expect(result.lastName).toBe("Person");
-      expect(result.fullName).toBe("New Person");
-      expect(result.hasAvatar).toBe(true);
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.firstName).toBe("New");
+        expect(result.value.lastName).toBe("Person");
+        expect(result.value.fullName).toBe("New Person");
+        expect(result.value.hasAvatar).toBe(true);
+      }
     });
 
     it("should work with different repository implementations", async () => {
@@ -341,8 +374,11 @@ describe("[UNIT] UpdateUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.firstName).toBe("Updated");
-      expect(result.lastName).toBe("User");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.firstName).toBe("Updated");
+        expect(result.value.lastName).toBe("User");
+      }
       expect(mockRepo.findById).toHaveBeenCalledWith("user-different-repo");
       expect(mockRepo.update).toHaveBeenCalled();
     });

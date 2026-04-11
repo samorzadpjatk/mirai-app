@@ -41,11 +41,14 @@ describe("[UNIT] CreateUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.authUserId).toBe("auth-123");
-      expect(result.firstName).toBe("John");
-      expect(result.lastName).toBe("Doe");
-      expect(result.role).toBe("USER");
-      expect(result.fullName).toBe("John Doe");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.authUserId).toBe("auth-123");
+        expect(result.value.firstName).toBe("John");
+        expect(result.value.lastName).toBe("Doe");
+        expect(result.value.role).toBe("USER");
+        expect(result.value.fullName).toBe("John Doe");
+      }
 
       // Verify user was actually stored
       const stored = await repo.findByAuthUserId("auth-123");
@@ -65,8 +68,14 @@ describe("[UNIT] CreateUserUseCase", () => {
         role: UserRole.USER,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("already exists");
+      // Act
+      const result = await useCase.execute(input);
+
+      // Assert
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toContain("already exists");
+      }
 
       // Verify create was not called again
       const users = await repo.findAll();
@@ -81,8 +90,14 @@ describe("[UNIT] CreateUserUseCase", () => {
         role: UserRole.USER,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("firstName");
+      // Act
+      const result = await useCase.execute(input);
+
+      // Assert
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toContain("required");
+      }
 
       // Verify no user was stored
       const stored = await repo.findByAuthUserId("auth-456");
@@ -97,8 +112,14 @@ describe("[UNIT] CreateUserUseCase", () => {
         role: UserRole.USER,
       };
 
-      // Act & Assert
-      await expect(useCase.execute(input)).rejects.toThrow("authUserId");
+      // Act
+      const result = await useCase.execute(input);
+
+      // Assert
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toContain("required");
+      }
 
       // Verify no user was stored
       const users = await repo.findAll();
@@ -117,7 +138,10 @@ describe("[UNIT] CreateUserUseCase", () => {
       const result = await useCase.execute(input);
 
       // Assert
-      expect(result.role).toBe("USER");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.role).toBe("USER");
+      }
 
       // Verify stored user has USER role
       const stored = await repo.findByAuthUserId("auth-789");
@@ -140,9 +164,12 @@ describe("[UNIT] CreateUserUseCase", () => {
       const result = await differentUseCase.execute(input);
 
       // Assert
-      expect(result.authUserId).toBe("auth-different-repo");
-      expect(result.firstName).toBe("Different");
-      expect(result.lastName).toBe("Repo");
+      expect(result.kind).toBe("ok");
+      if (result.kind === "ok") {
+        expect(result.value.authUserId).toBe("auth-different-repo");
+        expect(result.value.firstName).toBe("Different");
+        expect(result.value.lastName).toBe("Repo");
+      }
 
       // Verify data was stored in the different repository
       const stored = await differentRepo.findByAuthUserId(

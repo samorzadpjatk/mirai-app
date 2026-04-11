@@ -36,7 +36,7 @@ export class GetCoinQuickStatsUseCase {
     try {
       const totalSum = await this.coinRepo.sumAmount({ tripId: input.tripId });
 
-      if (!totalSum) {
+      if (totalSum === null || totalSum === undefined) {
         return ok(null);
       }
 

@@ -130,26 +130,12 @@ class InMemoryTripAccessChecker implements TripAccessChecker {
   }
 }
 
-async function runAsResult<T>(
-  fn: () => Promise<T>,
-): Promise<{ kind: "ok"; value: T } | { kind: "err"; error: string }> {
-  try {
-    const value = await fn();
-    return { kind: "ok", value };
-  } catch (error) {
-    return {
-      kind: "err",
-      error: error instanceof Error ? error.message : "Unexpected error",
-    };
-  }
-}
-
 // Helper to unwrap Result
 const unwrap = <T, E>(
   result: { kind: "ok"; value: T } | { kind: "err"; error: E },
 ): T => {
   if (result.kind === "err") {
-    throw new Error(`Unexpected error: ${result.error}`);
+    throw new Error(`Unexpected error: ${String(result.error)}`);
   }
   return result.value;
 };
@@ -208,7 +194,7 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("ok");
@@ -242,13 +228,10 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Unexpected error");
-      }
     });
 
     it("should reject purchase when user is not group leader", async () => {
@@ -266,13 +249,10 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Unexpected error");
-      }
     });
 
     it("should reject purchase when insufficient quantity", async () => {
@@ -291,13 +271,10 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Unexpected error");
-      }
     });
 
     it("should reject purchase when insufficient coins", async () => {
@@ -316,13 +293,10 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Unexpected error");
-      }
     });
 
     it("should reject purchase when trip has ended", async () => {
@@ -342,13 +316,10 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Unexpected error");
-      }
     });
 
     it("should reject purchase when reward is hidden", async () => {
@@ -376,13 +347,10 @@ describe("[UNIT] PurchaseRewardUseCase", () => {
       };
 
       // Act
-      const result = await runAsResult(() => useCase.execute(input));
+      const result = await useCase.execute(input);
 
       // Assert
       expect(result.kind).toBe("err");
-      if (result.kind === "err") {
-        expect(result.error).toContain("Unexpected error");
-      }
     });
   });
 });

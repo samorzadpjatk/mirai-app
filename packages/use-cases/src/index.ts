@@ -583,6 +583,9 @@ export type { Result } from "@mirai-app/domain";
 
 export { ok, err } from "@mirai-app/domain";
 
+// Re-export domain enums needed by adapters layer
+export { UserRole } from "@mirai-app/domain";
+
 // Authorization Use Cases
 export {
   AuthorizeAdminUseCase,

@@ -27,8 +27,11 @@ describe("[UNIT] AddCoinsUseCase", () => {
     const result = await useCase.execute(input);
 
     // Assert
-    expect(result.transaction.amount).toBe(100);
-    expect(result.transaction.groupId).toBe("group-1");
+    expect(result.kind).toBe("ok");
+    if (result.kind === "ok") {
+      expect(result.value.transaction.amount).toBe(100);
+      expect(result.value.transaction.groupId).toBe("group-1");
+    }
 
     // Verify group coins were incremented
     const groupCoins = await repo.getGroupCoins("group-1");
@@ -50,8 +53,11 @@ describe("[UNIT] AddCoinsUseCase", () => {
     const result = await useCase.execute(input);
 
     // Assert
-    expect(result.transaction.reason).toBeNull();
-    expect(result.transaction.amount).toBe(50);
+    expect(result.kind).toBe("ok");
+    if (result.kind === "ok") {
+      expect(result.value.transaction.reason).toBeNull();
+      expect(result.value.transaction.amount).toBe(50);
+    }
 
     // Verify group coins were incremented
     const groupCoins = await repo.getGroupCoins("group-1");
