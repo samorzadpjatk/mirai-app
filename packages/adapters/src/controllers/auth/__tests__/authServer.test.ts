@@ -1,6 +1,31 @@
 import { describe, test, expect, mock, spyOn } from "bun:test";
 import type { SupabaseUser, SupabaseClient } from "@mirai-app/frameworks/supabase";
-import type { User, Role, PrismaClient } from "@mirai-app/frameworks/prisma";
+
+// Inline type definitions to replace the removed Prisma dependency
+// These types match the expected interface from the original Prisma schema
+type Role = "ADMIN" | "MODERATOR" | "SERVICE" | "USER";
+
+interface User {
+  id: string;
+  authUserId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  name: string | null;
+  hasAvatar: boolean;
+  wristNumber: number | null;
+  houseNumber: number | null;
+  role: Role;
+  groupId: string | null;
+  emailVerified: Date | null;
+}
+
+// Minimal PrismaClient interface for mocking
+type PrismaClient = {
+  user: {
+    findFirst: (args: { where: { authUserId: string } }) => Promise<User | null>;
+  };
+};
 import {
   decodeJwtPayload,
   hasRequiredRole,
@@ -46,14 +71,14 @@ const createMockDbUser = (overrides: Partial<User> = {}): User =>
   }) as User;
 
 const createMockSupabaseClient = (
-  overrides: Partial<{
-    getUser: Partial<ReturnType<SupabaseClient["auth"]["getUser"]>>;
-    getSession: Partial<ReturnType<SupabaseClient["auth"]["getSession"]>>;
-    adminGetUserById: Partial<{
-      user: SupabaseUser | null;
-      error: { message: string } | null;
-    }>;
-  }> = {},
+  overrides: {
+    getUser?: { user?: SupabaseUser | null; error?: { message: string } | null };
+    getSession?: { session?: unknown | null; error?: unknown | null };
+    adminGetUserById?: {
+      user?: SupabaseUser | null;
+      error?: { message: string } | null;
+    };
+  } = {},
 ) => {
   const mockGetUser = mock(() =>
     Promise.resolve({
@@ -89,11 +114,7 @@ const createMockSupabaseClient = (
   } as unknown as SupabaseClient;
 };
 
-const createMockPrismaClient = (
-  overrides: {
-    userFindFirst?: Partial<ReturnType<PrismaClient["user"]["findFirst"]>>;
-  } = {},
-) => {
+const createMockPrismaClient = (overrides: { userFindFirst?: { result?: User | null } } = {}) => {
   const mockFindFirst = mock(() =>
     Promise.resolve(overrides.userFindFirst?.result ?? null),
   );
@@ -223,6 +244,8 @@ describe("[UNIT] parseRolesFromToken", () => {
 
   test("returns groups value as-is even when not an array", () => {
     const token = createJwtPayload({ groups: "admin" });
+    // parseRolesFromToken returns string[] but test checks raw value from token
+    // @ts-expect-error - testing non-array return behavior
     expect(parseRolesFromToken(token)).toEqual("admin");
   });
 });

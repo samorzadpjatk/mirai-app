@@ -118,10 +118,8 @@ export interface ControllerModuleDeps {
   [key: string]: unknown;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ControllerModuleDef {
   name: "ControllerModule";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   providers: Record<string, object | string | boolean | number>;
   exports: string[];
 }

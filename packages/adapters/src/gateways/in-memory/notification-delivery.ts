@@ -117,8 +117,9 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
     );
 
     // Apply pagination
-    const start = pagination.offset;
-    const end = start + pagination.limit;
+    const start = pagination.offset ?? 0;
+    const limit = pagination.limit ?? 50;
+    const end = start + limit;
     return results.slice(start, end);
   }
 
@@ -170,7 +171,7 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
     const results = Array.from(this.storage.values()).filter(
       (d) => d.notificationId === notificationId,
     );
-    return results.length > 0 ? results[0] : null;
+    return results.length > 0 ? results[0]! : null;
   }
 
   /**
@@ -278,8 +279,9 @@ export class InMemoryNotificationDeliveryRepository implements NotificationDeliv
     );
 
     // Apply pagination
-    const start = pagination.offset;
-    const end = start + pagination.limit;
+    const start = pagination.offset ?? 0;
+    const limit = pagination.limit ?? 50;
+    const end = start + limit;
     return results.slice(start, end);
   }
 

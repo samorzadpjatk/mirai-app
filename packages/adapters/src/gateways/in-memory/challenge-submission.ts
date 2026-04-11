@@ -188,7 +188,7 @@ export class InMemoryChallengeSubmissionRepository
    * Reset the repository - clears all stored data.
    * Call this in beforeEach for test isolation.
    */
-  reset(): void {
+  override reset(): void {
     super.reset();
   }
 
@@ -196,7 +196,7 @@ export class InMemoryChallengeSubmissionRepository
    * Seed the repository with initial data.
    * Useful for setting up test scenarios.
    */
-  seed(items: ChallengeSubmission[]): void {
+  override seed(items: ChallengeSubmission[]): void {
     super.seed(items);
   }
 }

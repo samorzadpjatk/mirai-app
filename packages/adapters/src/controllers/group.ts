@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { GroupRepository } from "@mirai-app/use-cases";
 import { Group, GroupStatus } from "@mirai-app/domain";
+import type {
+  CreateGroupUseCase,
+  UpdateGroupUseCase,
+} from "@mirai-app/use-cases";
 
 /**
  * Input validation schemas for group controller
@@ -72,7 +76,11 @@ const schemas = {
  * should delegate to them instead of working directly with the repository.
  */
 export class GroupController {
-  constructor(private groupRepository: GroupRepository) {}
+  constructor(
+    private groupRepository: GroupRepository,
+    private createGroupUseCase?: CreateGroupUseCase,
+    private updateGroupUseCase?: UpdateGroupUseCase,
+  ) {}
 
   /**
    * Get a group by ID
@@ -266,6 +274,16 @@ export class GroupController {
       };
     }
 
+    // Use CreateGroupUseCase if available, otherwise fallback to manual creation
+    if (this.createGroupUseCase) {
+      const result = await this.createGroupUseCase.execute(parsed.data);
+      if (result.kind === "err") {
+        return { success: false, error: result.error };
+      }
+      return { success: true, data: result.value };
+    }
+
+    // Fallback: manual implementation
     // Check if code is already in use
     const existingGroup = await this.groupRepository.findByCode(
       parsed.data.code,
@@ -274,7 +292,7 @@ export class GroupController {
       return { success: false, error: "Group code is already in use" };
     }
 
-    // Create domain entity directly until CreateGroupUseCase exists
+    // Create domain entity directly
     const groupResult = Group.create({
       tripId: parsed.data.tripId,
       name: parsed.data.name,
@@ -286,7 +304,7 @@ export class GroupController {
     });
 
     if (groupResult.kind === "err") {
-      return { success: false, error: groupResult.error };
+      return { success: false, error: groupResult.error.message };
     }
 
     // Persist group
@@ -339,6 +357,30 @@ export class GroupController {
       };
     }
 
+    // Use UpdateGroupUseCase if available, otherwise fallback to manual update
+    if (this.updateGroupUseCase) {
+      const result = await this.updateGroupUseCase.execute(parsed.data);
+      if (result.kind === "err") {
+        return { success: false, error: result.error };
+      }
+      return {
+        success: true,
+        data: {
+          id: result.value.id,
+          tripId: result.value.tripId,
+          name: result.value.name,
+          description: result.value.description,
+          image: result.value.image,
+          organizerId: result.value.organizerId,
+          code: result.value.code,
+          coins: result.value.coins,
+          status: result.value.status,
+          updatedAt: result.value.updatedAt,
+        },
+      };
+    }
+
+    // Fallback: manual implementation
     // Find existing group
     const group = await this.groupRepository.findById(parsed.data.groupId);
     if (!group) {
@@ -365,7 +407,7 @@ export class GroupController {
       });
 
       if (detailsResult.kind === "err") {
-        return { success: false, error: detailsResult.error };
+        return { success: false, error: detailsResult.error.message };
       }
 
       updatedGroup = detailsResult.value;
@@ -432,7 +474,7 @@ export class GroupController {
     const coinsResult = group.addCoins(parsed.data.amount);
 
     if (coinsResult.kind === "err") {
-      return { success: false, error: coinsResult.error };
+      return { success: false, error: coinsResult.error.message };
     }
 
     // Persist changes
@@ -583,10 +625,10 @@ export class GroupController {
     }
 
     // Mark as deleted
-    const deletedResult = group.delete();
+    const deletedResult = group.markAsDeleted();
 
     if (deletedResult.kind === "err") {
-      return { success: false, error: deletedResult.error };
+      return { success: false, error: deletedResult.error.message };
     }
 
     // Persist changes

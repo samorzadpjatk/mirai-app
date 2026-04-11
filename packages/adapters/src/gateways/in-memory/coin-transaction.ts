@@ -92,10 +92,9 @@ export class InMemoryCoinTransactionRepository implements CoinTransactionReposit
     pagination: PaginationOptions,
   ): Promise<CoinTransaction[]> {
     let filtered = this.filterTransactions(filters);
-    filtered = filtered.slice(
-      pagination.offset,
-      pagination.offset + pagination.limit,
-    );
+    const offset = pagination.offset ?? 0;
+    const limit = pagination.limit ?? 50;
+    filtered = filtered.slice(offset, offset + limit);
     return filtered;
   }
 

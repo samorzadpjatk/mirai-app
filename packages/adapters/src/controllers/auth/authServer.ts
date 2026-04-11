@@ -2,8 +2,31 @@ import type {
   SupabaseClient,
   SupabaseUser,
 } from "@mirai-app/frameworks/supabase";
-import type { User, Role, PrismaClient } from "@mirai-app/frameworks/prisma";
 import type { AuthUser } from "@mirai-app/frameworks/stores";
+
+// Inline type definitions to replace the removed Prisma dependency
+type Role = "ADMIN" | "MODERATOR" | "SERVICE" | "USER";
+
+interface User {
+  id: string;
+  authUserId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  name: string | null;
+  hasAvatar: boolean;
+  wristNumber: number | null;
+  houseNumber: number | null;
+  role: Role;
+  groupId: string | null;
+  emailVerified: Date | null;
+}
+
+type PrismaClient = {
+  user: {
+    findFirst: (args: { where: { authUserId: string } }) => Promise<User | null>;
+  };
+};
 
 interface MinimalBuffer {
   from(
@@ -12,7 +35,7 @@ interface MinimalBuffer {
   ): { toString(encoding: "utf-8"): string };
 }
 
-type AdminUserWithBan = SupabaseUser & { banned_until?: string | null };
+export type AdminUserWithBan = SupabaseUser & { banned_until?: string | null };
 
 const getGlobalBuffer = () =>
   (globalThis as typeof globalThis & { Buffer?: MinimalBuffer }).Buffer;

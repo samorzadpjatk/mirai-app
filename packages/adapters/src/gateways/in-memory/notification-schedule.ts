@@ -52,7 +52,7 @@ export class InMemoryNotificationScheduleRepository
    * Reset the repository - clears all stored data including execution history.
    * Call this in beforeEach for test isolation.
    */
-  reset(): void {
+  override reset(): void {
     super.reset();
     this.executionStorage.clear();
   }
@@ -61,7 +61,7 @@ export class InMemoryNotificationScheduleRepository
    * Seed the repository with initial data.
    * Useful for setting up test scenarios.
    */
-  seed(items: NotificationSchedule[]): void {
+  override seed(items: NotificationSchedule[]): void {
     super.seed(items);
   }
 

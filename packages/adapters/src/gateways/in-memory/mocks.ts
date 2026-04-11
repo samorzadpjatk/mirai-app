@@ -1,5 +1,20 @@
-import type { PrismaClient, User, Role } from "@mirai-app/frameworks/prisma";
+import type { Role } from "@mirai-app/frameworks/auth";
 import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
+
+// Mock types for Drizzle-based testing (Prisma migration completed)
+interface PrismaClientMock {
+  [key: string]: unknown;
+}
+
+interface UserMock {
+  id: string;
+  authUserId: string;
+  email: string;
+  name: string;
+  role: Role;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface MockAuthUser {
   id: string;
@@ -13,11 +28,11 @@ export interface MockAuthUser {
 }
 
 export type MockPrismaClient = {
-  [K in keyof PrismaClient]: K extends symbol
-    ? PrismaClient[K]
-    : PrismaClient[K] extends (...args: infer A) => infer R
+  [K in keyof PrismaClientMock]: K extends symbol
+    ? PrismaClientMock[K]
+    : PrismaClientMock[K] extends (...args: infer A) => infer R
       ? (...args: A) => R
-      : PrismaClient[K];
+      : PrismaClientMock[K];
 };
 
 export type MockContext = {
@@ -26,7 +41,7 @@ export type MockContext = {
   headers: Headers;
   accessToken: string | null;
   user?: MockAuthUser;
-  dbUser?: User;
+  dbUser?: UserMock;
 };
 
 type MockSupabaseClient = {

@@ -556,7 +556,7 @@ export class ActivityFeedController {
       });
 
       if (contentResult.kind === "err") {
-        return { success: false, error: contentResult.error };
+        return { success: false, error: contentResult.error.message };
       }
 
       updated = contentResult.value;

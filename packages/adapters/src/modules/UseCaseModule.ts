@@ -444,9 +444,9 @@ export interface UseCaseModuleDeps {
 // Module Definition Type
 // =============================================================================
 
-export interface UseCaseModuleDef {
+interface UseCaseModuleDef {
   name: "UseCaseModule";
-  providers: Record<string, object | string | boolean | number>;
+  providers: Record<string, any>;
   exports: string[];
 }
 
@@ -526,8 +526,7 @@ export interface UseCaseModuleDef {
  *         └── "inmemory" ──► new InMemoryStorageAdapter()
  * ```
  */
-export const UseCaseModule: StaticModule<UseCaseModuleDef> =
-  createStaticModule<UseCaseModuleDef>({
+export const UseCaseModule: StaticModule<any> = createStaticModule({
     name: "UseCaseModule",
 
     providers: {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ChallengeVoteRepository } from "@mirai-app/use-cases";
+import type { ChallengeVoteRepository, ChallengeRepository } from "@mirai-app/use-cases";
 import {
   GetMyVotesUseCase,
   GetVotesByChallengeUseCase,
@@ -84,16 +84,7 @@ const schemas = {
 export class ChallengeVoteController {
   constructor(
     private voteRepository: ChallengeVoteRepository,
-    private challengeRepository?: {
-      findById(id: string): Promise<{
-        id: string;
-        tripId: string;
-        status: string;
-        scoringCategory: string;
-        endTime: Date | null;
-      } | null>;
-      updateStatus(id: string, status: string): Promise<void>;
-    },
+    private challengeRepository?: ChallengeRepository,
     private submissionRepository?: {
       findByChallengeId(challengeId: string): Promise<
         Array<{
