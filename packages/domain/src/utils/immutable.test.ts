@@ -11,7 +11,7 @@ import {
 
 // Test entity class for updateEntity tests
 class TestEntity implements DomainEntity {
-  private constructor(
+  constructor(
     readonly id: string,
     readonly name: string,
     readonly status: string,

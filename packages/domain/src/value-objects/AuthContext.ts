@@ -16,7 +16,8 @@
 import type { UserId } from "./UserId";
 import { UserRole } from "../enums/UserRole";
 import { AppError, type ValidationError } from "../errors/DomainErrors";
-import { Result, ok, err } from "../types/Result";
+import type { Result } from "../types/Result";
+import { ok, err } from "../types/Result";
 
 /**
  * AuthContext represents the authenticated state of a user
@@ -164,10 +165,11 @@ export class AuthContext {
    * Role hierarchy: ADMIN > MODERATOR > USER
    */
   hasRoleAtLeast(role: UserRole): boolean {
-    const roleHierarchy = {
+    const roleHierarchy: Record<UserRole, number> = {
       [UserRole.ADMIN]: 3,
       [UserRole.MODERATOR]: 2,
       [UserRole.USER]: 1,
+      [UserRole.SERVICE]: 3,
     };
 
     return roleHierarchy[this.role] >= roleHierarchy[role];

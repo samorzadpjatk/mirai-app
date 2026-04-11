@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { AuthContext } from "../AuthContext";
 import { UserRole } from "../../enums/UserRole";
 import { UserId } from "../UserId";
-import { isOk, isErr, unwrap } from "../../types/Result";
+import { isOk, isErr } from "../../types/Result";
 
 describe("[UNIT] AuthContext", () => {
   const validUserId = UserId.create("550e8400-e29b-41d4-a716-446655440000");

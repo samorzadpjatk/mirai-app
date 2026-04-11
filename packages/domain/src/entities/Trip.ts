@@ -37,12 +37,12 @@ const stateMachine = createStateMachine<TripStatus>({
 export class Trip {
   private constructor(
     public readonly id: string,
-    public readonly name: string,
-    public readonly description: string | null,
-    public readonly startDate: Date,
-    public readonly endDate: Date,
-    public readonly backgroundImagePath: string | null,
-    public readonly status: TripStatus,
+    public name: string,
+    public description: string | null,
+    public startDate: Date,
+    public endDate: Date,
+    public backgroundImagePath: string | null,
+    public status: TripStatus,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}

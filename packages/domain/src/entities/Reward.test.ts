@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { Reward, REWARD_PURCHASE_STATUSES } from "./Reward";
-import { RewardPurchase, canTransitionPurchaseStatus } from "./RewardPurchase";
+import { RewardPurchase, RewardPurchaseStatus, canTransitionPurchaseStatus } from "./RewardPurchase";
 import { CoinAmount } from "../value-objects/CoinAmount";
 
 // Helper to extract value from Result
@@ -776,46 +776,46 @@ describe("[UNIT] Reward Entity", () => {
 
 describe("canTransitionPurchaseStatus", () => {
   it("should allow transition from BOUGHT to ACCEPTED", () => {
-    expect(canTransitionPurchaseStatus("BOUGHT", "ACCEPTED")).toBe(true);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.BOUGHT, RewardPurchaseStatus.ACCEPTED)).toBe(true);
   });
 
   it("should allow transition from BOUGHT to CANCELLED", () => {
-    expect(canTransitionPurchaseStatus("BOUGHT", "CANCELLED")).toBe(true);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.BOUGHT, RewardPurchaseStatus.CANCELLED)).toBe(true);
   });
 
   it("should allow transition from ACCEPTED to IN_DELIVERY", () => {
-    expect(canTransitionPurchaseStatus("ACCEPTED", "IN_DELIVERY")).toBe(true);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.ACCEPTED, RewardPurchaseStatus.IN_DELIVERY)).toBe(true);
   });
 
   it("should allow transition from ACCEPTED to CANCELLED", () => {
-    expect(canTransitionPurchaseStatus("ACCEPTED", "CANCELLED")).toBe(true);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.ACCEPTED, RewardPurchaseStatus.CANCELLED)).toBe(true);
   });
 
   it("should allow transition from IN_DELIVERY to DELIVERED", () => {
-    expect(canTransitionPurchaseStatus("IN_DELIVERY", "DELIVERED")).toBe(true);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.IN_DELIVERY, RewardPurchaseStatus.DELIVERED)).toBe(true);
   });
 
   it("should allow transition from IN_DELIVERY to CANCELLED", () => {
-    expect(canTransitionPurchaseStatus("IN_DELIVERY", "CANCELLED")).toBe(true);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.IN_DELIVERY, RewardPurchaseStatus.CANCELLED)).toBe(true);
   });
 
   it("should NOT allow transition from BOUGHT to DELIVERED", () => {
-    expect(canTransitionPurchaseStatus("BOUGHT", "DELIVERED")).toBe(false);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.BOUGHT, RewardPurchaseStatus.DELIVERED)).toBe(false);
   });
 
   it("should NOT allow transition from CANCELLED to any status", () => {
-    expect(canTransitionPurchaseStatus("CANCELLED", "BOUGHT")).toBe(false);
-    expect(canTransitionPurchaseStatus("CANCELLED", "ACCEPTED")).toBe(false);
-    expect(canTransitionPurchaseStatus("CANCELLED", "DELIVERED")).toBe(false);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.CANCELLED, RewardPurchaseStatus.BOUGHT)).toBe(false);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.CANCELLED, RewardPurchaseStatus.ACCEPTED)).toBe(false);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.CANCELLED, RewardPurchaseStatus.DELIVERED)).toBe(false);
   });
 
   it("should NOT allow transition from DELIVERED to any status", () => {
-    expect(canTransitionPurchaseStatus("DELIVERED", "CANCELLED")).toBe(false);
-    expect(canTransitionPurchaseStatus("DELIVERED", "BOUGHT")).toBe(false);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.DELIVERED, RewardPurchaseStatus.CANCELLED)).toBe(false);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.DELIVERED, RewardPurchaseStatus.BOUGHT)).toBe(false);
   });
 
   it("should allow same status transition", () => {
-    expect(canTransitionPurchaseStatus("BOUGHT", "BOUGHT")).toBe(true);
-    expect(canTransitionPurchaseStatus("DELIVERED", "DELIVERED")).toBe(true);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.BOUGHT, RewardPurchaseStatus.BOUGHT)).toBe(true);
+    expect(canTransitionPurchaseStatus(RewardPurchaseStatus.DELIVERED, RewardPurchaseStatus.DELIVERED)).toBe(true);
   });
 });

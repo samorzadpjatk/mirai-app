@@ -6,7 +6,7 @@ describe("[UNIT] UserId", () => {
     it("should create UserId from valid UUID", () => {
       const validUUID = "550e8400-e29b-41d4-a716-446655440000";
       const userId = UserId.create(validUUID);
-      expect(userId).toBe(validUUID);
+      expect(UserId.toString(userId)).toBe(validUUID);
     });
 
     it("should throw for invalid UUID", () => {

@@ -34,13 +34,13 @@ export class Group {
   private constructor(
     public readonly id: string,
     public readonly tripId: string,
-    public readonly name: string,
-    public readonly description: string | null,
-    public readonly image: string | null,
+    public name: string,
+    public description: string | null,
+    public image: string | null,
     public readonly organizerId: string,
     public readonly code: string,
-    public readonly coins: number,
-    public readonly status: GroupStatus,
+    public coins: number,
+    public status: GroupStatus,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}
@@ -153,14 +153,16 @@ export class Group {
     }
 
     // Validate description if provided
-    if (props.description !== undefined) {
+    if (props.description !== undefined && props.description !== null) {
       const validated = validate.string(props.description, "description", {
         required: false,
         maxLength: 500,
         trim: true,
       });
       if (isError(validated)) return err(validated.error);
-      updates.description = props.description !== null ? validated.value : null;
+      updates.description = validated.value;
+    } else if (props.description === null) {
+      updates.description = null;
     }
 
     if (props.image !== undefined) {

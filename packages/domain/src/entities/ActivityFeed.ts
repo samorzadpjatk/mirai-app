@@ -1,7 +1,7 @@
 import type { Result } from "../utils/result";
 import { ok, err, isError } from "../utils/result";
 import { validate } from "../utils/entity-validation";
-import { updateEntity, timestamps } from "../utils/immutable";
+import { updateEntity, timestamps, type Writable } from "../utils/immutable";
 import { ValidationError } from "../errors/domain-errors";
 import type { ActivityId } from "../value-objects/ActivityId";
 
@@ -235,8 +235,8 @@ export class ActivityFeed {
     public readonly id: ActivityId,
     public readonly tripId: string,
     public readonly activityType: ActivityType,
-    public readonly title: string,
-    public readonly description: string | null,
+    public title: string,
+    public description: string | null,
     public readonly imageUrl: string | null,
     public readonly isPinned: boolean,
     public readonly isHidden: boolean,

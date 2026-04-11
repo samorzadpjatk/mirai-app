@@ -62,13 +62,13 @@ export class NotificationDelivery {
     public readonly scheduleId: string | null,
     public readonly deliveryStartedAt: Date,
     public readonly deliveryCompletedAt: Date | null,
-    public readonly totalRecipients: number,
-    public readonly successCount: number,
-    public readonly failureCount: number,
+    public totalRecipients: number,
+    public successCount: number,
+    public failureCount: number,
     public readonly errors: string | null,
-    public readonly status: NotificationDeliveryStatus,
+    public status: NotificationDeliveryStatus,
     // NEW: Nested push delivery records
-    public readonly pushes: readonly PushDeliveryRecord[],
+    public pushes: readonly PushDeliveryRecord[],
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}

@@ -232,11 +232,14 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("updateContent", () => {
     it("should update content when pending", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         textContent: "Original",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.updateContent({
         textContent: "Updated",
@@ -253,11 +256,14 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("should error when trying to update approved submission", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "APPROVED",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.updateContent({
         textContent: "Updated",
@@ -270,11 +276,14 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("should error when trying to update rejected submission", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "REJECTED",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.updateContent({
         textContent: "Updated",
@@ -289,10 +298,13 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("approve", () => {
     it("should approve a pending submission", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.approve({
         reviewedById: "admin-123",
@@ -314,13 +326,16 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("should use existing points if not provided", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         awardedPoints: 50,
         bonusPoints: 5,
         ranking: 2,
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.approve({
         reviewedById: "admin-123",
@@ -335,11 +350,14 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("should error when trying to approve a rejected submission", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "REJECTED",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.approve({
         reviewedById: "admin-123",
@@ -352,10 +370,13 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("should error if awardedPoints is negative", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.approve({
         reviewedById: "admin-123",
@@ -365,15 +386,20 @@ describe("[UNIT] ChallengeSubmission", () => {
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
         expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("awardedPoints");
+        if (result.error instanceof ValidationError) {
+          expect(result.error.field).toBe("awardedPoints");
+        }
       }
     });
 
     it("should error if bonusPoints is negative", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.approve({
         reviewedById: "admin-123",
@@ -383,15 +409,20 @@ describe("[UNIT] ChallengeSubmission", () => {
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
         expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("bonusPoints");
+        if (result.error instanceof ValidationError) {
+          expect(result.error.field).toBe("bonusPoints");
+        }
       }
     });
 
     it("should error if ranking is out of range", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.approve({
         reviewedById: "admin-123",
@@ -401,20 +432,25 @@ describe("[UNIT] ChallengeSubmission", () => {
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
         expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("ranking");
+        if (result.error instanceof ValidationError) {
+          expect(result.error.field).toBe("ranking");
+        }
       }
     });
   });
 
   describe("reject", () => {
     it("should reject a pending submission", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         awardedPoints: 100,
         bonusPoints: 10,
         ranking: 1,
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.reject({
         reviewedById: "admin-123",
@@ -433,10 +469,13 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("should error when rejecting without a reason", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.reject({
         reviewedById: "admin-123",
@@ -446,16 +485,21 @@ describe("[UNIT] ChallengeSubmission", () => {
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
         expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("reason");
+        if (result.error instanceof ValidationError) {
+          expect(result.error.field).toBe("reason");
+        }
       }
     });
 
     it("should error when trying to reject an approved submission", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "APPROVED",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.reject({
         reviewedById: "admin-123",
@@ -471,10 +515,13 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("autoApprove", () => {
     it("should auto-approve with points", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.autoApprove({ awardedPoints: 50 });
 
@@ -489,29 +536,37 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("should error if awardedPoints is negative", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const result = submission.autoApprove({ awardedPoints: -10 });
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
         expect(result.error).toBeInstanceOf(ValidationError);
-        expect(result.error.field).toBe("awardedPoints");
+        if (result.error instanceof ValidationError) {
+          expect(result.error.field).toBe("awardedPoints");
+        }
       }
     });
   });
 
   describe("updateVoteStats", () => {
     it("should update vote count and score", async () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         voteCount: 0,
         voteScore: 0,
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       // Small delay to ensure updatedAt is different
       await new Promise((resolve) => setTimeout(resolve, 2));
@@ -531,11 +586,14 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("status checks", () => {
     it("isPending should return true for pending submissions", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "PENDING",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.isPending()).toBe(true);
       expect(submission.isApproved()).toBe(false);
@@ -543,11 +601,14 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("isApproved should return true for approved submissions", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "APPROVED",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.isPending()).toBe(false);
       expect(submission.isApproved()).toBe(true);
@@ -555,11 +616,14 @@ describe("[UNIT] ChallengeSubmission", () => {
     });
 
     it("isRejected should return true for rejected submissions", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "REJECTED",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.isPending()).toBe(false);
       expect(submission.isApproved()).toBe(false);
@@ -569,33 +633,42 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("canEdit and canDelete", () => {
     it("should allow editing and deleting pending submissions", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "PENDING",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.canEdit()).toBe(true);
       expect(submission.canDelete()).toBe(true);
     });
 
     it("should not allow editing or deleting approved submissions", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "APPROVED",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.canEdit()).toBe(false);
       expect(submission.canDelete()).toBe(false);
     });
 
     it("should not allow editing or deleting rejected submissions", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         status: "REJECTED",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.canEdit()).toBe(false);
       expect(submission.canDelete()).toBe(false);
@@ -604,30 +677,39 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("hasMedia", () => {
     it("should return true when has images", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         imageIds: ["img1"],
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.hasMedia()).toBe(true);
     });
 
     it("should return true when has video", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         videoId: "video-123",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.hasMedia()).toBe(true);
     });
 
     it("should return false when has no media", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.hasMedia()).toBe(false);
     });
@@ -635,32 +717,41 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("hasLocation", () => {
     it("should return true when has both latitude and longitude", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         latitude: 52.2297,
         longitude: 21.0122,
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.hasLocation()).toBe(true);
     });
 
     it("should return false when missing latitude", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         longitude: 21.0122,
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.hasLocation()).toBe(false);
     });
 
     it("should return false when missing longitude", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         latitude: 52.2297,
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.hasLocation()).toBe(false);
     });
@@ -668,12 +759,15 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("getTotalPoints", () => {
     it("should return sum of awarded and bonus points", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         awardedPoints: 100,
         bonusPoints: 25,
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.getTotalPoints()).toBe(125);
     });
@@ -681,20 +775,26 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("isReviewed", () => {
     it("should return true when reviewedAt is set", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
         reviewedAt: new Date(),
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.isReviewed()).toBe(true);
     });
 
     it("should return false when reviewedAt is null", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       expect(submission.isReviewed()).toBe(false);
     });
@@ -702,33 +802,39 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("withGroup", () => {
     it("should set group info", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const withGroup = submission.withGroup({
         id: "group-456",
         name: "Test Group",
-        description: "A test group",
         image: "group-image.jpg",
+        coins: 100,
       });
 
       expect(withGroup.group).toEqual({
         id: "group-456",
         name: "Test Group",
-        description: "A test group",
         image: "group-image.jpg",
+        coins: 100,
       });
     });
   });
 
   describe("withReviewer", () => {
     it("should set reviewer info", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const withReviewer = submission.withReviewer({
         id: "user-789",
@@ -748,59 +854,84 @@ describe("[UNIT] ChallengeSubmission", () => {
 
   describe("withChallenge", () => {
     it("should set challenge info", () => {
-      const submission = ChallengeSubmission.create({
+      const createResult = ChallengeSubmission.create({
         challengeId: "challenge-123",
         groupId: "group-456",
-      }).value as ChallengeSubmission;
+      });
+      expect(createResult.kind).toBe("ok");
+      if (createResult.kind !== "ok") return;
+      const submission = createResult.value;
 
       const withChallenge = submission.withChallenge({
         id: "challenge-123",
         name: "Test Challenge",
-        tripId: "trip-789",
+        description: null,
+        image: null,
+        status: "active",
+        startTime: null,
+        endTime: null,
+        votingStartTime: null,
+        votingEndTime: null,
       });
 
       expect(withChallenge.challenge).toEqual({
         id: "challenge-123",
         name: "Test Challenge",
-        tripId: "trip-789",
+        description: null,
+        image: null,
+        status: "active",
+        startTime: null,
+        endTime: null,
+        votingStartTime: null,
+        votingEndTime: null,
       });
     });
   });
 
   describe("compareForSort", () => {
     it("should sort by voteScore descending", () => {
-      const submission1 = ChallengeSubmission.create({
+      const createResult1 = ChallengeSubmission.create({
         challengeId: "c1",
         groupId: "g1",
         voteScore: 100,
         createdAt: new Date("2024-01-01"),
-      }).value as ChallengeSubmission;
-
-      const submission2 = ChallengeSubmission.create({
+      });
+      const createResult2 = ChallengeSubmission.create({
         challengeId: "c1",
         groupId: "g2",
         voteScore: 50,
         createdAt: new Date("2024-01-01"),
-      }).value as ChallengeSubmission;
+      });
+
+      expect(createResult1.kind).toBe("ok");
+      expect(createResult2.kind).toBe("ok");
+      if (createResult1.kind !== "ok" || createResult2.kind !== "ok") return;
+      const submission1 = createResult1.value;
+      const submission2 = createResult2.value;
 
       expect(submission1.compareForSort(submission2)).toBeLessThan(0);
       expect(submission2.compareForSort(submission1)).toBeGreaterThan(0);
     });
 
     it("should sort by createdAt ascending when voteScore is equal", () => {
-      const submission1 = ChallengeSubmission.create({
+      const createResult1 = ChallengeSubmission.create({
         challengeId: "c1",
         groupId: "g1",
         voteScore: 50,
         createdAt: new Date("2024-01-01"),
-      }).value as ChallengeSubmission;
-
-      const submission2 = ChallengeSubmission.create({
+      });
+      const createResult2 = ChallengeSubmission.create({
         challengeId: "c1",
         groupId: "g2",
         voteScore: 50,
         createdAt: new Date("2024-01-02"),
-      }).value as ChallengeSubmission;
+      });
+
+      expect(createResult1.kind).toBe("ok");
+      expect(createResult2.kind).toBe("ok");
+      if (createResult1.kind !== "ok" || createResult2.kind !== "ok") return;
+      const submission1 = createResult1.value;
+      const submission2 = createResult2.value;
 
       expect(submission1.compareForSort(submission2)).toBeLessThan(0);
       expect(submission2.compareForSort(submission1)).toBeGreaterThan(0);

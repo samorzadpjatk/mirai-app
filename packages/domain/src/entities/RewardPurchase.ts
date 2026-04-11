@@ -55,11 +55,11 @@ export class RewardPurchase {
     public readonly groupId: string,
     public readonly quantity: number,
     public readonly totalCost: number,
-    public readonly status: RewardPurchaseStatus,
-    public readonly collectionMethod: string | null,
+    public status: RewardPurchaseStatus,
+    public collectionMethod: string | null,
     public readonly purchasedById: string,
-    public readonly statusUpdatedById: string | null,
-    public readonly statusUpdatedAt: Date,
+    public statusUpdatedById: string | null,
+    public statusUpdatedAt: Date,
     public readonly purchasedAt: Date,
   ) {}
 

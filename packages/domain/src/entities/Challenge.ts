@@ -86,23 +86,23 @@ export class Challenge {
   private constructor(
     public readonly id: string,
     public readonly tripId: string,
-    public readonly name: string,
-    public readonly description: string | null,
-    public readonly image: string | null,
+    public name: string,
+    public description: string | null,
+    public image: string | null,
     public readonly submissionType: SubmissionType,
     public readonly scoringCategory: ScoringCategory,
     public readonly isRecurring: boolean,
-    public readonly dailyStartTime: string | null,
-    public readonly dailyEndTime: string | null,
-    public readonly basePoints: number,
-    public readonly firstPlacePoints: number | null,
-    public readonly secondPlacePoints: number | null,
-    public readonly thirdPlacePoints: number | null,
-    public readonly status: ChallengeStatus,
-    public readonly startTime: Date | null,
-    public readonly endTime: Date | null,
-    public readonly votingStartTime: Date | null,
-    public readonly votingEndTime: Date | null,
+    public dailyStartTime: string | null,
+    public dailyEndTime: string | null,
+    public basePoints: number,
+    public firstPlacePoints: number | null,
+    public secondPlacePoints: number | null,
+    public thirdPlacePoints: number | null,
+    public status: ChallengeStatus,
+    public startTime: Date | null,
+    public endTime: Date | null,
+    public votingStartTime: Date | null,
+    public votingEndTime: Date | null,
     public readonly targetLatitude: number | null,
     public readonly targetLongitude: number | null,
     public readonly expectedValue: string | null,
@@ -321,14 +321,16 @@ export class Challenge {
     }
 
     // Validate description if provided
-    if (props.description !== undefined) {
+    if (props.description !== undefined && props.description !== null) {
       const validated = validate.string(props.description, "description", {
         required: false,
         maxLength: 2000,
         trim: true,
       });
       if (isError(validated)) return err(validated.error);
-      updates.description = props.description !== null ? validated.value : null;
+      updates.description = validated.value;
+    } else if (props.description === null) {
+      updates.description = null;
     }
 
     if (props.image !== undefined) {

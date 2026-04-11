@@ -9,12 +9,12 @@ import { ValidationError } from "../errors/domain-errors";
  * Replaces TripInsuranceStep entity
  */
 export interface InsuranceStep {
-  readonly stepNumber: number;
-  readonly title: string;
-  readonly text: string;
-  readonly requiredInfo: readonly string[];
-  readonly exampleCall: string | null;
-  readonly additionalText: string | null;
+  stepNumber: number;
+  title: string;
+  text: string;
+  requiredInfo: readonly string[];
+  exampleCall: string | null;
+  additionalText: string | null;
 }
 
 /**
@@ -27,17 +27,17 @@ export class TripInsurance {
   private constructor(
     public readonly id: string,
     public readonly tripId: string,
-    public readonly label: string,
-    public readonly phoneNumber: string,
-    public readonly phoneDisplay: string,
-    public readonly policyNumber: string,
-    public readonly contractNumber: string,
-    public readonly providerName: string,
-    public readonly hospitalName: string | null,
-    public readonly hospitalAddress: string | null,
-    public readonly hospitalDistance: string | null,
+    public label: string,
+    public phoneNumber: string,
+    public phoneDisplay: string,
+    public policyNumber: string,
+    public contractNumber: string,
+    public providerName: string,
+    public hospitalName: string | null,
+    public hospitalAddress: string | null,
+    public hospitalDistance: string | null,
     // NEW: Nested steps
-    public readonly steps: readonly InsuranceStep[],
+    public steps: readonly InsuranceStep[],
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}

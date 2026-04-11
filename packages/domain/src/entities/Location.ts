@@ -46,17 +46,17 @@ export class Location {
   private constructor(
     public readonly id: LocationId,
     public readonly userId: string,
-    public readonly latitude: number | null,
-    public readonly longitude: number | null,
-    public readonly accuracy: number | null,
-    public readonly altitude: number | null,
-    public readonly altitudeAccuracy: number | null,
-    public readonly heading: number | null,
-    public readonly speed: number | null,
-    public readonly sharingLocation: boolean,
-    public readonly timestamp: Date,
-    public readonly lastInactivityNotification: Date | null,
-    public readonly usersToShareWith: SharingUserInfo[],
+    public latitude: number | null,
+    public longitude: number | null,
+    public accuracy: number | null,
+    public altitude: number | null,
+    public altitudeAccuracy: number | null,
+    public heading: number | null,
+    public speed: number | null,
+    public sharingLocation: boolean,
+    public timestamp: Date,
+    public lastInactivityNotification: Date | null,
+    public usersToShareWith: SharingUserInfo[],
   ) {}
 
   /**

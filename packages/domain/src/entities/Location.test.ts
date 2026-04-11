@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { Location, LocationAccuracy, calculateDistance } from "./Location";
 import { ValidationError } from "../errors/domain-errors";
-import type { LocationId } from "../value-objects/LocationId";
+import { LocationId } from "../value-objects/LocationId";
 
 describe("[UNIT] Location Entity", () => {
   describe("Location.create", () => {
@@ -205,7 +205,7 @@ describe("[UNIT] Location Entity", () => {
   describe("Location.reconstitute", () => {
     it("should reconstitute location from persistence", () => {
       const location = Location.reconstitute({
-        id: "loc-123" as LocationId,
+        id: LocationId.unsafeCreate("loc-123"),
         userId: "user-123",
         latitude: 40.7128,
         longitude: -74.006,
@@ -220,7 +220,7 @@ describe("[UNIT] Location Entity", () => {
         usersToShareWith: [],
       });
 
-      expect(location.id).toBe("loc-123");
+      expect(location.id).toBe(LocationId.unsafeCreate("loc-123"));
       expect(location.userId).toBe("user-123");
       expect(location.latitude).toBe(40.7128);
       expect(location.isSharingLocation()).toBe(true);

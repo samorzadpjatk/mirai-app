@@ -199,8 +199,10 @@ describe("[UNIT] RewardPurchase Entity", () => {
       expect(updated.kind).toBe("err");
       if (updated.kind === "err") {
         expect(updated.error).toBeInstanceOf(StateTransitionError);
-        expect(updated.error.from).toBe(RewardPurchaseStatus.BOUGHT);
-        expect(updated.error.to).toBe(RewardPurchaseStatus.DELIVERED);
+        if (updated.error instanceof StateTransitionError) {
+          expect(updated.error.from).toBe(RewardPurchaseStatus.BOUGHT);
+          expect(updated.error.to).toBe(RewardPurchaseStatus.DELIVERED);
+        }
       }
     });
 
@@ -224,7 +226,9 @@ describe("[UNIT] RewardPurchase Entity", () => {
       expect(updated.kind).toBe("err");
       if (updated.kind === "err") {
         expect(updated.error).toBeInstanceOf(ValidationError);
-        expect(updated.error.field).toBe("updatedById");
+        if (updated.error instanceof ValidationError) {
+          expect(updated.error.field).toBe("updatedById");
+        }
       }
     });
   });

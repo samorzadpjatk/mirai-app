@@ -33,6 +33,12 @@ export type DomainEntity = {
 };
 
 /**
+ * Makes all properties writable (removes readonly) and optional.
+ * Used for entity update methods that build partial update objects.
+ */
+export type Writable<T> = { -readonly [P in keyof T]?: T[P] };
+
+/**
  * Create a timestamps object with optional overrides.
  * Uses new Date() for any undefined timestamps.
  *
@@ -98,7 +104,7 @@ export function timestampsWithNow(
  */
 export function withUpdatedAt<T extends Timestamps>(
   entity: T,
-  updates: Partial<Omit<T, "id" | "createdAt">>,
+  updates: Writable<Omit<T, "id" | "createdAt">>,
 ): T {
   return {
     ...entity,
@@ -114,7 +120,7 @@ export function withUpdatedAt<T extends Timestamps>(
  *
  * @param entity - The source entity
  * @param updates - Properties to change
- * @param constructor - The entity class constructor (can be private)
+ * @param constructor - The entity class constructor (accepts private constructors)
  * @returns New entity instance with updates applied
  *
  * @example
@@ -139,29 +145,27 @@ export function withUpdatedAt<T extends Timestamps>(
  * );
  * ```
  */
-export function updateEntity<T extends DomainEntity>(
+export function updateEntity<T extends object>(
   entity: T,
-  updates: Partial<T>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor: new (...args: any[]) => T,
+  updates: any,
+  constructor: any,
 ): T {
   // Get all property keys from the entity
   const keys = Object.keys(entity) as Array<keyof T>;
 
   // Build constructor arguments from entity properties
   // with updates applied and updatedAt refreshed
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const args = keys.map((key) => {
     if (key === "updatedAt") {
       return new Date();
     }
-    if (key in updates) {
-      return updates[key];
+    if (key in updates && (updates as Record<string, unknown>)[key as string] !== undefined) {
+      return (updates as Record<string, unknown>)[key as string];
     }
     return entity[key];
   });
 
-  return new constructor(...args);
+  return new constructor(...(args as any[])) as T;
 }
 
 /**
@@ -169,29 +173,27 @@ export function updateEntity<T extends DomainEntity>(
  *
  * @param entity - The source entity
  * @param updates - Properties to change
- * @param constructor - The entity class constructor (can be private)
+ * @param constructor - The entity class constructor (accepts private constructors)
  * @param now - The timestamp to use for updatedAt
  * @returns New entity instance
  */
-export function updateEntityWithNow<T extends DomainEntity>(
+export function updateEntityWithNow<T extends object>(
   entity: T,
-  updates: Partial<T>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor: new (...args: any[]) => T,
+  updates: any,
+  constructor: any,
   now: Date,
 ): T {
   const keys = Object.keys(entity) as Array<keyof T>;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const args = keys.map((key) => {
     if (key === "updatedAt") {
       return now;
     }
-    if (key in updates) {
-      return updates[key];
+    if (key in updates && (updates as Record<string, unknown>)[key as string] !== undefined) {
+      return (updates as Record<string, unknown>)[key as string];
     }
     return entity[key];
   });
 
-  return new constructor(...args);
+  return new constructor(...(args as any[])) as T;
 }

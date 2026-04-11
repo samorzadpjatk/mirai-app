@@ -14,13 +14,13 @@ import { ValidationError } from "../errors/domain-errors";
 export class Sponsor {
   private constructor(
     public readonly id: SponsorId,
-    public readonly name: string,
-    public readonly description: string,
-    public readonly logoPath: string,
-    public readonly height: number | null,
-    public readonly offsetX: number | null,
-    public readonly offsetY: number | null,
-    public readonly isActive: boolean,
+    public name: string,
+    public description: string,
+    public logoPath: string,
+    public height: number | null,
+    public offsetX: number | null,
+    public offsetY: number | null,
+    public isActive: boolean,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}

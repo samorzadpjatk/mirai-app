@@ -21,13 +21,17 @@ describe("[UNIT] result utilities", () => {
     it("should create a successful result", () => {
       const result = ok(42);
       expect(result.kind).toBe("ok");
-      expect(result.value).toBe(42);
+      if (result.kind === "ok") {
+        expect(result.value).toBe(42);
+      }
     });
 
     it("should create an error result", () => {
       const result = err("error message");
       expect(result.kind).toBe("err");
-      expect(result.error).toBe("error message");
+      if (result.kind === "err") {
+        expect(result.error).toBe("error message");
+      }
     });
   });
 
