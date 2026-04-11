@@ -2,7 +2,7 @@
 
 ## What Was Built
 
-A shared GraphQL types package (`@mirai-app/graphql-types`) that generates type-safe React Query hooks from the backend GraphQL schema. Both frontend apps (web and native) can now consume these hooks with full TypeScript support.
+A shared GraphQL types package (`@mirai-app/graphql-client`) that generates type-safe React Query hooks from the backend GraphQL schema. Both frontend apps (web and native) can now consume these hooks with full TypeScript support.
 
 ## Architecture
 
@@ -62,13 +62,13 @@ import {
   useCreateTripMutation,
   useUpdateTripMutation,
   useDeleteTripMutation,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 ```
 
 ## Usage Example
 
 ```typescript
-import { useGetUserQuery } from '@mirai-app/graphql-types';
+import { useGetUserQuery } from '@mirai-app/graphql-client';
 import { GraphQLClient } from 'graphql-request';
 
 const client = new GraphQLClient('/graphql');
@@ -93,7 +93,7 @@ function UserProfile({ userId }: { userId: string }) {
 2. **Export schema:** `cd apps/backend-server && bun run generate:sdl`
 3. **Add operations:** Create `.graphql` files in `packages/graphql-types/src/graphql/operations/`
 4. **Generate types:** `cd packages/graphql-types && bun run generate`
-5. **Frontend usage:** Import hooks from `@mirai-app/graphql-types`
+5. **Frontend usage:** Import hooks from `@mirai-app/graphql-client`
 
 ## Test Results
 

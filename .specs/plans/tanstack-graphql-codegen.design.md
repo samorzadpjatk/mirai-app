@@ -83,7 +83,7 @@ The `fetcher: 'graphql-request'` setting uses a lightweight fetcher. TanStack Qu
 
 ```bash
 # In both apps/web and apps/native
-bun add @mirai-app/graphql-types
+bun add @mirai-app/graphql-client
 ```
 
 **2. Configure TanStack Query**
@@ -110,7 +110,7 @@ const queryClient = new QueryClient({
 import {
   useGetUserQuery,
   useCreateTripMutation,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 // In a component:
 const { data, isLoading, error } = useGetUserQuery(

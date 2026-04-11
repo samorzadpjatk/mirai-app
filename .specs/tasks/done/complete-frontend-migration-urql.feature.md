@@ -111,7 +111,7 @@ import { useQuery, useMutation, useClient } from "urql";
 import {
   GetChallengesDocument,
   CreateChallengeDocument,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 
 const client = useClient();
 
@@ -170,7 +170,7 @@ const handleCreate = async () => {
 When continuing the migration:
 
 1. Import from `urql` instead of `@tanstack/react-query`
-2. Use generated GraphQL documents from `@mirai-app/graphql-types/urql`
+2. Use generated GraphQL documents from `@mirai-app/graphql-client/urql`
 3. Handle loading with `fetching` property instead of `isLoading`
 4. Use `useClient()` for cache invalidation
 5. Handle errors manually instead of `onError` callbacks

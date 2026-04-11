@@ -734,7 +734,7 @@ These items are not blockers for the core infrastructure which is now complete.
   - All seed modules using graphql-request
 - **Success Criteria:**
   - [x] No Prisma imports in seed app
-  - [x] Uses `@mirai-app/graphql-types` SDK pattern
+  - [x] Uses `@mirai-app/graphql-client` SDK pattern
   - [x] Service account authentication
   - [x] All seed operations work
   - [x] .env.example updated with GRAPHQL_ENDPOINT
@@ -768,13 +768,13 @@ These items are not blockers for the core infrastructure which is now complete.
   - Updated `apps/notification-sender/src/index.ts`
   - Notification services using SDK
 - **Success Criteria:**
-  - [x] Uses `@mirai-app/graphql-types` SDK via getSdk()
+  - [x] Uses `@mirai-app/graphql-client` SDK via getSdk()
   - [x] No custom fetch code for GraphQL operations
   - [x] Service-to-service auth configured
   - [x] Notification delivery mutations work
   - [x] package.json updated with dependencies
 - **Subtasks:**
-  - [x] Import graphql-request and @mirai-app/graphql-types
+  - [x] Import graphql-request and @mirai-app/graphql-client
   - [x] Create GraphQLClient with service account headers
   - [x] Initialize SDK with graphQLClient
   - [x] Replace custom fetch with SDK calls (trackDeliveryStart, sendMobileNotifications, trackDeliveryComplete, trackDeliveryFailure)

@@ -31,7 +31,7 @@ mutation.mutate({ name: "Trip", description: "Desc" });
 import {
   useGetUserQuery,
   useCreateTripMutation,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { useQueryClient } from "@tanstack/react-query";
 
 // Query

@@ -405,7 +405,7 @@ export const createNativeClient = async () => {
 ```typescript
 // apps/native/src/hooks/useActivityFeedSubscription.ts
 import { useSubscription } from "urql";
-import { useActivityFeedUpdatedSubscription } from "@mirai-app/graphql-types";
+import { useActivityFeedUpdatedSubscription } from "@mirai-app/graphql-client";
 
 export function useActivityFeedSubscription(tripId: string) {
   const [{ data, error }] = useSubscription(

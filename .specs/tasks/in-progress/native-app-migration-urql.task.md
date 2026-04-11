@@ -87,7 +87,7 @@ import { useQuery, useMutation, useClient } from "urql";
 import {
   GetChallengesDocument,
   CreateChallengeDocument,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 
 const client = useClient();
 
@@ -123,19 +123,19 @@ const handleCreate = async () => {
 
 ## Dependencies
 
-- `@mirai-app/graphql-types` with urql hooks
+- `@mirai-app/graphql-client` with urql hooks
 - `urql` package in native app
 
 ## Notes
 
 1. The native app uses a mix of:
-   - Old `@mirai-app/graphql-types` TanStack Query hooks (deprecated)
+   - Old `@mirai-app/graphql-client` TanStack Query hooks (deprecated)
    - Direct graphql-request usage
    - Native custom GraphQL client
 
 2. Need to standardize on urql pattern:
    - Import hooks from `urql`
-   - Use generated documents from `@mirai-app/graphql-types/urql`
+   - Use generated documents from `@mirai-app/graphql-client/urql`
    - Handle cache invalidation via `useClient().invalidate()`
    - Convert `isLoading` to `fetching`
    - Handle errors manually (no `onError` callback)
