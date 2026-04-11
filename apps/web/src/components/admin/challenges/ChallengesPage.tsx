@@ -1,34 +1,39 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQuery } from "urql";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useGetChallengesQuery, graphqlClient } from "@mirai-app/graphql-types";
-import type {
+import {
+  GetChallengesByTripDocument,
   ChallengeFilterStatus,
   ChallengeSortBy,
+  type ChallengeStatus,
 } from "@mirai-app/graphql-types";
 import { ChallengeCard } from "./ChallengeCard";
 import { useTrip } from "../../../contexts/TripContext";
 
 const statusOptions: { value: ChallengeFilterStatus; label: string }[] = [
-  { value: "ALL", label: "All statuses" },
-  { value: "HIDDEN", label: "Draft" },
-  { value: "VISIBLE", label: "Visible" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "VOTING_PHASE", label: "Voting" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "CANCELLED", label: "Cancelled" },
+  { value: ChallengeFilterStatus.All, label: "All statuses" },
+  { value: ChallengeFilterStatus.Hidden, label: "Draft" },
+  { value: ChallengeFilterStatus.Visible, label: "Visible" },
+  { value: ChallengeFilterStatus.Active, label: "Active" },
+  { value: ChallengeFilterStatus.Completed, label: "Completed" },
+  { value: ChallengeFilterStatus.Cancelled, label: "Cancelled" },
 ];
 
 const sortOptions: { value: ChallengeSortBy; label: string }[] = [
-  { value: "priority", label: "Priority" },
-  { value: "newest", label: "Newest" },
-  { value: "name", label: "Name" },
-  { value: "points", label: "Points" },
+  { value: ChallengeSortBy.NameAsc, label: "Name (A-Z)" },
+  { value: ChallengeSortBy.NameDesc, label: "Name (Z-A)" },
+  { value: ChallengeSortBy.CreatedAtDesc, label: "Newest first" },
+  { value: ChallengeSortBy.CreatedAtAsc, label: "Oldest first" },
+  { value: ChallengeSortBy.StatusAsc, label: "Status (A-Z)" },
+  { value: ChallengeSortBy.StatusDesc, label: "Status (Z-A)" },
+  { value: ChallengeSortBy.BasePointsDesc, label: "Points (High-Low)" },
+  { value: ChallengeSortBy.BasePointsAsc, label: "Points (Low-High)" },
 ];
 
 const isStatusOption = (value: string): value is ChallengeFilterStatus =>
@@ -37,36 +42,95 @@ const isStatusOption = (value: string): value is ChallengeFilterStatus =>
 const isSortOption = (value: string): value is ChallengeSortBy =>
   sortOptions.some((option) => option.value === value);
 
+const PAGE_SIZE = 20;
+
 export function ChallengesPage() {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState<ChallengeFilterStatus>("ALL");
-  const [sortBy, setSortBy] = useState<ChallengeSortBy>("priority");
-
-  const challengesQuery = useGetChallengesQuery(
-    graphqlClient,
-    {
-      tripId,
-      search: searchTerm || undefined,
-      status: statusFilter === "ALL" ? undefined : statusFilter,
-      sortBy,
-      first: 20,
-    },
-    { enabled: Boolean(tripId) },
+  const [statusFilter, setStatusFilter] = useState<ChallengeFilterStatus>(
+    ChallengeFilterStatus.All,
   );
+  const [sortBy, setSortBy] = useState<ChallengeSortBy>(
+    ChallengeSortBy.CreatedAtDesc,
+  );
+  const [offset, setOffset] = useState(0);
 
+  const [result] = useQuery({
+    query: GetChallengesByTripDocument,
+    variables: {
+      tripId,
+      limit: PAGE_SIZE,
+      offset,
+    },
+    pause: !tripId,
+  });
+
+  const { data, fetching, error } = result;
+
+  // Filter and sort challenges client-side (since the schema supports filtering/sorting)
   const challenges = useMemo(() => {
-    return (
-      challengesQuery.data?.challenges.edges.map((edge) => edge.node) ?? []
-    );
-  }, [challengesQuery.data]);
+    const allChallenges = data?.challengesByTrip?.challenges ?? [];
 
-  const pagination = challengesQuery.data?.challenges.pageInfo;
-  const allChallengesCount = challengesQuery.data?.challenges.totalCount ?? 0;
+    // Filter by search term
+    let filtered = allChallenges;
+    if (searchTerm.trim()) {
+      const search = searchTerm.toLowerCase();
+      filtered = allChallenges.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search) ||
+          (c.description?.toLowerCase().includes(search) ?? false),
+      );
+    }
+
+    // Filter by status (client-side for now - could be moved to query)
+    if (statusFilter !== ChallengeFilterStatus.All) {
+      const statusMap: Record<ChallengeFilterStatus, ChallengeStatus> = {
+        [ChallengeFilterStatus.All]: "ACTIVE" as ChallengeStatus,
+        [ChallengeFilterStatus.Active]: "ACTIVE" as ChallengeStatus,
+        [ChallengeFilterStatus.Visible]: "VISIBLE" as ChallengeStatus,
+        [ChallengeFilterStatus.Hidden]: "HIDDEN" as ChallengeStatus,
+        [ChallengeFilterStatus.Completed]: "COMPLETED" as ChallengeStatus,
+        [ChallengeFilterStatus.Cancelled]: "CANCELLED" as ChallengeStatus,
+      };
+      const targetStatus = statusMap[statusFilter];
+      filtered = filtered.filter((c) => c.status === targetStatus);
+    }
+
+    // Sort
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case ChallengeSortBy.NameAsc:
+          return a.name.localeCompare(b.name);
+        case ChallengeSortBy.NameDesc:
+          return b.name.localeCompare(a.name);
+        case ChallengeSortBy.CreatedAtAsc:
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        case ChallengeSortBy.CreatedAtDesc:
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        case ChallengeSortBy.StatusAsc:
+          return a.status.localeCompare(b.status);
+        case ChallengeSortBy.StatusDesc:
+          return b.status.localeCompare(a.status);
+        case ChallengeSortBy.BasePointsAsc:
+          return a.basePoints - b.basePoints;
+        case ChallengeSortBy.BasePointsDesc:
+          return b.basePoints - a.basePoints;
+        default:
+          return 0;
+      }
+    });
+  }, [data?.challengesByTrip?.challenges, searchTerm, statusFilter, sortBy]);
+
+  const pagination = data?.challengesByTrip?.pagination;
+  const allChallengesCount = pagination?.total ?? 0;
 
   const statusCounts = useMemo(() => {
+    const allChallenges = data?.challengesByTrip?.challenges ?? [];
     const counts = {
       ALL: allChallengesCount,
       HIDDEN: 0,
@@ -76,14 +140,13 @@ export function ChallengesPage() {
       COMPLETED: 0,
       CANCELLED: 0,
     };
-    // Count from current fetched challenges
-    challenges.forEach((c) => {
+    allChallenges.forEach((c) => {
       if (c.status && counts[c.status as keyof typeof counts] !== undefined) {
         counts[c.status as keyof typeof counts]++;
       }
     });
     return counts;
-  }, [challenges, allChallengesCount]);
+  }, [data?.challengesByTrip?.challenges, allChallengesCount]);
 
   const totalCountLabel = useMemo(() => {
     const total = allChallengesCount;
@@ -94,14 +157,20 @@ export function ChallengesPage() {
     return `${challenges.length} / ${total} challenges`;
   }, [challenges.length, allChallengesCount]);
 
-  const fetchMoreChallenges = async () => {
-    if (pagination?.hasNextPage && pagination.endCursor) {
-      await challengesQuery.fetchNextPage();
+  const loadMore = () => {
+    if (pagination?.hasMore) {
+      setOffset((prev) => prev + PAGE_SIZE);
     }
   };
 
   if (!tripId) {
     return <ErrorMessage message="Please select a trip first." />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage message={`Error loading challenges: ${error.message}`} />
+    );
   }
 
   return (
@@ -133,6 +202,7 @@ export function ChallengesPage() {
             const next = event.target.value;
             if (isStatusOption(next)) {
               setStatusFilter(next);
+              setOffset(0); // Reset pagination on filter change
             }
           }}
           options={statusOptions}
@@ -160,16 +230,16 @@ export function ChallengesPage() {
           {statusCounts.ACTIVE}
         </p>
         <p>
-          <span className="font-medium text-text-primary">Voting:</span>{" "}
-          {statusCounts.VOTING_PHASE}
+          <span className="font-medium text-text-primary">Visible:</span>{" "}
+          {statusCounts.VISIBLE}
         </p>
       </div>
 
-      {challengesQuery.isLoading ? (
+      {fetching && challenges.length === 0 ? (
         <LoadingSpinner label="Loading challenges..." />
       ) : null}
 
-      {!challengesQuery.isLoading && challenges.length === 0 ? (
+      {!fetching && challenges.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border-subtle bg-card p-6 text-sm text-text-secondary">
           No challenges found for this filter.
         </p>
@@ -190,16 +260,14 @@ export function ChallengesPage() {
         <p className="text-sm text-text-muted">{totalCountLabel}</p>
       ) : null}
 
-      {pagination?.hasNextPage ? (
+      {pagination?.hasMore ? (
         <div>
           <Button
             variant="secondary"
-            disabled={challengesQuery.isFetchingNextPage}
-            onClick={() => void fetchMoreChallenges()}
+            disabled={fetching}
+            onClick={() => void loadMore()}
           >
-            {challengesQuery.isFetchingNextPage
-              ? "Loading more..."
-              : "Load more"}
+            {fetching ? "Loading more..." : "Load more"}
           </Button>
         </div>
       ) : null}

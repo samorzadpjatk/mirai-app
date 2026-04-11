@@ -10,7 +10,7 @@ import { appToast } from "../../../lib/toast";
 import {
   useCreateCustomActivityMutation,
   useUpdateActivityMutation,
-  useGetActivityByIdQuery,
+  useGetActivityQuery,
 } from "@mirai-app/graphql-types";
 import { useWebFileUpload } from "../../../hooks/useWebFileUpload";
 import { useTrip } from "../../../contexts/TripContext";
@@ -27,16 +27,17 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
   const { selectedTrip } = useTrip();
   const tripId = selectedTrip?.id ?? "";
 
-  const { data: activity, isLoading: isActivityLoading } =
-    useGetActivityByIdQuery(
-      { id: activityId! },
-      { enabled: mode === "edit" && Boolean(activityId) },
-    );
+  const [{ data: activityResult, fetching: isActivityLoading }] =
+    useGetActivityQuery({
+      variables: { id: activityId! },
+      pause: mode !== "edit" || !Boolean(activityId),
+    });
+  const activity = activityResult?.activity;
 
-  const createCustom = useCreateCustomActivityMutation();
-  const updateActivity = useUpdateActivityMutation();
+  const [, createCustom] = useCreateCustomActivityMutation();
+  const [, updateActivity] = useUpdateActivityMutation();
 
-  const isBusy = createCustom.isPending || updateActivity.isPending;
+  const isBusy = createCustom.fetching || updateActivity.fetching;
 
   const {
     selectedFile,
@@ -105,13 +106,18 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
     );
     try {
       if (mode === "create") {
-        await createCustom.mutateAsync({
-          tripId,
-          title: normalizedTitle,
-          description: description.trim() || null,
-          imageUrl: imagePath,
-          isPinned,
+        const result = await createCustom({
+          input: {
+            tripId,
+            title: normalizedTitle,
+            description: description.trim() || null,
+            imageUrl: imagePath,
+            isPinned,
+          },
         });
+        if (result.error) {
+          throw result.error;
+        }
         appToast.dismiss(toastId);
         appToast.success("Activity created.");
         window.location.href = "/activity";
@@ -142,7 +148,10 @@ export function ActivityForm({ mode, activityId }: ActivityFormProps) {
           return;
         }
 
-        await updateActivity.mutateAsync(payload);
+        const result = await updateActivity({ input: payload });
+        if (result.error) {
+          throw result.error;
+        }
         appToast.dismiss(toastId);
         appToast.success("Activity updated.");
         window.location.href = "/activity";

@@ -2,7 +2,12 @@
 
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
-import type { AdminActivity } from "@mirai-app/graphql-types";
+import type { Activity } from "@mirai-app/graphql-types";
+
+// Extended activity type for admin view with optional group info
+interface AdminActivity extends Activity {
+  groupName?: string | null;
+}
 
 interface AdminActivityCardProps {
   item: AdminActivity;
@@ -28,10 +33,7 @@ const formatRelativeTime = (value: string) => {
 };
 
 const getActivityGroupName = (activity: AdminActivity) =>
-  activity.submissionActivity?.group?.name?.trim() ??
-  activity.rankChangeActivity?.group?.name?.trim() ??
-  activity.userPost?.author?.group?.name?.trim() ??
-  "";
+  activity.groupName ?? "";
 
 export function AdminActivityCard({
   item,
