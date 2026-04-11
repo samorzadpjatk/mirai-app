@@ -23,7 +23,7 @@ const mockToast = {
   promise: () => Promise.resolve("promise-toast-id"),
 };
 
-// @ts-ignore
+// @ts-expect-error - bun:test types may not be available in all environments
 await import("bun:test").then(({ mock }) => {
   mock.module("react-hot-toast", () => ({
     toast: mockToast,

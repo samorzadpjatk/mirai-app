@@ -4,7 +4,6 @@ import { lazy, Suspense } from "react";
 import type { ComponentType } from "react";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type LazyPage = React.LazyExoticComponent<ComponentType<any>>;
 
 const resolve = <T extends Record<string, ComponentType<any>>>(

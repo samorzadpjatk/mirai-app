@@ -146,7 +146,6 @@ describe("[INTEGRATION] GraphQL Yoga Endpoint", () => {
     server.app.use("*", async (c, next) => {
       // Create request-scoped container from test container
       const requestContainer = container.createScope();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (c as any).set("container", requestContainer);
       await next();
     });

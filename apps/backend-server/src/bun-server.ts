@@ -249,7 +249,7 @@ enum MessageType {
   ConnectionAck = "connection_ack",
   Next = "next",
   Error = "error",
-  CompleteResponse = "complete", // Server response
+  CompleteResponse = "complete_response", // Server response
 }
 
 /**

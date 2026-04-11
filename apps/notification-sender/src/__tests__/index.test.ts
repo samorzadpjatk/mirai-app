@@ -100,12 +100,15 @@ beforeEach(() => {
   console.error = consoleErrorMock;
 
   // Mock process.on to capture SIGINT handler
-  process.on = function (event: string, handler: () => void) {
+  process.on = function (
+    event: string,
+    handler: (..._args: unknown[]) => void,
+  ) {
     if (event === "SIGINT" || event === "SIGTERM") {
       sigintHandler = handler;
     }
     return process;
-  };
+  } as typeof process.on;
 
   // Mock process.exit
   (process.exit as unknown) = mock(() => {}) as never;
@@ -217,7 +220,13 @@ describe("[UNIT] Notification INSERT Event Handler", () => {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
-    const channel = client.channel("test");
+    const channel = client.channel("test") as unknown as {
+      on: (
+        event: string,
+        filter: unknown,
+        handler: (payload: { new: { id: string } }) => void,
+      ) => unknown;
+    };
 
     // Verify the mock channel's on method is callable
     expect(typeof channel.on).toBe("function");

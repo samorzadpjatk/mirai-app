@@ -335,7 +335,6 @@ export default function ChallengePeerVotingScreen() {
     navigateBackToChallenge();
   }, [navigateBackToChallenge, shouldRedirectToChallengeDetails]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!challengeId || !tripId) return;
     if (
@@ -393,7 +392,6 @@ export default function ChallengePeerVotingScreen() {
     tripId,
     votingSubmissions.length,
   ]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handlePickWinner = (winnerId: string) => {
     if (phase !== "comparing") return;

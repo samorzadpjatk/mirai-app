@@ -88,7 +88,6 @@ export interface GraphQLContext {
  * ```
  */
 export function createContextFactory(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _rootContainer?: AwilixContainer,
 ): (honoContext: HonoContext) => Promise<GraphQLContext> {
   return async (honoContext: HonoContext): Promise<GraphQLContext> => {
