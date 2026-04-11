@@ -1,11 +1,11 @@
-# GraphQL Types Package
+# GraphQL Client Package
 
 TypeScript type definitions and React Query hooks generated from GraphQL schema and operations for the Mirai App.
 
 ## Installation
 
 ```bash
-bun add @mirai-app/graphql-types
+bun add @mirai-app/graphql-client
 ```
 
 ## Usage
@@ -27,7 +27,7 @@ bun run generate:watch
 - `src/graphql/schema.graphql` - GraphQL schema definition
 - `src/graphql/operations/` - GraphQL query/mutation/subscription files
 - `src/graphql/fragments/` - Reusable GraphQL fragments
-- `src/generated/graphql.ts` - Auto-generated TypeScript types and React Query hooks
+- `src/generated/urql.ts` - Auto-generated TypeScript types and urql hooks
 
 ## Building
 

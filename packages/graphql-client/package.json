@@ -1,5 +1,5 @@
 {
-  "name": "@mirai-app/graphql-types",
+  "name": "@mirai-app/graphql-client",
   "version": "0.0.1",
   "type": "module",
   "private": true,
@@ -11,10 +11,6 @@
     "./urql": {
       "types": "./dist/src/generated/urql.d.ts",
       "import": "./dist/src/generated/urql.js"
-    },
-    "./sdk": {
-      "types": "./dist/src/generated/sdk.d.ts",
-      "import": "./dist/src/generated/sdk.js"
     }
   },
   "scripts": {
