@@ -204,7 +204,6 @@ export function createConfiguredTestContainer(
  * ```
  */
 export function createTestContainerFromModule(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   module: { providers: Record<string, any>; exports: string[] },
 ): AwilixContainer {
   const container = createTestContainer();
@@ -282,7 +281,6 @@ export function createMockPortFactory<T>(mockImplementation: T): Resolver<T> {
  * expect(mockValidateToken).toHaveBeenCalledWith("test-token");
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createMockFn<T>(returnValue?: T): MockFn<T> {
   const calls: unknown[][] = [];
 
@@ -306,7 +304,6 @@ export function createMockFn<T>(returnValue?: T): MockFn<T> {
 /**
  * Mock function type with call tracking
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type MockFn<T = any> = {
   (...args: unknown[]): T | undefined;
   calls: unknown[][];

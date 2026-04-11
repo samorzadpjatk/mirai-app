@@ -208,7 +208,6 @@ function generateRequestId(): string {
 export function isScopedContainer(container: AwilixContainer): boolean {
   // Awilix scoped containers have a parent property
   // Access via type assertion since parent is internal
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (container as any).parent !== undefined;
 }
 
@@ -222,7 +221,6 @@ export function getParentContainer(
   container: AwilixContainer,
 ): AwilixContainer | null {
   // Access parent via type assertion since it's internal
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const parent = (container as any).parent;
   return parent || null;
 }

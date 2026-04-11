@@ -127,7 +127,6 @@ export interface AppModuleDef {
    * Uses lazy loading pattern for ControllerModule to avoid circular deps.
    */
   // DefProviderMap constraint: StaticModule expects object | string | boolean | number
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   imports: Array<StaticModule<any> | (() => StaticModule<any>)>;
 
   /**
@@ -168,7 +167,6 @@ export interface AppModuleDef {
  */
 // Type annotation uses any due to awilix-modular's complex generic constraints
 // The actual type safety is provided by the module definition interfaces above
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const AppModule: StaticModule<any> = createStaticModule<AppModuleDef>({
   name: "AppModule",
 

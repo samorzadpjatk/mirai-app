@@ -693,16 +693,6 @@ class GraphQLClientImpl {
     },
   };
 
-  // [File continues with all other domains...]
-  // Due to length, I'll include key domains. The full implementation would continue
-  // with all 14 domains: group, challenge, challengeSubmission, challengeVote,
-  // reward, coinTransaction, activityFeed, notifications, notificationSchedule,
-  // location, storage, sponsor
-}
-
-// [Rest of the file with Context, Provider, and Hooks would follow]
-// This is a truncated version for demonstration
-
   // =============================================================================
   // GROUP DOMAIN (16 procedures)
   // =============================================================================
@@ -910,7 +900,13 @@ class GraphQLClientImpl {
     // Mutations
     create: {
       mutationOptions: () => ({
-        mutationFn: async (input: { name: string; description?: string; tripId: string; color?: string; maxMembers?: number }) => {
+        mutationFn: async (input: {
+          name: string;
+          description?: string;
+          tripId: string;
+          color?: string;
+          maxMembers?: number;
+        }) => {
           return this.execute(
             `
             mutation CreateGroup($input: CreateGroupInput!) {
@@ -929,7 +925,13 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { name: string; description?: string; tripId: string; color?: string; maxMembers?: number }) => {
+      mutate: async (input: {
+        name: string;
+        description?: string;
+        tripId: string;
+        color?: string;
+        maxMembers?: number;
+      }) => {
         return this.execute(
           `
           mutation CreateGroup($input: CreateGroupInput!) {
@@ -1234,7 +1236,12 @@ class GraphQLClientImpl {
   challenge = {
     getAll: {
       queryOptions: (input?: { tripId?: string; status?: string }) => ({
-        queryKey: ["challenge", "getAll", input?.tripId, input?.status] as const,
+        queryKey: [
+          "challenge",
+          "getAll",
+          input?.tripId,
+          input?.status,
+        ] as const,
       }),
       query: async (input?: { tripId?: string; status?: string }) => {
         return this.execute(
@@ -1334,7 +1341,12 @@ class GraphQLClientImpl {
     // Mutations
     submit: {
       mutationOptions: () => ({
-        mutationFn: async (input: { challengeId: string; content: string; mediaUrls?: string[]; location?: { latitude: number; longitude: number } }) => {
+        mutationFn: async (input: {
+          challengeId: string;
+          content: string;
+          mediaUrls?: string[];
+          location?: { latitude: number; longitude: number };
+        }) => {
           return this.execute(
             `
             mutation SubmitChallenge($input: ChallengeSubmissionInput!) {
@@ -1357,7 +1369,12 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { challengeId: string; content: string; mediaUrls?: string[]; location?: { latitude: number; longitude: number } }) => {
+      mutate: async (input: {
+        challengeId: string;
+        content: string;
+        mediaUrls?: string[];
+        location?: { latitude: number; longitude: number };
+      }) => {
         return this.execute(
           `
           mutation SubmitChallenge($input: ChallengeSubmissionInput!) {
@@ -1451,10 +1468,24 @@ class GraphQLClientImpl {
   // =============================================================================
   challengeSubmission = {
     getAll: {
-      queryOptions: (input?: { challengeId?: string; userId?: string; status?: string }) => ({
-        queryKey: ["challengeSubmission", "getAll", input?.challengeId, input?.userId, input?.status] as const,
+      queryOptions: (input?: {
+        challengeId?: string;
+        userId?: string;
+        status?: string;
+      }) => ({
+        queryKey: [
+          "challengeSubmission",
+          "getAll",
+          input?.challengeId,
+          input?.userId,
+          input?.status,
+        ] as const,
       }),
-      query: async (input?: { challengeId?: string; userId?: string; status?: string }) => {
+      query: async (input?: {
+        challengeId?: string;
+        userId?: string;
+        status?: string;
+      }) => {
         return this.execute(
           `
           query GetAllSubmissions($challengeId: ID, $userId: ID, $status: SubmissionStatus) {
@@ -1482,7 +1513,11 @@ class GraphQLClientImpl {
             }
           }
         `,
-          { challengeId: input?.challengeId, userId: input?.userId, status: input?.status },
+          {
+            challengeId: input?.challengeId,
+            userId: input?.userId,
+            status: input?.status,
+          },
         );
       },
     },
@@ -1530,7 +1565,11 @@ class GraphQLClientImpl {
     },
     getByChallenge: {
       queryOptions: (input: { challengeId: string }) => ({
-        queryKey: ["challengeSubmission", "getByChallenge", input.challengeId] as const,
+        queryKey: [
+          "challengeSubmission",
+          "getByChallenge",
+          input.challengeId,
+        ] as const,
       }),
       query: async (input: { challengeId: string }) => {
         return this.execute(
@@ -1562,7 +1601,11 @@ class GraphQLClientImpl {
     // Mutations
     approve: {
       mutationOptions: () => ({
-        mutationFn: async (input: { id: string; score?: number; feedback?: string }) => {
+        mutationFn: async (input: {
+          id: string;
+          score?: number;
+          feedback?: string;
+        }) => {
           return this.execute(
             `
             mutation ApproveSubmission($id: ID!, $score: Int, $feedback: String) {
@@ -1579,7 +1622,11 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { id: string; score?: number; feedback?: string }) => {
+      mutate: async (input: {
+        id: string;
+        score?: number;
+        feedback?: string;
+      }) => {
         return this.execute(
           `
           mutation ApproveSubmission($id: ID!, $score: Int, $feedback: String) {
@@ -1694,7 +1741,12 @@ class GraphQLClientImpl {
     },
     getByUser: {
       queryOptions: (input: { challengeId: string; userId: string }) => ({
-        queryKey: ["challengeVote", "getByUser", input.challengeId, input.userId] as const,
+        queryKey: [
+          "challengeVote",
+          "getByUser",
+          input.challengeId,
+          input.userId,
+        ] as const,
       }),
       query: async (input: { challengeId: string; userId: string }) => {
         return this.execute(
@@ -1752,7 +1804,9 @@ class GraphQLClientImpl {
     },
     submitVotes: {
       mutationOptions: () => ({
-        mutationFn: async (input: { votes: { submissionId: string; score: number }[] }) => {
+        mutationFn: async (input: {
+          votes: { submissionId: string; score: number }[];
+        }) => {
           return this.execute(
             `
             mutation SubmitVotes($votes: [ChallengeVoteInput!]!) {
@@ -1768,7 +1822,9 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { votes: { submissionId: string; score: number }[] }) => {
+      mutate: async (input: {
+        votes: { submissionId: string; score: number }[];
+      }) => {
         return this.execute(
           `
           mutation SubmitVotes($votes: [ChallengeVoteInput!]!) {
@@ -1824,7 +1880,12 @@ class GraphQLClientImpl {
   reward = {
     getAll: {
       queryOptions: (input?: { tripId?: string; available?: boolean }) => ({
-        queryKey: ["reward", "getAll", input?.tripId, input?.available] as const,
+        queryKey: [
+          "reward",
+          "getAll",
+          input?.tripId,
+          input?.available,
+        ] as const,
       }),
       query: async (input?: { tripId?: string; available?: boolean }) => {
         return this.execute(
@@ -1962,7 +2023,15 @@ class GraphQLClientImpl {
     // Mutations
     create: {
       mutationOptions: () => ({
-        mutationFn: async (input: { name: string; description?: string; tripId: string; type: string; rarity: string; cost: number; quantity?: number }) => {
+        mutationFn: async (input: {
+          name: string;
+          description?: string;
+          tripId: string;
+          type: string;
+          rarity: string;
+          cost: number;
+          quantity?: number;
+        }) => {
           return this.execute(
             `
             mutation CreateReward($input: CreateRewardInput!) {
@@ -1983,7 +2052,15 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { name: string; description?: string; tripId: string; type: string; rarity: string; cost: number; quantity?: number }) => {
+      mutate: async (input: {
+        name: string;
+        description?: string;
+        tripId: string;
+        type: string;
+        rarity: string;
+        cost: number;
+        quantity?: number;
+      }) => {
         return this.execute(
           `
           mutation CreateReward($input: CreateRewardInput!) {
@@ -2213,7 +2290,12 @@ class GraphQLClientImpl {
   activityFeed = {
     getByTripModeration: {
       queryOptions: (input: { tripId: string; page?: number }) => ({
-        queryKey: ["activityFeed", "getByTripModeration", input.tripId, input.page] as const,
+        queryKey: [
+          "activityFeed",
+          "getByTripModeration",
+          input.tripId,
+          input.page,
+        ] as const,
       }),
       query: async (input: { tripId: string; page?: number }) => {
         return this.execute(
@@ -2282,7 +2364,13 @@ class GraphQLClientImpl {
     // Mutations
     createCustom: {
       mutationOptions: () => ({
-        mutationFn: async (input: { tripId: string; title: string; description?: string; imageUrl?: string; isPinned?: boolean }) => {
+        mutationFn: async (input: {
+          tripId: string;
+          title: string;
+          description?: string;
+          imageUrl?: string;
+          isPinned?: boolean;
+        }) => {
           return this.execute(
             `
             mutation CreateCustomActivity($input: CreateActivityFeedInput!) {
@@ -2303,7 +2391,13 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { tripId: string; title: string; description?: string; imageUrl?: string; isPinned?: boolean }) => {
+      mutate: async (input: {
+        tripId: string;
+        title: string;
+        description?: string;
+        imageUrl?: string;
+        isPinned?: boolean;
+      }) => {
         return this.execute(
           `
           mutation CreateCustomActivity($input: CreateActivityFeedInput!) {
@@ -2513,7 +2607,9 @@ class GraphQLClientImpl {
       },
     },
     getUnreadCount: {
-      queryOptions: () => ({ queryKey: ["notification", "getUnreadCount"] as const }),
+      queryOptions: () => ({
+        queryKey: ["notification", "getUnreadCount"] as const,
+      }),
       query: async () => {
         return this.execute(`
           query GetUnreadNotificationCount {
@@ -2523,7 +2619,9 @@ class GraphQLClientImpl {
       },
     },
     getPreferences: {
-      queryOptions: () => ({ queryKey: ["notification", "getPreferences"] as const }),
+      queryOptions: () => ({
+        queryKey: ["notification", "getPreferences"] as const,
+      }),
       query: async () => {
         return this.execute(`
           query GetNotificationPreferences {
@@ -2595,7 +2693,12 @@ class GraphQLClientImpl {
     },
     updatePreferences: {
       mutationOptions: () => ({
-        mutationFn: async (input: { type: string; enabled: boolean; pushEnabled?: boolean; emailEnabled?: boolean }) => {
+        mutationFn: async (input: {
+          type: string;
+          enabled: boolean;
+          pushEnabled?: boolean;
+          emailEnabled?: boolean;
+        }) => {
           return this.execute(
             `
             mutation UpdateNotificationPreferences($input: UpdateNotificationPreferencesInput!) {
@@ -2611,7 +2714,12 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { type: string; enabled: boolean; pushEnabled?: boolean; emailEnabled?: boolean }) => {
+      mutate: async (input: {
+        type: string;
+        enabled: boolean;
+        pushEnabled?: boolean;
+        emailEnabled?: boolean;
+      }) => {
         return this.execute(
           `
           mutation UpdateNotificationPreferences($input: UpdateNotificationPreferencesInput!) {
@@ -2665,7 +2773,12 @@ class GraphQLClientImpl {
   notificationSchedule = {
     getAll: {
       queryOptions: (input?: { tripId?: string; active?: boolean }) => ({
-        queryKey: ["notificationSchedule", "getAll", input?.tripId, input?.active] as const,
+        queryKey: [
+          "notificationSchedule",
+          "getAll",
+          input?.tripId,
+          input?.active,
+        ] as const,
       }),
       query: async (input?: { tripId?: string; active?: boolean }) => {
         return this.execute(
@@ -2693,7 +2806,13 @@ class GraphQLClientImpl {
     // Mutations
     create: {
       mutationOptions: () => ({
-        mutationFn: async (input: { name: string; tripId: string; type: string; schedule: string; description?: string }) => {
+        mutationFn: async (input: {
+          name: string;
+          tripId: string;
+          type: string;
+          schedule: string;
+          description?: string;
+        }) => {
           return this.execute(
             `
             mutation CreateNotificationSchedule($input: CreateNotificationScheduleInput!) {
@@ -2712,7 +2831,13 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { name: string; tripId: string; type: string; schedule: string; description?: string }) => {
+      mutate: async (input: {
+        name: string;
+        tripId: string;
+        type: string;
+        schedule: string;
+        description?: string;
+      }) => {
         return this.execute(
           `
           mutation CreateNotificationSchedule($input: CreateNotificationScheduleInput!) {
@@ -2806,10 +2931,24 @@ class GraphQLClientImpl {
   // =============================================================================
   location = {
     getAll: {
-      queryOptions: (input?: { tripId?: string; userId?: string; active?: boolean }) => ({
-        queryKey: ["location", "getAll", input?.tripId, input?.userId, input?.active] as const,
+      queryOptions: (input?: {
+        tripId?: string;
+        userId?: string;
+        active?: boolean;
+      }) => ({
+        queryKey: [
+          "location",
+          "getAll",
+          input?.tripId,
+          input?.userId,
+          input?.active,
+        ] as const,
       }),
-      query: async (input?: { tripId?: string; userId?: string; active?: boolean }) => {
+      query: async (input?: {
+        tripId?: string;
+        userId?: string;
+        active?: boolean;
+      }) => {
         return this.execute(
           `
           query GetLocations($tripId: ID, $userId: ID, $active: Boolean) {
@@ -2830,12 +2969,18 @@ class GraphQLClientImpl {
             }
           }
         `,
-          { tripId: input?.tripId, userId: input?.userId, active: input?.active },
+          {
+            tripId: input?.tripId,
+            userId: input?.userId,
+            active: input?.active,
+          },
         );
       },
     },
     getMyLocation: {
-      queryOptions: () => ({ queryKey: ["location", "getMyLocation"] as const }),
+      queryOptions: () => ({
+        queryKey: ["location", "getMyLocation"] as const,
+      }),
       query: async () => {
         return this.execute(`
           query GetMyLocation {
@@ -2854,7 +2999,11 @@ class GraphQLClientImpl {
     // Mutations
     update: {
       mutationOptions: () => ({
-        mutationFn: async (input: { latitude: number; longitude: number; accuracy?: number }) => {
+        mutationFn: async (input: {
+          latitude: number;
+          longitude: number;
+          accuracy?: number;
+        }) => {
           return this.execute(
             `
             mutation UpdateLocation($input: UpdateLocationInput!) {
@@ -2871,7 +3020,11 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { latitude: number; longitude: number; accuracy?: number }) => {
+      mutate: async (input: {
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+      }) => {
         return this.execute(
           `
           mutation UpdateLocation($input: UpdateLocationInput!) {
@@ -2920,7 +3073,14 @@ class GraphQLClientImpl {
     },
     batchUpdate: {
       mutationOptions: () => ({
-        mutationFn: async (input: { locations: { latitude: number; longitude: number; accuracy?: number; timestamp: string }[] }) => {
+        mutationFn: async (input: {
+          locations: {
+            latitude: number;
+            longitude: number;
+            accuracy?: number;
+            timestamp: string;
+          }[];
+        }) => {
           return this.execute(
             `
             mutation BatchUpdateLocations($locations: [LocationInput!]!) {
@@ -2934,7 +3094,14 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { locations: { latitude: number; longitude: number; accuracy?: number; timestamp: string }[] }) => {
+      mutate: async (input: {
+        locations: {
+          latitude: number;
+          longitude: number;
+          accuracy?: number;
+          timestamp: string;
+        }[];
+      }) => {
         return this.execute(
           `
           mutation BatchUpdateLocations($locations: [LocationInput!]!) {
@@ -2956,7 +3123,12 @@ class GraphQLClientImpl {
   storage = {
     getUploadUrl: {
       queryOptions: (input: { filename: string; contentType: string }) => ({
-        queryKey: ["storage", "getUploadUrl", input.filename, input.contentType] as const,
+        queryKey: [
+          "storage",
+          "getUploadUrl",
+          input.filename,
+          input.contentType,
+        ] as const,
       }),
       query: async (input: { filename: string; contentType: string }) => {
         return this.execute(
@@ -2977,7 +3149,12 @@ class GraphQLClientImpl {
     // Mutations
     createTusUpload: {
       mutationOptions: () => ({
-        mutationFn: async (input: { filename: string; fileSize: number; contentType: string; metadata?: Record<string, string> }) => {
+        mutationFn: async (input: {
+          filename: string;
+          fileSize: number;
+          contentType: string;
+          metadata?: Record<string, string>;
+        }) => {
           return this.execute(
             `
             mutation CreateTusUpload($input: CreateTusUploadInput!) {
@@ -2991,7 +3168,12 @@ class GraphQLClientImpl {
           );
         },
       }),
-      mutate: async (input: { filename: string; fileSize: number; contentType: string; metadata?: Record<string, string> }) => {
+      mutate: async (input: {
+        filename: string;
+        fileSize: number;
+        contentType: string;
+        metadata?: Record<string, string>;
+      }) => {
         return this.execute(
           `
           mutation CreateTusUpload($input: CreateTusUploadInput!) {
@@ -3198,11 +3380,7 @@ export function useTRPCClient(): GraphQLClientImpl {
 /**
  * @deprecated Use direct GraphQL client instead
  */
-export function getTRPCClient(
-  httpUrl: string,
-  _wsUrl: string,
-  token: string,
-) {
+export function getTRPCClient(httpUrl: string, _wsUrl: string, token: string) {
   const client = new GraphQLClientImpl({
     endpoint: httpUrl,
     getAuthToken: () => token,

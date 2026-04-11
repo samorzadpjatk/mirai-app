@@ -56,7 +56,6 @@ import {
  * Configured as the base container for the application.
  * Modules are registered here to provide shared singletons.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let rootContainer: AwilixContainer<any> | null = null;
 
 // =============================================================================
@@ -81,11 +80,8 @@ let rootContainer: AwilixContainer<any> | null = null;
  * const container = initializeContainer([RepositoryModule, ControllerModule]);
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function initializeContainer(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   modules: Array<StaticModule<any>> = [],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): AwilixContainer<any> {
   rootContainer = createContainer({
     injectionMode: "PROXY",
@@ -110,10 +106,8 @@ export function initializeContainer(
  * @param container - Target container
  * @param mod - Module to register
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function registerModule(
   container: AwilixContainer,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mod: StaticModule<any>,
 ): void {
   const providers = mod.providers;
@@ -132,7 +126,6 @@ function registerModule(
         asClass(provider as new (...args: unknown[]) => unknown).singleton(),
       );
     } else if (provider && typeof provider === "object") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const config = provider as any;
 
       if ("factory" in config && typeof config.factory === "function") {
@@ -165,7 +158,6 @@ function registerModule(
  *
  * @returns The root AwilixContainer
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getContainer(): AwilixContainer<any> {
   if (!rootContainer) {
     throw new Error(
@@ -181,18 +173,15 @@ export function getContainer(): AwilixContainer<any> {
  * Note: Accessing this before initialization will throw.
  * Use getContainer() or initializeContainer() for safe access.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const container: AwilixContainer<any> = new Proxy(
   {} as AwilixContainer,
   {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get(_: unknown, prop: keyof AwilixContainer) {
       if (!rootContainer) {
         throw new Error(
           "Container not initialized. Call initializeContainer() first.",
         );
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const value = (rootContainer as any)[prop];
       return typeof value === "function" ? value.bind(rootContainer) : value;
     },
@@ -222,11 +211,8 @@ export const container: AwilixContainer<any> = new Proxy(
  * const controller = requestContainer.resolve("userController");
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createChildContainer(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parent: AwilixContainer<any> = getContainer(),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): AwilixContainer<any> {
   return parent.createScope();
 }
@@ -247,7 +233,6 @@ export function createChildContainer(
  * const useCase = testContainer.resolve("getUserUseCase");
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createTestContainer(): AwilixContainer<any> {
   const testContainer = createContainer({
     injectionMode: "PROXY",
@@ -307,5 +292,4 @@ export { asClass, asValue, Lifetime };
 // Type Exports
 // =============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type { AwilixContainer, StaticModule };

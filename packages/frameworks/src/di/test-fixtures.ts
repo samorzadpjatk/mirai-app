@@ -201,7 +201,6 @@ export const TestAuthContexts = {
 export function createMockAuthPort(config?: {
   validToken?: string;
   authContext?: TestAuthContext;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }): Record<string, (...args: any[]) => unknown> {
   const validToken = config?.validToken ?? "valid-test-token";
   const authContext = config?.authContext ?? createTestAuthContext();
@@ -239,9 +238,7 @@ export function createMockAuthPort(config?: {
  * expect(mockTelemetryPort.getEvents()[0].userAgent).toBe("TestApp/1.0");
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createMockTelemetryPort(): Record<string, any> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const events: any[] = [];
 
   return {
