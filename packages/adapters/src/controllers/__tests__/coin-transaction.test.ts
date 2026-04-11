@@ -54,8 +54,8 @@ describe("[UNIT] CoinTransactionController", () => {
                 amount: 100,
                 reason: "Test",
                 createdAt: new Date(),
-                groupId: "group-1",
-                adminId: "admin-1",
+                group: { id: "group-1", name: "Group 1", coins: 500 },
+                admin: { id: "admin-1", firstName: "Admin", lastName: "User" },
               },
             ],
             pagination: {

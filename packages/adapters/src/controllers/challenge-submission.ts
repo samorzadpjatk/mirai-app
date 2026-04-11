@@ -9,8 +9,57 @@ import {
   ListSubmissionsByChallengeUseCase,
   type CreateSubmissionInput,
   type UpdateSubmissionInput,
+  type GetSubmissionOutput,
+  type GetSubmissionByChallengeAndGroupOutput,
+  type ListSubmissionsByChallengeOutput,
+  type CreateSubmissionOutput,
+  type UpdateSubmissionOutput,
 } from "@mirai-app/use-cases";
 import { SubmissionId } from "@mirai-app/domain";
+
+/**
+ * Helper type to convert branded SubmissionId to string in DTOs
+ * This ensures API returns primitive types, not branded types
+ */
+type ConvertSubmissionId<T> = T extends { id: SubmissionId }
+  ? Omit<T, "id"> & { id: string }
+  : T;
+
+/**
+ * Convert DTO with branded SubmissionId to API-compatible DTO with string id
+ */
+function convertDtoWithSubmissionId<T extends { id: SubmissionId }>(
+  dto: T,
+): ConvertSubmissionId<T> {
+  return {
+    ...dto,
+    id: SubmissionId.toString(dto.id),
+  } as ConvertSubmissionId<T>;
+}
+
+/**
+ * API-ready DTO types (branded IDs converted to strings)
+ */
+type ApiGetSubmissionOutput = ConvertSubmissionId<GetSubmissionOutput>;
+type ApiGetSubmissionByChallengeAndGroupOutput =
+  ConvertSubmissionId<GetSubmissionByChallengeAndGroupOutput>;
+type ApiCreateSubmissionOutput = ConvertSubmissionId<CreateSubmissionOutput>;
+type ApiUpdateSubmissionOutput = ConvertSubmissionId<UpdateSubmissionOutput>;
+
+/**
+ * Convert list output with branded IDs to API-compatible output
+ */
+function convertListOutput(output: ListSubmissionsByChallengeOutput): {
+  submissions: Array<
+    ConvertSubmissionId<ListSubmissionsByChallengeOutput["submissions"][number]>
+  >;
+  totalCount: number;
+} {
+  return {
+    submissions: output.submissions.map((s) => convertDtoWithSubmissionId(s)),
+    totalCount: output.totalCount,
+  };
+}
 
 /**
  * Input validation schemas for challenge submission controller
@@ -78,43 +127,10 @@ export class ChallengeSubmissionController {
   /**
    * Get a submission by ID
    */
-  async getById(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          challengeId: string;
-          groupId: string;
-          imageIds: string[];
-          videoId: string | null;
-          textContent: string | null;
-          latitude: number | null;
-          longitude: number | null;
-          status: string;
-          reviewedById: string | null;
-          reviewedAt: Date | null;
-          rejectionReason: string | null;
-          awardedPoints: number;
-          bonusPoints: number;
-          ranking: number | null;
-          voteCount: number;
-          voteScore: number;
-          createdAt: Date;
-          updatedAt: Date;
-          group: {
-            id: string;
-            name: string;
-            description: string | null;
-            image: string | null;
-          } | null;
-          reviewedBy: {
-            id: string;
-            firstName: string;
-            lastName: string;
-            email: string | null;
-          } | null;
-        };
-      }
+  async getById(
+    input: unknown,
+  ): Promise<
+    | { success: true; data: ApiGetSubmissionOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.getById.safeParse(input);
@@ -134,49 +150,17 @@ export class ChallengeSubmissionController {
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.value };
+    // Convert branded SubmissionId to string for API response
+    return { success: true, data: convertDtoWithSubmissionId(result.value) };
   }
 
   /**
    * Get a submission by challenge ID and group ID
    */
-  async getByChallengeAndGroup(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          challengeId: string;
-          groupId: string;
-          imageIds: string[];
-          videoId: string | null;
-          textContent: string | null;
-          latitude: number | null;
-          longitude: number | null;
-          status: string;
-          reviewedById: string | null;
-          reviewedAt: Date | null;
-          rejectionReason: string | null;
-          awardedPoints: number;
-          bonusPoints: number;
-          ranking: number | null;
-          voteCount: number;
-          voteScore: number;
-          createdAt: Date;
-          updatedAt: Date;
-          group: {
-            id: string;
-            name: string;
-            description: string | null;
-            image: string | null;
-          } | null;
-          reviewedBy: {
-            id: string;
-            firstName: string;
-            lastName: string;
-            email: string | null;
-          } | null;
-        } | null;
-      }
+  async getByChallengeAndGroup(
+    input: unknown,
+  ): Promise<
+    | { success: true; data: ApiGetSubmissionByChallengeAndGroupOutput | null }
     | { success: false; error: string }
   > {
     const parsed = schemas.getByChallengeAndGroup.safeParse(input);
@@ -199,7 +183,11 @@ export class ChallengeSubmissionController {
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.value };
+    // Convert branded SubmissionId to string for API response (if data exists)
+    const apiData = result.value
+      ? convertDtoWithSubmissionId(result.value)
+      : null;
+    return { success: true, data: apiData };
   }
 
   /**
@@ -208,42 +196,7 @@ export class ChallengeSubmissionController {
   async listByChallenge(input: unknown): Promise<
     | {
         success: true;
-        data: {
-          submissions: Array<{
-            id: string;
-            challengeId: string;
-            groupId: string;
-            imageIds: string[];
-            videoId: string | null;
-            textContent: string | null;
-            latitude: number | null;
-            longitude: number | null;
-            status: string;
-            reviewedById: string | null;
-            reviewedAt: Date | null;
-            rejectionReason: string | null;
-            awardedPoints: number;
-            bonusPoints: number;
-            ranking: number | null;
-            voteCount: number;
-            voteScore: number;
-            createdAt: Date;
-            updatedAt: Date;
-            group: {
-              id: string;
-              name: string;
-              description: string | null;
-              image: string | null;
-            } | null;
-            reviewedBy: {
-              id: string;
-              firstName: string;
-              lastName: string;
-              email: string | null;
-            } | null;
-          }>;
-          totalCount: number;
-        };
+        data: ReturnType<typeof convertListOutput>;
       }
     | { success: false; error: string }
   > {
@@ -270,33 +223,17 @@ export class ChallengeSubmissionController {
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.value };
+    // Convert branded SubmissionIds to strings for API response
+    return { success: true, data: convertListOutput(result.value) };
   }
 
   /**
    * Create a new submission
    */
-  async create(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          challengeId: string;
-          groupId: string;
-          imageIds: string[];
-          videoId: string | null;
-          textContent: string | null;
-          latitude: number | null;
-          longitude: number | null;
-          status: string;
-          awardedPoints: number;
-          bonusPoints: number;
-          ranking: number | null;
-          voteCount: number;
-          voteScore: number;
-          createdAt: Date;
-        };
-      }
+  async create(
+    input: unknown,
+  ): Promise<
+    | { success: true; data: ApiCreateSubmissionOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.create.safeParse(input);
@@ -325,36 +262,17 @@ export class ChallengeSubmissionController {
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.value };
+    // Convert branded SubmissionId to string for API response
+    return { success: true, data: convertDtoWithSubmissionId(result.value) };
   }
 
   /**
    * Update a submission (content or review)
    */
-  async update(input: unknown): Promise<
-    | {
-        success: true;
-        data: {
-          id: string;
-          challengeId: string;
-          groupId: string;
-          imageIds: string[];
-          videoId: string | null;
-          textContent: string | null;
-          latitude: number | null;
-          longitude: number | null;
-          status: string;
-          reviewedById: string | null;
-          reviewedAt: Date | null;
-          rejectionReason: string | null;
-          awardedPoints: number;
-          bonusPoints: number;
-          ranking: number | null;
-          voteCount: number;
-          voteScore: number;
-          updatedAt: Date;
-        };
-      }
+  async update(
+    input: unknown,
+  ): Promise<
+    | { success: true; data: ApiUpdateSubmissionOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.update.safeParse(input);
@@ -388,7 +306,8 @@ export class ChallengeSubmissionController {
       return { success: false, error: result.error };
     }
 
-    return { success: true, data: result.value };
+    // Convert branded SubmissionId to string for API response
+    return { success: true, data: convertDtoWithSubmissionId(result.value) };
   }
 
   /**

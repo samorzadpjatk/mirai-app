@@ -1,5 +1,9 @@
 import { z } from "zod";
-import type { ChallengeVoteRepository, ChallengeRepository } from "@mirai-app/use-cases";
+import type {
+  ChallengeVoteRepository,
+  ChallengeRepository,
+  ChallengeSubmissionRepository,
+} from "@mirai-app/use-cases";
 import {
   GetMyVotesUseCase,
   GetVotesByChallengeUseCase,
@@ -13,6 +17,15 @@ import {
   type SubmissionVoteCount,
   type AdminVotingInfo,
 } from "@mirai-app/use-cases";
+
+/**
+ * Event payload for challenge completion callback
+ */
+interface ChallengeCompletedEvent {
+  challengeId: string;
+  tripId: string;
+  adminId: string;
+}
 
 /**
  * Input validation schemas for challenge vote controller
@@ -84,25 +97,11 @@ const schemas = {
 export class ChallengeVoteController {
   constructor(
     private voteRepository: ChallengeVoteRepository,
-    private challengeRepository?: ChallengeRepository,
-    private submissionRepository?: {
-      findByChallengeId(challengeId: string): Promise<
-        Array<{
-          id: string;
-          challengeId: string;
-          status: string;
-        }>
-      >;
-      updateVoteStats(
-        submissionId: string,
-        stats: { voteCount: number; voteScore: number },
-      ): Promise<void>;
-    },
-    private onChallengeCompleted?: (params: {
-      challengeId: string;
-      tripId: string;
-      adminId: string;
-    }) => Promise<void>,
+    private challengeRepository: ChallengeRepository,
+    private submissionRepository: ChallengeSubmissionRepository,
+    private onChallengeCompleted: (
+      params: ChallengeCompletedEvent,
+    ) => Promise<void>,
   ) {}
 
   /**
@@ -344,13 +343,6 @@ export class ChallengeVoteController {
       return {
         success: false,
         error: "Invalid input: " + parsed.error.message,
-      };
-    }
-
-    if (!this.challengeRepository || !this.submissionRepository) {
-      return {
-        success: false,
-        error: "Required repositories not provided",
       };
     }
 

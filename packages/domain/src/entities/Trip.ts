@@ -287,4 +287,23 @@ export class Trip {
     const endStr = this.endDate.toLocaleDateString();
     return `${this.name} (${startStr} - ${endStr})`;
   }
+
+  /**
+   * Check if the trip can transition to a specific status
+   */
+  canTransitionTo(targetStatus: TripStatus): boolean {
+    return stateMachine.canTransition(this.status, targetStatus);
+  }
+
+  /**
+   * Update the trip status with validation
+   * Returns a Result with new Trip instance or StateTransitionError
+   */
+  updateStatus(newStatus: TripStatus): Result<Trip, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, newStatus)) {
+      return err(new StateTransitionError(this.status, newStatus));
+    }
+
+    return ok(updateEntity(this, { status: newStatus }, Trip));
+  }
 }

@@ -5,6 +5,7 @@ import type {
   GetCoinTransactionsUseCase,
   GetCoinQuickStatsUseCase,
   GetCoinAdditionalInsightsUseCase,
+  GetCoinAdditionalInsightsOutput,
 } from "@mirai-app/use-cases";
 
 /**
@@ -84,7 +85,13 @@ export class CoinTransactionController {
     });
 
     if (result.kind === "err") {
-      return { success: false, error: result.error };
+      return {
+        success: false,
+        error:
+          typeof result.error === "string"
+            ? result.error
+            : result.error.message,
+      };
     }
 
     return { success: true, data: result.value };
@@ -109,7 +116,13 @@ export class CoinTransactionController {
     });
 
     if (result.kind === "err") {
-      return { success: false, error: result.error };
+      return {
+        success: false,
+        error:
+          typeof result.error === "string"
+            ? result.error
+            : result.error.message,
+      };
     }
 
     return { success: true, data: result.value };
@@ -153,7 +166,13 @@ export class CoinTransactionController {
     });
 
     if (result.kind === "err") {
-      return { success: false, error: result.error };
+      return {
+        success: false,
+        error:
+          typeof result.error === "string"
+            ? result.error
+            : result.error.message,
+      };
     }
 
     return {
@@ -200,7 +219,13 @@ export class CoinTransactionController {
     });
 
     if (result.kind === "err") {
-      return { success: false, error: result.error };
+      return {
+        success: false,
+        error:
+          typeof result.error === "string"
+            ? result.error
+            : result.error.message,
+      };
     }
 
     return { success: true, data: result.value };
@@ -212,16 +237,7 @@ export class CoinTransactionController {
   async getAdditionalInsights(input: { tripId: string }): Promise<
     | {
         success: true;
-        data: {
-          mostActiveAdmin: { name: string; transactionCount: number } | null;
-          recentTransactions: Array<{
-            id: string;
-            amount: number;
-            reason: string | null;
-            createdAt: Date;
-            group?: { name: string } | null;
-          }>;
-        } | null;
+        data: GetCoinAdditionalInsightsOutput | null;
       }
     | { success: false; error: string }
   > {
@@ -230,10 +246,46 @@ export class CoinTransactionController {
     });
 
     if (result.kind === "err") {
-      return { success: false, error: result.error };
+      return {
+        success: false,
+        error:
+          typeof result.error === "string"
+            ? result.error
+            : result.error.message,
+      };
     }
 
-    return { success: true, data: result.value };
+    if (!result.value) {
+      return { success: true, data: null };
+    }
+
+    // Normalize optional nested objects for API serialization
+    // Convert undefined to null for consistent API responses
+    const normalizedData: GetCoinAdditionalInsightsOutput = {
+      mostActiveAdmin: result.value.mostActiveAdmin,
+      recentTransactions: result.value.recentTransactions.map((t) => ({
+        id: t.id,
+        amount: t.amount,
+        reason: t.reason ?? null,
+        createdAt: t.createdAt,
+        group: t.group
+          ? {
+              id: t.group.id,
+              name: t.group.name,
+              coins: t.group.coins,
+            }
+          : null,
+        admin: t.admin
+          ? {
+              id: t.admin.id,
+              firstName: t.admin.firstName ?? null,
+              lastName: t.admin.lastName ?? null,
+            }
+          : null,
+      })),
+    };
+
+    return { success: true, data: normalizedData };
   }
 
   /**
@@ -276,7 +328,13 @@ export class CoinTransactionController {
     });
 
     if (result.kind === "err") {
-      return { success: false, error: result.error };
+      return {
+        success: false,
+        error:
+          typeof result.error === "string"
+            ? result.error
+            : result.error.message,
+      };
     }
 
     return {

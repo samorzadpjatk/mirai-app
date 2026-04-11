@@ -14,8 +14,13 @@ import {
   GetUpcomingNotificationSchedulesUseCase,
   UpdateNotificationScheduleLastRunUseCase,
   GetNotificationScheduleExecutionHistoryUseCase,
+  type NotificationScheduleOutput,
 } from "@mirai-app/use-cases";
-import { NotificationScheduleType } from "@mirai-app/domain";
+import {
+  NotificationScheduleType,
+  type NotificationScheduleFilter,
+  type PaginationOptions,
+} from "@mirai-app/domain";
 
 /**
  * Input validation schemas for notification schedule controller
@@ -24,22 +29,14 @@ const schemas = {
   getAll: z.object({
     pagination: z
       .object({
-        limit: z.number().int().min(1).max(100).optional(),
-        offset: z.number().int().min(0).optional(),
+        limit: z.number().int().min(1).max(100).default(20),
+        offset: z.number().int().min(0).default(0),
       })
       .optional(),
     filter: z
       .object({
         tripId: z.string().nullable().optional(),
-        notificationType: z
-          .enum([
-            "CHALLENGE",
-            "INFO",
-            "REMINDER",
-            "ANNOUNCEMENT",
-            "DAILY_RANKING",
-          ])
-          .optional(),
+        notificationType: z.nativeEnum(NotificationScheduleType).optional(),
         isActive: z.boolean().optional(),
         startDateFrom: z.coerce.date().optional(),
         startDateTo: z.coerce.date().optional(),
@@ -59,13 +56,7 @@ const schemas = {
   create: z.object({
     name: z.string().min(1).max(100),
     tripId: z.string().uuid().nullable().optional(),
-    notificationType: z.enum([
-      "CHALLENGE",
-      "INFO",
-      "REMINDER",
-      "ANNOUNCEMENT",
-      "DAILY_RANKING",
-    ]),
+    notificationType: z.nativeEnum(NotificationScheduleType),
     notificationTitle: z.string().max(200).nullable().optional(),
     notificationBody: z.string().max(2000).nullable().optional(),
     notificationUrl: z.string().url().max(500).nullable().optional(),
@@ -127,32 +118,6 @@ const schemas = {
 };
 
 /**
- * Output type for schedule operations
- */
-export type NotificationScheduleOutput = {
-  id: string;
-  name: string;
-  tripId: string | null;
-  notificationType: string;
-  notificationTitle: string | null;
-  notificationBody: string | null;
-  notificationUrl: string | null;
-  startDate: Date;
-  endDate: Date;
-  hour: number;
-  minute: number;
-  isActive: boolean;
-  createdById: string;
-  lastRun: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  isCurrentlyActive: boolean;
-  isExpired: boolean;
-  isUpcoming: boolean;
-  formattedTime: string;
-};
-
-/**
  * Controller result type
  */
 type ControllerResult<T> =
@@ -192,9 +157,27 @@ export class NotificationScheduleController {
     }
 
     const useCase = new GetNotificationSchedulesUseCase(this.repository);
+
+    // Map Zod schema filter to domain filter type
+    const filter: NotificationScheduleFilter | undefined = parsed.data.filter
+      ? {
+          tripId: parsed.data.filter.tripId ?? undefined,
+          notificationType: parsed.data.filter.notificationType,
+          isActive: parsed.data.filter.isActive,
+          startDateFrom: parsed.data.filter.startDateFrom,
+          startDateTo: parsed.data.filter.startDateTo,
+          search: parsed.data.filter.search,
+        }
+      : undefined;
+
+    const pagination: PaginationOptions = parsed.data.pagination ?? {
+      limit: 20,
+      offset: 0,
+    };
+
     const result = await useCase.execute({
-      filter: parsed.data.filter,
-      pagination: parsed.data.pagination,
+      filter,
+      pagination,
     });
 
     if (result.kind === "err") {

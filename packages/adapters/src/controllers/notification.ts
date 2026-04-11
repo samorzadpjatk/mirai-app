@@ -220,7 +220,7 @@ export class NotificationController {
     });
 
     if (notificationResult.kind === "err") {
-      return { success: false, error: notificationResult.error };
+      return { success: false, error: notificationResult.error.message };
     }
 
     // Persist notification
@@ -297,34 +297,34 @@ export class NotificationController {
       });
 
       if (contentResult.kind === "err") {
-        return { success: false, error: contentResult.error };
+        return { success: false, error: contentResult.error.message };
       }
 
       updatedNotification = contentResult.value;
     }
 
     if (parsed.data.priority !== undefined) {
-      const priorityResult = updatedNotification.updatePriority(
+      updatedNotification = updatedNotification.updatePriority(
         parsed.data.priority as NotificationPriority,
       );
-
-      if (priorityResult.kind === "err") {
-        return { success: false, error: priorityResult.error };
-      }
-
-      updatedNotification = priorityResult.value;
     }
 
-    if (parsed.data.scheduledFor !== undefined) {
-      const scheduleResult = updatedNotification.updateSchedule(
+    if (
+      parsed.data.scheduledFor !== undefined &&
+      parsed.data.scheduledFor !== null
+    ) {
+      const scheduleResult = updatedNotification.schedule(
         parsed.data.scheduledFor,
       );
 
       if (scheduleResult.kind === "err") {
-        return { success: false, error: scheduleResult.error };
+        return { success: false, error: scheduleResult.error.message };
       }
 
       updatedNotification = scheduleResult.value;
+    } else if (parsed.data.scheduledFor === null) {
+      // If explicitly set to null, unschedule the notification
+      updatedNotification = updatedNotification.unschedule();
     }
 
     // Persist changes
@@ -390,31 +390,30 @@ export class NotificationController {
     }
 
     // Apply status update
-    try {
-      const updatedNotification = notification.updateStatus(
-        parsed.data.newStatus as NotificationStatus,
-      );
+    const statusResult = notification.updateStatus(
+      parsed.data.newStatus as NotificationStatus,
+    );
 
-      // Persist changes
-      const saved =
-        await this.notificationRepository.update(updatedNotification);
-
-      return {
-        success: true,
-        data: {
-          id: saved.id,
-          title: saved.title,
-          previousStatus,
-          newStatus: saved.status,
-          updatedAt: saved.updatedAt,
-        },
-      };
-    } catch (error) {
+    if (statusResult.kind === "err") {
       return {
         success: false,
-        error: `Failed to update status: ${error}`,
+        error: statusResult.error.message,
       };
     }
+
+    // Persist changes
+    const saved = await this.notificationRepository.update(statusResult.value);
+
+    return {
+      success: true,
+      data: {
+        id: saved.id,
+        title: saved.title,
+        previousStatus,
+        newStatus: saved.status,
+        updatedAt: saved.updatedAt,
+      },
+    };
   }
 
   /**

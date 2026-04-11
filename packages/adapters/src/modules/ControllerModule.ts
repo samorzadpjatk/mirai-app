@@ -42,7 +42,7 @@ import type {
   AuthPort,
   TelemetryPort,
 } from "@mirai-app/use-cases";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@mirai-app/frameworks/supabase";
 import type { TokenExtractor } from "../utils/TokenExtractor";
 
 export const SERVICE_TOKENS = {
@@ -182,6 +182,13 @@ export const ControllerModule: StaticModule<ControllerModuleDef> =
         (c) =>
           new ChallengeVoteController(
             c.challengeVoteRepository as ChallengeVoteRepository,
+            c.challengeRepository as ChallengeRepository,
+            c.challengeSubmissionRepository as ChallengeSubmissionRepository,
+            c.onChallengeCompleted as (params: {
+              challengeId: string;
+              tripId: string;
+              adminId: string;
+            }) => Promise<void>,
           ),
       ),
       [CONTROLLER_TOKENS.ActivityFeedController]: scoped(

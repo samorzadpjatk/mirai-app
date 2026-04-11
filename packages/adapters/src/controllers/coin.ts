@@ -76,7 +76,7 @@ export class CoinController {
       data: {
         id: result.value.transaction.id,
         amount: result.value.transaction.amount,
-        reason: result.value.transaction.reason,
+        reason: result.value.transaction.reason ?? null,
         groupId: result.value.transaction.groupId,
         adminId: result.value.transaction.adminId,
         createdAt: result.value.transaction.createdAt,
@@ -124,7 +124,7 @@ export class CoinController {
       data: {
         id: result.value.transaction.id,
         amount: result.value.transaction.amount,
-        reason: result.value.transaction.reason,
+        reason: result.value.transaction.reason ?? null,
         groupId: result.value.transaction.groupId,
         adminId: result.value.transaction.adminId,
         createdAt: result.value.transaction.createdAt,

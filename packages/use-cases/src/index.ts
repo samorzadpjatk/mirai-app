@@ -428,6 +428,7 @@ export {
   type SubmitVotesInput,
   type SubmitVotesOutput,
   type VoteInput,
+  type VoteOutput,
 } from "./interactors/SubmitVotes";
 export {
   ForceEndVotingUseCase,
@@ -553,6 +554,7 @@ export {
   GetNotificationScheduleExecutionHistoryUseCase,
   type GetNotificationScheduleExecutionHistoryInput,
   type GetNotificationScheduleExecutionHistoryOutput,
+  type ExecutionHistoryItem,
 } from "./interactors/GetNotificationScheduleExecutionHistory";
 
 // Utilities

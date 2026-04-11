@@ -182,7 +182,7 @@ export class TripController {
     });
 
     if (tripResult.kind === "err") {
-      return { success: false, error: tripResult.error };
+      return { success: false, error: tripResult.error.message };
     }
 
     // Persist trip
@@ -261,7 +261,7 @@ export class TripController {
       });
 
       if (detailsResult.kind === "err") {
-        return { success: false, error: detailsResult.error };
+        return { success: false, error: detailsResult.error.message };
       }
 
       updatedTrip = detailsResult.value;
@@ -278,7 +278,7 @@ export class TripController {
       });
 
       if (datesResult.kind === "err") {
-        return { success: false, error: datesResult.error };
+        return { success: false, error: datesResult.error.message };
       }
 
       updatedTrip = datesResult.value;

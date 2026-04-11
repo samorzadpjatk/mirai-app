@@ -5,6 +5,16 @@ import type {
   TripPointsCalculator,
   GroupCoinsService,
   TripAccessChecker,
+  GetRewardOutput,
+  ListRewardsOutput,
+  CreateRewardOutput,
+  UpdateRewardOutput,
+  SetRewardHiddenOutput,
+  DeleteRewardOutput,
+  PurchaseRewardOutput,
+  UpdatePurchaseStatusOutput,
+  UpdateMyPurchaseStatusOutput,
+  GetPurchaseHistoryOutput,
 } from "@mirai-app/use-cases";
 import {
   GetRewardUseCase,
@@ -17,8 +27,9 @@ import {
   UpdatePurchaseStatusUseCase,
   UpdateMyPurchaseStatusUseCase,
   GetPurchaseHistoryUseCase,
-  UserRole,
 } from "@mirai-app/use-cases";
+import type { RewardId, UserId } from "@mirai-app/domain";
+import { UserRole, RewardPurchaseStatus } from "@mirai-app/domain";
 
 /**
  * Input validation schemas for reward controller
@@ -52,7 +63,7 @@ const schemas = {
     isHidden: z.boolean().optional(),
     tripId: z.string().min(1, "Trip ID is required"),
     createdById: z.string().min(1, "Creator ID is required"),
-    creatorRole: z.enum(["USER", "MODERATOR", "ADMIN", "SERVICE"]),
+    creatorRole: z.nativeEnum(UserRole),
   }),
 
   update: z.object({
@@ -81,20 +92,14 @@ const schemas = {
 
   updatePurchaseStatus: z.object({
     purchaseId: z.string().min(1, "Purchase ID is required"),
-    status: z.enum([
-      "BOUGHT",
-      "ACCEPTED",
-      "IN_DELIVERY",
-      "CANCELLED",
-      "DELIVERED",
-    ]),
+    status: z.nativeEnum(RewardPurchaseStatus),
     updatedById: z.string().min(1, "Updater ID is required"),
     collectionMethod: z.string().min(1).max(500).optional(),
   }),
 
   updateMyPurchaseStatus: z.object({
     purchaseId: z.string().min(1, "Purchase ID is required"),
-    status: z.enum(["IN_DELIVERY", "CANCELLED"]),
+    status: z.nativeEnum(RewardPurchaseStatus),
     userId: z.string().min(1, "User ID is required"),
   }),
 
@@ -133,8 +138,7 @@ export class RewardController {
   async getById(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@mirai-app/use-cases").GetRewardOutput }
-    | { success: false; error: string }
+    { success: true; data: GetRewardOutput } | { success: false; error: string }
   > {
     const parsed = schemas.getById.safeParse(input);
     if (!parsed.success) {
@@ -146,7 +150,7 @@ export class RewardController {
 
     const useCase = new GetRewardUseCase(this.rewardRepository);
     const result = await useCase.execute({
-      rewardId: parsed.data.id as import("@mirai-app/domain").RewardId,
+      rewardId: parsed.data.id as RewardId,
     });
 
     if (result.kind === "err") {
@@ -162,7 +166,7 @@ export class RewardController {
   async getByTrip(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@mirai-app/use-cases").ListRewardsOutput }
+    | { success: true; data: ListRewardsOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.getByTrip.safeParse(input);
@@ -195,7 +199,7 @@ export class RewardController {
   async getByTripAdmin(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@mirai-app/use-cases").ListRewardsOutput }
+    | { success: true; data: ListRewardsOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.getByTripAdmin.safeParse(input);
@@ -229,7 +233,7 @@ export class RewardController {
   async create(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@mirai-app/use-cases").CreateRewardOutput }
+    | { success: true; data: CreateRewardOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.create.safeParse(input);
@@ -253,7 +257,7 @@ export class RewardController {
       isHidden: parsed.data.isHidden,
       tripId: parsed.data.tripId,
       createdById: parsed.data.createdById,
-      creatorRole: parsed.data.creatorRole as UserRole,
+      creatorRole: parsed.data.creatorRole,
     });
 
     if (result.kind === "err") {
@@ -269,7 +273,7 @@ export class RewardController {
   async update(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@mirai-app/use-cases").UpdateRewardOutput }
+    | { success: true; data: UpdateRewardOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.update.safeParse(input);
@@ -282,7 +286,7 @@ export class RewardController {
 
     const useCase = new UpdateRewardUseCase(this.rewardRepository);
     const result = await useCase.execute({
-      rewardId: parsed.data.rewardId as import("@mirai-app/domain").RewardId,
+      rewardId: parsed.data.rewardId as RewardId,
       name: parsed.data.name,
       description: parsed.data.description,
       availableQuantity: parsed.data.availableQuantity,
@@ -300,12 +304,10 @@ export class RewardController {
   /**
    * Set reward hidden status
    */
-  async setHidden(
-    input: unknown,
-  ): Promise<
+  async setHidden(input: unknown): Promise<
     | {
         success: true;
-        data: import("@mirai-app/use-cases").SetRewardHiddenOutput;
+        data: SetRewardHiddenOutput;
       }
     | { success: false; error: string }
   > {
@@ -319,7 +321,7 @@ export class RewardController {
 
     const useCase = new SetRewardHiddenUseCase(this.rewardRepository);
     const result = await useCase.execute({
-      rewardId: parsed.data.rewardId as import("@mirai-app/domain").RewardId,
+      rewardId: parsed.data.rewardId as RewardId,
       isHidden: parsed.data.isHidden,
     });
 
@@ -336,7 +338,7 @@ export class RewardController {
   async delete(
     input: unknown,
   ): Promise<
-    | { success: true; data: import("@mirai-app/use-cases").DeleteRewardOutput }
+    | { success: true; data: DeleteRewardOutput }
     | { success: false; error: string }
   > {
     const parsed = schemas.delete.safeParse(input);
@@ -349,7 +351,7 @@ export class RewardController {
 
     const useCase = new DeleteRewardUseCase(this.rewardRepository);
     const result = await useCase.execute({
-      rewardId: parsed.data.rewardId as import("@mirai-app/domain").RewardId,
+      rewardId: parsed.data.rewardId as RewardId,
     });
 
     if (result.kind === "err") {
@@ -362,12 +364,10 @@ export class RewardController {
   /**
    * Purchase a reward
    */
-  async purchase(
-    input: unknown,
-  ): Promise<
+  async purchase(input: unknown): Promise<
     | {
         success: true;
-        data: import("@mirai-app/use-cases").PurchaseRewardOutput;
+        data: PurchaseRewardOutput;
       }
     | { success: false; error: string }
   > {
@@ -387,7 +387,7 @@ export class RewardController {
       this.accessChecker,
     );
     const result = await useCase.execute({
-      rewardId: parsed.data.rewardId as import("@mirai-app/domain").RewardId,
+      rewardId: parsed.data.rewardId as RewardId,
       quantity: parsed.data.quantity,
       userId: parsed.data.userId,
     });
@@ -405,7 +405,7 @@ export class RewardController {
   async updatePurchaseStatus(input: unknown): Promise<
     | {
         success: true;
-        data: import("@mirai-app/use-cases").UpdatePurchaseStatusOutput;
+        data: UpdatePurchaseStatusOutput;
       }
     | { success: false; error: string }
   > {
@@ -425,8 +425,7 @@ export class RewardController {
     );
     const result = await useCase.execute({
       purchaseId: parsed.data.purchaseId,
-      newStatus: parsed.data
-        .status as import("@mirai-app/domain").RewardPurchaseStatus,
+      newStatus: parsed.data.status,
       updatedById: parsed.data.updatedById,
       collectionMethod: parsed.data.collectionMethod,
     });
@@ -444,7 +443,7 @@ export class RewardController {
   async updateMyPurchaseStatus(input: unknown): Promise<
     | {
         success: true;
-        data: import("@mirai-app/use-cases").UpdateMyPurchaseStatusOutput;
+        data: UpdateMyPurchaseStatusOutput;
       }
     | { success: false; error: string }
   > {
@@ -499,7 +498,7 @@ export class RewardController {
   async getPurchaseHistory(input: unknown): Promise<
     | {
         success: true;
-        data: import("@mirai-app/use-cases").GetPurchaseHistoryOutput;
+        data: GetPurchaseHistoryOutput;
       }
     | { success: false; error: string }
   > {
