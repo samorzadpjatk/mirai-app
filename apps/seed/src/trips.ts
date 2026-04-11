@@ -1,17 +1,128 @@
 import { createAuthUserByEmail, ensureGhostAuthUser } from "./auth";
 import { supabase } from "./config/supabase";
 import { env } from "./config/env";
-import { getSeedSDK } from "./graphql-client";
+import { seedUrqlClient } from "./graphql-client";
 import type { TripConfig, AuthUserByEmail } from "./types";
 import { parseUsersCsv } from "./users";
 import { joinPath } from "./utils/path";
 import { readTextFile, readFile } from "./utils/fs";
+import { gql } from "graphql-tag";
 
-// Service role key for admin operations via GraphQL
-const SERVICE_ROLE_KEY = env.serviceRoleKey;
+// =============================================================================
+// GraphQL Operation Documents
+// =============================================================================
+
+const UpsertTripDocument = gql`
+  mutation UpsertTrip(
+    $key: String!
+    $name: String!
+    $description: String
+    $startDate: DateTime!
+    $endDate: DateTime!
+    $backgroundImagePath: String
+  ) {
+    upsertTrip(
+      input: {
+        key: $key
+        name: $name
+        description: $description
+        startDate: $startDate
+        endDate: $endDate
+        backgroundImagePath: $backgroundImagePath
+      }
+    ) {
+      id
+      name
+      description
+      startDate
+      endDate
+      backgroundImagePath
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const UpsertUserDocument = gql`
+  mutation UpsertUser(
+    $authUserId: String!
+    $email: String!
+    $firstName: String!
+    $lastName: String!
+    $role: UserRole!
+  ) {
+    upsertUser(
+      input: {
+        authUserId: $authUserId
+        email: $email
+        firstName: $firstName
+        lastName: $lastName
+        role: $role
+      }
+    ) {
+      id
+      authUserId
+      firstName
+      lastName
+      role
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const AddTripParticipantDocument = gql`
+  mutation AddTripParticipant($tripId: ID!, $userId: ID!) {
+    addTripParticipant(input: { tripId: $tripId, userId: $userId }) {
+      id
+      tripId
+      userId
+      joinedAt
+    }
+  }
+`;
+
+// Types for GraphQL responses
+interface UpsertTripResponse {
+  upsertTrip: {
+    id: string;
+    name: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    backgroundImagePath?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+interface UpsertUserResponse {
+  upsertUser: {
+    id: string;
+    authUserId: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+interface AddTripParticipantResponse {
+  addTripParticipant: {
+    id: string;
+    tripId: string;
+    userId: string;
+    joinedAt: string;
+  };
+}
+
+// =============================================================================
+// Trip Seeding
+// =============================================================================
 
 /**
- * Seed a trip with participants using GraphQL SDK
+ * Seed a trip with participants using GraphQL via urql
  * Uses service account authentication for admin-level operations
  */
 export const seedTrip = async (
@@ -57,13 +168,13 @@ export const seedTrip = async (
       }
     } catch (err) {
       console.warn(
-        `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}:`,
-        err,
+        `✗ Failed to read background image ${tripConfig.background} for ${tripConfig.name}:` +
+          err,
       );
     }
   }
 
-  // Create or update trip via GraphQL
+  // Create or update trip via GraphQL using urql
   const trip = await upsertTripViaGraphQL({
     key: tripConfig.key,
     name: tripConfig.name,
@@ -99,7 +210,7 @@ export const seedTrip = async (
       authUsers.set(email.toLowerCase(), authUser);
     }
 
-    // Create or update user via GraphQL
+    // Create or update user via GraphQL using urql
     const roleMapping: Record<string, string> = {
       admin: "ADMIN",
       moderator: "MODERATOR",
@@ -122,7 +233,7 @@ export const seedTrip = async (
       continue;
     }
 
-    // Add user as trip participant
+    // Add user as trip participant using urql
     const participant = await addTripParticipantViaGraphQL({
       tripId: trip.id,
       userId: dbUser.id,
@@ -158,88 +269,36 @@ export const seedTrip = async (
 };
 
 // =============================================================================
-// GraphQL SDK Operations
+// GraphQL Operations via urql
 // =============================================================================
 
 /**
- * Upsert trip via GraphQL API
+ * Upsert trip via GraphQL API using urql
  * Uses service account for admin operations
  */
 async function upsertTripViaGraphQL(input: {
   key: string;
   name: string;
-  description: string;
+  description?: string;
   startDate: Date;
   endDate: Date;
   backgroundImagePath?: string;
 }) {
-  const query = `
-    mutation UpsertTrip(
-      $key: String!
-      $name: String!
-      $description: String
-      $startDate: DateTime!
-      $endDate: DateTime!
-      $backgroundImagePath: String
-    ) {
-      upsertTrip(
-        input: {
-          key: $key
-          name: $name
-          description: $description
-          startDate: $startDate
-          endDate: $endDate
-          backgroundImagePath: $backgroundImagePath
-        }
-      ) {
-        id
-        name
-        description
-        startDate
-        endDate
-        backgroundImagePath
-        createdAt
-        updatedAt
-      }
-    }
-  `;
-
   try {
-    const response = await fetch(env.graphqlEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        "X-Service-Account": "seed",
+    const result = await seedUrqlClient.mutation<UpsertTripResponse>(
+      UpsertTripDocument,
+      {
+        key: input.key,
+        name: input.name,
+        description: input.description,
+        startDate: input.startDate.toISOString(),
+        endDate: input.endDate.toISOString(),
+        backgroundImagePath: input.backgroundImagePath,
       },
-      body: JSON.stringify({
-        query,
-        variables: input,
-      }),
-    });
+    );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
-    }
-
-    const result = (await response.json()) as {
-      data?: {
-        upsertTrip: {
-          id: string;
-          name: string;
-          description: string;
-          startDate: string;
-          endDate: string;
-          backgroundImagePath?: string;
-          createdAt: string;
-          updatedAt: string;
-        };
-      };
-      errors?: Array<{ message: string }>;
-    };
-
-    if (result.errors) {
-      console.warn("GraphQL errors:", result.errors);
+    if (result.error) {
+      console.warn("GraphQL error (upsertTrip):", result.error);
       return null;
     }
 
@@ -251,7 +310,7 @@ async function upsertTripViaGraphQL(input: {
 }
 
 /**
- * Upsert user via GraphQL API
+ * Upsert user via GraphQL API using urql
  */
 async function upsertUserViaGraphQL(input: {
   authUserId: string;
@@ -260,69 +319,20 @@ async function upsertUserViaGraphQL(input: {
   lastName: string;
   role: string;
 }) {
-  const query = `
-    mutation UpsertUser(
-      $authUserId: String!
-      $email: String!
-      $firstName: String!
-      $lastName: String!
-      $role: UserRole!
-    ) {
-      upsertUser(
-        input: {
-          authUserId: $authUserId
-          email: $email
-          firstName: $firstName
-          lastName: $lastName
-          role: $role
-        }
-      ) {
-        id
-        authUserId
-        firstName
-        lastName
-        role
-        createdAt
-        updatedAt
-      }
-    }
-  `;
-
   try {
-    const response = await fetch(env.graphqlEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        "X-Service-Account": "seed",
+    const result = await seedUrqlClient.mutation<UpsertUserResponse>(
+      UpsertUserDocument,
+      {
+        authUserId: input.authUserId,
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        role: input.role,
       },
-      body: JSON.stringify({
-        query,
-        variables: input,
-      }),
-    });
+    );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
-    }
-
-    const result = (await response.json()) as {
-      data?: {
-        upsertUser: {
-          id: string;
-          authUserId: string;
-          firstName: string;
-          lastName: string;
-          role: string;
-          createdAt: string;
-          updatedAt: string;
-        };
-      };
-      errors?: Array<{ message: string }>;
-    };
-
-    if (result.errors) {
-      console.warn("GraphQL errors:", result.errors);
+    if (result.error) {
+      console.warn("GraphQL error (upsertUser):", result.error);
       return null;
     }
 
@@ -334,59 +344,31 @@ async function upsertUserViaGraphQL(input: {
 }
 
 /**
- * Add trip participant via GraphQL API
+ * Add trip participant via GraphQL API using urql
  */
 async function addTripParticipantViaGraphQL(input: {
   tripId: string;
   userId: string;
 }) {
-  const query = `
-    mutation AddTripParticipant($tripId: ID!, $userId: ID!) {
-      addTripParticipant(input: { tripId: $tripId, userId: $userId }) {
-        id
-        tripId
-        userId
-        joinedAt
-      }
-    }
-  `;
-
   try {
-    const response = await fetch(env.graphqlEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        "X-Service-Account": "seed",
+    const result = await seedUrqlClient.mutation<AddTripParticipantResponse>(
+      AddTripParticipantDocument,
+      {
+        tripId: input.tripId,
+        userId: input.userId,
       },
-      body: JSON.stringify({
-        query,
-        variables: input,
-      }),
-    });
+    );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
-    }
-
-    const result = (await response.json()) as {
-      data?: {
-        addTripParticipant: {
-          id: string;
-          tripId: string;
-          userId: string;
-          joinedAt: string;
-        };
-      };
-      errors?: Array<{ message: string }>;
-    };
-
-    if (result.errors) {
+    if (result.error) {
       // Participant may already exist - that's ok
-      if (result.errors.some((e) => e.message.includes("already exists"))) {
-        return { id: "existing", ...input, joinedAt: new Date().toISOString() };
+      if (result.error.message?.includes("already exists")) {
+        return {
+          id: "existing",
+          ...input,
+          joinedAt: new Date().toISOString(),
+        };
       }
-      console.warn("GraphQL errors:", result.errors);
+      console.warn("GraphQL error (addTripParticipant):", result.error);
       return null;
     }
 
