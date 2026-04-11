@@ -45,13 +45,13 @@ import { builder } from "./builder";
  */
 import "./types/User";
 import "./types/activityFeed";
+import "./types/reward"; // Load before challenge (provides PaginationInput)
 import "./types/challenge";
 import "./types/notificationDelivery";
 import "./types/notifications";
 import "./types/challengeSubmission";
 import "./types/submissionReport";
 import "./types/challengeVote";
-import "./types/reward";
 import "./types/coin";
 import "./types/notificationSchedule";
 import "./types/storage";

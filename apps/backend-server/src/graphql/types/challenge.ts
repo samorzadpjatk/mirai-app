@@ -86,6 +86,41 @@ export const ChallengeStatusEnum = builder.enumType("ChallengeStatus", {
   },
 });
 
+/**
+ * Challenge filter status for filtering challenges in lists
+ */
+export const ChallengeFilterStatusEnum = builder.enumType(
+  "ChallengeFilterStatus",
+  {
+    description: "Filter options for challenge status in list views",
+    values: {
+      ALL: { value: "ALL" },
+      ACTIVE: { value: "ACTIVE" },
+      VISIBLE: { value: "VISIBLE" },
+      HIDDEN: { value: "HIDDEN" },
+      COMPLETED: { value: "COMPLETED" },
+      CANCELLED: { value: "CANCELLED" },
+    },
+  },
+);
+
+/**
+ * Challenge sort options for ordering challenge lists
+ */
+export const ChallengeSortByEnum = builder.enumType("ChallengeSortBy", {
+  description: "Sort options for challenge lists",
+  values: {
+    NAME_ASC: { value: "NAME_ASC" },
+    NAME_DESC: { value: "NAME_DESC" },
+    CREATED_AT_ASC: { value: "CREATED_AT_ASC" },
+    CREATED_AT_DESC: { value: "CREATED_AT_DESC" },
+    STATUS_ASC: { value: "STATUS_ASC" },
+    STATUS_DESC: { value: "STATUS_DESC" },
+    BASE_POINTS_ASC: { value: "BASE_POINTS_ASC" },
+    BASE_POINTS_DESC: { value: "BASE_POINTS_DESC" },
+  },
+});
+
 // =============================================================================
 // Challenge Object Type
 // =============================================================================
@@ -367,6 +402,94 @@ export const ChallengeSummaryType = builder.objectType("ChallengeSummary", {
 });
 
 // =============================================================================
+// Mutation Input Types
+// =============================================================================
+
+/**
+ * Input for creating a challenge
+ */
+export const CreateChallengeInput = builder.inputType("CreateChallengeInput", {
+  description: "Input for creating a new challenge",
+  fields: (t) => ({
+    tripId: t.id({
+      description: "ID of the trip this challenge belongs to",
+      required: true,
+    }),
+    name: t.string({
+      description: "Challenge name (1-200 characters)",
+      required: true,
+    }),
+    description: t.string({
+      description: "Challenge description (max 2000 characters)",
+      required: false,
+    }),
+    image: t.string({
+      description: "Challenge image URL",
+      required: false,
+    }),
+    submissionType: t.field({
+      type: SubmissionTypeEnum,
+      description: "Type of submission required",
+      required: true,
+    }),
+    scoringCategory: t.field({
+      type: ScoringCategoryEnum,
+      description: "How points are awarded",
+      required: true,
+    }),
+    basePoints: t.int({
+      description: "Base points for completion (0-10000)",
+      required: false,
+      defaultValue: 100,
+    }),
+    firstPlacePoints: t.int({
+      description: "Bonus points for 1st place (speed challenges)",
+      required: false,
+    }),
+    secondPlacePoints: t.int({
+      description: "Bonus points for 2nd place (speed challenges)",
+      required: false,
+    }),
+    thirdPlacePoints: t.int({
+      description: "Bonus points for 3rd place (speed challenges)",
+      required: false,
+    }),
+    status: t.field({
+      type: ChallengeStatusEnum,
+      description: "Initial challenge status",
+      required: false,
+    }),
+    startTime: t.field({
+      type: "DateTime",
+      description: "When the challenge becomes available",
+      required: false,
+    }),
+    endTime: t.field({
+      type: "DateTime",
+      description: "When the challenge closes",
+      required: false,
+    }),
+    targetLatitude: t.float({
+      description: "Target latitude for location challenges",
+      required: false,
+    }),
+    targetLongitude: t.float({
+      description: "Target longitude for location challenges",
+      required: false,
+    }),
+    expectedValue: t.string({
+      description: "Expected answer for QR/text challenges",
+      required: false,
+    }),
+    autoApprove: t.boolean({
+      description: "Whether to auto-approve submissions",
+      required: false,
+      defaultValue: false,
+    }),
+  }),
+});
+
+// =============================================================================
 // Mutation Output Types
 // =============================================================================
 
@@ -536,109 +659,67 @@ export const ChallengesConnectionType = builder.objectType(
   },
 );
 
-// =============================================================================
-// Input Types
-// =============================================================================
-
 /**
  * Input for pagination
  */
-export const ChallengePaginationInput = builder.inputType("ChallengePaginationInput", {
-  description: "Pagination parameters for list queries",
-  fields: (t) => ({
-    limit: t.int({
-      description: "Maximum number of items to return (1-100)",
-      required: false,
-      defaultValue: 30,
+export const ChallengePaginationInput = builder.inputType(
+  "ChallengePaginationInput",
+  {
+    description: "Pagination parameters for list queries",
+    fields: (t) => ({
+      limit: t.int({
+        description: "Maximum number of items to return (1-100)",
+        required: false,
+        defaultValue: 30,
+      }),
+      offset: t.int({
+        description: "Number of items to skip",
+        required: false,
+        defaultValue: 0,
+      }),
     }),
-    offset: t.int({
-      description: "Number of items to skip",
+  },
+);
+
+/**
+ * Input for filtering challenges
+ */
+export const ChallengeFilterInput = builder.inputType("ChallengeFilterInput", {
+  description: "Filter parameters for challenge list queries",
+  fields: (t) => ({
+    status: t.field({
+      type: ChallengeFilterStatusEnum,
+      description: "Filter by challenge status",
       required: false,
-      defaultValue: 0,
+    }),
+    submissionType: t.field({
+      type: SubmissionTypeEnum,
+      description: "Filter by submission type",
+      required: false,
+    }),
+    scoringCategory: t.field({
+      type: ScoringCategoryEnum,
+      description: "Filter by scoring category",
+      required: false,
+    }),
+    search: t.string({
+      description: "Search by name or description",
+      required: false,
     }),
   }),
 });
 
 /**
- * Input for creating a challenge
+ * Input for sorting challenges
  */
-export const CreateChallengeInput = builder.inputType("CreateChallengeInput", {
-  description: "Input for creating a new challenge",
+export const ChallengeSortInput = builder.inputType("ChallengeSortInput", {
+  description: "Sort parameters for challenge list queries",
   fields: (t) => ({
-    tripId: t.id({
-      description: "ID of the trip this challenge belongs to",
-      required: true,
-    }),
-    name: t.string({
-      description: "Challenge name (1-200 characters)",
-      required: true,
-    }),
-    description: t.string({
-      description: "Challenge description (max 2000 characters)",
+    sortBy: t.field({
+      type: ChallengeSortByEnum,
+      description: "Field and direction to sort by",
       required: false,
-    }),
-    image: t.string({
-      description: "Challenge image URL",
-      required: false,
-    }),
-    submissionType: t.field({
-      type: SubmissionTypeEnum,
-      description: "Type of submission required",
-      required: true,
-    }),
-    scoringCategory: t.field({
-      type: ScoringCategoryEnum,
-      description: "How points are awarded",
-      required: true,
-    }),
-    basePoints: t.int({
-      description: "Base points for completion (0-10000)",
-      required: false,
-      defaultValue: 100,
-    }),
-    firstPlacePoints: t.int({
-      description: "Bonus points for 1st place (speed challenges)",
-      required: false,
-    }),
-    secondPlacePoints: t.int({
-      description: "Bonus points for 2nd place (speed challenges)",
-      required: false,
-    }),
-    thirdPlacePoints: t.int({
-      description: "Bonus points for 3rd place (speed challenges)",
-      required: false,
-    }),
-    status: t.field({
-      type: ChallengeStatusEnum,
-      description: "Initial challenge status",
-      required: false,
-    }),
-    startTime: t.field({
-      type: "DateTime",
-      description: "When the challenge becomes available",
-      required: false,
-    }),
-    endTime: t.field({
-      type: "DateTime",
-      description: "When the challenge closes",
-      required: false,
-    }),
-    targetLatitude: t.float({
-      description: "Target latitude for location challenges",
-      required: false,
-    }),
-    targetLongitude: t.float({
-      description: "Target longitude for location challenges",
-      required: false,
-    }),
-    expectedValue: t.string({
-      description: "Expected answer for QR/text challenges",
-      required: false,
-    }),
-    autoApprove: t.boolean({
-      description: "Whether to auto-approve submissions",
-      required: false,
-      defaultValue: false,
+      defaultValue: "CREATED_AT_DESC",
     }),
   }),
 });
