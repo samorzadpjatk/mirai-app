@@ -13,7 +13,7 @@ import {
  * TripStatus enum
  */
 export const tripStatusEnum = pgEnum("TripStatus", [
-  "DRAFT",
+  "PLANNING",
   "ACTIVE",
   "COMPLETED",
   "CANCELLED",
@@ -29,6 +29,7 @@ export const trips = pgTable("Trip", {
   startDate: timestamp("startDate", { mode: "date" }).notNull(),
   endDate: timestamp("endDate", { mode: "date" }).notNull(),
   backgroundImagePath: text("backgroundImagePath"),
+  status: tripStatusEnum("status").notNull().default("PLANNING"),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
 });

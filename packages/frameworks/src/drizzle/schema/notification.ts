@@ -11,6 +11,17 @@ import {
 import { trips } from "./trip";
 
 /**
+ * Notification Status enum
+ */
+export const notificationStatusEnum = pgEnum("NotificationStatus", [
+  "DRAFT",
+  "READY",
+  "SENT",
+  "FAILED",
+  "CANCELLED",
+]);
+
+/**
  * Notification Priority enum
  */
 export const notificationPriorityEnum = pgEnum("NotificationPriority", [
@@ -29,7 +40,11 @@ export const notifications = pgTable("Notification", {
   title: varchar("title", { length: 255 }).notNull(),
   body: text("body").notNull(),
   url: text("url"),
+  status: notificationStatusEnum("status").notNull().default("DRAFT"),
   priority: notificationPriorityEnum("priority").notNull().default("NORMAL"),
+  scheduledFor: timestamp("scheduledFor", { mode: "date" }),
+  sentAt: timestamp("sentAt", { mode: "date" }),
+  failureReason: text("failureReason"),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
   createdById: uuid("createdById").notNull(),
