@@ -8,7 +8,7 @@
  *
  * This service is designed to run as a background worker. It:
  * 1. Connects to Supabase Realtime to listen for new Notification INSERT events
- * 2. Calls the GraphQL API using the typed SDK to track delivery status
+ * 2. Calls the GraphQL API using urql to track delivery status
  * 3. Sends mobile push notifications via the notification service
  * 4. Tracks delivery completion or failure
  *
@@ -18,7 +18,7 @@
  * - `SUPABASE_URL` - Supabase project URL
  * - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
  *
- * ## GraphQL Mutations Used (via SDK)
+ * ## GraphQL Mutations Used (via urql)
  *
  * - `trackDeliveryStart` - Marks delivery as started
  * - `sendMobileNotifications` - Sends push notifications
@@ -30,8 +30,21 @@
 
 import { createSupabaseClient as createClient } from "@mirai-app/frameworks/supabase";
 import type { RealtimePostgresInsertPayload } from "@mirai-app/frameworks/supabase";
-import { GraphQLClient } from "graphql-request";
-import { getSdk } from "@mirai-app/graphql-types/sdk";
+import {
+  createClient as createUrqlClient,
+  cacheExchange,
+  fetchExchange,
+} from "@urql/core";
+import {
+  TrackDeliveryStartDocument,
+  SendMobileNotificationsDocument,
+  TrackDeliveryCompleteDocument,
+  TrackDeliveryFailureDocument,
+  type TrackDeliveryStartMutation,
+  type SendMobileNotificationsMutation,
+  type TrackDeliveryCompleteMutation,
+  type TrackDeliveryFailureMutation,
+} from "@mirai-app/graphql-types/urql";
 
 // =============================================================================
 // Environment Configuration
@@ -47,23 +60,22 @@ if (!SUPABASE_SERVICE_ROLE_KEY)
   throw new Error("Missing env: SUPABASE_SERVICE_ROLE_KEY");
 
 // =============================================================================
-// GraphQL SDK Client
+// GraphQL Client (urql)
 // =============================================================================
 
 /**
- * Create GraphQL client with service account authentication
+ * Create urql client with service account authentication
  */
-const graphQLClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
-  headers: {
-    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    "X-Service-Account": "notification-sender",
+const urqlClient = createUrqlClient({
+  url: GRAPHQL_ENDPOINT,
+  exchanges: [cacheExchange, fetchExchange],
+  fetchOptions: {
+    headers: {
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "X-Service-Account": "notification-sender",
+    },
   },
 });
-
-/**
- * Typed GraphQL SDK for notification operations
- */
-const sdk = getSdk(graphQLClient);
 
 // =============================================================================
 // Types
@@ -78,19 +90,26 @@ interface NotificationRow {
 // =============================================================================
 
 /**
- * Notification service using the typed GraphQL SDK
- * Replaces the previous custom GraphQL client with full type safety
+ * Notification service using urql GraphQL client
+ * Replaces the previous SDK pattern with urql's core client
  */
-class NotificationSDKService {
+class NotificationService {
   /**
-   * Track delivery start via SDK
+   * Track delivery start via urql mutation
    */
   async trackDeliveryStart(notificationId: string): Promise<boolean> {
     try {
-      const result = await sdk.TrackDeliveryStart({
-        input: { notificationId },
-      });
-      return result.trackDeliveryStart?.success ?? false;
+      const result = await urqlClient.mutation<TrackDeliveryStartMutation>(
+        TrackDeliveryStartDocument,
+        { notificationId },
+      );
+
+      if (result.error) {
+        console.error("Failed to track delivery start:", result.error);
+        return false;
+      }
+
+      return result.data?.trackDeliveryStart?.success ?? false;
     } catch (error) {
       console.error("Failed to track delivery start:", error);
       return false;
@@ -98,21 +117,26 @@ class NotificationSDKService {
   }
 
   /**
-   * Send mobile notifications via SDK
+   * Send mobile notifications via urql mutation
    */
-  async sendMobileNotifications(
-    notificationId: string,
-  ): Promise<{
+  async sendMobileNotifications(notificationId: string): Promise<{
     success: boolean;
     sent: number;
     failed: number;
     total: number;
   }> {
     try {
-      const result = await sdk.SendMobileNotifications({
-        input: { notificationId },
-      });
-      const payload = result.sendMobileNotifications;
+      const result = await urqlClient.mutation<SendMobileNotificationsMutation>(
+        SendMobileNotificationsDocument,
+        { notificationId },
+      );
+
+      if (result.error) {
+        console.error("Failed to send mobile notifications:", result.error);
+        return { success: false, sent: 0, failed: 0, total: 0 };
+      }
+
+      const payload = result.data?.sendMobileNotifications;
       return {
         success: payload?.success ?? false,
         sent: payload?.sent ?? 0,
@@ -126,7 +150,7 @@ class NotificationSDKService {
   }
 
   /**
-   * Track delivery completion via SDK
+   * Track delivery completion via urql mutation
    */
   async trackDeliveryComplete(
     notificationId: string,
@@ -136,16 +160,23 @@ class NotificationSDKService {
     errors: string | null,
   ): Promise<boolean> {
     try {
-      const result = await sdk.TrackDeliveryComplete({
-        input: {
+      const result = await urqlClient.mutation<TrackDeliveryCompleteMutation>(
+        TrackDeliveryCompleteDocument,
+        {
           notificationId,
           totalRecipients,
           successCount,
           failureCount,
           errors,
         },
-      });
-      return result.trackDeliveryComplete?.success ?? false;
+      );
+
+      if (result.error) {
+        console.error("Failed to track delivery completion:", result.error);
+        return false;
+      }
+
+      return result.data?.trackDeliveryComplete?.success ?? false;
     } catch (error) {
       console.error("Failed to track delivery completion:", error);
       return false;
@@ -153,17 +184,24 @@ class NotificationSDKService {
   }
 
   /**
-   * Track delivery failure via SDK
+   * Track delivery failure via urql mutation
    */
   async trackDeliveryFailure(
     notificationId: string,
     error: string,
   ): Promise<boolean> {
     try {
-      const result = await sdk.TrackDeliveryFailure({
-        input: { notificationId, error },
-      });
-      return result.trackDeliveryFailure?.success ?? false;
+      const result = await urqlClient.mutation<TrackDeliveryFailureMutation>(
+        TrackDeliveryFailureDocument,
+        { notificationId, error },
+      );
+
+      if (result.error) {
+        console.error("Failed to track delivery failure:", result.error);
+        return false;
+      }
+
+      return result.data?.trackDeliveryFailure?.success ?? false;
     } catch (err) {
       console.error("Failed to track delivery failure:", err);
       return false;
@@ -177,13 +215,13 @@ class NotificationSDKService {
 
 function main(): () => void {
   const supabase = createClient(
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
+    SUPABASE_URL!,
+    SUPABASE_SERVICE_ROLE_KEY!,
     undefined,
     { realtime: { params: { eventsPerSecond: 2 } } },
   );
 
-  const notificationService = new NotificationSDKService();
+  const notificationService = new NotificationService();
 
   const channel = supabase
     .channel("public:Notification:insert")
@@ -193,6 +231,10 @@ function main(): () => void {
       (payload: RealtimePostgresInsertPayload<NotificationRow>) => {
         void (async () => {
           const id = payload.new.id;
+          if (!id) {
+            console.error("Missing notification ID in payload");
+            return;
+          }
           try {
             await notificationService.trackDeliveryStart(id);
 
@@ -242,11 +284,11 @@ function main(): () => void {
 
 try {
   main();
-  console.log("Notification sender service started with GraphQL SDK");
+  console.log("Notification sender service started with urql");
 } catch (err) {
   console.error("Failed to start notification sender:", err);
   process.exit(1);
 }
 
 // Export for testing
-export { NotificationSDKService, main };
+export { NotificationService, main };

@@ -58,11 +58,7 @@ mock.module("@mirai-app/frameworks/supabase", () => ({
 
 // Mock the GraphQL service methods
 mock.module("../index", () => ({
-  GraphQLClient: class {
-    constructor() {}
-    mutate = mock(() => Promise.resolve({ success: true }));
-  },
-  NotificationGraphQLService: class {
+  NotificationService: class {
     trackDeliveryStart = trackDeliveryStartMock;
     sendMobileNotifications = sendMobileNotificationsMock;
     trackDeliveryComplete = trackDeliveryCompleteMock;
@@ -127,8 +123,7 @@ describe("[UNIT] notification-sender index", () => {
   test("main function can be imported", async () => {
     const index = await import("../index");
     expect(index).toBeDefined();
-    expect(index.GraphQLClient).toBeDefined();
-    expect(index.NotificationGraphQLService).toBeDefined();
+    expect(index.NotificationService).toBeDefined();
     expect(index.main).toBeDefined();
   });
 
@@ -157,12 +152,9 @@ describe("[UNIT] notification-sender index", () => {
     expect(typeof mockChannel.subscribe).toBe("function");
   });
 
-  test("GraphQL service methods exist", async () => {
-    const { NotificationGraphQLService } = await import("../index");
-    const service = new NotificationGraphQLService(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
+  test("NotificationService methods exist", async () => {
+    const { NotificationService } = await import("../index");
+    const service = new NotificationService();
 
     expect(typeof service.trackDeliveryStart).toBe("function");
     expect(typeof service.sendMobileNotifications).toBe("function");
@@ -258,10 +250,7 @@ describe("[UNIT] Delivery Tracking Flow", () => {
     const index = await import("../index");
 
     // Create a mock service to test the flow
-    const service = new index.NotificationGraphQLService(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
+    const service = new index.NotificationService();
 
     await service.trackDeliveryStart("test-notification-1");
     expect(trackDeliveryStartMock).toHaveBeenCalled();
@@ -269,10 +258,7 @@ describe("[UNIT] Delivery Tracking Flow", () => {
 
   test("sendMobileNotifications is called after trackDeliveryStart", async () => {
     const index = await import("../index");
-    const service = new index.NotificationGraphQLService(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
+    const service = new index.NotificationService();
 
     await service.sendMobileNotifications("test-notification-2");
     expect(sendMobileNotificationsMock).toHaveBeenCalled();
@@ -280,10 +266,7 @@ describe("[UNIT] Delivery Tracking Flow", () => {
 
   test("trackDeliveryComplete is called on successful delivery", async () => {
     const index = await import("../index");
-    const service = new index.NotificationGraphQLService(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
+    const service = new index.NotificationService();
 
     await service.trackDeliveryComplete("test-notification-3", 1, 1, 0, null);
     expect(trackDeliveryCompleteMock).toHaveBeenCalled();
@@ -303,10 +286,7 @@ describe("[UNIT] Delivery Failure Handling", () => {
     );
 
     const index = await import("../index");
-    const service = new index.NotificationGraphQLService(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
+    const service = new index.NotificationService();
 
     try {
       await service.sendMobileNotifications("test-notification-fail");
@@ -327,10 +307,7 @@ describe("[UNIT] Delivery Failure Handling", () => {
 
   test("error is logged when delivery fails", async () => {
     const index = await import("../index");
-    const service = new index.NotificationGraphQLService(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
+    const service = new index.NotificationService();
 
     const error = new Error("Network error");
     console.error("Failed handling Notification INSERT:", error);
@@ -341,10 +318,7 @@ describe("[UNIT] Delivery Failure Handling", () => {
   test("trackDeliveryFailure receives error message", async () => {
     const errorMessage = "Custom error message";
     const index = await import("../index");
-    const service = new index.NotificationGraphQLService(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
+    const service = new index.NotificationService();
 
     await service.trackDeliveryFailure("test-notification-error", errorMessage);
 
@@ -392,86 +366,6 @@ describe("[UNIT] Graceful Shutdown (SIGINT)", () => {
   });
 });
 
-describe("[UNIT] GraphQL Client", () => {
-  test("GraphQLClient can be instantiated", async () => {
-    const index = await import("../index");
-    const client = new index.GraphQLClient(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
-
-    expect(client).toBeDefined();
-  });
-
-  test("GraphQL mutation sends correct request format", async () => {
-    const mockFetch = mock(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ data: { success: true } }),
-      }),
-    );
-    global.fetch = mockFetch as unknown as typeof fetch;
-
-    const index = await import("../index");
-    const client = new index.GraphQLClient(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
-
-    await client.mutate("mutation Test { test }", { input: { id: "123" } });
-
-    expect(mockFetch).toHaveBeenCalled();
-    const call = mockFetch.mock.calls[0];
-    expect(call[0]).toBe("http://localhost:4000/graphql");
-    expect(call[1].method).toBe("POST");
-    expect(call[1].headers["Content-Type"]).toBe("application/json");
-    expect(call[1].headers["Authorization"]).toBe("Bearer mock-token");
-  });
-
-  test("GraphQL client throws on HTTP error", async () => {
-    const mockFetch = mock(() =>
-      Promise.resolve({
-        ok: false,
-        statusText: "Internal Server Error",
-      }),
-    );
-    global.fetch = mockFetch as unknown as typeof fetch;
-
-    const index = await import("../index");
-    const client = new index.GraphQLClient(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
-
-    await expect(client.mutate("mutation { test }", {})).rejects.toThrow(
-      "Internal Server Error",
-    );
-  });
-
-  test("GraphQL client throws on GraphQL errors", async () => {
-    const mockFetch = mock(() =>
-      Promise.resolve({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            errors: [{ message: "Field not found" }],
-          }),
-      }),
-    );
-    global.fetch = mockFetch as unknown as typeof fetch;
-
-    const index = await import("../index");
-    const client = new index.GraphQLClient(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
-
-    await expect(client.mutate("mutation { test }", {})).rejects.toThrow(
-      "Field not found",
-    );
-  });
-});
-
 describe("[UNIT] Partial Failures", () => {
   test("handles partial delivery failure (some recipients failed)", async () => {
     sendMobileNotificationsMock.mockImplementation(() =>
@@ -484,10 +378,7 @@ describe("[UNIT] Partial Failures", () => {
     );
 
     const index = await import("../index");
-    const service = new index.NotificationGraphQLService(
-      "http://localhost:4000/graphql",
-      "mock-token",
-    );
+    const service = new index.NotificationService();
 
     const result = await service.sendMobileNotifications("test-partial-fail");
 

@@ -19,7 +19,7 @@
   "dependencies": {
     "@mirai-app/frameworks": "workspace:*",
     "@mirai-app/graphql-types": "workspace:*",
-    "graphql-request": "^7.1.2"
+    "@urql/core": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.7.2",
