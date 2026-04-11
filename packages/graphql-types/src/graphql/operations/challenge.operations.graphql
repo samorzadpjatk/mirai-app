@@ -217,3 +217,10 @@ mutation UpdateChallenge($input: UpdateChallengeInput!) {
     }
   }
 }
+
+# Delete a challenge (admin only)
+mutation DeleteChallenge($id: ID!, $tripId: ID!) {
+  deleteChallenge(id: $id, tripId: $tripId) {
+    success
+  }
+}

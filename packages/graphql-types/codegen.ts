@@ -10,19 +10,7 @@ const config: CodegenConfig = {
       config: {
         withSubscription: true,
       },
-    },
-    // graphql-request SDK for backend apps
-    "src/generated/sdk.ts": {
-      plugins: [
-        "typescript",
-        "typescript-operations",
-        "typescript-graphql-request",
-      ],
-      config: {
-        documentMode: "documentNode",
-        rawRequest: false,
-      },
-    },
+    }
   },
 };
 

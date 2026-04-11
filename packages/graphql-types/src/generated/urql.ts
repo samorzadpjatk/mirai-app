@@ -233,6 +233,28 @@ export enum ChallengeEventType {
   VotingStarted = 'VOTING_STARTED'
 }
 
+/** Filter parameters for challenge list queries */
+export type ChallengeFilterInput = {
+  /** Filter by scoring category */
+  scoringCategory?: InputMaybe<ScoringCategory>;
+  /** Search by name or description */
+  search?: InputMaybe<Scalars['String']['input']>;
+  /** Filter by challenge status */
+  status?: InputMaybe<ChallengeFilterStatus>;
+  /** Filter by submission type */
+  submissionType?: InputMaybe<SubmissionType>;
+};
+
+/** Filter options for challenge status in list views */
+export enum ChallengeFilterStatus {
+  Active = 'ACTIVE',
+  All = 'ALL',
+  Cancelled = 'CANCELLED',
+  Completed = 'COMPLETED',
+  Hidden = 'HIDDEN',
+  Visible = 'VISIBLE'
+}
+
 /** Pagination metadata for challenge lists */
 export type ChallengePagination = {
   __typename?: 'ChallengePagination';
@@ -252,6 +274,24 @@ export type ChallengePaginationInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   /** Number of items to skip */
   offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+/** Sort options for challenge lists */
+export enum ChallengeSortBy {
+  BasePointsAsc = 'BASE_POINTS_ASC',
+  BasePointsDesc = 'BASE_POINTS_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  NameAsc = 'NAME_ASC',
+  NameDesc = 'NAME_DESC',
+  StatusAsc = 'STATUS_ASC',
+  StatusDesc = 'STATUS_DESC'
+}
+
+/** Sort parameters for challenge list queries */
+export type ChallengeSortInput = {
+  /** Field and direction to sort by */
+  sortBy?: InputMaybe<ChallengeSortBy>;
 };
 
 /** Current status of a challenge in its lifecycle */
@@ -4754,6 +4794,14 @@ export type UpdateChallengeMutationVariables = Exact<{
 
 export type UpdateChallengeMutation = { __typename?: 'Mutation', updateChallenge?: { __typename?: 'UpdateChallengePayload', challenge: { __typename?: 'ChallengeSummary', id: string, tripId: string, name: string, description?: string | null, submissionType: SubmissionType, scoringCategory: ScoringCategory, basePoints: number, status: ChallengeStatus, createdAt: any } } | null };
 
+export type DeleteChallengeMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  tripId: Scalars['ID']['input'];
+}>;
+
+
+export type DeleteChallengeMutation = { __typename?: 'Mutation', deleteChallenge?: { __typename?: 'DeleteChallengePayload', success: boolean } | null };
+
 export type GetCoinStatisticsQueryVariables = Exact<{
   tripId: Scalars['ID']['input'];
 }>;
@@ -7459,6 +7507,17 @@ export const UpdateChallengeDocument = gql`
 
 export function useUpdateChallengeMutation() {
   return Urql.useMutation<UpdateChallengeMutation, UpdateChallengeMutationVariables>(UpdateChallengeDocument);
+};
+export const DeleteChallengeDocument = gql`
+    mutation DeleteChallenge($id: ID!, $tripId: ID!) {
+  deleteChallenge(id: $id, tripId: $tripId) {
+    success
+  }
+}
+    `;
+
+export function useDeleteChallengeMutation() {
+  return Urql.useMutation<DeleteChallengeMutation, DeleteChallengeMutationVariables>(DeleteChallengeDocument);
 };
 export const GetCoinStatisticsDocument = gql`
     query GetCoinStatistics($tripId: ID!) {

@@ -261,6 +261,31 @@ enum ChallengeEventType {
   VOTING_STARTED
 }
 
+"""Filter parameters for challenge list queries"""
+input ChallengeFilterInput {
+  """Filter by scoring category"""
+  scoringCategory: ScoringCategory
+
+  """Search by name or description"""
+  search: String
+
+  """Filter by challenge status"""
+  status: ChallengeFilterStatus
+
+  """Filter by submission type"""
+  submissionType: SubmissionType
+}
+
+"""Filter options for challenge status in list views"""
+enum ChallengeFilterStatus {
+  ACTIVE
+  ALL
+  CANCELLED
+  COMPLETED
+  HIDDEN
+  VISIBLE
+}
+
 """Pagination metadata for challenge lists"""
 type ChallengePagination {
   """Whether more items are available"""
@@ -283,6 +308,24 @@ input ChallengePaginationInput {
 
   """Number of items to skip"""
   offset: Int = 0
+}
+
+"""Sort options for challenge lists"""
+enum ChallengeSortBy {
+  BASE_POINTS_ASC
+  BASE_POINTS_DESC
+  CREATED_AT_ASC
+  CREATED_AT_DESC
+  NAME_ASC
+  NAME_DESC
+  STATUS_ASC
+  STATUS_DESC
+}
+
+"""Sort parameters for challenge list queries"""
+input ChallengeSortInput {
+  """Field and direction to sort by"""
+  sortBy: ChallengeSortBy = CREATED_AT_DESC
 }
 
 """Current status of a challenge in its lifecycle"""
