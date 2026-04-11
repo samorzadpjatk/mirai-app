@@ -3,6 +3,7 @@ import {
   NotificationDelivery,
   NotificationDeliveryStatus,
 } from "./NotificationDelivery";
+import { ValidationError } from "../errors/domain-errors";
 
 describe("[UNIT] NotificationDelivery Entity", () => {
   describe("NotificationDelivery.create", () => {
@@ -63,6 +64,10 @@ describe("[UNIT] NotificationDelivery Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("totalRecipients");
+      }
     });
 
     it("should reject success + failure exceeding total", () => {
@@ -74,6 +79,10 @@ describe("[UNIT] NotificationDelivery Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("counts");
+      }
     });
 
     it("should reject completedAt before startedAt", () => {
@@ -87,6 +96,22 @@ describe("[UNIT] NotificationDelivery Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("deliveryCompletedAt");
+      }
+    });
+
+    it("should reject empty notificationId", () => {
+      const result = NotificationDelivery.create({
+        notificationId: "",
+      });
+
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("notificationId");
+      }
     });
   });
 
@@ -155,6 +180,10 @@ describe("[UNIT] NotificationDelivery Entity", () => {
 
       const updated = deliveryResult.value.markAsFailed("");
       expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
+        expect(updated.error.field).toBe("errors");
+      }
     });
   });
 
@@ -196,6 +225,10 @@ describe("[UNIT] NotificationDelivery Entity", () => {
       });
 
       expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
+        expect(updated.error.field).toBe("counts");
+      }
     });
   });
 

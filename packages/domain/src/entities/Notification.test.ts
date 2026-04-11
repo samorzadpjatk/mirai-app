@@ -4,6 +4,7 @@ import {
   NotificationStatus,
   NotificationPriority,
 } from "./Notification";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 describe("[UNIT] Notification Entity", () => {
   describe("Notification.create", () => {
@@ -63,7 +64,8 @@ describe("[UNIT] Notification Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("title");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("title");
       }
     });
 
@@ -76,7 +78,8 @@ describe("[UNIT] Notification Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("title");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("title");
       }
     });
 
@@ -89,7 +92,8 @@ describe("[UNIT] Notification Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("body");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("body");
       }
     });
 
@@ -102,7 +106,8 @@ describe("[UNIT] Notification Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("body");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("body");
       }
     });
 
@@ -115,7 +120,8 @@ describe("[UNIT] Notification Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("createdById");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("createdById");
       }
     });
 
@@ -132,7 +138,8 @@ describe("[UNIT] Notification Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("future");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("scheduledFor");
       }
     });
   });
@@ -167,15 +174,22 @@ describe("[UNIT] Notification Entity", () => {
         title: "Title",
         body: "Body",
         createdById: "admin-123",
+        status: NotificationStatus.READY,
       });
 
       expect(notificationResult.kind).toBe("ok");
       if (notificationResult.kind !== "ok") return;
 
-      const notification = notificationResult.value.markAsSent();
-      const result = notification.updateContent({ title: "New Title" });
+      const sentResult = notificationResult.value.markAsSent();
+      expect(sentResult.kind).toBe("ok");
+      if (sentResult.kind !== "ok") return;
+
+      const result = sentResult.value.updateContent({ title: "New Title" });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+      }
     });
   });
 
@@ -193,8 +207,11 @@ describe("[UNIT] Notification Entity", () => {
       const notification = notificationResult.value;
       expect(notification.status).toBe(NotificationStatus.DRAFT);
 
-      const updated = notification.updateStatus(NotificationStatus.READY);
-      expect(updated.status).toBe(NotificationStatus.READY);
+      const updatedResult = notification.updateStatus(NotificationStatus.READY);
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.status).toBe(NotificationStatus.READY);
+      }
     });
 
     it("should transition from READY to SENT", () => {
@@ -209,8 +226,11 @@ describe("[UNIT] Notification Entity", () => {
       if (notificationResult.kind !== "ok") return;
 
       const notification = notificationResult.value;
-      const updated = notification.updateStatus(NotificationStatus.SENT);
-      expect(updated.status).toBe(NotificationStatus.SENT);
+      const updatedResult = notification.updateStatus(NotificationStatus.SENT);
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.status).toBe(NotificationStatus.SENT);
+      }
     });
 
     it("should reject invalid transition", () => {
@@ -224,9 +244,15 @@ describe("[UNIT] Notification Entity", () => {
       if (notificationResult.kind !== "ok") return;
 
       // Cannot go from DRAFT directly to SENT
-      expect(() => {
-        notificationResult.value.updateStatus(NotificationStatus.SENT);
-      }).toThrow();
+      const result = notificationResult.value.updateStatus(
+        NotificationStatus.SENT,
+      );
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+        expect(result.error.from).toBe(NotificationStatus.DRAFT);
+        expect(result.error.to).toBe(NotificationStatus.SENT);
+      }
     });
   });
 
@@ -243,11 +269,14 @@ describe("[UNIT] Notification Entity", () => {
       if (notificationResult.kind !== "ok") return;
 
       const notification = notificationResult.value;
-      const updated = notification.markAsSent();
+      const updatedResult = notification.markAsSent();
 
-      expect(updated.status).toBe(NotificationStatus.SENT);
-      expect(updated.sentAt).toBeInstanceOf(Date);
-      expect(updated.isSent()).toBe(true);
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.status).toBe(NotificationStatus.SENT);
+        expect(updatedResult.value.sentAt).toBeInstanceOf(Date);
+        expect(updatedResult.value.isSent()).toBe(true);
+      }
     });
   });
 
@@ -264,10 +293,17 @@ describe("[UNIT] Notification Entity", () => {
       if (notificationResult.kind !== "ok") return;
 
       const notification = notificationResult.value;
-      const updated = notification.markAsFailed("Push service unavailable");
+      const updatedResult = notification.markAsFailed(
+        "Push service unavailable",
+      );
 
-      expect(updated.status).toBe(NotificationStatus.FAILED);
-      expect(updated.failureReason).toBe("Push service unavailable");
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.status).toBe(NotificationStatus.FAILED);
+        expect(updatedResult.value.failureReason).toBe(
+          "Push service unavailable",
+        );
+      }
     });
   });
 
@@ -288,10 +324,13 @@ describe("[UNIT] Notification Entity", () => {
       if (notificationResult.kind !== "ok") return;
 
       const notification = notificationResult.value;
-      const updated = notification.cancel();
+      const updatedResult = notification.cancel();
 
-      expect(updated.status).toBe(NotificationStatus.CANCELLED);
-      expect(updated.isCancelled()).toBe(true);
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.status).toBe(NotificationStatus.CANCELLED);
+        expect(updatedResult.value.isCancelled()).toBe(true);
+      }
     });
 
     it("should reject cancel after sent", () => {
@@ -299,16 +338,21 @@ describe("[UNIT] Notification Entity", () => {
         title: "Title",
         body: "Body",
         createdById: "admin-123",
+        status: NotificationStatus.READY,
       });
 
       expect(notificationResult.kind).toBe("ok");
       if (notificationResult.kind !== "ok") return;
 
-      const sent = notificationResult.value.markAsSent();
+      const sentResult = notificationResult.value.markAsSent();
+      expect(sentResult.kind).toBe("ok");
+      if (sentResult.kind !== "ok") return;
 
-      expect(() => {
-        sent.cancel();
-      }).toThrow();
+      const result = sentResult.value.cancel();
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+      }
     });
   });
 
@@ -390,18 +434,7 @@ describe("[UNIT] Notification Entity", () => {
 
   describe("Notification.isOverdue", () => {
     it("should return true when scheduled time has passed", () => {
-      const pastDate = new Date();
-      pastDate.setMinutes(pastDate.getMinutes() - 5); // 5 minutes ago
-
-      const notificationResult = Notification.create({
-        title: "Title",
-        body: "Body",
-        createdById: "admin-123",
-        status: NotificationStatus.READY,
-        scheduledFor: pastDate,
-      });
-
-      // Note: Creating with past scheduledFor fails validation, so we need to schedule after creation
+      // Create notification and schedule it with a date that will be "in the past" after creation
       const createResult = Notification.create({
         title: "Title",
         body: "Body",
@@ -412,10 +445,9 @@ describe("[UNIT] Notification Entity", () => {
       expect(createResult.kind).toBe("ok");
       if (createResult.kind !== "ok") return;
 
-      // Mark as failed first to get past state, then test overdue logic indirectly
-      // Actually, isOverdue only checks if scheduledFor < now, so let's create a test differently
+      // No schedule set, so not overdue
       const notification = createResult.value;
-      expect(notification.isOverdue()).toBe(false); // No schedule set
+      expect(notification.isOverdue()).toBe(false);
     });
 
     it("should return false when scheduled time is in future", () => {

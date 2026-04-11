@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { Group, GroupStatus } from "./Group";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 describe("[UNIT] Group Entity", () => {
   describe("Group.create", () => {
@@ -53,7 +54,8 @@ describe("[UNIT] Group Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("tripId");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("tripId");
       }
     });
 
@@ -67,7 +69,8 @@ describe("[UNIT] Group Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("name");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("name");
       }
     });
 
@@ -80,6 +83,10 @@ describe("[UNIT] Group Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("name");
+      }
     });
 
     it("should reject empty organizerId", () => {
@@ -92,7 +99,8 @@ describe("[UNIT] Group Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("organizerId");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("organizerId");
       }
     });
 
@@ -106,7 +114,8 @@ describe("[UNIT] Group Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("code");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("code");
       }
     });
 
@@ -119,6 +128,10 @@ describe("[UNIT] Group Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("code");
+      }
     });
 
     it("should reject negative coins", () => {
@@ -132,7 +145,8 @@ describe("[UNIT] Group Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("coins");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("coins");
       }
     });
   });
@@ -176,6 +190,9 @@ describe("[UNIT] Group Entity", () => {
 
       const result = groupResult.value.updateDetails({ name: "" });
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("should reject update if group is deleted", () => {
@@ -189,10 +206,16 @@ describe("[UNIT] Group Entity", () => {
       expect(groupResult.kind).toBe("ok");
       if (groupResult.kind !== "ok") return;
 
-      const deleted = groupResult.value.markAsDeleted();
-      const result = deleted.updateDetails({ name: "New Name" });
+      const deletedResult = groupResult.value.markAsDeleted();
+      expect(deletedResult.kind).toBe("ok");
+      if (deletedResult.kind !== "ok") return;
+
+      const result = deletedResult.value.updateDetails({ name: "New Name" });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+      }
     });
   });
 
@@ -209,10 +232,13 @@ describe("[UNIT] Group Entity", () => {
       if (groupResult.kind !== "ok") return;
 
       const group = groupResult.value;
-      const updated = group.changeOrganizer("user-456");
+      const updatedResult = group.changeOrganizer("user-456");
 
-      expect(updated.organizerId).toBe("user-456");
-      expect(updated.id).toBe(group.id);
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.organizerId).toBe("user-456");
+        expect(updatedResult.value.id).toBe(group.id);
+      }
     });
 
     it("should reject empty organizerId", () => {
@@ -226,9 +252,12 @@ describe("[UNIT] Group Entity", () => {
       expect(groupResult.kind).toBe("ok");
       if (groupResult.kind !== "ok") return;
 
-      expect(() => {
-        groupResult.value.changeOrganizer("");
-      }).toThrow();
+      const result = groupResult.value.changeOrganizer("");
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("organizerId");
+      }
     });
   });
 
@@ -246,9 +275,12 @@ describe("[UNIT] Group Entity", () => {
       if (groupResult.kind !== "ok") return;
 
       const group = groupResult.value;
-      const updated = group.addCoins(50);
+      const updatedResult = group.addCoins(50);
 
-      expect(updated.coins).toBe(150);
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.coins).toBe(150);
+      }
     });
 
     it("should reject negative amount", () => {
@@ -263,9 +295,12 @@ describe("[UNIT] Group Entity", () => {
       expect(groupResult.kind).toBe("ok");
       if (groupResult.kind !== "ok") return;
 
-      expect(() => {
-        groupResult.value.addCoins(-10);
-      }).toThrow();
+      const result = groupResult.value.addCoins(-10);
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("amount");
+      }
     });
   });
 
@@ -305,6 +340,10 @@ describe("[UNIT] Group Entity", () => {
 
       const result = groupResult.value.spendCoins(100);
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("coins");
+      }
     });
   });
 
@@ -321,10 +360,32 @@ describe("[UNIT] Group Entity", () => {
       if (groupResult.kind !== "ok") return;
 
       const group = groupResult.value;
-      const updated = group.markAsDeleted();
+      const updatedResult = group.markAsDeleted();
 
-      expect(updated.isDeleted()).toBe(true);
-      expect(updated.status).toBe(GroupStatus.DELETED);
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.isDeleted()).toBe(true);
+        expect(updatedResult.value.status).toBe(GroupStatus.DELETED);
+      }
+    });
+
+    it("should reject deleting already deleted group", () => {
+      const groupResult = Group.create({
+        tripId: "trip-123",
+        name: "Team Name",
+        organizerId: "user-123",
+        code: "CODE123",
+        status: GroupStatus.DELETED,
+      });
+
+      expect(groupResult.kind).toBe("ok");
+      if (groupResult.kind !== "ok") return;
+
+      const result = groupResult.value.markAsDeleted();
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+      }
     });
   });
 
@@ -353,8 +414,11 @@ describe("[UNIT] Group Entity", () => {
 
       expect(groupResult.kind).toBe("ok");
       if (groupResult.kind === "ok") {
-        const deleted = groupResult.value.markAsDeleted();
-        expect(deleted.isActive()).toBe(false);
+        const deletedResult = groupResult.value.markAsDeleted();
+        expect(deletedResult.kind).toBe("ok");
+        if (deletedResult.kind === "ok") {
+          expect(deletedResult.value.isActive()).toBe(false);
+        }
       }
     });
   });

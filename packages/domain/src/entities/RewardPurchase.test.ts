@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { RewardPurchase, RewardPurchaseStatus } from "./RewardPurchase";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 describe("[UNIT] RewardPurchase Entity", () => {
   describe("RewardPurchase.create", () => {
@@ -51,6 +52,10 @@ describe("[UNIT] RewardPurchase Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("rewardId");
+      }
     });
 
     it("should reject quantity less than 1", () => {
@@ -63,6 +68,10 @@ describe("[UNIT] RewardPurchase Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("quantity");
+      }
     });
 
     it("should reject negative total cost", () => {
@@ -75,6 +84,10 @@ describe("[UNIT] RewardPurchase Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("totalCost");
+      }
     });
   });
 
@@ -184,6 +197,11 @@ describe("[UNIT] RewardPurchase Entity", () => {
       );
 
       expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(StateTransitionError);
+        expect(updated.error.from).toBe(RewardPurchaseStatus.BOUGHT);
+        expect(updated.error.to).toBe(RewardPurchaseStatus.DELIVERED);
+      }
     });
 
     it("should reject transition without updater", () => {
@@ -204,6 +222,10 @@ describe("[UNIT] RewardPurchase Entity", () => {
       );
 
       expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
+        expect(updated.error.field).toBe("updatedById");
+      }
     });
   });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { Sponsor } from "./Sponsor";
 import { SponsorId } from "../value-objects/SponsorId";
+import { ValidationError } from "../errors/domain-errors";
 
 describe("[UNIT] Sponsor entity", () => {
   describe("create", () => {
@@ -113,7 +114,8 @@ describe("[UNIT] Sponsor entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("name");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("name");
       }
     });
 
@@ -126,7 +128,8 @@ describe("[UNIT] Sponsor entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("description");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("description");
       }
     });
 
@@ -139,7 +142,8 @@ describe("[UNIT] Sponsor entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("logo");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("logoPath");
       }
     });
 
@@ -152,7 +156,8 @@ describe("[UNIT] Sponsor entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("200");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("name");
       }
     });
 
@@ -165,7 +170,8 @@ describe("[UNIT] Sponsor entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("2000");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("description");
       }
     });
 
@@ -179,7 +185,8 @@ describe("[UNIT] Sponsor entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("Height");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("height");
       }
     });
 
@@ -193,7 +200,8 @@ describe("[UNIT] Sponsor entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("Offset X");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("offsetX");
       }
     });
 
@@ -207,7 +215,8 @@ describe("[UNIT] Sponsor entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("Offset Y");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("offsetY");
       }
     });
   });
@@ -331,6 +340,10 @@ describe("[UNIT] Sponsor entity", () => {
       if (createResult.kind === "ok") {
         const updateResult = createResult.value.update({ name: "" });
         expect(updateResult.kind).toBe("err");
+        if (updateResult.kind === "err") {
+          expect(updateResult.error).toBeInstanceOf(ValidationError);
+          expect(updateResult.error.field).toBe("name");
+        }
       }
     });
 
@@ -345,6 +358,10 @@ describe("[UNIT] Sponsor entity", () => {
       if (createResult.kind === "ok") {
         const updateResult = createResult.value.update({ height: -1 });
         expect(updateResult.kind).toBe("err");
+        if (updateResult.kind === "err") {
+          expect(updateResult.error).toBeInstanceOf(ValidationError);
+          expect(updateResult.error.field).toBe("height");
+        }
       }
     });
 

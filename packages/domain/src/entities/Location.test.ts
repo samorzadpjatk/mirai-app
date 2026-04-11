@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { Location, LocationAccuracy, calculateDistance } from "./Location";
+import { ValidationError } from "../errors/domain-errors";
 import type { LocationId } from "../value-objects/LocationId";
 
 describe("[UNIT] Location Entity", () => {
@@ -77,7 +78,8 @@ describe("[UNIT] Location Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("latitude");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("latitude");
       }
     });
 
@@ -89,6 +91,10 @@ describe("[UNIT] Location Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("latitude");
+      }
     });
 
     it("should reject invalid longitude (>180)", () => {
@@ -100,7 +106,8 @@ describe("[UNIT] Location Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("longitude");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("longitude");
       }
     });
 
@@ -112,6 +119,10 @@ describe("[UNIT] Location Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("longitude");
+      }
     });
 
     it("should reject empty userId", () => {
@@ -122,6 +133,10 @@ describe("[UNIT] Location Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("userId");
+      }
     });
 
     it("should reject negative accuracy", () => {
@@ -133,6 +148,10 @@ describe("[UNIT] Location Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("accuracy");
+      }
     });
 
     it("should reject negative speed", () => {
@@ -144,6 +163,10 @@ describe("[UNIT] Location Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("speed");
+      }
     });
 
     it("should reject heading > 360", () => {
@@ -155,6 +178,10 @@ describe("[UNIT] Location Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("heading");
+      }
     });
 
     it("should reject self-sharing in usersToShareWith", () => {
@@ -169,7 +196,8 @@ describe("[UNIT] Location Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("yourself");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("usersToShareWith");
       }
     });
   });
@@ -265,6 +293,10 @@ describe("[UNIT] Location Entity", () => {
       });
 
       expect(updatedResult.kind).toBe("err");
+      if (updatedResult.kind === "err") {
+        expect(updatedResult.error).toBeInstanceOf(ValidationError);
+        expect(updatedResult.error.field).toBe("latitude");
+      }
     });
   });
 
@@ -345,6 +377,10 @@ describe("[UNIT] Location Entity", () => {
       const updatedResult = locationResult.value.addSharingUser(selfUser);
 
       expect(updatedResult.kind).toBe("err");
+      if (updatedResult.kind === "err") {
+        expect(updatedResult.error).toBeInstanceOf(ValidationError);
+        expect(updatedResult.error.field).toBe("user");
+      }
     });
 
     it("should reject adding duplicate user", () => {
@@ -368,6 +404,10 @@ describe("[UNIT] Location Entity", () => {
       const updatedResult = locationResult.value.addSharingUser(duplicateUser);
 
       expect(updatedResult.kind).toBe("err");
+      if (updatedResult.kind === "err") {
+        expect(updatedResult.error).toBeInstanceOf(ValidationError);
+        expect(updatedResult.error.field).toBe("user");
+      }
     });
   });
 
@@ -434,6 +474,10 @@ describe("[UNIT] Location Entity", () => {
         locationResult.value.updateSharingUsers(invalidList);
 
       expect(updatedResult.kind).toBe("err");
+      if (updatedResult.kind === "err") {
+        expect(updatedResult.error).toBeInstanceOf(ValidationError);
+        expect(updatedResult.error.field).toBe("users");
+      }
     });
   });
 

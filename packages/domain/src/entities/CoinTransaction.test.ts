@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { CoinTransaction } from "./CoinTransaction";
+import { ValidationError } from "../errors/domain-errors";
 
 describe("[UNIT] CoinTransaction Entity", () => {
   describe("CoinTransaction.create", () => {
@@ -60,6 +61,10 @@ describe("[UNIT] CoinTransaction Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("amount");
+      }
     });
 
     it("should reject empty groupId", () => {
@@ -70,6 +75,10 @@ describe("[UNIT] CoinTransaction Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("groupId");
+      }
     });
 
     it("should reject empty adminId", () => {
@@ -80,6 +89,10 @@ describe("[UNIT] CoinTransaction Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("adminId");
+      }
     });
   });
 

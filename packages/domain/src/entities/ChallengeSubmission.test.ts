@@ -4,6 +4,7 @@ import {
   SUBMISSION_STATUSES,
 } from "./ChallengeSubmission";
 import { SubmissionId } from "../value-objects/SubmissionId";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 describe("[UNIT] ChallengeSubmission", () => {
   describe("create", () => {
@@ -98,7 +99,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("challengeId is required");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("challengeId");
       }
     });
 
@@ -110,7 +112,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("groupId is required");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("groupId");
       }
     });
 
@@ -123,7 +126,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("Cannot have more than 10 images");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("imageIds");
       }
     });
 
@@ -136,9 +140,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe(
-          "textContent must be at most 10000 characters",
-        );
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("textContent");
       }
     });
 
@@ -151,7 +154,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("latitude must be between -90 and 90");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("latitude");
       }
     });
 
@@ -164,7 +168,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("longitude must be between -180 and 180");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("longitude");
       }
     });
 
@@ -177,7 +182,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("awardedPoints cannot be negative");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("awardedPoints");
       }
     });
 
@@ -190,7 +196,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("bonusPoints cannot be negative");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("bonusPoints");
       }
     });
 
@@ -203,7 +210,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("ranking must be at least 1");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("ranking");
       }
     });
 
@@ -216,7 +224,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("ranking must be at most 3");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("ranking");
       }
     });
   });
@@ -256,7 +265,7 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("Cannot edit submission that is not pending");
+        expect(result.error).toBeInstanceOf(StateTransitionError);
       }
     });
 
@@ -273,7 +282,7 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("Cannot edit submission that is not pending");
+        expect(result.error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
@@ -338,7 +347,7 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("Cannot approve a rejected submission");
+        expect(result.error).toBeInstanceOf(StateTransitionError);
       }
     });
 
@@ -355,7 +364,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("awardedPoints cannot be negative");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("awardedPoints");
       }
     });
 
@@ -372,7 +382,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("bonusPoints cannot be negative");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("bonusPoints");
       }
     });
 
@@ -389,7 +400,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("ranking must be between 1 and 3");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("ranking");
       }
     });
   });
@@ -433,7 +445,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("Rejection reason is required");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("reason");
       }
     });
 
@@ -451,7 +464,7 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("Cannot reject an approved submission");
+        expect(result.error).toBeInstanceOf(StateTransitionError);
       }
     });
   });
@@ -485,7 +498,8 @@ describe("[UNIT] ChallengeSubmission", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toBe("awardedPoints cannot be negative");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("awardedPoints");
       }
     });
   });

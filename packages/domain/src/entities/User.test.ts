@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { User, UserRole } from "./User";
+import { ValidationError } from "../errors/domain-errors";
 
 describe("[UNIT] User Entity", () => {
   describe("User.create", () => {
@@ -48,7 +49,8 @@ describe("[UNIT] User Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("authUserId");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("authUserId");
       }
     });
 
@@ -62,7 +64,9 @@ describe("[UNIT] User Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("digits");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("firstName");
+        expect(result.error.message).toContain("digits");
       }
     });
 
@@ -75,6 +79,10 @@ describe("[UNIT] User Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("firstName");
+      }
     });
   });
 
@@ -119,6 +127,10 @@ describe("[UNIT] User Entity", () => {
       });
 
       expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
+        expect(updated.error.field).toBe("firstName");
+      }
     });
   });
 

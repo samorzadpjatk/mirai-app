@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { TripInsurance } from "./TripInsurance";
+import { ValidationError } from "../errors/domain-errors";
 
 describe("[UNIT] TripInsurance Entity", () => {
   describe("TripInsurance.create", () => {
@@ -60,7 +61,8 @@ describe("[UNIT] TripInsurance Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("tripId");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("tripId");
       }
     });
 
@@ -77,7 +79,8 @@ describe("[UNIT] TripInsurance Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("label");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("label");
       }
     });
 
@@ -94,7 +97,8 @@ describe("[UNIT] TripInsurance Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("phoneNumber");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("phoneNumber");
       }
     });
 
@@ -110,6 +114,10 @@ describe("[UNIT] TripInsurance Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("policyNumber");
+      }
     });
 
     it("should reject empty providerName", () => {
@@ -124,6 +132,10 @@ describe("[UNIT] TripInsurance Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("providerName");
+      }
     });
   });
 
@@ -174,6 +186,10 @@ describe("[UNIT] TripInsurance Entity", () => {
       const updated = insurance.updateDetails({ label: "" });
 
       expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
+        expect(updated.error.field).toBe("label");
+      }
     });
   });
 

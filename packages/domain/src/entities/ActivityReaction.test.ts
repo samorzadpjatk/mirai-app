@@ -1,6 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { ActivityReaction } from "./ActivityReaction";
 import { REACTION_TYPES } from "./ActivityFeed";
+import { ValidationError } from "../errors/domain-errors";
 
 describe("[UNIT] ActivityReaction Entity", () => {
   describe("ActivityReaction.create", () => {
@@ -29,6 +30,10 @@ describe("[UNIT] ActivityReaction Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("activityId");
+      }
     });
 
     it("should reject empty userId", () => {
@@ -39,6 +44,10 @@ describe("[UNIT] ActivityReaction Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("userId");
+      }
     });
 
     it("should reject empty reactionType", () => {
@@ -49,6 +58,10 @@ describe("[UNIT] ActivityReaction Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("reactionType");
+      }
     });
 
     it("should reject invalid reaction type", () => {
@@ -60,7 +73,9 @@ describe("[UNIT] ActivityReaction Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("Invalid reaction type");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("reactionType");
+        expect(result.error.message).toContain("Invalid reaction type");
       }
     });
 
@@ -144,6 +159,10 @@ describe("[UNIT] ActivityReaction Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("reactionType");
+      }
     });
   });
 

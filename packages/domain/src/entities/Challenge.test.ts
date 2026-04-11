@@ -5,6 +5,7 @@ import {
   SubmissionType,
   ScoringCategory,
 } from "./Challenge";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 describe("[UNIT] Challenge Entity", () => {
   describe("Challenge.create", () => {
@@ -81,7 +82,8 @@ describe("[UNIT] Challenge Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("tripId");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("tripId");
       }
     });
 
@@ -95,7 +97,8 @@ describe("[UNIT] Challenge Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("name");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("name");
       }
     });
 
@@ -121,7 +124,8 @@ describe("[UNIT] Challenge Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("basePoints");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("basePoints");
       }
     });
 
@@ -137,7 +141,8 @@ describe("[UNIT] Challenge Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("endTime");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("endTime");
       }
     });
   });
@@ -199,8 +204,11 @@ describe("[UNIT] Challenge Entity", () => {
       const challenge = challengeResult.value;
       expect(challenge.status).toBe(ChallengeStatus.HIDDEN);
 
-      const updated = challenge.updateStatus(ChallengeStatus.VISIBLE);
-      expect(updated.status).toBe(ChallengeStatus.VISIBLE);
+      const updatedResult = challenge.updateStatus(ChallengeStatus.VISIBLE);
+      expect(updatedResult.kind).toBe("ok");
+      if (updatedResult.kind === "ok") {
+        expect(updatedResult.value.status).toBe(ChallengeStatus.VISIBLE);
+      }
     });
 
     it("should transition through valid workflow", () => {
@@ -217,20 +225,51 @@ describe("[UNIT] Challenge Entity", () => {
       let challenge = challengeResult.value;
 
       // HIDDEN -> VISIBLE
-      challenge = challenge.updateStatus(ChallengeStatus.VISIBLE);
+      const result1 = challenge.updateStatus(ChallengeStatus.VISIBLE);
+      expect(result1.kind).toBe("ok");
+      if (result1.kind === "ok") challenge = result1.value;
       expect(challenge.status).toBe(ChallengeStatus.VISIBLE);
 
       // VISIBLE -> ACTIVE
-      challenge = challenge.updateStatus(ChallengeStatus.ACTIVE);
+      const result2 = challenge.updateStatus(ChallengeStatus.ACTIVE);
+      expect(result2.kind).toBe("ok");
+      if (result2.kind === "ok") challenge = result2.value;
       expect(challenge.status).toBe(ChallengeStatus.ACTIVE);
 
       // ACTIVE -> VOTING_PHASE (for PEER_VOTING)
-      challenge = challenge.updateStatus(ChallengeStatus.VOTING_PHASE);
+      const result3 = challenge.updateStatus(ChallengeStatus.VOTING_PHASE);
+      expect(result3.kind).toBe("ok");
+      if (result3.kind === "ok") challenge = result3.value;
       expect(challenge.status).toBe(ChallengeStatus.VOTING_PHASE);
 
       // VOTING_PHASE -> COMPLETED
-      challenge = challenge.updateStatus(ChallengeStatus.COMPLETED);
+      const result4 = challenge.updateStatus(ChallengeStatus.COMPLETED);
+      expect(result4.kind).toBe("ok");
+      if (result4.kind === "ok") challenge = result4.value;
       expect(challenge.status).toBe(ChallengeStatus.COMPLETED);
+    });
+
+    it("should return StateTransitionError for invalid transition", () => {
+      const challengeResult = Challenge.create({
+        tripId: "trip-123",
+        name: "Test Challenge",
+        submissionType: SubmissionType.IMAGE,
+        scoringCategory: ScoringCategory.UNLIMITED,
+      });
+
+      expect(challengeResult.kind).toBe("ok");
+      if (challengeResult.kind !== "ok") return;
+
+      const challenge = challengeResult.value;
+
+      // Try to transition directly from HIDDEN to ACTIVE (invalid)
+      const result = challenge.updateStatus(ChallengeStatus.ACTIVE);
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+        expect(result.error.from).toBe(ChallengeStatus.HIDDEN);
+        expect(result.error.to).toBe(ChallengeStatus.ACTIVE);
+      }
     });
   });
 

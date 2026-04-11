@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { Event } from "./Event";
+import { ValidationError } from "../errors/domain-errors";
 
 describe("[UNIT] Event Entity", () => {
   describe("Event.create", () => {
@@ -58,6 +59,9 @@ describe("[UNIT] Event Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("should reject empty title", () => {
@@ -71,6 +75,9 @@ describe("[UNIT] Event Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+      }
     });
 
     it("should reject endTime before startTime", () => {
@@ -88,7 +95,8 @@ describe("[UNIT] Event Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("endTime");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.message).toContain("date");
       }
     });
 
@@ -104,6 +112,9 @@ describe("[UNIT] Event Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+      }
     });
   });
 
@@ -131,6 +142,29 @@ describe("[UNIT] Event Entity", () => {
       if (updated.kind === "ok") {
         expect(updated.value.title).toBe("New Title");
         expect(updated.value.location).toBe("New Location");
+      }
+    });
+
+    it("should reject invalid title in updateDetails", () => {
+      const eventResult = Event.create({
+        creatorId: "user-123",
+        title: "Valid Title",
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 3600000),
+        location: "Room A",
+        description: "Description",
+      });
+
+      expect(eventResult.kind).toBe("ok");
+      if (eventResult.kind !== "ok") return;
+
+      const updated = eventResult.value.updateDetails({
+        title: "",
+      });
+
+      expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
       }
     });
   });
@@ -185,6 +219,9 @@ describe("[UNIT] Event Entity", () => {
       });
 
       expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
+      }
     });
   });
 
@@ -207,6 +244,49 @@ describe("[UNIT] Event Entity", () => {
       expect(updated.kind).toBe("ok");
       if (updated.kind === "ok") {
         expect(updated.value.files).toContain("document.pdf");
+      }
+    });
+
+    it("should reject empty file path", () => {
+      const eventResult = Event.create({
+        creatorId: "user-123",
+        title: "Meeting",
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 3600000),
+        location: "Room A",
+        description: "Description",
+      });
+
+      expect(eventResult.kind).toBe("ok");
+      if (eventResult.kind !== "ok") return;
+
+      const updated = eventResult.value.addFile("");
+
+      expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
+      }
+    });
+
+    it("should reject adding file when at max capacity", () => {
+      const eventResult = Event.create({
+        creatorId: "user-123",
+        title: "Meeting",
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 3600000),
+        location: "Room A",
+        description: "Description",
+        files: Array(10).fill("existing.pdf"),
+      });
+
+      expect(eventResult.kind).toBe("ok");
+      if (eventResult.kind !== "ok") return;
+
+      const updated = eventResult.value.addFile("new.pdf");
+
+      expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
       }
     });
 
@@ -250,6 +330,27 @@ describe("[UNIT] Event Entity", () => {
       expect(updated.kind).toBe("ok");
       if (updated.kind === "ok") {
         expect(updated.value.organizerGroupId).toBe("group-456");
+      }
+    });
+
+    it("should reject empty groupId", () => {
+      const eventResult = Event.create({
+        creatorId: "user-123",
+        title: "Meeting",
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 3600000),
+        location: "Room A",
+        description: "Description",
+      });
+
+      expect(eventResult.kind).toBe("ok");
+      if (eventResult.kind !== "ok") return;
+
+      const updated = eventResult.value.assignToGroup("");
+
+      expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
       }
     });
 

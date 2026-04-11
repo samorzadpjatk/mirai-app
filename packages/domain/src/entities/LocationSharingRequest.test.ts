@@ -3,6 +3,7 @@ import {
   LocationSharingRequest,
   LocationSharingRequestStatus,
 } from "./LocationSharingRequest";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 describe("[UNIT] LocationSharingRequest Entity", () => {
   describe("LocationSharingRequest.create", () => {
@@ -43,6 +44,10 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("senderId");
+      }
     });
 
     it("should reject empty receiverId", () => {
@@ -52,6 +57,10 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
       });
 
       expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("receiverId");
+      }
     });
 
     it("should reject same sender and receiver", () => {
@@ -62,7 +71,8 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("different");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("receiverId");
       }
     });
   });
@@ -77,12 +87,51 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
       expect(requestResult.kind).toBe("ok");
       if (requestResult.kind !== "ok") return;
 
-      const accepted = requestResult.value.accept();
+      const acceptedResult = requestResult.value.accept();
 
-      expect(accepted.status).toBe(LocationSharingRequestStatus.ACCEPTED);
-      expect(accepted.isAccepted()).toBe(true);
-      expect(accepted.isPending()).toBe(false);
-      expect(accepted.isResolved()).toBe(true);
+      expect(acceptedResult.kind).toBe("ok");
+      if (acceptedResult.kind === "ok") {
+        expect(acceptedResult.value.status).toBe(
+          LocationSharingRequestStatus.ACCEPTED,
+        );
+        expect(acceptedResult.value.isAccepted()).toBe(true);
+        expect(acceptedResult.value.isPending()).toBe(false);
+        expect(acceptedResult.value.isResolved()).toBe(true);
+      }
+    });
+
+    it("should reject accepting already accepted request", () => {
+      const requestResult = LocationSharingRequest.create({
+        senderId: "user-123",
+        receiverId: "user-456",
+        status: LocationSharingRequestStatus.ACCEPTED,
+      });
+
+      expect(requestResult.kind).toBe("ok");
+      if (requestResult.kind !== "ok") return;
+
+      const result = requestResult.value.accept();
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+      }
+    });
+
+    it("should reject accepting already rejected request", () => {
+      const requestResult = LocationSharingRequest.create({
+        senderId: "user-123",
+        receiverId: "user-456",
+        status: LocationSharingRequestStatus.REJECTED,
+      });
+
+      expect(requestResult.kind).toBe("ok");
+      if (requestResult.kind !== "ok") return;
+
+      const result = requestResult.value.accept();
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+      }
     });
   });
 
@@ -96,12 +145,34 @@ describe("[UNIT] LocationSharingRequest Entity", () => {
       expect(requestResult.kind).toBe("ok");
       if (requestResult.kind !== "ok") return;
 
-      const rejected = requestResult.value.reject();
+      const rejectedResult = requestResult.value.reject();
 
-      expect(rejected.status).toBe(LocationSharingRequestStatus.REJECTED);
-      expect(rejected.isRejected()).toBe(true);
-      expect(rejected.isPending()).toBe(false);
-      expect(rejected.isResolved()).toBe(true);
+      expect(rejectedResult.kind).toBe("ok");
+      if (rejectedResult.kind === "ok") {
+        expect(rejectedResult.value.status).toBe(
+          LocationSharingRequestStatus.REJECTED,
+        );
+        expect(rejectedResult.value.isRejected()).toBe(true);
+        expect(rejectedResult.value.isPending()).toBe(false);
+        expect(rejectedResult.value.isResolved()).toBe(true);
+      }
+    });
+
+    it("should reject rejecting already accepted request", () => {
+      const requestResult = LocationSharingRequest.create({
+        senderId: "user-123",
+        receiverId: "user-456",
+        status: LocationSharingRequestStatus.ACCEPTED,
+      });
+
+      expect(requestResult.kind).toBe("ok");
+      if (requestResult.kind !== "ok") return;
+
+      const result = requestResult.value.reject();
+      expect(result.kind).toBe("err");
+      if (result.kind === "err") {
+        expect(result.error).toBeInstanceOf(StateTransitionError);
+      }
     });
   });
 

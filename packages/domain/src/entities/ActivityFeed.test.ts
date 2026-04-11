@@ -8,6 +8,7 @@ import {
 } from "./ActivityFeed";
 import { ActivityReaction } from "./ActivityReaction";
 import { ActivityId } from "../value-objects/ActivityId";
+import { ValidationError } from "../errors/domain-errors";
 
 describe("[UNIT] ActivityFeed Entity", () => {
   describe("ActivityFeed.create", () => {
@@ -54,7 +55,8 @@ describe("[UNIT] ActivityFeed Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("tripId");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("tripId");
       }
     });
 
@@ -67,11 +69,12 @@ describe("[UNIT] ActivityFeed Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("title");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("title");
       }
     });
 
-    it("should require submissionActivity for submission type", () => {
+    it("should require submissionActivity or submissionMetadata for submission type", () => {
       const result = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "submission",
@@ -80,11 +83,12 @@ describe("[UNIT] ActivityFeed Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("submissionActivity");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("submissionMetadata");
       }
     });
 
-    it("should require challengeActivity for challenge_event type", () => {
+    it("should require challengeActivity or challengeMetadata for challenge_event type", () => {
       const result = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "challenge_event",
@@ -93,11 +97,12 @@ describe("[UNIT] ActivityFeed Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("challengeActivity");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("challengeMetadata");
       }
     });
 
-    it("should require rankChangeActivity for rank_change type", () => {
+    it("should require rankChangeActivity or rankChangeMetadata for rank_change type", () => {
       const result = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "rank_change",
@@ -106,11 +111,12 @@ describe("[UNIT] ActivityFeed Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("rankChangeActivity");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("rankChangeMetadata");
       }
     });
 
-    it("should require userPost for user_post type", () => {
+    it("should require userPost or postMetadata for user_post type", () => {
       const result = ActivityFeed.create({
         tripId: "trip-123",
         activityType: "user_post",
@@ -119,7 +125,8 @@ describe("[UNIT] ActivityFeed Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("userPost");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("postMetadata");
       }
     });
 
@@ -317,6 +324,10 @@ describe("[UNIT] ActivityFeed Entity", () => {
       });
 
       expect(updated.kind).toBe("err");
+      if (updated.kind === "err") {
+        expect(updated.error).toBeInstanceOf(ValidationError);
+        expect(updated.error.field).toBe("title");
+      }
     });
 
     it("should allow setting description to null", () => {
@@ -532,7 +543,8 @@ describe("ActivityReaction Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("activityId");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("activityId");
       }
     });
 
@@ -546,7 +558,8 @@ describe("ActivityReaction Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("userId");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("userId");
       }
     });
 
@@ -560,7 +573,8 @@ describe("ActivityReaction Entity", () => {
 
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("Invalid reaction type");
+        expect(result.error).toBeInstanceOf(ValidationError);
+        expect(result.error.field).toBe("reactionType");
       }
     });
 
