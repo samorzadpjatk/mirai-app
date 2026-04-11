@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@mirai-app/frameworks": "workspace:*",
-    "@mirai-app/graphql-types": "workspace:*",
+    "@mirai-app/graphql-client": "workspace:*",
     "@urql/core": "^5.0.0",
     "csv-parse": "^6.1.0",
     "graphql-tag": "^2.12.6",

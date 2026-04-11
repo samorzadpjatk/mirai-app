@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@mirai-app/frameworks": "workspace:*",
-    "@mirai-app/graphql-types": "workspace:*",
+    "@mirai-app/graphql-client": "workspace:*",
     "@urql/core": "^5.0.0"
   },
   "devDependencies": {
