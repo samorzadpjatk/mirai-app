@@ -37,7 +37,11 @@ describe("[UNIT] UpdateChallengeStatusUseCase", () => {
     challenge: Challenge,
     newStatus: ChallengeStatus,
   ): Challenge => {
-    return challenge.updateStatus(newStatus);
+    const result = challenge.updateStatus(newStatus);
+    if (result.kind === "err") {
+      throw new Error(`Failed to update status: ${result.error}`);
+    }
+    return result.value;
   };
 
   describe("execute", () => {

@@ -352,7 +352,7 @@ describe("[UNIT] UpdateChallengeUseCase", () => {
       // Assert
       expect(result.kind).toBe("err");
       if (result.kind === "err") {
-        expect(result.error).toContain("name");
+        expect(result.error.message).toContain("name");
       }
       expect(mockRepo.update).not.toHaveBeenCalled();
     });

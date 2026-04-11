@@ -131,7 +131,11 @@ describe("[UNIT] GetNotificationUseCase", () => {
         title: "Sent Notification",
         status: NotificationStatus.READY,
       });
-      const sentNotification = draftNotification.markAsSent();
+      const markResult = draftNotification.markAsSent();
+      if (markResult.kind === "err") {
+        throw new Error("Failed to mark notification as sent");
+      }
+      const sentNotification = markResult.value;
 
       const mockRepo: NotificationRepository = {
         create: mock(() => Promise.resolve(draftNotification)),
