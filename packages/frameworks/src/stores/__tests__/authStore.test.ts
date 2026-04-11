@@ -61,7 +61,8 @@ describe("[UNIT] authStore setUser action", () => {
   });
 
   test("sets user to null and isAuthenticated to false when null is passed", () => {
-    const { setUser, setSession } = authStore.getState();
+    const { setUser } = authStore.getState();
+    const { setSession } = authStore.getState();
     const mockUser = createMockUser();
     const mockSession = createMockSession();
 
@@ -149,7 +150,8 @@ describe("[UNIT] authStore state transitions", () => {
     expect(state.isLoading).toBe(true);
     expect(state.isAuthenticated).toBe(false);
 
-    const { setLoading, setUser } = authStore.getState();
+    const { setLoading } = authStore.getState();
+    const { setUser } = authStore.getState();
     setLoading(false);
     setUser(createMockUser());
 
@@ -160,7 +162,8 @@ describe("[UNIT] authStore state transitions", () => {
   });
 
   test("transitions from authenticated to loading state", () => {
-    const { setUser, setLoading } = authStore.getState();
+    const { setUser } = authStore.getState();
+    const { setLoading } = authStore.getState();
     setUser(createMockUser());
     expect(authStore.getState().isAuthenticated).toBe(true);
 
