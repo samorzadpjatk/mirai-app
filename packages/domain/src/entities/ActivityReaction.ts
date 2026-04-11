@@ -1,16 +1,9 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { timestamps } from "../utils/immutable";
+import { ValidationError } from "../errors/domain-errors";
 import { REACTION_TYPES } from "./ActivityFeed";
-
-/**
- * Validation rules for ActivityReaction data
- */
-const VALIDATION_RULES = {
-  reactionType: {
-    minLength: 1,
-    maxLength: 50,
-  },
-};
 
 /**
  * ActivityReaction entity - represents a user's reaction to an activity feed item
@@ -37,46 +30,46 @@ export class ActivityReaction {
     userId: string;
     reactionType: string;
     createdAt?: Date;
-  }): Result<ActivityReaction, string> {
+  }): Result<ActivityReaction, ValidationError> {
     // Validate activityId
-    if (!props.activityId || props.activityId.trim() === "") {
-      return err("activityId is required");
-    }
+    const activityId = validate.id(props.activityId, "activityId");
+    if (isError(activityId)) return err(activityId.error);
 
     // Validate userId
-    if (!props.userId || props.userId.trim() === "") {
-      return err("userId is required");
-    }
+    const userId = validate.id(props.userId, "userId");
+    if (isError(userId)) return err(userId.error);
 
     // Validate reactionType
-    if (!props.reactionType || props.reactionType.trim() === "") {
-      return err("reactionType is required");
-    }
-    if (props.reactionType.length > VALIDATION_RULES.reactionType.maxLength) {
-      return err(
-        `reactionType must be at most ${VALIDATION_RULES.reactionType.maxLength} characters`,
-      );
-    }
+    const reactionType = validate.string(props.reactionType, "reactionType", {
+      required: true,
+      maxLength: 50,
+      trim: true,
+    });
+    if (isError(reactionType)) return err(reactionType.error);
 
     // Validate reaction type is one of the allowed types
-    const trimmedType = props.reactionType.trim();
     if (
-      !REACTION_TYPES.includes(trimmedType as (typeof REACTION_TYPES)[number])
+      !REACTION_TYPES.includes(
+        reactionType.value as (typeof REACTION_TYPES)[number],
+      )
     ) {
       return err(
-        `Invalid reaction type: ${trimmedType}. Must be one of: ${REACTION_TYPES.join(", ")}`,
+        new ValidationError(
+          `Invalid reaction type: ${reactionType.value}. Must be one of: ${REACTION_TYPES.join(", ")}`,
+          "reactionType",
+        ),
       );
     }
 
-    const now = new Date();
+    const ts = timestamps(props);
 
     return ok(
       new ActivityReaction(
         props.id ?? crypto.randomUUID(),
-        props.activityId.trim(),
-        props.userId.trim(),
-        trimmedType,
-        props.createdAt ?? now,
+        activityId.value,
+        userId.value,
+        reactionType.value,
+        ts.createdAt,
       ),
     );
   }

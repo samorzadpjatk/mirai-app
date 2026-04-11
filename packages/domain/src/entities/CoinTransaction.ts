@@ -1,14 +1,8 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
-
-/**
- * Validation rules for CoinTransaction data
- */
-const VALIDATION_RULES = {
-  reason: {
-    maxLength: 500,
-  },
-};
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { timestamps } from "../utils/immutable";
+import { ValidationError } from "../errors/domain-errors";
 
 /**
  * CoinTransaction entity - tracks coin balance changes for groups
@@ -39,43 +33,40 @@ export class CoinTransaction {
     adminId: string;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<CoinTransaction, string> {
+  }): Result<CoinTransaction, ValidationError> {
     // Validate groupId
-    if (!props.groupId || props.groupId.trim() === "") {
-      return err("groupId is required");
-    }
+    const groupId = validate.id(props.groupId, "groupId");
+    if (isError(groupId)) return err(groupId.error);
 
     // Validate amount (must be non-zero)
     if (props.amount === 0) {
-      return err("amount cannot be zero");
+      return err(new ValidationError("amount cannot be zero", "amount"));
     }
 
     // Validate adminId
-    if (!props.adminId || props.adminId.trim() === "") {
-      return err("adminId is required");
-    }
+    const adminId = validate.id(props.adminId, "adminId");
+    if (isError(adminId)) return err(adminId.error);
 
     // Validate reason if provided
-    if (
-      props.reason &&
-      props.reason.length > VALIDATION_RULES.reason.maxLength
-    ) {
-      return err(
-        `reason must be at most ${VALIDATION_RULES.reason.maxLength} characters`,
-      );
+    if (props.reason) {
+      const validated = validate.string(props.reason, "reason", {
+        required: false,
+        maxLength: 500,
+      });
+      if (isError(validated)) return err(validated.error);
     }
 
-    const now = new Date();
+    const ts = timestamps(props);
 
     return ok(
       new CoinTransaction(
         props.id ?? crypto.randomUUID(),
-        props.groupId.trim(),
+        groupId.value,
         props.amount,
         props.reason ?? null,
-        props.adminId.trim(),
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        adminId.value,
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }

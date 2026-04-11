@@ -1,7 +1,11 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
 import type { SubmissionId } from "../value-objects/SubmissionId";
 import type { GroupInfo, ChallengeInfo } from "./ActivityFeed";
+import { validate } from "../utils/entity-validation";
+import { createStateMachine } from "../utils/state-machine";
+import { timestamps, updateEntity } from "../utils/immutable";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 /**
  * Submission status values
@@ -29,25 +33,16 @@ export interface ReviewerInfo {
 }
 
 /**
- * Validation rules for submission data
+ * State machine for submission status transitions
  */
-const VALIDATION_RULES = {
-  textContent: {
-    maxLength: 10000,
+const submissionStateMachine = createStateMachine<SubmissionStatus>({
+  transitions: {
+    PENDING: ["APPROVED", "REJECTED"],
+    APPROVED: [],
+    REJECTED: [],
   },
-  rejectionReason: {
-    maxLength: 1000,
-  },
-  imageIds: {
-    maxCount: 10,
-  },
-  location: {
-    minLatitude: -90,
-    maxLatitude: 90,
-    minLongitude: -180,
-    maxLongitude: 180,
-  },
-};
+  terminalStates: ["APPROVED", "REJECTED"],
+});
 
 /**
  * ChallengeSubmission entity - represents a challenge submission in the system
@@ -109,96 +104,93 @@ export class ChallengeSubmission {
     group?: GroupInfo | null;
     reviewedBy?: ReviewerInfo | null;
     challenge?: ChallengeInfo | null;
-  }): Result<ChallengeSubmission, string> {
+  }): Result<ChallengeSubmission, ValidationError> {
     // Validate challengeId
-    if (!props.challengeId || props.challengeId.trim() === "") {
-      return err("challengeId is required");
-    }
+    const challengeIdResult = validate.id(props.challengeId, "challengeId");
+    if (isError(challengeIdResult)) return challengeIdResult;
 
     // Validate groupId
-    if (!props.groupId || props.groupId.trim() === "") {
-      return err("groupId is required");
-    }
+    const groupIdResult = validate.id(props.groupId, "groupId");
+    if (isError(groupIdResult)) return groupIdResult;
 
     // Validate imageIds
     const imageIds = props.imageIds ?? [];
-    if (imageIds.length > VALIDATION_RULES.imageIds.maxCount) {
-      return err(
-        `Cannot have more than ${VALIDATION_RULES.imageIds.maxCount} images`,
-      );
-    }
+    const imageIdsResult = validate.array(imageIds, "imageIds", {
+      maxItems: 10,
+    });
+    if (isError(imageIdsResult)) return imageIdsResult;
 
     // Validate textContent length
-    if (
-      props.textContent &&
-      props.textContent.length > VALIDATION_RULES.textContent.maxLength
-    ) {
-      return err(
-        `textContent must be at most ${VALIDATION_RULES.textContent.maxLength} characters`,
-      );
+    if (props.textContent !== null && props.textContent !== undefined) {
+      const textResult = validate.string(props.textContent, "textContent", {
+        maxLength: 10000,
+      });
+      if (isError(textResult)) return textResult;
     }
 
     // Validate location coordinates
     if (props.latitude !== null && props.latitude !== undefined) {
-      if (
-        props.latitude < VALIDATION_RULES.location.minLatitude ||
-        props.latitude > VALIDATION_RULES.location.maxLatitude
-      ) {
-        return err("latitude must be between -90 and 90");
-      }
+      const latResult = validate.number(props.latitude, "latitude", {
+        min: -90,
+        max: 90,
+      });
+      if (isError(latResult)) return latResult;
     }
 
     if (props.longitude !== null && props.longitude !== undefined) {
-      if (
-        props.longitude < VALIDATION_RULES.location.minLongitude ||
-        props.longitude > VALIDATION_RULES.location.maxLongitude
-      ) {
-        return err("longitude must be between -180 and 180");
-      }
-    }
-
-    // Validate status
-    if (props.status && !SUBMISSION_STATUSES.includes(props.status)) {
-      return err(
-        `Invalid status: ${props.status}. Must be one of: ${SUBMISSION_STATUSES.join(", ")}`,
-      );
+      const lngResult = validate.number(props.longitude, "longitude", {
+        min: -180,
+        max: 180,
+      });
+      if (isError(lngResult)) return lngResult;
     }
 
     // Validate rejection reason length
-    if (
-      props.rejectionReason &&
-      props.rejectionReason.length > VALIDATION_RULES.rejectionReason.maxLength
-    ) {
-      return err(
-        `rejectionReason must be at most ${VALIDATION_RULES.rejectionReason.maxLength} characters`,
+    if (props.rejectionReason !== null && props.rejectionReason !== undefined) {
+      const reasonResult = validate.string(
+        props.rejectionReason,
+        "rejectionReason",
+        {
+          maxLength: 1000,
+        },
       );
+      if (isError(reasonResult)) return reasonResult;
     }
 
     // Validate points are non-negative
-    if (props.awardedPoints !== undefined && props.awardedPoints < 0) {
-      return err("awardedPoints cannot be negative");
-    }
-    if (props.bonusPoints !== undefined && props.bonusPoints < 0) {
-      return err("bonusPoints cannot be negative");
+    const awardedPoints = props.awardedPoints ?? 0;
+    if (awardedPoints < 0) {
+      return err(ValidationError.minValue("awardedPoints", 0));
     }
 
-    // Validate ranking is positive if provided
+    const bonusPoints = props.bonusPoints ?? 0;
+    if (bonusPoints < 0) {
+      return err(ValidationError.minValue("bonusPoints", 0));
+    }
+
+    // Validate ranking is between 1 and 3 if provided
+    let ranking: number | null = null;
     if (props.ranking !== null && props.ranking !== undefined) {
-      if (props.ranking < 1) {
-        return err("ranking must be at least 1");
-      }
-      if (props.ranking > 3) {
-        return err("ranking must be at most 3");
-      }
+      const rankingResult = validate.number(props.ranking, "ranking", {
+        min: 1,
+        max: 3,
+        integer: true,
+      });
+      if (isError(rankingResult)) return rankingResult;
+      ranking = rankingResult.value;
     }
 
-    const now = new Date();
+    // Generate timestamps
+    const ts = timestamps({
+      createdAt: props.createdAt,
+      updatedAt: props.updatedAt,
+    });
 
     return ok(
       new ChallengeSubmission(
         props.id ?? (crypto.randomUUID() as SubmissionId),
-        props.challengeId.trim(),
-        props.groupId.trim(),
+        challengeIdResult.value.trim(),
+        groupIdResult.value.trim(),
         imageIds,
         props.videoId ?? null,
         props.textContent ?? null,
@@ -208,13 +200,13 @@ export class ChallengeSubmission {
         props.reviewedById ?? null,
         props.reviewedAt ?? null,
         props.rejectionReason ?? null,
-        props.awardedPoints ?? 0,
-        props.bonusPoints ?? 0,
-        props.ranking ?? null,
+        awardedPoints,
+        bonusPoints,
+        ranking,
         props.voteCount ?? 0,
         props.voteScore ?? 0,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        ts.createdAt,
+        ts.updatedAt,
         props.group ?? null,
         props.reviewedBy ?? null,
         props.challenge ?? null,
@@ -233,29 +225,26 @@ export class ChallengeSubmission {
     textContent?: string | null;
     latitude?: number | null;
     longitude?: number | null;
-  }): Result<ChallengeSubmission, string> {
+  }): Result<ChallengeSubmission, ValidationError | StateTransitionError> {
     if (this.status !== "PENDING") {
-      return err("Cannot edit submission that is not pending");
+      return err(new StateTransitionError(this.status, "PENDING_UPDATE"));
     }
 
     // Validate imageIds
     const imageIds = props.imageIds ?? this.imageIds;
-    if (imageIds.length > VALIDATION_RULES.imageIds.maxCount) {
-      return err(
-        `Cannot have more than ${VALIDATION_RULES.imageIds.maxCount} images`,
-      );
-    }
+    const imageIdsResult = validate.array(imageIds, "imageIds", {
+      maxItems: 10,
+    });
+    if (isError(imageIdsResult)) return imageIdsResult;
 
     // Validate textContent length
-    const textContent =
+    let textContent =
       props.textContent !== undefined ? props.textContent : this.textContent;
-    if (
-      textContent &&
-      textContent.length > VALIDATION_RULES.textContent.maxLength
-    ) {
-      return err(
-        `textContent must be at most ${VALIDATION_RULES.textContent.maxLength} characters`,
-      );
+    if (textContent !== null) {
+      const textResult = validate.string(textContent, "textContent", {
+        maxLength: 10000,
+      });
+      if (isError(textResult)) return textResult;
     }
 
     // Validate location coordinates
@@ -265,47 +254,36 @@ export class ChallengeSubmission {
       props.longitude !== undefined ? props.longitude : this.longitude;
 
     if (latitude !== null) {
-      if (
-        latitude < VALIDATION_RULES.location.minLatitude ||
-        latitude > VALIDATION_RULES.location.maxLatitude
-      ) {
-        return err("latitude must be between -90 and 90");
-      }
+      const latResult = validate.number(latitude, "latitude", {
+        min: -90,
+        max: 90,
+      });
+      if (isError(latResult)) return latResult;
     }
 
     if (longitude !== null) {
-      if (
-        longitude < VALIDATION_RULES.location.minLongitude ||
-        longitude > VALIDATION_RULES.location.maxLongitude
-      ) {
-        return err("longitude must be between -180 and 180");
-      }
+      const lngResult = validate.number(longitude, "longitude", {
+        min: -180,
+        max: 180,
+      });
+      if (isError(lngResult)) return lngResult;
     }
 
     return ok(
-      new ChallengeSubmission(
-        this.id,
-        this.challengeId,
-        this.groupId,
-        imageIds,
-        props.videoId !== undefined ? props.videoId : this.videoId,
-        textContent,
-        latitude,
-        longitude,
-        this.status,
-        null, // Reset reviewedById when editing
-        null, // Reset reviewedAt when editing
-        null, // Reset rejectionReason when editing
-        this.awardedPoints,
-        this.bonusPoints,
-        this.ranking,
-        this.voteCount,
-        this.voteScore,
-        this.createdAt,
-        new Date(), // updatedAt
-        this.group,
-        null, // Reset reviewedBy when editing
-        this.challenge,
+      updateEntity(
+        this,
+        {
+          imageIds,
+          videoId: props.videoId !== undefined ? props.videoId : this.videoId,
+          textContent,
+          latitude,
+          longitude,
+          reviewedById: null, // Reset reviewedById when editing
+          reviewedAt: null, // Reset reviewedAt when editing
+          rejectionReason: null, // Reset rejectionReason when editing
+          reviewedBy: null, // Reset reviewedBy when editing
+        },
+        ChallengeSubmission,
       ),
     );
   }
@@ -319,51 +297,46 @@ export class ChallengeSubmission {
     awardedPoints?: number;
     bonusPoints?: number;
     ranking?: number | null;
-  }): Result<ChallengeSubmission, string> {
-    if (this.status === "REJECTED") {
-      return err("Cannot approve a rejected submission");
+  }): Result<ChallengeSubmission, ValidationError | StateTransitionError> {
+    if (!submissionStateMachine.canTransition(this.status, "APPROVED")) {
+      return err(new StateTransitionError(this.status, "APPROVED"));
     }
 
     const awardedPoints = props.awardedPoints ?? this.awardedPoints;
     const bonusPoints = props.bonusPoints ?? this.bonusPoints;
 
     if (awardedPoints < 0) {
-      return err("awardedPoints cannot be negative");
+      return err(ValidationError.minValue("awardedPoints", 0));
     }
     if (bonusPoints < 0) {
-      return err("bonusPoints cannot be negative");
+      return err(ValidationError.minValue("bonusPoints", 0));
     }
 
+    let ranking: number | null = this.ranking;
     if (props.ranking !== undefined && props.ranking !== null) {
-      if (props.ranking < 1 || props.ranking > 3) {
-        return err("ranking must be between 1 and 3");
-      }
+      const rankingResult = validate.number(props.ranking, "ranking", {
+        min: 1,
+        max: 3,
+        integer: true,
+      });
+      if (isError(rankingResult)) return rankingResult;
+      ranking = rankingResult.value;
     }
 
     return ok(
-      new ChallengeSubmission(
-        this.id,
-        this.challengeId,
-        this.groupId,
-        this.imageIds,
-        this.videoId,
-        this.textContent,
-        this.latitude,
-        this.longitude,
-        "APPROVED",
-        props.reviewedById,
-        new Date(), // reviewedAt
-        null, // Clear rejection reason on approval
-        awardedPoints,
-        bonusPoints,
-        props.ranking !== undefined ? props.ranking : this.ranking,
-        this.voteCount,
-        this.voteScore,
-        this.createdAt,
-        new Date(), // updatedAt
-        this.group,
-        null, // Will be populated by repository
-        this.challenge,
+      updateEntity(
+        this,
+        {
+          status: "APPROVED",
+          reviewedById: props.reviewedById,
+          reviewedAt: new Date(),
+          rejectionReason: null, // Clear rejection reason on approval
+          awardedPoints,
+          bonusPoints,
+          ranking,
+          reviewedBy: null, // Will be populated by repository
+        },
+        ChallengeSubmission,
       ),
     );
   }
@@ -375,45 +348,31 @@ export class ChallengeSubmission {
   reject(props: {
     reviewedById: string;
     reason: string;
-  }): Result<ChallengeSubmission, string> {
-    if (this.status === "APPROVED") {
-      return err("Cannot reject an approved submission");
+  }): Result<ChallengeSubmission, ValidationError | StateTransitionError> {
+    if (!submissionStateMachine.canTransition(this.status, "REJECTED")) {
+      return err(new StateTransitionError(this.status, "REJECTED"));
     }
 
-    if (!props.reason || props.reason.trim() === "") {
-      return err("Rejection reason is required");
-    }
-
-    if (props.reason.length > VALIDATION_RULES.rejectionReason.maxLength) {
-      return err(
-        `rejectionReason must be at most ${VALIDATION_RULES.rejectionReason.maxLength} characters`,
-      );
-    }
+    const reasonResult = validate.string(props.reason, "reason", {
+      required: true,
+      maxLength: 1000,
+    });
+    if (isError(reasonResult)) return reasonResult;
 
     return ok(
-      new ChallengeSubmission(
-        this.id,
-        this.challengeId,
-        this.groupId,
-        this.imageIds,
-        this.videoId,
-        this.textContent,
-        this.latitude,
-        this.longitude,
-        "REJECTED",
-        props.reviewedById,
-        new Date(), // reviewedAt
-        props.reason.trim(),
-        0, // Clear awarded points on rejection
-        0, // Clear bonus points on rejection
-        null, // Clear ranking on rejection
-        this.voteCount,
-        this.voteScore,
-        this.createdAt,
-        new Date(), // updatedAt
-        this.group,
-        null, // Will be populated by repository
-        this.challenge,
+      updateEntity(
+        this,
+        {
+          status: "REJECTED",
+          reviewedById: props.reviewedById,
+          reviewedAt: new Date(),
+          rejectionReason: reasonResult.value.trim(),
+          awardedPoints: 0, // Clear awarded points on rejection
+          bonusPoints: 0, // Clear bonus points on rejection
+          ranking: null, // Clear ranking on rejection
+          reviewedBy: null, // Will be populated by repository
+        },
+        ChallengeSubmission,
       ),
     );
   }
@@ -424,35 +383,24 @@ export class ChallengeSubmission {
    */
   autoApprove(props: {
     awardedPoints: number;
-  }): Result<ChallengeSubmission, string> {
+  }): Result<ChallengeSubmission, ValidationError> {
     if (props.awardedPoints < 0) {
-      return err("awardedPoints cannot be negative");
+      return err(ValidationError.minValue("awardedPoints", 0));
     }
 
     return ok(
-      new ChallengeSubmission(
-        this.id,
-        this.challengeId,
-        this.groupId,
-        this.imageIds,
-        this.videoId,
-        this.textContent,
-        this.latitude,
-        this.longitude,
-        "APPROVED",
-        null, // No reviewer for auto-approval
-        new Date(), // reviewedAt
-        null, // No rejection reason
-        props.awardedPoints,
-        0, // No bonus points for auto-approval
-        null, // No ranking for auto-approval
-        this.voteCount,
-        this.voteScore,
-        this.createdAt,
-        new Date(), // updatedAt
-        this.group,
-        null,
-        this.challenge,
+      updateEntity(
+        this,
+        {
+          status: "APPROVED",
+          reviewedById: null, // No reviewer for auto-approval
+          reviewedAt: new Date(),
+          rejectionReason: null, // No rejection reason
+          awardedPoints: props.awardedPoints,
+          bonusPoints: 0, // No bonus points for auto-approval
+          ranking: null, // No ranking for auto-approval
+        },
+        ChallengeSubmission,
       ),
     );
   }
@@ -465,29 +413,13 @@ export class ChallengeSubmission {
     voteCount: number;
     voteScore: number;
   }): ChallengeSubmission {
-    return new ChallengeSubmission(
-      this.id,
-      this.challengeId,
-      this.groupId,
-      this.imageIds,
-      this.videoId,
-      this.textContent,
-      this.latitude,
-      this.longitude,
-      this.status,
-      this.reviewedById,
-      this.reviewedAt,
-      this.rejectionReason,
-      this.awardedPoints,
-      this.bonusPoints,
-      this.ranking,
-      props.voteCount,
-      props.voteScore,
-      this.createdAt,
-      new Date(), // updatedAt
-      this.group,
-      this.reviewedBy,
-      this.challenge,
+    return updateEntity(
+      this,
+      {
+        voteCount: props.voteCount,
+        voteScore: props.voteScore,
+      },
+      ChallengeSubmission,
     );
   }
 
@@ -559,30 +491,7 @@ export class ChallengeSubmission {
    * Returns a new ChallengeSubmission instance (immutable)
    */
   withGroup(group: GroupInfo): ChallengeSubmission {
-    return new ChallengeSubmission(
-      this.id,
-      this.challengeId,
-      this.groupId,
-      this.imageIds,
-      this.videoId,
-      this.textContent,
-      this.latitude,
-      this.longitude,
-      this.status,
-      this.reviewedById,
-      this.reviewedAt,
-      this.rejectionReason,
-      this.awardedPoints,
-      this.bonusPoints,
-      this.ranking,
-      this.voteCount,
-      this.voteScore,
-      this.createdAt,
-      this.updatedAt,
-      group,
-      this.reviewedBy,
-      this.challenge,
-    );
+    return updateEntity(this, { group }, ChallengeSubmission);
   }
 
   /**
@@ -590,30 +499,7 @@ export class ChallengeSubmission {
    * Returns a new ChallengeSubmission instance (immutable)
    */
   withReviewer(reviewer: ReviewerInfo): ChallengeSubmission {
-    return new ChallengeSubmission(
-      this.id,
-      this.challengeId,
-      this.groupId,
-      this.imageIds,
-      this.videoId,
-      this.textContent,
-      this.latitude,
-      this.longitude,
-      this.status,
-      this.reviewedById,
-      this.reviewedAt,
-      this.rejectionReason,
-      this.awardedPoints,
-      this.bonusPoints,
-      this.ranking,
-      this.voteCount,
-      this.voteScore,
-      this.createdAt,
-      this.updatedAt,
-      this.group,
-      reviewer,
-      this.challenge,
-    );
+    return updateEntity(this, { reviewedBy: reviewer }, ChallengeSubmission);
   }
 
   /**
@@ -621,30 +507,7 @@ export class ChallengeSubmission {
    * Returns a new ChallengeSubmission instance (immutable)
    */
   withChallenge(challenge: ChallengeInfo): ChallengeSubmission {
-    return new ChallengeSubmission(
-      this.id,
-      this.challengeId,
-      this.groupId,
-      this.imageIds,
-      this.videoId,
-      this.textContent,
-      this.latitude,
-      this.longitude,
-      this.status,
-      this.reviewedById,
-      this.reviewedAt,
-      this.rejectionReason,
-      this.awardedPoints,
-      this.bonusPoints,
-      this.ranking,
-      this.voteCount,
-      this.voteScore,
-      this.createdAt,
-      this.updatedAt,
-      this.group,
-      this.reviewedBy,
-      challenge,
-    );
+    return updateEntity(this, { challenge }, ChallengeSubmission);
   }
 
   /**

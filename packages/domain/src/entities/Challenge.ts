@@ -1,5 +1,9 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { createStateMachine } from "../utils/state-machine";
+import { updateEntity, timestamps } from "../utils/immutable";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 /**
  * Challenge submission types
@@ -39,48 +43,38 @@ export enum ChallengeStatus {
 }
 
 /**
- * Validation rules for challenge data
+ * Regex for validating daily time format (HH:MM)
  */
-const VALIDATION_RULES = {
-  name: {
-    minLength: 1,
-    maxLength: 200,
-  },
-  description: {
-    maxLength: 2000,
-  },
-  basePoints: {
-    min: 0,
-    max: 10000,
-  },
-  dailyTimeFormat: /^([01]\d|2[0-3]):([0-5]\d)$/, // HH:MM format
-};
+const DAILY_TIME_FORMAT = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 /**
- * Valid status transitions
+ * State machine for Challenge status transitions
  */
-const VALID_STATUS_TRANSITIONS: Record<ChallengeStatus, ChallengeStatus[]> = {
-  [ChallengeStatus.HIDDEN]: [
-    ChallengeStatus.VISIBLE,
-    ChallengeStatus.CANCELLED,
-  ],
-  [ChallengeStatus.VISIBLE]: [
-    ChallengeStatus.ACTIVE,
-    ChallengeStatus.HIDDEN,
-    ChallengeStatus.CANCELLED,
-  ],
-  [ChallengeStatus.ACTIVE]: [
-    ChallengeStatus.VOTING_PHASE,
-    ChallengeStatus.COMPLETED,
-    ChallengeStatus.CANCELLED,
-  ],
-  [ChallengeStatus.VOTING_PHASE]: [
-    ChallengeStatus.COMPLETED,
-    ChallengeStatus.CANCELLED,
-  ],
-  [ChallengeStatus.COMPLETED]: [], // Terminal state
-  [ChallengeStatus.CANCELLED]: [], // Terminal state
-};
+const stateMachine = createStateMachine<ChallengeStatus>({
+  transitions: {
+    [ChallengeStatus.HIDDEN]: [
+      ChallengeStatus.VISIBLE,
+      ChallengeStatus.CANCELLED,
+    ],
+    [ChallengeStatus.VISIBLE]: [
+      ChallengeStatus.ACTIVE,
+      ChallengeStatus.HIDDEN,
+      ChallengeStatus.CANCELLED,
+    ],
+    [ChallengeStatus.ACTIVE]: [
+      ChallengeStatus.VOTING_PHASE,
+      ChallengeStatus.COMPLETED,
+      ChallengeStatus.CANCELLED,
+    ],
+    [ChallengeStatus.VOTING_PHASE]: [
+      ChallengeStatus.COMPLETED,
+      ChallengeStatus.CANCELLED,
+    ],
+    [ChallengeStatus.COMPLETED]: [],
+    [ChallengeStatus.CANCELLED]: [],
+  },
+  terminalStates: [ChallengeStatus.COMPLETED, ChallengeStatus.CANCELLED],
+});
 
 /**
  * Challenge entity - represents a challenge/task in a trip
@@ -147,109 +141,148 @@ export class Challenge {
     autoApprove?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Challenge, string> {
+  }): Result<Challenge, ValidationError> {
     // Validate tripId
-    if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
-    }
+    const tripId = validate.id(props.tripId, "tripId");
+    if (isError(tripId)) return err(tripId.error);
 
     // Validate name
-    if (!props.name || props.name.trim() === "") {
-      return err("name is required");
-    }
-    if (props.name.length > VALIDATION_RULES.name.maxLength) {
-      return err(
-        `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
-      );
-    }
+    const name = validate.string(props.name, "name", {
+      required: true,
+      maxLength: 200,
+      trim: true,
+    });
+    if (isError(name)) return err(name.error);
 
-    // Validate description length
-    if (
-      props.description &&
-      props.description.length > VALIDATION_RULES.description.maxLength
-    ) {
-      return err(
-        `description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
-      );
-    }
+    // Validate description (optional)
+    const description = validate.string(
+      props.description ?? "",
+      "description",
+      {
+        required: false,
+        maxLength: 2000,
+        trim: true,
+      },
+    );
+    if (isError(description)) return err(description.error);
 
-    // Validate points
-    const basePoints = props.basePoints ?? 0;
-    if (basePoints < VALIDATION_RULES.basePoints.min) {
-      return err(
-        `basePoints must be at least ${VALIDATION_RULES.basePoints.min}`,
-      );
-    }
-    if (basePoints > VALIDATION_RULES.basePoints.max) {
-      return err(
-        `basePoints must be at most ${VALIDATION_RULES.basePoints.max}`,
-      );
-    }
+    // Validate basePoints
+    const basePoints = validate.number(props.basePoints ?? 0, "basePoints", {
+      required: true,
+      min: 0,
+      max: 10000,
+    });
+    if (isError(basePoints)) return err(basePoints.error);
 
-    // Validate ranking points
+    // Validate firstPlacePoints
+    let firstPlacePoints: number | null = null;
     if (
       props.firstPlacePoints !== undefined &&
-      props.firstPlacePoints !== null &&
-      props.firstPlacePoints < 0
+      props.firstPlacePoints !== null
     ) {
-      return err("firstPlacePoints must be non-negative");
-    }
-    if (
-      props.secondPlacePoints !== undefined &&
-      props.secondPlacePoints !== null &&
-      props.secondPlacePoints < 0
-    ) {
-      return err("secondPlacePoints must be non-negative");
-    }
-    if (
-      props.thirdPlacePoints !== undefined &&
-      props.thirdPlacePoints !== null &&
-      props.thirdPlacePoints < 0
-    ) {
-      return err("thirdPlacePoints must be non-negative");
+      const result = validate.number(
+        props.firstPlacePoints,
+        "firstPlacePoints",
+        {
+          required: true,
+          min: 0,
+        },
+      );
+      if (isError(result)) return err(result.error);
+      firstPlacePoints = result.value;
     }
 
-    // Validate time range
+    // Validate secondPlacePoints
+    let secondPlacePoints: number | null = null;
     if (
-      props.startTime &&
-      props.endTime &&
-      props.endTime.getTime() < props.startTime.getTime()
+      props.secondPlacePoints !== undefined &&
+      props.secondPlacePoints !== null
     ) {
-      return err("endTime must be after startTime");
+      const result = validate.number(
+        props.secondPlacePoints,
+        "secondPlacePoints",
+        {
+          required: true,
+          min: 0,
+        },
+      );
+      if (isError(result)) return err(result.error);
+      secondPlacePoints = result.value;
+    }
+
+    // Validate thirdPlacePoints
+    let thirdPlacePoints: number | null = null;
+    if (
+      props.thirdPlacePoints !== undefined &&
+      props.thirdPlacePoints !== null
+    ) {
+      const result = validate.number(
+        props.thirdPlacePoints,
+        "thirdPlacePoints",
+        {
+          required: true,
+          min: 0,
+        },
+      );
+      if (isError(result)) return err(result.error);
+      thirdPlacePoints = result.value;
+    }
+
+    // Validate date range
+    if (props.startTime && props.endTime) {
+      const rangeResult = validate.dateRange(props.startTime, props.endTime);
+      if (isError(rangeResult)) {
+        return err(
+          new ValidationError("endTime must be after startTime", "endTime"),
+        );
+      }
     }
 
     // Validate daily time format
-    if (
-      props.dailyStartTime &&
-      !VALIDATION_RULES.dailyTimeFormat.test(props.dailyStartTime)
-    ) {
-      return err("dailyStartTime must be in HH:MM format");
-    }
-    if (
-      props.dailyEndTime &&
-      !VALIDATION_RULES.dailyTimeFormat.test(props.dailyEndTime)
-    ) {
-      return err("dailyEndTime must be in HH:MM format");
+    let dailyStartTime: string | null = null;
+    if (props.dailyStartTime) {
+      if (!DAILY_TIME_FORMAT.test(props.dailyStartTime)) {
+        return err(
+          new ValidationError(
+            "dailyStartTime must be in HH:MM format",
+            "dailyStartTime",
+          ),
+        );
+      }
+      dailyStartTime = props.dailyStartTime;
     }
 
-    const now = new Date();
+    let dailyEndTime: string | null = null;
+    if (props.dailyEndTime) {
+      if (!DAILY_TIME_FORMAT.test(props.dailyEndTime)) {
+        return err(
+          new ValidationError(
+            "dailyEndTime must be in HH:MM format",
+            "dailyEndTime",
+          ),
+        );
+      }
+      dailyEndTime = props.dailyEndTime;
+    }
+
+    const ts = timestamps(props);
 
     return ok(
       new Challenge(
         props.id ?? crypto.randomUUID(),
-        props.tripId.trim(),
-        props.name.trim(),
-        props.description ?? null,
+        tripId.value,
+        name.value,
+        description.value || null,
         props.image ?? null,
         props.submissionType,
         props.scoringCategory,
         props.isRecurring ?? false,
-        props.dailyStartTime ?? null,
-        props.dailyEndTime ?? null,
-        basePoints,
-        props.firstPlacePoints ?? null,
-        props.secondPlacePoints ?? null,
-        props.thirdPlacePoints ?? null,
+        dailyStartTime,
+        dailyEndTime,
+        basePoints.value,
+        firstPlacePoints,
+        secondPlacePoints,
+        thirdPlacePoints,
         props.status ?? ChallengeStatus.HIDDEN,
         props.startTime ?? null,
         props.endTime ?? null,
@@ -259,8 +292,8 @@ export class Challenge {
         props.targetLongitude ?? null,
         props.expectedValue ?? null,
         props.autoApprove ?? false,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }
@@ -273,98 +306,50 @@ export class Challenge {
     name?: string;
     description?: string | null;
     image?: string | null;
-  }): Result<Challenge, string> {
+  }): Result<Challenge, ValidationError> {
+    const updates: Partial<Challenge> = {};
+
     // Validate name if provided
     if (props.name !== undefined) {
-      if (props.name.trim() === "") {
-        return err("name is required");
-      }
-      if (props.name.length > VALIDATION_RULES.name.maxLength) {
-        return err(
-          `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.name, "name", {
+        required: true,
+        maxLength: 200,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.name = validated.value;
     }
 
     // Validate description if provided
-    if (props.description !== undefined && props.description !== null) {
-      if (props.description.length > VALIDATION_RULES.description.maxLength) {
-        return err(
-          `description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
-        );
-      }
+    if (props.description !== undefined) {
+      const validated = validate.string(props.description, "description", {
+        required: false,
+        maxLength: 2000,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.description = props.description !== null ? validated.value : null;
     }
 
-    return ok(
-      new Challenge(
-        this.id,
-        this.tripId,
-        props.name ?? this.name,
-        props.description !== undefined ? props.description : this.description,
-        props.image !== undefined ? props.image : this.image,
-        this.submissionType,
-        this.scoringCategory,
-        this.isRecurring,
-        this.dailyStartTime,
-        this.dailyEndTime,
-        this.basePoints,
-        this.firstPlacePoints,
-        this.secondPlacePoints,
-        this.thirdPlacePoints,
-        this.status,
-        this.startTime,
-        this.endTime,
-        this.votingStartTime,
-        this.votingEndTime,
-        this.targetLatitude,
-        this.targetLongitude,
-        this.expectedValue,
-        this.autoApprove,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    if (props.image !== undefined) {
+      updates.image = props.image;
+    }
+
+    return ok(updateEntity(this, updates, Challenge));
   }
 
   /**
    * Update challenge status
-   * Returns a new Challenge instance (immutable)
-   * @throws if status transition is invalid
+   * Returns a Result with new Challenge instance or StateTransitionError
    */
-  updateStatus(newStatus: ChallengeStatus): Challenge {
-    if (!this.canTransitionTo(newStatus)) {
-      throw new Error(
-        `Invalid status transition from ${this.status} to ${newStatus}`,
-      );
+  updateStatus(
+    newStatus: ChallengeStatus,
+  ): Result<Challenge, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, newStatus)) {
+      return err(new StateTransitionError(this.status, newStatus));
     }
 
-    return new Challenge(
-      this.id,
-      this.tripId,
-      this.name,
-      this.description,
-      this.image,
-      this.submissionType,
-      this.scoringCategory,
-      this.isRecurring,
-      this.dailyStartTime,
-      this.dailyEndTime,
-      this.basePoints,
-      this.firstPlacePoints,
-      this.secondPlacePoints,
-      this.thirdPlacePoints,
-      newStatus,
-      this.startTime,
-      this.endTime,
-      this.votingStartTime,
-      this.votingEndTime,
-      this.targetLatitude,
-      this.targetLongitude,
-      this.expectedValue,
-      this.autoApprove,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return ok(updateEntity(this, { status: newStatus }, Challenge));
   }
 
   /**
@@ -376,79 +361,69 @@ export class Challenge {
     firstPlacePoints?: number | null;
     secondPlacePoints?: number | null;
     thirdPlacePoints?: number | null;
-  }): Result<Challenge, string> {
+  }): Result<Challenge, ValidationError> {
+    const updates: Partial<Challenge> = {};
+
     // Validate basePoints if provided
     if (props.basePoints !== undefined) {
-      if (props.basePoints < VALIDATION_RULES.basePoints.min) {
-        return err(
-          `basePoints must be at least ${VALIDATION_RULES.basePoints.min}`,
-        );
-      }
-      if (props.basePoints > VALIDATION_RULES.basePoints.max) {
-        return err(
-          `basePoints must be at most ${VALIDATION_RULES.basePoints.max}`,
-        );
-      }
+      const validated = validate.number(props.basePoints, "basePoints", {
+        required: true,
+        min: 0,
+        max: 10000,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.basePoints = validated.value;
     }
 
-    // Validate ranking points
-    if (
-      props.firstPlacePoints !== undefined &&
-      props.firstPlacePoints !== null &&
-      props.firstPlacePoints < 0
-    ) {
-      return err("firstPlacePoints must be non-negative");
-    }
-    if (
-      props.secondPlacePoints !== undefined &&
-      props.secondPlacePoints !== null &&
-      props.secondPlacePoints < 0
-    ) {
-      return err("secondPlacePoints must be non-negative");
-    }
-    if (
-      props.thirdPlacePoints !== undefined &&
-      props.thirdPlacePoints !== null &&
-      props.thirdPlacePoints < 0
-    ) {
-      return err("thirdPlacePoints must be non-negative");
+    // Validate firstPlacePoints
+    if (props.firstPlacePoints !== undefined) {
+      if (props.firstPlacePoints !== null) {
+        const validated = validate.number(
+          props.firstPlacePoints,
+          "firstPlacePoints",
+          {
+            required: true,
+            min: 0,
+          },
+        );
+        if (isError(validated)) return err(validated.error);
+      }
+      updates.firstPlacePoints = props.firstPlacePoints;
     }
 
-    return ok(
-      new Challenge(
-        this.id,
-        this.tripId,
-        this.name,
-        this.description,
-        this.image,
-        this.submissionType,
-        this.scoringCategory,
-        this.isRecurring,
-        this.dailyStartTime,
-        this.dailyEndTime,
-        props.basePoints ?? this.basePoints,
-        props.firstPlacePoints !== undefined
-          ? props.firstPlacePoints
-          : this.firstPlacePoints,
-        props.secondPlacePoints !== undefined
-          ? props.secondPlacePoints
-          : this.secondPlacePoints,
-        props.thirdPlacePoints !== undefined
-          ? props.thirdPlacePoints
-          : this.thirdPlacePoints,
-        this.status,
-        this.startTime,
-        this.endTime,
-        this.votingStartTime,
-        this.votingEndTime,
-        this.targetLatitude,
-        this.targetLongitude,
-        this.expectedValue,
-        this.autoApprove,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    // Validate secondPlacePoints
+    if (props.secondPlacePoints !== undefined) {
+      if (props.secondPlacePoints !== null) {
+        const validated = validate.number(
+          props.secondPlacePoints,
+          "secondPlacePoints",
+          {
+            required: true,
+            min: 0,
+          },
+        );
+        if (isError(validated)) return err(validated.error);
+      }
+      updates.secondPlacePoints = props.secondPlacePoints;
+    }
+
+    // Validate thirdPlacePoints
+    if (props.thirdPlacePoints !== undefined) {
+      if (props.thirdPlacePoints !== null) {
+        const validated = validate.number(
+          props.thirdPlacePoints,
+          "thirdPlacePoints",
+          {
+            required: true,
+            min: 0,
+          },
+        );
+        if (isError(validated)) return err(validated.error);
+      }
+      updates.thirdPlacePoints = props.thirdPlacePoints;
+    }
+
+    return ok(updateEntity(this, updates, Challenge));
   }
 
   /**
@@ -462,80 +437,68 @@ export class Challenge {
     votingEndTime?: Date | null;
     dailyStartTime?: string | null;
     dailyEndTime?: string | null;
-  }): Result<Challenge, string> {
+  }): Result<Challenge, ValidationError> {
+    const updates: Partial<Challenge> = {};
+
     const newStartTime =
       props.startTime !== undefined ? props.startTime : this.startTime;
     const newEndTime =
       props.endTime !== undefined ? props.endTime : this.endTime;
 
     // Validate time range
-    if (
-      newStartTime &&
-      newEndTime &&
-      newEndTime.getTime() < newStartTime.getTime()
-    ) {
-      return err("endTime must be after startTime");
+    if (newStartTime && newEndTime) {
+      const rangeResult = validate.dateRange(newStartTime, newEndTime);
+      if (isError(rangeResult)) {
+        return err(
+          new ValidationError("endTime must be after startTime", "endTime"),
+        );
+      }
     }
+
+    if (props.startTime !== undefined) updates.startTime = props.startTime;
+    if (props.endTime !== undefined) updates.endTime = props.endTime;
+    if (props.votingStartTime !== undefined)
+      updates.votingStartTime = props.votingStartTime;
+    if (props.votingEndTime !== undefined)
+      updates.votingEndTime = props.votingEndTime;
 
     // Validate daily time format
-    if (
-      props.dailyStartTime &&
-      !VALIDATION_RULES.dailyTimeFormat.test(props.dailyStartTime)
-    ) {
-      return err("dailyStartTime must be in HH:MM format");
-    }
-    if (
-      props.dailyEndTime &&
-      !VALIDATION_RULES.dailyTimeFormat.test(props.dailyEndTime)
-    ) {
-      return err("dailyEndTime must be in HH:MM format");
+    if (props.dailyStartTime !== undefined && props.dailyStartTime !== null) {
+      if (!DAILY_TIME_FORMAT.test(props.dailyStartTime)) {
+        return err(
+          new ValidationError(
+            "dailyStartTime must be in HH:MM format",
+            "dailyStartTime",
+          ),
+        );
+      }
+      updates.dailyStartTime = props.dailyStartTime;
+    } else if (props.dailyStartTime === null) {
+      updates.dailyStartTime = null;
     }
 
-    return ok(
-      new Challenge(
-        this.id,
-        this.tripId,
-        this.name,
-        this.description,
-        this.image,
-        this.submissionType,
-        this.scoringCategory,
-        this.isRecurring,
-        props.dailyStartTime !== undefined
-          ? props.dailyStartTime
-          : this.dailyStartTime,
-        props.dailyEndTime !== undefined
-          ? props.dailyEndTime
-          : this.dailyEndTime,
-        this.basePoints,
-        this.firstPlacePoints,
-        this.secondPlacePoints,
-        this.thirdPlacePoints,
-        this.status,
-        newStartTime,
-        newEndTime,
-        props.votingStartTime !== undefined
-          ? props.votingStartTime
-          : this.votingStartTime,
-        props.votingEndTime !== undefined
-          ? props.votingEndTime
-          : this.votingEndTime,
-        this.targetLatitude,
-        this.targetLongitude,
-        this.expectedValue,
-        this.autoApprove,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    if (props.dailyEndTime !== undefined && props.dailyEndTime !== null) {
+      if (!DAILY_TIME_FORMAT.test(props.dailyEndTime)) {
+        return err(
+          new ValidationError(
+            "dailyEndTime must be in HH:MM format",
+            "dailyEndTime",
+          ),
+        );
+      }
+      updates.dailyEndTime = props.dailyEndTime;
+    } else if (props.dailyEndTime === null) {
+      updates.dailyEndTime = null;
+    }
+
+    return ok(updateEntity(this, updates, Challenge));
   }
 
   /**
    * Check if status can transition to new status
    */
   canTransitionTo(newStatus: ChallengeStatus): boolean {
-    const validTransitions = VALID_STATUS_TRANSITIONS[this.status];
-    return validTransitions.includes(newStatus);
+    return stateMachine.canTransition(this.status, newStatus);
   }
 
   /**
@@ -594,7 +557,7 @@ export class Challenge {
    * Check if challenge is in a terminal state (COMPLETED or CANCELLED)
    */
   isTerminal(): boolean {
-    return this.isCompleted() || this.isCancelled();
+    return stateMachine.isTerminal(this.status);
   }
 
   /**

@@ -1,26 +1,8 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
-
-/**
- * Validation rules for Event data
- */
-const VALIDATION_RULES = {
-  title: {
-    minLength: 1,
-    maxLength: 200,
-  },
-  location: {
-    minLength: 1,
-    maxLength: 300,
-  },
-  description: {
-    minLength: 1,
-    maxLength: 2000,
-  },
-  files: {
-    maxItems: 10,
-  },
-};
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { timestamps, updateEntity } from "../utils/immutable";
+import { ValidationError } from "../errors/domain-errors";
 
 /**
  * Event entity - represents a trip-level event
@@ -59,70 +41,58 @@ export class Event {
     files?: string[];
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Event, string> {
+  }): Result<Event, ValidationError> {
     // Validate creatorId
-    if (!props.creatorId || props.creatorId.trim() === "") {
-      return err("creatorId is required");
-    }
+    const creatorId = validate.id(props.creatorId, "creatorId");
+    if (isError(creatorId)) return err(creatorId.error);
 
     // Validate title
-    if (!props.title || props.title.trim() === "") {
-      return err("title is required");
-    }
-    if (props.title.length > VALIDATION_RULES.title.maxLength) {
-      return err(
-        `title must be at most ${VALIDATION_RULES.title.maxLength} characters`,
-      );
-    }
+    const title = validate.string(props.title, "title", {
+      required: true,
+      maxLength: 200,
+      trim: true,
+    });
+    if (isError(title)) return err(title.error);
 
     // Validate location
-    if (!props.location || props.location.trim() === "") {
-      return err("location is required");
-    }
-    if (props.location.length > VALIDATION_RULES.location.maxLength) {
-      return err(
-        `location must be at most ${VALIDATION_RULES.location.maxLength} characters`,
-      );
-    }
+    const location = validate.string(props.location, "location", {
+      required: true,
+      maxLength: 300,
+      trim: true,
+    });
+    if (isError(location)) return err(location.error);
 
     // Validate description
-    if (!props.description || props.description.trim() === "") {
-      return err("description is required");
-    }
-    if (props.description.length > VALIDATION_RULES.description.maxLength) {
-      return err(
-        `description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
-      );
-    }
+    const description = validate.string(props.description, "description", {
+      required: true,
+      maxLength: 2000,
+      trim: true,
+    });
+    if (isError(description)) return err(description.error);
 
     // Validate time range
-    if (props.endTime.getTime() < props.startTime.getTime()) {
-      return err("endTime must be after startTime");
-    }
+    const timeRange = validate.dateRange(props.startTime, props.endTime);
+    if (isError(timeRange)) return err(timeRange.error);
 
     // Validate files array
-    const files = props.files ?? [];
-    if (files.length > VALIDATION_RULES.files.maxItems) {
-      return err(
-        `files can have at most ${VALIDATION_RULES.files.maxItems} items`,
-      );
-    }
+    const files = validate.array(props.files ?? [], "files", { maxItems: 10 });
+    if (isError(files)) return err(files.error);
 
-    const now = new Date();
+    const ts = timestamps(props);
 
     return ok(
       new Event(
         props.id ?? crypto.randomUUID(),
-        props.creatorId.trim(),
+        creatorId.value,
         props.organizerGroupId ?? null,
-        props.title.trim(),
+        title.value,
         props.startTime,
         props.endTime,
-        props.location.trim(),
-        props.description.trim(),
-        Object.freeze([...files]),
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        location.value,
+        description.value,
+        Object.freeze([...files.value]),
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }
@@ -135,58 +105,48 @@ export class Event {
     title?: string;
     location?: string;
     description?: string;
-  }): Result<Event, string> {
+  }): Result<Event, ValidationError> {
     // Validate title if provided
+    let title = this.title;
     if (props.title !== undefined) {
-      if (props.title.trim() === "") {
-        return err("title is required");
-      }
-      if (props.title.length > VALIDATION_RULES.title.maxLength) {
-        return err(
-          `title must be at most ${VALIDATION_RULES.title.maxLength} characters`,
-        );
-      }
+      const titleValidated = validate.string(props.title, "title", {
+        required: true,
+        maxLength: 200,
+        trim: true,
+      });
+      if (isError(titleValidated)) return err(titleValidated.error);
+      title = titleValidated.value;
     }
 
     // Validate location if provided
+    let location = this.location;
     if (props.location !== undefined) {
-      if (props.location.trim() === "") {
-        return err("location is required");
-      }
-      if (props.location.length > VALIDATION_RULES.location.maxLength) {
-        return err(
-          `location must be at most ${VALIDATION_RULES.location.maxLength} characters`,
-        );
-      }
+      const locationValidated = validate.string(props.location, "location", {
+        required: true,
+        maxLength: 300,
+        trim: true,
+      });
+      if (isError(locationValidated)) return err(locationValidated.error);
+      location = locationValidated.value;
     }
 
     // Validate description if provided
+    let description = this.description;
     if (props.description !== undefined) {
-      if (props.description.trim() === "") {
-        return err("description is required");
-      }
-      if (props.description.length > VALIDATION_RULES.description.maxLength) {
-        return err(
-          `description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
-        );
-      }
+      const descriptionValidated = validate.string(
+        props.description,
+        "description",
+        {
+          required: true,
+          maxLength: 2000,
+          trim: true,
+        },
+      );
+      if (isError(descriptionValidated)) return err(descriptionValidated.error);
+      description = descriptionValidated.value;
     }
 
-    return ok(
-      new Event(
-        this.id,
-        this.creatorId,
-        this.organizerGroupId,
-        props.title ?? this.title,
-        this.startTime,
-        this.endTime,
-        props.location ?? this.location,
-        props.description ?? this.description,
-        this.files,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    return ok(updateEntity(this, { title, location, description }, Event));
   }
 
   /**
@@ -196,27 +156,18 @@ export class Event {
   updateTimes(props: {
     startTime?: Date;
     endTime?: Date;
-  }): Result<Event, string> {
+  }): Result<Event, ValidationError> {
     const newStartTime = props.startTime ?? this.startTime;
     const newEndTime = props.endTime ?? this.endTime;
 
-    if (newEndTime.getTime() < newStartTime.getTime()) {
-      return err("endTime must be after startTime");
-    }
+    const timeRange = validate.dateRange(newStartTime, newEndTime);
+    if (isError(timeRange)) return err(timeRange.error);
 
     return ok(
-      new Event(
-        this.id,
-        this.creatorId,
-        this.organizerGroupId,
-        this.title,
-        newStartTime,
-        newEndTime,
-        this.location,
-        this.description,
-        this.files,
-        this.createdAt,
-        new Date(), // updatedAt
+      updateEntity(
+        this,
+        { startTime: newStartTime, endTime: newEndTime },
+        Event,
       ),
     );
   }
@@ -225,25 +176,12 @@ export class Event {
    * Assign to organizing group
    * Returns a new Event instance (immutable)
    */
-  assignToGroup(groupId: string): Result<Event, string> {
-    if (!groupId || groupId.trim() === "") {
-      return err("groupId cannot be empty");
-    }
+  assignToGroup(groupId: string): Result<Event, ValidationError> {
+    const validatedGroupId = validate.id(groupId, "groupId");
+    if (isError(validatedGroupId)) return err(validatedGroupId.error);
 
     return ok(
-      new Event(
-        this.id,
-        this.creatorId,
-        groupId.trim(),
-        this.title,
-        this.startTime,
-        this.endTime,
-        this.location,
-        this.description,
-        this.files,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
+      updateEntity(this, { organizerGroupId: validatedGroupId.value }, Event),
     );
   }
 
@@ -252,48 +190,26 @@ export class Event {
    * Returns a new Event instance (immutable)
    */
   removeFromGroup(): Event {
-    return new Event(
-      this.id,
-      this.creatorId,
-      null,
-      this.title,
-      this.startTime,
-      this.endTime,
-      this.location,
-      this.description,
-      this.files,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return updateEntity(this, { organizerGroupId: null }, Event);
   }
 
   /**
    * Add a file
    * Returns a new Event instance (immutable)
    */
-  addFile(filePath: string): Result<Event, string> {
-    if (!filePath || filePath.trim() === "") {
-      return err("filePath cannot be empty");
-    }
+  addFile(filePath: string): Result<Event, ValidationError> {
+    const validatedFilePath = validate.string(filePath, "filePath", {
+      required: true,
+      trim: true,
+    });
+    if (isError(validatedFilePath)) return err(validatedFilePath.error);
 
-    if (this.files.length >= VALIDATION_RULES.files.maxItems) {
-      return err(`Maximum ${VALIDATION_RULES.files.maxItems} files allowed`);
-    }
+    const newFiles = [...this.files, validatedFilePath.value];
+    const files = validate.array(newFiles, "files", { maxItems: 10 });
+    if (isError(files)) return err(files.error);
 
     return ok(
-      new Event(
-        this.id,
-        this.creatorId,
-        this.organizerGroupId,
-        this.title,
-        this.startTime,
-        this.endTime,
-        this.location,
-        this.description,
-        Object.freeze([...this.files, filePath.trim()]),
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
+      updateEntity(this, { files: Object.freeze([...files.value]) }, Event),
     );
   }
 
@@ -302,18 +218,10 @@ export class Event {
    * Returns a new Event instance (immutable)
    */
   removeFile(filePath: string): Event {
-    return new Event(
-      this.id,
-      this.creatorId,
-      this.organizerGroupId,
-      this.title,
-      this.startTime,
-      this.endTime,
-      this.location,
-      this.description,
-      Object.freeze(this.files.filter((f) => f !== filePath)),
-      this.createdAt,
-      new Date(), // updatedAt
+    return updateEntity(
+      this,
+      { files: Object.freeze(this.files.filter((f) => f !== filePath)) },
+      Event,
     );
   }
 

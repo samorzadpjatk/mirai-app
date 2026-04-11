@@ -1,5 +1,9 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { createStateMachine } from "../utils/state-machine";
+import { updateEntity, timestamps } from "../utils/immutable";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 /**
  * LocationSharingRequestStatus - represents the status of a location sharing request
@@ -9,6 +13,24 @@ export enum LocationSharingRequestStatus {
   ACCEPTED = "ACCEPTED",
   REJECTED = "REJECTED",
 }
+
+/**
+ * State machine for LocationSharingRequest status transitions
+ */
+const stateMachine = createStateMachine<LocationSharingRequestStatus>({
+  transitions: {
+    [LocationSharingRequestStatus.PENDING]: [
+      LocationSharingRequestStatus.ACCEPTED,
+      LocationSharingRequestStatus.REJECTED,
+    ],
+    [LocationSharingRequestStatus.ACCEPTED]: [],
+    [LocationSharingRequestStatus.REJECTED]: [],
+  },
+  terminalStates: [
+    LocationSharingRequestStatus.ACCEPTED,
+    LocationSharingRequestStatus.REJECTED,
+  ],
+});
 
 /**
  * LocationSharingRequest entity - represents friend-to-friend location sharing requests
@@ -37,64 +59,92 @@ export class LocationSharingRequest {
     status?: LocationSharingRequestStatus;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<LocationSharingRequest, string> {
+  }): Result<LocationSharingRequest, ValidationError> {
     // Validate senderId
-    if (!props.senderId || props.senderId.trim() === "") {
-      return err("senderId is required");
-    }
+    const senderId = validate.id(props.senderId, "senderId");
+    if (isError(senderId)) return err(senderId.error);
 
     // Validate receiverId
-    if (!props.receiverId || props.receiverId.trim() === "") {
-      return err("receiverId is required");
-    }
+    const receiverId = validate.id(props.receiverId, "receiverId");
+    if (isError(receiverId)) return err(receiverId.error);
 
     // Check that sender and receiver are different
-    if (props.senderId.trim() === props.receiverId.trim()) {
-      return err("senderId and receiverId must be different");
+    if (senderId.value === receiverId.value) {
+      return err(
+        new ValidationError(
+          "senderId and receiverId must be different",
+          "receiverId",
+        ),
+      );
     }
 
-    const now = new Date();
-    const status = props.status ?? LocationSharingRequestStatus.PENDING;
+    const ts = timestamps(props);
 
     return ok(
       new LocationSharingRequest(
         props.id ?? crypto.randomUUID(),
-        props.senderId.trim(),
-        props.receiverId.trim(),
-        status,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        senderId.value,
+        receiverId.value,
+        props.status ?? LocationSharingRequestStatus.PENDING,
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }
 
   /**
    * Accept the request
-   * Returns a new LocationSharingRequest instance (immutable)
+   * Returns a Result with new LocationSharingRequest instance or StateTransitionError
    */
-  accept(): LocationSharingRequest {
-    return new LocationSharingRequest(
-      this.id,
-      this.senderId,
-      this.receiverId,
-      LocationSharingRequestStatus.ACCEPTED,
-      this.createdAt,
-      new Date(),
+  accept(): Result<LocationSharingRequest, StateTransitionError> {
+    if (
+      !stateMachine.canTransition(
+        this.status,
+        LocationSharingRequestStatus.ACCEPTED,
+      )
+    ) {
+      return err(
+        new StateTransitionError(
+          this.status,
+          LocationSharingRequestStatus.ACCEPTED,
+        ),
+      );
+    }
+
+    return ok(
+      updateEntity(
+        this,
+        { status: LocationSharingRequestStatus.ACCEPTED },
+        LocationSharingRequest,
+      ),
     );
   }
 
   /**
    * Reject the request
-   * Returns a new LocationSharingRequest instance (immutable)
+   * Returns a Result with new LocationSharingRequest instance or StateTransitionError
    */
-  reject(): LocationSharingRequest {
-    return new LocationSharingRequest(
-      this.id,
-      this.senderId,
-      this.receiverId,
-      LocationSharingRequestStatus.REJECTED,
-      this.createdAt,
-      new Date(),
+  reject(): Result<LocationSharingRequest, StateTransitionError> {
+    if (
+      !stateMachine.canTransition(
+        this.status,
+        LocationSharingRequestStatus.REJECTED,
+      )
+    ) {
+      return err(
+        new StateTransitionError(
+          this.status,
+          LocationSharingRequestStatus.REJECTED,
+        ),
+      );
+    }
+
+    return ok(
+      updateEntity(
+        this,
+        { status: LocationSharingRequestStatus.REJECTED },
+        LocationSharingRequest,
+      ),
     );
   }
 
@@ -123,7 +173,7 @@ export class LocationSharingRequest {
    * Check if request is in a terminal state (accepted or rejected)
    */
   isResolved(): boolean {
-    return this.isAccepted() || this.isRejected();
+    return stateMachine.isTerminal(this.status);
   }
 
   /**

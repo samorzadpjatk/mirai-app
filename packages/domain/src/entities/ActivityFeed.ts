@@ -1,6 +1,53 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { updateEntity, timestamps } from "../utils/immutable";
+import { ValidationError } from "../errors/domain-errors";
 import type { ActivityId } from "../value-objects/ActivityId";
+
+/**
+ * Challenge metadata for challenge_event activities
+ * Replaces ChallengeActivity entity
+ */
+export interface ChallengeMetadata {
+  readonly challengeId: string;
+  readonly challengeName: string;
+  readonly type: string; // event type (started, ended, voting_started, etc.)
+}
+
+/**
+ * Rank change metadata for rank_change activities
+ * Replaces RankChangeActivity entity
+ */
+export interface RankChangeMetadata {
+  readonly groupId: string;
+  readonly newRank: number;
+  readonly totalCoins: number;
+  readonly coinsGained: number;
+}
+
+/**
+ * Submission metadata for submission activities
+ * Replaces SubmissionActivity entity
+ */
+export interface SubmissionMetadata {
+  readonly submissionId: string;
+  readonly challengeId: string;
+  readonly groupId: string;
+  readonly hasVideo: boolean;
+  readonly isWinner: boolean;
+  readonly ranking: number | null;
+  readonly pointsAwarded: number | null;
+}
+
+/**
+ * Post metadata for user_post activities
+ * Replaces UserPost entity
+ */
+export interface PostMetadata {
+  readonly authorId: string;
+  readonly additionalImages: readonly string[];
+}
 
 /**
  * Activity types in the feed
@@ -199,12 +246,20 @@ export class ActivityFeed {
     public readonly hiddenByAdmin: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
-    // Related metadata based on activity type
+    // NEW: Nested metadata based on activity type (discriminated union pattern)
+    public readonly challengeMetadata: ChallengeMetadata | null,
+    public readonly rankChangeMetadata: RankChangeMetadata | null,
+    public readonly submissionMetadata: SubmissionMetadata | null,
+    public readonly postMetadata: PostMetadata | null,
+    // Existing related entities (for display purposes)
+    /** @deprecated Use challengeMetadata instead */
     public readonly submissionActivity: SubmissionActivityMetadata | null,
+    /** @deprecated Use rankChangeMetadata instead */
     public readonly challengeActivity: ChallengeActivityMetadata | null,
+    /** @deprecated Use submissionMetadata instead */
     public readonly rankChangeActivity: RankChangeActivityMetadata | null,
+    /** @deprecated Use postMetadata instead */
     public readonly userPost: UserPostMetadata | null,
-    // Related entities (for display purposes)
     public readonly admin: AdminInfo | null,
     public readonly hiddenBy: AdminInfo | null,
   ) {}
@@ -227,48 +282,92 @@ export class ActivityFeed {
     hiddenByAdmin?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
+    // NEW metadata parameters
+    challengeMetadata?: ChallengeMetadata | null;
+    rankChangeMetadata?: RankChangeMetadata | null;
+    submissionMetadata?: SubmissionMetadata | null;
+    postMetadata?: PostMetadata | null;
+    // Legacy parameters (maintain backward compatibility)
     submissionActivity?: SubmissionActivityMetadata | null;
     challengeActivity?: ChallengeActivityMetadata | null;
     rankChangeActivity?: RankChangeActivityMetadata | null;
     userPost?: UserPostMetadata | null;
     admin?: AdminInfo | null;
     hiddenBy?: AdminInfo | null;
-  }): Result<ActivityFeed, string> {
+  }): Result<ActivityFeed, ValidationError> {
     // Validate tripId
-    if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
-    }
+    const tripId = validate.id(props.tripId, "tripId");
+    if (isError(tripId)) return err(tripId.error);
 
     // Validate title
-    if (!props.title || props.title.trim() === "") {
-      return err("title is required");
-    }
+    const title = validate.string(props.title, "title", {
+      required: true,
+      maxLength: 500,
+      trim: true,
+    });
+    if (isError(title)) return err(title.error);
 
     // Validate activity type-specific requirements
-    if (props.activityType === "submission" && !props.submissionActivity) {
-      return err("submissionActivity is required for submission type");
+    if (
+      props.activityType === "submission" &&
+      !props.submissionActivity &&
+      !props.submissionMetadata
+    ) {
+      return err(
+        new ValidationError(
+          "submissionActivity or submissionMetadata is required for submission type",
+          "submissionMetadata",
+        ),
+      );
     }
 
-    if (props.activityType === "challenge_event" && !props.challengeActivity) {
-      return err("challengeActivity is required for challenge_event type");
+    if (
+      props.activityType === "challenge_event" &&
+      !props.challengeActivity &&
+      !props.challengeMetadata
+    ) {
+      return err(
+        new ValidationError(
+          "challengeActivity or challengeMetadata is required for challenge_event type",
+          "challengeMetadata",
+        ),
+      );
     }
 
-    if (props.activityType === "rank_change" && !props.rankChangeActivity) {
-      return err("rankChangeActivity is required for rank_change type");
+    if (
+      props.activityType === "rank_change" &&
+      !props.rankChangeActivity &&
+      !props.rankChangeMetadata
+    ) {
+      return err(
+        new ValidationError(
+          "rankChangeActivity or rankChangeMetadata is required for rank_change type",
+          "rankChangeMetadata",
+        ),
+      );
     }
 
-    if (props.activityType === "user_post" && !props.userPost) {
-      return err("userPost is required for user_post type");
+    if (
+      props.activityType === "user_post" &&
+      !props.userPost &&
+      !props.postMetadata
+    ) {
+      return err(
+        new ValidationError(
+          "userPost or postMetadata is required for user_post type",
+          "postMetadata",
+        ),
+      );
     }
 
-    const now = new Date();
+    const ts = timestamps(props);
 
     return ok(
       new ActivityFeed(
         props.id ?? (crypto.randomUUID() as ActivityId),
-        props.tripId.trim(),
+        tripId.value,
         props.activityType,
-        props.title.trim(),
+        title.value,
         props.description ?? null,
         props.imageUrl ?? null,
         props.isPinned ?? false,
@@ -277,8 +376,14 @@ export class ActivityFeed {
         props.hiddenReason ?? null,
         props.createdByAdmin ?? null,
         props.hiddenByAdmin ?? null,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        ts.createdAt,
+        ts.updatedAt,
+        // NEW: Pass metadata to constructor
+        props.challengeMetadata ?? null,
+        props.rankChangeMetadata ?? null,
+        props.submissionMetadata ?? null,
+        props.postMetadata ?? null,
+        // Legacy fields
         props.submissionActivity ?? null,
         props.challengeActivity ?? null,
         props.rankChangeActivity ?? null,
@@ -290,32 +395,149 @@ export class ActivityFeed {
   }
 
   /**
+   * Factory method for creating challenge activity
+   */
+  static createChallengeActivity(props: {
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    createdByAdmin?: string | null;
+    challenge: ChallengeMetadata;
+    id?: ActivityId;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }): Result<ActivityFeed, ValidationError> {
+    return ActivityFeed.create({
+      id: props.id,
+      tripId: props.tripId,
+      activityType: "challenge_event",
+      title: props.title,
+      description: props.description,
+      imageUrl: props.imageUrl,
+      createdByAdmin: props.createdByAdmin,
+      challengeMetadata: props.challenge,
+      createdAt: props.createdAt,
+      updatedAt: props.updatedAt,
+    });
+  }
+
+  /**
+   * Factory method for creating rank change activity
+   */
+  static createRankChangeActivity(props: {
+    tripId: string;
+    title: string;
+    description?: string | null;
+    rankChange: RankChangeMetadata;
+    id?: ActivityId;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }): Result<ActivityFeed, ValidationError> {
+    return ActivityFeed.create({
+      id: props.id,
+      tripId: props.tripId,
+      activityType: "rank_change",
+      title: props.title,
+      description: props.description,
+      rankChangeMetadata: props.rankChange,
+      createdAt: props.createdAt,
+      updatedAt: props.updatedAt,
+    });
+  }
+
+  /**
+   * Factory method for creating submission activity
+   */
+  static createSubmissionActivity(props: {
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    submission: SubmissionMetadata;
+    id?: ActivityId;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }): Result<ActivityFeed, ValidationError> {
+    return ActivityFeed.create({
+      id: props.id,
+      tripId: props.tripId,
+      activityType: "submission",
+      title: props.title,
+      description: props.description,
+      imageUrl: props.imageUrl,
+      submissionMetadata: props.submission,
+      createdAt: props.createdAt,
+      updatedAt: props.updatedAt,
+    });
+  }
+
+  /**
+   * Factory method for creating user post activity
+   */
+  static createPostActivity(props: {
+    tripId: string;
+    title: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    post: PostMetadata;
+    id?: ActivityId;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }): Result<ActivityFeed, ValidationError> {
+    return ActivityFeed.create({
+      id: props.id,
+      tripId: props.tripId,
+      activityType: "user_post",
+      title: props.title,
+      description: props.description,
+      imageUrl: props.imageUrl,
+      postMetadata: props.post,
+      createdAt: props.createdAt,
+      updatedAt: props.updatedAt,
+    });
+  }
+
+  /**
+   * Type guard: Check if this is a challenge activity
+   */
+  isChallengeActivity(): this is { challengeMetadata: ChallengeMetadata } {
+    return (
+      this.activityType === "challenge_event" && this.challengeMetadata !== null
+    );
+  }
+
+  /**
+   * Type guard: Check if this is a rank change activity
+   */
+  isRankChange(): this is { rankChangeMetadata: RankChangeMetadata } {
+    return (
+      this.activityType === "rank_change" && this.rankChangeMetadata !== null
+    );
+  }
+
+  /**
+   * Type guard: Check if this is a submission activity
+   */
+  isSubmission(): this is { submissionMetadata: SubmissionMetadata } {
+    return (
+      this.activityType === "submission" && this.submissionMetadata !== null
+    );
+  }
+
+  /**
+   * Type guard: Check if this is a user post activity
+   */
+  isUserPostActivity(): this is { postMetadata: PostMetadata } {
+    return this.activityType === "user_post" && this.postMetadata !== null;
+  }
+
+  /**
    * Pin this activity
    * Returns a new ActivityFeed instance (immutable)
    */
   pin(): ActivityFeed {
-    return new ActivityFeed(
-      this.id,
-      this.tripId,
-      this.activityType,
-      this.title,
-      this.description,
-      this.imageUrl,
-      true, // isPinned
-      this.isHidden,
-      this.hiddenAt,
-      this.hiddenReason,
-      this.createdByAdmin,
-      this.hiddenByAdmin,
-      this.createdAt,
-      new Date(), // updatedAt
-      this.submissionActivity,
-      this.challengeActivity,
-      this.rankChangeActivity,
-      this.userPost,
-      this.admin,
-      this.hiddenBy,
-    );
+    return updateEntity(this, { isPinned: true }, ActivityFeed);
   }
 
   /**
@@ -323,28 +545,7 @@ export class ActivityFeed {
    * Returns a new ActivityFeed instance (immutable)
    */
   unpin(): ActivityFeed {
-    return new ActivityFeed(
-      this.id,
-      this.tripId,
-      this.activityType,
-      this.title,
-      this.description,
-      this.imageUrl,
-      false, // isPinned
-      this.isHidden,
-      this.hiddenAt,
-      this.hiddenReason,
-      this.createdByAdmin,
-      this.hiddenByAdmin,
-      this.createdAt,
-      new Date(), // updatedAt
-      this.submissionActivity,
-      this.challengeActivity,
-      this.rankChangeActivity,
-      this.userPost,
-      this.admin,
-      this.hiddenBy,
-    );
+    return updateEntity(this, { isPinned: false }, ActivityFeed);
   }
 
   /**
@@ -352,27 +553,15 @@ export class ActivityFeed {
    * Returns a new ActivityFeed instance (immutable)
    */
   hide(hiddenByAdmin: string, reason?: string | null): ActivityFeed {
-    return new ActivityFeed(
-      this.id,
-      this.tripId,
-      this.activityType,
-      this.title,
-      this.description,
-      this.imageUrl,
-      this.isPinned,
-      true, // isHidden
-      new Date(), // hiddenAt
-      reason ?? null,
-      this.createdByAdmin,
-      hiddenByAdmin,
-      this.createdAt,
-      new Date(), // updatedAt
-      this.submissionActivity,
-      this.challengeActivity,
-      this.rankChangeActivity,
-      this.userPost,
-      this.admin,
-      this.hiddenBy,
+    return updateEntity(
+      this,
+      {
+        isHidden: true,
+        hiddenAt: new Date(),
+        hiddenReason: reason ?? null,
+        hiddenByAdmin,
+      },
+      ActivityFeed,
     );
   }
 
@@ -381,66 +570,43 @@ export class ActivityFeed {
    * Returns a new ActivityFeed instance (immutable)
    */
   unhide(): ActivityFeed {
-    return new ActivityFeed(
-      this.id,
-      this.tripId,
-      this.activityType,
-      this.title,
-      this.description,
-      this.imageUrl,
-      this.isPinned,
-      false, // isHidden
-      null, // hiddenAt
-      null, // hiddenReason
-      this.createdByAdmin,
-      null, // hiddenByAdmin
-      this.createdAt,
-      new Date(), // updatedAt
-      this.submissionActivity,
-      this.challengeActivity,
-      this.rankChangeActivity,
-      this.userPost,
-      this.admin,
-      this.hiddenBy,
+    return updateEntity(
+      this,
+      {
+        isHidden: false,
+        hiddenAt: null,
+        hiddenReason: null,
+        hiddenByAdmin: null,
+      },
+      ActivityFeed,
     );
   }
 
   /**
    * Update the activity title and/or description
-   * Returns a new ActivityFeed instance (immutable)
+   * Returns a Result with new ActivityFeed instance or ValidationError
    */
   updateContent(props: {
     title?: string;
     description?: string | null;
-  }): Result<ActivityFeed, string> {
-    if (props.title !== undefined && props.title.trim() === "") {
-      return err("title cannot be empty");
+  }): Result<ActivityFeed, ValidationError> {
+    const updates: Partial<ActivityFeed> = {};
+
+    if (props.title !== undefined) {
+      const validated = validate.string(props.title, "title", {
+        required: true,
+        maxLength: 500,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.title = validated.value;
     }
 
-    return ok(
-      new ActivityFeed(
-        this.id,
-        this.tripId,
-        this.activityType,
-        props.title !== undefined ? props.title.trim() : this.title,
-        props.description !== undefined ? props.description : this.description,
-        this.imageUrl,
-        this.isPinned,
-        this.isHidden,
-        this.hiddenAt,
-        this.hiddenReason,
-        this.createdByAdmin,
-        this.hiddenByAdmin,
-        this.createdAt,
-        new Date(), // updatedAt
-        this.submissionActivity,
-        this.challengeActivity,
-        this.rankChangeActivity,
-        this.userPost,
-        this.admin,
-        this.hiddenBy,
-      ),
-    );
+    if (props.description !== undefined) {
+      updates.description = props.description;
+    }
+
+    return ok(updateEntity(this, updates, ActivityFeed));
   }
 
   /**

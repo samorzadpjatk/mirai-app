@@ -1,5 +1,9 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { createStateMachine } from "../utils/state-machine";
+import { updateEntity, timestamps } from "../utils/immutable";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 /**
  * Group status
@@ -10,21 +14,15 @@ export enum GroupStatus {
 }
 
 /**
- * Validation rules for group data
+ * State machine for Group status transitions
  */
-const VALIDATION_RULES = {
-  name: {
-    minLength: 1,
-    maxLength: 100,
+const stateMachine = createStateMachine<GroupStatus>({
+  transitions: {
+    [GroupStatus.ACTIVE]: [GroupStatus.DELETED],
+    [GroupStatus.DELETED]: [],
   },
-  code: {
-    minLength: 1,
-    maxLength: 50,
-  },
-  description: {
-    maxLength: 500,
-  },
-};
+  terminalStates: [GroupStatus.DELETED],
+});
 
 /**
  * Group entity - represents a participant group in a trip
@@ -63,68 +61,65 @@ export class Group {
     status?: GroupStatus;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Group, string> {
+  }): Result<Group, ValidationError> {
     // Validate tripId
-    if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
-    }
+    const tripId = validate.id(props.tripId, "tripId");
+    if (isError(tripId)) return err(tripId.error);
 
     // Validate name
-    if (!props.name || props.name.trim() === "") {
-      return err("name is required");
-    }
-    if (props.name.length > VALIDATION_RULES.name.maxLength) {
-      return err(
-        `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
-      );
-    }
+    const name = validate.string(props.name, "name", {
+      required: true,
+      maxLength: 100,
+      trim: true,
+    });
+    if (isError(name)) return err(name.error);
 
     // Validate organizerId
-    if (!props.organizerId || props.organizerId.trim() === "") {
-      return err("organizerId is required");
-    }
+    const organizerId = validate.id(props.organizerId, "organizerId");
+    if (isError(organizerId)) return err(organizerId.error);
 
     // Validate code
-    if (!props.code || props.code.trim() === "") {
-      return err("code is required");
-    }
-    if (props.code.length > VALIDATION_RULES.code.maxLength) {
-      return err(
-        `code must be at most ${VALIDATION_RULES.code.maxLength} characters`,
-      );
-    }
+    const code = validate.string(props.code, "code", {
+      required: true,
+      maxLength: 50,
+      trim: true,
+    });
+    if (isError(code)) return err(code.error);
 
     // Validate coins
-    const coins = props.coins ?? 0;
-    if (coins < 0) {
-      return err("coins must be non-negative");
-    }
+    const coins = validate.number(props.coins ?? 0, "coins", {
+      required: true,
+      min: 0,
+    });
+    if (isError(coins)) return err(coins.error);
 
-    // Validate description length
-    if (
-      props.description &&
-      props.description.length > VALIDATION_RULES.description.maxLength
-    ) {
-      return err(
-        `description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
-      );
-    }
+    // Validate description (optional)
+    const description = validate.string(
+      props.description ?? "",
+      "description",
+      {
+        required: false,
+        maxLength: 500,
+        trim: true,
+      },
+    );
+    if (isError(description)) return err(description.error);
 
-    const now = new Date();
+    const ts = timestamps(props);
 
     return ok(
       new Group(
         props.id ?? crypto.randomUUID(),
-        props.tripId.trim(),
-        props.name.trim(),
-        props.description ?? null,
+        tripId.value,
+        name.value,
+        description.value || null,
         props.image ?? null,
-        props.organizerId.trim(),
-        props.code.trim(),
-        coins,
+        organizerId.value,
+        code.value,
+        coins.value,
         props.status ?? GroupStatus.ACTIVE,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }
@@ -138,96 +133,66 @@ export class Group {
     name?: string;
     description?: string | null;
     image?: string | null;
-  }): Result<Group, string> {
+  }): Result<Group, ValidationError | StateTransitionError> {
     // Cannot update deleted group
     if (this.isDeleted()) {
-      return err("Cannot update a deleted group");
+      return err(new StateTransitionError(this.status, this.status));
     }
+
+    const updates: Partial<Group> = {};
 
     // Validate name if provided
     if (props.name !== undefined) {
-      if (props.name.trim() === "") {
-        return err("name is required");
-      }
-      if (props.name.length > VALIDATION_RULES.name.maxLength) {
-        return err(
-          `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.name, "name", {
+        required: true,
+        maxLength: 100,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.name = validated.value;
     }
 
     // Validate description if provided
-    if (props.description !== undefined && props.description !== null) {
-      if (props.description.length > VALIDATION_RULES.description.maxLength) {
-        return err(
-          `description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
-        );
-      }
+    if (props.description !== undefined) {
+      const validated = validate.string(props.description, "description", {
+        required: false,
+        maxLength: 500,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.description = props.description !== null ? validated.value : null;
     }
 
-    return ok(
-      new Group(
-        this.id,
-        this.tripId,
-        props.name ?? this.name,
-        props.description !== undefined ? props.description : this.description,
-        props.image !== undefined ? props.image : this.image,
-        this.organizerId,
-        this.code,
-        this.coins,
-        this.status,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    if (props.image !== undefined) {
+      updates.image = props.image;
+    }
+
+    return ok(updateEntity(this, updates, Group));
   }
 
   /**
    * Change group organizer
-   * Returns a new Group instance (immutable)
+   * Returns a Result with new Group instance or ValidationError
    */
-  changeOrganizer(newOrganizerId: string): Group {
-    if (!newOrganizerId || newOrganizerId.trim() === "") {
-      throw new Error("organizerId is required");
-    }
+  changeOrganizer(newOrganizerId: string): Result<Group, ValidationError> {
+    const organizerId = validate.id(newOrganizerId, "organizerId");
+    if (isError(organizerId)) return err(organizerId.error);
 
-    return new Group(
-      this.id,
-      this.tripId,
-      this.name,
-      this.description,
-      this.image,
-      newOrganizerId.trim(),
-      this.code,
-      this.coins,
-      this.status,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return ok(updateEntity(this, { organizerId: organizerId.value }, Group));
   }
 
   /**
    * Add coins to group balance
-   * Returns a new Group instance (immutable)
+   * Returns a Result with new Group instance or ValidationError
    */
-  addCoins(amount: number): Group {
-    if (amount < 0) {
-      throw new Error("Cannot add negative coins");
-    }
+  addCoins(amount: number): Result<Group, ValidationError> {
+    const validated = validate.number(amount, "amount", {
+      required: true,
+      min: 0,
+    });
+    if (isError(validated)) return err(validated.error);
 
-    return new Group(
-      this.id,
-      this.tripId,
-      this.name,
-      this.description,
-      this.image,
-      this.organizerId,
-      this.code,
-      this.coins + amount,
-      this.status,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return ok(updateEntity(this, { coins: this.coins + amount }, Group));
   }
 
   /**
@@ -235,52 +200,35 @@ export class Group {
    * Returns a new Group instance (immutable)
    * Returns error if insufficient balance
    */
-  spendCoins(amount: number): Result<Group, string> {
-    if (amount < 0) {
-      return err("Cannot spend negative coins");
-    }
+  spendCoins(amount: number): Result<Group, ValidationError> {
+    const validated = validate.number(amount, "amount", {
+      required: true,
+      min: 0,
+    });
+    if (isError(validated)) return err(validated.error);
 
     if (amount > this.coins) {
       return err(
-        `Insufficient balance: ${this.coins} coins available, ${amount} required`,
+        new ValidationError(
+          `Insufficient balance: ${this.coins} coins available, ${amount} required`,
+          "coins",
+        ),
       );
     }
 
-    return ok(
-      new Group(
-        this.id,
-        this.tripId,
-        this.name,
-        this.description,
-        this.image,
-        this.organizerId,
-        this.code,
-        this.coins - amount,
-        this.status,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    return ok(updateEntity(this, { coins: this.coins - amount }, Group));
   }
 
   /**
    * Mark group as deleted (soft delete)
-   * Returns a new Group instance (immutable)
+   * Returns a Result with new Group instance or StateTransitionError
    */
-  markAsDeleted(): Group {
-    return new Group(
-      this.id,
-      this.tripId,
-      this.name,
-      this.description,
-      this.image,
-      this.organizerId,
-      this.code,
-      this.coins,
-      GroupStatus.DELETED,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+  markAsDeleted(): Result<Group, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, GroupStatus.DELETED)) {
+      return err(new StateTransitionError(this.status, GroupStatus.DELETED));
+    }
+
+    return ok(updateEntity(this, { status: GroupStatus.DELETED }, Group));
   }
 
   /**

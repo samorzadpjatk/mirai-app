@@ -1,5 +1,8 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { updateEntity } from "../utils/immutable";
+import { ValidationError } from "../errors/domain-errors";
 import type { LocationId } from "../value-objects/LocationId";
 
 /**
@@ -73,67 +76,74 @@ export class Location {
     timestamp?: Date;
     lastInactivityNotification?: Date | null;
     usersToShareWith?: SharingUserInfo[];
-  }): Result<Location, string> {
+  }): Result<Location, ValidationError> {
     // Validate userId
-    if (!props.userId || props.userId.trim() === "") {
-      return err("userId is required");
-    }
+    const userId = validate.id(props.userId, "userId");
+    if (isError(userId)) return err(userId.error);
 
     // Validate latitude if provided
     if (props.latitude !== undefined && props.latitude !== null) {
-      if (
-        props.latitude < VALIDATION.latitude.min ||
-        props.latitude > VALIDATION.latitude.max
-      ) {
-        return err(
-          `latitude must be between ${VALIDATION.latitude.min} and ${VALIDATION.latitude.max}`,
-        );
-      }
+      const validated = validate.number(props.latitude, "latitude", {
+        required: true,
+        min: VALIDATION.latitude.min,
+        max: VALIDATION.latitude.max,
+      });
+      if (isError(validated)) return err(validated.error);
     }
 
     // Validate longitude if provided
     if (props.longitude !== undefined && props.longitude !== null) {
-      if (
-        props.longitude < VALIDATION.longitude.min ||
-        props.longitude > VALIDATION.longitude.max
-      ) {
-        return err(
-          `longitude must be between ${VALIDATION.longitude.min} and ${VALIDATION.longitude.max}`,
-        );
-      }
+      const validated = validate.number(props.longitude, "longitude", {
+        required: true,
+        min: VALIDATION.longitude.min,
+        max: VALIDATION.longitude.max,
+      });
+      if (isError(validated)) return err(validated.error);
     }
 
     // Validate accuracy if provided
-    if (
-      props.accuracy !== undefined &&
-      props.accuracy !== null &&
-      props.accuracy < 0
-    ) {
-      return err("accuracy must be non-negative");
+    if (props.accuracy !== undefined && props.accuracy !== null) {
+      const validated = validate.number(props.accuracy, "accuracy", {
+        required: true,
+        min: 0,
+      });
+      if (isError(validated)) return err(validated.error);
     }
 
     // Validate speed if provided
-    if (props.speed !== undefined && props.speed !== null && props.speed < 0) {
-      return err("speed must be non-negative");
+    if (props.speed !== undefined && props.speed !== null) {
+      const validated = validate.number(props.speed, "speed", {
+        required: true,
+        min: 0,
+      });
+      if (isError(validated)) return err(validated.error);
     }
 
     // Validate heading if provided (0-360 degrees)
     if (props.heading !== undefined && props.heading !== null) {
-      if (props.heading < 0 || props.heading > 360) {
-        return err("heading must be between 0 and 360 degrees");
-      }
+      const validated = validate.number(props.heading, "heading", {
+        required: true,
+        min: 0,
+        max: 360,
+      });
+      if (isError(validated)) return err(validated.error);
     }
 
     // Validate usersToShareWith - prevent self-sharing
     const shareList = props.usersToShareWith ?? [];
     if (shareList.some((u) => u.id === props.userId)) {
-      return err("Cannot share location with yourself");
+      return err(
+        new ValidationError(
+          "Cannot share location with yourself",
+          "usersToShareWith",
+        ),
+      );
     }
 
     return ok(
       new Location(
         props.id ?? (crypto.randomUUID() as LocationId),
-        props.userId.trim(),
+        userId.value,
         props.latitude ?? null,
         props.longitude ?? null,
         props.accuracy ?? null,
@@ -194,89 +204,75 @@ export class Location {
     altitude?: number | null;
     speed?: number | null;
     heading?: number | null;
-  }): Result<Location, string> {
-    let newLat = this.latitude;
-    let newLon = this.longitude;
+  }): Result<Location, ValidationError> {
+    const updates: Partial<Location> = {};
 
     // Validate and update latitude if provided
     if (props.latitude !== undefined) {
       if (props.latitude !== null) {
-        if (
-          props.latitude < VALIDATION.latitude.min ||
-          props.latitude > VALIDATION.latitude.max
-        ) {
-          return err(
-            `latitude must be between ${VALIDATION.latitude.min} and ${VALIDATION.latitude.max}`,
-          );
-        }
+        const validated = validate.number(props.latitude, "latitude", {
+          required: true,
+          min: VALIDATION.latitude.min,
+          max: VALIDATION.latitude.max,
+        });
+        if (isError(validated)) return err(validated.error);
       }
-      newLat = props.latitude;
+      updates.latitude = props.latitude;
     }
 
     // Validate and update longitude if provided
     if (props.longitude !== undefined) {
       if (props.longitude !== null) {
-        if (
-          props.longitude < VALIDATION.longitude.min ||
-          props.longitude > VALIDATION.longitude.max
-        ) {
-          return err(
-            `longitude must be between ${VALIDATION.longitude.min} and ${VALIDATION.longitude.max}`,
-          );
-        }
+        const validated = validate.number(props.longitude, "longitude", {
+          required: true,
+          min: VALIDATION.longitude.min,
+          max: VALIDATION.longitude.max,
+        });
+        if (isError(validated)) return err(validated.error);
       }
-      newLon = props.longitude;
+      updates.longitude = props.longitude;
     }
 
     // Validate speed if provided
-    if (props.speed !== undefined && props.speed !== null && props.speed < 0) {
-      return err("speed must be non-negative");
+    if (props.speed !== undefined && props.speed !== null) {
+      const validated = validate.number(props.speed, "speed", {
+        required: true,
+        min: 0,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.speed = props.speed;
+    } else if (props.speed === null) {
+      updates.speed = null;
     }
 
     // Validate heading if provided
     if (props.heading !== undefined && props.heading !== null) {
-      if (props.heading < 0 || props.heading > 360) {
-        return err("heading must be between 0 and 360 degrees");
-      }
+      const validated = validate.number(props.heading, "heading", {
+        required: true,
+        min: 0,
+        max: 360,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.heading = props.heading;
+    } else if (props.heading === null) {
+      updates.heading = null;
     }
 
-    return ok(
-      new Location(
-        this.id,
-        this.userId,
-        newLat,
-        newLon,
-        props.accuracy !== undefined ? props.accuracy : this.accuracy,
-        props.altitude !== undefined ? props.altitude : this.altitude,
-        this.altitudeAccuracy,
-        props.heading !== undefined ? props.heading : this.heading,
-        props.speed !== undefined ? props.speed : this.speed,
-        this.sharingLocation,
-        new Date(), // new timestamp
-        this.lastInactivityNotification,
-        this.usersToShareWith,
-      ),
-    );
+    if (props.accuracy !== undefined) updates.accuracy = props.accuracy;
+    if (props.altitude !== undefined) updates.altitude = props.altitude;
+    updates.timestamp = new Date();
+
+    return ok(updateEntity(this, updates, Location));
   }
 
   /**
    * Start sharing location
    */
   startSharing(): Location {
-    return new Location(
-      this.id,
-      this.userId,
-      this.latitude,
-      this.longitude,
-      this.accuracy,
-      this.altitude,
-      this.altitudeAccuracy,
-      this.heading,
-      this.speed,
-      true,
-      new Date(), // update timestamp when sharing starts
-      this.lastInactivityNotification,
-      this.usersToShareWith,
+    return updateEntity(
+      this,
+      { sharingLocation: true, timestamp: new Date() },
+      Location,
     );
   }
 
@@ -284,52 +280,42 @@ export class Location {
    * Stop sharing location
    */
   stopSharing(): Location {
-    return new Location(
-      this.id,
-      this.userId,
-      this.latitude,
-      this.longitude,
-      this.accuracy,
-      this.altitude,
-      this.altitudeAccuracy,
-      this.heading,
-      this.speed,
-      false,
-      new Date(), // update timestamp when sharing stops
-      this.lastInactivityNotification,
-      this.usersToShareWith,
+    return updateEntity(
+      this,
+      { sharingLocation: false, timestamp: new Date() },
+      Location,
     );
   }
 
   /**
    * Add a user to share location with
    */
-  addSharingUser(user: SharingUserInfo): Result<Location, string> {
+  addSharingUser(user: SharingUserInfo): Result<Location, ValidationError> {
     // Prevent self-sharing
     if (user.id === this.userId) {
-      return err("Cannot share location with yourself");
+      return err(
+        new ValidationError("Cannot share location with yourself", "user"),
+      );
     }
 
     // Check if already sharing with this user
     if (this.usersToShareWith.some((u) => u.id === user.id)) {
-      return err(`Already sharing location with user ${user.id}`);
+      return err(
+        new ValidationError(
+          `Already sharing location with user ${user.id}`,
+          "user",
+        ),
+      );
     }
 
     return ok(
-      new Location(
-        this.id,
-        this.userId,
-        this.latitude,
-        this.longitude,
-        this.accuracy,
-        this.altitude,
-        this.altitudeAccuracy,
-        this.heading,
-        this.speed,
-        this.sharingLocation,
-        new Date(),
-        this.lastInactivityNotification,
-        [...this.usersToShareWith, user],
+      updateEntity(
+        this,
+        {
+          usersToShareWith: [...this.usersToShareWith, user],
+          timestamp: new Date(),
+        },
+        Location,
       ),
     );
   }
@@ -338,47 +324,34 @@ export class Location {
    * Remove a user from sharing list
    */
   removeSharingUser(userId: string): Location {
-    return new Location(
-      this.id,
-      this.userId,
-      this.latitude,
-      this.longitude,
-      this.accuracy,
-      this.altitude,
-      this.altitudeAccuracy,
-      this.heading,
-      this.speed,
-      this.sharingLocation,
-      new Date(),
-      this.lastInactivityNotification,
-      this.usersToShareWith.filter((u) => u.id !== userId),
+    return updateEntity(
+      this,
+      {
+        usersToShareWith: this.usersToShareWith.filter((u) => u.id !== userId),
+        timestamp: new Date(),
+      },
+      Location,
     );
   }
 
   /**
    * Update the entire sharing users list
    */
-  updateSharingUsers(users: SharingUserInfo[]): Result<Location, string> {
+  updateSharingUsers(
+    users: SharingUserInfo[],
+  ): Result<Location, ValidationError> {
     // Prevent self-sharing
     if (users.some((u) => u.id === this.userId)) {
-      return err("Cannot share location with yourself");
+      return err(
+        new ValidationError("Cannot share location with yourself", "users"),
+      );
     }
 
     return ok(
-      new Location(
-        this.id,
-        this.userId,
-        this.latitude,
-        this.longitude,
-        this.accuracy,
-        this.altitude,
-        this.altitudeAccuracy,
-        this.heading,
-        this.speed,
-        this.sharingLocation,
-        new Date(),
-        this.lastInactivityNotification,
-        users,
+      updateEntity(
+        this,
+        { usersToShareWith: users, timestamp: new Date() },
+        Location,
       ),
     );
   }
@@ -387,20 +360,10 @@ export class Location {
    * Update last inactivity notification timestamp
    */
   updateInactivityNotification(): Location {
-    return new Location(
-      this.id,
-      this.userId,
-      this.latitude,
-      this.longitude,
-      this.accuracy,
-      this.altitude,
-      this.altitudeAccuracy,
-      this.heading,
-      this.speed,
-      this.sharingLocation,
-      this.timestamp,
-      new Date(),
-      this.usersToShareWith,
+    return updateEntity(
+      this,
+      { lastInactivityNotification: new Date() },
+      Location,
     );
   }
 

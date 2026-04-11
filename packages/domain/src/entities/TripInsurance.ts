@@ -1,44 +1,21 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { updateEntity, timestamps } from "../utils/immutable";
+import { ValidationError } from "../errors/domain-errors";
 
 /**
- * Validation rules for TripInsurance data
+ * Insurance step interface - represents a single step in emergency procedure
+ * Replaces TripInsuranceStep entity
  */
-const VALIDATION_RULES = {
-  label: {
-    minLength: 1,
-    maxLength: 100,
-  },
-  providerName: {
-    minLength: 1,
-    maxLength: 100,
-  },
-  policyNumber: {
-    minLength: 1,
-    maxLength: 100,
-  },
-  contractNumber: {
-    minLength: 1,
-    maxLength: 100,
-  },
-  phoneNumber: {
-    minLength: 1,
-    maxLength: 50,
-  },
-  phoneDisplay: {
-    minLength: 1,
-    maxLength: 50,
-  },
-  hospitalName: {
-    maxLength: 200,
-  },
-  hospitalAddress: {
-    maxLength: 500,
-  },
-  hospitalDistance: {
-    maxLength: 100,
-  },
-};
+export interface InsuranceStep {
+  readonly stepNumber: number;
+  readonly title: string;
+  readonly text: string;
+  readonly requiredInfo: readonly string[];
+  readonly exampleCall: string | null;
+  readonly additionalText: string | null;
+}
 
 /**
  * TripInsurance entity - represents emergency insurance information for a trip
@@ -59,6 +36,8 @@ export class TripInsurance {
     public readonly hospitalName: string | null,
     public readonly hospitalAddress: string | null,
     public readonly hospitalDistance: string | null,
+    // NEW: Nested steps
+    public readonly steps: readonly InsuranceStep[],
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
   ) {}
@@ -79,120 +58,124 @@ export class TripInsurance {
     hospitalName?: string | null;
     hospitalAddress?: string | null;
     hospitalDistance?: string | null;
+    // NEW: Steps parameter
+    steps?: InsuranceStep[];
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<TripInsurance, string> {
+  }): Result<TripInsurance, ValidationError> {
     // Validate tripId
-    if (!props.tripId || props.tripId.trim() === "") {
-      return err("tripId is required");
-    }
+    const tripId = validate.id(props.tripId, "tripId");
+    if (isError(tripId)) return err(tripId.error);
 
     // Validate label
-    if (!props.label || props.label.trim() === "") {
-      return err("label is required");
-    }
-    if (props.label.length > VALIDATION_RULES.label.maxLength) {
-      return err(
-        `label must be at most ${VALIDATION_RULES.label.maxLength} characters`,
-      );
-    }
+    const label = validate.string(props.label, "label", {
+      required: true,
+      maxLength: 100,
+      trim: true,
+    });
+    if (isError(label)) return err(label.error);
 
     // Validate phoneNumber
-    if (!props.phoneNumber || props.phoneNumber.trim() === "") {
-      return err("phoneNumber is required");
-    }
-    if (props.phoneNumber.length > VALIDATION_RULES.phoneNumber.maxLength) {
-      return err(
-        `phoneNumber must be at most ${VALIDATION_RULES.phoneNumber.maxLength} characters`,
-      );
-    }
+    const phoneNumber = validate.string(props.phoneNumber, "phoneNumber", {
+      required: true,
+      maxLength: 50,
+      trim: true,
+    });
+    if (isError(phoneNumber)) return err(phoneNumber.error);
 
     // Validate phoneDisplay
-    if (!props.phoneDisplay || props.phoneDisplay.trim() === "") {
-      return err("phoneDisplay is required");
-    }
-    if (props.phoneDisplay.length > VALIDATION_RULES.phoneDisplay.maxLength) {
-      return err(
-        `phoneDisplay must be at most ${VALIDATION_RULES.phoneDisplay.maxLength} characters`,
-      );
-    }
+    const phoneDisplay = validate.string(props.phoneDisplay, "phoneDisplay", {
+      required: true,
+      maxLength: 50,
+      trim: true,
+    });
+    if (isError(phoneDisplay)) return err(phoneDisplay.error);
 
     // Validate policyNumber
-    if (!props.policyNumber || props.policyNumber.trim() === "") {
-      return err("policyNumber is required");
-    }
-    if (props.policyNumber.length > VALIDATION_RULES.policyNumber.maxLength) {
-      return err(
-        `policyNumber must be at most ${VALIDATION_RULES.policyNumber.maxLength} characters`,
-      );
-    }
+    const policyNumber = validate.string(props.policyNumber, "policyNumber", {
+      required: true,
+      maxLength: 100,
+      trim: true,
+    });
+    if (isError(policyNumber)) return err(policyNumber.error);
 
     // Validate contractNumber
-    if (!props.contractNumber || props.contractNumber.trim() === "") {
-      return err("contractNumber is required");
-    }
-    if (
-      props.contractNumber.length > VALIDATION_RULES.contractNumber.maxLength
-    ) {
-      return err(
-        `contractNumber must be at most ${VALIDATION_RULES.contractNumber.maxLength} characters`,
-      );
-    }
+    const contractNumber = validate.string(
+      props.contractNumber,
+      "contractNumber",
+      {
+        required: true,
+        maxLength: 100,
+        trim: true,
+      },
+    );
+    if (isError(contractNumber)) return err(contractNumber.error);
 
     // Validate providerName
-    if (!props.providerName || props.providerName.trim() === "") {
-      return err("providerName is required");
-    }
-    if (props.providerName.length > VALIDATION_RULES.providerName.maxLength) {
-      return err(
-        `providerName must be at most ${VALIDATION_RULES.providerName.maxLength} characters`,
-      );
-    }
+    const providerName = validate.string(props.providerName, "providerName", {
+      required: true,
+      maxLength: 100,
+      trim: true,
+    });
+    if (isError(providerName)) return err(providerName.error);
 
     // Validate optional hospital fields
-    if (
-      props.hospitalName &&
-      props.hospitalName.length > VALIDATION_RULES.hospitalName.maxLength
-    ) {
-      return err(
-        `hospitalName must be at most ${VALIDATION_RULES.hospitalName.maxLength} characters`,
-      );
-    }
-    if (
-      props.hospitalAddress &&
-      props.hospitalAddress.length > VALIDATION_RULES.hospitalAddress.maxLength
-    ) {
-      return err(
-        `hospitalAddress must be at most ${VALIDATION_RULES.hospitalAddress.maxLength} characters`,
-      );
-    }
-    if (
-      props.hospitalDistance &&
-      props.hospitalDistance.length >
-        VALIDATION_RULES.hospitalDistance.maxLength
-    ) {
-      return err(
-        `hospitalDistance must be at most ${VALIDATION_RULES.hospitalDistance.maxLength} characters`,
-      );
+    if (props.hospitalName) {
+      const validated = validate.string(props.hospitalName, "hospitalName", {
+        required: false,
+        maxLength: 200,
+      });
+      if (isError(validated)) return err(validated.error);
     }
 
-    const now = new Date();
+    if (props.hospitalAddress) {
+      const validated = validate.string(
+        props.hospitalAddress,
+        "hospitalAddress",
+        {
+          required: false,
+          maxLength: 500,
+        },
+      );
+      if (isError(validated)) return err(validated.error);
+    }
+
+    if (props.hospitalDistance) {
+      const validated = validate.string(
+        props.hospitalDistance,
+        "hospitalDistance",
+        {
+          required: false,
+          maxLength: 100,
+        },
+      );
+      if (isError(validated)) return err(validated.error);
+    }
+
+    // Validate steps array (max 20 steps)
+    const steps = props.steps ?? [];
+    if (steps.length > 20) {
+      return err(new ValidationError("Maximum 20 steps allowed", "steps"));
+    }
+
+    const ts = timestamps(props);
 
     return ok(
       new TripInsurance(
         props.id ?? crypto.randomUUID(),
-        props.tripId.trim(),
-        props.label.trim(),
-        props.phoneNumber.trim(),
-        props.phoneDisplay.trim(),
-        props.policyNumber.trim(),
-        props.contractNumber.trim(),
-        props.providerName.trim(),
+        tripId.value,
+        label.value,
+        phoneNumber.value,
+        phoneDisplay.value,
+        policyNumber.value,
+        contractNumber.value,
+        providerName.value,
         props.hospitalName ?? null,
         props.hospitalAddress ?? null,
         props.hospitalDistance ?? null,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        Object.freeze([...steps]),
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }
@@ -208,98 +191,80 @@ export class TripInsurance {
     policyNumber?: string;
     contractNumber?: string;
     providerName?: string;
-  }): Result<TripInsurance, string> {
+  }): Result<TripInsurance, ValidationError> {
+    const updates: Partial<TripInsurance> = {};
+
     // Validate label if provided
     if (props.label !== undefined) {
-      if (props.label.trim() === "") {
-        return err("label is required");
-      }
-      if (props.label.length > VALIDATION_RULES.label.maxLength) {
-        return err(
-          `label must be at most ${VALIDATION_RULES.label.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.label, "label", {
+        required: true,
+        maxLength: 100,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.label = validated.value;
     }
 
     // Validate phoneNumber if provided
     if (props.phoneNumber !== undefined) {
-      if (props.phoneNumber.trim() === "") {
-        return err("phoneNumber is required");
-      }
-      if (props.phoneNumber.length > VALIDATION_RULES.phoneNumber.maxLength) {
-        return err(
-          `phoneNumber must be at most ${VALIDATION_RULES.phoneNumber.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.phoneNumber, "phoneNumber", {
+        required: true,
+        maxLength: 50,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.phoneNumber = validated.value;
     }
 
     // Validate phoneDisplay if provided
     if (props.phoneDisplay !== undefined) {
-      if (props.phoneDisplay.trim() === "") {
-        return err("phoneDisplay is required");
-      }
-      if (props.phoneDisplay.length > VALIDATION_RULES.phoneDisplay.maxLength) {
-        return err(
-          `phoneDisplay must be at most ${VALIDATION_RULES.phoneDisplay.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.phoneDisplay, "phoneDisplay", {
+        required: true,
+        maxLength: 50,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.phoneDisplay = validated.value;
     }
 
     // Validate policyNumber if provided
     if (props.policyNumber !== undefined) {
-      if (props.policyNumber.trim() === "") {
-        return err("policyNumber is required");
-      }
-      if (props.policyNumber.length > VALIDATION_RULES.policyNumber.maxLength) {
-        return err(
-          `policyNumber must be at most ${VALIDATION_RULES.policyNumber.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.policyNumber, "policyNumber", {
+        required: true,
+        maxLength: 100,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.policyNumber = validated.value;
     }
 
     // Validate contractNumber if provided
     if (props.contractNumber !== undefined) {
-      if (props.contractNumber.trim() === "") {
-        return err("contractNumber is required");
-      }
-      if (
-        props.contractNumber.length > VALIDATION_RULES.contractNumber.maxLength
-      ) {
-        return err(
-          `contractNumber must be at most ${VALIDATION_RULES.contractNumber.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(
+        props.contractNumber,
+        "contractNumber",
+        {
+          required: true,
+          maxLength: 100,
+          trim: true,
+        },
+      );
+      if (isError(validated)) return err(validated.error);
+      updates.contractNumber = validated.value;
     }
 
     // Validate providerName if provided
     if (props.providerName !== undefined) {
-      if (props.providerName.trim() === "") {
-        return err("providerName is required");
-      }
-      if (props.providerName.length > VALIDATION_RULES.providerName.maxLength) {
-        return err(
-          `providerName must be at most ${VALIDATION_RULES.providerName.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.providerName, "providerName", {
+        required: true,
+        maxLength: 100,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.providerName = validated.value;
     }
 
-    return ok(
-      new TripInsurance(
-        this.id,
-        this.tripId,
-        props.label ?? this.label,
-        props.phoneNumber ?? this.phoneNumber,
-        props.phoneDisplay ?? this.phoneDisplay,
-        props.policyNumber ?? this.policyNumber,
-        props.contractNumber ?? this.contractNumber,
-        props.providerName ?? this.providerName,
-        this.hospitalName,
-        this.hospitalAddress,
-        this.hospitalDistance,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    return ok(updateEntity(this, updates, TripInsurance));
   }
 
   /**
@@ -310,51 +275,185 @@ export class TripInsurance {
     hospitalName?: string | null;
     hospitalAddress?: string | null;
     hospitalDistance?: string | null;
-  }): Result<TripInsurance, string> {
+  }): Result<TripInsurance, ValidationError> {
+    const updates: Partial<TripInsurance> = {};
+
     // Validate hospitalName if provided
     if (props.hospitalName !== undefined && props.hospitalName !== null) {
-      if (props.hospitalName.length > VALIDATION_RULES.hospitalName.maxLength) {
-        return err(
-          `hospitalName must be at most ${VALIDATION_RULES.hospitalName.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.hospitalName, "hospitalName", {
+        required: false,
+        maxLength: 200,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.hospitalName = validated.value;
+    } else if (props.hospitalName === null) {
+      updates.hospitalName = null;
     }
 
     // Validate hospitalAddress if provided
     if (props.hospitalAddress !== undefined && props.hospitalAddress !== null) {
-      if (
-        props.hospitalAddress.length >
-        VALIDATION_RULES.hospitalAddress.maxLength
-      ) {
-        return err(
-          `hospitalAddress must be at most ${VALIDATION_RULES.hospitalAddress.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(
+        props.hospitalAddress,
+        "hospitalAddress",
+        {
+          required: false,
+          maxLength: 500,
+        },
+      );
+      if (isError(validated)) return err(validated.error);
+      updates.hospitalAddress = validated.value;
+    } else if (props.hospitalAddress === null) {
+      updates.hospitalAddress = null;
     }
 
+    if (props.hospitalDistance !== undefined) {
+      if (props.hospitalDistance !== null) {
+        const validated = validate.string(
+          props.hospitalDistance,
+          "hospitalDistance",
+          {
+            required: false,
+            maxLength: 100,
+          },
+        );
+        if (isError(validated)) return err(validated.error);
+      }
+      updates.hospitalDistance = props.hospitalDistance;
+    }
+
+    return ok(updateEntity(this, updates, TripInsurance));
+  }
+
+  /**
+   * Add a new step to the insurance procedure
+   * Returns a new TripInsurance instance (immutable)
+   */
+  addStep(
+    step: Omit<InsuranceStep, "stepNumber">,
+  ): Result<TripInsurance, ValidationError> {
+    if (this.steps.length >= 20) {
+      return err(new ValidationError("Maximum 20 steps allowed", "steps"));
+    }
+
+    // Validate step title
+    const title = validate.string(step.title, "title", {
+      required: true,
+      maxLength: 200,
+      trim: true,
+    });
+    if (isError(title)) return err(title.error);
+
+    // Validate step text
+    const text = validate.string(step.text, "text", {
+      required: true,
+      maxLength: 2000,
+      trim: true,
+    });
+    if (isError(text)) return err(text.error);
+
+    const stepNumber = this.steps.length + 1;
+    const newStep: InsuranceStep = {
+      ...step,
+      stepNumber,
+      title: title.value,
+      text: text.value,
+    };
+
     return ok(
-      new TripInsurance(
-        this.id,
-        this.tripId,
-        this.label,
-        this.phoneNumber,
-        this.phoneDisplay,
-        this.policyNumber,
-        this.contractNumber,
-        this.providerName,
-        props.hospitalName !== undefined
-          ? props.hospitalName
-          : this.hospitalName,
-        props.hospitalAddress !== undefined
-          ? props.hospitalAddress
-          : this.hospitalAddress,
-        props.hospitalDistance !== undefined
-          ? props.hospitalDistance
-          : this.hospitalDistance,
-        this.createdAt,
-        new Date(), // updatedAt
+      updateEntity(
+        this,
+        { steps: Object.freeze([...this.steps, newStep]) },
+        TripInsurance,
       ),
     );
+  }
+
+  /**
+   * Remove a step by step number
+   * Returns a new TripInsurance instance with renumbered steps (immutable)
+   */
+  removeStep(stepNumber: number): TripInsurance {
+    const newSteps = this.steps
+      .filter((s) => s.stepNumber !== stepNumber)
+      .map((s, index) => ({ ...s, stepNumber: index + 1 })); // Renumber remaining
+
+    return updateEntity(
+      this,
+      { steps: Object.freeze(newSteps) },
+      TripInsurance,
+    );
+  }
+
+  /**
+   * Update an existing step
+   * Returns a new TripInsurance instance (immutable)
+   */
+  updateStep(
+    stepNumber: number,
+    updates: Partial<Omit<InsuranceStep, "stepNumber">>,
+  ): Result<TripInsurance, ValidationError> {
+    const step = this.steps.find((s) => s.stepNumber === stepNumber);
+    if (!step) {
+      return err(
+        new ValidationError(`Step ${stepNumber} not found`, "stepNumber"),
+      );
+    }
+
+    const finalUpdates: Partial<InsuranceStep> = {};
+
+    // Validate title if provided
+    if (updates.title !== undefined) {
+      const validated = validate.string(updates.title, "title", {
+        required: true,
+        maxLength: 200,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      finalUpdates.title = validated.value;
+    }
+
+    // Validate text if provided
+    if (updates.text !== undefined) {
+      const validated = validate.string(updates.text, "text", {
+        required: true,
+        maxLength: 2000,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      finalUpdates.text = validated.value;
+    }
+
+    if (updates.requiredInfo !== undefined) {
+      finalUpdates.requiredInfo = updates.requiredInfo;
+    }
+    if (updates.exampleCall !== undefined) {
+      finalUpdates.exampleCall = updates.exampleCall;
+    }
+    if (updates.additionalText !== undefined) {
+      finalUpdates.additionalText = updates.additionalText;
+    }
+
+    const newSteps = this.steps.map((s) =>
+      s.stepNumber === stepNumber ? { ...s, ...finalUpdates } : s,
+    );
+
+    return ok(
+      updateEntity(this, { steps: Object.freeze(newSteps) }, TripInsurance),
+    );
+  }
+
+  /**
+   * Get step count
+   */
+  getStepCount(): number {
+    return this.steps.length;
+  }
+
+  /**
+   * Check if has any steps
+   */
+  hasSteps(): boolean {
+    return this.steps.length > 0;
   }
 
   /**

@@ -1,5 +1,9 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { createStateMachine } from "../utils/state-machine";
+import { updateEntity, timestamps } from "../utils/immutable";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 /**
  * Trip status
@@ -12,17 +16,17 @@ export enum TripStatus {
 }
 
 /**
- * Validation rules for trip data
+ * State machine for Trip status transitions
  */
-const VALIDATION_RULES = {
-  name: {
-    minLength: 1,
-    maxLength: 200,
+const stateMachine = createStateMachine<TripStatus>({
+  transitions: {
+    [TripStatus.PLANNING]: [TripStatus.ACTIVE, TripStatus.CANCELLED],
+    [TripStatus.ACTIVE]: [TripStatus.COMPLETED, TripStatus.CANCELLED],
+    [TripStatus.COMPLETED]: [],
+    [TripStatus.CANCELLED]: [],
   },
-  description: {
-    maxLength: 2000,
-  },
-};
+  terminalStates: [TripStatus.COMPLETED, TripStatus.CANCELLED],
+});
 
 /**
  * Trip entity - represents a trip/event in the system
@@ -57,45 +61,48 @@ export class Trip {
     status?: TripStatus;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Trip, string> {
+  }): Result<Trip, ValidationError> {
     // Validate name
-    if (!props.name || props.name.trim() === "") {
-      return err("name is required");
-    }
-    if (props.name.length > VALIDATION_RULES.name.maxLength) {
+    const name = validate.string(props.name, "name", {
+      required: true,
+      maxLength: 200,
+      trim: true,
+    });
+    if (isError(name)) return err(name.error);
+
+    // Validate description (optional)
+    const description = validate.string(
+      props.description ?? "",
+      "description",
+      {
+        required: false,
+        maxLength: 2000,
+        trim: true,
+      },
+    );
+    if (isError(description)) return err(description.error);
+
+    // Validate date range
+    const dateRangeResult = validate.dateRange(props.startDate, props.endDate);
+    if (isError(dateRangeResult)) {
       return err(
-        `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
+        new ValidationError("endDate must be after startDate", "endDate"),
       );
     }
 
-    // Validate dates
-    if (props.endDate.getTime() < props.startDate.getTime()) {
-      return err("endDate must be after startDate");
-    }
-
-    // Validate description length
-    if (
-      props.description &&
-      props.description.length > VALIDATION_RULES.description.maxLength
-    ) {
-      return err(
-        `description must be at most ${VALIDATION_RULES.description.maxLength} characters`,
-      );
-    }
-
-    const now = new Date();
+    const ts = timestamps(props);
 
     return ok(
       new Trip(
         props.id ?? crypto.randomUUID(),
-        props.name.trim(),
-        props.description ?? null,
+        name.value,
+        description.value || null,
         props.startDate,
         props.endDate,
         props.backgroundImagePath ?? null,
         props.status ?? TripStatus.PLANNING,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }
@@ -108,39 +115,34 @@ export class Trip {
     name?: string;
     description?: string | null;
     backgroundImagePath?: string | null;
-  }): Result<Trip, string> {
+  }): Result<Trip, ValidationError | StateTransitionError> {
     // Cannot update completed or cancelled trips
     if (this.isTerminal()) {
-      return err("Cannot update a completed or cancelled trip");
+      return err(new StateTransitionError(this.status, this.status));
     }
+
+    const updates: Partial<Trip> = {};
 
     // Validate name if provided
     if (props.name !== undefined) {
-      if (props.name.trim() === "") {
-        return err("name is required");
-      }
-      if (props.name.length > VALIDATION_RULES.name.maxLength) {
-        return err(
-          `name must be at most ${VALIDATION_RULES.name.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.name, "name", {
+        required: true,
+        maxLength: 200,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.name = validated.value;
     }
 
-    return ok(
-      new Trip(
-        this.id,
-        props.name ?? this.name,
-        props.description !== undefined ? props.description : this.description,
-        this.startDate,
-        this.endDate,
-        props.backgroundImagePath !== undefined
-          ? props.backgroundImagePath
-          : this.backgroundImagePath,
-        this.status,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    if (props.description !== undefined) {
+      updates.description = props.description;
+    }
+
+    if (props.backgroundImagePath !== undefined) {
+      updates.backgroundImagePath = props.backgroundImagePath;
+    }
+
+    return ok(updateEntity(this, updates, Trip));
   }
 
   /**
@@ -150,98 +152,64 @@ export class Trip {
   updateDates(props: {
     startDate?: Date;
     endDate?: Date;
-  }): Result<Trip, string> {
+  }): Result<Trip, ValidationError | StateTransitionError> {
     // Cannot update completed or cancelled trips
     if (this.isTerminal()) {
-      return err("Cannot update a completed or cancelled trip");
+      return err(new StateTransitionError(this.status, this.status));
     }
 
     const newStartDate = props.startDate ?? this.startDate;
     const newEndDate = props.endDate ?? this.endDate;
 
-    if (newEndDate.getTime() < newStartDate.getTime()) {
-      return err("endDate must be after startDate");
+    // Validate date range
+    const dateRangeResult = validate.dateRange(newStartDate, newEndDate);
+    if (isError(dateRangeResult)) {
+      return err(
+        new ValidationError("endDate must be after startDate", "endDate"),
+      );
     }
 
-    return ok(
-      new Trip(
-        this.id,
-        this.name,
-        this.description,
-        newStartDate,
-        newEndDate,
-        this.backgroundImagePath,
-        this.status,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    const updates: Partial<Trip> = {};
+    if (props.startDate !== undefined) updates.startDate = props.startDate;
+    if (props.endDate !== undefined) updates.endDate = props.endDate;
+
+    return ok(updateEntity(this, updates, Trip));
   }
 
   /**
    * Start the trip
-   * Returns a new Trip instance (immutable)
+   * Returns a Result with new Trip instance or StateTransitionError
    */
-  start(): Trip {
-    if (this.status !== TripStatus.PLANNING) {
-      throw new Error(`Cannot start trip from status: ${this.status}`);
+  start(): Result<Trip, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, TripStatus.ACTIVE)) {
+      return err(new StateTransitionError(this.status, TripStatus.ACTIVE));
     }
 
-    return new Trip(
-      this.id,
-      this.name,
-      this.description,
-      this.startDate,
-      this.endDate,
-      this.backgroundImagePath,
-      TripStatus.ACTIVE,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return ok(updateEntity(this, { status: TripStatus.ACTIVE }, Trip));
   }
 
   /**
    * Complete the trip
-   * Returns a new Trip instance (immutable)
+   * Returns a Result with new Trip instance or StateTransitionError
    */
-  complete(): Trip {
-    if (this.status !== TripStatus.ACTIVE) {
-      throw new Error(`Cannot complete trip from status: ${this.status}`);
+  complete(): Result<Trip, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, TripStatus.COMPLETED)) {
+      return err(new StateTransitionError(this.status, TripStatus.COMPLETED));
     }
 
-    return new Trip(
-      this.id,
-      this.name,
-      this.description,
-      this.startDate,
-      this.endDate,
-      this.backgroundImagePath,
-      TripStatus.COMPLETED,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return ok(updateEntity(this, { status: TripStatus.COMPLETED }, Trip));
   }
 
   /**
    * Cancel the trip
-   * Returns a new Trip instance (immutable)
+   * Returns a Result with new Trip instance or StateTransitionError
    */
-  cancel(): Trip {
-    if (this.status === TripStatus.COMPLETED) {
-      throw new Error("Cannot cancel a completed trip");
+  cancel(): Result<Trip, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, TripStatus.CANCELLED)) {
+      return err(new StateTransitionError(this.status, TripStatus.CANCELLED));
     }
 
-    return new Trip(
-      this.id,
-      this.name,
-      this.description,
-      this.startDate,
-      this.endDate,
-      this.backgroundImagePath,
-      TripStatus.CANCELLED,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return ok(updateEntity(this, { status: TripStatus.CANCELLED }, Trip));
   }
 
   /**
@@ -276,7 +244,7 @@ export class Trip {
    * Check if trip is in a terminal state (COMPLETED or CANCELLED)
    */
   isTerminal(): boolean {
-    return this.isCompleted() || this.isCancelled();
+    return stateMachine.isTerminal(this.status);
   }
 
   /**

@@ -1,5 +1,8 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { timestamps, updateEntity } from "../utils/immutable";
+import { ValidationError } from "../errors/domain-errors";
 
 /**
  * User roles in the system
@@ -20,17 +23,6 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
   [UserRole.MODERATOR]: 2,
   [UserRole.ADMIN]: 3,
   [UserRole.SERVICE]: 4,
-};
-
-/**
- * Validation rules for user data
- */
-const VALIDATION_RULES = {
-  name: {
-    minLength: 2,
-    maxLength: 100,
-    noDigits: true,
-  },
 };
 
 /**
@@ -66,36 +58,61 @@ export class User {
     createdAt?: Date;
     updatedAt?: Date;
     lastSeenOn?: Date | null;
-  }): Result<User, string> {
+  }): Result<User, ValidationError> {
     // Validate authUserId
-    if (!props.authUserId || props.authUserId.trim() === "") {
-      return err("authUserId is required");
+    const authUserId = validate.id(props.authUserId, "authUserId");
+    if (isError(authUserId)) return err(authUserId.error);
+
+    // Validate firstName (allow empty, but validate if non-empty)
+    let firstName = props.firstName.trim();
+    if (firstName.length > 0) {
+      const firstNameValidated = validate.string(firstName, "firstName", {
+        trim: true,
+        minLength: 2,
+        maxLength: 100,
+      });
+      if (isError(firstNameValidated)) return err(firstNameValidated.error);
+      firstName = firstNameValidated.value;
+
+      // Check for digits
+      if (/\d/.test(firstName)) {
+        return err(
+          new ValidationError("firstName cannot contain digits", "firstName"),
+        );
+      }
     }
 
-    // Validate firstName
-    const firstNameValidation = validateName(props.firstName, "firstName");
-    if (firstNameValidation.kind === "err") {
-      return err(firstNameValidation.error);
+    // Validate lastName (allow empty, but validate if non-empty)
+    let lastName = props.lastName.trim();
+    if (lastName.length > 0) {
+      const lastNameValidated = validate.string(lastName, "lastName", {
+        trim: true,
+        minLength: 2,
+        maxLength: 100,
+      });
+      if (isError(lastNameValidated)) return err(lastNameValidated.error);
+      lastName = lastNameValidated.value;
+
+      // Check for digits
+      if (/\d/.test(lastName)) {
+        return err(
+          new ValidationError("lastName cannot contain digits", "lastName"),
+        );
+      }
     }
 
-    // Validate lastName
-    const lastNameValidation = validateName(props.lastName, "lastName");
-    if (lastNameValidation.kind === "err") {
-      return err(lastNameValidation.error);
-    }
-
-    const now = new Date();
+    const ts = timestamps(props);
 
     return ok(
       new User(
         props.id ?? crypto.randomUUID(),
-        props.authUserId.trim(),
-        firstNameValidation.value,
-        lastNameValidation.value,
+        authUserId.value,
+        firstName,
+        lastName,
         props.role,
         props.hasAvatar ?? false,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        ts.createdAt,
+        ts.updatedAt,
         props.lastSeenOn ?? null,
       ),
     );
@@ -108,32 +125,46 @@ export class User {
   updateName(props: {
     firstName: string;
     lastName: string;
-  }): Result<User, string> {
-    // Validate firstName
-    const firstNameValidation = validateName(props.firstName, "firstName");
-    if (firstNameValidation.kind === "err") {
-      return err(firstNameValidation.error);
+  }): Result<User, ValidationError> {
+    // Validate firstName (allow empty, but validate if non-empty)
+    let firstName = props.firstName.trim();
+    if (firstName.length > 0) {
+      const firstNameValidated = validate.string(firstName, "firstName", {
+        trim: true,
+        minLength: 2,
+        maxLength: 100,
+      });
+      if (isError(firstNameValidated)) return err(firstNameValidated.error);
+      firstName = firstNameValidated.value;
+
+      // Check for digits
+      if (/\d/.test(firstName)) {
+        return err(
+          new ValidationError("firstName cannot contain digits", "firstName"),
+        );
+      }
     }
 
-    // Validate lastName
-    const lastNameValidation = validateName(props.lastName, "lastName");
-    if (lastNameValidation.kind === "err") {
-      return err(lastNameValidation.error);
+    // Validate lastName (allow empty, but validate if non-empty)
+    let lastName = props.lastName.trim();
+    if (lastName.length > 0) {
+      const lastNameValidated = validate.string(lastName, "lastName", {
+        trim: true,
+        minLength: 2,
+        maxLength: 100,
+      });
+      if (isError(lastNameValidated)) return err(lastNameValidated.error);
+      lastName = lastNameValidated.value;
+
+      // Check for digits
+      if (/\d/.test(lastName)) {
+        return err(
+          new ValidationError("lastName cannot contain digits", "lastName"),
+        );
+      }
     }
 
-    return ok(
-      new User(
-        this.id,
-        this.authUserId,
-        firstNameValidation.value,
-        lastNameValidation.value,
-        this.role,
-        this.hasAvatar,
-        this.createdAt,
-        new Date(), // updatedAt
-        this.lastSeenOn,
-      ),
-    );
+    return ok(updateEntity(this, { firstName, lastName }, User));
   }
 
   /**
@@ -141,17 +172,7 @@ export class User {
    * Returns a new User instance (immutable)
    */
   updateRole(newRole: UserRole): User {
-    return new User(
-      this.id,
-      this.authUserId,
-      this.firstName,
-      this.lastName,
-      newRole,
-      this.hasAvatar,
-      this.createdAt,
-      new Date(), // updatedAt
-      this.lastSeenOn,
-    );
+    return updateEntity(this, { role: newRole }, User);
   }
 
   /**
@@ -159,17 +180,7 @@ export class User {
    * Returns a new User instance (immutable)
    */
   setAvatar(hasAvatar: boolean): User {
-    return new User(
-      this.id,
-      this.authUserId,
-      this.firstName,
-      this.lastName,
-      this.role,
-      hasAvatar,
-      this.createdAt,
-      new Date(), // updatedAt
-      this.lastSeenOn,
-    );
+    return updateEntity(this, { hasAvatar }, User);
   }
 
   /**
@@ -177,17 +188,7 @@ export class User {
    * Returns a new User instance (immutable)
    */
   updateLastSeen(timestamp: Date = new Date()): User {
-    return new User(
-      this.id,
-      this.authUserId,
-      this.firstName,
-      this.lastName,
-      this.role,
-      this.hasAvatar,
-      this.createdAt,
-      new Date(), // updatedAt
-      timestamp,
-    );
+    return updateEntity(this, { lastSeenOn: timestamp }, User);
   }
 
   /**
@@ -256,33 +257,4 @@ export class User {
     const last = this.lastName?.charAt(0)?.toUpperCase() ?? "";
     return first + last || "?";
   }
-}
-
-/**
- * Validate a name field
- */
-function validateName(name: string, fieldName: string): Result<string, string> {
-  // Allow empty names (just spaces)
-  const trimmed = name.trim();
-
-  // If not empty, apply validation rules
-  if (trimmed.length > 0) {
-    if (trimmed.length < VALIDATION_RULES.name.minLength) {
-      return err(
-        `${fieldName} must be at least ${VALIDATION_RULES.name.minLength} characters`,
-      );
-    }
-
-    if (trimmed.length > VALIDATION_RULES.name.maxLength) {
-      return err(
-        `${fieldName} must be at most ${VALIDATION_RULES.name.maxLength} characters`,
-      );
-    }
-
-    if (VALIDATION_RULES.name.noDigits && /\d/.test(trimmed)) {
-      return err(`${fieldName} cannot contain digits`);
-    }
-  }
-
-  return ok(trimmed);
 }

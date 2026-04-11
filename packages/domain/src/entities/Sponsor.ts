@@ -1,6 +1,9 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
 import type { SponsorId } from "../value-objects/SponsorId";
+import { validate } from "../utils/entity-validation";
+import { timestamps, updateEntity } from "../utils/immutable";
+import { ValidationError } from "../errors/domain-errors";
 
 /**
  * Sponsor entity - represents a sponsor with logo and contact information
@@ -37,70 +40,81 @@ export class Sponsor {
     isActive?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Sponsor, string> {
+  }): Result<Sponsor, ValidationError> {
     // Validate name
-    if (!props.name || props.name.trim() === "") {
-      return err("Sponsor name is required");
-    }
-    if (props.name.length > 200) {
-      return err("Sponsor name must be at most 200 characters");
-    }
+    const nameResult = validate.string(props.name, "name", {
+      required: true,
+      maxLength: 200,
+      trim: true,
+    });
+    if (isError(nameResult)) return err(nameResult.error);
 
     // Validate description
-    if (!props.description || props.description.trim() === "") {
-      return err("Sponsor description is required");
-    }
-    if (props.description.length > 2000) {
-      return err("Sponsor description must be at most 2000 characters");
-    }
+    const descriptionResult = validate.string(
+      props.description,
+      "description",
+      {
+        required: true,
+        maxLength: 2000,
+        trim: true,
+      },
+    );
+    if (isError(descriptionResult)) return err(descriptionResult.error);
 
     // Validate logoPath
-    if (!props.logoPath || props.logoPath.trim() === "") {
-      return err("Sponsor logo path is required");
+    const logoPathResult = validate.string(props.logoPath, "logoPath", {
+      required: true,
+      trim: true,
+    });
+    if (isError(logoPathResult)) return err(logoPathResult.error);
+
+    // Validate height (only if provided and not null)
+    let height: number | null = null;
+    if (props.height !== undefined && props.height !== null) {
+      const heightResult = validate.number(props.height, "height", {
+        min: 0,
+      });
+      if (isError(heightResult)) return err(heightResult.error);
+      height = heightResult.value;
     }
 
-    // Validate height (must be non-negative if provided)
-    if (
-      props.height !== null &&
-      props.height !== undefined &&
-      props.height < 0
-    ) {
-      return err("Height must be non-negative");
+    // Validate offsetX (only if provided and not null)
+    let offsetX: number | null = null;
+    if (props.offsetX !== undefined && props.offsetX !== null) {
+      const offsetXResult = validate.number(props.offsetX, "offsetX", {
+        min: 0,
+      });
+      if (isError(offsetXResult)) return err(offsetXResult.error);
+      offsetX = offsetXResult.value;
     }
 
-    // Validate offsetX
-    if (
-      props.offsetX !== null &&
-      props.offsetX !== undefined &&
-      props.offsetX < 0
-    ) {
-      return err("Offset X must be non-negative");
-    }
-
-    // Validate offsetY
-    if (
-      props.offsetY !== null &&
-      props.offsetY !== undefined &&
-      props.offsetY < 0
-    ) {
-      return err("Offset Y must be non-negative");
+    // Validate offsetY (only if provided and not null)
+    let offsetY: number | null = null;
+    if (props.offsetY !== undefined && props.offsetY !== null) {
+      const offsetYResult = validate.number(props.offsetY, "offsetY", {
+        min: 0,
+      });
+      if (isError(offsetYResult)) return err(offsetYResult.error);
+      offsetY = offsetYResult.value;
     }
 
     // Generate ID if not provided
     const id: SponsorId = props.id ?? (crypto.randomUUID() as SponsorId);
 
+    const ts = timestamps(props);
+
     return ok(
       new Sponsor(
         id,
-        props.name.trim(),
-        props.description.trim(),
-        props.logoPath.trim(),
-        props.height ?? null,
-        props.offsetX ?? null,
-        props.offsetY ?? null,
+        nameResult.value,
+        descriptionResult.value,
+        logoPathResult.value,
+        height,
+        offsetX,
+        offsetY,
         props.isActive ?? true,
-        props.createdAt ?? new Date(),
-        props.updatedAt ?? new Date(),
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }
@@ -117,113 +131,93 @@ export class Sponsor {
     offsetX?: number | null;
     offsetY?: number | null;
     isActive?: boolean;
-  }): Result<Sponsor, string> {
+  }): Result<Sponsor, ValidationError> {
+    const updates: Partial<Sponsor> = {};
+
     // Validate name if provided
     if (props.name !== undefined) {
-      if (props.name.trim() === "") {
-        return err("Sponsor name cannot be empty");
-      }
-      if (props.name.length > 200) {
-        return err("Sponsor name must be at most 200 characters");
-      }
+      const validated = validate.string(props.name, "name", {
+        required: true,
+        maxLength: 200,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.name = validated.value;
     }
 
     // Validate description if provided
     if (props.description !== undefined) {
-      if (props.description.trim() === "") {
-        return err("Sponsor description cannot be empty");
-      }
-      if (props.description.length > 2000) {
-        return err("Sponsor description must be at most 2000 characters");
-      }
+      const validated = validate.string(props.description, "description", {
+        required: true,
+        maxLength: 2000,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.description = validated.value;
     }
 
     // Validate logoPath if provided
     if (props.logoPath !== undefined) {
-      if (props.logoPath.trim() === "") {
-        return err("Sponsor logo path cannot be empty");
-      }
+      const validated = validate.string(props.logoPath, "logoPath", {
+        required: true,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.logoPath = validated.value;
     }
 
     // Validate height if provided
-    if (
-      props.height !== undefined &&
-      props.height !== null &&
-      props.height < 0
-    ) {
-      return err("Height must be non-negative");
+    if (props.height !== undefined) {
+      if (props.height !== null) {
+        const validated = validate.number(props.height, "height", {
+          min: 0,
+        });
+        if (isError(validated)) return err(validated.error);
+      }
+      updates.height = props.height;
     }
 
     // Validate offsetX if provided
-    if (
-      props.offsetX !== undefined &&
-      props.offsetX !== null &&
-      props.offsetX < 0
-    ) {
-      return err("Offset X must be non-negative");
+    if (props.offsetX !== undefined) {
+      if (props.offsetX !== null) {
+        const validated = validate.number(props.offsetX, "offsetX", {
+          min: 0,
+        });
+        if (isError(validated)) return err(validated.error);
+      }
+      updates.offsetX = props.offsetX;
     }
 
     // Validate offsetY if provided
-    if (
-      props.offsetY !== undefined &&
-      props.offsetY !== null &&
-      props.offsetY < 0
-    ) {
-      return err("Offset Y must be non-negative");
+    if (props.offsetY !== undefined) {
+      if (props.offsetY !== null) {
+        const validated = validate.number(props.offsetY, "offsetY", {
+          min: 0,
+        });
+        if (isError(validated)) return err(validated.error);
+      }
+      updates.offsetY = props.offsetY;
     }
 
-    return ok(
-      new Sponsor(
-        this.id,
-        props.name !== undefined ? props.name.trim() : this.name,
-        props.description !== undefined
-          ? props.description.trim()
-          : this.description,
-        props.logoPath !== undefined ? props.logoPath.trim() : this.logoPath,
-        props.height !== undefined ? props.height : this.height,
-        props.offsetX !== undefined ? props.offsetX : this.offsetX,
-        props.offsetY !== undefined ? props.offsetY : this.offsetY,
-        props.isActive !== undefined ? props.isActive : this.isActive,
-        this.createdAt,
-        new Date(),
-      ),
-    );
+    if (props.isActive !== undefined) {
+      updates.isActive = props.isActive;
+    }
+
+    return ok(updateEntity(this, updates, Sponsor));
   }
 
   /**
    * Deactivate this sponsor
    */
   deactivate(): Sponsor {
-    return new Sponsor(
-      this.id,
-      this.name,
-      this.description,
-      this.logoPath,
-      this.height,
-      this.offsetX,
-      this.offsetY,
-      false,
-      this.createdAt,
-      new Date(),
-    );
+    return updateEntity(this, { isActive: false }, Sponsor);
   }
 
   /**
    * Activate this sponsor
    */
   activate(): Sponsor {
-    return new Sponsor(
-      this.id,
-      this.name,
-      this.description,
-      this.logoPath,
-      this.height,
-      this.offsetX,
-      this.offsetY,
-      true,
-      this.createdAt,
-      new Date(),
-    );
+    return updateEntity(this, { isActive: true }, Sponsor);
   }
 
   /**

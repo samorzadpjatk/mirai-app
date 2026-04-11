@@ -1,5 +1,9 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { createStateMachine } from "../utils/state-machine";
+import { updateEntity, timestampsWithNow } from "../utils/immutable";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 /**
  * RewardPurchaseStatus - represents the status of a reward purchase
@@ -13,38 +17,30 @@ export enum RewardPurchaseStatus {
 }
 
 /**
- * Validation rules for RewardPurchase data
+ * State machine for RewardPurchase status transitions
  */
-const VALIDATION_RULES = {
-  collectionMethod: {
-    maxLength: 200,
+const stateMachine = createStateMachine<RewardPurchaseStatus>({
+  transitions: {
+    [RewardPurchaseStatus.BOUGHT]: [
+      RewardPurchaseStatus.ACCEPTED,
+      RewardPurchaseStatus.CANCELLED,
+    ],
+    [RewardPurchaseStatus.ACCEPTED]: [
+      RewardPurchaseStatus.IN_DELIVERY,
+      RewardPurchaseStatus.CANCELLED,
+    ],
+    [RewardPurchaseStatus.IN_DELIVERY]: [
+      RewardPurchaseStatus.DELIVERED,
+      RewardPurchaseStatus.CANCELLED,
+    ],
+    [RewardPurchaseStatus.CANCELLED]: [],
+    [RewardPurchaseStatus.DELIVERED]: [],
   },
-};
-
-/**
- * Valid status transitions for reward purchase workflow
- * BOUGHT -> ACCEPTED -> IN_DELIVERY -> DELIVERED
- *       -> CANCELLED
- */
-const VALID_STATUS_TRANSITIONS: Record<
-  RewardPurchaseStatus,
-  RewardPurchaseStatus[]
-> = {
-  [RewardPurchaseStatus.BOUGHT]: [
-    RewardPurchaseStatus.ACCEPTED,
+  terminalStates: [
     RewardPurchaseStatus.CANCELLED,
-  ],
-  [RewardPurchaseStatus.ACCEPTED]: [
-    RewardPurchaseStatus.IN_DELIVERY,
-    RewardPurchaseStatus.CANCELLED,
-  ],
-  [RewardPurchaseStatus.IN_DELIVERY]: [
     RewardPurchaseStatus.DELIVERED,
-    RewardPurchaseStatus.CANCELLED,
   ],
-  [RewardPurchaseStatus.CANCELLED]: [],
-  [RewardPurchaseStatus.DELIVERED]: [],
-};
+});
 
 /**
  * RewardPurchase entity - tracks reward purchases by groups
@@ -83,94 +79,96 @@ export class RewardPurchase {
     statusUpdatedById?: string | null;
     statusUpdatedAt?: Date;
     purchasedAt?: Date;
-  }): Result<RewardPurchase, string> {
+  }): Result<RewardPurchase, ValidationError> {
     // Validate rewardId
-    if (!props.rewardId || props.rewardId.trim() === "") {
-      return err("rewardId is required");
-    }
+    const rewardId = validate.id(props.rewardId, "rewardId");
+    if (isError(rewardId)) return err(rewardId.error);
 
     // Validate groupId
-    if (!props.groupId || props.groupId.trim() === "") {
-      return err("groupId is required");
-    }
+    const groupId = validate.id(props.groupId, "groupId");
+    if (isError(groupId)) return err(groupId.error);
 
     // Validate quantity
-    if (props.quantity < 1) {
-      return err("quantity must be at least 1");
-    }
+    const quantity = validate.number(props.quantity, "quantity", {
+      required: true,
+      min: 1,
+      integer: true,
+    });
+    if (isError(quantity)) return err(quantity.error);
 
     // Validate totalCost
-    if (props.totalCost < 0) {
-      return err("totalCost must be non-negative");
-    }
+    const totalCost = validate.number(props.totalCost, "totalCost", {
+      required: true,
+      min: 0,
+    });
+    if (isError(totalCost)) return err(totalCost.error);
 
     // Validate purchasedById
-    if (!props.purchasedById || props.purchasedById.trim() === "") {
-      return err("purchasedById is required");
-    }
+    const purchasedById = validate.id(props.purchasedById, "purchasedById");
+    if (isError(purchasedById)) return err(purchasedById.error);
 
     // Validate collectionMethod if provided
-    if (
-      props.collectionMethod &&
-      props.collectionMethod.length >
-        VALIDATION_RULES.collectionMethod.maxLength
-    ) {
-      return err(
-        `collectionMethod must be at most ${VALIDATION_RULES.collectionMethod.maxLength} characters`,
+    let collectionMethod: string | null = null;
+    if (props.collectionMethod) {
+      const validated = validate.string(
+        props.collectionMethod,
+        "collectionMethod",
+        {
+          required: false,
+          maxLength: 200,
+        },
       );
+      if (isError(validated)) return err(validated.error);
+      collectionMethod = validated.value;
     }
 
     const now = new Date();
-    const status = props.status ?? RewardPurchaseStatus.BOUGHT;
+    const ts = timestampsWithNow(now, {
+      createdAt: props.purchasedAt,
+      updatedAt: props.statusUpdatedAt,
+    });
 
     return ok(
       new RewardPurchase(
         props.id ?? crypto.randomUUID(),
-        props.rewardId.trim(),
-        props.groupId.trim(),
-        props.quantity,
-        props.totalCost,
-        status,
-        props.collectionMethod ?? null,
-        props.purchasedById.trim(),
+        rewardId.value,
+        groupId.value,
+        quantity.value,
+        totalCost.value,
+        props.status ?? RewardPurchaseStatus.BOUGHT,
+        collectionMethod,
+        purchasedById.value,
         props.statusUpdatedById ?? null,
-        props.statusUpdatedAt ?? now,
-        props.purchasedAt ?? now,
+        ts.updatedAt,
+        ts.createdAt,
       ),
     );
   }
 
   /**
    * Update status
-   * Returns a new RewardPurchase instance (immutable)
+   * Returns a Result with new RewardPurchase instance or error
    */
   updateStatus(
     newStatus: RewardPurchaseStatus,
     updatedById: string,
-  ): Result<RewardPurchase, string> {
-    if (!this.canTransitionTo(newStatus)) {
-      return err(
-        `Invalid status transition from ${this.status} to ${newStatus}`,
-      );
+  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, newStatus)) {
+      return err(new StateTransitionError(this.status, newStatus));
     }
 
-    if (!updatedById || updatedById.trim() === "") {
-      return err("updatedById is required");
-    }
+    const validated = validate.id(updatedById, "updatedById");
+    if (isError(validated)) return err(validated.error);
 
     return ok(
-      new RewardPurchase(
-        this.id,
-        this.rewardId,
-        this.groupId,
-        this.quantity,
-        this.totalCost,
-        newStatus,
-        this.collectionMethod,
-        this.purchasedById,
-        updatedById.trim(),
-        new Date(),
-        this.purchasedAt,
+      updateEntity(
+        this,
+        {
+          status: newStatus,
+          statusUpdatedById: validated.value,
+          statusUpdatedAt: new Date(),
+        },
+        RewardPurchase,
       ),
     );
   }
@@ -178,80 +176,69 @@ export class RewardPurchase {
   /**
    * Accept the purchase
    */
-  accept(updatedById: string): Result<RewardPurchase, string> {
+  accept(
+    updatedById: string,
+  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
     return this.updateStatus(RewardPurchaseStatus.ACCEPTED, updatedById);
   }
 
   /**
    * Mark as in delivery
    */
-  startDelivery(updatedById: string): Result<RewardPurchase, string> {
+  startDelivery(
+    updatedById: string,
+  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
     return this.updateStatus(RewardPurchaseStatus.IN_DELIVERY, updatedById);
   }
 
   /**
    * Mark as delivered
    */
-  deliver(updatedById: string): Result<RewardPurchase, string> {
+  deliver(
+    updatedById: string,
+  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
     return this.updateStatus(RewardPurchaseStatus.DELIVERED, updatedById);
   }
 
   /**
    * Cancel the purchase
    */
-  cancel(updatedById: string): Result<RewardPurchase, string> {
+  cancel(
+    updatedById: string,
+  ): Result<RewardPurchase, ValidationError | StateTransitionError> {
     return this.updateStatus(RewardPurchaseStatus.CANCELLED, updatedById);
   }
 
   /**
    * Update collection method
-   * Returns a new RewardPurchase instance (immutable)
+   * Returns a Result with new RewardPurchase instance or ValidationError
    */
   updateCollectionMethod(
     method: string | null,
-  ): Result<RewardPurchase, string> {
-    if (
-      method !== null &&
-      method.length > VALIDATION_RULES.collectionMethod.maxLength
-    ) {
-      return err(
-        `collectionMethod must be at most ${VALIDATION_RULES.collectionMethod.maxLength} characters`,
-      );
+  ): Result<RewardPurchase, ValidationError> {
+    if (method !== null) {
+      const validated = validate.string(method, "collectionMethod", {
+        required: false,
+        maxLength: 200,
+      });
+      if (isError(validated)) return err(validated.error);
     }
 
-    return ok(
-      new RewardPurchase(
-        this.id,
-        this.rewardId,
-        this.groupId,
-        this.quantity,
-        this.totalCost,
-        this.status,
-        method,
-        this.purchasedById,
-        this.statusUpdatedById,
-        this.statusUpdatedAt,
-        this.purchasedAt,
-      ),
-    );
+    return ok(updateEntity(this, { collectionMethod: method }, RewardPurchase));
   }
 
   /**
    * Check if status can transition to new status
    */
   canTransitionTo(newStatus: RewardPurchaseStatus): boolean {
-    const validTransitions = VALID_STATUS_TRANSITIONS[this.status];
-    return validTransitions.includes(newStatus);
+    return stateMachine.canTransition(this.status, newStatus);
   }
 
   /**
    * Check if purchase is in a terminal state
    */
   isTerminal(): boolean {
-    return (
-      this.status === RewardPurchaseStatus.DELIVERED ||
-      this.status === RewardPurchaseStatus.CANCELLED
-    );
+    return stateMachine.isTerminal(this.status);
   }
 
   /**
@@ -309,5 +296,5 @@ export function canTransitionPurchaseStatus(
   to: RewardPurchaseStatus,
 ): boolean {
   if (from === to) return true;
-  return VALID_STATUS_TRANSITIONS[from].includes(to);
+  return stateMachine.canTransition(from, to);
 }

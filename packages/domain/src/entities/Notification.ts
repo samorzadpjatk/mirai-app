@@ -1,5 +1,9 @@
 import type { Result } from "../utils/result";
-import { ok, err } from "../utils/result";
+import { ok, err, isError } from "../utils/result";
+import { validate } from "../utils/entity-validation";
+import { createStateMachine } from "../utils/state-machine";
+import { updateEntity, timestamps } from "../utils/immutable";
+import { ValidationError, StateTransitionError } from "../errors/domain-errors";
 
 /**
  * Notification status workflow
@@ -26,39 +30,25 @@ export enum NotificationPriority {
 }
 
 /**
- * Validation rules for notification data
+ * State machine for Notification status transitions
  */
-const VALIDATION_RULES = {
-  title: {
-    minLength: 1,
-    maxLength: 200,
+const stateMachine = createStateMachine<NotificationStatus>({
+  transitions: {
+    [NotificationStatus.DRAFT]: [
+      NotificationStatus.READY,
+      NotificationStatus.CANCELLED,
+    ],
+    [NotificationStatus.READY]: [
+      NotificationStatus.SENT,
+      NotificationStatus.FAILED,
+      NotificationStatus.CANCELLED,
+    ],
+    [NotificationStatus.SENT]: [],
+    [NotificationStatus.FAILED]: [NotificationStatus.READY],
+    [NotificationStatus.CANCELLED]: [],
   },
-  body: {
-    minLength: 1,
-    maxLength: 2000,
-  },
-};
-
-/**
- * Valid status transitions
- */
-const VALID_STATUS_TRANSITIONS: Record<
-  NotificationStatus,
-  NotificationStatus[]
-> = {
-  [NotificationStatus.DRAFT]: [
-    NotificationStatus.READY,
-    NotificationStatus.CANCELLED,
-  ],
-  [NotificationStatus.READY]: [
-    NotificationStatus.SENT,
-    NotificationStatus.FAILED,
-    NotificationStatus.CANCELLED,
-  ],
-  [NotificationStatus.SENT]: [], // Terminal state
-  [NotificationStatus.FAILED]: [NotificationStatus.READY], // Can retry
-  [NotificationStatus.CANCELLED]: [], // Terminal state
-};
+  terminalStates: [NotificationStatus.SENT, NotificationStatus.CANCELLED],
+});
 
 /**
  * Notification entity - represents a push notification
@@ -101,54 +91,54 @@ export class Notification {
     failureReason?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
-  }): Result<Notification, string> {
+  }): Result<Notification, ValidationError> {
     // Validate title
-    if (!props.title || props.title.trim() === "") {
-      return err("title is required");
-    }
-    if (props.title.length > VALIDATION_RULES.title.maxLength) {
-      return err(
-        `title must be at most ${VALIDATION_RULES.title.maxLength} characters`,
-      );
-    }
+    const title = validate.string(props.title, "title", {
+      required: true,
+      maxLength: 200,
+      trim: true,
+    });
+    if (isError(title)) return err(title.error);
 
     // Validate body
-    if (!props.body || props.body.trim() === "") {
-      return err("body is required");
-    }
-    if (props.body.length > VALIDATION_RULES.body.maxLength) {
-      return err(
-        `body must be at most ${VALIDATION_RULES.body.maxLength} characters`,
-      );
-    }
+    const body = validate.string(props.body, "body", {
+      required: true,
+      maxLength: 2000,
+      trim: true,
+    });
+    if (isError(body)) return err(body.error);
 
     // Validate createdById
-    if (!props.createdById || props.createdById.trim() === "") {
-      return err("createdById is required");
-    }
+    const createdById = validate.id(props.createdById, "createdById");
+    if (isError(createdById)) return err(createdById.error);
 
     // Validate scheduledFor is not in the past
     if (props.scheduledFor && props.scheduledFor.getTime() < Date.now()) {
-      return err("scheduledFor must be in the future");
+      return err(
+        new ValidationError(
+          "scheduledFor must be in the future",
+          "scheduledFor",
+        ),
+      );
     }
 
-    const now = new Date();
+    const ts = timestamps(props);
 
     return ok(
       new Notification(
         props.id ?? crypto.randomUUID(),
-        props.title.trim(),
-        props.body.trim(),
+        title.value,
+        body.value,
         props.url ?? null,
-        props.createdById.trim(),
+        createdById.value,
         props.tripId ?? null,
         props.status ?? NotificationStatus.DRAFT,
         props.priority ?? NotificationPriority.NORMAL,
         props.scheduledFor ?? null,
         props.sentAt ?? null,
         props.failureReason ?? null,
-        props.createdAt ?? now,
-        props.updatedAt ?? now,
+        ts.createdAt,
+        ts.updatedAt,
       ),
     );
   }
@@ -162,152 +152,126 @@ export class Notification {
     title?: string;
     body?: string;
     url?: string | null;
-  }): Result<Notification, string> {
+  }): Result<Notification, ValidationError | StateTransitionError> {
     // Cannot update after sent
     if (this.isSent()) {
-      return err("Cannot update a sent notification");
+      return err(new StateTransitionError(this.status, this.status)); // Stay in same state, but operation not allowed
     }
+
+    const updates: Partial<Notification> = {};
 
     // Validate title if provided
     if (props.title !== undefined) {
-      if (props.title.trim() === "") {
-        return err("title is required");
-      }
-      if (props.title.length > VALIDATION_RULES.title.maxLength) {
-        return err(
-          `title must be at most ${VALIDATION_RULES.title.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.title, "title", {
+        required: true,
+        maxLength: 200,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.title = validated.value;
     }
 
     // Validate body if provided
     if (props.body !== undefined) {
-      if (props.body.trim() === "") {
-        return err("body is required");
-      }
-      if (props.body.length > VALIDATION_RULES.body.maxLength) {
-        return err(
-          `body must be at most ${VALIDATION_RULES.body.maxLength} characters`,
-        );
-      }
+      const validated = validate.string(props.body, "body", {
+        required: true,
+        maxLength: 2000,
+        trim: true,
+      });
+      if (isError(validated)) return err(validated.error);
+      updates.body = validated.value;
+    }
+
+    if (props.url !== undefined) {
+      updates.url = props.url;
+    }
+
+    return ok(updateEntity(this, updates, Notification));
+  }
+
+  /**
+   * Update notification status
+   * Returns a Result with new Notification instance or StateTransitionError
+   */
+  updateStatus(
+    newStatus: NotificationStatus,
+  ): Result<Notification, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, newStatus)) {
+      return err(new StateTransitionError(this.status, newStatus));
+    }
+
+    return ok(updateEntity(this, { status: newStatus }, Notification));
+  }
+
+  /**
+   * Mark notification as sent
+   * Returns a Result with new Notification instance or StateTransitionError
+   */
+  markAsSent(): Result<Notification, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, NotificationStatus.SENT)) {
+      return err(
+        new StateTransitionError(this.status, NotificationStatus.SENT),
+      );
     }
 
     return ok(
-      new Notification(
-        this.id,
-        props.title ?? this.title,
-        props.body ?? this.body,
-        props.url !== undefined ? props.url : this.url,
-        this.createdById,
-        this.tripId,
-        this.status,
-        this.priority,
-        this.scheduledFor,
-        this.sentAt,
-        this.failureReason,
-        this.createdAt,
-        new Date(), // updatedAt
+      updateEntity(
+        this,
+        {
+          status: NotificationStatus.SENT,
+          sentAt: new Date(),
+          failureReason: null,
+        },
+        Notification,
       ),
     );
   }
 
   /**
-   * Update notification status
-   * Returns a new Notification instance (immutable)
-   * @throws if status transition is invalid
+   * Mark notification as failed
+   * Returns a Result with new Notification instance or StateTransitionError
    */
-  updateStatus(newStatus: NotificationStatus): Notification {
-    if (!this.canTransitionTo(newStatus)) {
-      throw new Error(
-        `Invalid status transition from ${this.status} to ${newStatus}`,
+  markAsFailed(reason: string): Result<Notification, StateTransitionError> {
+    if (!stateMachine.canTransition(this.status, NotificationStatus.FAILED)) {
+      return err(
+        new StateTransitionError(this.status, NotificationStatus.FAILED),
       );
     }
 
-    return new Notification(
-      this.id,
-      this.title,
-      this.body,
-      this.url,
-      this.createdById,
-      this.tripId,
-      newStatus,
-      this.priority,
-      this.scheduledFor,
-      this.sentAt,
-      this.failureReason,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
-  }
-
-  /**
-   * Mark notification as sent
-   * Returns a new Notification instance (immutable)
-   */
-  markAsSent(): Notification {
-    return new Notification(
-      this.id,
-      this.title,
-      this.body,
-      this.url,
-      this.createdById,
-      this.tripId,
-      NotificationStatus.SENT,
-      this.priority,
-      this.scheduledFor,
-      new Date(), // sentAt
-      null, // clear failure reason
-      this.createdAt,
-      new Date(), // updatedAt
-    );
-  }
-
-  /**
-   * Mark notification as failed
-   * Returns a new Notification instance (immutable)
-   */
-  markAsFailed(reason: string): Notification {
-    return new Notification(
-      this.id,
-      this.title,
-      this.body,
-      this.url,
-      this.createdById,
-      this.tripId,
-      NotificationStatus.FAILED,
-      this.priority,
-      this.scheduledFor,
-      this.sentAt,
-      reason, // failureReason
-      this.createdAt,
-      new Date(), // updatedAt
+    return ok(
+      updateEntity(
+        this,
+        { status: NotificationStatus.FAILED, failureReason: reason },
+        Notification,
+      ),
     );
   }
 
   /**
    * Cancel notification
-   * Returns a new Notification instance (immutable)
-   * Cannot cancel after sent
+   * Returns a Result with new Notification instance or StateTransitionError
    */
-  cancel(): Notification {
+  cancel(): Result<Notification, StateTransitionError> {
     if (this.isSent()) {
-      throw new Error("Cannot cancel a sent notification");
+      return err(
+        new StateTransitionError(this.status, NotificationStatus.CANCELLED),
+      );
     }
 
-    return new Notification(
-      this.id,
-      this.title,
-      this.body,
-      this.url,
-      this.createdById,
-      this.tripId,
-      NotificationStatus.CANCELLED,
-      this.priority,
-      null, // clear scheduledFor
-      this.sentAt,
-      this.failureReason,
-      this.createdAt,
-      new Date(), // updatedAt
+    if (
+      !stateMachine.canTransition(this.status, NotificationStatus.CANCELLED)
+    ) {
+      return err(
+        new StateTransitionError(this.status, NotificationStatus.CANCELLED),
+      );
+    }
+
+    return ok(
+      updateEntity(
+        this,
+        { status: NotificationStatus.CANCELLED, scheduledFor: null },
+        Notification,
+      ),
     );
   }
 
@@ -316,49 +280,24 @@ export class Notification {
    * Returns a new Notification instance (immutable)
    */
   updatePriority(newPriority: NotificationPriority): Notification {
-    return new Notification(
-      this.id,
-      this.title,
-      this.body,
-      this.url,
-      this.createdById,
-      this.tripId,
-      this.status,
-      newPriority,
-      this.scheduledFor,
-      this.sentAt,
-      this.failureReason,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return updateEntity(this, { priority: newPriority }, Notification);
   }
 
   /**
    * Schedule notification for future delivery
-   * Returns a new Notification instance (immutable)
+   * Returns a Result with new Notification instance or ValidationError
    */
-  schedule(scheduledFor: Date): Result<Notification, string> {
+  schedule(scheduledFor: Date): Result<Notification, ValidationError> {
     if (scheduledFor.getTime() < Date.now()) {
-      return err("scheduledFor must be in the future");
+      return err(
+        new ValidationError(
+          "scheduledFor must be in the future",
+          "scheduledFor",
+        ),
+      );
     }
 
-    return ok(
-      new Notification(
-        this.id,
-        this.title,
-        this.body,
-        this.url,
-        this.createdById,
-        this.tripId,
-        this.status,
-        this.priority,
-        scheduledFor,
-        this.sentAt,
-        this.failureReason,
-        this.createdAt,
-        new Date(), // updatedAt
-      ),
-    );
+    return ok(updateEntity(this, { scheduledFor }, Notification));
   }
 
   /**
@@ -366,29 +305,14 @@ export class Notification {
    * Returns a new Notification instance (immutable)
    */
   unschedule(): Notification {
-    return new Notification(
-      this.id,
-      this.title,
-      this.body,
-      this.url,
-      this.createdById,
-      this.tripId,
-      this.status,
-      this.priority,
-      null, // clear scheduledFor
-      this.sentAt,
-      this.failureReason,
-      this.createdAt,
-      new Date(), // updatedAt
-    );
+    return updateEntity(this, { scheduledFor: null }, Notification);
   }
 
   /**
    * Check if status can transition to new status
    */
   canTransitionTo(newStatus: NotificationStatus): boolean {
-    const validTransitions = VALID_STATUS_TRANSITIONS[this.status];
-    return validTransitions.includes(newStatus);
+    return stateMachine.canTransition(this.status, newStatus);
   }
 
   /**
@@ -430,7 +354,7 @@ export class Notification {
    * Check if notification is in a terminal state (SENT or CANCELLED)
    */
   isTerminal(): boolean {
-    return this.isSent() || this.isCancelled();
+    return stateMachine.isTerminal(this.status);
   }
 
   /**
