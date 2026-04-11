@@ -7,7 +7,7 @@ import {
   GetActivityDocument,
   UpdateActivityDocument,
   GetActivitiesByTripModerationDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, typography } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
 //   2. Removed GraphQLClient and SecureStore imports (urql client handles auth automatically)
 //   3. Removed createGraphQLClient helper function (not needed with urql)
 //   4. Removed manual client state management (urql Provider handles this)
-//   5. Imported GraphQL documents from @mirai-app/graphql-types (GetActivityDocument, UpdateActivityDocument, GetActivitiesByTripModerationDocument)
+//   5. Imported GraphQL documents from @mirai-app/graphql-client (GetActivityDocument, UpdateActivityDocument, GetActivitiesByTripModerationDocument)
 //   6. Migrated useQueryClient() to useClient() from urql
 //   7. Changed from graphql-request's useGetActivityQuery(client, variables, options) to urql's useQuery({ query, variables, pause })
 //   8. Changed from graphql-request's useUpdateActivityMutation(client, options) to urql's useMutation(Document)

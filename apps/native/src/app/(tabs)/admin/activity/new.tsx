@@ -18,7 +18,7 @@ import { borderRadius, colors, spacing, typography } from "~/styles";
 import {
   CreateCustomActivityDocument,
   GetActivitiesByTripModerationDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { getImageExtension, getImageContentType } from "~/utils/image";
 import { useFileUpload } from "~/hooks/files";
 import { AdminHeader } from "~/components/admin/AdminHeader";

@@ -10,7 +10,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useQuery, useClient } from "urql";
-import { useGetActivitiesByTripQuery } from "@mirai-app/graphql-types";
+import { useGetActivitiesByTripQuery } from "@mirai-app/graphql-client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 
 interface TripNewsSectionProps {

@@ -10,7 +10,7 @@ import { ErrorMessage } from "../../ui/ErrorMessage";
 import {
   useCreateGroupMutation,
   useGetUsersQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { appToast } from "../../../lib/toast";
 import { useTrip } from "../../../contexts/TripContext";
 import { env } from "../../../lib/env";

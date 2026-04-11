@@ -1,6 +1,6 @@
 "use client";
 
-import type { GetGroupsByTripQuery } from "@mirai-app/graphql-types";
+import type { GetGroupsByTripQuery } from "@mirai-app/graphql-client";
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 

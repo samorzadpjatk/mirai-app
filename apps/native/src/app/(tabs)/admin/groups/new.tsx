@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useClient, useMutation } from "urql";
-import { CreateGroupDocument } from "@mirai-app/graphql-types";
+import { CreateGroupDocument } from "@mirai-app/graphql-client";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";

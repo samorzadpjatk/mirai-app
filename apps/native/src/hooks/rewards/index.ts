@@ -12,7 +12,7 @@ import {
   GetPurchaseHistoryDocument,
   UpdatePurchaseStatusDocument,
   UpdateMyPurchaseStatusDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 const PAGE_SIZE = 30;
 

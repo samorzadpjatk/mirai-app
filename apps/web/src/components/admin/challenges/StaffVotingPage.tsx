@@ -12,7 +12,7 @@ import {
   type GetChallengeSubmissionsQuery,
   type GetMyVotesQuery,
   type GetJudgedStaffVotingProgressQuery,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 import { appToast } from "../../../lib/toast";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";

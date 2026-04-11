@@ -24,7 +24,7 @@ import {
   GetGroupsByTripDocument,
   type GetGroupQuery,
   type GetUsersQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 interface OrganizerOption {
   id: string;
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
 //   2. Removed GraphQLClient and SecureStore imports (urql client handles auth automatically)
 //   3. Removed createGraphQLClient helper function (not needed with urql)
 //   4. Removed manual client state management (urql Provider handles this)
-//   5. Imported GraphQL documents from @mirai-app/graphql-types (GetGroupDocument, GetUsersDocument, UpdateGroupDocument, DeleteGroupDocument, GetGroupsByTripDocument)
+//   5. Imported GraphQL documents from @mirai-app/graphql-client (GetGroupDocument, GetUsersDocument, UpdateGroupDocument, DeleteGroupDocument, GetGroupsByTripDocument)
 //   6. Migrated useQueryClient() to useClient() from urql
 //   7. Changed from TanStack Query's useQuery({ queryKey, queryFn, enabled }) to urql's useQuery({ query, variables, pause })
 //   8. Changed from useMutation with callbacks to urql's useMutation(Document) with manual error handling

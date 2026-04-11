@@ -7,7 +7,7 @@ import {
   ThemedTextInput,
   DateTimePickerModal,
 } from "~/components/common/ui";
-import type { User } from "@mirai-app/graphql-types";
+import type { User } from "@mirai-app/graphql-client";
 
 interface EditUserModalProps {
   visible: boolean;

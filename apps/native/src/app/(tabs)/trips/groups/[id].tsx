@@ -23,7 +23,7 @@ import {
   CancelGroupJoinRequestDocument,
   RespondToGroupJoinRequestDocument,
   LeaveGroupDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { useTripDetails } from "~/hooks/trips";
 import { EditGroupButton } from "~/components/trips/groups/details/EditGroupButton";
 import { GroupDetailsHero } from "~/components/trips/groups/details/GroupDetailsHero";

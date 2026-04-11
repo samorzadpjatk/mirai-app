@@ -16,7 +16,7 @@ import {
   GetGroupsByTripDocument,
   GetAllNotificationsDocument,
   GetNotificationSchedulesDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoadingButton";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { Ionicons } from "@expo/vector-icons";

@@ -12,7 +12,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   useGetGroupsByTripQuery,
   useGetCurrentUserQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { graphqlClient } from "~/lib/graphql-client";
 import { useMemo } from "react";
 import { colors, spacing } from "../../../../styles";

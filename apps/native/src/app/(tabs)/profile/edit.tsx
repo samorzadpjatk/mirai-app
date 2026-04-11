@@ -18,7 +18,7 @@ import { useQuery, useMutation, useClient } from "urql";
 import {
   GetCurrentUserDocument,
   UpdateUserDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { PhotoCaptureModal } from "~/components/camera/PhotoCaptureModal";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFileDownload, useFileUpload } from "~/hooks/files";
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
 // - File migrated: apps/native/src/app/(tabs)/profile/edit.tsx
 // - Key changes made:
 //   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
-//   2. Imported GraphQL documents from @mirai-app/graphql-types (GetCurrentUserDocument, UpdateUserDocument)
+//   2. Imported GraphQL documents from @mirai-app/graphql-client (GetCurrentUserDocument, UpdateUserDocument)
 //   3. Migrated useQueryClient() to useClient() from urql
 //   4. Changed from TanStack Query's useGetCurrentUserQuery() to urql's useQuery({ query: GetCurrentUserDocument })
 //   5. Changed from useUpdateUserMutation with callbacks to urql's useMutation(UpdateUserDocument) with manual error handling

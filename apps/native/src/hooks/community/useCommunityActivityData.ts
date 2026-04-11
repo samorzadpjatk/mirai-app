@@ -5,7 +5,7 @@ import * as SecureStore from "expo-secure-store";
 import {
   useGetGroupRankingQuery,
   useCreateDownloadUrlMutation,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import type { CommunityFeedActivity } from "~/components/community/CommunityActivityCard";
 import type { RankedGroup } from "~/components/trips/leaderboard/types";
 

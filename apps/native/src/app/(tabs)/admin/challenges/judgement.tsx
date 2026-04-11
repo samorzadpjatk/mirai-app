@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "urql";
-import { GetChallengeDocument } from "@mirai-app/graphql-types/urql";
+import { GetChallengeDocument } from "@mirai-app/graphql-client/urql";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { JudgementContent } from "~/components/judgement/JudgementContent";

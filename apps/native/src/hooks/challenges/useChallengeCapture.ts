@@ -7,7 +7,7 @@ import {
   GetCurrentUserDocument,
   CreateChallengeSubmissionDocument,
   DeleteChallengeSubmissionDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { useFileUpload } from "~/hooks/files";
 
 interface ChallengeCaptureOptions {

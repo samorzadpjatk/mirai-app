@@ -4,7 +4,7 @@ import {
   GetGroupDocument,
   UpdateGroupDocument,
   GetGroupsByTripDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 export function useGroupEditor(groupId?: string | null) {
   const client = useClient();

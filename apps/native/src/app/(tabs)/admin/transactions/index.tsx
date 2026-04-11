@@ -16,7 +16,7 @@ import { colors, spacing, typography } from "../../../../styles";
 import {
   GetCoinTransactionsDocument,
   type GetCoinTransactionsQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { TransactionsFilters } from "~/components/admin/transactions/TransactionsFilters";
 import TransactionCard from "~/components/admin/transactions/TransactionCard";
@@ -300,9 +300,9 @@ const styles = StyleSheet.create({
 
 2. **Updated imports:**
    - Removed: `import { useQuery } from "@tanstack/react-query"`
-   - Removed: `import { useGetCoinTransactionsQuery } from "@mirai-app/graphql-types"`
+   - Removed: `import { useGetCoinTransactionsQuery } from "@mirai-app/graphql-client"`
    - Added: `import { useQuery } from "urql"`
-   - Added: `import { GetCoinTransactionsDocument } from "@mirai-app/graphql-types"`
+   - Added: `import { GetCoinTransactionsDocument } from "@mirai-app/graphql-client"`
 
 3. **Extracted query logic into custom hook:**
    - Created: `useAdminTransactions(tripId: string)` custom hook

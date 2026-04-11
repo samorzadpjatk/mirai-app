@@ -6,14 +6,14 @@ import {
   GetChallengeDocument,
   UpdateChallengeDocument,
   DeleteChallengeDocument,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { appToast } from "../../../lib/toast";
 import { ChallengeAnalyticsPanel } from "./ChallengeAnalyticsPanel";
-import type { Challenge, ChallengeStatus } from "@mirai-app/graphql-types/urql";
+import type { Challenge, ChallengeStatus } from "@mirai-app/graphql-client/urql";
 
 interface ChallengeDetailsPageProps {
   tripId: string;

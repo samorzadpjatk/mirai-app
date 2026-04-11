@@ -11,7 +11,7 @@ import { PrimaryLoadingButton } from "~/components/common/buttons/PrimaryLoading
 import {
   useAddCoinsMutation,
   useRemoveCoinsMutation,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 interface CoinOperationScreenProps {
   operation: "add" | "remove";

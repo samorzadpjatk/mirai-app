@@ -3,7 +3,7 @@ import { useQuery } from "urql";
 import {
   GetTripDocument,
   GetCurrentUserDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { colors } from "~/styles";
 import type { ChallengeListItem } from "~/components/trips/challenges/types";
 

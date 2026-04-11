@@ -6,7 +6,7 @@ import {
   GetChallengeSubmissionsDocument,
   GetVotesByChallengeDocument,
   type GetChallengeSubmissionsQuery,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 
 type ChallengeStatus =
   | "HIDDEN"

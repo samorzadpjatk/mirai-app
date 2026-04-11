@@ -2,7 +2,7 @@
 
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
-import type { Activity } from "@mirai-app/graphql-types";
+import type { Activity } from "@mirai-app/graphql-client";
 
 // Extended activity type for admin view with optional group info
 interface AdminActivity extends Activity {

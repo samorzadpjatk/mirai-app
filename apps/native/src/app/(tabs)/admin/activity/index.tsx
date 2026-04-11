@@ -19,7 +19,7 @@ import {
   UnhideActivityDocument,
   DeleteActivityDocument,
   ActivityType,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

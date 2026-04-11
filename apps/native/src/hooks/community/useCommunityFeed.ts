@@ -5,7 +5,7 @@ import * as SecureStore from "expo-secure-store";
 import {
   useGetActivitiesByTripQuery,
   useToggleActivityReactionMutation,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import type {
   CommunityFeedActivity,
   ActivityFilter,

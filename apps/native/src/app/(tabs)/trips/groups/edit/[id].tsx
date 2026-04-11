@@ -14,7 +14,7 @@ import {
   GetGroupDocument,
   GetCurrentUserDocument,
   DeleteGroupDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { useGroupEditor } from "~/hooks/groups";
 import { useTripDetails } from "~/hooks/trips";
 import {

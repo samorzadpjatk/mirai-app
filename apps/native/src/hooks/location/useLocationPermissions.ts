@@ -6,7 +6,7 @@ import { useQuery, useMutation } from "urql";
 import {
   GetMySharingSettingsDocument,
   UpdateLocationSharingDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 const LOCATION_SETTINGS_KEY = "location_sharing_enabled";
 

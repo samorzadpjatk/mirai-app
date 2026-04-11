@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useQuery } from "urql";
-import { GetTripResourcesDocument } from "@mirai-app/graphql-types";
+import { GetTripResourcesDocument } from "@mirai-app/graphql-client";
 import { TRIP_RESOURCE_TYPES } from "../../types/trip";
 
 export function useTripResources(tripId?: string | null) {

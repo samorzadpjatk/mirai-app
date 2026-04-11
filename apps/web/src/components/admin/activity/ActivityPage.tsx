@@ -16,7 +16,7 @@ import {
   DeleteActivityDocument,
   type ActivityType,
   type ActivityFieldsFragment,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 import { AdminActivityCard } from "./AdminActivityCard";
 import { useTrip } from "../../../contexts/TripContext";
 

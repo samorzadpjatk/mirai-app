@@ -4,7 +4,7 @@ This guide explains how to use the generated GraphQL hooks in the Mirai web appl
 
 ## Overview
 
-The `@mirai-app/graphql-types` package provides TypeScript types and React Query hooks generated from the GraphQL schema. These hooks integrate seamlessly with TanStack Query for data fetching, caching, and state management.
+The `@mirai-app/graphql-client` package provides TypeScript types and React Query hooks generated from the GraphQL schema. These hooks integrate seamlessly with TanStack Query for data fetching, caching, and state management.
 
 ## Setup
 
@@ -70,7 +70,7 @@ const client = new GraphQLClient("https://your-api.com/graphql", {
 
 ## Importing Hooks
 
-Import hooks from the `@mirai-app/graphql-types` package:
+Import hooks from the `@mirai-app/graphql-client` package:
 
 ```typescript
 import {
@@ -89,7 +89,7 @@ import {
   type GetUserQuery,
   type GetTripsQuery,
   type CreateTripMutation,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 ```
 
 ## Using Query Hooks
@@ -110,7 +110,7 @@ const { data, isLoading, error, refetch } = useGetUserQuery(
 ### Example: Fetching a User
 
 ```tsx
-import { useGetUserQuery } from "@mirai-app/graphql-types";
+import { useGetUserQuery } from "@mirai-app/graphql-client";
 import { GraphQLClient } from "graphql-request";
 
 function UserProfile({ userId }: { userId: string }) {
@@ -140,7 +140,7 @@ function UserProfile({ userId }: { userId: string }) {
 ### Example: Fetching Trips with Pagination
 
 ```tsx
-import { useGetTripsQuery } from "@mirai-app/graphql-types";
+import { useGetTripsQuery } from "@mirai-app/graphql-client";
 
 function TripList() {
   const client = new GraphQLClient("/graphql");
@@ -186,7 +186,7 @@ function TripList() {
 ### Example: Current User (No Variables)
 
 ```tsx
-import { useGetCurrentUserQuery } from "@mirai-app/graphql-types";
+import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
 
 function UserMenu() {
   const client = new GraphQLClient("/graphql");
@@ -217,7 +217,7 @@ const { mutate, mutateAsync, isPending, error } = useCreateTripMutation(
 ### Example: Creating a Trip
 
 ```tsx
-import { useCreateTripMutation } from "@mirai-app/graphql-types";
+import { useCreateTripMutation } from "@mirai-app/graphql-client";
 import { useQueryClient } from "@tanstack/react-query";
 
 function CreateTripForm() {
@@ -362,7 +362,7 @@ bun run generate
 ### 3. Use the Generated Hook
 
 ```tsx
-import { useGetMyFeaturesQuery } from "@mirai-app/graphql-types";
+import { useGetMyFeaturesQuery } from "@mirai-app/graphql-client";
 ```
 
 ## Available Hooks
@@ -401,7 +401,7 @@ If you see type errors:
 
 1. Run `bun run generate` in `packages/graphql-types`
 2. Restart your TypeScript server
-3. Check that you're importing from `@mirai-app/graphql-types`
+3. Check that you're importing from `@mirai-app/graphql-client`
 
 ### Caching issues
 

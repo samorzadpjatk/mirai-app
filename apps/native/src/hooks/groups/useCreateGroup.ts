@@ -3,7 +3,7 @@ import { useMutation } from "urql";
 import {
   CreateGroupDocument,
   GetGroupsByTripDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { useClient } from "urql";
 
 export function useCreateGroup(tripId?: string | null) {

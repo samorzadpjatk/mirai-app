@@ -6,7 +6,7 @@ import {
   useGetAllNotificationsQuery,
   useDeleteNotificationMutation,
   type GetAllNotificationsQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";

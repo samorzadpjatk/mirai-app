@@ -6,7 +6,7 @@ import {
   GetTripDocument,
   GetCurrentUserDocument,
   GetGroupRankingDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { colors, spacing } from "../../../../styles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeaderboardEmptyState } from "~/components/trips/leaderboard/LeaderboardEmptyState";

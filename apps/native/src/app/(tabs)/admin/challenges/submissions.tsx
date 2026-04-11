@@ -16,7 +16,7 @@ import {
   GetChallengeDocument,
   GetChallengeSubmissionsDocument,
   UpdateChallengeSubmissionDocument,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   FilterChip,
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
 - Removed: `import { GraphQLClient } from "graphql-request"` and custom hooks like `useGetChallengeQuery`
 - Added: `import { useQuery, useMutation, useClient } from "urql"`
 - Added: `import gql from "graphql-tag"`
-- Added: Imported GraphQL Documents (`GetChallengeSubmissionsDocument`, `UpdateChallengeSubmissionDocument`) from `@mirai-app/graphql-types`
+- Added: Imported GraphQL Documents (`GetChallengeSubmissionsDocument`, `UpdateChallengeSubmissionDocument`) from `@mirai-app/graphql-client`
 
 ### 2. Hook Replacements
 
@@ -612,8 +612,8 @@ const styles = StyleSheet.create({
 
 ### 4. GraphQL Documents
 - `GetChallengeDocument`: Defined inline using `gql` template literal (not yet in generated urql types)
-- `GetChallengeSubmissionsDocument`: Imported from `@mirai-app/graphql-types`
-- `UpdateChallengeSubmissionDocument`: Imported from `@mirai-app/graphql-types`
+- `GetChallengeSubmissionsDocument`: Imported from `@mirai-app/graphql-client`
+- `UpdateChallengeSubmissionDocument`: Imported from `@mirai-app/graphql-client`
 
 ### 5. Loading States Updated
 - `isLoading` / `isFetching` → `fetching`

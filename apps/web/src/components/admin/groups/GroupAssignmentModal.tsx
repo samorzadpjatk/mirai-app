@@ -9,7 +9,7 @@ import {
   useGetGroupsByTripQuery,
   useGetUsersQuery,
   type GetGroupsByTripQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { appToast } from "../../../lib/toast";
 import { env } from "../../../lib/env";
 

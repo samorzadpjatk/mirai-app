@@ -3,7 +3,7 @@ import {
   GetNotificationSchedulesDocument,
   DeleteNotificationScheduleDocument,
   ToggleNotificationScheduleActiveDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 export function useNotificationSchedules() {
   const client = useClient();

@@ -27,7 +27,7 @@ import {
   GetTripByIdAdminDocument,
   type GetRewardsByTripAdminQuery,
   type GetPurchaseHistoryQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 const PAGE_SIZE = 30;
 
@@ -1436,7 +1436,7 @@ export default function AdminRewardsPage() {
 - Removed: `import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query"`
 - Removed: `import { GraphQLClient } from "graphql-request"` and `* as SecureStore`
 - Added: `import { useQuery, useMutation, useClient } from "urql"`
-- Added: Imported GraphQL Documents (`GetRewardsByTripAdminDocument`, `GetPurchaseHistoryDocument`, `UpdatePurchaseStatusDocument`, `GetTripByIdAdminDocument`) from `@mirai-app/graphql-types`
+- Added: Imported GraphQL Documents (`GetRewardsByTripAdminDocument`, `GetPurchaseHistoryDocument`, `UpdatePurchaseStatusDocument`, `GetTripByIdAdminDocument`) from `@mirai-app/graphql-client`
 
 ### 2. Hook Replacements
 

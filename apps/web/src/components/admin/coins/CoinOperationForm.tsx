@@ -14,7 +14,7 @@ import {
   GetGroupsByTripDocument,
   AddCoinsDocument,
   RemoveCoinsDocument,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 
 interface CoinOperationFormProps {
   operation: "add" | "remove";

@@ -12,7 +12,7 @@ import {
   ChallengeFilterStatus,
   ChallengeSortBy,
   type ChallengeStatus,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { ChallengeCard } from "./ChallengeCard";
 import { useTrip } from "../../../contexts/TripContext";
 

@@ -7,7 +7,7 @@ import { Card } from "../../ui/Card";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { useTrip } from "../../../contexts/TripContext";
-import { useGetGroupsByTripQuery } from "@mirai-app/graphql-types";
+import { useGetGroupsByTripQuery } from "@mirai-app/graphql-client";
 import { env } from "../../../lib/env";
 
 const createGraphQLClient = (): GraphQLClient => {

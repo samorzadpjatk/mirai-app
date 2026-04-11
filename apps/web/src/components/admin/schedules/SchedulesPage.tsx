@@ -18,7 +18,7 @@ import {
   DeleteNotificationScheduleDocument,
   ToggleNotificationScheduleActiveDocument,
   type GetNotificationSchedulesQuery,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 import { useTrip } from "../../../contexts/TripContext";
 import { ScheduleCard } from "./ScheduleCard";
 

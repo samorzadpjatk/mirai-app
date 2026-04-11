@@ -17,7 +17,7 @@ import {
   GetChallengesDocument,
   DeleteChallengeDocument,
   GetJudgedStaffVotingProgressDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
@@ -707,7 +707,7 @@ export default function AdminChallengesScreen() {
 // - Files modified: apps/native/src/app/(tabs)/admin/challenges/index.tsx
 // - Key changes made:
 //   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
-//   2. Imported GraphQL documents from @mirai-app/graphql-types (GetChallengesDocument, DeleteChallengeDocument, GetJudgedStaffVotingProgressDocument)
+//   2. Imported GraphQL documents from @mirai-app/graphql-client (GetChallengesDocument, DeleteChallengeDocument, GetJudgedStaffVotingProgressDocument)
 //   3. Migrated useQueryClient() to useClient() from urql
 //   4. Changed query pattern from TanStack Query's { data, isLoading, isFetching, hasNextPage, fetchNextPage } to urql's [{ data, fetching }, replay] tuple
 //   5. Updated mutation pattern from useMutation({ mutationFn, onSuccess, onError }) to useMutation(Document) with manual error handling

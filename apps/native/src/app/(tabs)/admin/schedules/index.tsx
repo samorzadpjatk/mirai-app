@@ -18,7 +18,7 @@ import {
   GetNotificationSchedulesDocument,
   CreateNotificationScheduleDocument,
   type GetNotificationSchedulesQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { ScheduleCard } from "~/components/admin/schedules/ScheduleCard";
 import {

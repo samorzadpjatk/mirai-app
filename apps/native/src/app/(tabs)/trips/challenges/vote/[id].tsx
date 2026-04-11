@@ -16,7 +16,7 @@ import {
   GetMyVotesDocument,
   SubmitVoteDocument,
   GetCurrentUserDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import {
   borderRadius,
   colors,

@@ -8,7 +8,7 @@ import {
   UpdateChallengeDocument,
   type Challenge,
   type UpdateChallengeInput,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 import { colors } from "~/styles";
 import { useChallengeForm } from "~/hooks/admin/useChallengeForm";
 import { ChallengeFormFields } from "~/components/admin/challenges/ChallengeFormFields";

@@ -9,7 +9,7 @@ import {
   useGetUsersQuery,
   type GetUsersQuery,
   type User,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminSearchBar } from "~/components/admin/AdminSearchBar";
 import { UserCard } from "~/components/admin/users/UserCard";

@@ -16,7 +16,7 @@ import { colors, spacing, borderRadius, typography } from "../../../../styles";
 import {
   useGetGroupsByTripQuery,
   type GetGroupsByTripQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { GroupsSearchBar } from "~/components/admin/groups/GroupsSearchBar";
 import { GroupManagementCard } from "~/components/admin/groups/GroupManagementCard";

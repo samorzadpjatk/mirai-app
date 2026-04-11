@@ -12,7 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "urql";
-import { GetTripsDocument } from "@mirai-app/graphql-types";
+import { GetTripsDocument } from "@mirai-app/graphql-client";
 import { colors, spacing, borderRadius, typography } from "../../../styles";
 import { TripPickerModal } from "~/components/common/ui";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

@@ -2,7 +2,7 @@
 
 import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
-import type { GetNotificationSchedulesQuery } from "@mirai-app/graphql-types";
+import type { GetNotificationSchedulesQuery } from "@mirai-app/graphql-client";
 
 type NotificationSchedule =
   GetNotificationSchedulesQuery["notificationSchedules"]["schedules"][number];

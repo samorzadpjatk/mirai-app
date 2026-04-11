@@ -44,7 +44,7 @@ import {
   type SendMobileNotificationsMutation,
   type TrackDeliveryCompleteMutation,
   type TrackDeliveryFailureMutation,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 
 // =============================================================================
 // Environment Configuration

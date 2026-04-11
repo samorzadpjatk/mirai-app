@@ -1,6 +1,6 @@
 "use client";
 
-import type { User } from "@mirai-app/graphql-types";
+import type { User } from "@mirai-app/graphql-client";
 import { Card } from "../../ui/Card";
 
 interface UserCardProps {

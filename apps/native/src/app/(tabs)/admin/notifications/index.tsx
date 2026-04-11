@@ -23,7 +23,7 @@ import {
   DeleteNotificationScheduleDocument,
   ToggleNotificationScheduleActiveDocument,
   type NotificationSchedule,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { AdminHeader } from "~/components/admin/AdminHeader";
 import { AdminAddFab } from "~/components/admin/common/AdminAddFab";
 import { NotificationCard } from "~/components/admin/notifications/NotificationCard";
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
    - Removed: `import { graphqlClient } from "~/lib/graphql-client"`
    - Removed: Manual GraphQL document imports for TanStack Query
    - Added: `import { useQuery, useMutation, useClient } from "urql"`
-   - Added: Document imports from `@mirai-app/graphql-types` (GetNotificationSchedulesDocument, UpdateNotificationScheduleDocument, DeleteNotificationScheduleDocument, ToggleNotificationScheduleActiveDocument)
+   - Added: Document imports from `@mirai-app/graphql-client` (GetNotificationSchedulesDocument, UpdateNotificationScheduleDocument, DeleteNotificationScheduleDocument, ToggleNotificationScheduleActiveDocument)
 
 2. **Replaced `useAdminNotifications` hook:**
    - Changed from using TanStack Query's `useGetAllNotificationsQuery` hook to urql's `useQuery` with the document from `useGetAllNotificationsQuery.document`

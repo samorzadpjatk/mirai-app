@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, typography } from "~/styles";
 import { AdminModal, AdminModalButton } from "../AdminModal";
 
-// GraphQL User type from @mirai-app/graphql-types
+// GraphQL User type from @mirai-app/graphql-client
 interface User {
   id: string;
   firstName: string;
@@ -24,7 +24,7 @@ interface User {
   } | null;
 }
 
-// GraphQL Group type from @mirai-app/graphql-types (simplified for local use)
+// GraphQL Group type from @mirai-app/graphql-client (simplified for local use)
 interface Group {
   id: string;
   name: string;

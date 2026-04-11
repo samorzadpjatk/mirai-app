@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "urql";
 import { borderRadius, colors, spacing, typography } from "~/styles";
-import { useGetCurrentUserQuery } from "@mirai-app/graphql-types";
+import { useGetCurrentUserQuery } from "@mirai-app/graphql-client";
 
 export function AccountInfoSection() {
   const [result] = useQuery({

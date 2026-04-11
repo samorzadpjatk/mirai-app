@@ -7,7 +7,7 @@ import {
   CreateUserDocument,
   GetUsersDocument,
   type CreateUserInput,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing } from "~/styles";
 import { AdminHeader } from "~/components/admin/AdminHeader";

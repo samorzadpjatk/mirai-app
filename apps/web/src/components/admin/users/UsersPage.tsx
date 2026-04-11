@@ -6,7 +6,7 @@ import { Select } from "../../ui/Select";
 import { Button } from "../../ui/Button";
 import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
-import { useGetUsersQuery, type User } from "@mirai-app/graphql-types";
+import { useGetUsersQuery, type User } from "@mirai-app/graphql-client";
 import { graphqlClient } from "../../../lib/graphql-client";
 import { UserCard } from "./UserCard";
 import { useTrip } from "../../../contexts/TripContext";

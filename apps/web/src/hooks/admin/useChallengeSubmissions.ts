@@ -5,7 +5,7 @@ import { useQuery, useMutation, useClient } from "urql";
 import {
   GetChallengeSubmissionsDocument,
   type GetChallengeSubmissionsQuery,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 
 export type SubmissionStatus = "PENDING" | "APPROVED" | "REJECTED";
 

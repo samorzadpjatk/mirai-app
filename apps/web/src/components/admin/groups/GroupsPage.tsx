@@ -8,7 +8,7 @@ import { LoadingSpinner } from "../../ui/LoadingSpinner";
 import { ErrorMessage } from "../../ui/ErrorMessage";
 import { GroupCard } from "./GroupCard";
 import { GroupAssignmentModal } from "./GroupAssignmentModal";
-import { useGetGroupsByTripQuery } from "@mirai-app/graphql-types";
+import { useGetGroupsByTripQuery } from "@mirai-app/graphql-client";
 import { useTrip } from "../../../contexts/TripContext";
 import { env } from "../../../lib/env";
 

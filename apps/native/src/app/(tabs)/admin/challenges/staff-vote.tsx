@@ -18,7 +18,7 @@ import {
   SubmitVotesDocument,
   ForceEndVotingDocument,
   type GetChallengeSubmissionsQuery,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { borderRadius, colors, spacing, typography } from "~/styles";
 import { ChallengeLoadingState } from "~/components/trips/challenges/ChallengeLoadingState";

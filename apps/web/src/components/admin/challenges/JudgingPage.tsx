@@ -5,7 +5,7 @@ import { GraphQLClient } from "graphql-request";
 import {
   useGetVotesByChallengeQuery,
   type GetVotesByChallengeQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { env } from "../../../lib/env";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";

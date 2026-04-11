@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import type { ReactNode } from "react";
 import { GraphQLClient } from "graphql-request";
-import { useGetTripsQuery } from "@mirai-app/graphql-types";
+import { useGetTripsQuery } from "@mirai-app/graphql-client";
 import { env } from "../lib/env";
 import { ACTIVE_TRIP_STORAGE_KEY } from "../hooks/useActiveTripId";
 
@@ -35,7 +35,7 @@ interface TripProviderProps {
 /**
  * Create a GraphQL client instance for use with generated hooks
  *
- * The generated hooks from @mirai-app/graphql-types require a GraphQLClient
+ * The generated hooks from @mirai-app/graphql-client require a GraphQLClient
  * instance from graphql-request as their first parameter.
  */
 const createGraphQLClient = (): GraphQLClient => {

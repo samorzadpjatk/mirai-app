@@ -60,11 +60,11 @@ export type {
   SeedLinkSponsorToTripMutationVariables,
   SeedCreateRewardMutation,
   SeedCreateRewardMutationVariables,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";
 
 // Export the generated documents for seed operations
 export {
   SeedCreateSponsorDocument,
   SeedLinkSponsorToTripDocument,
   SeedCreateRewardDocument,
-} from "@mirai-app/graphql-types/urql";
+} from "@mirai-app/graphql-client/urql";

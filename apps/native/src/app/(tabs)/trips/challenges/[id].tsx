@@ -11,7 +11,7 @@ import {
   CreateChallengeSubmissionDocument,
   DeleteChallengeSubmissionDocument,
   GetTripDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { QrScannerModal } from "~/components/common";
 import { AppModalShell, AppModalFooter } from "~/components/common/ui";
 import { ThemedTextInput } from "~/components/common/ui";

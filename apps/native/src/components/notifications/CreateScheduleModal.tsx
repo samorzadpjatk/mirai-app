@@ -10,7 +10,7 @@ import { useMutation, useClient } from "urql";
 import {
   useCreateNotificationScheduleMutation,
   useGetNotificationSchedulesQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 import { useTrips } from "~/hooks/trips";
 import { colors, spacing } from "~/styles";
 import {

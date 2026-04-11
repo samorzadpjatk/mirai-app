@@ -24,7 +24,7 @@ import {
   GetTotalAvailablePointsDocument,
   CreateRewardDocument,
   GetRewardsByTripAdminDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 export default function AdminCreateRewardScreen() {
   const router = useRouter();

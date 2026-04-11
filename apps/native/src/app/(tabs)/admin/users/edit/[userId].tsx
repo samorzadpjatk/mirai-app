@@ -23,7 +23,7 @@ import {
   GetUserDocument,
   UpdateUserDocument,
   GetUsersDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 export default function AdminEditUserScreen() {
   const router = useRouter();
@@ -478,8 +478,8 @@ const styles = StyleSheet.create({
 // - Key changes made:
 //   1. Replaced @tanstack/react-query imports with urql (useQuery, useMutation, useClient)
 //   2. Removed useQueryClient import from @tanstack/react-query
-//   3. Removed useGetUserQuery and useUpdateUserMutation hooks from @mirai-app/graphql-types
-//   4. Imported GraphQL documents from @mirai-app/graphql-types (GetUserDocument, UpdateUserDocument, GetUsersDocument)
+//   3. Removed useGetUserQuery and useUpdateUserMutation hooks from @mirai-app/graphql-client
+//   4. Imported GraphQL documents from @mirai-app/graphql-client (GetUserDocument, UpdateUserDocument, GetUsersDocument)
 //   5. Changed from TanStack Query's useQuery({ queryKey, queryFn, enabled }) to urql's useQuery({ query, variables, pause })
 //   6. Changed from useMutation with callbacks to urql's useMutation(Document) with manual error handling
 //   7. Replaced queryClient.invalidateQueries({ queryKey }) with urqlClient.invalidate(Document, variables)

@@ -3,7 +3,7 @@ import {
   GetSponsorsDocument,
   GetSponsorDocument,
   GetSponsorsByTripDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 export function useSponsors() {
   return useQuery({

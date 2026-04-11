@@ -27,7 +27,7 @@ import {
   SetRewardHiddenDocument,
   DeleteRewardDocument,
   GetRewardsByTripAdminDocument,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 export default function AdminEditRewardScreen() {
   const router = useRouter();
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
 //   2. Removed GraphQLClient and SecureStore imports (urql client handles auth automatically)
 //   3. Removed createGraphQLClient helper function and useGraphQLClient hook (not needed with urql)
 //   4. Removed useQueryClient import from @tanstack/react-query
-//   5. Imported GraphQL documents from @mirai-app/graphql-types (GetRewardDocument, GetTotalAvailablePointsDocument, UpdateRewardDocument, SetRewardHiddenDocument, DeleteRewardDocument, GetRewardsByTripAdminDocument)
+//   5. Imported GraphQL documents from @mirai-app/graphql-client (GetRewardDocument, GetTotalAvailablePointsDocument, UpdateRewardDocument, SetRewardHiddenDocument, DeleteRewardDocument, GetRewardsByTripAdminDocument)
 //   6. Changed from graphql-request's useGetRewardQuery.fetcher(client, variables) to urql's useQuery({ query, variables, pause })
 //   7. Changed from graphql-request's useUpdateRewardMutation.fetcher() to urql's useMutation(Document)
 //   8. Changed loading state: isLoading → fetching (from urql's tuple)

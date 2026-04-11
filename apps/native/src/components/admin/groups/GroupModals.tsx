@@ -36,7 +36,7 @@ interface Group {
   };
 }
 
-// GraphQL User type from @mirai-app/graphql-types
+// GraphQL User type from @mirai-app/graphql-client
 interface User {
   id: string;
   firstName: string;

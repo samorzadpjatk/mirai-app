@@ -19,7 +19,7 @@ import {
   GetCoinQuickStatsDocument,
   type GetGroupsByTripQuery,
   type GetCoinQuickStatsQuery,
-} from "@mirai-app/graphql-types";
+} from "@mirai-app/graphql-client";
 
 // Group type matching the expected structure
 interface Group {
