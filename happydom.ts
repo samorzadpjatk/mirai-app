@@ -2,6 +2,10 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 GlobalRegistrator.register();
 
+// Define React Native / Expo globals
+(globalThis as typeof globalThis & { __DEV__: boolean }).__DEV__ =
+  process.env.NODE_ENV === "development";
+
 // Suppress console output during tests unless explicitly enabled
 if (!process.env.ENABLE_TEST_LOGS) {
   const noop = () => {};
