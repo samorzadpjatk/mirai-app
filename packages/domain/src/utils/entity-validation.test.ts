@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { validate } from "./entity-validation";
-import { isValidationError } from "../errors/domain-errors";
+import { isValidationError } from "../errors/effect-errors";
 
 describe("[UNIT] entity-validation", () => {
   describe("validate.string", () => {

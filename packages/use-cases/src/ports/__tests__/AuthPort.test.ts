@@ -223,8 +223,8 @@ describe("[UNIT] AuthPort Interface Contract", () => {
   });
 
   describe("No Framework Dependencies", () => {
-    it("AuthPort source does not import from @trpc/server", async () => {
-      // Read the source file and verify no tRPC imports
+    it("AuthPort source does not import from HTTP/GraphQL frameworks", async () => {
+      // Read the source file and verify no framework imports
       const file = await import("../AuthPort.ts");
 
       // The file should only export types and errors
